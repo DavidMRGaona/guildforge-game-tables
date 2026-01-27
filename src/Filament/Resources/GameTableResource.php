@@ -1,0 +1,508 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\GameTables\Filament\Resources;
+
+use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
+use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Tabs;
+use Filament\Forms\Components\Tabs\Tab;
+use Filament\Forms\Components\TagsInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Form;
+use Filament\Forms\Get;
+use App\Filament\Resources\BaseResource;
+use Filament\Tables\Actions\BulkActionGroup;
+use Filament\Tables\Actions\DeleteBulkAction;
+use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Tables\Table;
+use Modules\GameTables\Domain\Enums\CharacterCreation;
+use Modules\GameTables\Domain\Enums\ExperienceLevel;
+use Modules\GameTables\Domain\Enums\GameMasterRole;
+use Modules\GameTables\Domain\Enums\Genre;
+use Modules\GameTables\Domain\Enums\RegistrationType;
+use Modules\GameTables\Domain\Enums\SafetyTool;
+use Modules\GameTables\Domain\Enums\TableFormat;
+use Modules\GameTables\Domain\Enums\TableStatus;
+use Modules\GameTables\Domain\Enums\TableType;
+use Modules\GameTables\Domain\Enums\Tone;
+use Modules\GameTables\Filament\Resources\GameTableResource\Pages;
+use Modules\GameTables\Filament\Resources\GameTableResource\RelationManagers\ParticipantsRelationManager;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ContentWarningModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
+
+final class GameTableResource extends BaseResource
+{
+    protected static ?string $model = GameTableModel::class;
+
+    protected static ?string $navigationIcon = 'heroicon-o-table-cells';
+
+    protected static ?int $navigationSort = 1;
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('game-tables::messages.navigation.group');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('game-tables::messages.navigation.tables');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('game-tables::messages.model.game_table.singular');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('game-tables::messages.model.game_table.plural');
+    }
+
+    public static function form(Form $form): Form
+    {
+        return $form
+            ->schema([
+                Tabs::make('GameTableTabs')
+                    ->tabs([
+                        Tab::make(__('game-tables::messages.tabs.basic_info'))
+                            ->icon('heroicon-o-document-text')
+                            ->schema([
+                                TextInput::make('title')
+                                    ->label(__('game-tables::messages.fields.title'))
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->columnSpanFull(),
+
+                                Select::make('game_system_id')
+                                    ->label(__('game-tables::messages.fields.game_system'))
+                                    ->options(GameSystemModel::query()->where('is_active', true)->pluck('name', 'id'))
+                                    ->searchable()
+                                    ->native(false)
+                                    ->required(),
+
+                                Select::make('campaign_id')
+                                    ->label(__('game-tables::messages.fields.campaign'))
+                                    ->options(CampaignModel::query()->pluck('title', 'id'))
+                                    ->searchable()
+                                    ->native(false),
+
+                                Select::make('event_id')
+                                    ->label(__('game-tables::messages.fields.event'))
+                                    ->options(
+                                        EventModel::query()
+                                            ->where('is_published', true)
+                                            ->where('start_date', '>=', now())
+                                            ->orderBy('start_date', 'asc')
+                                            ->pluck('title', 'id')
+                                    )
+                                    ->searchable()
+                                    ->native(false),
+
+                                Textarea::make('synopsis')
+                                    ->label(__('game-tables::messages.fields.synopsis'))
+                                    ->rows(3)
+                                    ->maxLength(2000)
+                                    ->columnSpanFull(),
+                            ])
+                            ->columns(2),
+
+                        Tab::make(__('game-tables::messages.tabs.direction'))
+                            ->icon('heroicon-o-star')
+                            ->schema([
+                                Section::make(__('game-tables::messages.sections.game_masters'))
+                                    ->schema([
+                                        Repeater::make('gameMasters')
+                                            ->relationship()
+                                            ->label(__('game-tables::messages.fields.game_masters'))
+                                            ->addActionLabel(__('game-tables::messages.actions.add_game_master'))
+                                            ->schema([
+                                                Select::make('gm_type')
+                                                    ->label(__('game-tables::messages.fields.gm_type'))
+                                                    ->options([
+                                                        'user' => __('game-tables::messages.fields.gm_type_user'),
+                                                        'external' => __('game-tables::messages.fields.gm_type_external'),
+                                                    ])
+                                                    ->default('user')
+                                                    ->required()
+                                                    ->live()
+                                                    ->dehydrated(false)
+                                                    ->afterStateHydrated(function (Select $component, Get $get): void {
+                                                        $userId = $get('user_id');
+                                                        $component->state($userId !== null ? 'user' : 'external');
+                                                    }),
+
+                                                Select::make('user_id')
+                                                    ->label(__('game-tables::messages.fields.user'))
+                                                    ->relationship('user', 'name')
+                                                    ->searchable()
+                                                    ->preload()
+                                                    ->visible(fn (Get $get): bool => $get('gm_type') === 'user')
+                                                    ->required(fn (Get $get): bool => $get('gm_type') === 'user'),
+
+                                                Grid::make(2)
+                                                    ->schema([
+                                                        TextInput::make('first_name')
+                                                            ->label(__('game-tables::messages.fields.first_name'))
+                                                            ->required(fn (Get $get): bool => $get('gm_type') === 'external'),
+                                                        TextInput::make('last_name')
+                                                            ->label(__('game-tables::messages.fields.last_name')),
+                                                    ])
+                                                    ->visible(fn (Get $get): bool => $get('gm_type') === 'external'),
+
+                                                Grid::make(2)
+                                                    ->schema([
+                                                        TextInput::make('email')
+                                                            ->label(__('game-tables::messages.fields.email'))
+                                                            ->email(),
+                                                        TextInput::make('phone')
+                                                            ->label(__('game-tables::messages.fields.phone'))
+                                                            ->tel(),
+                                                    ])
+                                                    ->visible(fn (Get $get): bool => $get('gm_type') === 'external'),
+
+                                                Grid::make(2)
+                                                    ->schema([
+                                                        Select::make('role')
+                                                            ->label(__('game-tables::messages.fields.gm_role'))
+                                                            ->options(GameMasterRole::options())
+                                                            ->default(GameMasterRole::Main->value)
+                                                            ->native(false)
+                                                            ->required(),
+
+                                                        TextInput::make('custom_title')
+                                                            ->label(__('game-tables::messages.fields.custom_title'))
+                                                            ->placeholder(__('game-tables::messages.fields.custom_title_placeholder'))
+                                                            ->helperText(__('game-tables::messages.fields.custom_title_help'))
+                                                            ->maxLength(100),
+                                                    ]),
+
+                                                Grid::make(2)
+                                                    ->schema([
+                                                        Toggle::make('notify_by_email')
+                                                            ->label(__('game-tables::messages.fields.notify_by_email'))
+                                                            ->default(true),
+                                                        Toggle::make('is_name_public')
+                                                            ->label(__('game-tables::messages.fields.is_name_public'))
+                                                            ->default(true),
+                                                    ]),
+
+                                                Textarea::make('notes')
+                                                    ->label(__('game-tables::messages.fields.notes'))
+                                                    ->rows(2)
+                                                    ->maxLength(500),
+                                            ])
+                                            ->defaultItems(1)
+                                            ->minItems(1)
+                                            ->collapsible()
+                                            ->itemLabel(fn (array $state): ?string => $state['custom_title'] ?? $state['first_name'] ?? __('game-tables::messages.fields.game_master'))
+                                            ->columnSpanFull(),
+                                    ]),
+                            ]),
+
+                        Tab::make(__('game-tables::messages.tabs.schedule'))
+                            ->icon('heroicon-o-clock')
+                            ->schema([
+                                DateTimePicker::make('starts_at')
+                                    ->label(__('game-tables::messages.fields.start_time'))
+                                    ->native(false)
+                                    ->displayFormat('d/m/Y H:i')
+                                    ->required(),
+
+                                TextInput::make('duration_minutes')
+                                    ->label(__('game-tables::messages.fields.duration_minutes'))
+                                    ->numeric()
+                                    ->minValue(30)
+                                    ->maxValue(720)
+                                    ->default(config('game-tables.defaults.duration_minutes', 240))
+                                    ->required(),
+
+                                Select::make('table_format')
+                                    ->label(__('game-tables::messages.fields.table_format'))
+                                    ->options(TableFormat::options())
+                                    ->default(TableFormat::InPerson->value)
+                                    ->native(false)
+                                    ->required()
+                                    ->live(),
+
+                                TextInput::make('location')
+                                    ->label(__('game-tables::messages.fields.location'))
+                                    ->maxLength(255)
+                                    ->visible(fn (Get $get): bool => in_array($get('table_format'), [TableFormat::InPerson->value, TableFormat::Hybrid->value])),
+
+                                TextInput::make('online_url')
+                                    ->label(__('game-tables::messages.fields.online_url'))
+                                    ->url()
+                                    ->maxLength(500)
+                                    ->visible(fn (Get $get): bool => in_array($get('table_format'), [TableFormat::Online->value, TableFormat::Hybrid->value])),
+                            ])
+                            ->columns(2),
+
+                        Tab::make(__('game-tables::messages.tabs.capacity'))
+                            ->icon('heroicon-o-users')
+                            ->schema([
+                                Select::make('table_type')
+                                    ->label(__('game-tables::messages.fields.table_type'))
+                                    ->options(TableType::options())
+                                    ->default(TableType::OneShot->value)
+                                    ->native(false)
+                                    ->required(),
+
+                                TextInput::make('min_players')
+                                    ->label(__('game-tables::messages.fields.min_players'))
+                                    ->numeric()
+                                    ->minValue(1)
+                                    ->maxValue(20)
+                                    ->default(config('game-tables.defaults.min_players', 3))
+                                    ->required(),
+
+                                TextInput::make('max_players')
+                                    ->label(__('game-tables::messages.fields.max_players'))
+                                    ->numeric()
+                                    ->minValue(1)
+                                    ->maxValue(20)
+                                    ->default(config('game-tables.defaults.max_players', 5))
+                                    ->required(),
+
+                                TextInput::make('max_spectators')
+                                    ->label(__('game-tables::messages.fields.max_spectators'))
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->maxValue(50)
+                                    ->default(config('game-tables.defaults.max_spectators', 0)),
+
+                                TextInput::make('minimum_age')
+                                    ->label(__('game-tables::messages.fields.minimum_age'))
+                                    ->numeric()
+                                    ->minValue(1)
+                                    ->maxValue(99),
+
+                                Select::make('language')
+                                    ->label(__('game-tables::messages.fields.language'))
+                                    ->options([
+                                        'es' => 'Español',
+                                        'en' => 'English',
+                                        'ca' => 'Català',
+                                        'eu' => 'Euskara',
+                                        'gl' => 'Galego',
+                                    ])
+                                    ->default('es')
+                                    ->native(false)
+                                    ->required(),
+
+                                Select::make('experience_level')
+                                    ->label(__('game-tables::messages.fields.experience_level'))
+                                    ->options(ExperienceLevel::options())
+                                    ->native(false)
+                                    ->required(),
+
+                                Select::make('character_creation')
+                                    ->label(__('game-tables::messages.fields.character_creation'))
+                                    ->options(CharacterCreation::options())
+                                    ->native(false)
+                                    ->required(),
+                            ])
+                            ->columns(4),
+
+                        Tab::make(__('game-tables::messages.tabs.content'))
+                            ->icon('heroicon-o-shield-exclamation')
+                            ->schema([
+                                CheckboxList::make('genres')
+                                    ->label(__('game-tables::messages.fields.genres'))
+                                    ->options(Genre::options())
+                                    ->columns(4)
+                                    ->columnSpanFull(),
+
+                                Select::make('tone')
+                                    ->label(__('game-tables::messages.fields.tone'))
+                                    ->options(Tone::options())
+                                    ->native(false),
+
+                                CheckboxList::make('safety_tools')
+                                    ->label(__('game-tables::messages.fields.safety_tools'))
+                                    ->options(SafetyTool::options())
+                                    ->columns(4)
+                                    ->columnSpanFull(),
+
+                                Select::make('contentWarnings')
+                                    ->label(__('game-tables::messages.fields.content_warnings'))
+                                    ->multiple()
+                                    ->relationship('contentWarnings', 'name')
+                                    ->options(ContentWarningModel::query()->where('is_active', true)->pluck('name', 'id'))
+                                    ->searchable()
+                                    ->native(false)
+                                    ->preload()
+                                    ->columnSpanFull(),
+
+                                TagsInput::make('custom_warnings')
+                                    ->label(__('game-tables::messages.fields.custom_warnings'))
+                                    ->placeholder(__('game-tables::messages.fields.custom_warnings_placeholder'))
+                                    ->columnSpanFull(),
+                            ])
+                            ->columns(2),
+
+                        Tab::make(__('game-tables::messages.tabs.registration'))
+                            ->icon('heroicon-o-clipboard-document-list')
+                            ->schema([
+                                Select::make('registration_type')
+                                    ->label(__('game-tables::messages.fields.registration_type'))
+                                    ->options(RegistrationType::options())
+                                    ->default(RegistrationType::Everyone->value)
+                                    ->native(false)
+                                    ->required(),
+
+                                TextInput::make('members_early_access_days')
+                                    ->label(__('game-tables::messages.fields.members_early_access_days'))
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->maxValue(30)
+                                    ->default(0)
+                                    ->required(),
+
+                                DateTimePicker::make('registration_opens_at')
+                                    ->label(__('game-tables::messages.fields.registration_opens_at'))
+                                    ->native(false)
+                                    ->displayFormat('d/m/Y H:i'),
+
+                                DateTimePicker::make('registration_closes_at')
+                                    ->label(__('game-tables::messages.fields.registration_closes_at'))
+                                    ->native(false)
+                                    ->displayFormat('d/m/Y H:i'),
+
+                                Toggle::make('auto_confirm')
+                                    ->label(__('game-tables::messages.fields.auto_confirm'))
+                                    ->default(true),
+
+                                TextInput::make('notification_email')
+                                    ->label(__('game-tables::messages.fields.notification_email'))
+                                    ->email()
+                                    ->maxLength(255)
+                                    ->helperText(__('game-tables::messages.fields.notification_email_help')),
+                            ])
+                            ->columns(3),
+
+                        Tab::make(__('game-tables::messages.tabs.publication'))
+                            ->icon('heroicon-o-eye')
+                            ->schema([
+                                Select::make('status')
+                                    ->label(__('game-tables::messages.fields.table_status'))
+                                    ->options(TableStatus::options())
+                                    ->default(TableStatus::Draft->value)
+                                    ->native(false)
+                                    ->required(),
+
+                                Toggle::make('is_published')
+                                    ->label(__('game-tables::messages.fields.is_published'))
+                                    ->default(false),
+
+                                Textarea::make('notes')
+                                    ->label(__('game-tables::messages.fields.notes'))
+                                    ->rows(2)
+                                    ->maxLength(1000)
+                                    ->columnSpanFull(),
+                            ])
+                            ->columns(2),
+                    ])
+                    ->columnSpanFull(),
+            ]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                TextColumn::make('title')
+                    ->label(__('game-tables::messages.fields.title'))
+                    ->searchable()
+                    ->sortable(),
+
+                TextColumn::make('gameSystem.name')
+                    ->label(__('game-tables::messages.fields.game_system'))
+                    ->sortable(),
+
+                TextColumn::make('starts_at')
+                    ->label(__('game-tables::messages.fields.start_time'))
+                    ->dateTime('d/m/Y H:i')
+                    ->sortable(),
+
+                TextColumn::make('table_format')
+                    ->label(__('game-tables::messages.fields.table_format'))
+                    ->badge()
+                    ->color(fn (TableFormat $state): string => $state->color())
+                    ->formatStateUsing(fn (TableFormat $state): string => $state->label()),
+
+                TextColumn::make('status')
+                    ->label(__('game-tables::messages.fields.table_status'))
+                    ->badge()
+                    ->color(fn (TableStatus $state): string => $state->color())
+                    ->formatStateUsing(fn (TableStatus $state): string => $state->label())
+                    ->sortable(),
+
+                TextColumn::make('participants_count')
+                    ->label(__('game-tables::messages.model.participant.plural'))
+                    ->counts('participants')
+                    ->sortable(),
+
+                IconColumn::make('is_published')
+                    ->label(__('game-tables::messages.fields.is_published'))
+                    ->boolean(),
+
+                TextColumn::make('created_at')
+                    ->dateTime('d/m/Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->filters([
+                SelectFilter::make('status')
+                    ->label(__('game-tables::messages.fields.table_status'))
+                    ->options(TableStatus::options()),
+                SelectFilter::make('table_format')
+                    ->label(__('game-tables::messages.fields.table_format'))
+                    ->options(TableFormat::options()),
+                SelectFilter::make('game_system_id')
+                    ->label(__('game-tables::messages.fields.game_system'))
+                    ->options(GameSystemModel::query()->where('is_active', true)->pluck('name', 'id')),
+                TernaryFilter::make('is_published')
+                    ->label(__('game-tables::messages.fields.is_published')),
+            ])
+            ->actions([
+                EditAction::make(),
+            ])
+            ->bulkActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                ]),
+            ])
+            ->defaultSort('starts_at', 'desc');
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            ParticipantsRelationManager::class,
+        ];
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListGameTables::route('/'),
+            'create' => Pages\CreateGameTable::route('/create'),
+            'edit' => Pages\EditGameTable::route('/{record}/edit'),
+        ];
+    }
+}
