@@ -81,6 +81,7 @@ return [
         'content' => 'Contenido y seguridad',
         'registration' => 'Inscripciones',
         'publication' => 'Publicación',
+        'progress' => 'Progreso',
     ],
 
     /*
@@ -140,18 +141,25 @@ return [
         'registration_opens_at' => 'Apertura de inscripciones',
         'registration_closes_at' => 'Cierre de inscripciones',
         'auto_confirm' => 'Confirmar automáticamente',
+        'accepts_registrations_in_progress' => 'Permitir inscripciones durante la partida',
+        'accepts_registrations_in_progress_help' => 'Permite que usuarios se inscriban aunque la mesa esté en progreso',
         'notification_email' => 'Email de notificaciones',
         'notification_email_help' => 'Dirección de correo donde se enviarán las notificaciones de inscripciones y bajas',
         'is_published' => 'Publicado',
+        'is_published_help' => 'Controla la visibilidad pública de la mesa. Las inscripciones se abren automáticamente según las fechas configuradas.',
+        'is_published_campaign_help' => 'Controla la visibilidad pública de la campaña.',
         'published_at' => 'Fecha de publicación',
         'notes' => 'Notas',
 
         // Campaign fields
         'session_count' => 'Número de sesiones',
+        'session_count_help' => 'Número total de sesiones previstas. Dejar vacío si no está definido.',
         'current_session' => 'Sesión actual',
+        'current_session_help' => 'Usa 0 para campañas que aún no han comenzado.',
         'frequency' => 'Frecuencia',
         'campaign_status' => 'Estado de la campaña',
         'accepts_new_players' => 'Acepta nuevos jugadores',
+        'accepts_new_players_help' => 'Indica si la campaña está buscando nuevos jugadores activamente.',
 
         // Participant fields
         'user' => 'Usuario',
@@ -193,6 +201,14 @@ return [
 
         // Game masters
         'game_masters' => 'Directores de juego',
+        'inherited_badge' => '(heredado)',
+        'excluded_badge' => '(excluido)',
+        'inherited_from_campaign' => 'Heredado de la campaña',
+        'exclude_from_table' => 'Excluir de esta mesa',
+        'exclude_from_table_help' => 'El director seguirá en la campaña pero no aparecerá en esta mesa',
+
+        // Image
+        'image' => 'Imagen',
     ],
 
     /*
@@ -235,8 +251,7 @@ return [
         ],
         'table_status' => [
             'draft' => 'Borrador',
-            'published' => 'Publicada',
-            'open' => 'Abierta',
+            'scheduled' => 'Programada',
             'full' => 'Completa',
             'in_progress' => 'En progreso',
             'completed' => 'Completada',
@@ -431,9 +446,13 @@ return [
     */
     'actions' => [
         'publish' => 'Publicar',
-        'open_registration' => 'Abrir inscripciones',
-        'cancel' => 'Cancelar',
+        'unpublish' => 'Despublicar',
+        'start' => 'Iniciar',
         'complete' => 'Completar',
+        'cancel' => 'Cancelar mesa',
+        'cancel_confirmation_title' => '¿Cancelar esta mesa?',
+        'cancel_confirmation_description' => 'Esta acción cancelará la mesa y notificará a todos los participantes inscritos. Esta acción no se puede deshacer.',
+        'cancel_confirm' => 'Sí, cancelar mesa',
         'create_publisher' => 'Crear editorial',
         'add_game_master' => 'Añadir director de juego',
     ],
@@ -457,8 +476,16 @@ return [
         ],
         'table' => [
             'published' => 'Mesa publicada correctamente',
-            'cancelled' => 'Mesa cancelada',
+            'unpublished' => 'Mesa despublicada',
+            'started' => 'Mesa iniciada',
             'completed' => 'Mesa marcada como completada',
+            'cancelled' => 'Mesa cancelada',
+        ],
+        'registration_status' => [
+            'opens_in' => 'Abre en :days días',
+            'open_until' => 'Abierta hasta :date',
+            'closed' => 'Cerrada',
+            'member_early_access' => 'Acceso anticipado para socios activo',
         ],
     ],
 
@@ -489,6 +516,15 @@ return [
         'registered' => 'Te has inscrito correctamente',
         'guest_registered' => 'Te has inscrito correctamente. Recibirás un email de confirmación.',
         'cancelled' => 'Inscripción cancelada correctamente',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Filament Notifications
+    |--------------------------------------------------------------------------
+    */
+    'notifications' => [
+        'table_cancelled' => 'Mesa cancelada correctamente',
     ],
 
     /*

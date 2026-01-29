@@ -43,6 +43,7 @@ final readonly class NotifyOnWaitingListPromotion
             Notification::route('mail', $participantEmail)
                 ->notify(new WaitingListPromotionNotification(
                     participantName: $participantName,
+                    tableId: $event->gameTableId,
                     tableTitle: $gameTable->title,
                     tableDate: $tableDate,
                     tableLocation: $tableLocation,
@@ -52,6 +53,7 @@ final readonly class NotifyOnWaitingListPromotion
         // Notify GMs and table notification email
         $gmNotification = new WaitingListPromotionGmNotification(
             participantName: $participantName,
+            tableId: $event->gameTableId,
             tableTitle: $gameTable->title,
             tableDate: $tableDate,
             tableLocation: $tableLocation,

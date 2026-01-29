@@ -114,6 +114,42 @@ final readonly class EloquentCampaignRepository implements CampaignRepositoryInt
             ->all();
     }
 
+    public function findPublishedModelWithRelations(string $id): ?object
+    {
+        return CampaignModel::query()
+            ->with([
+                'gameSystem',
+                'creator',
+                'gameTables' => function ($query): void {
+                    $query->where('is_published', true)
+                        ->with(['gameSystem', 'creator', 'gameMasters.user', 'participants'])
+                        ->orderBy('starts_at', 'asc');
+                },
+                'gameMasters.user',
+            ])
+            ->where('id', $id)
+            ->where('is_published', true)
+            ->first();
+    }
+
+    public function findPublishedModelBySlugWithRelations(string $slug): ?object
+    {
+        return CampaignModel::query()
+            ->with([
+                'gameSystem',
+                'creator',
+                'gameTables' => function ($query): void {
+                    $query->where('is_published', true)
+                        ->with(['gameSystem', 'creator', 'gameMasters.user', 'participants'])
+                        ->orderBy('starts_at', 'asc');
+                },
+                'gameMasters.user',
+            ])
+            ->where('slug', $slug)
+            ->where('is_published', true)
+            ->first();
+    }
+
     public function toEntity(CampaignModel $model): Campaign
     {
         return new Campaign(

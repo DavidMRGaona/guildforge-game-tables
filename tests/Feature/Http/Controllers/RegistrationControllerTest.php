@@ -312,7 +312,7 @@ final class RegistrationControllerTest extends TestCase
             timeSlot: $timeSlot,
             tableType: TableType::OneShot,
             tableFormat: TableFormat::InPerson,
-            status: TableStatus::Published,
+            status: TableStatus::Scheduled,
             minPlayers: 2,
             maxPlayers: 6,
             registrationType: $registrationType,

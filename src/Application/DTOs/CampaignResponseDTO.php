@@ -11,9 +11,14 @@ use Modules\GameTables\Domain\Enums\CampaignStatus;
 
 final readonly class CampaignResponseDTO
 {
+    /**
+     * @param array<CampaignGameMasterResponseDTO> $gameMasters
+     * @param array<GameTableListDTO> $gameTables
+     */
     public function __construct(
         public string $id,
         public string $title,
+        public ?string $slug,
         public ?string $description,
         public string $gameSystemId,
         public string $gameSystemName,
@@ -25,16 +30,34 @@ final readonly class CampaignResponseDTO
         public int $currentPlayers,
         public bool $isPublished,
         public bool $isRecruiting,
+        public bool $acceptsNewPlayers,
+        public ?int $sessionCount,
+        public int $currentSession,
         public int $totalSessions,
+        public ?string $imagePublicId,
+        public array $gameMasters,
+        public array $gameTables,
+        public bool $hasActiveOrUpcomingTables,
         public ?DateTimeInterface $createdAt,
         public ?DateTimeInterface $updatedAt,
     ) {}
 
-    public static function fromEntity(Campaign $campaign, string $gameSystemName = '', string $creatorName = ''): self
-    {
+    /**
+     * @param array<CampaignGameMasterResponseDTO> $gameMasters
+     * @param array<GameTableListDTO> $gameTables
+     */
+    public static function fromEntity(
+        Campaign $campaign,
+        string $gameSystemName = '',
+        string $creatorName = '',
+        array $gameMasters = [],
+        array $gameTables = [],
+        bool $hasActiveOrUpcomingTables = false,
+    ): self {
         return new self(
             id: $campaign->id->value,
             title: $campaign->title,
+            slug: $campaign->slug,
             description: $campaign->description,
             gameSystemId: $campaign->gameSystemId->value,
             gameSystemName: $gameSystemName,
@@ -46,7 +69,14 @@ final readonly class CampaignResponseDTO
             currentPlayers: 0,
             isPublished: $campaign->isPublished,
             isRecruiting: $campaign->status === CampaignStatus::Recruiting,
+            acceptsNewPlayers: $campaign->acceptsNewPlayers,
+            sessionCount: $campaign->sessionCount,
+            currentSession: $campaign->currentSession,
             totalSessions: 0,
+            imagePublicId: $campaign->imagePublicId,
+            gameMasters: $gameMasters,
+            gameTables: $gameTables,
+            hasActiveOrUpcomingTables: $hasActiveOrUpcomingTables,
             createdAt: $campaign->createdAt,
             updatedAt: $campaign->updatedAt,
         );
@@ -60,6 +90,7 @@ final readonly class CampaignResponseDTO
         return [
             'id' => $this->id,
             'title' => $this->title,
+            'slug' => $this->slug,
             'description' => $this->description,
             'game_system_id' => $this->gameSystemId,
             'game_system_name' => $this->gameSystemName,
@@ -74,7 +105,14 @@ final readonly class CampaignResponseDTO
             'current_players' => $this->currentPlayers,
             'is_published' => $this->isPublished,
             'is_recruiting' => $this->isRecruiting,
+            'accepts_new_players' => $this->acceptsNewPlayers,
+            'session_count' => $this->sessionCount,
+            'current_session' => $this->currentSession,
             'total_sessions' => $this->totalSessions,
+            'image_public_id' => $this->imagePublicId,
+            'game_masters' => array_map(fn (CampaignGameMasterResponseDTO $gm) => $gm->toArray(), $this->gameMasters),
+            'game_tables' => array_map(fn (GameTableListDTO $table) => $table->toArray(), $this->gameTables),
+            'has_active_or_upcoming_tables' => $this->hasActiveOrUpcomingTables,
             'created_at' => $this->createdAt?->format('c'),
             'updated_at' => $this->updatedAt?->format('c'),
         ];

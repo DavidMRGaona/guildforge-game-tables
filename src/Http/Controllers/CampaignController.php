@@ -6,11 +6,14 @@ namespace Modules\GameTables\Http\Controllers;
 
 use App\Http\Concerns\BuildsPaginatedResponse;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\GameTables\Application\Services\CampaignQueryServiceInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
+use App\Application\Services\SlugRedirectServiceInterface;
 use Modules\GameTables\Http\Resources\CampaignResource;
 
 final class CampaignController extends Controller
@@ -22,6 +25,7 @@ final class CampaignController extends Controller
     public function __construct(
         private readonly CampaignQueryServiceInterface $queryService,
         private readonly GameTableQueryServiceInterface $tableQueryService,
+        private readonly SlugRedirectServiceInterface $slugRedirectService,
     ) {}
 
     public function index(Request $request): Response
@@ -67,16 +71,32 @@ final class CampaignController extends Controller
         ]);
     }
 
-    public function show(string $id): Response
+    public function show(string $identifier): Response|RedirectResponse
     {
-        $campaign = $this->queryService->findPublished($id);
+        // 1. Try to find by slug directly
+        $campaign = $this->queryService->findPublishedBySlug($identifier);
 
-        if ($campaign === null) {
-            abort(404);
+        if ($campaign !== null) {
+            return Inertia::render('Campaigns/Show', [
+                'campaign' => CampaignResource::make($campaign)->resolve(),
+            ]);
         }
 
-        return Inertia::render('Campaigns/Show', [
-            'campaign' => CampaignResource::make($campaign)->resolve(),
-        ]);
+        // 2. Check if this is an old slug that redirects to a new one
+        $currentSlug = $this->slugRedirectService->resolveCurrentSlug($identifier, 'campaign');
+        if ($currentSlug !== null) {
+            return redirect()->route('campaigns.show', $currentSlug, 301);
+        }
+
+        // 3. If it looks like a UUID, try finding by ID and redirect to slug
+        if (Str::isUuid($identifier)) {
+            $campaign = $this->queryService->findPublished($identifier);
+            if ($campaign !== null && $campaign->slug !== null) {
+                return redirect()->route('campaigns.show', $campaign->slug, 301);
+            }
+        }
+
+        // 4. Not found
+        abort(404);
     }
 }

@@ -57,7 +57,7 @@ final class GameTablesSettings extends Page implements HasForms
 
     public function mount(ModuleManagerServiceInterface $moduleManager): void
     {
-        $settings = $moduleManager->getSettings(new ModuleName('gametables'));
+        $settings = $moduleManager->getSettings(new ModuleName('game-tables'));
 
         // Load settings with defaults from config
         $defaults = config('game-tables');
@@ -211,7 +211,7 @@ final class GameTablesSettings extends Page implements HasForms
     {
         $formData = $this->form->getState();
 
-        $moduleManager->updateSettings(new ModuleName('gametables'), $formData);
+        $moduleManager->updateSettings(new ModuleName('game-tables'), $formData);
 
         Notification::make()
             ->title(__('common.saved'))

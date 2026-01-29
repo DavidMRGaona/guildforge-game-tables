@@ -7,8 +7,7 @@ namespace Modules\GameTables\Domain\Enums;
 enum TableStatus: string
 {
     case Draft = 'draft';
-    case Published = 'published';
-    case Open = 'open';
+    case Scheduled = 'scheduled';
     case Full = 'full';
     case InProgress = 'in_progress';
     case Completed = 'completed';
@@ -18,8 +17,7 @@ enum TableStatus: string
     {
         return match ($this) {
             self::Draft => __('game-tables::messages.enums.table_status.draft'),
-            self::Published => __('game-tables::messages.enums.table_status.published'),
-            self::Open => __('game-tables::messages.enums.table_status.open'),
+            self::Scheduled => __('game-tables::messages.enums.table_status.scheduled'),
             self::Full => __('game-tables::messages.enums.table_status.full'),
             self::InProgress => __('game-tables::messages.enums.table_status.in_progress'),
             self::Completed => __('game-tables::messages.enums.table_status.completed'),
@@ -31,8 +29,7 @@ enum TableStatus: string
     {
         return match ($this) {
             self::Draft => 'gray',
-            self::Published => 'info',
-            self::Open => 'success',
+            self::Scheduled => 'success',
             self::Full => 'warning',
             self::InProgress => 'primary',
             self::Completed => 'success',
@@ -44,8 +41,7 @@ enum TableStatus: string
     {
         return match ($this) {
             self::Draft => 'heroicon-o-pencil',
-            self::Published => 'heroicon-o-eye',
-            self::Open => 'heroicon-o-lock-open',
+            self::Scheduled => 'heroicon-o-calendar',
             self::Full => 'heroicon-o-user-group',
             self::InProgress => 'heroicon-o-play',
             self::Completed => 'heroicon-o-check-circle',
@@ -55,17 +51,34 @@ enum TableStatus: string
 
     public function isActive(): bool
     {
-        return in_array($this, [self::Published, self::Open, self::Full, self::InProgress], true);
+        return in_array($this, [self::Scheduled, self::Full, self::InProgress], true);
     }
 
-    public function canRegister(): bool
+    /**
+     * Determines if the status allows registrations (based on dates).
+     */
+    public function isRegistrable(): bool
     {
-        return $this === self::Open;
+        return in_array($this, [self::Scheduled, self::Full], true);
     }
 
     public function isFinal(): bool
     {
         return in_array($this, [self::Completed, self::Cancelled], true);
+    }
+
+    /**
+     * Validates if a transition to the given status is allowed.
+     */
+    public function canTransitionTo(self $newStatus): bool
+    {
+        return match ($this) {
+            self::Draft => in_array($newStatus, [self::Scheduled, self::Cancelled], true),
+            self::Scheduled => in_array($newStatus, [self::Full, self::InProgress, self::Cancelled], true),
+            self::Full => in_array($newStatus, [self::Scheduled, self::InProgress, self::Cancelled], true),
+            self::InProgress => in_array($newStatus, [self::Completed, self::Cancelled], true),
+            self::Completed, self::Cancelled => false,
+        };
     }
 
     /**

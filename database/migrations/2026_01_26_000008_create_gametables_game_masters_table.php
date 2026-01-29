@@ -12,10 +12,9 @@ return new class extends Migration
     {
         Schema::create('gametables_game_masters', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->uuid('game_table_id');
             $table->uuid('user_id')->nullable();
 
-            // External person fields
+            // External person fields (when not linked to a user)
             $table->string('first_name')->nullable();
             $table->string('last_name')->nullable();
             $table->string('email')->nullable();
@@ -35,11 +34,6 @@ return new class extends Migration
             $table->index('user_id');
 
             // Foreign keys
-            $table->foreign('game_table_id')
-                ->references('id')
-                ->on('gametables_tables')
-                ->onDelete('cascade');
-
             $table->foreign('user_id')
                 ->references('id')
                 ->on('users')

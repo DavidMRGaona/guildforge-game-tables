@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Models;
 
+use App\Infrastructure\Persistence\Eloquent\Concerns\DeletesCloudinaryImages;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -20,6 +21,7 @@ use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Enums\TableType;
 use Modules\GameTables\Domain\Enums\Tone;
+use App\Infrastructure\Persistence\Eloquent\Concerns\HasSlug;
 
 /**
  * @property string $id
@@ -28,6 +30,7 @@ use Modules\GameTables\Domain\Enums\Tone;
  * @property string|null $event_id
  * @property string $created_by
  * @property string $title
+ * @property string|null $slug
  * @property Carbon $starts_at
  * @property int $duration_minutes
  * @property TableType $table_type
@@ -52,16 +55,25 @@ use Modules\GameTables\Domain\Enums\Tone;
  * @property Carbon|null $registration_opens_at
  * @property Carbon|null $registration_closes_at
  * @property bool $auto_confirm
+ * @property bool $accepts_registrations_in_progress
  * @property bool $is_published
  * @property Carbon|null $published_at
  * @property string|null $notes
  * @property string|null $notification_email
+ * @property string|null $image_public_id
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
 final class GameTableModel extends Model
 {
+    use DeletesCloudinaryImages;
+    use HasSlug;
     use HasUuids;
+
+    /**
+     * @var array<string>
+     */
+    protected array $cloudinaryImageFields = ['image_public_id'];
 
     protected $table = 'gametables_tables';
 
@@ -79,6 +91,7 @@ final class GameTableModel extends Model
         'event_id',
         'created_by',
         'title',
+        'slug',
         'starts_at',
         'duration_minutes',
         'table_type',
@@ -103,10 +116,12 @@ final class GameTableModel extends Model
         'registration_opens_at',
         'registration_closes_at',
         'auto_confirm',
+        'accepts_registrations_in_progress',
         'is_published',
         'published_at',
         'notes',
         'notification_email',
+        'image_public_id',
     ];
 
     /**
@@ -135,6 +150,7 @@ final class GameTableModel extends Model
             'registration_opens_at' => 'datetime',
             'registration_closes_at' => 'datetime',
             'auto_confirm' => 'boolean',
+            'accepts_registrations_in_progress' => 'boolean',
             'is_published' => 'boolean',
             'published_at' => 'datetime',
         ];
@@ -194,11 +210,80 @@ final class GameTableModel extends Model
     }
 
     /**
-     * @return HasMany<GameMasterModel, $this>
+     * Get all game masters directly associated with this table (both inherited and local).
+     *
+     * @return BelongsToMany<GameMasterModel, $this>
      */
-    public function gameMasters(): HasMany
+    public function gameMasters(): BelongsToMany
     {
-        return $this->hasMany(GameMasterModel::class, 'game_table_id');
+        return $this->belongsToMany(
+            GameMasterModel::class,
+            'gametables_table_gm',
+            'game_table_id',
+            'game_master_id',
+        )->withPivot('source', 'excluded', 'sort_order')->withTimestamps()->orderByPivot('sort_order');
+    }
+
+    /**
+     * Get only local game masters (added directly to this table).
+     *
+     * @return BelongsToMany<GameMasterModel, $this>
+     */
+    public function localGameMasters(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            GameMasterModel::class,
+            'gametables_table_gm',
+            'game_table_id',
+            'game_master_id',
+        )->withPivot('source', 'excluded', 'sort_order')
+            ->withTimestamps()
+            ->wherePivot('source', 'local')
+            ->wherePivot('excluded', false)
+            ->orderByPivot('sort_order');
+    }
+
+    /**
+     * Get inherited game masters that have been excluded from this table.
+     *
+     * @return BelongsToMany<GameMasterModel, $this>
+     */
+    public function excludedGameMasters(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            GameMasterModel::class,
+            'gametables_table_gm',
+            'game_table_id',
+            'game_master_id',
+        )->withPivot('source', 'excluded', 'sort_order')
+            ->withTimestamps()
+            ->wherePivot('excluded', true);
+    }
+
+    /**
+     * Get the effective game masters for this table (inherited from campaign + local, minus excluded).
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, GameMasterModel>
+     */
+    public function getEffectiveGameMastersAttribute(): \Illuminate\Database\Eloquent\Collection
+    {
+        // Get excluded GM IDs for this table
+        $excludedIds = $this->excludedGameMasters()->pluck('gametables_game_masters.id')->toArray();
+
+        // Start with campaign GMs if linked to a campaign
+        if ($this->campaign_id !== null) {
+            $campaignGms = $this->campaign?->gameMasters()
+                ->whereNotIn('gametables_game_masters.id', $excludedIds)
+                ->get() ?? collect();
+        } else {
+            $campaignGms = collect();
+        }
+
+        // Add local GMs
+        $localGms = $this->localGameMasters()->get();
+
+        // Merge and return unique by ID
+        return $campaignGms->merge($localGms)->unique('id')->values();
     }
 
     /**
@@ -211,5 +296,13 @@ final class GameTableModel extends Model
         return Attribute::make(
             set: fn (mixed $value): int => (int) ($value ?? 0),
         );
+    }
+
+    /**
+     * Get the entity type for slug redirects.
+     */
+    public function getSlugEntityType(): string
+    {
+        return 'game_table';
     }
 }

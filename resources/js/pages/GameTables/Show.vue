@@ -11,6 +11,7 @@ import ContentWarningBadge from '../../components/ContentWarningBadge.vue';
 import SafetyToolBadge from '../../components/SafetyToolBadge.vue';
 import { useSeo } from '@/composables/useSeo';
 import ModuleSlot from '@/components/layout/ModuleSlot.vue';
+import { buildHeroImageUrl } from '@/utils/cloudinary';
 
 interface Props {
     table: GameTable;
@@ -24,6 +25,7 @@ useSeo({
     title: props.table.title,
     description: props.table.synopsis || t('gameTables.description'),
     type: 'article',
+    canonical: `/mesas/${props.table.slug}`,
 });
 
 const formattedDate = computed(() => {
@@ -179,6 +181,8 @@ const hasRegistrationInfo = computed(() => {
         props.table.membersEarlyAccessDays > 0
     );
 });
+
+const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
 </script>
 
 <template>
@@ -211,6 +215,15 @@ const hasRegistrationInfo = computed(() => {
             <article
                 class="overflow-hidden rounded-lg bg-white shadow dark:bg-stone-800 dark:shadow-stone-900/50"
             >
+                <!-- Game Table Image -->
+                <div v-if="imageUrl" class="relative">
+                    <img
+                        :src="imageUrl"
+                        :alt="table.title"
+                        class="h-64 w-full object-cover sm:h-80"
+                    />
+                </div>
+
                 <div class="p-6 sm:p-8">
                     <!-- Section 1: Header -->
                     <div class="mb-6">

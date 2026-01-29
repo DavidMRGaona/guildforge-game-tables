@@ -14,6 +14,7 @@ final class WaitingListPromotionNotification extends Notification
 
     public function __construct(
         private readonly string $participantName,
+        private readonly string $tableId,
         private readonly string $tableTitle,
         private readonly ?string $tableDate,
         private readonly ?string $tableLocation,
@@ -44,7 +45,10 @@ final class WaitingListPromotionNotification extends Notification
             $message->line('**' . __('game-tables::emails.waiting_list_promotion.table_location') . ':** ' . $this->tableLocation);
         }
 
+        $tableUrl = url("/mesas/{$this->tableId}");
+
         return $message
+            ->action(__('game-tables::emails.waiting_list_promotion.view_table'), $tableUrl)
             ->line('')
             ->line(__('game-tables::emails.waiting_list_promotion.outro'));
     }

@@ -11,11 +11,24 @@ return [
         'table_title' => 'Mesa',
         'table_date' => 'Fecha',
         'table_location' => 'Ubicación',
+        'view_table' => 'Ver mesa',
         'cancel_intro' => 'Si necesitas cancelar tu inscripción, usa el siguiente enlace:',
         'cancel_button' => 'Cancelar inscripción',
         'gdpr_notice' => 'Tus datos serán eliminados automáticamente después de la fecha de la partida, de acuerdo con nuestra política de privacidad.',
         'role_player' => 'jugador',
         'role_spectator' => 'espectador',
+    ],
+
+    'user_confirmation' => [
+        'subject' => 'Confirmación de inscripción: :tableTitle',
+        'greeting' => 'Hola :name,',
+        'intro' => 'Tu inscripción como :role ha sido registrada correctamente.',
+        'details' => 'Detalles de la partida:',
+        'table_title' => 'Mesa',
+        'table_date' => 'Fecha',
+        'table_location' => 'Ubicación',
+        'view_table' => 'Ver mesa',
+        'outro' => '¡Nos vemos en la partida!',
     ],
 
     'registration' => [
@@ -25,6 +38,7 @@ return [
         'table_title' => 'Mesa',
         'table_date' => 'Fecha',
         'table_location' => 'Ubicación',
+        'view_table' => 'Ver mesa',
     ],
 
     'cancellation' => [
@@ -34,6 +48,20 @@ return [
         'table_title' => 'Mesa',
         'table_date' => 'Fecha',
         'table_location' => 'Ubicación',
+        'view_table' => 'Ver mesa',
+    ],
+
+    'cancellation_confirmation' => [
+        'subject' => 'Cancelación confirmada: :tableTitle',
+        'greeting' => 'Hola :name,',
+        'intro' => 'Tu inscripción ha sido cancelada correctamente.',
+        'details' => 'Detalles de la mesa:',
+        'table_title' => 'Mesa',
+        'table_date' => 'Fecha',
+        'table_location' => 'Ubicación',
+        'view_table' => 'Ver mesa',
+        'outro' => 'Esperamos verte en futuras partidas.',
+        'guest_gdpr_notice' => 'Tus datos serán eliminados automáticamente de acuerdo con nuestra política de privacidad.',
     ],
 
     'waiting_list_promotion' => [
@@ -43,6 +71,7 @@ return [
         'table_title' => 'Mesa',
         'table_date' => 'Fecha',
         'table_location' => 'Ubicación',
+        'view_table' => 'Ver mesa',
         'outro' => 'Tu plaza ha sido confirmada automáticamente. ¡Nos vemos en la partida!',
     ],
 
@@ -53,5 +82,17 @@ return [
         'table_title' => 'Mesa',
         'table_date' => 'Fecha',
         'table_location' => 'Ubicación',
+        'view_table' => 'Ver mesa',
+    ],
+
+    'table_cancelled' => [
+        'subject' => 'Mesa cancelada: :tableTitle',
+        'greeting' => 'Hola :name,',
+        'intro' => 'Lamentamos informarte que la mesa ":tableTitle" ha sido cancelada.',
+        'details' => 'Detalles de la mesa cancelada:',
+        'table_title' => 'Mesa',
+        'table_date' => 'Fecha prevista',
+        'table_location' => 'Ubicación',
+        'outro' => 'Disculpa las molestias. Esperamos verte en futuras partidas.',
     ],
 ];

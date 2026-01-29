@@ -68,4 +68,16 @@ interface CampaignRepositoryInterface
      * @return array<Campaign>
      */
     public function all(): array;
+
+    /**
+     * Find a published campaign model with all relations for detail view.
+     * Returns the model (not entity) to support eager loading for read scenarios.
+     */
+    public function findPublishedModelWithRelations(string $id): ?object;
+
+    /**
+     * Find a published campaign model by slug with all relations for detail view.
+     * Returns the model (not entity) to support eager loading for read scenarios.
+     */
+    public function findPublishedModelBySlugWithRelations(string $slug): ?object;
 }

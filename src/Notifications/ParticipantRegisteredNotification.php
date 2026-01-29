@@ -14,6 +14,7 @@ final class ParticipantRegisteredNotification extends Notification
 
     public function __construct(
         private readonly string $participantName,
+        private readonly string $tableId,
         private readonly string $tableTitle,
         private readonly ?string $tableDate,
         private readonly ?string $tableLocation,
@@ -53,6 +54,9 @@ final class ParticipantRegisteredNotification extends Notification
             $message->line('**' . __('game-tables::emails.registration.table_location') . ':** ' . $this->tableLocation);
         }
 
-        return $message;
+        $tableUrl = url("/mesas/{$this->tableId}");
+
+        return $message
+            ->action(__('game-tables::emails.registration.view_table'), $tableUrl);
     }
 }

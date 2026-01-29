@@ -59,4 +59,27 @@ interface GameTableRepositoryInterface
      * @return array<GameTable>
      */
     public function all(): array;
+
+    /**
+     * Find a published game table model with all relations for detail view.
+     * Returns the model (not entity) to support eager loading for read scenarios.
+     */
+    public function findPublishedModelWithRelations(string $id): ?object;
+
+    /**
+     * Find a published game table model by slug with all relations for detail view.
+     * Returns the model (not entity) to support eager loading for read scenarios.
+     */
+    public function findPublishedModelBySlugWithRelations(string $slug): ?object;
+
+    /**
+     * Get published game table models within a date range for calendar view.
+     * Returns models (not entities) to support eager loading for read scenarios.
+     *
+     * @return \Illuminate\Support\Collection<int, object>
+     */
+    public function getPublishedModelsInDateRange(
+        \DateTimeInterface $from,
+        \DateTimeInterface $to,
+    ): \Illuminate\Support\Collection;
 }

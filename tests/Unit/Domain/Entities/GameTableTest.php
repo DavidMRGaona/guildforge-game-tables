@@ -72,7 +72,7 @@ final class GameTableTest extends TestCase
             timeSlot: $timeSlot,
             tableType: TableType::OneShot,
             tableFormat: TableFormat::Online,
-            status: TableStatus::Published,
+            status: TableStatus::Scheduled,
             minPlayers: 3,
             maxPlayers: 5,
             maxSpectators: 2,
@@ -119,23 +119,14 @@ final class GameTableTest extends TestCase
 
         $gameTable->publish();
 
-        $this->assertEquals(TableStatus::Published, $gameTable->status);
+        $this->assertEquals(TableStatus::Scheduled, $gameTable->status);
         $this->assertTrue($gameTable->isPublished);
         $this->assertNotNull($gameTable->publishedAt);
     }
 
-    public function test_it_can_open_registration(): void
-    {
-        $gameTable = $this->createGameTable(status: TableStatus::Published);
-
-        $gameTable->openRegistration();
-
-        $this->assertEquals(TableStatus::Open, $gameTable->status);
-    }
-
     public function test_it_can_mark_as_full(): void
     {
-        $gameTable = $this->createGameTable(status: TableStatus::Open);
+        $gameTable = $this->createGameTable(status: TableStatus::Scheduled);
 
         $gameTable->markAsFull();
 
@@ -144,7 +135,7 @@ final class GameTableTest extends TestCase
 
     public function test_it_can_start(): void
     {
-        $gameTable = $this->createGameTable(status: TableStatus::Open);
+        $gameTable = $this->createGameTable(status: TableStatus::Scheduled);
 
         $gameTable->start();
 
@@ -162,21 +153,23 @@ final class GameTableTest extends TestCase
 
     public function test_it_can_cancel(): void
     {
-        $gameTable = $this->createGameTable(status: TableStatus::Open);
+        $gameTable = $this->createGameTable(status: TableStatus::Scheduled);
 
         $gameTable->cancel();
 
         $this->assertEquals(TableStatus::Cancelled, $gameTable->status);
     }
 
-    public function test_it_checks_registration_availability(): void
+    public function test_it_checks_registration_availability_based_on_status(): void
     {
-        $gameTable = $this->createGameTable(status: TableStatus::Open);
-
-        $this->assertTrue($gameTable->canRegister());
+        $scheduledTable = $this->createGameTable(status: TableStatus::Scheduled);
+        $this->assertTrue($scheduledTable->status->isRegistrable());
 
         $fullTable = $this->createGameTable(status: TableStatus::Full);
-        $this->assertFalse($fullTable->canRegister());
+        $this->assertTrue($fullTable->status->isRegistrable());
+
+        $draftTable = $this->createGameTable(status: TableStatus::Draft);
+        $this->assertFalse($draftTable->status->isRegistrable());
     }
 
     public function test_it_checks_if_requires_membership(): void
@@ -211,7 +204,7 @@ final class GameTableTest extends TestCase
             timeSlot: new TimeSlot(new DateTimeImmutable('2026-02-01 18:00:00'), 240),
             tableType: TableType::OneShot,
             tableFormat: TableFormat::InPerson,
-            status: TableStatus::Open,
+            status: TableStatus::Scheduled,
             minPlayers: 3,
             maxPlayers: 5,
             registrationType: RegistrationType::Everyone,

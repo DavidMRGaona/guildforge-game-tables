@@ -130,12 +130,15 @@ const isOpenToEveryone = computed(() => {
     return tableData.value?.registrationType === 'everyone';
 });
 
-// Check if guest registration should be offered (unauthenticated + open to everyone + table is open)
+// Check if guest registration should be offered (unauthenticated + open to everyone + table is scheduled or in_progress with acceptsRegistrationsInProgress)
 const canRegisterAsGuest = computed(() => {
     if (isAuthenticated.value) return false;
     if (!isOpenToEveryone.value) return false;
     // For unauthenticated users, check table status directly (eligibility is null for guests)
-    return tableData.value?.status === 'open';
+    const status = tableData.value?.status;
+    if (status === 'scheduled') return true;
+    if (status === 'in_progress' && tableData.value?.acceptsRegistrationsInProgress) return true;
+    return false;
 });
 
 // Button text and styling

@@ -38,6 +38,7 @@ final readonly class NotifyOnCancellation
 
         $notification = new ParticipantCancelledNotification(
             participantName: $participantName,
+            tableId: $event->gameTableId,
             tableTitle: $gameTable->title,
             tableDate: $tableDate,
             tableLocation: $tableLocation,

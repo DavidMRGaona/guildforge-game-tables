@@ -14,6 +14,7 @@ final class GuestRegistrationConfirmation extends Notification
 
     public function __construct(
         private readonly string $firstName,
+        private readonly string $tableId,
         private readonly string $tableTitle,
         private readonly ?string $tableDate,
         private readonly ?string $tableLocation,
@@ -36,6 +37,7 @@ final class GuestRegistrationConfirmation extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
+        $tableUrl = url("/mesas/{$this->tableId}");
         $cancelUrl = route('gametables.cancel-confirmation', ['token' => $this->cancellationToken]);
         $roleLabel = $this->role === 'player'
             ? __('game-tables::emails.guest_confirmation.role_player')
@@ -59,9 +61,10 @@ final class GuestRegistrationConfirmation extends Notification
         }
 
         return $message
+            ->action(__('game-tables::emails.guest_confirmation.view_table'), $tableUrl)
             ->line('')
             ->line(__('game-tables::emails.guest_confirmation.cancel_intro'))
-            ->action(__('game-tables::emails.guest_confirmation.cancel_button'), $cancelUrl)
+            ->line('[' . __('game-tables::emails.guest_confirmation.cancel_button') . '](' . $cancelUrl . ')')
             ->line('')
             ->line(__('game-tables::emails.guest_confirmation.gdpr_notice'));
     }

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources;
 
+use App\Filament\Resources\BaseResource;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Tabs;
@@ -19,7 +19,9 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
-use App\Filament\Resources\BaseResource;
+use Filament\Forms\Set;
+use Illuminate\Support\Str;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Tables\Actions\EditAction;
@@ -30,8 +32,8 @@ use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
-use Modules\GameTables\Domain\Enums\GameMasterRole;
 use Modules\GameTables\Domain\Enums\Genre;
+use Modules\GameTables\Filament\Forms\Components\GameMasterRepeater;
 use Modules\GameTables\Domain\Enums\RegistrationType;
 use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Enums\TableFormat;
@@ -41,6 +43,7 @@ use Modules\GameTables\Domain\Enums\Tone;
 use Modules\GameTables\Filament\Resources\GameTableResource\Pages;
 use Modules\GameTables\Filament\Resources\GameTableResource\RelationManagers\ParticipantsRelationManager;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ContentWarningModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
@@ -88,18 +91,66 @@ final class GameTableResource extends BaseResource
                                     ->maxLength(255)
                                     ->columnSpanFull(),
 
+                                Select::make('campaign_id')
+                                    ->label(__('game-tables::messages.fields.campaign'))
+                                    ->options(CampaignModel::query()->pluck('title', 'id'))
+                                    ->searchable()
+                                    ->native(false)
+                                    ->live()
+                                    ->afterStateUpdated(function (?string $state, Set $set, Get $get): void {
+                                        if ($state === null) {
+                                            return;
+                                        }
+
+                                        $campaign = CampaignModel::with('gameMasters')->find($state);
+                                        if ($campaign === null) {
+                                            return;
+                                        }
+
+                                        // Copy game system from campaign
+                                        $set('game_system_id', $campaign->game_system_id);
+
+                                        // Do not overwrite game masters if there are already real ones
+                                        /** @var array<int, array<string, mixed>> $currentGameMasters */
+                                        $currentGameMasters = $get('gameMasters') ?? [];
+                                        if (self::hasRealGameMasters($currentGameMasters)) {
+                                            return;
+                                        }
+
+                                        if ($campaign->gameMasters->isEmpty()) {
+                                            return;
+                                        }
+
+                                        // Copy game masters to the repeater (for display only - actual inheritance handled in save)
+                                        $gameMastersData = $campaign->gameMasters->map(
+                                            fn (GameMasterModel $gm): array => [
+                                                'id' => $gm->id,
+                                                'gm_type' => $gm->user_id !== null ? 'user' : 'external',
+                                                'user_id' => $gm->user_id,
+                                                'first_name' => $gm->first_name,
+                                                'last_name' => $gm->last_name,
+                                                'email' => $gm->email,
+                                                'phone' => $gm->phone,
+                                                'role' => $gm->role->value,
+                                                'custom_title' => $gm->custom_title,
+                                                'notify_by_email' => $gm->notify_by_email,
+                                                'is_name_public' => $gm->is_name_public,
+                                                'notes' => $gm->notes,
+                                                'is_inherited' => true,
+                                            ]
+                                        )->toArray();
+
+                                        $set('gameMasters', $gameMastersData);
+                                    }),
+
                                 Select::make('game_system_id')
                                     ->label(__('game-tables::messages.fields.game_system'))
                                     ->options(GameSystemModel::query()->where('is_active', true)->pluck('name', 'id'))
                                     ->searchable()
                                     ->native(false)
-                                    ->required(),
-
-                                Select::make('campaign_id')
-                                    ->label(__('game-tables::messages.fields.campaign'))
-                                    ->options(CampaignModel::query()->pluck('title', 'id'))
-                                    ->searchable()
-                                    ->native(false),
+                                    ->required()
+                                    ->disabled(fn (Get $get): bool => $get('campaign_id') !== null)
+                                    ->dehydrated(),
 
                                 Select::make('event_id')
                                     ->label(__('game-tables::messages.fields.event'))
@@ -118,6 +169,17 @@ final class GameTableResource extends BaseResource
                                     ->rows(3)
                                     ->maxLength(2000)
                                     ->columnSpanFull(),
+
+                                FileUpload::make('image_public_id')
+                                    ->label(__('game-tables::messages.fields.image'))
+                                    ->image()
+                                    ->disk('images')
+                                    ->directory(fn (): string => 'game-tables/' . now()->format('Y/m'))
+                                    ->getUploadedFileNameForStorageUsing(
+                                        fn (TemporaryUploadedFile $file): string => Str::uuid()->toString() . '.' . $file->getClientOriginalExtension()
+                                    )
+                                    ->maxSize(2048)
+                                    ->columnSpanFull(),
                             ])
                             ->columns(2),
 
@@ -126,91 +188,7 @@ final class GameTableResource extends BaseResource
                             ->schema([
                                 Section::make(__('game-tables::messages.sections.game_masters'))
                                     ->schema([
-                                        Repeater::make('gameMasters')
-                                            ->relationship()
-                                            ->label(__('game-tables::messages.fields.game_masters'))
-                                            ->addActionLabel(__('game-tables::messages.actions.add_game_master'))
-                                            ->schema([
-                                                Select::make('gm_type')
-                                                    ->label(__('game-tables::messages.fields.gm_type'))
-                                                    ->options([
-                                                        'user' => __('game-tables::messages.fields.gm_type_user'),
-                                                        'external' => __('game-tables::messages.fields.gm_type_external'),
-                                                    ])
-                                                    ->default('user')
-                                                    ->required()
-                                                    ->live()
-                                                    ->dehydrated(false)
-                                                    ->afterStateHydrated(function (Select $component, Get $get): void {
-                                                        $userId = $get('user_id');
-                                                        $component->state($userId !== null ? 'user' : 'external');
-                                                    }),
-
-                                                Select::make('user_id')
-                                                    ->label(__('game-tables::messages.fields.user'))
-                                                    ->relationship('user', 'name')
-                                                    ->searchable()
-                                                    ->preload()
-                                                    ->visible(fn (Get $get): bool => $get('gm_type') === 'user')
-                                                    ->required(fn (Get $get): bool => $get('gm_type') === 'user'),
-
-                                                Grid::make(2)
-                                                    ->schema([
-                                                        TextInput::make('first_name')
-                                                            ->label(__('game-tables::messages.fields.first_name'))
-                                                            ->required(fn (Get $get): bool => $get('gm_type') === 'external'),
-                                                        TextInput::make('last_name')
-                                                            ->label(__('game-tables::messages.fields.last_name')),
-                                                    ])
-                                                    ->visible(fn (Get $get): bool => $get('gm_type') === 'external'),
-
-                                                Grid::make(2)
-                                                    ->schema([
-                                                        TextInput::make('email')
-                                                            ->label(__('game-tables::messages.fields.email'))
-                                                            ->email(),
-                                                        TextInput::make('phone')
-                                                            ->label(__('game-tables::messages.fields.phone'))
-                                                            ->tel(),
-                                                    ])
-                                                    ->visible(fn (Get $get): bool => $get('gm_type') === 'external'),
-
-                                                Grid::make(2)
-                                                    ->schema([
-                                                        Select::make('role')
-                                                            ->label(__('game-tables::messages.fields.gm_role'))
-                                                            ->options(GameMasterRole::options())
-                                                            ->default(GameMasterRole::Main->value)
-                                                            ->native(false)
-                                                            ->required(),
-
-                                                        TextInput::make('custom_title')
-                                                            ->label(__('game-tables::messages.fields.custom_title'))
-                                                            ->placeholder(__('game-tables::messages.fields.custom_title_placeholder'))
-                                                            ->helperText(__('game-tables::messages.fields.custom_title_help'))
-                                                            ->maxLength(100),
-                                                    ]),
-
-                                                Grid::make(2)
-                                                    ->schema([
-                                                        Toggle::make('notify_by_email')
-                                                            ->label(__('game-tables::messages.fields.notify_by_email'))
-                                                            ->default(true),
-                                                        Toggle::make('is_name_public')
-                                                            ->label(__('game-tables::messages.fields.is_name_public'))
-                                                            ->default(true),
-                                                    ]),
-
-                                                Textarea::make('notes')
-                                                    ->label(__('game-tables::messages.fields.notes'))
-                                                    ->rows(2)
-                                                    ->maxLength(500),
-                                            ])
-                                            ->defaultItems(1)
-                                            ->minItems(1)
-                                            ->collapsible()
-                                            ->itemLabel(fn (array $state): ?string => $state['custom_title'] ?? $state['first_name'] ?? __('game-tables::messages.fields.game_master'))
-                                            ->columnSpanFull(),
+                                        GameMasterRepeater::makeForTable('gameMasters'),
                                     ]),
                             ]),
 
@@ -387,6 +365,11 @@ final class GameTableResource extends BaseResource
                                     ->label(__('game-tables::messages.fields.auto_confirm'))
                                     ->default(true),
 
+                                Toggle::make('accepts_registrations_in_progress')
+                                    ->label(__('game-tables::messages.fields.accepts_registrations_in_progress'))
+                                    ->default(false)
+                                    ->helperText(__('game-tables::messages.fields.accepts_registrations_in_progress_help')),
+
                                 TextInput::make('notification_email')
                                     ->label(__('game-tables::messages.fields.notification_email'))
                                     ->email()
@@ -398,16 +381,22 @@ final class GameTableResource extends BaseResource
                         Tab::make(__('game-tables::messages.tabs.publication'))
                             ->icon('heroicon-o-eye')
                             ->schema([
-                                Select::make('status')
-                                    ->label(__('game-tables::messages.fields.table_status'))
-                                    ->options(TableStatus::options())
-                                    ->default(TableStatus::Draft->value)
-                                    ->native(false)
-                                    ->required(),
-
                                 Toggle::make('is_published')
                                     ->label(__('game-tables::messages.fields.is_published'))
-                                    ->default(false),
+                                    ->default(false)
+                                    ->helperText(__('game-tables::messages.fields.is_published_help')),
+
+                                Select::make('status')
+                                    ->label(__('game-tables::messages.fields.table_status'))
+                                    ->options(
+                                        collect(TableStatus::cases())
+                                            ->reject(fn (TableStatus $status): bool => $status === TableStatus::Draft)
+                                            ->mapWithKeys(fn (TableStatus $status): array => [$status->value => $status->label()])
+                                            ->toArray()
+                                    )
+                                    ->default(TableStatus::Scheduled->value)
+                                    ->native(false)
+                                    ->required(),
 
                                 Textarea::make('notes')
                                     ->label(__('game-tables::messages.fields.notes'))
@@ -504,5 +493,25 @@ final class GameTableResource extends BaseResource
             'create' => Pages\CreateGameTable::route('/create'),
             'edit' => Pages\EditGameTable::route('/{record}/edit'),
         ];
+    }
+
+    /**
+     * Check if the game masters array contains actual data (not just empty default items).
+     *
+     * @param  array<int, array<string, mixed>>  $gameMasters
+     */
+    private static function hasRealGameMasters(array $gameMasters): bool
+    {
+        if ($gameMasters === []) {
+            return false;
+        }
+
+        foreach ($gameMasters as $gm) {
+            if (! empty($gm['user_id']) || ! empty($gm['first_name']) || ! empty($gm['email'])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

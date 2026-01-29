@@ -15,6 +15,7 @@ return new class extends Migration
             $table->uuid('game_system_id');
             $table->uuid('created_by');
             $table->string('title');
+            $table->string('slug')->nullable()->unique();
             $table->text('description')->nullable();
             $table->string('frequency')->nullable(); // weekly, biweekly, monthly, irregular
             $table->string('status'); // recruiting, active, on_hold, completed, cancelled
@@ -22,10 +23,12 @@ return new class extends Migration
             $table->integer('current_session')->default(0);
             $table->boolean('accepts_new_players')->default(true);
             $table->integer('max_players')->nullable();
+            $table->string('image_public_id')->nullable();
             $table->boolean('is_published')->default(false);
             $table->timestamps();
 
             // Indexes
+            $table->index('slug');
             $table->index('status');
             $table->index('created_by');
             $table->index('is_published');

@@ -67,6 +67,7 @@ return [
         'content' => 'Content and safety',
         'registration' => 'Registration',
         'publication' => 'Publication',
+        'progress' => 'Progress',
     ],
 
     /*
@@ -118,13 +119,18 @@ return [
         'registration_closes_at' => 'Registration closes',
         'auto_confirm' => 'Auto confirm',
         'is_published' => 'Published',
+        'is_published_help' => 'Controls the public visibility of the table. Registrations open automatically based on configured dates.',
+        'is_published_campaign_help' => 'Controls the public visibility of the campaign.',
         'published_at' => 'Published date',
         'notes' => 'Notes',
         'session_count' => 'Session count',
+        'session_count_help' => 'Total number of planned sessions. Leave empty if not defined.',
         'current_session' => 'Current session',
+        'current_session_help' => 'Use 0 for campaigns that have not started yet.',
         'frequency' => 'Frequency',
         'campaign_status' => 'Campaign status',
         'accepts_new_players' => 'Accepts new players',
+        'accepts_new_players_help' => 'Indicates if the campaign is actively looking for new players.',
         'user' => 'User',
         'participant_role' => 'Role',
         'participant_status' => 'Status',
@@ -164,6 +170,9 @@ return [
 
         // Game masters
         'game_masters' => 'Game masters',
+
+        // Image
+        'image' => 'Image',
     ],
 
     /*
@@ -205,8 +214,7 @@ return [
         ],
         'table_status' => [
             'draft' => 'Draft',
-            'published' => 'Published',
-            'open' => 'Open',
+            'scheduled' => 'Scheduled',
             'full' => 'Full',
             'in_progress' => 'In progress',
             'completed' => 'Completed',
@@ -401,9 +409,10 @@ return [
     */
     'actions' => [
         'publish' => 'Publish',
-        'open_registration' => 'Open registration',
-        'cancel' => 'Cancel',
+        'unpublish' => 'Unpublish',
+        'start' => 'Start',
         'complete' => 'Complete',
+        'cancel' => 'Cancel table',
         'create_publisher' => 'Create publisher',
         'add_game_master' => 'Add game master',
     ],
@@ -427,8 +436,16 @@ return [
         ],
         'table' => [
             'published' => 'Table published successfully',
-            'cancelled' => 'Table cancelled',
+            'unpublished' => 'Table unpublished',
+            'started' => 'Table started',
             'completed' => 'Table marked as completed',
+            'cancelled' => 'Table cancelled',
+        ],
+        'registration_status' => [
+            'opens_in' => 'Opens in :days days',
+            'open_until' => 'Open until :date',
+            'closed' => 'Closed',
+            'member_early_access' => 'Member early access active',
         ],
     ],
 

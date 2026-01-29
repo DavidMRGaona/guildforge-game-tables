@@ -7,12 +7,14 @@ namespace Modules\GameTables\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
 use Modules\GameTables\Application\Services\EligibilityServiceInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
+use App\Application\Services\SlugRedirectServiceInterface;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Exceptions\AlreadyRegisteredException;
 use Modules\GameTables\Domain\Exceptions\CannotCancelException;
@@ -30,12 +32,13 @@ final class RegistrationController extends Controller
         private readonly RegistrationServiceInterface $registrationService,
         private readonly EligibilityServiceInterface $eligibilityService,
         private readonly GameTableQueryServiceInterface $gameTableQueryService,
+        private readonly SlugRedirectServiceInterface $slugRedirectService,
     ) {}
 
     /**
      * Register to a game table.
      */
-    public function register(RegisterRequest $request, string $id): RedirectResponse
+    public function register(RegisterRequest $request, string $identifier): RedirectResponse
     {
         $user = $request->user();
 
@@ -43,12 +46,18 @@ final class RegistrationController extends Controller
             return back()->with('error', __('game-tables::messages.errors.unauthenticated'));
         }
 
+        // Resolve identifier to game table ID
+        $gameTableId = $this->resolveGameTableId($identifier);
+        if ($gameTableId === null) {
+            abort(404);
+        }
+
         try {
             $roleValue = $request->validated('role', ParticipantRole::Player->value);
             $role = ParticipantRole::from($roleValue);
 
             $this->registrationService->register(new RegisterParticipantDTO(
-                gameTableId: $id,
+                gameTableId: $gameTableId,
                 userId: (string) $user->id,
                 role: $role,
                 notes: $request->validated('notes'),
@@ -71,7 +80,7 @@ final class RegistrationController extends Controller
     /**
      * Cancel registration.
      */
-    public function cancel(Request $request, string $id): RedirectResponse
+    public function cancel(Request $request, string $identifier): RedirectResponse
     {
         $user = $request->user();
 
@@ -79,8 +88,14 @@ final class RegistrationController extends Controller
             return back()->with('error', __('game-tables::messages.errors.unauthenticated'));
         }
 
+        // Resolve identifier to game table ID
+        $gameTableId = $this->resolveGameTableId($identifier);
+        if ($gameTableId === null) {
+            abort(404);
+        }
+
         try {
-            $this->registrationService->cancelByUser($id, (string) $user->id);
+            $this->registrationService->cancelByUser($gameTableId, (string) $user->id);
 
             return back()->with('success', __('game-tables::messages.success.cancelled'));
         } catch (ParticipantNotFoundException) {
@@ -93,12 +108,18 @@ final class RegistrationController extends Controller
     /**
      * Register as a guest (no authentication required).
      */
-    public function registerGuest(GuestRegisterRequest $request, string $id): RedirectResponse
+    public function registerGuest(GuestRegisterRequest $request, string $identifier): RedirectResponse
     {
         $validated = $request->validated();
 
+        // Resolve identifier to game table ID
+        $gameTableId = $this->resolveGameTableId($identifier);
+        if ($gameTableId === null) {
+            abort(404);
+        }
+
         // Check guest eligibility
-        $eligibility = $this->eligibilityService->canGuestRegister($id, $validated['email']);
+        $eligibility = $this->eligibilityService->canGuestRegister($gameTableId, $validated['email']);
 
         if (! $eligibility['eligible']) {
             return back()->with('error', $eligibility['message'] ?? __('game-tables::messages.errors.registration_closed'));
@@ -109,7 +130,7 @@ final class RegistrationController extends Controller
             $role = ParticipantRole::from($roleValue);
 
             $this->registrationService->registerGuest(new RegisterParticipantDTO(
-                gameTableId: $id,
+                gameTableId: $gameTableId,
                 userId: null,
                 role: $role,
                 notes: $validated['notes'] ?? null,
@@ -177,5 +198,32 @@ final class RegistrationController extends Controller
             return redirect()->route('gametables.index')
                 ->with('error', __('game-tables::messages.errors.cannot_cancel'));
         }
+    }
+
+    /**
+     * Resolve an identifier (slug or UUID) to a game table ID.
+     */
+    private function resolveGameTableId(string $identifier): ?string
+    {
+        // Try by slug first
+        $table = $this->gameTableQueryService->findPublishedBySlug($identifier);
+        if ($table !== null) {
+            return $table->id;
+        }
+
+        // Check redirect
+        $currentSlug = $this->slugRedirectService->resolveCurrentSlug($identifier, 'game_table');
+        if ($currentSlug !== null) {
+            $table = $this->gameTableQueryService->findPublishedBySlug($currentSlug);
+            return $table?->id;
+        }
+
+        // Try UUID
+        if (Str::isUuid($identifier)) {
+            $table = $this->gameTableQueryService->findPublished($identifier);
+            return $table?->id;
+        }
+
+        return null;
     }
 }

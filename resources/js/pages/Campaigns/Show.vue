@@ -8,8 +8,10 @@ import BaseButton from '@/components/ui/BaseButton.vue';
 import StatusBadge from '../../components/StatusBadge.vue';
 import SafetyToolBadge from '../../components/SafetyToolBadge.vue';
 import ContentWarningBadge from '../../components/ContentWarningBadge.vue';
+import GameTableCard from '../../components/GameTableCard.vue';
 import { useSeo } from '@/composables/useSeo';
 import ModuleSlot from '@/components/layout/ModuleSlot.vue';
+import { buildHeroImageUrl } from '@/utils/cloudinary';
 
 interface Props {
     campaign: Campaign;
@@ -23,6 +25,7 @@ useSeo({
     title: props.campaign.title,
     description: props.campaign.description || t('campaigns.description'),
     type: 'article',
+    canonical: `/campanas/${props.campaign.slug}`,
 });
 
 const formattedStartDate = computed(() => {
@@ -46,8 +49,43 @@ const formattedEndDate = computed(() => {
 });
 
 const spotsAvailable = computed(() => {
+    if (props.campaign.maxPlayers === null) return null;
     return props.campaign.maxPlayers - props.campaign.currentPlayers;
 });
+
+const sessionProgressLabel = computed(() => {
+    if (props.campaign.sessionCount !== null && props.campaign.sessionCount > 0) {
+        return t('campaigns.details.totalSessions', {
+            current: props.campaign.currentSession,
+            total: props.campaign.sessionCount,
+        });
+    }
+    return t('campaigns.sessionNumber', { number: props.campaign.currentSession });
+});
+
+const totalSessionsLabel = computed(() => {
+    if (props.campaign.totalSessions === 0) {
+        return t('campaigns.totalSessionsUndetermined');
+    }
+    return String(props.campaign.totalSessions);
+});
+
+const sessionProgress = computed(() => {
+    if (props.campaign.sessionCount === null || props.campaign.sessionCount === 0) {
+        return null;
+    }
+    return (props.campaign.currentSession / props.campaign.sessionCount) * 100;
+});
+
+const mainGameMasters = computed(() => {
+    return props.campaign.gameMasters.filter((gm) => gm.isMain);
+});
+
+const coGameMasters = computed(() => {
+    return props.campaign.gameMasters.filter((gm) => !gm.isMain);
+});
+
+const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId));
 </script>
 
 <template>
@@ -79,6 +117,15 @@ const spotsAvailable = computed(() => {
             <article
                 class="overflow-hidden rounded-lg bg-white shadow dark:bg-stone-800 dark:shadow-stone-900/50"
             >
+                <!-- Campaign Image -->
+                <div v-if="imageUrl" class="relative">
+                    <img
+                        :src="imageUrl"
+                        :alt="campaign.title"
+                        class="h-64 w-full object-cover sm:h-80"
+                    />
+                </div>
+
                 <div class="p-6 sm:p-8">
                     <!-- Header with badges -->
                     <div class="mb-4 flex flex-wrap items-center gap-2">
@@ -89,10 +136,10 @@ const spotsAvailable = computed(() => {
                             size="md"
                         />
                         <span
-                            v-if="campaign.isRecruiting"
+                            v-if="campaign.acceptsNewPlayers"
                             class="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400"
                         >
-                            {{ t('campaigns.recruiting') }}
+                            {{ t('campaigns.lookingForPlayers') }}
                         </span>
                     </div>
 
@@ -119,7 +166,7 @@ const spotsAvailable = computed(() => {
                         class="mb-6 grid grid-cols-1 gap-4 rounded-lg bg-stone-50 p-4 sm:grid-cols-2 dark:bg-stone-900/30"
                     >
                         <!-- Frequency -->
-                        <div>
+                        <div v-if="campaign.frequencyLabel">
                             <h3 class="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
                                 {{ t('campaigns.frequency') }}
                             </h3>
@@ -184,32 +231,111 @@ const spotsAvailable = computed(() => {
                             <p class="text-stone-700 dark:text-stone-300">{{ formattedEndDate }}</p>
                         </div>
 
-                        <!-- Game Master -->
+                        <!-- Session Progress -->
+                        <div>
+                            <h3 class="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                                {{ t('campaigns.details.currentSession') }}
+                            </h3>
+                            <div class="text-stone-700 dark:text-stone-300">
+                                <p>{{ sessionProgressLabel }}</p>
+                                <div v-if="sessionProgress !== null" class="mt-2">
+                                    <div
+                                        class="h-2 w-full overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700"
+                                    >
+                                        <div
+                                            class="h-full bg-amber-500 transition-all"
+                                            :style="{ width: `${sessionProgress}%` }"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Game Masters -->
                         <div>
                             <h3 class="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
                                 {{ t('campaigns.gameMaster') }}
                             </h3>
-                            <div class="flex items-center text-stone-700 dark:text-stone-300">
-                                <svg
-                                    class="mr-2 h-5 w-5 text-amber-600"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    aria-hidden="true"
+                            <div class="space-y-1">
+                                <template v-if="mainGameMasters.length > 0">
+                                    <div
+                                        v-for="gm in mainGameMasters"
+                                        :key="gm.id"
+                                        class="flex items-center text-stone-700 dark:text-stone-300"
+                                    >
+                                        <svg
+                                            class="mr-2 h-5 w-5 text-amber-600"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                            aria-hidden="true"
+                                        >
+                                            <path
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                stroke-width="2"
+                                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                            />
+                                        </svg>
+                                        <span>{{ gm.isNamePublic ? gm.displayName : t('campaigns.anonymousGm') }}</span>
+                                        <span v-if="gm.customTitle" class="ml-1 text-sm text-stone-500">({{ gm.customTitle }})</span>
+                                    </div>
+                                </template>
+                                <template v-else>
+                                    <div class="flex items-center text-stone-700 dark:text-stone-300">
+                                        <svg
+                                            class="mr-2 h-5 w-5 text-amber-600"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                            aria-hidden="true"
+                                        >
+                                            <path
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                stroke-width="2"
+                                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                            />
+                                        </svg>
+                                        <span>{{ campaign.creatorName }}</span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Co-Game Masters -->
+                        <div v-if="coGameMasters.length > 0">
+                            <h3 class="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                                {{ t('gameTables.coGameMasters') }}
+                            </h3>
+                            <div class="space-y-1">
+                                <div
+                                    v-for="gm in coGameMasters"
+                                    :key="gm.id"
+                                    class="flex items-center text-stone-700 dark:text-stone-300"
                                 >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                    />
-                                </svg>
-                                <span>{{ campaign.creatorName }}</span>
+                                    <svg
+                                        class="mr-2 h-5 w-5 text-amber-500"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                        aria-hidden="true"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                        />
+                                    </svg>
+                                    <span>{{ gm.isNamePublic ? gm.displayName : t('campaigns.anonymousGm') }}</span>
+                                    <span v-if="gm.customTitle" class="ml-1 text-sm text-stone-500">({{ gm.customTitle }})</span>
+                                </div>
                             </div>
                         </div>
 
                         <!-- Capacity -->
-                        <div>
+                        <div v-if="campaign.maxPlayers !== null">
                             <h3 class="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
                                 {{ t('campaigns.capacity') }}
                             </h3>
@@ -220,7 +346,7 @@ const spotsAvailable = computed(() => {
                                         max: campaign.maxPlayers,
                                     }) }}
                                 </p>
-                                <p class="text-sm">
+                                <p v-if="spotsAvailable !== null" class="text-sm">
                                     {{ spotsAvailable }} {{ t('campaigns.spotsAvailable') }}
                                 </p>
                             </div>
@@ -232,12 +358,12 @@ const spotsAvailable = computed(() => {
                                 {{ t('campaigns.totalSessions') }}
                             </h3>
                             <p class="text-stone-700 dark:text-stone-300">
-                                {{ campaign.totalSessions }}
+                                {{ totalSessionsLabel }}
                             </p>
                         </div>
 
                         <!-- Experience Level -->
-                        <div>
+                        <div v-if="campaign.experienceLevelLabel">
                             <h3 class="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
                                 {{ t('campaigns.experienceLevel') }}
                             </h3>
@@ -250,7 +376,7 @@ const spotsAvailable = computed(() => {
                     <!-- Additional Details -->
                     <div class="mb-6 space-y-4">
                         <!-- Language -->
-                        <div>
+                        <div v-if="campaign.language">
                             <h3 class="mb-2 text-sm font-semibold text-stone-900 dark:text-stone-100">
                                 {{ t('campaigns.language') }}
                             </h3>
@@ -322,7 +448,7 @@ const spotsAvailable = computed(() => {
                         </div>
 
                         <!-- Recruitment Message -->
-                        <div v-if="campaign.isRecruiting && campaign.recruitmentMessage">
+                        <div v-if="campaign.acceptsNewPlayers && campaign.recruitmentMessage">
                             <h3 class="mb-2 text-sm font-semibold text-stone-900 dark:text-stone-100">
                                 {{ t('campaigns.recruitmentMessage') }}
                             </h3>
@@ -348,6 +474,40 @@ const spotsAvailable = computed(() => {
                     </div>
                 </div>
             </article>
+
+            <!-- Campaign tables section -->
+            <section v-if="campaign.gameTables.length > 0" class="mt-8">
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-4">
+                    <h2 class="text-2xl font-bold text-stone-900 dark:text-stone-100">
+                        {{ t('campaigns.tables') }}
+                    </h2>
+                    <Link
+                        v-if="campaign.hasActiveOrUpcomingTables"
+                        :href="`/mesas?campaign=${campaign.id}`"
+                    >
+                        <BaseButton variant="primary" size="sm">
+                            {{ t('campaigns.viewUpcomingTables') }}
+                        </BaseButton>
+                    </Link>
+                </div>
+
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    <GameTableCard
+                        v-for="table in campaign.gameTables"
+                        :key="table.id"
+                        :table="table"
+                    />
+                </div>
+            </section>
+
+            <!-- Empty state when no tables -->
+            <section v-else class="mt-8">
+                <div class="rounded-lg border border-stone-200 bg-stone-50 p-8 text-center dark:border-stone-700 dark:bg-stone-800/50">
+                    <p class="text-stone-600 dark:text-stone-400">
+                        {{ t('campaigns.noTables') }}
+                    </p>
+                </div>
+            </section>
         </div>
     </DefaultLayout>
 </template>

@@ -17,6 +17,7 @@ return new class extends Migration
             $table->uuid('event_id')->nullable();
             $table->uuid('created_by');
             $table->string('title');
+            $table->string('slug')->nullable()->unique();
             $table->dateTime('starts_at');
             $table->integer('duration_minutes');
             $table->string('table_type');
@@ -41,13 +42,16 @@ return new class extends Migration
             $table->dateTime('registration_opens_at')->nullable();
             $table->dateTime('registration_closes_at')->nullable();
             $table->boolean('auto_confirm')->default(true);
+            $table->boolean('accepts_registrations_in_progress')->default(false);
             $table->boolean('is_published')->default(false);
             $table->dateTime('published_at')->nullable();
             $table->text('notes')->nullable();
             $table->string('notification_email')->nullable();
+            $table->string('image_public_id')->nullable();
             $table->timestamps();
 
             // Indexes
+            $table->index('slug');
             $table->index('status');
             $table->index('starts_at');
             $table->index('is_published');

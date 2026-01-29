@@ -22,6 +22,7 @@ interface GameTableQueryServiceInterface
         ?string $format = null,
         ?string $status = null,
         ?string $eventId = null,
+        ?string $campaignId = null,
     ): array;
 
     /**
@@ -34,6 +35,7 @@ interface GameTableQueryServiceInterface
         ?string $format = null,
         ?string $status = null,
         ?string $eventId = null,
+        ?string $campaignId = null,
     ): int;
 
     /**
@@ -47,6 +49,11 @@ interface GameTableQueryServiceInterface
      * Find a published game table by ID.
      */
     public function findPublished(string $id): ?GameTableResponseDTO;
+
+    /**
+     * Find a published game table by slug.
+     */
+    public function findPublishedBySlug(string $slug): ?GameTableResponseDTO;
 
     /**
      * Get game systems with active tables.

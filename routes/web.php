@@ -24,7 +24,9 @@ Route::prefix('mesas')->name('gametables.')->group(function (): void {
     Route::delete('/cancelar/{token}', [RegistrationController::class, 'cancelByToken'])
         ->name('cancel-by-token');
 
-    Route::get('/{id}', [GameTableController::class, 'show'])->name('show');
+    Route::get('/{slug}', [GameTableController::class, 'show'])
+        ->where('slug', '[a-z0-9-]+')
+        ->name('show');
 
     // Guest registration (no auth required)
     Route::post('/{id}/inscripcion-invitado', [RegistrationController::class, 'registerGuest'])
@@ -40,5 +42,7 @@ Route::prefix('mesas')->name('gametables.')->group(function (): void {
 // Campaigns routes (separate from mesas - a campaign can have multiple mesas)
 Route::prefix('campanas')->name('campaigns.')->group(function (): void {
     Route::get('/', [CampaignController::class, 'index'])->name('index');
-    Route::get('/{id}', [CampaignController::class, 'show'])->name('show');
+    Route::get('/{slug}', [CampaignController::class, 'show'])
+        ->where('slug', '[a-z0-9-]+')
+        ->name('show');
 });

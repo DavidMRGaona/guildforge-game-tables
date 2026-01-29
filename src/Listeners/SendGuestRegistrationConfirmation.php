@@ -30,6 +30,7 @@ final readonly class SendGuestRegistrationConfirmation
         Notification::route('mail', $event->email)
             ->notify(new GuestRegistrationConfirmation(
                 firstName: $event->firstName,
+                tableId: $event->gameTableId,
                 tableTitle: $gameTable->title,
                 tableDate: $tableDate,
                 tableLocation: $tableLocation,

@@ -15,6 +15,7 @@ final readonly class GameTableListDTO
     public function __construct(
         public string $id,
         public string $title,
+        public ?string $slug,
         public string $gameSystemName,
         public ?DateTimeInterface $startsAt,
         public int $durationMinutes,
@@ -31,6 +32,7 @@ final readonly class GameTableListDTO
         public string $mainGameMasterName,
         public ?string $eventId,
         public ?string $eventTitle,
+        public ?string $imagePublicId,
     ) {}
 
     public static function fromEntity(
@@ -44,6 +46,7 @@ final readonly class GameTableListDTO
         return new self(
             id: $gameTable->id->value,
             title: $gameTable->title,
+            slug: $gameTable->slug,
             gameSystemName: $gameSystemName,
             startsAt: $gameTable->timeSlot->startsAt,
             durationMinutes: $gameTable->timeSlot->durationMinutes,
@@ -60,6 +63,7 @@ final readonly class GameTableListDTO
             mainGameMasterName: $mainGameMasterName !== '' ? $mainGameMasterName : $creatorName,
             eventId: $gameTable->eventId,
             eventTitle: $eventTitle,
+            imagePublicId: $gameTable->imagePublicId,
         );
     }
 
@@ -71,6 +75,7 @@ final readonly class GameTableListDTO
         return [
             'id' => $this->id,
             'title' => $this->title,
+            'slug' => $this->slug,
             'game_system_name' => $this->gameSystemName,
             'starts_at' => $this->startsAt?->format('c'),
             'duration_minutes' => $this->durationMinutes,
@@ -94,6 +99,7 @@ final readonly class GameTableListDTO
             'main_game_master_name' => $this->mainGameMasterName,
             'event_id' => $this->eventId,
             'event_title' => $this->eventTitle,
+            'image_public_id' => $this->imagePublicId,
         ];
     }
 }

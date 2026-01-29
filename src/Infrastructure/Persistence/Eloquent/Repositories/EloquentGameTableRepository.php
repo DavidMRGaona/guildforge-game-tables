@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories;
 
 use DateTimeImmutable;
+use DateTimeInterface;
+use Illuminate\Support\Collection;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\SafetyTool;
@@ -148,8 +150,7 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
             ->where('is_published', true)
             ->where('starts_at', '>=', now())
             ->whereIn('status', [
-                TableStatus::Published->value,
-                TableStatus::Open->value,
+                TableStatus::Scheduled->value,
                 TableStatus::Full->value,
             ])
             ->orderBy('starts_at', 'asc')
@@ -171,6 +172,57 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
             ->all();
     }
 
+    public function findPublishedModelWithRelations(string $id): ?object
+    {
+        return GameTableModel::query()
+            ->with([
+                'gameSystem',
+                'creator',
+                'campaign',
+                'event',
+                'contentWarnings',
+                'participants.user',
+                'gameMasters.user',
+            ])
+            ->where('id', $id)
+            ->where('is_published', true)
+            ->first();
+    }
+
+    public function findPublishedModelBySlugWithRelations(string $slug): ?object
+    {
+        return GameTableModel::query()
+            ->with([
+                'gameSystem',
+                'creator',
+                'campaign',
+                'event',
+                'contentWarnings',
+                'participants.user',
+                'gameMasters.user',
+            ])
+            ->where('slug', $slug)
+            ->where('is_published', true)
+            ->first();
+    }
+
+    /**
+     * @return Collection<int, object>
+     */
+    public function getPublishedModelsInDateRange(
+        DateTimeInterface $from,
+        DateTimeInterface $to,
+    ): Collection {
+        return GameTableModel::query()
+            ->with(['gameSystem', 'creator'])
+            ->withCount('participants')
+            ->where('is_published', true)
+            ->whereNotIn('status', [TableStatus::Cancelled->value, TableStatus::Draft->value])
+            ->whereBetween('starts_at', [$from, $to])
+            ->orderBy('starts_at', 'asc')
+            ->get();
+    }
+
     public function toEntity(GameTableModel $model): GameTable
     {
         // Load content warning IDs
@@ -181,6 +233,7 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
             gameSystemId: new GameSystemId($model->game_system_id),
             createdBy: $model->created_by,
             title: $model->title,
+            slug: $model->slug,
             timeSlot: new TimeSlot(
                 new DateTimeImmutable($model->starts_at->toDateTimeString()),
                 $model->duration_minutes,
@@ -218,6 +271,7 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
                 ? new DateTimeImmutable($model->registration_closes_at->toDateTimeString())
                 : null,
             autoConfirm: $model->auto_confirm,
+            acceptsRegistrationsInProgress: $model->accepts_registrations_in_progress ?? false,
             isPublished: $model->is_published,
             publishedAt: $model->published_at !== null
                 ? new DateTimeImmutable($model->published_at->toDateTimeString())
@@ -241,6 +295,7 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
             'event_id' => $gameTable->eventId,
             'created_by' => $gameTable->createdBy,
             'title' => $gameTable->title,
+            'slug' => $gameTable->slug,
             'starts_at' => $gameTable->timeSlot->startsAt,
             'duration_minutes' => $gameTable->timeSlot->durationMinutes,
             'table_type' => $gameTable->tableType->value,
@@ -269,6 +324,7 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
             'registration_opens_at' => $gameTable->registrationOpensAt,
             'registration_closes_at' => $gameTable->registrationClosesAt,
             'auto_confirm' => $gameTable->autoConfirm,
+            'accepts_registrations_in_progress' => $gameTable->acceptsRegistrationsInProgress,
             'is_published' => $gameTable->isPublished,
             'published_at' => $gameTable->publishedAt,
             'notes' => $gameTable->notes,

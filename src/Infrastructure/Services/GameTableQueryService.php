@@ -4,22 +4,29 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Services;
 
-use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Modules\GameTables\Application\DTOs\GameMasterResponseDTO;
 use Modules\GameTables\Application\DTOs\GameTableListDTO;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
 use Modules\GameTables\Application\DTOs\ParticipantResponseDTO;
+use Modules\GameTables\Application\Services\EventWithTablesQueryInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use Modules\GameTables\Domain\Enums\GameMasterRole;
 use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Enums\TableStatus;
+use Modules\GameTables\Domain\Repositories\GameSystemRepositoryInterface;
+use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
-use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
 final class GameTableQueryService implements GameTableQueryServiceInterface
 {
+    public function __construct(
+        private readonly GameTableRepositoryInterface $gameTableRepository,
+        private readonly GameSystemRepositoryInterface $gameSystemRepository,
+        private readonly EventWithTablesQueryInterface $eventWithTablesQuery,
+    ) {}
+
     public function getPublishedTablesPaginated(
         int $page,
         int $perPage,
@@ -27,8 +34,9 @@ final class GameTableQueryService implements GameTableQueryServiceInterface
         ?string $format = null,
         ?string $status = null,
         ?string $eventId = null,
+        ?string $campaignId = null,
     ): array {
-        $query = $this->buildPublishedQuery($gameSystemIds, $format, $status, $eventId);
+        $query = $this->buildPublishedQuery($gameSystemIds, $format, $status, $eventId, $campaignId);
 
         $tables = $query
             ->orderBy('starts_at', 'asc')
@@ -44,78 +52,50 @@ final class GameTableQueryService implements GameTableQueryServiceInterface
         ?string $format = null,
         ?string $status = null,
         ?string $eventId = null,
+        ?string $campaignId = null,
     ): int {
-        return $this->buildPublishedQuery($gameSystemIds, $format, $status, $eventId)->count();
+        return $this->buildPublishedQuery($gameSystemIds, $format, $status, $eventId, $campaignId)->count();
     }
 
     public function getUpcomingTables(\DateTimeInterface $from, \DateTimeInterface $to): array
     {
-        $tables = GameTableModel::query()
-            ->with(['gameSystem', 'creator'])
-            ->withCount('participants')
-            ->where('is_published', true)
-            ->whereNotIn('status', [TableStatus::Cancelled->value, TableStatus::Draft->value])
-            ->whereBetween('starts_at', [$from, $to])
-            ->orderBy('starts_at', 'asc')
-            ->get();
+        $tables = $this->gameTableRepository->getPublishedModelsInDateRange($from, $to);
 
         return $tables->map(fn (GameTableModel $table) => $this->toListDTO($table))->all();
     }
 
     public function findPublished(string $id): ?GameTableResponseDTO
     {
-        $table = GameTableModel::query()
-            ->with(['gameSystem', 'creator', 'campaign', 'event', 'contentWarnings', 'participants.user', 'gameMasters.user'])
-            ->where('id', $id)
-            ->where('is_published', true)
-            ->first();
+        $table = $this->gameTableRepository->findPublishedModelWithRelations($id);
 
         if ($table === null) {
             return null;
         }
 
+        /** @var GameTableModel $table */
+        return $this->toResponseDTO($table);
+    }
+
+    public function findPublishedBySlug(string $slug): ?GameTableResponseDTO
+    {
+        $table = $this->gameTableRepository->findPublishedModelBySlugWithRelations($slug);
+
+        if ($table === null) {
+            return null;
+        }
+
+        /** @var GameTableModel $table */
         return $this->toResponseDTO($table);
     }
 
     public function getGameSystemsWithTables(): array
     {
-        return GameSystemModel::query()
-            ->where('is_active', true)
-            ->withCount(['gameTables' => function ($query): void {
-                $query->where('is_published', true)
-                    ->whereNotIn('status', [TableStatus::Cancelled->value, TableStatus::Draft->value]);
-            }])
-            ->orderBy('name')
-            ->get()
-            ->filter(fn (GameSystemModel $system) => $system->game_tables_count > 0)
-            ->map(fn (GameSystemModel $system) => [
-                'id' => $system->id,
-                'name' => $system->name,
-                'count' => $system->game_tables_count,
-            ])
-            ->values()
-            ->all();
+        return $this->gameSystemRepository->getActiveWithPublishedTableCount();
     }
 
     public function getEventsWithTables(): array
     {
-        return EventModel::query()
-            ->where('is_published', true)
-            ->where('end_date', '>=', now())
-            ->withCount(['gameTables' => function ($query): void {
-                $query->where('is_published', true)
-                    ->whereNotIn('status', [TableStatus::Cancelled->value, TableStatus::Draft->value]);
-            }])
-            ->orderBy('start_date')
-            ->get()
-            ->filter(fn (EventModel $event) => $event->game_tables_count > 0)
-            ->map(fn (EventModel $event) => [
-                'id' => $event->id,
-                'title' => $event->title,
-                'count' => $event->game_tables_count,
-            ])
-            ->values()
-            ->all();
+        return $this->eventWithTablesQuery->getEventsWithPublishedTables();
     }
 
     /**
@@ -126,6 +106,7 @@ final class GameTableQueryService implements GameTableQueryServiceInterface
         ?string $format = null,
         ?string $status = null,
         ?string $eventId = null,
+        ?string $campaignId = null,
     ): \Illuminate\Database\Eloquent\Builder {
         $query = GameTableModel::query()
             ->with(['gameSystem', 'creator', 'event', 'gameMasters.user'])
@@ -133,9 +114,9 @@ final class GameTableQueryService implements GameTableQueryServiceInterface
             ->where('is_published', true)
             ->whereNotIn('status', [TableStatus::Cancelled->value, TableStatus::Draft->value]);
 
-        // When browsing by event, show all tables (event page controls visibility).
+        // When browsing by event or campaign, show all tables (the context page controls visibility).
         // When browsing general listing, only show future tables.
-        if ($eventId === null) {
+        if ($eventId === null && $campaignId === null) {
             $query->where('starts_at', '>=', now());
         }
 
@@ -155,6 +136,10 @@ final class GameTableQueryService implements GameTableQueryServiceInterface
             $query->where('event_id', $eventId);
         }
 
+        if ($campaignId !== null) {
+            $query->where('campaign_id', $campaignId);
+        }
+
         return $query;
     }
 
@@ -166,6 +151,7 @@ final class GameTableQueryService implements GameTableQueryServiceInterface
         return new GameTableListDTO(
             id: $table->id,
             title: $table->title,
+            slug: $table->slug,
             gameSystemName: $table->gameSystem?->name ?? '',
             startsAt: $table->starts_at,
             durationMinutes: $table->duration_minutes,
@@ -182,6 +168,7 @@ final class GameTableQueryService implements GameTableQueryServiceInterface
             mainGameMasterName: $mainGameMasterName,
             eventId: $table->event_id,
             eventTitle: $table->event?->title,
+            imagePublicId: $table->image_public_id,
         );
     }
 
@@ -207,6 +194,7 @@ final class GameTableQueryService implements GameTableQueryServiceInterface
         return new GameTableResponseDTO(
             id: $table->id,
             title: $table->title,
+            slug: $table->slug,
             synopsis: $table->synopsis,
             gameSystemId: $table->game_system_id,
             gameSystemName: $table->gameSystem?->name ?? '',
@@ -244,9 +232,11 @@ final class GameTableQueryService implements GameTableQueryServiceInterface
             registrationOpensAt: $table->registration_opens_at,
             registrationClosesAt: $table->registration_closes_at,
             autoConfirm: $table->auto_confirm,
+            acceptsRegistrationsInProgress: $table->accepts_registrations_in_progress ?? false,
             isPublished: $table->is_published,
             publishedAt: $table->published_at,
             notes: $table->notes,
+            imagePublicId: $table->image_public_id,
             participants: $participants,
             gameMasters: $gameMasters,
             createdAt: $table->created_at,

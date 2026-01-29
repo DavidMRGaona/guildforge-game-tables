@@ -12,6 +12,7 @@ import StatusBadge from '../../components/StatusBadge.vue';
 import { useSeo } from '@/composables/useSeo';
 import { usePagination } from '@/composables/usePagination';
 import { useGridLayout, type GridColumns } from '@/composables/useGridLayout';
+import { buildCardImageUrl } from '@/utils/cloudinary';
 
 interface Props {
     campaigns: PaginatedResponse<CampaignListItem>;
@@ -48,6 +49,34 @@ function handleNext(): void {
     isNavigating.value = true;
     goToNext();
 }
+
+function getSessionProgressLabel(campaign: CampaignListItem): string {
+    if (campaign.sessionCount !== null && campaign.sessionCount > 0) {
+        return t('campaigns.details.totalSessions', {
+            current: campaign.currentSession,
+            total: campaign.sessionCount,
+        });
+    }
+    return t('campaigns.sessionNumber', { number: campaign.currentSession });
+}
+
+function getTotalSessionsLabel(campaign: CampaignListItem): string {
+    if (campaign.totalSessions === 0) {
+        return t('campaigns.totalSessionsUndetermined');
+    }
+    return String(campaign.totalSessions);
+}
+
+function getSessionProgress(campaign: CampaignListItem): number | null {
+    if (campaign.sessionCount === null || campaign.sessionCount === 0) {
+        return null;
+    }
+    return (campaign.currentSession / campaign.sessionCount) * 100;
+}
+
+function getImageUrl(campaign: CampaignListItem): string | null {
+    return buildCardImageUrl(campaign.imagePublicId);
+}
 </script>
 
 <template>
@@ -72,19 +101,36 @@ function handleNext(): void {
                     class="block transition-all duration-200 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-stone-900"
                 >
                     <BaseCard :padding="false">
+                        <!-- Campaign Image -->
+                        <div v-if="getImageUrl(campaign)" class="relative">
+                            <img
+                                :src="getImageUrl(campaign)!"
+                                :alt="campaign.title"
+                                class="h-40 w-full object-cover"
+                            />
+                        </div>
+
                         <div class="p-4">
-                            <!-- Header with title and status -->
-                            <div class="mb-3 flex items-start justify-between gap-2">
+                            <!-- Header with title and badges -->
+                            <div class="mb-3 flex flex-wrap items-start gap-2">
                                 <h3
                                     class="line-clamp-2 flex-1 text-lg font-semibold text-stone-900 dark:text-stone-100"
                                 >
                                     {{ campaign.title }}
                                 </h3>
-                                <StatusBadge
-                                    :status="campaign.status"
-                                    :label="campaign.statusLabel"
-                                    :color="campaign.statusColor"
-                                />
+                                <div class="flex flex-wrap gap-1">
+                                    <StatusBadge
+                                        :status="campaign.status"
+                                        :label="campaign.statusLabel"
+                                        :color="campaign.statusColor"
+                                    />
+                                    <span
+                                        v-if="campaign.acceptsNewPlayers"
+                                        class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                                    >
+                                        {{ t('campaigns.lookingForPlayers') }}
+                                    </span>
+                                </div>
                             </div>
 
                             <!-- Game System -->
@@ -93,7 +139,10 @@ function handleNext(): void {
                             </p>
 
                             <!-- Frequency -->
-                            <div class="mb-2 flex items-center text-sm text-stone-600 dark:text-stone-400">
+                            <div
+                                v-if="campaign.frequencyLabel"
+                                class="mb-2 flex items-center text-sm text-stone-600 dark:text-stone-400"
+                            >
                                 <svg
                                     class="mr-2 h-4 w-4"
                                     fill="none"
@@ -111,7 +160,7 @@ function handleNext(): void {
                                 <span>{{ campaign.frequencyLabel }}</span>
                             </div>
 
-                            <!-- Total Sessions -->
+                            <!-- Session Progress -->
                             <div class="mb-3 flex items-center text-sm text-stone-600 dark:text-stone-400">
                                 <svg
                                     class="mr-2 h-4 w-4"
@@ -127,11 +176,45 @@ function handleNext(): void {
                                         d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                                     />
                                 </svg>
-                                <span>{{ campaign.totalSessions }} {{ t('campaigns.sessions') }}</span>
+                                <span>{{ getSessionProgressLabel(campaign) }}</span>
                             </div>
 
-                            <!-- Capacity -->
-                            <div class="mb-2">
+                            <!-- Session Progress Bar (only if there's a defined session count) -->
+                            <div v-if="getSessionProgress(campaign) !== null" class="mb-3">
+                                <div
+                                    class="h-2 w-full overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700"
+                                >
+                                    <div
+                                        class="h-full bg-amber-500 transition-all"
+                                        :style="{ width: `${getSessionProgress(campaign)}%` }"
+                                    />
+                                </div>
+                            </div>
+
+                            <!-- Total Sessions -->
+                            <div class="mb-3 flex items-center text-sm text-stone-600 dark:text-stone-400">
+                                <svg
+                                    class="mr-2 h-4 w-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    aria-hidden="true"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                                    />
+                                </svg>
+                                <span
+                                    >{{ t('campaigns.totalSessions') }}:
+                                    {{ getTotalSessionsLabel(campaign) }}</span
+                                >
+                            </div>
+
+                            <!-- Capacity (only if maxPlayers is defined) -->
+                            <div v-if="campaign.maxPlayers !== null" class="mb-2">
                                 <div
                                     class="mb-1 flex items-center justify-between text-xs text-stone-600 dark:text-stone-400"
                                 >
@@ -174,16 +257,8 @@ function handleNext(): void {
                                             d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                                         />
                                     </svg>
-                                    <span>{{ campaign.creatorName }}</span>
+                                    <span>{{ campaign.mainGameMasterName }}</span>
                                 </div>
-
-                                <!-- Recruiting badge -->
-                                <span
-                                    v-if="campaign.isRecruiting"
-                                    class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                                >
-                                    {{ t('campaigns.recruiting') }}
-                                </span>
                             </div>
                         </div>
                     </BaseCard>

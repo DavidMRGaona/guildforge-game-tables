@@ -361,6 +361,207 @@ final class RegistrationServiceTest extends TestCase
         $this->assertNull($result);
     }
 
+    public function test_user_can_reregister_after_cancellation(): void
+    {
+        $gameTableId = GameTableId::generate()->value;
+        $userId = 'user-123';
+
+        $gameTable = $this->createGameTable($gameTableId);
+
+        // Create a cancelled participant
+        $cancelledParticipant = new Participant(
+            id: ParticipantId::generate(),
+            gameTableId: new GameTableId($gameTableId),
+            userId: $userId,
+            role: ParticipantRole::Player,
+            status: ParticipantStatus::Cancelled,
+            cancelledAt: new DateTimeImmutable('-1 hour'),
+        );
+
+        $this->participantRepository
+            ->expects($this->once())
+            ->method('findByTableAndUser')
+            ->with(
+                $this->callback(fn (GameTableId $id) => $id->value === $gameTableId),
+                $userId,
+            )
+            ->willReturn($cancelledParticipant);
+
+        $this->gameTableRepository
+            ->expects($this->once())
+            ->method('findOrFail')
+            ->willReturn($gameTable);
+
+        $this->participantRepository
+            ->expects($this->once())
+            ->method('countConfirmedPlayers')
+            ->willReturn(0);
+
+        $savedParticipant = null;
+        $this->participantRepository
+            ->expects($this->once())
+            ->method('save')
+            ->willReturnCallback(function (Participant $participant) use (&$savedParticipant) {
+                $savedParticipant = $participant;
+            });
+
+        $dto = new RegisterParticipantDTO(
+            gameTableId: $gameTableId,
+            userId: $userId,
+            role: ParticipantRole::Player,
+            notes: 'Re-registered',
+        );
+
+        $result = $this->service->register($dto);
+
+        // Assert: reused the same participant ID (not a new one)
+        $this->assertNotNull($savedParticipant);
+        $this->assertEquals($cancelledParticipant->id->value, $savedParticipant->id->value);
+        $this->assertEquals($cancelledParticipant->id->value, $result->id);
+
+        // Assert: status is now active (confirmed due to autoConfirm)
+        $this->assertEquals(ParticipantStatus::Confirmed, $savedParticipant->status);
+
+        // Assert: cancellation data cleared
+        $this->assertNull($savedParticipant->cancelledAt);
+
+        // Assert: notes updated
+        $this->assertEquals('Re-registered', $savedParticipant->notes);
+    }
+
+    public function test_user_reregistration_goes_to_waiting_list_when_full(): void
+    {
+        $gameTableId = GameTableId::generate()->value;
+        $userId = 'user-123';
+
+        $gameTable = $this->createGameTable($gameTableId, autoConfirm: true);
+
+        $cancelledParticipant = new Participant(
+            id: ParticipantId::generate(),
+            gameTableId: new GameTableId($gameTableId),
+            userId: $userId,
+            role: ParticipantRole::Player,
+            status: ParticipantStatus::Cancelled,
+            cancelledAt: new DateTimeImmutable('-1 hour'),
+        );
+
+        $this->participantRepository
+            ->expects($this->once())
+            ->method('findByTableAndUser')
+            ->willReturn($cancelledParticipant);
+
+        $this->gameTableRepository
+            ->expects($this->once())
+            ->method('findOrFail')
+            ->willReturn($gameTable);
+
+        // Table is full (6 players = maxPlayers)
+        $this->participantRepository
+            ->expects($this->once())
+            ->method('countConfirmedPlayers')
+            ->willReturn(6);
+
+        $this->participantRepository
+            ->expects($this->once())
+            ->method('getNextWaitingListPosition')
+            ->willReturn(1);
+
+        $savedParticipant = null;
+        $this->participantRepository
+            ->expects($this->once())
+            ->method('save')
+            ->willReturnCallback(function (Participant $participant) use (&$savedParticipant) {
+                $savedParticipant = $participant;
+            });
+
+        $dto = new RegisterParticipantDTO(
+            gameTableId: $gameTableId,
+            userId: $userId,
+            role: ParticipantRole::Player,
+        );
+
+        $result = $this->service->register($dto);
+
+        $this->assertNotNull($savedParticipant);
+        $this->assertEquals(ParticipantStatus::WaitingList, $savedParticipant->status);
+        $this->assertEquals(1, $savedParticipant->waitingListPosition);
+    }
+
+    public function test_guest_can_reregister_after_cancellation(): void
+    {
+        $gameTableId = GameTableId::generate()->value;
+        $email = 'guest@example.com';
+
+        $gameTable = $this->createGameTable($gameTableId);
+
+        $cancelledParticipant = new Participant(
+            id: ParticipantId::generate(),
+            gameTableId: new GameTableId($gameTableId),
+            userId: null,
+            role: ParticipantRole::Player,
+            status: ParticipantStatus::Cancelled,
+            email: $email,
+            firstName: 'Old Name',
+            cancellationToken: 'old-token',
+            cancelledAt: new DateTimeImmutable('-1 hour'),
+        );
+
+        $this->participantRepository
+            ->expects($this->once())
+            ->method('findByTableAndEmail')
+            ->with(
+                $this->callback(fn (GameTableId $id) => $id->value === $gameTableId),
+                $email,
+            )
+            ->willReturn($cancelledParticipant);
+
+        $this->gameTableRepository
+            ->expects($this->once())
+            ->method('findOrFail')
+            ->willReturn($gameTable);
+
+        $this->participantRepository
+            ->expects($this->once())
+            ->method('countConfirmedPlayers')
+            ->willReturn(0);
+
+        $savedParticipant = null;
+        $this->participantRepository
+            ->expects($this->once())
+            ->method('save')
+            ->willReturnCallback(function (Participant $participant) use (&$savedParticipant) {
+                $savedParticipant = $participant;
+            });
+
+        $dto = new RegisterParticipantDTO(
+            gameTableId: $gameTableId,
+            userId: null,
+            role: ParticipantRole::Player,
+            firstName: 'New Name',
+            email: $email,
+        );
+
+        $result = $this->service->registerGuest($dto);
+
+        // Assert: reused the same participant ID
+        $this->assertNotNull($savedParticipant);
+        $this->assertEquals($cancelledParticipant->id->value, $savedParticipant->id->value);
+        $this->assertEquals($cancelledParticipant->id->value, $result->id);
+
+        // Assert: status is now active
+        $this->assertEquals(ParticipantStatus::Confirmed, $savedParticipant->status);
+
+        // Assert: cancellation data cleared
+        $this->assertNull($savedParticipant->cancelledAt);
+
+        // Assert: name updated
+        $this->assertEquals('New Name', $savedParticipant->firstName);
+
+        // Assert: new cancellation token generated
+        $this->assertNotNull($savedParticipant->cancellationToken);
+        $this->assertNotEquals('old-token', $savedParticipant->cancellationToken);
+    }
+
     private function createGameTable(
         string $id,
         bool $autoConfirm = true,
@@ -376,7 +577,7 @@ final class RegistrationServiceTest extends TestCase
             timeSlot: $timeSlot,
             tableType: TableType::OneShot,
             tableFormat: TableFormat::InPerson,
-            status: TableStatus::Published,
+            status: TableStatus::Scheduled,
             minPlayers: 2,
             maxPlayers: 6,
             registrationType: RegistrationType::Everyone,

@@ -15,5 +15,6 @@ final class GameTableCancelled
     public function __construct(
         public readonly string $gameTableId,
         public readonly string $title,
+        public readonly \DateTimeImmutable $startsAt,
     ) {}
 }

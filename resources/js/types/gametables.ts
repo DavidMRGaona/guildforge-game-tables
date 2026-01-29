@@ -17,6 +17,18 @@ export interface GameMaster {
     isNamePublic: boolean;
 }
 
+export interface CampaignGameMaster {
+    id: string;
+    campaignId: string;
+    userId: string | null;
+    displayName: string;
+    role: string;
+    roleLabel: string;
+    customTitle: string | null;
+    isMain: boolean;
+    isNamePublic: boolean;
+}
+
 export interface EventFilter {
     id: string;
     title: string;
@@ -26,6 +38,7 @@ export interface EventFilter {
 export interface GameTableListItem {
     id: string;
     title: string;
+    slug: string;
     gameSystemName: string;
     startsAt: string;
     durationMinutes: number;
@@ -55,6 +68,7 @@ export interface GameTableListItem {
     mainGameMasterName: string;
     eventId: string | null;
     eventTitle: string | null;
+    imagePublicId: string | null;
 }
 
 export interface Participant {
@@ -77,6 +91,7 @@ export interface Participant {
 export interface GameTable {
     id: string;
     title: string;
+    slug: string;
     synopsis: string | null;
     gameSystemId: string;
     gameSystemName: string;
@@ -120,9 +135,11 @@ export interface GameTable {
     registrationOpensAt: string | null;
     registrationClosesAt: string | null;
     autoConfirm: boolean;
+    acceptsRegistrationsInProgress: boolean;
     isPublished: boolean;
     publishedAt: string | null;
     notes: string | null;
+    imagePublicId: string | null;
     gameMasters: GameMaster[];
     mainGameMasterName: string;
     currentPlayers: number;
@@ -137,22 +154,30 @@ export interface GameTable {
 export interface CampaignListItem {
     id: string;
     title: string;
+    slug: string;
     gameSystemName: string;
     creatorName: string;
     status: string;
     statusLabel: string;
     statusColor: string;
-    frequency: string;
-    frequencyLabel: string;
-    maxPlayers: number;
+    frequency: string | null;
+    frequencyLabel: string | null;
+    maxPlayers: number | null;
     currentPlayers: number;
     isRecruiting: boolean;
+    acceptsNewPlayers: boolean;
+    sessionCount: number | null;
+    currentSession: number;
     totalSessions: number;
+    imagePublicId: string | null;
+    gameMasters: CampaignGameMaster[];
+    mainGameMasterName: string;
 }
 
 export interface Campaign {
     id: string;
     title: string;
+    slug: string;
     description: string | null;
     gameSystemId: string;
     gameSystemName: string;
@@ -161,14 +186,18 @@ export interface Campaign {
     status: string;
     statusLabel: string;
     statusColor: string;
-    frequency: string;
-    frequencyLabel: string;
+    frequency: string | null;
+    frequencyLabel: string | null;
     expectedDurationMonths: number | null;
     startDate: string | null;
     endDate: string | null;
-    maxPlayers: number;
+    maxPlayers: number | null;
     currentPlayers: number;
+    spotsAvailable: number | null;
     isRecruiting: boolean;
+    acceptsNewPlayers: boolean;
+    sessionCount: number | null;
+    currentSession: number;
     recruitmentMessage: string | null;
     settings: string | null;
     themes: string[];
@@ -179,6 +208,11 @@ export interface Campaign {
     experienceLevel: string;
     experienceLevelLabel: string;
     totalSessions: number;
+    imagePublicId: string | null;
+    gameMasters: CampaignGameMaster[];
+    gameTables: GameTableListItem[];
+    hasActiveOrUpcomingTables: boolean;
+    mainGameMasterName: string;
     createdAt: string;
     updatedAt: string;
 }
@@ -188,6 +222,7 @@ export interface GameTableFilters {
     format?: string;
     status?: string;
     event?: string;
+    campaign?: string;
 }
 
 // Re-export registration types for convenience

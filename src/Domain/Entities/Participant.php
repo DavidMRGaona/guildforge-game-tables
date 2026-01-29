@@ -42,6 +42,14 @@ final class Participant
         $this->cancelledAt = new DateTimeImmutable();
     }
 
+    public function reactivate(): void
+    {
+        $this->status = ParticipantStatus::Pending;
+        $this->cancelledAt = null;
+        $this->confirmedAt = null;
+        $this->waitingListPosition = null;
+    }
+
     public function reject(): void
     {
         $this->status = ParticipantStatus::Rejected;

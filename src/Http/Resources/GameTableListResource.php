@@ -21,6 +21,7 @@ final class GameTableListResource extends JsonResource
         return [
             'id' => $this->id,
             'title' => $this->title,
+            'slug' => $this->slug,
             'gameSystemName' => $this->gameSystemName,
             'startsAt' => $this->startsAt?->format('c'),
             'durationMinutes' => $this->durationMinutes,
@@ -50,6 +51,7 @@ final class GameTableListResource extends JsonResource
             'mainGameMasterName' => $this->mainGameMasterName,
             'eventId' => $this->eventId,
             'eventTitle' => $this->eventTitle,
+            'imagePublicId' => $this->imagePublicId,
         ];
     }
 }

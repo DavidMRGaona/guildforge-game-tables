@@ -35,4 +35,9 @@ interface CampaignQueryServiceInterface
      * Find a published campaign by ID.
      */
     public function findPublished(string $id): ?CampaignResponseDTO;
+
+    /**
+     * Find a published campaign by slug.
+     */
+    public function findPublishedBySlug(string $slug): ?CampaignResponseDTO;
 }

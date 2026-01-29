@@ -31,9 +31,8 @@ const formatOptions = [
 
 const statusOptions = [
     { value: '', label: t('gameTables.filters.allStatuses') },
-    { value: 'draft', label: t('gameTables.statuses.draft') },
     { value: 'scheduled', label: t('gameTables.statuses.scheduled') },
-    { value: 'open', label: t('gameTables.statuses.open') },
+    { value: 'in_progress', label: t('gameTables.statuses.inProgress') },
     { value: 'full', label: t('gameTables.statuses.full') },
     { value: 'completed', label: t('gameTables.statuses.completed') },
     { value: 'cancelled', label: t('gameTables.statuses.cancelled') },

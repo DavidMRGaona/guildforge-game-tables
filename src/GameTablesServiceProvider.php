@@ -9,13 +9,18 @@ use App\Application\Modules\DTOs\NavigationItemDTO;
 use App\Application\Modules\DTOs\PagePrefixDTO;
 use App\Application\Modules\DTOs\PermissionDTO;
 use App\Application\Modules\DTOs\SlotRegistrationDTO;
+use App\Application\Services\EventQueryServiceInterface;
 use App\Modules\ModuleServiceProvider;
 use Illuminate\Support\Facades\Event;
+use Inertia\Inertia;
 use Modules\GameTables\Application\Services\CampaignQueryServiceInterface;
 use Modules\GameTables\Application\Services\EligibilityServiceInterface;
+use Modules\GameTables\Application\Services\EventWithTablesQueryInterface;
+use Modules\GameTables\Application\Services\GameMasterServiceInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
+use Modules\GameTables\Domain\Events\GameTableCancelled;
 use Modules\GameTables\Domain\Events\GuestRegistered;
 use Modules\GameTables\Domain\Events\ParticipantCancelled;
 use Modules\GameTables\Domain\Events\ParticipantPromotedFromWaitingList;
@@ -25,12 +30,17 @@ use Modules\GameTables\Domain\Repositories\ContentWarningRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameSystemRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
+use Modules\GameTables\Infrastructure\Listeners\CancelParticipantsOnTableCancellation;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnCancellation;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnGuestRegistration;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnRegistration;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnWaitingListPromotion;
 use Modules\GameTables\Infrastructure\Listeners\PromoteFromWaitingListOnCancellation;
+use Modules\GameTables\Listeners\SendCancellationConfirmation;
 use Modules\GameTables\Listeners\SendGuestRegistrationConfirmation;
+use Modules\GameTables\Listeners\SendRegistrationConfirmation;
+use Modules\GameTables\Console\Commands\GenerateSlugsCommand;
+use Modules\GameTables\Infrastructure\Observers\GameTableObserver;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentCampaignRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentContentWarningRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentGameSystemRepository;
@@ -38,6 +48,8 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\Eloquent
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentParticipantRepository;
 use Modules\GameTables\Infrastructure\Services\CampaignQueryService;
 use Modules\GameTables\Infrastructure\Services\EligibilityService;
+use Modules\GameTables\Infrastructure\Services\EventWithTablesQuery;
+use Modules\GameTables\Infrastructure\Services\GameMasterService;
 use Modules\GameTables\Infrastructure\Services\GameTableQueryService;
 use Modules\GameTables\Infrastructure\Services\GameTableService;
 use Modules\GameTables\Infrastructure\Services\RegistrationService;
@@ -69,6 +81,8 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         $this->app->bind(GameTableServiceInterface::class, GameTableService::class);
         $this->app->bind(EligibilityServiceInterface::class, EligibilityService::class);
         $this->app->bind(RegistrationServiceInterface::class, RegistrationService::class);
+        $this->app->bind(EventWithTablesQueryInterface::class, EventWithTablesQuery::class);
+        $this->app->bind(GameMasterServiceInterface::class, GameMasterService::class);
 
         // Query service bindings
         $this->app->bind(GameTableQueryServiceInterface::class, GameTableQueryService::class);
@@ -79,7 +93,64 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     {
         parent::boot();
 
+        $this->registerModelObservers();
         $this->registerEventListeners();
+        $this->registerCommands();
+        $this->shareGameTableCount();
+    }
+
+    /**
+     * Share game table count via Inertia for the event detail page.
+     */
+    private function shareGameTableCount(): void
+    {
+        if (! class_exists(Inertia::class)) {
+            return;
+        }
+
+        Inertia::share('gameTableCount', function (): ?int {
+            $route = request()->route();
+            if ($route?->getName() !== 'events.show') {
+                return null;
+            }
+
+            $slug = request()->route('slug');
+            if (! is_string($slug) || $slug === '') {
+                return null;
+            }
+
+            $eventQuery = app(EventQueryServiceInterface::class);
+            $event = $eventQuery->findPublishedBySlug($slug);
+            if ($event === null) {
+                return null;
+            }
+
+            $queryService = app(GameTableQueryServiceInterface::class);
+
+            return $queryService->getPublishedTablesTotal(eventId: $event->id);
+        });
+    }
+
+    /**
+     * Register console commands.
+     */
+    private function registerCommands(): void
+    {
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                GenerateSlugsCommand::class,
+            ]);
+        }
+    }
+
+    /**
+     * Register model observers.
+     */
+    private function registerModelObservers(): void
+    {
+        \Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel::observe(
+            GameTableObserver::class
+        );
     }
 
     /**
@@ -103,6 +174,11 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         );
 
         Event::listen(
+            ParticipantRegistered::class,
+            [SendRegistrationConfirmation::class, 'handle']
+        );
+
+        Event::listen(
             GuestRegistered::class,
             [NotifyOnGuestRegistration::class, 'handle']
         );
@@ -113,8 +189,18 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         );
 
         Event::listen(
+            ParticipantCancelled::class,
+            [SendCancellationConfirmation::class, 'handle']
+        );
+
+        Event::listen(
             ParticipantPromotedFromWaitingList::class,
             [NotifyOnWaitingListPromotion::class, 'handle']
+        );
+
+        Event::listen(
+            GameTableCancelled::class,
+            [CancelParticipantsOnTableCancellation::class, 'handle']
         );
     }
 
@@ -362,7 +448,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                 module: $this->moduleName(),
                 order: 10,
                 props: [],
-                dataKeys: ['event'],
+                dataKeys: ['event', 'gameTableCount'],
             ),
         ];
     }
@@ -415,5 +501,17 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     public function getSettingsSchema(): array
     {
         return \Modules\GameTables\Filament\Pages\GameTablesSettings::getFormSchemaComponents();
+    }
+
+    /**
+     * Register Filament pages provided by this module.
+     *
+     * @return array<class-string<\Filament\Pages\Page>>
+     */
+    public function registerFilamentPages(): array
+    {
+        return [
+            \Modules\GameTables\Filament\Pages\GameTablesSettings::class,
+        ];
     }
 }

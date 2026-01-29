@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n';
 import type { GameTableListItem } from '../types/gametables';
 import FormatBadge from './FormatBadge.vue';
 import StatusBadge from './StatusBadge.vue';
+import { buildCardImageUrl } from '@/utils/cloudinary';
 
 interface Props {
     table: GameTableListItem;
@@ -13,6 +14,8 @@ interface Props {
 const props = defineProps<Props>();
 
 const { t, locale } = useI18n();
+
+const imageUrl = computed(() => buildCardImageUrl(props.table.imagePublicId));
 
 const dateBadge = computed(() => {
     const date = new Date(props.table.startsAt);
@@ -94,12 +97,50 @@ const availabilityBadge = computed(() => {
 
 <template>
     <Link
-        :href="`/mesas/${table.id}`"
+        :href="`/mesas/${table.slug}`"
         :aria-label="t('aria.viewGameTable', { title: table.title })"
         class="group block overflow-hidden rounded-lg bg-white shadow-sm transition-all duration-200 hover:scale-[1.02] hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:bg-stone-800 dark:shadow-stone-900/50 dark:focus:ring-offset-stone-900"
     >
-        <!-- Header band with gradient -->
+        <!-- Image with overlay badges (if image exists) -->
+        <div v-if="imageUrl" class="relative">
+            <img
+                :src="imageUrl"
+                :alt="table.title"
+                class="h-32 w-full object-cover"
+            />
+            <!-- Overlay gradient for better badge visibility -->
+            <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30" />
+
+            <!-- Date badge (top-left, overlaid on image) -->
+            <div
+                class="absolute left-3 top-3 flex flex-col items-center rounded bg-white/95 px-2 py-1 shadow-sm dark:bg-stone-800/95"
+            >
+                <span class="text-lg font-bold leading-none text-amber-600 dark:text-amber-500">
+                    {{ dateBadge.day }}
+                </span>
+                <span class="text-[10px] font-medium uppercase tracking-wide text-stone-600 dark:text-stone-400">
+                    {{ dateBadge.month }}
+                </span>
+            </div>
+
+            <!-- Status + Availability badges (top-right, overlaid on image) -->
+            <div class="absolute right-3 top-3 flex items-center gap-2">
+                <span
+                    :class="['rounded-full px-2 py-0.5 text-xs font-semibold', availabilityBadge.classes]"
+                >
+                    {{ availabilityBadge.text }}
+                </span>
+                <StatusBadge
+                    :status="table.status.value"
+                    :label="table.status.label"
+                    :color="table.status.color"
+                />
+            </div>
+        </div>
+
+        <!-- Header band with gradient (only if no image) -->
         <div
+            v-else
             :class="['relative flex items-center justify-between bg-gradient-to-r px-4 py-3', headerGradient]"
         >
             <!-- Date badge (top-left) -->

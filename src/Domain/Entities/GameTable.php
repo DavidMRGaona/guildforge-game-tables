@@ -32,6 +32,7 @@ final class GameTable
         public readonly GameSystemId $gameSystemId,
         public readonly string $createdBy,
         public string $title,
+        public string $slug,
         public TimeSlot $timeSlot,
         public TableType $tableType,
         public TableFormat $tableFormat,
@@ -58,16 +59,18 @@ final class GameTable
         public ?DateTimeImmutable $registrationOpensAt = null,
         public ?DateTimeImmutable $registrationClosesAt = null,
         public bool $autoConfirm = true,
+        public bool $acceptsRegistrationsInProgress = false,
         public bool $isPublished = false,
         public ?DateTimeImmutable $publishedAt = null,
         public ?string $notes = null,
+        public ?string $imagePublicId = null,
         public ?DateTimeImmutable $createdAt = null,
     ) {
     }
 
     public function publish(): void
     {
-        $this->status = TableStatus::Published;
+        $this->status = TableStatus::Scheduled;
         $this->isPublished = true;
         $this->publishedAt = new DateTimeImmutable();
     }
@@ -76,11 +79,7 @@ final class GameTable
     {
         $this->status = TableStatus::Draft;
         $this->isPublished = false;
-    }
-
-    public function openRegistration(): void
-    {
-        $this->status = TableStatus::Open;
+        $this->publishedAt = null;
     }
 
     public function markAsFull(): void
@@ -108,9 +107,19 @@ final class GameTable
         $this->status = $status;
     }
 
-    public function canRegister(): bool
+    /**
+     * Checks if registration is currently open based on publication state, status, and dates.
+     */
+    public function isRegistrationOpen(DateTimeImmutable $now): bool
     {
-        return $this->status->canRegister();
+        if (! $this->isPublished || ! $this->status->isRegistrable()) {
+            return false;
+        }
+
+        $opensAt = $this->registrationOpensAt ?? $this->timeSlot->startsAt;
+        $closesAt = $this->registrationClosesAt ?? $this->timeSlot->startsAt;
+
+        return $now >= $opensAt && $now <= $closesAt;
     }
 
     public function isActive(): bool
@@ -126,6 +135,14 @@ final class GameTable
     public function requiresMembership(): bool
     {
         return $this->registrationType->requiresMembership();
+    }
+
+    /**
+     * Checks if the table is in a state that allows registration (published and registrable status).
+     */
+    public function canRegister(): bool
+    {
+        return $this->isPublished && $this->status->isRegistrable();
     }
 
     public function requiresInvitation(): bool
@@ -184,7 +201,8 @@ final class GameTable
 
     public function canUserRegister(bool $isMember, DateTimeImmutable $now): bool
     {
-        if (! $this->canRegister()) {
+        // Check publication and registrable status
+        if (! $this->isPublished || ! $this->status->isRegistrable()) {
             return false;
         }
 
@@ -196,12 +214,12 @@ final class GameTable
             return false;
         }
 
-        // Check if within registration window
+        // Early access for members
         if ($isMember && $this->isMemberEarlyAccessActive($now)) {
             return true;
         }
 
-        return $this->isPublicRegistrationOpen($now);
+        return $this->isRegistrationOpen($now);
     }
 
     public function meetsAgeRequirement(?int $userAge): bool
@@ -275,12 +293,14 @@ final class GameTable
         ?DateTimeImmutable $registrationOpensAt,
         ?DateTimeImmutable $registrationClosesAt,
         bool $autoConfirm,
+        bool $acceptsRegistrationsInProgress = false,
     ): void {
         $this->registrationType = $registrationType;
         $this->membersEarlyAccessDays = $membersEarlyAccessDays;
         $this->registrationOpensAt = $registrationOpensAt;
         $this->registrationClosesAt = $registrationClosesAt;
         $this->autoConfirm = $autoConfirm;
+        $this->acceptsRegistrationsInProgress = $acceptsRegistrationsInProgress;
     }
 
     public function linkToEvent(?string $eventId): void

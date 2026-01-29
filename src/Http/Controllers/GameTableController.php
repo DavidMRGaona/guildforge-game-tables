@@ -7,12 +7,15 @@ namespace Modules\GameTables\Http\Controllers;
 use App\Http\Concerns\BuildsPaginatedResponse;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\GameTables\Application\Services\EligibilityServiceInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
+use App\Application\Services\SlugRedirectServiceInterface;
 use Modules\GameTables\Http\Resources\GameTableListResource;
 use Modules\GameTables\Http\Resources\GameTableResource;
 
@@ -26,6 +29,7 @@ final class GameTableController extends Controller
         private readonly GameTableQueryServiceInterface $queryService,
         private readonly EligibilityServiceInterface $eligibilityService,
         private readonly RegistrationServiceInterface $registrationService,
+        private readonly SlugRedirectServiceInterface $slugRedirectService,
     ) {}
 
     public function index(Request $request): Response
@@ -47,6 +51,9 @@ final class GameTableController extends Controller
         $eventId = $request->query('event');
         $eventId = is_string($eventId) && $eventId !== '' ? $eventId : null;
 
+        $campaignId = $request->query('campaign');
+        $campaignId = is_string($campaignId) && $campaignId !== '' ? $campaignId : null;
+
         $tables = $this->queryService->getPublishedTablesPaginated(
             page: $page,
             perPage: self::PER_PAGE,
@@ -54,6 +61,7 @@ final class GameTableController extends Controller
             format: $format,
             status: $status,
             eventId: $eventId,
+            campaignId: $campaignId,
         );
 
         $total = $this->queryService->getPublishedTablesTotal(
@@ -61,6 +69,7 @@ final class GameTableController extends Controller
             format: $format,
             status: $status,
             eventId: $eventId,
+            campaignId: $campaignId,
         );
 
         $gameSystems = $this->queryService->getGameSystemsWithTables();
@@ -81,6 +90,7 @@ final class GameTableController extends Controller
                 'format' => $format,
                 'status' => $status,
                 'event' => $eventId,
+                'campaign' => $campaignId,
             ],
         ]);
     }
@@ -104,24 +114,48 @@ final class GameTableController extends Controller
         ]);
     }
 
-    public function show(string $id): Response
+    public function show(string $identifier): Response|RedirectResponse
     {
-        $table = $this->queryService->findPublished($id);
+        // 1. Try to find by slug directly
+        $table = $this->queryService->findPublishedBySlug($identifier);
 
-        if ($table === null) {
-            abort(404);
+        if ($table !== null) {
+            return $this->renderShow($table);
         }
 
+        // 2. Check if this is an old slug that redirects to a new one
+        $currentSlug = $this->slugRedirectService->resolveCurrentSlug($identifier, 'game_table');
+        if ($currentSlug !== null) {
+            return redirect()->route('gametables.show', $currentSlug, 301);
+        }
+
+        // 3. If it looks like a UUID, try finding by ID and redirect to slug
+        if (Str::isUuid($identifier)) {
+            $table = $this->queryService->findPublished($identifier);
+            if ($table !== null && $table->slug !== null) {
+                return redirect()->route('gametables.show', $table->slug, 301);
+            }
+        }
+
+        // 4. Not found
+        abort(404);
+    }
+
+    /**
+     * Render the show page for a game table.
+     */
+    private function renderShow(\Modules\GameTables\Application\DTOs\GameTableResponseDTO $table): Response
+    {
         $user = auth()->user();
         $eligibility = null;
         $userRegistration = null;
 
         if ($user !== null) {
             // Get user eligibility
-            $eligibility = $this->eligibilityService->canRegisterById($id, (string) $user->id);
+            $eligibility = $this->eligibilityService->canRegisterById($table->id, (string) $user->id);
 
             // Get current user's registration
-            $registration = $this->registrationService->findByTableAndUser($id, (string) $user->id);
+            $registration = $this->registrationService->findByTableAndUser($table->id, (string) $user->id);
             $userRegistration = $registration !== null ? $this->formatRegistrationForFrontend($registration) : null;
         }
 

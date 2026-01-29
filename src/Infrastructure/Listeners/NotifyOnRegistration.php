@@ -38,6 +38,7 @@ final readonly class NotifyOnRegistration
 
         $notification = new ParticipantRegisteredNotification(
             participantName: $participantName,
+            tableId: $event->gameTableId,
             tableTitle: $gameTable->title,
             tableDate: $tableDate,
             tableLocation: $tableLocation,

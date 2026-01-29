@@ -55,4 +55,12 @@ interface GameSystemRepositoryInterface
      * Check if a game system exists by slug.
      */
     public function existsBySlug(string $slug): bool;
+
+    /**
+     * Get active game systems with count of published tables.
+     * Returns array of arrays with 'id', 'name', and 'count' keys.
+     *
+     * @return array<array{id: string, name: string, count: int}>
+     */
+    public function getActiveWithPublishedTableCount(): array;
 }

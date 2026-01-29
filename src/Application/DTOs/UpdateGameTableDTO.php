@@ -51,6 +51,7 @@ final readonly class UpdateGameTableDTO
         public ?DateTimeImmutable $registrationOpensAt = null,
         public ?DateTimeImmutable $registrationClosesAt = null,
         public bool $autoConfirm = true,
+        public bool $acceptsRegistrationsInProgress = false,
         public ?string $notes = null,
     ) {}
 
@@ -106,6 +107,7 @@ final readonly class UpdateGameTableDTO
                 ? ($data['registration_closes_at'] instanceof DateTimeImmutable ? $data['registration_closes_at'] : new DateTimeImmutable($data['registration_closes_at']))
                 : null,
             autoConfirm: (bool) ($data['auto_confirm'] ?? true),
+            acceptsRegistrationsInProgress: (bool) ($data['accepts_registrations_in_progress'] ?? false),
             notes: $data['notes'] ?? null,
         );
     }

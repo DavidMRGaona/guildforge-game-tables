@@ -6,6 +6,7 @@ namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories;
 
 use DateTimeImmutable;
 use Modules\GameTables\Domain\Entities\GameSystem;
+use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Exceptions\GameSystemNotFoundException;
 use Modules\GameTables\Domain\Repositories\GameSystemRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameSystemId;
@@ -87,6 +88,29 @@ final readonly class EloquentGameSystemRepository implements GameSystemRepositor
     public function existsBySlug(string $slug): bool
     {
         return GameSystemModel::query()->where('slug', $slug)->exists();
+    }
+
+    /**
+     * @return array<array{id: string, name: string, count: int}>
+     */
+    public function getActiveWithPublishedTableCount(): array
+    {
+        return GameSystemModel::query()
+            ->where('is_active', true)
+            ->withCount(['gameTables' => function ($query): void {
+                $query->where('is_published', true)
+                    ->whereNotIn('status', [TableStatus::Cancelled->value, TableStatus::Draft->value]);
+            }])
+            ->orderBy('name')
+            ->get()
+            ->filter(fn (GameSystemModel $system): bool => $system->game_tables_count > 0)
+            ->map(fn (GameSystemModel $system): array => [
+                'id' => $system->id,
+                'name' => $system->name,
+                'count' => $system->game_tables_count,
+            ])
+            ->values()
+            ->all();
     }
 
     public function toEntity(GameSystemModel $model): GameSystem

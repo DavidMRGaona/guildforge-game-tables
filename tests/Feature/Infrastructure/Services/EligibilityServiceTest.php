@@ -51,7 +51,7 @@ final class EligibilityServiceTest extends TestCase
         $gameTable = $this->createGameTable(
             id: $gameTableId,
             registrationType: RegistrationType::Everyone,
-            status: TableStatus::Published,
+            status: TableStatus::Scheduled,
             maxPlayers: 5,
         );
 
@@ -89,7 +89,7 @@ final class EligibilityServiceTest extends TestCase
         $gameTable = $this->createGameTable(
             id: $gameTableId,
             registrationType: RegistrationType::MembersOnly,
-            status: TableStatus::Published,
+            status: TableStatus::Scheduled,
         );
 
         $this->gameTableRepository
@@ -112,7 +112,7 @@ final class EligibilityServiceTest extends TestCase
         $gameTable = $this->createGameTable(
             id: $gameTableId,
             registrationType: RegistrationType::Everyone,
-            status: TableStatus::Published,
+            status: TableStatus::Scheduled,
         );
 
         $existingParticipant = new Participant(
@@ -153,7 +153,7 @@ final class EligibilityServiceTest extends TestCase
         $gameTable = $this->createGameTable(
             id: $gameTableId,
             registrationType: RegistrationType::Everyone,
-            status: TableStatus::Published,
+            status: TableStatus::Scheduled,
             maxPlayers: 4,
         );
 
@@ -208,7 +208,7 @@ final class EligibilityServiceTest extends TestCase
         $gameTable = $this->createGameTable(
             id: $gameTableId,
             registrationType: RegistrationType::Invite,
-            status: TableStatus::Published,
+            status: TableStatus::Scheduled,
         );
 
         $this->gameTableRepository
@@ -231,7 +231,7 @@ final class EligibilityServiceTest extends TestCase
         $gameTable = $this->createGameTable(
             id: $gameTableId,
             registrationType: RegistrationType::Everyone,
-            status: TableStatus::Published,
+            status: TableStatus::Scheduled,
             registrationOpensAt: $futureDate,
         );
 
@@ -249,7 +249,7 @@ final class EligibilityServiceTest extends TestCase
     private function createGameTable(
         string $id,
         RegistrationType $registrationType = RegistrationType::Everyone,
-        TableStatus $status = TableStatus::Published,
+        TableStatus $status = TableStatus::Scheduled,
         int $maxPlayers = 6,
         ?DateTimeImmutable $registrationOpensAt = null,
     ): GameTable {
