@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Application\Services;
 
 use Modules\GameTables\Application\DTOs\ParticipantResponseDTO;
+use Modules\GameTables\Application\DTOs\ProfileParticipationDTO;
 use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
 
 interface RegistrationServiceInterface
@@ -20,6 +21,22 @@ interface RegistrationServiceInterface
     public function reject(string $participantId): ParticipantResponseDTO;
 
     public function promoteFromWaitingList(string $gameTableId): ?ParticipantResponseDTO;
+
+    /**
+     * Promote a specific participant from waiting list.
+     * For admin use when promoting a specific person instead of the first in queue.
+     */
+    public function promoteParticipant(string $participantId): ParticipantResponseDTO;
+
+    /**
+     * Register a participant by admin (bypasses eligibility checks).
+     */
+    public function registerByAdmin(RegisterParticipantDTO $dto): ParticipantResponseDTO;
+
+    /**
+     * Register a guest participant by admin (bypasses eligibility checks).
+     */
+    public function registerGuestByAdmin(RegisterParticipantDTO $dto): ParticipantResponseDTO;
 
     public function markAsNoShow(string $participantId): ParticipantResponseDTO;
 
@@ -56,4 +73,13 @@ interface RegistrationServiceInterface
      * Find a participant by cancellation token.
      */
     public function findByToken(string $token): ?ParticipantResponseDTO;
+
+    /**
+     * Get user participations for profile page.
+     * Returns participations excluding Cancelled, Rejected statuses.
+     * Sorted: upcoming first (ASC by date), then past (DESC by date).
+     *
+     * @return array<ProfileParticipationDTO>
+     */
+    public function getByUserForProfile(string $userId): array;
 }

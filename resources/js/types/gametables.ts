@@ -225,6 +225,35 @@ export interface GameTableFilters {
     campaign?: string;
 }
 
+export interface ProfileParticipationFilters {
+    statuses: string[];
+    roles: string[];
+    systems: string[];
+}
+
+export interface ProfileParticipation {
+    id: string;
+    gameTableId: string;
+    gameTableTitle: string;
+    gameTableSlug: string;
+    gameTableStartsAt: string | null;
+    gameSystemName: string;
+    role: string;
+    roleKey: string;
+    roleColor: string;
+    status: string;
+    statusKey: string;
+    statusColor: string;
+    waitingListPosition: number | null;
+    isUpcoming: boolean;
+}
+
+export interface ProfileGameTablesData {
+    upcoming: ProfileParticipation[];
+    past: ProfileParticipation[];
+    total: number;
+}
+
 // Re-export registration types for convenience
 export type { EligibilityResponse, ParticipantData } from './registration';
 

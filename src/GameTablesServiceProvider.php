@@ -20,11 +20,14 @@ use Modules\GameTables\Application\Services\GameMasterServiceInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
+use Modules\GameTables\Console\Commands\GenerateSlugsCommand;
 use Modules\GameTables\Domain\Events\GameTableCancelled;
 use Modules\GameTables\Domain\Events\GuestRegistered;
 use Modules\GameTables\Domain\Events\ParticipantCancelled;
+use Modules\GameTables\Domain\Events\ParticipantConfirmed;
 use Modules\GameTables\Domain\Events\ParticipantPromotedFromWaitingList;
 use Modules\GameTables\Domain\Events\ParticipantRegistered;
+use Modules\GameTables\Domain\Events\ParticipantRejected;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ContentWarningRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameSystemRepositoryInterface;
@@ -36,10 +39,6 @@ use Modules\GameTables\Infrastructure\Listeners\NotifyOnGuestRegistration;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnRegistration;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnWaitingListPromotion;
 use Modules\GameTables\Infrastructure\Listeners\PromoteFromWaitingListOnCancellation;
-use Modules\GameTables\Listeners\SendCancellationConfirmation;
-use Modules\GameTables\Listeners\SendGuestRegistrationConfirmation;
-use Modules\GameTables\Listeners\SendRegistrationConfirmation;
-use Modules\GameTables\Console\Commands\GenerateSlugsCommand;
 use Modules\GameTables\Infrastructure\Observers\GameTableObserver;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentCampaignRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentContentWarningRepository;
@@ -52,7 +51,13 @@ use Modules\GameTables\Infrastructure\Services\EventWithTablesQuery;
 use Modules\GameTables\Infrastructure\Services\GameMasterService;
 use Modules\GameTables\Infrastructure\Services\GameTableQueryService;
 use Modules\GameTables\Infrastructure\Services\GameTableService;
+use Modules\GameTables\Infrastructure\Services\ProfileGameTablesDataProvider;
 use Modules\GameTables\Infrastructure\Services\RegistrationService;
+use Modules\GameTables\Listeners\SendCancellationConfirmation;
+use Modules\GameTables\Listeners\SendConfirmationNotification;
+use Modules\GameTables\Listeners\SendGuestRegistrationConfirmation;
+use Modules\GameTables\Listeners\SendRegistrationConfirmation;
+use Modules\GameTables\Listeners\SendRejectionNotification;
 
 final class GameTablesServiceProvider extends ModuleServiceProvider
 {
@@ -97,6 +102,50 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         $this->registerEventListeners();
         $this->registerCommands();
         $this->shareGameTableCount();
+        $this->shareProfileGameTables();
+    }
+
+    /**
+     * Share profile game tables data via Inertia for the profile page.
+     */
+    private function shareProfileGameTables(): void
+    {
+        if (! class_exists(Inertia::class)) {
+            return;
+        }
+
+        Inertia::share('profileGameTables', function (): ?array {
+            $route = request()->route();
+            if ($route?->getName() !== 'profile.show') {
+                return null;
+            }
+
+            $user = auth()->user();
+            if ($user === null) {
+                return null;
+            }
+
+            $provider = app(ProfileGameTablesDataProvider::class);
+
+            return $provider->getDataForUser($user->id);
+        });
+
+        Inertia::share('profileGameTablesTotal', function (): ?int {
+            $route = request()->route();
+            if ($route?->getName() !== 'profile.show') {
+                return null;
+            }
+
+            $user = auth()->user();
+            if ($user === null) {
+                return null;
+            }
+
+            $provider = app(ProfileGameTablesDataProvider::class);
+            $data = $provider->getDataForUser($user->id);
+
+            return $data['total'] ?? 0;
+        });
     }
 
     /**
@@ -196,6 +245,16 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         Event::listen(
             ParticipantPromotedFromWaitingList::class,
             [NotifyOnWaitingListPromotion::class, 'handle']
+        );
+
+        Event::listen(
+            ParticipantConfirmed::class,
+            [SendConfirmationNotification::class, 'handle']
+        );
+
+        Event::listen(
+            ParticipantRejected::class,
+            [SendRejectionNotification::class, 'handle']
         );
 
         Event::listen(
@@ -449,6 +508,19 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                 order: 10,
                 props: [],
                 dataKeys: ['event', 'gameTableCount'],
+            ),
+            new SlotRegistrationDTO(
+                slot: 'profile-sections',
+                component: 'components/profile/ProfileGameTablesSection.vue',
+                module: $this->moduleName(),
+                order: 10,
+                props: [],
+                dataKeys: ['profileGameTables'],
+                profileTab: [
+                    'icon' => 'dice',
+                    'labelKey' => 'gameTables.profile.tabLabel',
+                    'badgeKey' => 'profileGameTablesTotal',
+                ],
             ),
         ];
     }

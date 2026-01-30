@@ -21,8 +21,11 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
+use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 
 final class ParticipantsRelationManager extends RelationManager
@@ -48,9 +51,9 @@ final class ParticipantsRelationManager extends RelationManager
                     ->required()
                     ->live()
                     ->dehydrated(false)
-                    ->afterStateHydrated(function (Select $component, ?string $state, ?array $record): void {
-                        if ($record !== null && isset($record['user_id'])) {
-                            $component->state($record['user_id'] !== null ? 'user' : 'external');
+                    ->afterStateHydrated(function (Select $component, ?string $state, ?ParticipantModel $record): void {
+                        if ($record !== null) {
+                            $component->state($record->user_id !== null ? 'user' : 'external');
                         }
                     }),
 
@@ -138,7 +141,12 @@ final class ParticipantsRelationManager extends RelationManager
                 TextColumn::make('waiting_list_position')
                     ->label(__('game-tables::messages.fields.waiting_list_position'))
                     ->numeric()
-                    ->visible(fn (): bool => $this->getOwnerRecord()->participants()->where('status', ParticipantStatus::WaitingList->value)->exists()),
+                    ->visible(function (): bool {
+                        /** @var GameTableModel $ownerRecord */
+                        $ownerRecord = $this->getOwnerRecord();
+
+                        return $ownerRecord->participants()->where('status', ParticipantStatus::WaitingList->value)->exists();
+                    }),
 
                 TextColumn::make('confirmed_at')
                     ->label(__('game-tables::messages.fields.confirmed_at'))
@@ -160,7 +168,40 @@ final class ParticipantsRelationManager extends RelationManager
             ])
             ->headerActions([
                 CreateAction::make()
-                    ->label(__('game-tables::messages.relation_managers.participants.add')),
+                    ->label(__('game-tables::messages.relation_managers.participants.add'))
+                    ->using(function (array $data, RelationManager $livewire): Model {
+                        $registrationService = app(RegistrationServiceInterface::class);
+                        /** @var GameTableModel $ownerRecord */
+                        $ownerRecord = $livewire->getOwnerRecord();
+                        $gameTableId = $ownerRecord->id;
+                        $participantType = $data['participant_type'] ?? 'user';
+
+                        // Determine if this is a user or guest registration
+                        if ($participantType === 'user' && isset($data['user_id'])) {
+                            $dto = new RegisterParticipantDTO(
+                                gameTableId: $gameTableId,
+                                userId: $data['user_id'],
+                                role: ParticipantRole::from($data['role']),
+                                notes: $data['notes'] ?? null,
+                            );
+                            $result = $registrationService->registerByAdmin($dto);
+                        } else {
+                            $dto = new RegisterParticipantDTO(
+                                gameTableId: $gameTableId,
+                                userId: null,
+                                role: ParticipantRole::from($data['role']),
+                                notes: $data['notes'] ?? null,
+                                firstName: $data['first_name'] ?? null,
+                                lastName: $data['last_name'] ?? null,
+                                email: $data['email'] ?? null,
+                                phone: $data['phone'] ?? null,
+                            );
+                            $result = $registrationService->registerGuestByAdmin($dto);
+                        }
+
+                        // Fetch and return the model for Filament
+                        return ParticipantModel::findOrFail($result->id);
+                    }),
             ])
             ->actions([
                 Action::make('confirm')
@@ -168,30 +209,31 @@ final class ParticipantsRelationManager extends RelationManager
                     ->icon('heroicon-o-check')
                     ->color('success')
                     ->visible(fn (ParticipantModel $record): bool => $record->status === ParticipantStatus::Pending)
-                    ->action(fn (ParticipantModel $record) => $record->update([
-                        'status' => ParticipantStatus::Confirmed->value,
-                        'confirmed_at' => now(),
-                    ])),
+                    ->action(function (ParticipantModel $record): void {
+                        $registrationService = app(RegistrationServiceInterface::class);
+                        $registrationService->confirm($record->id);
+                    }),
 
                 Action::make('reject')
                     ->label(__('game-tables::messages.relation_managers.participants.reject'))
                     ->icon('heroicon-o-x-mark')
                     ->color('danger')
                     ->visible(fn (ParticipantModel $record): bool => $record->status === ParticipantStatus::Pending)
-                    ->action(fn (ParticipantModel $record) => $record->update([
-                        'status' => ParticipantStatus::Rejected->value,
-                    ])),
+                    ->requiresConfirmation()
+                    ->action(function (ParticipantModel $record): void {
+                        $registrationService = app(RegistrationServiceInterface::class);
+                        $registrationService->reject($record->id);
+                    }),
 
                 Action::make('promote')
                     ->label(__('game-tables::messages.relation_managers.participants.promote'))
                     ->icon('heroicon-o-arrow-up')
                     ->color('info')
                     ->visible(fn (ParticipantModel $record): bool => $record->status === ParticipantStatus::WaitingList)
-                    ->action(fn (ParticipantModel $record) => $record->update([
-                        'status' => ParticipantStatus::Confirmed->value,
-                        'waiting_list_position' => null,
-                        'confirmed_at' => now(),
-                    ])),
+                    ->action(function (ParticipantModel $record): void {
+                        $registrationService = app(RegistrationServiceInterface::class);
+                        $registrationService->promoteParticipant($record->id);
+                    }),
 
                 EditAction::make(),
                 DeleteAction::make(),

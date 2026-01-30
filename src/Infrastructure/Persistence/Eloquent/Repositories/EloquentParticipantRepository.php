@@ -283,4 +283,52 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
 
         return $this->toEntity($model);
     }
+
+    /**
+     * @return array<array{participant: Participant, game_table_id: string, game_table_title: string, game_table_slug: string, game_table_starts_at: \DateTimeImmutable|null, game_system_name: string}>
+     */
+    public function getActiveByUserWithTableData(string $userId): array
+    {
+        $models = ParticipantModel::query()
+            ->with(['gameTable.gameSystem'])
+            ->where('user_id', $userId)
+            ->whereNotIn('status', [
+                ParticipantStatus::Cancelled->value,
+                ParticipantStatus::Rejected->value,
+                ParticipantStatus::NoShow->value,
+            ])
+            ->get();
+
+        // Sort in PHP to be database-agnostic (works with both PostgreSQL and SQLite)
+        $now = new DateTimeImmutable();
+        $sorted = $models->sortBy(function (ParticipantModel $model) use ($now): array {
+            $startsAt = $model->gameTable?->starts_at;
+            if ($startsAt === null) {
+                return [1, PHP_INT_MAX]; // Tables without date go last
+            }
+
+            $tableDate = new DateTimeImmutable($startsAt->toDateTimeString());
+            $isUpcoming = $tableDate > $now;
+            $diff = abs($tableDate->getTimestamp() - $now->getTimestamp());
+
+            // Upcoming (0) before past (1), then by distance from now
+            return [$isUpcoming ? 0 : 1, $diff];
+        })->values();
+
+        return $sorted->map(function (ParticipantModel $model): array {
+            $gameTable = $model->gameTable;
+            $gameSystem = $gameTable?->gameSystem;
+
+            return [
+                'participant' => $this->toEntity($model),
+                'game_table_id' => $gameTable?->id ?? '',
+                'game_table_title' => $gameTable?->title ?? '',
+                'game_table_slug' => $gameTable?->slug ?? '',
+                'game_table_starts_at' => $gameTable?->starts_at !== null
+                    ? new DateTimeImmutable($gameTable->starts_at->toDateTimeString())
+                    : null,
+                'game_system_name' => $gameSystem?->name ?? '',
+            ];
+        })->all();
+    }
 }

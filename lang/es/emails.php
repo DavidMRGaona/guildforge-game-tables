@@ -95,4 +95,25 @@ return [
         'table_location' => 'Ubicación',
         'outro' => 'Disculpa las molestias. Esperamos verte en futuras partidas.',
     ],
+
+    'confirmation' => [
+        'subject' => 'Inscripción confirmada: :tableTitle',
+        'greeting' => 'Hola :name,',
+        'intro' => 'Tu inscripción en la mesa :tableTitle ha sido confirmada.',
+        'table_title' => 'Mesa',
+        'table_date' => 'Fecha',
+        'table_location' => 'Ubicación',
+        'view_table' => 'Ver mesa',
+        'outro' => '¡Nos vemos en la partida!',
+    ],
+
+    'rejection' => [
+        'subject' => 'Inscripción rechazada: :tableTitle',
+        'greeting' => 'Hola :name,',
+        'intro' => 'Lamentamos informarte que tu inscripción en la mesa :tableTitle ha sido rechazada.',
+        'table_title' => 'Mesa',
+        'table_date' => 'Fecha',
+        'table_location' => 'Ubicación',
+        'outro' => 'Esperamos verte en futuras partidas.',
+    ],
 ];

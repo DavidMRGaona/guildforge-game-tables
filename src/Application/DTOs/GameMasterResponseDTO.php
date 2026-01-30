@@ -20,11 +20,11 @@ final readonly class GameMasterResponseDTO
         public bool $isNamePublic,
     ) {}
 
-    public static function fromModel(GameMasterModel $model): self
+    public static function fromModel(GameMasterModel $model, string $gameTableId): self
     {
         return new self(
             id: $model->id,
-            gameTableId: $model->game_table_id,
+            gameTableId: $gameTableId,
             userId: $model->user_id,
             displayName: $model->display_name,
             role: $model->role,

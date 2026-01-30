@@ -188,7 +188,7 @@ final class GameTableQueryService implements GameTableQueryServiceInterface
         ))->all();
 
         $gameMasters = $table->gameMasters->map(
-            fn (GameMasterModel $gm) => GameMasterResponseDTO::fromModel($gm)
+            fn (GameMasterModel $gm) => GameMasterResponseDTO::fromModel($gm, $table->id)
         )->all();
 
         return new GameTableResponseDTO(
