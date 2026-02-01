@@ -7,6 +7,7 @@ namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories;
 use DateTimeImmutable;
 use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
+use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Exceptions\CampaignNotFoundException;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
@@ -157,6 +158,7 @@ final readonly class EloquentCampaignRepository implements CampaignRepositoryInt
             gameSystemId: new GameSystemId($model->game_system_id),
             createdBy: $model->created_by,
             title: $model->title,
+            slug: $model->slug ?? '',
             status: $model->status,
             description: $model->description,
             frequency: $model->frequency,
@@ -164,7 +166,10 @@ final readonly class EloquentCampaignRepository implements CampaignRepositoryInt
             currentSession: $model->current_session,
             acceptsNewPlayers: $model->accepts_new_players,
             maxPlayers: $model->max_players,
+            imagePublicId: $model->image_public_id,
             isPublished: $model->is_published,
+            frontendCreationStatus: $model->frontend_creation_status,
+            moderationNotes: $model->moderation_notes,
             createdAt: $model->created_at !== null
                 ? new DateTimeImmutable($model->created_at->toDateTimeString())
                 : null,
@@ -184,6 +189,7 @@ final readonly class EloquentCampaignRepository implements CampaignRepositoryInt
             'game_system_id' => $campaign->gameSystemId->value,
             'created_by' => $campaign->createdBy,
             'title' => $campaign->title,
+            'slug' => $campaign->slug,
             'description' => $campaign->description,
             'frequency' => $campaign->frequency?->value,
             'status' => $campaign->status->value,
@@ -191,7 +197,10 @@ final readonly class EloquentCampaignRepository implements CampaignRepositoryInt
             'current_session' => $campaign->currentSession,
             'accepts_new_players' => $campaign->acceptsNewPlayers,
             'max_players' => $campaign->maxPlayers,
+            'image_public_id' => $campaign->imagePublicId,
             'is_published' => $campaign->isPublished,
+            'frontend_creation_status' => $campaign->frontendCreationStatus?->value,
+            'moderation_notes' => $campaign->moderationNotes,
         ];
     }
 }

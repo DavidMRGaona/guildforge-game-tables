@@ -7,6 +7,7 @@ namespace Modules\GameTables\Domain\Entities;
 use DateTimeImmutable;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
+use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\RegistrationType;
 use Modules\GameTables\Domain\Enums\SafetyTool;
@@ -64,7 +65,10 @@ final class GameTable
         public ?DateTimeImmutable $publishedAt = null,
         public ?string $notes = null,
         public ?string $imagePublicId = null,
+        public ?FrontendCreationStatus $frontendCreationStatus = null,
+        public ?string $moderationNotes = null,
         public ?DateTimeImmutable $createdAt = null,
+        public ?DateTimeImmutable $updatedAt = null,
     ) {
     }
 
@@ -311,5 +315,48 @@ final class GameTable
     public function linkToCampaign(?CampaignId $campaignId): void
     {
         $this->campaignId = $campaignId;
+    }
+
+    public function setFrontendCreationStatus(FrontendCreationStatus $status, ?string $notes = null): void
+    {
+        $this->frontendCreationStatus = $status;
+        if ($notes !== null) {
+            $this->moderationNotes = $notes;
+        }
+    }
+
+    public function approveFrontendCreation(?string $notes = null): void
+    {
+        $this->frontendCreationStatus = FrontendCreationStatus::Approved;
+        if ($notes !== null) {
+            $this->moderationNotes = $notes;
+        }
+    }
+
+    public function rejectFrontendCreation(string $reason): void
+    {
+        $this->frontendCreationStatus = FrontendCreationStatus::Rejected;
+        $this->moderationNotes = $reason;
+    }
+
+    public function submitForModeration(): void
+    {
+        $this->frontendCreationStatus = FrontendCreationStatus::PendingReview;
+    }
+
+    public function isCreatedFromFrontend(): bool
+    {
+        return $this->frontendCreationStatus !== null;
+    }
+
+    public function isPendingModeration(): bool
+    {
+        return $this->frontendCreationStatus !== null && $this->frontendCreationStatus->isPending();
+    }
+
+    public function canEditAsDraft(): bool
+    {
+        return $this->frontendCreationStatus === null
+            || $this->frontendCreationStatus->canEdit();
     }
 }

@@ -25,6 +25,8 @@ return new class extends Migration
             $table->integer('max_players')->nullable();
             $table->string('image_public_id')->nullable();
             $table->boolean('is_published')->default(false);
+            $table->string('frontend_creation_status')->nullable()->index();
+            $table->text('moderation_notes')->nullable();
             $table->timestamps();
 
             // Indexes

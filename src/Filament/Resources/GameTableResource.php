@@ -22,6 +22,8 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Filament\Notifications\Notification;
+use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Tables\Actions\EditAction;
@@ -30,8 +32,11 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Collection;
+use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
+use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Filament\Forms\Components\GameMasterRepeater;
 use Modules\GameTables\Domain\Enums\RegistrationType;
@@ -450,6 +455,14 @@ final class GameTableResource extends BaseResource
                     ->label(__('game-tables::messages.fields.is_published'))
                     ->boolean(),
 
+                IconColumn::make('frontend_creation_status')
+                    ->label(__('game-tables::messages.fields.created_from_web'))
+                    ->icon(fn (?FrontendCreationStatus $state): ?string => $state?->icon())
+                    ->color(fn (?FrontendCreationStatus $state): ?string => $state?->color())
+                    ->tooltip(fn (?FrontendCreationStatus $state): ?string => $state?->label())
+                    ->visible(fn (): bool => true)
+                    ->toggleable(isToggledHiddenByDefault: false),
+
                 TextColumn::make('created_at')
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
@@ -467,6 +480,9 @@ final class GameTableResource extends BaseResource
                     ->options(GameSystemModel::query()->where('is_active', true)->pluck('name', 'id')),
                 TernaryFilter::make('is_published')
                     ->label(__('game-tables::messages.fields.is_published')),
+                SelectFilter::make('frontend_creation_status')
+                    ->label(__('game-tables::messages.fields.frontend_creation_status'))
+                    ->options(FrontendCreationStatus::options()),
             ])
             ->actions([
                 EditAction::make(),
@@ -474,6 +490,59 @@ final class GameTableResource extends BaseResource
             ->bulkActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
+                    BulkAction::make('approve')
+                        ->label(__('game-tables::messages.bulk_actions.approve'))
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->action(function (Collection $records): void {
+                            $service = app(FrontendCreationServiceInterface::class);
+                            $approvedCount = 0;
+
+                            foreach ($records as $record) {
+                                if ($record->frontend_creation_status !== null
+                                    && $record->frontend_creation_status !== FrontendCreationStatus::Approved
+                                ) {
+                                    $service->approveFrontendCreation($record->id);
+                                    $approvedCount++;
+                                }
+                            }
+
+                            Notification::make()
+                                ->title(__('game-tables::messages.bulk_actions.approved_count', ['count' => $approvedCount]))
+                                ->success()
+                                ->send();
+                        })
+                        ->deselectRecordsAfterCompletion(),
+                    BulkAction::make('reject')
+                        ->label(__('game-tables::messages.bulk_actions.reject'))
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->form([
+                            Textarea::make('reason')
+                                ->label(__('game-tables::messages.fields.rejection_reason'))
+                                ->required(),
+                        ])
+                        ->action(function (Collection $records, array $data): void {
+                            $service = app(FrontendCreationServiceInterface::class);
+                            $rejectedCount = 0;
+
+                            foreach ($records as $record) {
+                                if ($record->frontend_creation_status !== null
+                                    && $record->frontend_creation_status !== FrontendCreationStatus::Rejected
+                                ) {
+                                    $service->rejectFrontendCreation($record->id, $data['reason']);
+                                    $rejectedCount++;
+                                }
+                            }
+
+                            Notification::make()
+                                ->title(__('game-tables::messages.bulk_actions.rejected_count', ['count' => $rejectedCount]))
+                                ->success()
+                                ->send();
+                        })
+                        ->deselectRecordsAfterCompletion(),
                 ]),
             ])
             ->defaultSort('starts_at', 'desc');

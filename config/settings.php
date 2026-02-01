@@ -28,4 +28,14 @@ return array (
     'max_spectators_limit' => 50,
     'max_duration_minutes' => 720,
   ),
+  'frontend_creation' => 
+  array (
+    'enabled' => true,
+    'allowed_content' => 'both',
+    'access_level' => 'registered',
+    'publication' => 
+    array (
+      'mode' => 'approval',
+    ),
+  ),
 );

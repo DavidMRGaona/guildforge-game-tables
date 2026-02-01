@@ -14,6 +14,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 
@@ -197,6 +198,73 @@ final class GameTablesSettings extends Page implements HasForms
                         ->required(),
                 ])
                 ->columns(3),
+
+            Section::make(__('game-tables::messages.settings.sections.frontend_creation'))
+                ->description(__('game-tables::messages.settings.sections.frontend_creation_description'))
+                ->schema([
+                    Toggle::make('frontend_creation.enabled')
+                        ->label(__('game-tables::messages.settings.fields.frontend_creation_enabled'))
+                        ->helperText(__('game-tables::messages.settings.fields.frontend_creation_enabled_help'))
+                        ->default(false)
+                        ->live(),
+
+                    Select::make('frontend_creation.allowed_content')
+                        ->label(__('game-tables::messages.settings.fields.allowed_content'))
+                        ->options([
+                            'tables' => __('game-tables::messages.settings.allowed_content.tables'),
+                            'campaigns' => __('game-tables::messages.settings.allowed_content.campaigns'),
+                            'both' => __('game-tables::messages.settings.allowed_content.both'),
+                        ])
+                        ->default('tables')
+                        ->native(false)
+                        ->visible(fn (Get $get): bool => (bool) $get('frontend_creation.enabled')),
+
+                    Select::make('frontend_creation.access_level')
+                        ->label(__('game-tables::messages.settings.fields.access_level'))
+                        ->helperText(__('game-tables::messages.settings.fields.access_level_help'))
+                        ->options([
+                            'everyone' => __('game-tables::messages.settings.access_level.everyone'),
+                            'registered' => __('game-tables::messages.settings.access_level.registered'),
+                            'role' => __('game-tables::messages.settings.access_level.role'),
+                            'permission' => __('game-tables::messages.settings.access_level.permission'),
+                        ])
+                        ->default('registered')
+                        ->native(false)
+                        ->live()
+                        ->visible(fn (Get $get): bool => (bool) $get('frontend_creation.enabled')),
+
+                    TextInput::make('frontend_creation.allowed_roles')
+                        ->label(__('game-tables::messages.settings.fields.allowed_roles'))
+                        ->helperText(__('game-tables::messages.settings.fields.allowed_roles_help'))
+                        ->placeholder('socio, colaborador')
+                        ->visible(fn (Get $get): bool =>
+                            (bool) $get('frontend_creation.enabled') &&
+                            $get('frontend_creation.access_level') === 'role'
+                        ),
+
+                    TextInput::make('frontend_creation.required_permission')
+                        ->label(__('game-tables::messages.settings.fields.required_permission'))
+                        ->helperText(__('game-tables::messages.settings.fields.required_permission_help'))
+                        ->placeholder('gametables:create')
+                        ->visible(fn (Get $get): bool =>
+                            (bool) $get('frontend_creation.enabled') &&
+                            $get('frontend_creation.access_level') === 'permission'
+                        ),
+
+                    Select::make('frontend_creation.publication.mode')
+                        ->label(__('game-tables::messages.settings.fields.publication_mode'))
+                        ->helperText(__('game-tables::messages.settings.fields.publication_mode_help'))
+                        ->options([
+                            'auto' => __('game-tables::messages.settings.publication_mode.auto'),
+                            'approval' => __('game-tables::messages.settings.publication_mode.approval'),
+                            'role_based' => __('game-tables::messages.settings.publication_mode.role_based'),
+                        ])
+                        ->default('approval')
+                        ->native(false)
+                        ->visible(fn (Get $get): bool => (bool) $get('frontend_creation.enabled')),
+                ])
+                ->columns(2)
+                ->collapsible(),
         ];
     }
 

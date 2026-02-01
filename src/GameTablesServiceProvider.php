@@ -14,8 +14,10 @@ use App\Modules\ModuleServiceProvider;
 use Illuminate\Support\Facades\Event;
 use Inertia\Inertia;
 use Modules\GameTables\Application\Services\CampaignQueryServiceInterface;
+use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
 use Modules\GameTables\Application\Services\EligibilityServiceInterface;
 use Modules\GameTables\Application\Services\EventWithTablesQueryInterface;
+use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Application\Services\GameMasterServiceInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
@@ -46,11 +48,14 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\Eloquent
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentGameTableRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentParticipantRepository;
 use Modules\GameTables\Infrastructure\Services\CampaignQueryService;
+use Modules\GameTables\Infrastructure\Services\CreationEligibilityService;
 use Modules\GameTables\Infrastructure\Services\EligibilityService;
 use Modules\GameTables\Infrastructure\Services\EventWithTablesQuery;
+use Modules\GameTables\Infrastructure\Services\FrontendCreationService;
 use Modules\GameTables\Infrastructure\Services\GameMasterService;
 use Modules\GameTables\Infrastructure\Services\GameTableQueryService;
 use Modules\GameTables\Infrastructure\Services\GameTableService;
+use Modules\GameTables\Infrastructure\Services\ProfileCreatedTablesDataProvider;
 use Modules\GameTables\Infrastructure\Services\ProfileGameTablesDataProvider;
 use Modules\GameTables\Infrastructure\Services\RegistrationService;
 use Modules\GameTables\Listeners\SendCancellationConfirmation;
@@ -85,6 +90,8 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         // Service bindings
         $this->app->bind(GameTableServiceInterface::class, GameTableService::class);
         $this->app->bind(EligibilityServiceInterface::class, EligibilityService::class);
+        $this->app->bind(CreationEligibilityServiceInterface::class, CreationEligibilityService::class);
+        $this->app->bind(FrontendCreationServiceInterface::class, FrontendCreationService::class);
         $this->app->bind(RegistrationServiceInterface::class, RegistrationService::class);
         $this->app->bind(EventWithTablesQueryInterface::class, EventWithTablesQuery::class);
         $this->app->bind(GameMasterServiceInterface::class, GameMasterService::class);
@@ -103,6 +110,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         $this->registerCommands();
         $this->shareGameTableCount();
         $this->shareProfileGameTables();
+        $this->shareProfileCreatedTables();
     }
 
     /**
@@ -142,6 +150,49 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
             }
 
             $provider = app(ProfileGameTablesDataProvider::class);
+            $data = $provider->getDataForUser($user->id);
+
+            return $data['total'] ?? 0;
+        });
+    }
+
+    /**
+     * Share profile created tables data via Inertia for the profile page.
+     */
+    private function shareProfileCreatedTables(): void
+    {
+        if (! class_exists(Inertia::class)) {
+            return;
+        }
+
+        Inertia::share('profileCreatedTables', function (): ?array {
+            $route = request()->route();
+            if ($route?->getName() !== 'profile.show') {
+                return null;
+            }
+
+            $user = auth()->user();
+            if ($user === null) {
+                return null;
+            }
+
+            $provider = app(ProfileCreatedTablesDataProvider::class);
+
+            return $provider->getDataForUser($user->id);
+        });
+
+        Inertia::share('profileCreatedTablesTotal', function (): ?int {
+            $route = request()->route();
+            if ($route?->getName() !== 'profile.show') {
+                return null;
+            }
+
+            $user = auth()->user();
+            if ($user === null) {
+                return null;
+            }
+
+            $provider = app(ProfileCreatedTablesDataProvider::class);
             $data = $provider->getDataForUser($user->id);
 
             return $data['total'] ?? 0;
@@ -520,6 +571,19 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                     'icon' => 'dice',
                     'labelKey' => 'gameTables.profile.tabLabel',
                     'badgeKey' => 'profileGameTablesTotal',
+                ],
+            ),
+            new SlotRegistrationDTO(
+                slot: 'profile-sections',
+                component: 'components/profile/ProfileCreatedTablesSection.vue',
+                module: $this->moduleName(),
+                order: 15,
+                props: [],
+                dataKeys: ['profileCreatedTables'],
+                profileTab: [
+                    'icon' => 'pencil-square',
+                    'labelKey' => 'gameTables.profile.created.tabLabel',
+                    'badgeKey' => 'profileCreatedTablesTotal',
                 ],
             ),
         ];

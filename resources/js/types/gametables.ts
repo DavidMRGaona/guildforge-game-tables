@@ -254,6 +254,31 @@ export interface ProfileGameTablesData {
     total: number;
 }
 
+export interface ProfileCreatedTable {
+    id: string;
+    title: string;
+    slug: string | null;
+    gameSystemName: string;
+    startsAt: string | null;
+    status: string;
+    statusLabel: string;
+    statusColor: string;
+    isPublished: boolean;
+    tableFormat: string;
+    tableFormatLabel: string;
+    eventId: string | null;
+    eventTitle: string | null;
+    minPlayers: number;
+    maxPlayers: number;
+    currentPlayers: number;
+}
+
+export interface ProfileCreatedTablesData {
+    tables: ProfileCreatedTable[];
+    drafts: ProfileCreatedTable[];
+    total: number;
+}
+
 // Re-export registration types for convenience
 export type { EligibilityResponse, ParticipantData } from './registration';
 

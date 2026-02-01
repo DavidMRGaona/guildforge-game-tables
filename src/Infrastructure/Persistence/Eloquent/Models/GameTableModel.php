@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
+use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\RegistrationType;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableStatus;
@@ -61,6 +62,8 @@ use App\Infrastructure\Persistence\Eloquent\Concerns\HasSlug;
  * @property string|null $notes
  * @property string|null $notification_email
  * @property string|null $image_public_id
+ * @property FrontendCreationStatus|null $frontend_creation_status
+ * @property string|null $moderation_notes
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
@@ -122,6 +125,8 @@ final class GameTableModel extends Model
         'notes',
         'notification_email',
         'image_public_id',
+        'frontend_creation_status',
+        'moderation_notes',
     ];
 
     /**
@@ -153,6 +158,7 @@ final class GameTableModel extends Model
             'accepts_registrations_in_progress' => 'boolean',
             'is_published' => 'boolean',
             'published_at' => 'datetime',
+            'frontend_creation_status' => FrontendCreationStatus::class,
         ];
     }
 

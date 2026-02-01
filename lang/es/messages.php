@@ -209,6 +209,12 @@ return [
 
         // Image
         'image' => 'Imagen',
+
+        // Moderation fields
+        'frontend_creation_status' => 'Estado de moderación',
+        'moderation_notes' => 'Notas de moderación',
+        'created_from_web' => 'Creado desde web',
+        'rejection_reason' => 'Motivo del rechazo',
     ],
 
     /*
@@ -341,6 +347,18 @@ return [
             'moderate' => 'Moderada',
             'severe' => 'Severa',
         ],
+        'creation_access_level' => [
+            'everyone' => 'Cualquier persona',
+            'registered' => 'Usuarios registrados',
+            'role' => 'Usuarios con rol específico',
+            'permission' => 'Usuarios con permiso',
+        ],
+        'frontend_creation_status' => [
+            'draft' => 'Borrador',
+            'pending_review' => 'Pendiente de revisión',
+            'approved' => 'Aprobada',
+            'rejected' => 'Rechazada',
+        ],
     ],
 
     /*
@@ -379,6 +397,8 @@ return [
             'defaults' => 'Valores por defecto',
             'notifications' => 'Notificaciones',
             'limits' => 'Límites',
+            'frontend_creation' => 'Creación desde web',
+            'frontend_creation_description' => 'Permite que los usuarios creen mesas y campañas desde el frontend público',
         ],
         'fields' => [
             'creators' => 'Quién puede crear mesas',
@@ -400,11 +420,39 @@ return [
             'max_players_limit' => 'Límite máximo de jugadores',
             'max_spectators_limit' => 'Límite máximo de espectadores',
             'max_duration' => 'Duración máxima (minutos)',
+            // Frontend creation fields
+            'frontend_creation_enabled' => 'Habilitar creación desde web',
+            'frontend_creation_enabled_help' => 'Permite que los usuarios creen mesas desde el frontend público',
+            'allowed_content' => 'Contenido permitido',
+            'access_level' => 'Nivel de acceso',
+            'access_level_help' => 'Quién puede crear contenido desde la web',
+            'allowed_roles' => 'Roles permitidos',
+            'allowed_roles_help' => 'Lista de roles separados por coma',
+            'required_permission' => 'Permiso requerido',
+            'required_permission_help' => 'Nombre del permiso necesario para crear',
+            'publication_mode' => 'Modo de publicación',
+            'publication_mode_help' => 'Cómo se publican las mesas creadas por usuarios',
         ],
         'creators' => [
             'admin' => 'Solo administradores',
             'members' => 'Cualquier socio',
             'permission' => 'Usuarios con permiso específico',
+        ],
+        'allowed_content' => [
+            'tables' => 'Solo mesas',
+            'campaigns' => 'Solo campañas',
+            'both' => 'Mesas y campañas',
+        ],
+        'access_level' => [
+            'everyone' => 'Cualquier persona',
+            'registered' => 'Usuarios registrados',
+            'role' => 'Usuarios con rol específico',
+            'permission' => 'Usuarios con permiso específico',
+        ],
+        'publication_mode' => [
+            'auto' => 'Publicación automática',
+            'approval' => 'Requiere aprobación',
+            'role_based' => 'Según el rol del usuario',
         ],
     ],
 
@@ -457,6 +505,13 @@ return [
         'add_game_master' => 'Añadir director de juego',
     ],
 
+    'bulk_actions' => [
+        'approve' => 'Aprobar',
+        'reject' => 'Rechazar',
+        'approved_count' => ':count mesa(s) aprobada(s)',
+        'rejected_count' => ':count mesa(s) rechazada(s)',
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Messages
@@ -486,6 +541,13 @@ return [
             'open_until' => 'Abierta hasta :date',
             'closed' => 'Cerrada',
             'member_early_access' => 'Acceso anticipado para socios activo',
+        ],
+        'frontend' => [
+            'table_created' => 'Mesa creada correctamente',
+            'table_updated' => 'Mesa actualizada correctamente',
+            'table_deleted' => 'Mesa eliminada correctamente',
+            'submitted_for_review' => 'Mesa enviada para revisión',
+            'not_eligible' => 'No tienes permiso para crear mesas',
         ],
     ],
 

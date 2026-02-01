@@ -8,6 +8,7 @@ use DateTimeInterface;
 use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Enums\CampaignFrequency;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
+use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 
 final readonly class CampaignResponseDTO
 {
@@ -38,6 +39,8 @@ final readonly class CampaignResponseDTO
         public array $gameMasters,
         public array $gameTables,
         public bool $hasActiveOrUpcomingTables,
+        public ?FrontendCreationStatus $frontendCreationStatus,
+        public ?string $moderationNotes,
         public ?DateTimeInterface $createdAt,
         public ?DateTimeInterface $updatedAt,
     ) {}
@@ -77,6 +80,8 @@ final readonly class CampaignResponseDTO
             gameMasters: $gameMasters,
             gameTables: $gameTables,
             hasActiveOrUpcomingTables: $hasActiveOrUpcomingTables,
+            frontendCreationStatus: $campaign->frontendCreationStatus,
+            moderationNotes: $campaign->moderationNotes,
             createdAt: $campaign->createdAt,
             updatedAt: $campaign->updatedAt,
         );
@@ -113,6 +118,10 @@ final readonly class CampaignResponseDTO
             'game_masters' => array_map(fn (CampaignGameMasterResponseDTO $gm) => $gm->toArray(), $this->gameMasters),
             'game_tables' => array_map(fn (GameTableListDTO $table) => $table->toArray(), $this->gameTables),
             'has_active_or_upcoming_tables' => $this->hasActiveOrUpcomingTables,
+            'frontend_creation_status' => $this->frontendCreationStatus?->value,
+            'frontend_creation_status_label' => $this->frontendCreationStatus?->label(),
+            'moderation_notes' => $this->moderationNotes,
+            'can_edit' => $this->frontendCreationStatus === null || $this->frontendCreationStatus->canEdit(),
             'created_at' => $this->createdAt?->format('c'),
             'updated_at' => $this->updatedAt?->format('c'),
         ];

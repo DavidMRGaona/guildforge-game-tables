@@ -48,6 +48,8 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->string('notification_email')->nullable();
             $table->string('image_public_id')->nullable();
+            $table->string('frontend_creation_status')->nullable()->index();
+            $table->text('moderation_notes')->nullable();
             $table->timestamps();
 
             // Indexes

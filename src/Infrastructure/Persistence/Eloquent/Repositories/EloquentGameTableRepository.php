@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use Illuminate\Support\Collection;
 use Modules\GameTables\Domain\Entities\GameTable;
+use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Enums\TableStatus;
@@ -277,8 +278,14 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
                 ? new DateTimeImmutable($model->published_at->toDateTimeString())
                 : null,
             notes: $model->notes,
+            imagePublicId: $model->image_public_id,
+            frontendCreationStatus: $model->frontend_creation_status,
+            moderationNotes: $model->moderation_notes,
             createdAt: $model->created_at !== null
                 ? new DateTimeImmutable($model->created_at->toDateTimeString())
+                : null,
+            updatedAt: $model->updated_at !== null
+                ? new DateTimeImmutable($model->updated_at->toDateTimeString())
                 : null,
         );
     }
@@ -328,6 +335,9 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
             'is_published' => $gameTable->isPublished,
             'published_at' => $gameTable->publishedAt,
             'notes' => $gameTable->notes,
+            'image_public_id' => $gameTable->imagePublicId,
+            'frontend_creation_status' => $gameTable->frontendCreationStatus?->value,
+            'moderation_notes' => $gameTable->moderationNotes,
         ];
     }
 }

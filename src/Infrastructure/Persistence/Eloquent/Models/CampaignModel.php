@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Modules\GameTables\Domain\Enums\CampaignFrequency;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
+use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use App\Infrastructure\Persistence\Eloquent\Concerns\HasSlug;
 
 /**
@@ -30,6 +31,8 @@ use App\Infrastructure\Persistence\Eloquent\Concerns\HasSlug;
  * @property int|null $max_players
  * @property string|null $image_public_id
  * @property bool $is_published
+ * @property FrontendCreationStatus|null $frontend_creation_status
+ * @property string|null $moderation_notes
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
@@ -68,6 +71,8 @@ final class CampaignModel extends Model
         'max_players',
         'image_public_id',
         'is_published',
+        'frontend_creation_status',
+        'moderation_notes',
     ];
 
     /**
@@ -83,6 +88,7 @@ final class CampaignModel extends Model
             'accepts_new_players' => 'boolean',
             'max_players' => 'integer',
             'is_published' => 'boolean',
+            'frontend_creation_status' => FrontendCreationStatus::class,
         ];
     }
 
