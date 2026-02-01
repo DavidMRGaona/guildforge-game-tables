@@ -58,24 +58,24 @@ const formattedTime = computed(() => {
 <template>
     <Link
         :href="tableUrl"
-        class="group block rounded-lg border border-stone-200 bg-white p-4 transition-all hover:border-amber-300 hover:shadow-sm dark:border-stone-700 dark:bg-stone-800 dark:hover:border-amber-600"
+        class="group block rounded-lg border border-default bg-surface p-4 transition-all hover:border-primary-300 hover:shadow-sm dark:hover:border-primary"
     >
         <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <!-- Left: Title and details -->
             <div class="min-w-0 flex-1">
                 <h4
-                    class="truncate text-base font-medium text-stone-900 group-hover:text-amber-600 dark:text-stone-100 dark:group-hover:text-amber-500"
+                    class="truncate text-base font-medium text-base-primary group-hover:text-primary"
                 >
                     {{ participation.gameTableTitle }}
                 </h4>
-                <p class="mt-0.5 text-sm text-amber-600 dark:text-amber-500">
+                <p class="mt-0.5 text-sm text-primary">
                     {{ participation.gameSystemName }}
                 </p>
 
                 <!-- Date and time -->
                 <div
                     v-if="formattedDate"
-                    class="mt-2 flex items-center gap-1.5 text-sm text-stone-500 dark:text-stone-400"
+                    class="mt-2 flex items-center gap-1.5 text-sm text-base-muted"
                 >
                     <svg
                         class="h-4 w-4 shrink-0"

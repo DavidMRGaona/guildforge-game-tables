@@ -126,7 +126,7 @@ function getFilterLabel(
         <div class="space-y-3">
             <!-- Status filter -->
             <div>
-                <span class="mb-2 block text-xs font-medium uppercase tracking-wider text-stone-500 dark:text-stone-400">
+                <span class="mb-2 block text-xs font-medium uppercase tracking-wider text-base-muted">
                     {{ t('gameTables.profile.filters.status') }}
                 </span>
                 <div class="flex flex-wrap gap-2">
@@ -137,8 +137,8 @@ function getFilterLabel(
                         :class="[
                             'rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
                             isSelected('statuses', option.value)
-                                ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
-                                : 'bg-stone-100 text-stone-600 hover:bg-stone-200 dark:bg-stone-700 dark:text-stone-300 dark:hover:bg-stone-600',
+                                ? 'bg-primary-light text-primary-800 dark:text-primary-300'
+                                : 'bg-muted text-base-secondary hover:bg-stone-200 dark:hover:bg-stone-600',
                         ]"
                         @click="toggleFilter('statuses', option.value)"
                     >
@@ -149,7 +149,7 @@ function getFilterLabel(
 
             <!-- Role filter -->
             <div>
-                <span class="mb-2 block text-xs font-medium uppercase tracking-wider text-stone-500 dark:text-stone-400">
+                <span class="mb-2 block text-xs font-medium uppercase tracking-wider text-base-muted">
                     {{ t('gameTables.profile.filters.role') }}
                 </span>
                 <div class="flex flex-wrap gap-2">
@@ -160,8 +160,8 @@ function getFilterLabel(
                         :class="[
                             'rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
                             isSelected('roles', option.value)
-                                ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
-                                : 'bg-stone-100 text-stone-600 hover:bg-stone-200 dark:bg-stone-700 dark:text-stone-300 dark:hover:bg-stone-600',
+                                ? 'bg-primary-light text-primary-800 dark:text-primary-300'
+                                : 'bg-muted text-base-secondary hover:bg-stone-200 dark:hover:bg-stone-600',
                         ]"
                         @click="toggleFilter('roles', option.value)"
                     >
@@ -172,7 +172,7 @@ function getFilterLabel(
 
             <!-- Game system filter (only show if there are multiple systems) -->
             <div v-if="systemOptions.length > 1">
-                <span class="mb-2 block text-xs font-medium uppercase tracking-wider text-stone-500 dark:text-stone-400">
+                <span class="mb-2 block text-xs font-medium uppercase tracking-wider text-base-muted">
                     {{ t('gameTables.profile.filters.gameSystem') }}
                 </span>
                 <div class="flex flex-wrap gap-2">
@@ -183,8 +183,8 @@ function getFilterLabel(
                         :class="[
                             'rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
                             isSelected('systems', option.value)
-                                ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
-                                : 'bg-stone-100 text-stone-600 hover:bg-stone-200 dark:bg-stone-700 dark:text-stone-300 dark:hover:bg-stone-600',
+                                ? 'bg-primary-light text-primary-800 dark:text-primary-300'
+                                : 'bg-muted text-base-secondary hover:bg-stone-200 dark:hover:bg-stone-600',
                         ]"
                         @click="toggleFilter('systems', option.value)"
                     >
@@ -195,8 +195,8 @@ function getFilterLabel(
         </div>
 
         <!-- Active filters pills -->
-        <div v-if="hasActiveFilters" class="flex flex-wrap items-center gap-2 border-t border-stone-200 pt-3 dark:border-stone-700">
-            <span class="text-xs text-stone-500 dark:text-stone-400">
+        <div v-if="hasActiveFilters" class="flex flex-wrap items-center gap-2 border-t border-default pt-3">
+            <span class="text-xs text-base-muted">
                 {{ t('gameTables.profile.filters.active', activeFilterCount) }}:
             </span>
 
@@ -205,7 +205,7 @@ function getFilterLabel(
                 v-for="status in modelValue.statuses"
                 :key="`status-${status}`"
                 type="button"
-                class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800 transition-colors hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:hover:bg-amber-900/60"
+                class="inline-flex items-center gap-1 rounded-full bg-primary-light px-2 py-1 text-xs font-medium text-primary-800 transition-colors hover:bg-primary-200 dark:text-primary-300 dark:hover:bg-primary-900/60"
                 :aria-label="t('gameTables.filters.removeFilter')"
                 @click="removeFilter('statuses', status)"
             >
@@ -220,7 +220,7 @@ function getFilterLabel(
                 v-for="role in modelValue.roles"
                 :key="`role-${role}`"
                 type="button"
-                class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800 transition-colors hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:hover:bg-amber-900/60"
+                class="inline-flex items-center gap-1 rounded-full bg-primary-light px-2 py-1 text-xs font-medium text-primary-800 transition-colors hover:bg-primary-200 dark:text-primary-300 dark:hover:bg-primary-900/60"
                 :aria-label="t('gameTables.filters.removeFilter')"
                 @click="removeFilter('roles', role)"
             >
@@ -235,7 +235,7 @@ function getFilterLabel(
                 v-for="system in modelValue.systems"
                 :key="`system-${system}`"
                 type="button"
-                class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800 transition-colors hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:hover:bg-amber-900/60"
+                class="inline-flex items-center gap-1 rounded-full bg-primary-light px-2 py-1 text-xs font-medium text-primary-800 transition-colors hover:bg-primary-200 dark:text-primary-300 dark:hover:bg-primary-900/60"
                 :aria-label="t('gameTables.filters.removeFilter')"
                 @click="removeFilter('systems', system)"
             >
@@ -248,7 +248,7 @@ function getFilterLabel(
             <!-- Clear all button -->
             <button
                 type="button"
-                class="text-xs text-stone-500 underline transition-colors hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-300"
+                class="text-xs text-base-muted underline transition-colors hover:text-base-secondary"
                 @click="clearAllFilters"
             >
                 {{ t('gameTables.filters.clearAll') }}

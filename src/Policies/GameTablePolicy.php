@@ -30,8 +30,22 @@ final class GameTablePolicy
 
     public function update(UserModel $user, GameTableModel $gameTable): bool
     {
-        return $this->authorize($user, 'gametables:gametables.update')
-            || $gameTable->created_by === $user->id;
+        // Admin with permission can update any table
+        if ($this->authorize($user, 'gametables:gametables.update')) {
+            return true;
+        }
+
+        // Owner can update only if the frontend creation status allows it
+        return $gameTable->created_by === $user->id
+            && ($gameTable->frontend_creation_status === null
+                || $gameTable->frontend_creation_status->canEdit());
+    }
+
+    public function submitForReview(UserModel $user, GameTableModel $gameTable): bool
+    {
+        return $gameTable->created_by === $user->id
+            && $gameTable->frontend_creation_status !== null
+            && $gameTable->frontend_creation_status->canSubmitForReview();
     }
 
     public function delete(UserModel $user, GameTableModel $gameTable): bool

@@ -311,4 +311,12 @@ final class GameTableModel extends Model
     {
         return 'game_table';
     }
+
+    /**
+     * Get the route key name for route model binding.
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
 }

@@ -359,6 +359,27 @@ return [
             'approved' => 'Aprobada',
             'rejected' => 'Rechazada',
         ],
+        'language' => [
+            'es' => 'Español',
+            'en' => 'Inglés',
+            'ca' => 'Catalán',
+            'eu' => 'Euskera',
+            'gl' => 'Gallego',
+        ],
+        'scheduling_mode' => [
+            'free' => 'Horario libre',
+            'free_description' => 'Las mesas pueden programarse en cualquier momento durante el evento',
+            'slots' => 'Por turnos',
+            'slots_description' => 'Las mesas se asignan a turnos predefinidos',
+        ],
+        'location_mode' => [
+            'free' => 'Elección libre',
+            'free_description' => 'El creador de la mesa elige la ubicación',
+            'fixed' => 'Ubicación fija',
+            'fixed_description' => 'Todas las mesas usan una ubicación predefinida',
+            'event' => 'Ubicación del evento',
+            'event_description' => 'Las mesas usan la ubicación del evento',
+        ],
     ],
 
     /*
@@ -381,6 +402,12 @@ return [
         'popular_systems' => [
             'title' => 'Sistemas populares',
             'no_data' => 'Sin datos disponibles',
+        ],
+        'pending_moderation' => [
+            'title' => 'Mesas pendientes de moderación',
+            'count' => ':count mesa(s) pendiente(s)',
+            'no_pending' => 'No hay mesas pendientes de revisión',
+            'view_all' => 'Ver todas',
         ],
     ],
 
@@ -503,6 +530,7 @@ return [
         'cancel_confirm' => 'Sí, cancelar mesa',
         'create_publisher' => 'Crear editorial',
         'add_game_master' => 'Añadir director de juego',
+        'view' => 'Ver',
     ],
 
     'bulk_actions' => [
@@ -510,6 +538,22 @@ return [
         'reject' => 'Rechazar',
         'approved_count' => ':count mesa(s) aprobada(s)',
         'rejected_count' => ':count mesa(s) rechazada(s)',
+    ],
+
+    'table_tabs' => [
+        'all' => 'Todas',
+        'pending_moderation' => 'Pendientes de moderación',
+    ],
+
+    'moderation' => [
+        'approve' => 'Aprobar',
+        'reject' => 'Rechazar',
+        'approve_confirmation' => '¿Aprobar esta mesa?',
+        'approve_description' => 'La mesa será publicada y visible para todos los usuarios.',
+        'reject_confirmation' => '¿Rechazar esta mesa?',
+        'reject_description' => 'El creador será notificado del rechazo con el motivo indicado.',
+        'rejection_reason' => 'Motivo del rechazo',
+        'rejection_reason_placeholder' => 'Explica por qué se rechaza esta mesa...',
     ],
 
     /*
@@ -548,6 +592,7 @@ return [
             'table_deleted' => 'Mesa eliminada correctamente',
             'submitted_for_review' => 'Mesa enviada para revisión',
             'not_eligible' => 'No tienes permiso para crear mesas',
+            'cannot_edit_pending_review' => 'No puedes editar una mesa que está pendiente de revisión',
         ],
     ],
 
@@ -587,6 +632,8 @@ return [
     */
     'notifications' => [
         'table_cancelled' => 'Mesa cancelada correctamente',
+        'table_approved' => 'Mesa aprobada correctamente',
+        'table_rejected' => 'Mesa rechazada correctamente',
     ],
 
     /*
@@ -603,6 +650,13 @@ return [
         'email_invalid' => 'El email no es válido',
         'phone_max' => 'El teléfono no puede superar los 20 caracteres',
         'gdpr_consent_required' => 'Debes aceptar la política de privacidad para continuar',
+        'title_required' => 'El título es obligatorio',
+        'title_min' => 'El título debe tener al menos 5 caracteres',
+        'starts_at_future' => 'La fecha de inicio debe ser posterior a ahora',
+        'max_players_gte_min' => 'El máximo de jugadores debe ser mayor o igual al mínimo',
+        'language_required' => 'El idioma es obligatorio',
+        'experience_level_required' => 'El nivel de experiencia es obligatorio',
+        'character_creation_required' => 'El tipo de creación de personajes es obligatorio',
     ],
 
     /*
@@ -633,4 +687,61 @@ return [
         'everyone' => 'Abierto a todos',
         'members_only' => 'Solo socios',
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Event Game Table Configuration
+    |--------------------------------------------------------------------------
+    */
+    'event_config' => [
+        'title' => 'Configuración de mesas',
+        'general' => 'General',
+        'tables_enabled' => 'Habilitar mesas para este evento',
+        'tables_enabled_help' => 'Permite que se creen mesas de juego dentro de este evento',
+
+        // Scheduling
+        'scheduling' => 'Programación',
+        'scheduling_mode' => 'Modo de programación',
+        'time_slots' => 'Turnos',
+        'time_slot_label' => 'Nombre del turno',
+        'start_time' => 'Hora de inicio',
+        'end_time' => 'Hora de fin',
+        'max_tables' => 'Máximo de mesas',
+
+        // Location
+        'location' => 'Ubicación',
+        'location_mode' => 'Modo de ubicación',
+        'fixed_location' => 'Ubicación fija',
+        'fixed_location_help' => 'Todas las mesas se ubicarán aquí',
+
+        // Eligibility override
+        'eligibility_override' => 'Sobrescribir elegibilidad',
+        'eligibility_override_description' => 'Permite sobrescribir la configuración global de quién puede crear mesas',
+        'eligibility_override_enabled' => 'Usar configuración de evento',
+        'eligibility_override_enabled_help' => 'Ignora la configuración global para este evento',
+        'eligibility_access_level' => 'Nivel de acceso',
+        'eligibility_allowed_roles' => 'Roles permitidos',
+        'eligibility_required_permission' => 'Permiso requerido',
+        'eligibility_required_permission_help' => 'Nombre del permiso necesario para crear mesas en este evento',
+
+        // Early access
+        'early_access' => 'Acceso anticipado',
+        'early_access_description' => 'Permite que ciertos usuarios creen mesas antes de la fecha de apertura general',
+        'early_access_enabled' => 'Habilitar acceso anticipado',
+        'early_access_enabled_help' => 'Los usuarios con roles/permisos especiales podrán crear mesas antes que los demás',
+        'creation_opens_at' => 'Fecha de apertura general',
+        'creation_opens_at_help' => 'Fecha a partir de la cual todos los usuarios elegibles pueden crear mesas',
+        'early_access_type' => 'Tipo de acceso anticipado',
+        'early_access_roles' => 'Roles con acceso anticipado',
+        'early_access_roles_help' => 'Usuarios con estos roles podrán crear mesas antes',
+        'early_access_permission' => 'Permiso de acceso anticipado',
+        'early_access_permission_help' => 'Usuarios con este permiso podrán crear mesas antes',
+        'early_access_days_before' => 'Días de ventaja',
+        'early_access_days_before_help' => 'Número de días antes de la apertura general que pueden crear mesas',
+
+        // Actions
+        'save' => 'Guardar configuración',
+        'saved' => 'Configuración guardada',
+    ],
+
 ];

@@ -192,7 +192,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
             <div class="mb-6">
                 <Link
                     href="/mesas"
-                    class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:text-stone-400 dark:hover:text-stone-300 dark:focus:ring-offset-stone-900"
+                    class="inline-flex items-center text-sm text-base-muted hover:text-base-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-page"
                 >
                     <svg
                         class="mr-1 h-4 w-4"
@@ -213,7 +213,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
             </div>
 
             <article
-                class="overflow-hidden rounded-lg bg-white shadow dark:bg-stone-800 dark:shadow-stone-900/50"
+                class="overflow-hidden rounded-lg bg-surface shadow dark:shadow-neutral-900/50"
             >
                 <!-- Game Table Image -->
                 <div v-if="imageUrl" class="relative">
@@ -241,37 +241,37 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                                 size="md"
                             />
                             <span
-                                class="rounded-full bg-stone-100 px-3 py-1 text-sm font-medium text-stone-700 dark:bg-stone-700 dark:text-stone-300"
+                                class="rounded-full bg-muted px-3 py-1 text-sm font-medium text-base-secondary"
                             >
                                 {{ table.tableTypeLabel }}
                             </span>
                         </div>
 
                         <h1
-                            class="mb-4 text-3xl font-bold text-gray-900 sm:text-4xl dark:text-stone-100"
+                            class="mb-4 text-3xl font-bold text-base-primary sm:text-4xl"
                         >
                             {{ table.title }}
                         </h1>
 
-                        <p class="text-xl font-medium text-amber-600 dark:text-amber-500">
+                        <p class="text-xl font-medium text-primary">
                             {{ table.gameSystemName }}
                         </p>
                     </div>
 
                     <!-- Section 2: Key Information -->
                     <div
-                        class="mb-6 rounded-lg bg-stone-50 p-4 dark:bg-stone-900/30"
+                        class="mb-6 rounded-lg bg-muted p-4"
                     >
                         <h2 class="sr-only">{{ t('gameTables.details.gameSystem') }}</h2>
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <!-- Date and Time -->
                             <div>
-                                <h3 class="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                                <h3 class="mb-1 text-sm font-semibold text-base-primary">
                                     {{ t('gameTables.dateAndTime') }}
                                 </h3>
-                                <div class="flex items-center text-stone-700 dark:text-stone-300">
+                                <div class="flex items-center text-base-secondary">
                                     <svg
-                                        class="mr-2 h-5 w-5 text-amber-600"
+                                        class="mr-2 h-5 w-5 text-primary"
                                         fill="none"
                                         stroke="currentColor"
                                         viewBox="0 0 24 24"
@@ -293,12 +293,12 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
 
                             <!-- Duration -->
                             <div>
-                                <h3 class="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                                <h3 class="mb-1 text-sm font-semibold text-base-primary">
                                     {{ t('gameTables.duration') }}
                                 </h3>
-                                <div class="flex items-center text-stone-700 dark:text-stone-300">
+                                <div class="flex items-center text-base-secondary">
                                     <svg
-                                        class="mr-2 h-5 w-5 text-amber-600"
+                                        class="mr-2 h-5 w-5 text-primary"
                                         fill="none"
                                         stroke="currentColor"
                                         viewBox="0 0 24 24"
@@ -317,12 +317,12 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
 
                             <!-- Location -->
                             <div>
-                                <h3 class="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                                <h3 class="mb-1 text-sm font-semibold text-base-primary">
                                     {{ t('gameTables.location') }}
                                 </h3>
-                                <div class="flex items-center text-stone-700 dark:text-stone-300">
+                                <div class="flex items-center text-base-secondary">
                                     <svg
-                                        class="mr-2 h-5 w-5 text-amber-600"
+                                        class="mr-2 h-5 w-5 text-primary"
                                         fill="none"
                                         stroke="currentColor"
                                         viewBox="0 0 24 24"
@@ -341,10 +341,10 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
 
                             <!-- Game Masters -->
                             <div>
-                                <h3 class="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                                <h3 class="mb-1 text-sm font-semibold text-base-primary">
                                     {{ t('gameTables.gameMaster') }}
                                 </h3>
-                                <div class="text-stone-700 dark:text-stone-300">
+                                <div class="text-base-secondary">
                                     <!-- When all GMs have the same role, show as a single list -->
                                     <template v-if="allSameRole">
                                         <ul class="space-y-1">
@@ -354,7 +354,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                                                 class="flex items-center"
                                             >
                                                 <svg
-                                                    class="mr-2 h-5 w-5 text-amber-600"
+                                                    class="mr-2 h-5 w-5 text-primary"
                                                     fill="none"
                                                     stroke="currentColor"
                                                     viewBox="0 0 24 24"
@@ -382,7 +382,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                                                 class="flex items-center"
                                             >
                                                 <svg
-                                                    class="mr-2 h-5 w-5 text-amber-600"
+                                                    class="mr-2 h-5 w-5 text-primary"
                                                     fill="none"
                                                     stroke="currentColor"
                                                     viewBox="0 0 24 24"
@@ -417,20 +417,20 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
 
                             <!-- Format -->
                             <div>
-                                <h3 class="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                                <h3 class="mb-1 text-sm font-semibold text-base-primary">
                                     {{ t('gameTables.filters.format') }}
                                 </h3>
-                                <p class="text-stone-700 dark:text-stone-300">
+                                <p class="text-base-secondary">
                                     {{ table.tableFormatLabel }}
                                 </p>
                             </div>
 
                             <!-- Table Type -->
                             <div>
-                                <h3 class="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                                <h3 class="mb-1 text-sm font-semibold text-base-primary">
                                     {{ t('gameTables.tableType') }}
                                 </h3>
-                                <p class="text-stone-700 dark:text-stone-300">
+                                <p class="text-base-secondary">
                                     {{ table.tableTypeLabel }}
                                 </p>
                             </div>
@@ -439,37 +439,37 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
 
                     <!-- Section 3: Capacity -->
                     <div class="mb-6">
-                        <h2 class="mb-4 text-lg font-semibold text-stone-900 dark:text-stone-100">
+                        <h2 class="mb-4 text-lg font-semibold text-base-primary">
                             {{ t('gameTables.capacity') }}
                         </h2>
 
                         <!-- Players -->
                         <div class="mb-4">
                             <div class="mb-2 flex items-center justify-between text-sm">
-                                <span class="text-stone-700 dark:text-stone-300">
+                                <span class="text-base-secondary">
                                     {{ t('gameTables.roles.players') }}
-                                    <span class="text-stone-500 dark:text-stone-400">
+                                    <span class="text-base-muted">
                                         ({{ t('gameTables.playersRequired', { min: table.minPlayers, max: table.maxPlayers }) }})
                                     </span>
                                 </span>
-                                <span class="font-medium text-stone-900 dark:text-stone-100">
+                                <span class="font-medium text-base-primary">
                                     {{ table.currentPlayers }} / {{ table.maxPlayers }}
                                 </span>
                             </div>
-                            <div class="h-2.5 w-full overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700">
+                            <div class="h-2.5 w-full overflow-hidden rounded-full bg-muted">
                                 <div
                                     class="h-full transition-all"
                                     :class="[
                                         playerCapacityPercentage >= 100 ? 'bg-red-500' :
-                                        playerCapacityPercentage >= 75 ? 'bg-amber-500' : 'bg-green-500'
+                                        playerCapacityPercentage >= 75 ? 'bg-warning' : 'bg-success'
                                     ]"
                                     :style="{ width: `${playerCapacityPercentage}%` }"
                                 />
                             </div>
-                            <p v-if="table.spotsAvailable > 0" class="mt-1 text-sm text-green-600 dark:text-green-400">
+                            <p v-if="table.spotsAvailable > 0" class="mt-1 text-sm text-success">
                                 {{ table.spotsAvailable }} {{ t('gameTables.spotsAvailable') }}
                             </p>
-                            <p v-else class="mt-1 text-sm font-medium text-red-600 dark:text-red-400">
+                            <p v-else class="mt-1 text-sm font-medium text-error">
                                 {{ t('gameTables.full') }}
                             </p>
                         </div>
@@ -477,23 +477,23 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                         <!-- Spectators -->
                         <div v-if="table.maxSpectators > 0">
                             <div class="mb-2 flex items-center justify-between text-sm">
-                                <span class="text-stone-700 dark:text-stone-300">
+                                <span class="text-base-secondary">
                                     {{ t('gameTables.roles.spectators') }}
                                 </span>
-                                <span class="font-medium text-stone-900 dark:text-stone-100">
+                                <span class="font-medium text-base-primary">
                                     {{ table.currentSpectators }} / {{ table.maxSpectators }}
                                 </span>
                             </div>
-                            <div class="h-2.5 w-full overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700">
+                            <div class="h-2.5 w-full overflow-hidden rounded-full bg-muted">
                                 <div
-                                    class="h-full bg-blue-500 transition-all"
+                                    class="h-full bg-info transition-all"
                                     :style="{ width: `${spectatorCapacityPercentage}%` }"
                                 />
                             </div>
-                            <p v-if="table.spectatorSpotsAvailable > 0" class="mt-1 text-sm text-blue-600 dark:text-blue-400">
+                            <p v-if="table.spectatorSpotsAvailable > 0" class="mt-1 text-sm text-info">
                                 {{ table.spectatorSpotsAvailable }} {{ t('gameTables.spotsAvailable') }}
                             </p>
-                            <p v-else class="mt-1 text-sm text-stone-500 dark:text-stone-400">
+                            <p v-else class="mt-1 text-sm text-base-muted">
                                 {{ t('gameTables.registration.spectatorsFull') }}
                             </p>
                         </div>
@@ -502,9 +502,9 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                     <!-- Section 4: Registration Info (highlighted blue) -->
                     <div
                         v-if="hasRegistrationInfo"
-                        class="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950/30"
+                        class="mb-6 rounded-lg border border-info bg-info-light p-4"
                     >
-                        <h2 class="mb-3 flex items-center text-lg font-semibold text-blue-900 dark:text-blue-100">
+                        <h2 class="mb-3 flex items-center text-lg font-semibold text-info">
                             <svg
                                 class="mr-2 h-5 w-5"
                                 fill="none"
@@ -522,7 +522,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                             {{ t('gameTables.registration.title') }}
                         </h2>
 
-                        <div class="space-y-2 text-sm text-blue-800 dark:text-blue-200">
+                        <div class="space-y-2 text-sm text-info">
                             <p>
                                 <span class="font-medium">{{ t('gameTables.registrationTypeLabel') || 'Tipo' }}:</span>
                                 {{ table.registrationTypeLabel }}
@@ -540,7 +540,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
 
                             <p
                                 v-if="table.membersEarlyAccessDays > 0"
-                                class="flex items-center font-medium text-blue-700 dark:text-blue-300"
+                                class="flex items-center font-medium text-info"
                             >
                                 <svg
                                     class="mr-1 h-4 w-4"
@@ -563,63 +563,63 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
 
                     <!-- Section 5: Synopsis -->
                     <div v-if="table.synopsis" class="mb-6">
-                        <h2 class="mb-2 text-lg font-semibold text-stone-900 dark:text-stone-100">
+                        <h2 class="mb-2 text-lg font-semibold text-base-primary">
                             {{ t('gameTables.content.synopsis') }}
                         </h2>
-                        <p class="whitespace-pre-line text-stone-700 dark:text-stone-300">
+                        <p class="whitespace-pre-line text-base-secondary">
                             {{ table.synopsis }}
                         </p>
                     </div>
 
                     <!-- Section 6: Details -->
                     <div class="mb-6 space-y-4">
-                        <h2 class="text-lg font-semibold text-stone-900 dark:text-stone-100">
+                        <h2 class="text-lg font-semibold text-base-primary">
                             {{ t('gameTables.details.gameSystem') }}
                         </h2>
 
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <!-- Experience Level -->
                             <div v-if="table.experienceLevelLabel">
-                                <h3 class="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                                <h3 class="mb-1 text-sm font-semibold text-base-primary">
                                     {{ t('gameTables.experienceLevel') }}
                                 </h3>
-                                <p class="text-stone-700 dark:text-stone-300">
+                                <p class="text-base-secondary">
                                     {{ table.experienceLevelLabel }}
                                 </p>
                             </div>
 
                             <!-- Character Creation -->
                             <div v-if="table.characterCreationLabel">
-                                <h3 class="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                                <h3 class="mb-1 text-sm font-semibold text-base-primary">
                                     {{ t('gameTables.characterCreation') }}
                                 </h3>
-                                <p class="text-stone-700 dark:text-stone-300">
+                                <p class="text-base-secondary">
                                     {{ table.characterCreationLabel }}
                                 </p>
                             </div>
 
                             <!-- Language -->
                             <div v-if="table.languageLabel">
-                                <h3 class="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                                <h3 class="mb-1 text-sm font-semibold text-base-primary">
                                     {{ t('gameTables.language') }}
                                 </h3>
-                                <p class="text-stone-700 dark:text-stone-300">{{ table.languageLabel }}</p>
+                                <p class="text-base-secondary">{{ table.languageLabel }}</p>
                             </div>
 
                             <!-- Tone -->
                             <div v-if="table.toneLabel">
-                                <h3 class="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                                <h3 class="mb-1 text-sm font-semibold text-base-primary">
                                     {{ t('gameTables.tone') }}
                                 </h3>
-                                <p class="text-stone-700 dark:text-stone-300">{{ table.toneLabel }}</p>
+                                <p class="text-base-secondary">{{ table.toneLabel }}</p>
                             </div>
 
                             <!-- Minimum Age -->
                             <div v-if="table.minimumAge">
-                                <h3 class="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                                <h3 class="mb-1 text-sm font-semibold text-base-primary">
                                     {{ t('gameTables.minimumAge') }}
                                 </h3>
-                                <p class="text-stone-700 dark:text-stone-300">
+                                <p class="text-base-secondary">
                                     {{ t('gameTables.ageRequirement', { age: table.minimumAge }) }}
                                 </p>
                             </div>
@@ -627,14 +627,14 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
 
                         <!-- Genres -->
                         <div v-if="table.genres.length > 0">
-                            <h3 class="mb-2 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                            <h3 class="mb-2 text-sm font-semibold text-base-primary">
                                 {{ t('gameTables.genres') }}
                             </h3>
                             <div class="flex flex-wrap gap-2">
                                 <span
                                     v-for="(genre, index) in table.genres"
                                     :key="index"
-                                    class="rounded-full bg-stone-200 px-3 py-1 text-sm text-stone-700 dark:bg-stone-700 dark:text-stone-300"
+                                    class="rounded-full bg-muted px-3 py-1 text-sm text-base-secondary"
                                 >
                                     {{ genre }}
                                 </span>
@@ -644,7 +644,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
 
                     <!-- Section 7: Safety and Warnings -->
                     <div v-if="hasSafetySection" class="mb-6 space-y-4">
-                        <h2 class="text-lg font-semibold text-stone-900 dark:text-stone-100">
+                        <h2 class="text-lg font-semibold text-base-primary">
                             {{ t('gameTables.safetyTools') }}
                         </h2>
 
@@ -661,7 +661,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
 
                         <!-- Content Warnings -->
                         <div v-if="table.contentWarnings && table.contentWarnings.length > 0">
-                            <h3 class="mb-2 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                            <h3 class="mb-2 text-sm font-semibold text-base-primary">
                                 {{ t('gameTables.contentWarnings') }}
                             </h3>
                             <div class="flex flex-wrap gap-2">
@@ -676,11 +676,11 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                         <!-- Custom Warnings (highlighted amber) -->
                         <div
                             v-if="hasCustomWarnings"
-                            class="rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950/30"
+                            class="rounded-lg border border-warning bg-warning-light p-4"
                         >
-                            <h3 class="mb-2 flex items-center text-sm font-semibold text-amber-900 dark:text-amber-100">
+                            <h3 class="mb-2 flex items-center text-sm font-semibold text-warning">
                                 <svg
-                                    class="mr-2 h-5 w-5 text-amber-600 dark:text-amber-400"
+                                    class="mr-2 h-5 w-5 text-warning"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -695,7 +695,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                                 </svg>
                                 {{ t('gameTables.customWarningsTitle') }}
                             </h3>
-                            <ul class="list-inside list-disc space-y-1 text-sm text-amber-800 dark:text-amber-200">
+                            <ul class="list-inside list-disc space-y-1 text-sm text-warning">
                                 <li v-for="(warning, index) in table.customWarnings" :key="index">
                                     {{ warning }}
                                 </li>
@@ -707,12 +707,12 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                     <div class="mb-6 space-y-4">
                         <!-- Campaign -->
                         <div v-if="table.campaignTitle">
-                            <h3 class="mb-2 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                            <h3 class="mb-2 text-sm font-semibold text-base-primary">
                                 {{ t('gameTables.campaign') }}
                             </h3>
                             <Link
                                 :href="`/campanas/${table.campaignId}`"
-                                class="text-amber-600 hover:text-amber-700 dark:text-amber-500 dark:hover:text-amber-400"
+                                class="text-primary hover:text-primary-700"
                             >
                                 {{ table.campaignTitle }}
                             </Link>
@@ -720,10 +720,10 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
 
                         <!-- Notes -->
                         <div v-if="table.notes">
-                            <h3 class="mb-2 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                            <h3 class="mb-2 text-sm font-semibold text-base-primary">
                                 {{ t('gameTables.notes') }}
                             </h3>
-                            <p class="whitespace-pre-line text-stone-700 dark:text-stone-300">
+                            <p class="whitespace-pre-line text-base-secondary">
                                 {{ table.notes }}
                             </p>
                         </div>
@@ -734,7 +734,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                         <ModuleSlot name="game-table-registration" />
                     </div>
 
-                    <div class="border-t border-gray-200 pt-6 dark:border-stone-700">
+                    <div class="border-t border-default pt-6">
                         <Link href="/mesas">
                             <BaseButton variant="primary">
                                 {{ t('gameTables.viewAll') }}

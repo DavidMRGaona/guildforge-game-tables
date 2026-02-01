@@ -17,20 +17,20 @@ const sizeClasses: Record<NonNullable<typeof props.size>, string> = {
     md: 'px-3 py-1 text-sm',
 };
 
-// Map Filament-style color names to Tailwind classes
+// Map Filament-style color names to semantic CSS variable classes
 const colorClasses: Record<string, string> = {
-    success: 'bg-green-500 text-white',
-    info: 'bg-blue-500 text-white',
-    warning: 'bg-amber-500 text-white',
-    danger: 'bg-red-500 text-white',
-    gray: 'bg-stone-500 text-white',
-    primary: 'bg-amber-600 text-white',
+    success: 'bg-success-light text-success',
+    info: 'bg-info-light text-info',
+    warning: 'bg-warning-light text-warning',
+    danger: 'bg-error-light text-error',
+    gray: 'bg-muted text-base-secondary',
+    primary: 'bg-primary-light text-primary',
 };
 
 const badgeClasses = computed(() => [
     'inline-flex items-center rounded-full font-medium',
     sizeClasses[props.size],
-    colorClasses[props.color] || 'bg-stone-500 text-white',
+    colorClasses[props.color] || 'bg-muted text-base-secondary',
 ]);
 </script>
 

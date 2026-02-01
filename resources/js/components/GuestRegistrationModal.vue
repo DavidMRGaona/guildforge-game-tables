@@ -6,7 +6,7 @@ import type { ParticipantRole } from '../types/registration';
 
 interface Props {
     isOpen: boolean;
-    tableId: string;
+    tableSlug: string;
     hasSpectatorSlots?: boolean;
 }
 
@@ -83,7 +83,7 @@ function submitRegistration(role: ParticipantRole): void {
     error.value = null;
 
     router.post(
-        `/mesas/${props.tableId}/inscripcion-invitado`,
+        `/mesas/${props.tableSlug}/inscripcion-invitado`,
         {
             first_name: form.value.first_name.trim(),
             email: form.value.email.trim(),
@@ -145,17 +145,17 @@ function goBack(): void {
                 >
                     <div
                         v-if="isOpen"
-                        class="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl dark:bg-stone-800"
+                        class="w-full max-w-md rounded-xl bg-surface p-6 shadow-2xl"
                     >
                         <!-- Header -->
-                        <h3 class="mb-4 text-center text-lg font-semibold text-gray-900 dark:text-stone-100">
+                        <h3 class="mb-4 text-center text-lg font-semibold text-base-primary">
                             {{ step === 'form' ? t('guestRegistration.title') : t('gameTables.registration.selectRole') }}
                         </h3>
 
                         <!-- Error message -->
                         <div
                             v-if="error"
-                            class="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400"
+                            class="mb-4 rounded-lg bg-red-50 p-3 text-sm text-error dark:bg-red-900/20"
                         >
                             {{ error }}
                         </div>
@@ -166,7 +166,7 @@ function goBack(): void {
                             <div>
                                 <label
                                     for="guest-first-name"
-                                    class="mb-1 block text-sm font-medium text-gray-700 dark:text-stone-300"
+                                    class="mb-1 block text-sm font-medium text-base-secondary"
                                 >
                                     {{ t('guestRegistration.firstName') }} *
                                 </label>
@@ -175,7 +175,7 @@ function goBack(): void {
                                     v-model="form.first_name"
                                     type="text"
                                     required
-                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 dark:focus:border-amber-500"
+                                    class="w-full rounded-lg border border-default px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:bg-stone-700 text-base-primary dark:focus:ring-offset-page"
                                     :placeholder="t('guestRegistration.firstNamePlaceholder')"
                                 />
                             </div>
@@ -184,7 +184,7 @@ function goBack(): void {
                             <div>
                                 <label
                                     for="guest-email"
-                                    class="mb-1 block text-sm font-medium text-gray-700 dark:text-stone-300"
+                                    class="mb-1 block text-sm font-medium text-base-secondary"
                                 >
                                     {{ t('guestRegistration.email') }} *
                                 </label>
@@ -193,7 +193,7 @@ function goBack(): void {
                                     v-model="form.email"
                                     type="email"
                                     required
-                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 dark:focus:border-amber-500"
+                                    class="w-full rounded-lg border border-default px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:bg-stone-700 text-base-primary dark:focus:ring-offset-page"
                                     :placeholder="t('guestRegistration.emailPlaceholder')"
                                 />
                             </div>
@@ -202,7 +202,7 @@ function goBack(): void {
                             <div>
                                 <label
                                     for="guest-phone"
-                                    class="mb-1 block text-sm font-medium text-gray-700 dark:text-stone-300"
+                                    class="mb-1 block text-sm font-medium text-base-secondary"
                                 >
                                     {{ t('guestRegistration.phone') }}
                                 </label>
@@ -210,7 +210,7 @@ function goBack(): void {
                                     id="guest-phone"
                                     v-model="form.phone"
                                     type="tel"
-                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 dark:focus:border-amber-500"
+                                    class="w-full rounded-lg border border-default px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:bg-stone-700 text-base-primary dark:focus:ring-offset-page"
                                     :placeholder="t('guestRegistration.phonePlaceholder')"
                                 />
                             </div>
@@ -219,7 +219,7 @@ function goBack(): void {
                             <div>
                                 <label
                                     for="guest-notes"
-                                    class="mb-1 block text-sm font-medium text-gray-700 dark:text-stone-300"
+                                    class="mb-1 block text-sm font-medium text-base-secondary"
                                 >
                                     {{ t('gameTables.registration.notesLabel') }}
                                 </label>
@@ -227,7 +227,7 @@ function goBack(): void {
                                     id="guest-notes"
                                     v-model="form.notes"
                                     rows="2"
-                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 dark:focus:border-amber-500"
+                                    class="w-full rounded-lg border border-default px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:bg-stone-700 text-base-primary dark:focus:ring-offset-page"
                                     :placeholder="t('gameTables.registration.notesPlaceholder')"
                                 ></textarea>
                             </div>
@@ -239,17 +239,17 @@ function goBack(): void {
                                     v-model="form.gdpr_consent"
                                     type="checkbox"
                                     required
-                                    class="mt-1 h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700"
+                                    class="mt-1 h-4 w-4 rounded border-default text-primary-600 focus:ring-primary-500 dark:bg-stone-700"
                                 />
                                 <label
                                     for="guest-gdpr"
-                                    class="text-sm text-gray-600 dark:text-stone-400"
+                                    class="text-sm text-base-secondary"
                                 >
                                     {{ t('guestRegistration.gdprConsent') }}
                                     <a
                                         href="/privacidad"
                                         target="_blank"
-                                        class="text-amber-600 underline hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
+                                        class="text-primary underline hover:text-primary-700 dark:hover:text-primary-300"
                                     >
                                         {{ t('guestRegistration.privacyPolicy') }}
                                     </a>
@@ -260,7 +260,7 @@ function goBack(): void {
                             <div class="flex gap-3 pt-2">
                                 <button
                                     type="button"
-                                    class="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
+                                    class="flex-1 rounded-lg border border-default px-4 py-2.5 text-sm font-medium text-base-secondary transition-colors hover:bg-muted"
                                     @click="handleClose"
                                 >
                                     {{ $t('common.cancel') }}
@@ -268,7 +268,7 @@ function goBack(): void {
                                 <button
                                     type="submit"
                                     :disabled="!isFormValid || loading"
-                                    class="flex-1 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                    class="flex-1 rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     <span v-if="loading" class="flex items-center justify-center">
                                         <svg
@@ -301,10 +301,10 @@ function goBack(): void {
                             <button
                                 type="button"
                                 :disabled="loading"
-                                class="w-full rounded-lg bg-amber-50 px-4 py-3 text-left transition-colors hover:bg-amber-100 dark:bg-amber-900/20 dark:hover:bg-amber-900/30 disabled:cursor-not-allowed disabled:opacity-50"
+                                class="w-full rounded-lg bg-primary-light px-4 py-3 text-left transition-colors hover:bg-primary-200 dark:bg-primary-900/20 dark:hover:bg-primary-900/30 disabled:cursor-not-allowed disabled:opacity-50"
                                 @click="selectRole('player')"
                             >
-                                <div class="font-medium text-gray-900 dark:text-stone-100">
+                                <div class="font-medium text-base-primary">
                                     {{ t('gameTables.registration.registerAsPlayer') }}
                                 </div>
                             </button>
@@ -312,10 +312,10 @@ function goBack(): void {
                             <button
                                 type="button"
                                 :disabled="loading"
-                                class="w-full rounded-lg bg-gray-50 px-4 py-3 text-left transition-colors hover:bg-gray-100 dark:bg-stone-700/50 dark:hover:bg-stone-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                class="w-full rounded-lg bg-muted px-4 py-3 text-left transition-colors hover:bg-gray-100 dark:hover:bg-stone-700 disabled:cursor-not-allowed disabled:opacity-50"
                                 @click="selectRole('spectator')"
                             >
-                                <div class="font-medium text-gray-900 dark:text-stone-100">
+                                <div class="font-medium text-base-primary">
                                     {{ t('gameTables.registration.registerAsSpectator') }}
                                 </div>
                             </button>
@@ -323,7 +323,7 @@ function goBack(): void {
                             <button
                                 type="button"
                                 :disabled="loading"
-                                class="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
+                                class="mt-2 w-full rounded-lg border border-default px-4 py-2.5 text-sm font-medium text-base-secondary transition-colors hover:bg-muted"
                                 @click="goBack"
                             >
                                 {{ $t('common.back') }}

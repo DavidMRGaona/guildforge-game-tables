@@ -10,12 +10,17 @@ use App\Application\Modules\DTOs\PagePrefixDTO;
 use App\Application\Modules\DTOs\PermissionDTO;
 use App\Application\Modules\DTOs\SlotRegistrationDTO;
 use App\Application\Services\EventQueryServiceInterface;
+use App\Filament\Resources\EventResource;
+use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Modules\ModuleServiceProvider;
 use Illuminate\Support\Facades\Event;
 use Inertia\Inertia;
+use Livewire\Livewire;
 use Modules\GameTables\Application\Services\CampaignQueryServiceInterface;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
 use Modules\GameTables\Application\Services\EligibilityServiceInterface;
+use Modules\GameTables\Application\Services\EventCreationEligibilityServiceInterface;
+use Modules\GameTables\Application\Services\EventGameTableConfigServiceInterface;
 use Modules\GameTables\Application\Services\EventWithTablesQueryInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Application\Services\GameMasterServiceInterface;
@@ -24,6 +29,9 @@ use Modules\GameTables\Application\Services\GameTableServiceInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Modules\GameTables\Console\Commands\GenerateSlugsCommand;
 use Modules\GameTables\Domain\Events\GameTableCancelled;
+use Modules\GameTables\Domain\Events\GameTableModerationApproved;
+use Modules\GameTables\Domain\Events\GameTableModerationRejected;
+use Modules\GameTables\Domain\Events\GameTableSubmittedForReview;
 use Modules\GameTables\Domain\Events\GuestRegistered;
 use Modules\GameTables\Domain\Events\ParticipantCancelled;
 use Modules\GameTables\Domain\Events\ParticipantConfirmed;
@@ -32,9 +40,11 @@ use Modules\GameTables\Domain\Events\ParticipantRegistered;
 use Modules\GameTables\Domain\Events\ParticipantRejected;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ContentWarningRepositoryInterface;
+use Modules\GameTables\Domain\Repositories\EventGameTableConfigRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameSystemRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
+use Modules\GameTables\Filament\RelationManagers\EventGameTableConfigRelationManager;
 use Modules\GameTables\Infrastructure\Listeners\CancelParticipantsOnTableCancellation;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnCancellation;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnGuestRegistration;
@@ -42,14 +52,18 @@ use Modules\GameTables\Infrastructure\Listeners\NotifyOnRegistration;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnWaitingListPromotion;
 use Modules\GameTables\Infrastructure\Listeners\PromoteFromWaitingListOnCancellation;
 use Modules\GameTables\Infrastructure\Observers\GameTableObserver;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\EventGameTableConfigModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentCampaignRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentContentWarningRepository;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentEventGameTableConfigRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentGameSystemRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentGameTableRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentParticipantRepository;
 use Modules\GameTables\Infrastructure\Services\CampaignQueryService;
 use Modules\GameTables\Infrastructure\Services\CreationEligibilityService;
 use Modules\GameTables\Infrastructure\Services\EligibilityService;
+use Modules\GameTables\Infrastructure\Services\EventCreationEligibilityService;
+use Modules\GameTables\Infrastructure\Services\EventGameTableConfigService;
 use Modules\GameTables\Infrastructure\Services\EventWithTablesQuery;
 use Modules\GameTables\Infrastructure\Services\FrontendCreationService;
 use Modules\GameTables\Infrastructure\Services\GameMasterService;
@@ -58,6 +72,9 @@ use Modules\GameTables\Infrastructure\Services\GameTableService;
 use Modules\GameTables\Infrastructure\Services\ProfileCreatedTablesDataProvider;
 use Modules\GameTables\Infrastructure\Services\ProfileGameTablesDataProvider;
 use Modules\GameTables\Infrastructure\Services\RegistrationService;
+use Modules\GameTables\Listeners\NotifyAdminsOnModerationSubmission;
+use Modules\GameTables\Listeners\NotifyUserOnModerationApproved;
+use Modules\GameTables\Listeners\NotifyUserOnModerationRejected;
 use Modules\GameTables\Listeners\SendCancellationConfirmation;
 use Modules\GameTables\Listeners\SendConfirmationNotification;
 use Modules\GameTables\Listeners\SendGuestRegistrationConfirmation;
@@ -75,6 +92,9 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     {
         parent::register();
 
+        // Register model extensions early so they're available before Filament loads
+        $this->registerModelExtensions();
+
         $this->mergeConfigFrom(
             $this->modulePath('config/game-tables.php'),
             'game-tables'
@@ -86,6 +106,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         $this->app->bind(CampaignRepositoryInterface::class, EloquentCampaignRepository::class);
         $this->app->bind(GameTableRepositoryInterface::class, EloquentGameTableRepository::class);
         $this->app->bind(ParticipantRepositoryInterface::class, EloquentParticipantRepository::class);
+        $this->app->bind(EventGameTableConfigRepositoryInterface::class, EloquentEventGameTableConfigRepository::class);
 
         // Service bindings
         $this->app->bind(GameTableServiceInterface::class, GameTableService::class);
@@ -95,6 +116,8 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         $this->app->bind(RegistrationServiceInterface::class, RegistrationService::class);
         $this->app->bind(EventWithTablesQueryInterface::class, EventWithTablesQuery::class);
         $this->app->bind(GameMasterServiceInterface::class, GameMasterService::class);
+        $this->app->bind(EventGameTableConfigServiceInterface::class, EventGameTableConfigService::class);
+        $this->app->bind(EventCreationEligibilityServiceInterface::class, EventCreationEligibilityService::class);
 
         // Query service bindings
         $this->app->bind(GameTableQueryServiceInterface::class, GameTableQueryService::class);
@@ -105,12 +128,16 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     {
         parent::boot();
 
+        // Register Livewire components first (before Filament extensions)
+        $this->registerLivewireComponents();
+        $this->registerFilamentExtensions();
         $this->registerModelObservers();
         $this->registerEventListeners();
         $this->registerCommands();
         $this->shareGameTableCount();
         $this->shareProfileGameTables();
         $this->shareProfileCreatedTables();
+        $this->shareEventCreationContext();
     }
 
     /**
@@ -312,6 +339,124 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
             GameTableCancelled::class,
             [CancelParticipantsOnTableCancellation::class, 'handle']
         );
+
+        // Moderation event listeners
+        Event::listen(
+            GameTableSubmittedForReview::class,
+            [NotifyAdminsOnModerationSubmission::class, 'handle']
+        );
+
+        Event::listen(
+            GameTableModerationApproved::class,
+            [NotifyUserOnModerationApproved::class, 'handle']
+        );
+
+        Event::listen(
+            GameTableModerationRejected::class,
+            [NotifyUserOnModerationRejected::class, 'handle']
+        );
+    }
+
+    /**
+     * Register dynamic relationships on core models.
+     * Uses resolveRelationUsing() - the correct Laravel way to add relationships dynamically.
+     * Called in register() to ensure relationships are available before Filament loads.
+     */
+    private function registerModelExtensions(): void
+    {
+        // Add gameTableConfig() relationship to EventModel for configuration form section
+        // Note: resolveRelationUsing is idempotent - calling it multiple times is safe
+        EventModel::resolveRelationUsing('gameTableConfig', function (EventModel $eventModel) {
+            return $eventModel->hasOne(EventGameTableConfigModel::class, 'event_id', 'id');
+        });
+    }
+
+    /**
+     * Register Livewire components from the module.
+     */
+    private function registerLivewireComponents(): void
+    {
+        if (! class_exists(Livewire::class)) {
+            return;
+        }
+
+        // Register RelationManagers
+        Livewire::component(
+            'modules.game-tables.filament.relation-managers.event-game-table-config-relation-manager',
+            EventGameTableConfigRelationManager::class
+        );
+    }
+
+    /**
+     * Register Filament extensions: RelationManagers for event game table configuration.
+     */
+    private function registerFilamentExtensions(): void
+    {
+        if (! class_exists(EventResource::class)) {
+            return;
+        }
+
+        // Add config RelationManager to EventResource
+        EventResource::extendRelations([
+            EventGameTableConfigRelationManager::class,
+        ]);
+    }
+
+    /**
+     * Share event creation context via Inertia for the event detail page.
+     */
+    private function shareEventCreationContext(): void
+    {
+        if (! class_exists(Inertia::class)) {
+            return;
+        }
+
+        Inertia::share('eventCreationContext', function (): ?array {
+            $route = request()->route();
+            if ($route?->getName() !== 'events.show') {
+                return null;
+            }
+
+            $slug = request()->route('slug');
+            if (! is_string($slug) || $slug === '') {
+                return null;
+            }
+
+            $eventQuery = app(EventQueryServiceInterface::class);
+            $event = $eventQuery->findPublishedBySlug($slug);
+            if ($event === null) {
+                return null;
+            }
+
+            $configService = app(EventGameTableConfigServiceInterface::class);
+            $context = $configService->getCreationContext($event->id);
+
+            return $context->toArray();
+        });
+
+        Inertia::share('eventCreationEligibility', function (): ?array {
+            $route = request()->route();
+            if ($route?->getName() !== 'events.show') {
+                return null;
+            }
+
+            $slug = request()->route('slug');
+            if (! is_string($slug) || $slug === '') {
+                return null;
+            }
+
+            $eventQuery = app(EventQueryServiceInterface::class);
+            $event = $eventQuery->findPublishedBySlug($slug);
+            if ($event === null) {
+                return null;
+            }
+
+            $eligibilityService = app(EventCreationEligibilityServiceInterface::class);
+            $userId = auth()->id();
+            $eligibility = $eligibilityService->canCreateTableForEvent($event->id, $userId);
+
+            return $eligibility->toArray();
+        });
     }
 
     public function onEnable(): void
@@ -561,6 +706,14 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                 dataKeys: ['event', 'gameTableCount'],
             ),
             new SlotRegistrationDTO(
+                slot: 'event-detail-actions',
+                component: 'components/EventCreateTableButton.vue',
+                module: $this->moduleName(),
+                order: 20,
+                props: [],
+                dataKeys: ['event', 'eventCreationEligibility'],
+            ),
+            new SlotRegistrationDTO(
                 slot: 'profile-sections',
                 component: 'components/profile/ProfileGameTablesSection.vue',
                 module: $this->moduleName(),
@@ -568,6 +721,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                 props: [],
                 dataKeys: ['profileGameTables'],
                 profileTab: [
+                    'tabId' => 'gametables',
                     'icon' => 'dice',
                     'labelKey' => 'gameTables.profile.tabLabel',
                     'badgeKey' => 'profileGameTablesTotal',
@@ -581,6 +735,8 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                 props: [],
                 dataKeys: ['profileCreatedTables'],
                 profileTab: [
+                    'tabId' => 'gametables-created',
+                    'parentId' => 'gametables',
                     'icon' => 'pencil-square',
                     'labelKey' => 'gameTables.profile.created.tabLabel',
                     'badgeKey' => 'profileCreatedTablesTotal',
@@ -648,6 +804,18 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     {
         return [
             \Modules\GameTables\Filament\Pages\GameTablesSettings::class,
+        ];
+    }
+
+    /**
+     * Register Filament widgets provided by this module.
+     *
+     * @return array<class-string<\Filament\Widgets\Widget>>
+     */
+    public function registerFilamentWidgets(): array
+    {
+        return [
+            \Modules\GameTables\Filament\Widgets\PendingModerationWidget::class,
         ];
     }
 }

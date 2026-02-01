@@ -304,6 +304,27 @@ return [
             'moderate' => 'Moderate',
             'severe' => 'Severe',
         ],
+        'language' => [
+            'es' => 'Spanish',
+            'en' => 'English',
+            'ca' => 'Catalan',
+            'eu' => 'Basque',
+            'gl' => 'Galician',
+        ],
+        'scheduling_mode' => [
+            'free' => 'Free schedule',
+            'free_description' => 'Tables can be scheduled at any time during the event',
+            'slots' => 'Slot-based',
+            'slots_description' => 'Tables are assigned to predefined time slots',
+        ],
+        'location_mode' => [
+            'free' => 'Free choice',
+            'free_description' => 'The table creator chooses the location',
+            'fixed' => 'Fixed location',
+            'fixed_description' => 'All tables use a predefined location',
+            'event' => 'Event location',
+            'event_description' => 'Tables use the event location',
+        ],
     ],
 
     /*
@@ -326,6 +347,12 @@ return [
         'popular_systems' => [
             'title' => 'Popular systems',
             'no_data' => 'No data available',
+        ],
+        'pending_moderation' => [
+            'title' => 'Tables pending moderation',
+            'count' => ':count table(s) pending',
+            'no_pending' => 'No tables pending review',
+            'view_all' => 'View all',
         ],
     ],
 
@@ -415,6 +442,36 @@ return [
         'cancel' => 'Cancel table',
         'create_publisher' => 'Create publisher',
         'add_game_master' => 'Add game master',
+        'view' => 'View',
+    ],
+
+    'bulk_actions' => [
+        'approve' => 'Approve',
+        'reject' => 'Reject',
+        'approved_count' => ':count table(s) approved',
+        'rejected_count' => ':count table(s) rejected',
+    ],
+
+    'table_tabs' => [
+        'all' => 'All',
+        'pending_moderation' => 'Pending moderation',
+    ],
+
+    'moderation' => [
+        'approve' => 'Approve',
+        'reject' => 'Reject',
+        'approve_confirmation' => 'Approve this table?',
+        'approve_description' => 'The table will be published and visible to all users.',
+        'reject_confirmation' => 'Reject this table?',
+        'reject_description' => 'The creator will be notified of the rejection with the reason provided.',
+        'rejection_reason' => 'Rejection reason',
+        'rejection_reason_placeholder' => 'Explain why this table is being rejected...',
+    ],
+
+    'notifications' => [
+        'table_cancelled' => 'Table cancelled successfully',
+        'table_approved' => 'Table approved successfully',
+        'table_rejected' => 'Table rejected successfully',
     ],
 
     /*
@@ -502,6 +559,13 @@ return [
             'required' => 'You must accept the privacy policy',
             'accepted' => 'You must accept the privacy policy',
         ],
+        'title_required' => 'Title is required',
+        'title_min' => 'Title must be at least 5 characters',
+        'starts_at_future' => 'Start date must be in the future',
+        'max_players_gte_min' => 'Maximum players must be greater than or equal to minimum',
+        'language_required' => 'Language is required',
+        'experience_level_required' => 'Experience level is required',
+        'character_creation_required' => 'Character creation type is required',
     ],
 
     /*
@@ -532,4 +596,61 @@ return [
         'everyone' => 'Open to everyone',
         'members_only' => 'Members only',
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Event Game Table Configuration
+    |--------------------------------------------------------------------------
+    */
+    'event_config' => [
+        'title' => 'Game tables configuration',
+        'general' => 'General',
+        'tables_enabled' => 'Enable tables for this event',
+        'tables_enabled_help' => 'Allows game tables to be created within this event',
+
+        // Scheduling
+        'scheduling' => 'Scheduling',
+        'scheduling_mode' => 'Scheduling mode',
+        'time_slots' => 'Time slots',
+        'time_slot_label' => 'Slot name',
+        'start_time' => 'Start time',
+        'end_time' => 'End time',
+        'max_tables' => 'Maximum tables',
+
+        // Location
+        'location' => 'Location',
+        'location_mode' => 'Location mode',
+        'fixed_location' => 'Fixed location',
+        'fixed_location_help' => 'All tables will be located here',
+
+        // Eligibility override
+        'eligibility_override' => 'Override eligibility',
+        'eligibility_override_description' => 'Override the global configuration for who can create tables',
+        'eligibility_override_enabled' => 'Use event configuration',
+        'eligibility_override_enabled_help' => 'Ignores global settings for this event',
+        'eligibility_access_level' => 'Access level',
+        'eligibility_allowed_roles' => 'Allowed roles',
+        'eligibility_required_permission' => 'Required permission',
+        'eligibility_required_permission_help' => 'Permission name required to create tables in this event',
+
+        // Early access
+        'early_access' => 'Early access',
+        'early_access_description' => 'Allows certain users to create tables before the general opening date',
+        'early_access_enabled' => 'Enable early access',
+        'early_access_enabled_help' => 'Users with special roles/permissions can create tables before others',
+        'creation_opens_at' => 'General opening date',
+        'creation_opens_at_help' => 'Date from which all eligible users can create tables',
+        'early_access_type' => 'Early access type',
+        'early_access_roles' => 'Roles with early access',
+        'early_access_roles_help' => 'Users with these roles can create tables earlier',
+        'early_access_permission' => 'Early access permission',
+        'early_access_permission_help' => 'Users with this permission can create tables earlier',
+        'early_access_days_before' => 'Days advantage',
+        'early_access_days_before_help' => 'Number of days before general opening they can create tables',
+
+        // Actions
+        'save' => 'Save configuration',
+        'saved' => 'Configuration saved',
+    ],
+
 ];

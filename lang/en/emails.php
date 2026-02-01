@@ -84,4 +84,39 @@ return [
         'table_location' => 'Location',
         'view_table' => 'View table',
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Moderation Emails
+    |--------------------------------------------------------------------------
+    */
+    'moderation_submitted' => [
+        'subject' => 'New table pending moderation: :tableTitle',
+        'greeting' => 'Hello,',
+        'intro' => 'A new table has been submitted for review.',
+        'table_title' => 'Table',
+        'created_by' => 'Created by',
+        'review_table' => 'Review table',
+        'outro' => 'Please review the table and approve or reject it.',
+    ],
+
+    'moderation_approved' => [
+        'subject' => 'Your table has been approved: :tableTitle',
+        'greeting' => 'Hello :name,',
+        'intro' => 'Your table :tableTitle has been approved and is now published.',
+        'table_title' => 'Table',
+        'notes_label' => 'Moderator notes',
+        'view_table' => 'View table',
+        'outro' => 'Thank you for contributing to the community!',
+    ],
+
+    'moderation_rejected' => [
+        'subject' => 'Your table was not approved: :tableTitle',
+        'greeting' => 'Hello :name,',
+        'intro' => 'We regret to inform you that your table :tableTitle was not approved.',
+        'table_title' => 'Table',
+        'reason_label' => 'Reason',
+        'edit_table' => 'Edit table',
+        'outro' => 'You can modify your table and submit it again for review.',
+    ],
 ];

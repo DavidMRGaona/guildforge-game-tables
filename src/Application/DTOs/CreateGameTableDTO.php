@@ -85,7 +85,9 @@ final readonly class CreateGameTableDTO
             onlineUrl: $data['online_url'] ?? null,
             minimumAge: isset($data['minimum_age']) ? (int) $data['minimum_age'] : null,
             language: $data['language'] ?? 'es',
-            genres: $data['genres'] ?? null,
+            genres: isset($data['genres'])
+                ? array_map(fn ($g) => $g instanceof Genre ? $g : Genre::from($g), $data['genres'])
+                : null,
             tone: isset($data['tone'])
                 ? ($data['tone'] instanceof Tone ? $data['tone'] : Tone::from($data['tone']))
                 : null,
@@ -95,7 +97,9 @@ final readonly class CreateGameTableDTO
             characterCreation: isset($data['character_creation'])
                 ? ($data['character_creation'] instanceof CharacterCreation ? $data['character_creation'] : CharacterCreation::from($data['character_creation']))
                 : null,
-            safetyTools: $data['safety_tools'] ?? null,
+            safetyTools: isset($data['safety_tools'])
+                ? array_map(fn ($s) => $s instanceof SafetyTool ? $s : SafetyTool::from($s), $data['safety_tools'])
+                : null,
             contentWarningIds: $data['content_warning_ids'] ?? null,
             customWarnings: $data['custom_warnings'] ?? null,
             registrationType: isset($data['registration_type'])

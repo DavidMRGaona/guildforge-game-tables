@@ -63,7 +63,7 @@ const capacityPercentage = computed(() => {
 const capacityColor = computed(() => {
     const percentage = capacityPercentage.value;
     if (percentage >= 100) return 'bg-red-500';
-    if (percentage >= 75) return 'bg-amber-500';
+    if (percentage >= 75) return 'bg-warning';
     return 'bg-green-500';
 });
 
@@ -71,7 +71,7 @@ const headerGradient = computed(() => {
     const format = props.table.tableFormat.value;
     switch (format) {
         case 'in_person':
-            return 'from-amber-600 to-stone-700';
+            return 'from-primary to-stone-700';
         case 'online':
             return 'from-blue-600 to-stone-700';
         case 'hybrid':
@@ -99,7 +99,7 @@ const availabilityBadge = computed(() => {
     <Link
         :href="`/mesas/${table.slug}`"
         :aria-label="t('aria.viewGameTable', { title: table.title })"
-        class="group block overflow-hidden rounded-lg bg-white shadow-sm transition-all duration-200 hover:scale-[1.02] hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:bg-stone-800 dark:shadow-stone-900/50 dark:focus:ring-offset-stone-900"
+        class="group block overflow-hidden rounded-lg bg-surface shadow-sm transition-all duration-200 hover:scale-[1.02] hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:shadow-stone-900/50 dark:focus:ring-offset-page"
     >
         <!-- Image with overlay badges (if image exists) -->
         <div v-if="imageUrl" class="relative">
@@ -115,10 +115,10 @@ const availabilityBadge = computed(() => {
             <div
                 class="absolute left-3 top-3 flex flex-col items-center rounded bg-white/95 px-2 py-1 shadow-sm dark:bg-stone-800/95"
             >
-                <span class="text-lg font-bold leading-none text-amber-600 dark:text-amber-500">
+                <span class="text-lg font-bold leading-none text-primary">
                     {{ dateBadge.day }}
                 </span>
-                <span class="text-[10px] font-medium uppercase tracking-wide text-stone-600 dark:text-stone-400">
+                <span class="text-[10px] font-medium uppercase tracking-wide text-base-secondary">
                     {{ dateBadge.month }}
                 </span>
             </div>
@@ -147,10 +147,10 @@ const availabilityBadge = computed(() => {
             <div
                 class="flex flex-col items-center rounded bg-white/95 px-2 py-1 shadow-sm dark:bg-stone-800/95"
             >
-                <span class="text-lg font-bold leading-none text-amber-600 dark:text-amber-500">
+                <span class="text-lg font-bold leading-none text-primary">
                     {{ dateBadge.day }}
                 </span>
-                <span class="text-[10px] font-medium uppercase tracking-wide text-stone-600 dark:text-stone-400">
+                <span class="text-[10px] font-medium uppercase tracking-wide text-base-secondary">
                     {{ dateBadge.month }}
                 </span>
             </div>
@@ -175,21 +175,21 @@ const availabilityBadge = computed(() => {
             <!-- Zone 1: Identity -->
             <div class="mb-3">
                 <h3
-                    class="line-clamp-2 text-lg font-semibold text-stone-900 transition-colors group-hover:text-amber-600 dark:text-stone-100 dark:group-hover:text-amber-500"
+                    class="line-clamp-2 text-lg font-semibold text-base-primary transition-colors group-hover:text-primary"
                 >
                     {{ table.title }}
                 </h3>
-                <p class="mt-0.5 text-sm font-medium text-amber-600 dark:text-amber-500">
+                <p class="mt-0.5 text-sm font-medium text-primary">
                     {{ table.gameSystemName }}
                 </p>
             </div>
 
             <!-- Zone 2: Key details -->
-            <div class="mb-3 rounded-lg bg-stone-50 p-3 dark:bg-stone-700/50">
+            <div class="mb-3 rounded-lg bg-muted p-3">
                 <!-- Date / Time / Duration condensed -->
-                <div class="mb-2 flex items-center text-sm text-stone-600 dark:text-stone-300">
+                <div class="mb-2 flex items-center text-sm text-base-secondary">
                     <svg
-                        class="mr-1.5 h-4 w-4 flex-shrink-0 text-stone-400 dark:text-stone-500"
+                        class="mr-1.5 h-4 w-4 flex-shrink-0 text-base-muted"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -207,12 +207,12 @@ const availabilityBadge = computed(() => {
 
                 <!-- Capacity bar -->
                 <div>
-                    <div class="mb-1 flex items-center justify-between text-xs text-stone-600 dark:text-stone-400">
+                    <div class="mb-1 flex items-center justify-between text-xs text-base-secondary">
                         <span>{{ t('gameTables.capacity') }}</span>
                         <span class="font-medium">{{ table.currentPlayers }} / {{ table.maxPlayers }}</span>
                     </div>
                     <div
-                        class="h-2.5 w-full overflow-hidden rounded-full bg-stone-200 dark:bg-stone-600"
+                        class="h-2.5 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-600"
                         role="progressbar"
                         :aria-valuenow="table.currentPlayers"
                         :aria-valuemin="0"
@@ -231,8 +231,8 @@ const availabilityBadge = computed(() => {
             <!-- Zone 3: Meta -->
             <div class="flex items-center justify-between">
                 <!-- GM with avatar pill -->
-                <div class="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-400">
-                    <span class="inline-flex items-center gap-1.5 rounded-full bg-stone-100 px-2.5 py-1 dark:bg-stone-700">
+                <div class="flex items-center gap-2 text-sm text-base-secondary">
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1">
                         <svg
                             class="h-3.5 w-3.5"
                             fill="none"
@@ -260,7 +260,7 @@ const availabilityBadge = computed(() => {
                     />
                     <span
                         v-if="table.eventTitle"
-                        class="max-w-[100px] truncate text-xs text-stone-500 dark:text-stone-400"
+                        class="max-w-[100px] truncate text-xs text-base-muted"
                         :title="table.eventTitle"
                     >
                         {{ table.eventTitle }}

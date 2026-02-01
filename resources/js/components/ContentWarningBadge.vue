@@ -16,8 +16,7 @@ const sizeClasses: Record<NonNullable<typeof props.size>, string> = {
 };
 
 const badgeClasses = computed(() => [
-    'inline-flex items-center rounded-full bg-red-100 font-medium text-red-800',
-    'dark:bg-red-900/30 dark:text-red-400',
+    'inline-flex items-center rounded-full bg-error-light font-medium text-error',
     sizeClasses[props.size],
 ]);
 </script>

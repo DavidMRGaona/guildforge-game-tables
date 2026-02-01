@@ -167,7 +167,7 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
 </script>
 
 <template>
-    <div class="rounded-lg border border-stone-200 bg-white p-4 shadow-sm dark:border-stone-700 dark:bg-stone-800">
+    <div class="rounded-lg border border-default bg-surface p-4 shadow-sm">
         <!-- Game system chips (full width row) -->
         <div
             v-if="gameSystems.length > 0"
@@ -175,7 +175,7 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
             :aria-label="t('gameTables.filters.gameSystem')"
             class="mb-4"
         >
-            <span class="mb-2 block text-sm font-medium text-stone-700 dark:text-stone-300">
+            <span class="mb-2 block text-sm font-medium text-base-secondary">
                 {{ t('gameTables.filters.gameSystem') }}
             </span>
             <div class="flex flex-wrap gap-2">
@@ -187,8 +187,8 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
                     :class="[
                         'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
                         isSystemSelected(system.id)
-                            ? 'bg-amber-600 text-white ring-2 ring-amber-600 ring-offset-1 dark:ring-offset-stone-800'
-                            : 'bg-stone-100 text-stone-700 hover:bg-stone-200 dark:bg-stone-700 dark:text-stone-300 dark:hover:bg-stone-600',
+                            ? 'bg-primary-600 text-white ring-2 ring-primary-600 ring-offset-1 dark:ring-offset-page'
+                            : 'bg-muted text-base-secondary hover:bg-neutral-200 dark:hover:bg-neutral-600',
                     ]"
                     @click="toggleSystem(system.id)"
                 >
@@ -218,7 +218,7 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
             <div>
                 <label
                     for="format-filter"
-                    class="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
+                    class="mb-1.5 block text-sm font-medium text-base-secondary"
                 >
                     {{ t('gameTables.filters.format') }}
                 </label>
@@ -226,14 +226,14 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
                     <select
                         id="format-filter"
                         v-model="selectedFormat"
-                        class="block w-full appearance-none rounded-lg border border-stone-300 bg-white py-2 pl-3 pr-10 text-sm text-stone-900 shadow-sm transition-colors focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100"
+                        class="block w-full appearance-none rounded-lg border border-default bg-surface py-2 pl-3 pr-10 text-sm text-base-primary shadow-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                     >
                         <option v-for="option in formatOptions" :key="option.value" :value="option.value">
                             {{ option.label }}
                         </option>
                     </select>
                     <svg
-                        class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400"
+                        class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-base-muted"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -248,7 +248,7 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
             <div>
                 <label
                     for="status-filter"
-                    class="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
+                    class="mb-1.5 block text-sm font-medium text-base-secondary"
                 >
                     {{ t('gameTables.filters.status') }}
                 </label>
@@ -256,14 +256,14 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
                     <select
                         id="status-filter"
                         v-model="selectedStatus"
-                        class="block w-full appearance-none rounded-lg border border-stone-300 bg-white py-2 pl-3 pr-10 text-sm text-stone-900 shadow-sm transition-colors focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100"
+                        class="block w-full appearance-none rounded-lg border border-default bg-surface py-2 pl-3 pr-10 text-sm text-base-primary shadow-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                     >
                         <option v-for="option in statusOptions" :key="option.value" :value="option.value">
                             {{ option.label }}
                         </option>
                     </select>
                     <svg
-                        class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400"
+                        class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-base-muted"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -278,7 +278,7 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
             <div>
                 <label
                     for="event-filter"
-                    class="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
+                    class="mb-1.5 block text-sm font-medium text-base-secondary"
                 >
                     {{ t('gameTables.filters.event') }}
                 </label>
@@ -288,10 +288,10 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
                         v-model="selectedEvent"
                         :disabled="!hasEvents"
                         :class="[
-                            'block w-full appearance-none rounded-lg border border-stone-300 bg-white py-2 pl-3 pr-10 text-sm shadow-sm transition-colors focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700',
+                            'block w-full appearance-none rounded-lg border border-default bg-surface py-2 pl-3 pr-10 text-sm shadow-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500',
                             hasEvents
-                                ? 'text-stone-900 dark:text-stone-100'
-                                : 'cursor-not-allowed text-stone-400 dark:text-stone-500',
+                                ? 'text-base-primary'
+                                : 'cursor-not-allowed text-base-muted',
                         ]"
                     >
                         <option value="">
@@ -302,7 +302,7 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
                         </option>
                     </select>
                     <svg
-                        class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400"
+                        class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-base-muted"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -319,13 +319,13 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
             <span
                 v-for="pill in activeFilterPills"
                 :key="pill.key"
-                class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+                class="inline-flex items-center gap-1 rounded-full bg-primary-light px-2.5 py-1 text-xs font-medium text-primary"
             >
                 {{ pill.label }}
                 <button
                     type="button"
                     :aria-label="`${t('gameTables.filters.removeFilter')}: ${pill.label}`"
-                    class="ml-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full transition-colors hover:bg-amber-200 dark:hover:bg-amber-800"
+                    class="ml-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full transition-colors hover:bg-primary-200 dark:hover:bg-primary-800"
                     @click.prevent="pill.remove()"
                 >
                     <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -336,7 +336,7 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
 
             <button
                 type="button"
-                class="text-xs font-medium text-stone-500 transition-colors hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"
+                class="text-xs font-medium text-base-muted transition-colors hover:text-base-primary"
                 @click="clearFilters"
             >
                 {{ t('gameTables.filters.clearAll') }}

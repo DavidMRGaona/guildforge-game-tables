@@ -23,6 +23,7 @@ use Filament\Forms\Set;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Filament\Notifications\Notification;
+use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables\Actions\DeleteBulkAction;
@@ -485,6 +486,46 @@ final class GameTableResource extends BaseResource
                     ->options(FrontendCreationStatus::options()),
             ])
             ->actions([
+                Action::make('approve')
+                    ->label(__('game-tables::messages.moderation.approve'))
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading(__('game-tables::messages.moderation.approve_confirmation'))
+                    ->modalDescription(__('game-tables::messages.moderation.approve_description'))
+                    ->visible(fn (GameTableModel $record): bool => $record->frontend_creation_status === FrontendCreationStatus::PendingReview)
+                    ->action(function (GameTableModel $record): void {
+                        $service = app(FrontendCreationServiceInterface::class);
+                        $service->approveFrontendCreation($record->id);
+
+                        Notification::make()
+                            ->title(__('game-tables::messages.notifications.table_approved'))
+                            ->success()
+                            ->send();
+                    }),
+                Action::make('reject')
+                    ->label(__('game-tables::messages.moderation.reject'))
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading(__('game-tables::messages.moderation.reject_confirmation'))
+                    ->modalDescription(__('game-tables::messages.moderation.reject_description'))
+                    ->form([
+                        Textarea::make('reason')
+                            ->label(__('game-tables::messages.moderation.rejection_reason'))
+                            ->placeholder(__('game-tables::messages.moderation.rejection_reason_placeholder'))
+                            ->required(),
+                    ])
+                    ->visible(fn (GameTableModel $record): bool => $record->frontend_creation_status === FrontendCreationStatus::PendingReview)
+                    ->action(function (GameTableModel $record, array $data): void {
+                        $service = app(FrontendCreationServiceInterface::class);
+                        $service->rejectFrontendCreation($record->id, $data['reason']);
+
+                        Notification::make()
+                            ->title(__('game-tables::messages.notifications.table_rejected'))
+                            ->success()
+                            ->send();
+                    }),
                 EditAction::make(),
             ])
             ->bulkActions([

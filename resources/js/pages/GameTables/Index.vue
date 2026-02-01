@@ -57,14 +57,14 @@ function handleNext(): void {
 
 <template>
     <DefaultLayout>
-        <div class="bg-white shadow dark:bg-stone-800 dark:shadow-stone-900/50">
+        <div class="bg-surface shadow dark:shadow-neutral-900/50">
             <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h1 class="text-3xl font-bold tracking-tight text-stone-900 dark:text-stone-100">
+                        <h1 class="text-3xl font-bold tracking-tight text-base-primary">
                             {{ t('gameTables.title') }}
                         </h1>
-                        <p class="mt-2 text-lg text-stone-600 dark:text-stone-400">
+                        <p class="mt-2 text-lg text-base-secondary">
                             {{ t('gameTables.description') }}
                         </p>
                     </div>
@@ -76,7 +76,7 @@ function handleNext(): void {
                             role="tab"
                             :aria-selected="true"
                             :aria-label="t('gameTables.filters.listView')"
-                            class="rounded-l-lg border border-amber-600 bg-amber-600 px-3 py-2 text-white"
+                            class="rounded-l-lg border border-primary-600 bg-primary-600 px-3 py-2 text-white"
                         >
                             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
@@ -87,7 +87,7 @@ function handleNext(): void {
                             role="tab"
                             :aria-selected="false"
                             :aria-label="t('gameTables.filters.calendarView')"
-                            class="rounded-r-lg border border-stone-300 bg-white px-3 py-2 text-stone-600 transition-colors hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-300 dark:hover:bg-stone-600"
+                            class="rounded-r-lg border border-default bg-surface px-3 py-2 text-base-secondary transition-colors hover:bg-muted"
                         >
                             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -110,7 +110,7 @@ function handleNext(): void {
             <!-- Results counter -->
             <p
                 aria-live="polite"
-                class="mb-4 text-sm text-stone-600 dark:text-stone-400"
+                class="mb-4 text-sm text-base-secondary"
             >
                 {{ t('gameTables.filters.resultsCount', { count: totalResults }) }}
             </p>
@@ -134,9 +134,9 @@ function handleNext(): void {
 
             <div
                 v-if="hasPagination"
-                class="mt-8 flex items-center justify-between border-t border-stone-200 pt-6 dark:border-stone-700"
+                class="mt-8 flex items-center justify-between border-t border-default pt-6"
             >
-                <p class="text-sm text-stone-700 dark:text-stone-300">
+                <p class="text-sm text-base-secondary">
                     {{ t('common.showing') }}
                     <span class="font-medium">
                         {{ firstItemNumber }}

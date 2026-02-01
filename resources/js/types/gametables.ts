@@ -279,6 +279,76 @@ export interface ProfileCreatedTablesData {
     total: number;
 }
 
+/**
+ * GameTable data as returned by GameTableResponseDTO::toArray() (snake_case keys).
+ * Used for Edit form pre-population where data comes directly from DTO.
+ */
+export interface GameTableEditData {
+    id: string;
+    title: string;
+    slug: string | null;
+    synopsis: string | null;
+    game_system_id: string;
+    game_system_name: string;
+    campaign_id: string | null;
+    campaign_title: string | null;
+    event_id: string | null;
+    event_title: string | null;
+    created_by: string;
+    creator_name: string;
+    table_type: string;
+    table_type_label: string;
+    table_format: string;
+    table_format_label: string;
+    table_format_color: string;
+    status: string;
+    status_label: string;
+    status_color: string;
+    starts_at: string | null;
+    duration_minutes: number;
+    location: string | null;
+    online_url: string | null;
+    min_players: number;
+    max_players: number;
+    max_spectators: number;
+    minimum_age: number | null;
+    language: string;
+    experience_level: string | null;
+    experience_level_label: string | null;
+    character_creation: string | null;
+    character_creation_label: string | null;
+    genres: Array<{ value: string; label: string }>;
+    tone: string | null;
+    tone_label: string | null;
+    safety_tools: Array<{ value: string; label: string }>;
+    content_warnings: string[];
+    custom_warnings: string[];
+    registration_type: string;
+    registration_type_label: string;
+    members_early_access_days: number;
+    registration_opens_at: string | null;
+    registration_closes_at: string | null;
+    auto_confirm: boolean;
+    accepts_registrations_in_progress: boolean;
+    is_published: boolean;
+    published_at: string | null;
+    notes: string | null;
+    image_public_id: string | null;
+    game_masters: Array<{
+        id: string;
+        game_table_id: string;
+        user_id: string | null;
+        display_name: string;
+        role: string;
+        role_label: string;
+        custom_title: string | null;
+        is_main: boolean;
+        is_name_public: boolean;
+    }>;
+    created_at: string | null;
+    updated_at: string | null;
+}
+
 // Re-export registration types for convenience
 export type { EligibilityResponse, ParticipantData } from './registration';
 

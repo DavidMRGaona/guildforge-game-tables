@@ -97,14 +97,14 @@ function goToNextMonth(): void {
 
 <template>
     <DefaultLayout>
-        <div class="bg-white shadow dark:bg-stone-800 dark:shadow-stone-900/50">
+        <div class="bg-surface shadow dark:shadow-neutral-900/50">
             <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h1 class="text-3xl font-bold tracking-tight text-stone-900 dark:text-stone-100">
+                        <h1 class="text-3xl font-bold tracking-tight text-base-primary">
                             {{ t('gameTables.calendar') }}
                         </h1>
-                        <p class="mt-2 text-lg text-stone-600 dark:text-stone-400">
+                        <p class="mt-2 text-lg text-base-secondary">
                             {{ t('gameTables.description') }}
                         </p>
                     </div>
@@ -116,7 +116,7 @@ function goToNextMonth(): void {
                             role="tab"
                             :aria-selected="false"
                             :aria-label="t('gameTables.filters.listView')"
-                            class="rounded-l-lg border border-stone-300 bg-white px-3 py-2 text-stone-600 transition-colors hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-300 dark:hover:bg-stone-600"
+                            class="rounded-l-lg border border-default bg-surface px-3 py-2 text-base-secondary transition-colors hover:bg-muted"
                         >
                             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
@@ -127,7 +127,7 @@ function goToNextMonth(): void {
                             role="tab"
                             :aria-selected="true"
                             :aria-label="t('gameTables.filters.calendarView')"
-                            class="rounded-r-lg border border-amber-600 bg-amber-600 px-3 py-2 text-white"
+                            class="rounded-r-lg border border-primary-600 bg-primary-600 px-3 py-2 text-white"
                         >
                             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -163,7 +163,7 @@ function goToNextMonth(): void {
                     {{ t('common.previous') }}
                 </BaseButton>
 
-                <h2 class="text-2xl font-bold text-stone-900 dark:text-stone-100">
+                <h2 class="text-2xl font-bold text-base-primary">
                     {{ monthName }}
                 </h2>
 
@@ -190,8 +190,8 @@ function goToNextMonth(): void {
             <div v-if="groupedTables.length > 0" class="space-y-8">
                 <div v-for="group in groupedTables" :key="group.isoDate" class="space-y-4">
                     <!-- Date Header -->
-                    <div class="sticky top-0 z-10 border-l-4 border-amber-600 bg-white py-2 pl-4 shadow-sm dark:bg-stone-800">
-                        <h3 class="text-lg font-semibold text-stone-900 dark:text-stone-100">
+                    <div class="sticky top-0 z-10 border-l-4 border-primary-600 bg-surface py-2 pl-4 shadow-sm">
+                        <h3 class="text-lg font-semibold text-base-primary">
                             {{ group.weekday }}, {{ group.day }}
                         </h3>
                     </div>
@@ -210,10 +210,10 @@ function goToNextMonth(): void {
             <!-- Empty State -->
             <div
                 v-else
-                class="rounded-lg border border-dashed border-stone-300 p-12 text-center dark:border-stone-700"
+                class="rounded-lg border border-dashed border-default p-12 text-center"
             >
                 <svg
-                    class="mx-auto h-16 w-16 text-stone-400"
+                    class="mx-auto h-16 w-16 text-base-muted"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -226,10 +226,10 @@ function goToNextMonth(): void {
                         d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                     />
                 </svg>
-                <h3 class="mt-4 text-lg font-medium text-stone-900 dark:text-stone-100">
+                <h3 class="mt-4 text-lg font-medium text-base-primary">
                     {{ t('gameTables.noTablesThisMonth') }}
                 </h3>
-                <p class="mt-2 text-stone-500 dark:text-stone-400">
+                <p class="mt-2 text-stone-500 dark:text-base-muted">
                     {{ t('gameTables.tryDifferentMonth') }}
                 </p>
             </div>

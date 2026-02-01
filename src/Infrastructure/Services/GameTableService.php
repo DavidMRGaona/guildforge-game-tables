@@ -37,6 +37,7 @@ final readonly class GameTableService implements GameTableServiceInterface
             gameSystemId: new GameSystemId($dto->gameSystemId),
             createdBy: $dto->createdBy,
             title: $dto->title,
+            slug: \Illuminate\Support\Str::slug($dto->title),
             timeSlot: new TimeSlot($dto->startsAt, $dto->durationMinutes),
             tableType: $dto->tableType,
             tableFormat: $dto->tableFormat,

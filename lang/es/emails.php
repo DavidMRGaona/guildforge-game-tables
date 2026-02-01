@@ -116,4 +116,39 @@ return [
         'table_location' => 'Ubicación',
         'outro' => 'Esperamos verte en futuras partidas.',
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Moderation Emails
+    |--------------------------------------------------------------------------
+    */
+    'moderation_submitted' => [
+        'subject' => 'Nueva mesa pendiente de moderación: :tableTitle',
+        'greeting' => 'Hola,',
+        'intro' => 'Se ha enviado una nueva mesa para revisión.',
+        'table_title' => 'Mesa',
+        'created_by' => 'Creada por',
+        'review_table' => 'Revisar mesa',
+        'outro' => 'Por favor, revisa la mesa y apruébala o recházala.',
+    ],
+
+    'moderation_approved' => [
+        'subject' => 'Tu mesa ha sido aprobada: :tableTitle',
+        'greeting' => 'Hola :name,',
+        'intro' => 'Tu mesa :tableTitle ha sido aprobada y ya está publicada.',
+        'table_title' => 'Mesa',
+        'notes_label' => 'Notas del moderador',
+        'view_table' => 'Ver mesa',
+        'outro' => '¡Gracias por contribuir a la comunidad!',
+    ],
+
+    'moderation_rejected' => [
+        'subject' => 'Tu mesa no ha sido aprobada: :tableTitle',
+        'greeting' => 'Hola :name,',
+        'intro' => 'Lamentamos informarte que tu mesa :tableTitle no ha sido aprobada.',
+        'table_title' => 'Mesa',
+        'reason_label' => 'Motivo',
+        'edit_table' => 'Editar mesa',
+        'outro' => 'Puedes modificar tu mesa y volver a enviarla para revisión.',
+    ],
 ];

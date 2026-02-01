@@ -98,7 +98,7 @@ function getImageUrl(campaign: CampaignListItem): string | null {
                     v-for="campaign in props.campaigns.data"
                     :key="campaign.id"
                     :href="`/campanas/${campaign.id}`"
-                    class="block transition-all duration-200 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-stone-900"
+                    class="block transition-all duration-200 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-stone-900"
                 >
                     <BaseCard :padding="false">
                         <!-- Campaign Image -->
@@ -134,7 +134,7 @@ function getImageUrl(campaign: CampaignListItem): string | null {
                             </div>
 
                             <!-- Game System -->
-                            <p class="mb-2 text-sm font-medium text-amber-600 dark:text-amber-500">
+                            <p class="mb-2 text-sm font-medium text-primary">
                                 {{ campaign.gameSystemName }}
                             </p>
 
@@ -185,7 +185,7 @@ function getImageUrl(campaign: CampaignListItem): string | null {
                                     class="h-2 w-full overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700"
                                 >
                                     <div
-                                        class="h-full bg-amber-500 transition-all"
+                                        class="h-full bg-primary transition-all"
                                         :style="{ width: `${getSessionProgress(campaign)}%` }"
                                     />
                                 </div>

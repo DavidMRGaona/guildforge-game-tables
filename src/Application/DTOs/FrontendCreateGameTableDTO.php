@@ -24,6 +24,7 @@ final readonly class FrontendCreateGameTableDTO
      * @param array<SafetyTool>|null $safetyTools
      * @param array<string>|null $contentWarningIds
      * @param array<string>|null $customWarnings
+     * @param array<int, array<string, mixed>>|null $gameMasters
      */
     public function __construct(
         public string $createdBy,
@@ -37,6 +38,7 @@ final readonly class FrontendCreateGameTableDTO
         public int $maxPlayers,
         public int $maxSpectators = 0,
         public ?string $eventId = null,
+        public ?string $campaignId = null,
         public ?string $synopsis = null,
         public ?string $location = null,
         public ?string $onlineUrl = null,
@@ -49,6 +51,7 @@ final readonly class FrontendCreateGameTableDTO
         public ?array $safetyTools = null,
         public ?array $contentWarningIds = null,
         public ?array $customWarnings = null,
+        public ?array $gameMasters = null,
         public ?string $notes = null,
     ) {}
 
@@ -75,12 +78,15 @@ final readonly class FrontendCreateGameTableDTO
             maxPlayers: (int) $data['max_players'],
             maxSpectators: (int) ($data['max_spectators'] ?? 0),
             eventId: $data['event_id'] ?? null,
+            campaignId: $data['campaign_id'] ?? null,
             synopsis: $data['synopsis'] ?? null,
             location: $data['location'] ?? null,
             onlineUrl: $data['online_url'] ?? null,
             minimumAge: isset($data['minimum_age']) ? (int) $data['minimum_age'] : null,
             language: $data['language'] ?? 'es',
-            genres: $data['genres'] ?? null,
+            genres: isset($data['genres'])
+                ? array_map(fn ($g) => $g instanceof Genre ? $g : Genre::from($g), $data['genres'])
+                : null,
             tone: isset($data['tone'])
                 ? ($data['tone'] instanceof Tone ? $data['tone'] : Tone::from($data['tone']))
                 : null,
@@ -90,9 +96,12 @@ final readonly class FrontendCreateGameTableDTO
             characterCreation: isset($data['character_creation'])
                 ? ($data['character_creation'] instanceof CharacterCreation ? $data['character_creation'] : CharacterCreation::from($data['character_creation']))
                 : null,
-            safetyTools: $data['safety_tools'] ?? null,
+            safetyTools: isset($data['safety_tools'])
+                ? array_map(fn ($s) => $s instanceof SafetyTool ? $s : SafetyTool::from($s), $data['safety_tools'])
+                : null,
             contentWarningIds: $data['content_warning_ids'] ?? null,
             customWarnings: $data['custom_warnings'] ?? null,
+            gameMasters: $data['game_masters'] ?? null,
             notes: $data['notes'] ?? null,
         );
     }
@@ -100,8 +109,10 @@ final readonly class FrontendCreateGameTableDTO
     /**
      * Convert to full CreateGameTableDTO for service layer.
      * Sets sensible defaults for admin-only fields.
+     *
+     * @param DateTimeImmutable|null $registrationClosesAt Default registration close date (e.g., from event)
      */
-    public function toCreateGameTableDTO(): CreateGameTableDTO
+    public function toCreateGameTableDTO(?DateTimeImmutable $registrationClosesAt = null): CreateGameTableDTO
     {
         return new CreateGameTableDTO(
             gameSystemId: $this->gameSystemId,
@@ -113,7 +124,7 @@ final readonly class FrontendCreateGameTableDTO
             tableFormat: $this->tableFormat,
             minPlayers: $this->minPlayers,
             maxPlayers: $this->maxPlayers,
-            campaignId: null,
+            campaignId: $this->campaignId,
             eventId: $this->eventId,
             maxSpectators: $this->maxSpectators,
             synopsis: $this->synopsis,
@@ -128,6 +139,7 @@ final readonly class FrontendCreateGameTableDTO
             safetyTools: $this->safetyTools,
             contentWarningIds: $this->contentWarningIds,
             customWarnings: $this->customWarnings,
+            registrationClosesAt: $registrationClosesAt,
             notes: $this->notes,
         );
     }

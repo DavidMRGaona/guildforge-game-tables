@@ -83,7 +83,7 @@ function loadMore(): void {
 </script>
 
 <template>
-    <div v-if="profileGameTables && profileGameTables.total > 0" class="space-y-6">
+    <div v-if="profileGameTables && profileGameTables.total > 0" class="space-y-10">
         <!-- Filters -->
         <ProfileGameTablesFilters
             v-model="filters"
@@ -93,7 +93,7 @@ function loadMore(): void {
         <!-- No results message -->
         <div
             v-if="hasActiveFilters && filteredUpcoming.length === 0 && filteredPast.length === 0"
-            class="rounded-lg border border-dashed border-stone-300 bg-stone-50 p-6 text-center dark:border-stone-600 dark:bg-stone-800/50"
+            class="rounded-lg border border-dashed border-stone-300 bg-muted p-6 text-center dark:border-stone-600"
         >
             <svg
                 class="mx-auto h-10 w-10 text-stone-400"
@@ -109,7 +109,7 @@ function loadMore(): void {
                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                 />
             </svg>
-            <p class="mt-3 text-sm text-stone-500 dark:text-stone-400">
+            <p class="mt-3 text-sm text-base-muted">
                 {{ t('gameTables.profile.filters.noResults') }}
             </p>
         </div>
@@ -117,8 +117,8 @@ function loadMore(): void {
         <template v-else>
             <!-- Upcoming section -->
             <section>
-                <h2 class="mb-4 flex items-center gap-2 text-lg font-semibold text-stone-900 dark:text-stone-100">
-                    <span class="flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                <h2 class="mb-6 flex items-center gap-2 text-lg font-semibold text-base-primary">
+                    <span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary-700 dark:text-primary-400">
                         {{ filteredUpcoming.length }}
                     </span>
                     {{ t('gameTables.profile.upcoming') }}
@@ -134,28 +134,28 @@ function loadMore(): void {
 
                 <p
                     v-else
-                    class="rounded-lg border border-dashed border-stone-300 bg-stone-50 p-6 text-center text-sm text-stone-500 dark:border-stone-600 dark:bg-stone-800/50 dark:text-stone-400"
+                    class="rounded-lg border border-dashed border-stone-300 bg-muted p-6 text-center text-sm text-base-muted dark:border-stone-600"
                 >
                     {{ hasActiveFilters ? t('gameTables.profile.filters.noUpcomingMatch') : t('gameTables.profile.noUpcoming') }}
                 </p>
             </section>
 
             <!-- Past section (collapsible) -->
-            <section v-if="filteredPast.length > 0">
+            <section v-if="filteredPast.length > 0" class="border-t border-default pt-8">
                 <button
                     type="button"
-                    class="mb-4 flex w-full items-center justify-between rounded-lg bg-stone-100 px-4 py-3 text-left transition-colors hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700"
+                    class="mb-4 flex w-full items-center justify-between rounded-lg bg-muted px-4 py-3 text-left transition-colors hover:bg-stone-200 dark:hover:bg-stone-700"
                     :aria-expanded="showPastSection"
                     @click="togglePastSection"
                 >
-                    <span class="flex items-center gap-2 text-lg font-semibold text-stone-900 dark:text-stone-100">
+                    <span class="flex items-center gap-2 text-lg font-semibold text-base-primary">
                         <span class="flex h-6 w-6 items-center justify-center rounded-full bg-stone-200 text-xs font-bold text-stone-600 dark:bg-stone-700 dark:text-stone-400">
                             {{ filteredPast.length }}
                         </span>
                         {{ t('gameTables.profile.past') }}
                     </span>
                     <svg
-                        :class="['h-5 w-5 text-stone-500 transition-transform', showPastSection ? 'rotate-180' : '']"
+                        :class="['h-5 w-5 text-base-muted transition-transform', showPastSection ? 'rotate-180' : '']"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -176,7 +176,7 @@ function loadMore(): void {
                     <button
                         v-if="hasMorePast"
                         type="button"
-                        class="flex w-full items-center justify-center gap-2 rounded-lg border border-stone-300 bg-white py-3 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-400 dark:hover:bg-stone-700"
+                        class="flex w-full items-center justify-center gap-2 rounded-lg border border-stone-300 bg-surface py-3 text-sm font-medium text-base-secondary transition-colors hover:bg-stone-50 dark:border-stone-600 dark:hover:bg-stone-700"
                         @click="loadMore"
                     >
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -192,7 +192,7 @@ function loadMore(): void {
     <!-- Empty state when no tables at all -->
     <div
         v-else
-        class="rounded-lg border border-dashed border-stone-300 bg-stone-50 p-12 text-center dark:border-stone-600 dark:bg-stone-800/50"
+        class="rounded-lg border border-dashed border-stone-300 bg-muted p-12 text-center dark:border-stone-600"
     >
         <svg
             class="mx-auto h-12 w-12 text-stone-400"
@@ -208,10 +208,10 @@ function loadMore(): void {
                 d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
             />
         </svg>
-        <h3 class="mt-4 text-lg font-medium text-stone-900 dark:text-stone-100">
+        <h3 class="mt-4 text-lg font-medium text-base-primary">
             {{ t('gameTables.profile.noTables') }}
         </h3>
-        <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">
+        <p class="mt-1 text-sm text-base-muted">
             {{ t('gameTables.profile.noTablesDescription') }}
         </p>
     </div>

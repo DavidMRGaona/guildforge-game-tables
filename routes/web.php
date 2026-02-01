@@ -26,30 +26,31 @@ Route::prefix('mesas')->name('gametables.')->group(function (): void {
     Route::delete('/cancelar/{token}', [RegistrationController::class, 'cancelByToken'])
         ->name('cancel-by-token');
 
-    Route::get('/{slug}', [GameTableController::class, 'show'])
-        ->where('slug', '[a-z0-9-]+')
-        ->name('show');
-
-    // Guest registration (no auth required)
-    Route::post('/{id}/inscripcion-invitado', [RegistrationController::class, 'registerGuest'])
-        ->name('register-guest');
-
-    // Registration routes (authenticated)
-    Route::middleware('auth')->group(function (): void {
-        Route::post('/{id}/inscripcion', [RegistrationController::class, 'register'])->name('register');
-        Route::delete('/{id}/inscripcion', [RegistrationController::class, 'cancel'])->name('cancel');
-    });
-
-    // Frontend creation routes (authenticated)
+    // Frontend creation routes (authenticated) - MUST be before {slug} route
     Route::middleware('auth')->group(function (): void {
         Route::get('/crear', [FrontendGameTableController::class, 'create'])->name('create');
         Route::post('/crear', [FrontendGameTableController::class, 'store'])->name('store');
         Route::get('/mis-mesas', [FrontendGameTableController::class, 'myTables'])->name('my-tables');
-        Route::get('/mis-mesas/{id}/editar', [FrontendGameTableController::class, 'edit'])->name('edit');
-        Route::put('/mis-mesas/{id}', [FrontendGameTableController::class, 'update'])->name('update');
-        Route::post('/mis-mesas/{id}/enviar-revision', [FrontendGameTableController::class, 'submitForReview'])->name('submit-review');
-        Route::delete('/mis-mesas/{id}', [FrontendGameTableController::class, 'destroy'])->name('destroy');
+        Route::get('/mis-mesas/{gameTable}/editar', [FrontendGameTableController::class, 'edit'])->name('edit');
+        Route::put('/mis-mesas/{gameTable}', [FrontendGameTableController::class, 'update'])->name('update');
+        Route::post('/mis-mesas/{gameTable}/enviar-revision', [FrontendGameTableController::class, 'submitForReview'])->name('submit-review');
+        Route::delete('/mis-mesas/{gameTable}', [FrontendGameTableController::class, 'destroy'])->name('destroy');
     });
+
+    // Guest registration (no auth required)
+    Route::post('/{gameTable}/inscripcion-invitado', [RegistrationController::class, 'registerGuest'])
+        ->name('register-guest');
+
+    // Registration routes (authenticated)
+    Route::middleware('auth')->group(function (): void {
+        Route::post('/{gameTable}/inscripcion', [RegistrationController::class, 'register'])->name('register');
+        Route::delete('/{gameTable}/inscripcion', [RegistrationController::class, 'cancel'])->name('cancel');
+    });
+
+    // Show route with slug - MUST be last to avoid matching specific routes like /crear
+    Route::get('/{slug}', [GameTableController::class, 'show'])
+        ->where('slug', '[a-z0-9-]+')
+        ->name('show');
 });
 
 // Campaigns routes (separate from mesas - a campaign can have multiple mesas)

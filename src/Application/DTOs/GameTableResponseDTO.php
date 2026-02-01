@@ -8,6 +8,7 @@ use DateTimeInterface;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
+use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\RegistrationType;
 use Modules\GameTables\Domain\Enums\SafetyTool;
@@ -67,6 +68,7 @@ final readonly class GameTableResponseDTO
         public bool $acceptsRegistrationsInProgress,
         public bool $isPublished,
         public ?DateTimeInterface $publishedAt,
+        public ?FrontendCreationStatus $frontendCreationStatus,
         public ?string $notes,
         public ?string $imagePublicId,
         public array $participants,
@@ -128,6 +130,7 @@ final readonly class GameTableResponseDTO
             acceptsRegistrationsInProgress: $gameTable->acceptsRegistrationsInProgress,
             isPublished: $gameTable->isPublished,
             publishedAt: $gameTable->publishedAt,
+            frontendCreationStatus: $gameTable->frontendCreationStatus,
             notes: $gameTable->notes,
             imagePublicId: $gameTable->imagePublicId,
             participants: $participants,
@@ -191,6 +194,10 @@ final readonly class GameTableResponseDTO
             'accepts_registrations_in_progress' => $this->acceptsRegistrationsInProgress,
             'is_published' => $this->isPublished,
             'published_at' => $this->publishedAt?->format('c'),
+            'frontend_creation_status' => $this->frontendCreationStatus?->value,
+            'frontend_creation_status_label' => $this->frontendCreationStatus?->label(),
+            'frontend_creation_status_color' => $this->frontendCreationStatus?->color(),
+            'can_edit' => $this->frontendCreationStatus === null || $this->frontendCreationStatus->canEdit(),
             'notes' => $this->notes,
             'image_public_id' => $this->imagePublicId,
             'participants' => array_map(fn (ParticipantResponseDTO $p) => $p->toArray(), $this->participants),

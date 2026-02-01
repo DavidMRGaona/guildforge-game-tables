@@ -27,6 +27,8 @@ const { t } = useI18n();
 
 // Support both tableId prop directly or extracting from table object (for slot system)
 const resolvedTableId = computed(() => props.tableId ?? props.table?.id ?? '');
+// Use slug for Inertia routes (user-facing URLs)
+const resolvedTableSlug = computed(() => props.table?.slug ?? '');
 
 // Check if initial data was provided via props (from Inertia)
 const hasInitialEligibility = props.eligibility !== undefined;
@@ -230,7 +232,7 @@ function handleRegister(role: ParticipantRole): void {
     error.value = null;
 
     router.post(
-        `/mesas/${resolvedTableId.value}/inscripcion`,
+        `/mesas/${resolvedTableSlug.value}/inscripcion`,
         {
             role,
             notes: notes.value.trim() || undefined,
@@ -257,7 +259,7 @@ function handleCancel(): void {
     loading.value = true;
     error.value = null;
 
-    router.delete(`/mesas/${resolvedTableId.value}/inscripcion`, {
+    router.delete(`/mesas/${resolvedTableSlug.value}/inscripcion`, {
         preserveScroll: true,
         onError: (errors) => {
             error.value = Object.values(errors)[0] as string || t('gameTables.errors.cannotCancel');
@@ -384,7 +386,7 @@ onMounted(async () => {
                                     :disabled="isTableFull && !canJoinWaitingList"
                                     class="w-full rounded-lg px-4 py-3 text-left transition-colors"
                                     :class="{
-                                        'bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/20 dark:hover:bg-amber-900/30':
+                                        'bg-primary-light hover:bg-primary-200 dark:bg-primary-900/20 dark:hover:bg-primary-900/30':
                                             !isTableFull,
                                         'bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30':
                                             isTableFull && canJoinWaitingList,
@@ -455,7 +457,7 @@ onMounted(async () => {
                                         id="registration-notes"
                                         v-model="notes"
                                         rows="3"
-                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 dark:focus:border-amber-500"
+                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 dark:focus:border-primary-400"
                                         :placeholder="t('gameTables.registration.notesPlaceholder')"
                                     ></textarea>
                                 </div>
@@ -471,7 +473,7 @@ onMounted(async () => {
                                     <button
                                         type="button"
                                         :disabled="loading"
-                                        class="flex-1 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                        class="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
                                         @click="submitWithNotes"
                                     >
                                         <span v-if="loading" class="flex items-center justify-center">
@@ -522,7 +524,7 @@ onMounted(async () => {
             :disabled="buttonDisabled"
             class="w-full rounded-lg px-6 py-3 text-center font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2"
             :class="{
-                'bg-amber-600 text-white hover:bg-amber-700 focus:ring-amber-500':
+                'bg-primary text-white hover:bg-primary-700 focus:ring-primary-500':
                     (isAuthenticated && canRegister && !isTableFull) || canRegisterAsGuest,
                 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500':
                     isAuthenticated && canRegister && isTableFull,
@@ -655,7 +657,7 @@ onMounted(async () => {
         <!-- Guest registration modal -->
         <GuestRegistrationModal
             :is-open="showGuestModal"
-            :table-id="resolvedTableId"
+            :table-slug="resolvedTableSlug"
             :has-spectator-slots="(tableData?.maxSpectators ?? 0) > 0"
             @close="closeGuestModal"
             @success="onGuestSuccess"

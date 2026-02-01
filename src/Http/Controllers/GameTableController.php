@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Modules\GameTables\Application\Services\EligibilityServiceInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
@@ -48,8 +49,13 @@ final class GameTableController extends Controller
         $status = $request->query('status');
         $status = is_string($status) && $status !== '' ? $status : null;
 
-        $eventId = $request->query('event');
-        $eventId = is_string($eventId) && $eventId !== '' ? $eventId : null;
+        // Resolve event by slug
+        $eventSlug = $request->query('event');
+        $eventId = null;
+        if (is_string($eventSlug) && $eventSlug !== '') {
+            $event = EventModel::where('slug', $eventSlug)->first();
+            $eventId = $event?->id;
+        }
 
         $campaignId = $request->query('campaign');
         $campaignId = is_string($campaignId) && $campaignId !== '' ? $campaignId : null;
@@ -89,7 +95,7 @@ final class GameTableController extends Controller
                 'systems' => $gameSystemIds ?? [],
                 'format' => $format,
                 'status' => $status,
-                'event' => $eventId,
+                'event' => $eventSlug ?? null,
                 'campaign' => $campaignId,
             ],
         ]);

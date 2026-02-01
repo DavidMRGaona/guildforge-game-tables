@@ -34,8 +34,8 @@ const editUrl = computed(() => `/mesas/mis-mesas/${props.table.id}/editar`);
 
 const statusColorClasses = computed(() => {
     const colorMap: Record<string, string> = {
-        gray: 'bg-stone-100 text-stone-700 dark:bg-stone-700 dark:text-stone-300',
-        success: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+        gray: 'bg-muted text-base-secondary',
+        success: 'bg-success-light text-green-700 dark:text-green-400',
         warning: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
         primary: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
         danger: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
@@ -49,7 +49,7 @@ const playersText = computed(() => {
 </script>
 
 <template>
-    <div class="rounded-lg border border-stone-200 bg-white p-4 transition-shadow hover:shadow-md dark:border-stone-700 dark:bg-stone-800">
+    <div class="rounded-lg border border-default bg-surface p-4 transition-shadow hover:shadow-md">
         <div class="flex items-start justify-between gap-4">
             <div class="min-w-0 flex-1">
                 <!-- Title and game system -->
@@ -57,23 +57,23 @@ const playersText = computed(() => {
                     <Link
                         v-if="tableUrl && table.isPublished"
                         :href="tableUrl"
-                        class="truncate text-base font-medium text-stone-900 hover:text-amber-600 dark:text-stone-100 dark:hover:text-amber-400"
+                        class="truncate text-base font-medium text-base-primary hover:text-primary-700"
                     >
                         {{ table.title }}
                     </Link>
                     <span
                         v-else
-                        class="truncate text-base font-medium text-stone-900 dark:text-stone-100"
+                        class="truncate text-base font-medium text-base-primary"
                     >
                         {{ table.title }}
                     </span>
-                    <span class="shrink-0 text-xs text-stone-500 dark:text-stone-400">
+                    <span class="shrink-0 text-xs text-base-muted">
                         {{ table.gameSystemName }}
                     </span>
                 </div>
 
                 <!-- Meta info -->
-                <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-stone-500 dark:text-stone-400">
+                <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-base-muted">
                     <!-- Date -->
                     <span v-if="formattedDate" class="flex items-center gap-1">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -114,7 +114,7 @@ const playersText = computed(() => {
                 <Link
                     v-if="showEditLink && !table.isPublished"
                     :href="editUrl"
-                    class="text-sm text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
+                    class="text-sm text-primary hover:text-primary-700"
                 >
                     {{ t('gameTables.profile.created.edit') }}
                 </Link>

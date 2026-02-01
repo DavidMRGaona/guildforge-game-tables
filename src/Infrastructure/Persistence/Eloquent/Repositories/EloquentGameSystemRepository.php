@@ -121,7 +121,7 @@ final readonly class EloquentGameSystemRepository implements GameSystemRepositor
             slug: $model->slug,
             isActive: $model->is_active,
             description: $model->description,
-            publisher: $model->publisher,
+            publisher: $model->publisher?->name,
             edition: $model->edition,
             year: $model->year,
             logoUrl: $model->logo_url,

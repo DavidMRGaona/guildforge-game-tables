@@ -1,5 +1,5 @@
 <template>
-    <div class="animate-pulse overflow-hidden rounded-lg bg-white shadow-sm dark:bg-stone-800 dark:shadow-stone-900/50">
+    <div class="animate-pulse overflow-hidden rounded-lg bg-surface shadow-sm shadow-neutral-900/50">
         <!-- Header band skeleton -->
         <div class="flex items-center justify-between bg-stone-300 px-4 py-3 dark:bg-stone-600">
             <div class="h-10 w-10 rounded bg-white/50 dark:bg-stone-500" />
@@ -13,12 +13,12 @@
         <div class="p-4">
             <!-- Title + system -->
             <div class="mb-3">
-                <div class="mb-1.5 h-5 w-3/4 rounded bg-stone-200 dark:bg-stone-700" />
-                <div class="h-4 w-1/3 rounded bg-stone-200 dark:bg-stone-700" />
+                <div class="mb-1.5 h-5 w-3/4 rounded bg-muted" />
+                <div class="h-4 w-1/3 rounded bg-muted" />
             </div>
 
             <!-- Details panel -->
-            <div class="mb-3 rounded-lg bg-stone-50 p-3 dark:bg-stone-700/50">
+            <div class="mb-3 rounded-lg bg-muted p-3">
                 <div class="mb-2 h-4 w-2/3 rounded bg-stone-200 dark:bg-stone-600" />
                 <div class="mb-1 flex justify-between">
                     <div class="h-3 w-16 rounded bg-stone-200 dark:bg-stone-600" />
@@ -29,8 +29,8 @@
 
             <!-- Meta row -->
             <div class="flex items-center justify-between">
-                <div class="h-7 w-28 rounded-full bg-stone-200 dark:bg-stone-700" />
-                <div class="h-5 w-20 rounded-full bg-stone-200 dark:bg-stone-700" />
+                <div class="h-7 w-28 rounded-full bg-muted" />
+                <div class="h-5 w-20 rounded-full bg-muted" />
             </div>
         </div>
     </div>

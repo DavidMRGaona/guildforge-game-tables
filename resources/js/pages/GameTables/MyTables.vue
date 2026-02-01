@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import EmptyState from '@/components/ui/EmptyState.vue';
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
 import StatusBadge from '../../components/StatusBadge.vue';
 import FormatBadge from '../../components/FormatBadge.vue';
 import { useSeo } from '@/composables/useSeo';
@@ -13,21 +14,20 @@ interface GameTableResponseDTO {
     id: string;
     title: string;
     slug: string | null;
-    gameSystemName: string;
-    startsAt: string | null;
-    durationMinutes: number;
-    tableFormat: {
-        value: string;
-        label: string;
-        color: string;
-    };
-    status: {
-        value: string;
-        label: string;
-        color: string;
-    };
-    isPublished: boolean;
-    createdAt: string | null;
+    game_system_name: string;
+    starts_at: string | null;
+    duration_minutes: number;
+    table_format: string;
+    table_format_label: string;
+    table_format_color: string;
+    status: string;
+    status_label: string;
+    status_color: string;
+    frontend_creation_status: string | null;
+    frontend_creation_status_label: string | null;
+    frontend_creation_status_color: string | null;
+    is_published: boolean;
+    created_at: string | null;
 }
 
 interface Props {
@@ -48,6 +48,12 @@ useSeo({
 });
 
 const hasTables = computed(() => props.tables.length > 0);
+
+// Confirmation dialog state
+const showSubmitDialog = ref(false);
+const showDeleteDialog = ref(false);
+const pendingTableSlug = ref<string | null>(null);
+const pendingTableTitle = ref<string>('');
 
 function formatDate(dateString: string | null): string {
     if (!dateString) return '-';
@@ -75,39 +81,62 @@ function formatDuration(minutes: number): string {
 }
 
 function canEdit(table: GameTableResponseDTO): boolean {
-    return !table.isPublished && (table.status.value === 'draft' || table.status.value === 'rejected');
+    const status = table.frontend_creation_status;
+    return !table.is_published && (status === 'draft' || status === 'rejected');
 }
 
 function canSubmitForReview(table: GameTableResponseDTO): boolean {
-    return !table.isPublished && (table.status.value === 'draft' || table.status.value === 'rejected');
+    const status = table.frontend_creation_status;
+    return !table.is_published && (status === 'draft' || status === 'rejected');
 }
 
 function canDelete(table: GameTableResponseDTO): boolean {
-    return !table.isPublished && (table.status.value === 'draft' || table.status.value === 'rejected');
+    const status = table.frontend_creation_status;
+    return !table.is_published && (status === 'draft' || status === 'rejected');
 }
 
 function isApproved(table: GameTableResponseDTO): boolean {
-    return table.isPublished;
+    return table.is_published;
 }
 
 function isPendingReview(table: GameTableResponseDTO): boolean {
-    return !table.isPublished && table.status.value === 'pending_review';
+    return !table.is_published && table.frontend_creation_status === 'pending_review';
 }
 
-function handleEdit(tableId: string): void {
-    router.visit(`/mesas/mis-mesas/${tableId}/editar`);
+function handleEdit(tableSlug: string): void {
+    router.visit(`/mesas/mis-mesas/${tableSlug}/editar`);
 }
 
-function handleSubmitForReview(tableId: string): void {
-    if (confirm(t('gameTables.myTables.confirmSubmit'))) {
-        router.post(`/mesas/mis-mesas/${tableId}/enviar-revision`);
+function handleSubmitForReview(tableSlug: string): void {
+    pendingTableSlug.value = tableSlug;
+    showSubmitDialog.value = true;
+}
+
+function confirmSubmitForReview(): void {
+    if (pendingTableSlug.value) {
+        router.post(`/mesas/mis-mesas/${pendingTableSlug.value}/enviar-revision`, {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                pendingTableSlug.value = null;
+            },
+        });
+    } else {
+        pendingTableSlug.value = null;
     }
 }
 
-function handleDelete(tableId: string, tableTitle: string): void {
-    if (confirm(t('gameTables.myTables.confirmDelete', { title: tableTitle }))) {
-        router.delete(`/mesas/mis-mesas/${tableId}`);
+function handleDelete(tableSlug: string, tableTitle: string): void {
+    pendingTableSlug.value = tableSlug;
+    pendingTableTitle.value = tableTitle;
+    showDeleteDialog.value = true;
+}
+
+function confirmDelete(): void {
+    if (pendingTableSlug.value) {
+        router.delete(`/mesas/mis-mesas/${pendingTableSlug.value}`);
     }
+    pendingTableSlug.value = null;
+    pendingTableTitle.value = '';
 }
 
 function handleCreate(): void {
@@ -115,7 +144,7 @@ function handleCreate(): void {
 }
 
 function getTableLink(table: GameTableResponseDTO): string {
-    if (table.slug && table.isPublished) {
+    if (table.slug && table.is_published) {
         return `/mesas/${table.slug}`;
     }
     return '#';
@@ -124,14 +153,14 @@ function getTableLink(table: GameTableResponseDTO): string {
 
 <template>
     <DefaultLayout>
-        <div class="bg-white shadow dark:bg-stone-800 dark:shadow-stone-900/50">
+        <div class="bg-surface shadow dark:shadow-neutral-900/50">
             <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h1 class="text-3xl font-bold tracking-tight text-stone-900 dark:text-stone-100">
+                        <h1 class="text-3xl font-bold tracking-tight text-base-primary">
                             {{ t('gameTables.myTables.title') }}
                         </h1>
-                        <p class="mt-2 text-lg text-stone-600 dark:text-stone-400">
+                        <p class="mt-2 text-lg text-base-secondary">
                             {{ t('gameTables.myTables.subtitle') }}
                         </p>
                     </div>
@@ -167,34 +196,34 @@ function getTableLink(table: GameTableResponseDTO): string {
                 <div
                     v-for="table in props.tables"
                     :key="table.id"
-                    class="overflow-hidden rounded-lg bg-white shadow transition-shadow hover:shadow-md dark:bg-stone-800 dark:shadow-stone-900/50"
+                    class="overflow-hidden rounded-lg bg-surface shadow transition-shadow hover:shadow-md dark:shadow-neutral-900/50"
                 >
                     <div class="p-6">
                         <div class="flex items-start justify-between gap-4">
                             <div class="min-w-0 flex-1">
                                 <div class="mb-2 flex items-center gap-2">
-                                    <h2 class="truncate text-xl font-semibold text-stone-900 dark:text-stone-100">
+                                    <h2 class="truncate text-xl font-semibold text-base-primary">
                                         <Link
                                             v-if="isApproved(table)"
                                             :href="getTableLink(table)"
-                                            class="hover:text-amber-600 dark:hover:text-amber-500"
+                                            class="hover:text-primary"
                                         >
                                             {{ table.title }}
                                         </Link>
                                         <span v-else>{{ table.title }}</span>
                                     </h2>
                                     <StatusBadge
-                                        :status="table.status.value"
-                                        :label="table.status.label"
-                                        :color="table.status.color"
+                                        :status="table.frontend_creation_status ?? table.status"
+                                        :label="table.frontend_creation_status_label ?? table.status_label"
+                                        :color="table.frontend_creation_status_color ?? table.status_color"
                                     />
                                 </div>
 
-                                <p class="text-sm font-medium text-amber-600 dark:text-amber-500">
-                                    {{ table.gameSystemName }}
+                                <p class="text-sm font-medium text-primary">
+                                    {{ table.game_system_name }}
                                 </p>
 
-                                <div class="mt-3 flex flex-wrap items-center gap-4 text-sm text-stone-600 dark:text-stone-400">
+                                <div class="mt-3 flex flex-wrap items-center gap-4 text-sm text-base-secondary">
                                     <div class="flex items-center gap-1.5">
                                         <svg
                                             class="h-4 w-4"
@@ -210,7 +239,7 @@ function getTableLink(table: GameTableResponseDTO): string {
                                                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                                             />
                                         </svg>
-                                        <span>{{ formatDate(table.startsAt) }}</span>
+                                        <span>{{ formatDate(table.starts_at) }}</span>
                                     </div>
 
                                     <div class="flex items-center gap-1.5">
@@ -228,20 +257,20 @@ function getTableLink(table: GameTableResponseDTO): string {
                                                 d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                                             />
                                         </svg>
-                                        <span>{{ formatDuration(table.durationMinutes) }}</span>
+                                        <span>{{ formatDuration(table.duration_minutes) }}</span>
                                     </div>
 
                                     <FormatBadge
-                                        :format="table.tableFormat.value"
-                                        :label="table.tableFormat.label"
-                                        :color="table.tableFormat.color"
+                                        :format="table.table_format"
+                                        :label="table.table_format_label"
+                                        :color="table.table_format_color"
                                     />
                                 </div>
                             </div>
 
                             <div class="flex flex-shrink-0 flex-col gap-2 sm:flex-row">
                                 <template v-if="isPendingReview(table)">
-                                    <span class="text-sm text-stone-500 dark:text-stone-400">
+                                    <span class="text-sm text-base-muted">
                                         {{ t('gameTables.myTables.pendingReviewMessage') }}
                                     </span>
                                 </template>
@@ -249,7 +278,7 @@ function getTableLink(table: GameTableResponseDTO): string {
                                 <template v-else-if="isApproved(table)">
                                     <Link
                                         :href="getTableLink(table)"
-                                        class="inline-flex items-center justify-center gap-2 rounded-md bg-amber-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-stone-900"
+                                        class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-page"
                                     >
                                         {{ t('gameTables.myTables.viewPublic') }}
                                     </Link>
@@ -260,7 +289,7 @@ function getTableLink(table: GameTableResponseDTO): string {
                                         v-if="canEdit(table)"
                                         variant="secondary"
                                         size="sm"
-                                        @click="handleEdit(table.id)"
+                                        @click="handleEdit(table.slug!)"
                                     >
                                         {{ t('common.edit') }}
                                     </BaseButton>
@@ -269,7 +298,7 @@ function getTableLink(table: GameTableResponseDTO): string {
                                         v-if="canSubmitForReview(table)"
                                         variant="primary"
                                         size="sm"
-                                        @click="handleSubmitForReview(table.id)"
+                                        @click="handleSubmitForReview(table.slug!)"
                                     >
                                         {{ t('gameTables.myTables.submitForReview') }}
                                     </BaseButton>
@@ -278,7 +307,7 @@ function getTableLink(table: GameTableResponseDTO): string {
                                         v-if="canDelete(table)"
                                         variant="danger"
                                         size="sm"
-                                        @click="handleDelete(table.id, table.title)"
+                                        @click="handleDelete(table.slug!, table.title)"
                                     >
                                         {{ t('common.delete') }}
                                     </BaseButton>
@@ -289,5 +318,27 @@ function getTableLink(table: GameTableResponseDTO): string {
                 </div>
             </div>
         </main>
+
+        <!-- Submit for review confirmation dialog -->
+        <ConfirmDialog
+            v-model="showSubmitDialog"
+            :title="t('gameTables.myTables.submitForReviewTitle')"
+            :message="t('gameTables.myTables.confirmSubmit')"
+            :confirm-label="t('gameTables.myTables.submitForReview')"
+            :cancel-label="t('common.cancel')"
+            confirm-variant="primary"
+            @confirm="confirmSubmitForReview"
+        />
+
+        <!-- Delete confirmation dialog -->
+        <ConfirmDialog
+            v-model="showDeleteDialog"
+            :title="t('gameTables.myTables.deleteTitle')"
+            :message="t('gameTables.myTables.confirmDelete', { title: pendingTableTitle })"
+            :confirm-label="t('common.delete')"
+            :cancel-label="t('common.cancel')"
+            confirm-variant="danger"
+            @confirm="confirmDelete"
+        />
     </DefaultLayout>
 </template>

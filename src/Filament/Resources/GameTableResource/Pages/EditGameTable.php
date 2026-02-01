@@ -6,11 +6,14 @@ namespace Modules\GameTables\Filament\Resources\GameTableResource\Pages;
 
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
+use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
+use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Application\Services\GameMasterServiceInterface;
+use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Events\GameTableCancelled;
 use Modules\GameTables\Filament\Resources\GameTableResource;
@@ -109,6 +112,54 @@ final class EditGameTable extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('approveModeration')
+                ->label(__('game-tables::messages.moderation.approve'))
+                ->icon('heroicon-o-check-circle')
+                ->color('success')
+                ->requiresConfirmation()
+                ->modalHeading(__('game-tables::messages.moderation.approve_confirmation'))
+                ->modalDescription(__('game-tables::messages.moderation.approve_description'))
+                ->visible(fn (): bool => $this->record->frontend_creation_status === FrontendCreationStatus::PendingReview)
+                ->action(function (): void {
+                    /** @var FrontendCreationServiceInterface $service */
+                    $service = app(FrontendCreationServiceInterface::class);
+                    $service->approveFrontendCreation($this->record->id);
+
+                    Notification::make()
+                        ->title(__('game-tables::messages.notifications.table_approved'))
+                        ->success()
+                        ->send();
+
+                    $this->refreshFormData(['frontend_creation_status', 'is_published', 'status', 'published_at']);
+                }),
+
+            Action::make('rejectModeration')
+                ->label(__('game-tables::messages.moderation.reject'))
+                ->icon('heroicon-o-x-circle')
+                ->color('danger')
+                ->requiresConfirmation()
+                ->modalHeading(__('game-tables::messages.moderation.reject_confirmation'))
+                ->modalDescription(__('game-tables::messages.moderation.reject_description'))
+                ->form([
+                    Textarea::make('reason')
+                        ->label(__('game-tables::messages.moderation.rejection_reason'))
+                        ->placeholder(__('game-tables::messages.moderation.rejection_reason_placeholder'))
+                        ->required(),
+                ])
+                ->visible(fn (): bool => $this->record->frontend_creation_status === FrontendCreationStatus::PendingReview)
+                ->action(function (array $data): void {
+                    /** @var FrontendCreationServiceInterface $service */
+                    $service = app(FrontendCreationServiceInterface::class);
+                    $service->rejectFrontendCreation($this->record->id, $data['reason']);
+
+                    Notification::make()
+                        ->title(__('game-tables::messages.notifications.table_rejected'))
+                        ->success()
+                        ->send();
+
+                    $this->refreshFormData(['frontend_creation_status']);
+                }),
+
             Action::make('publish')
                 ->label(__('game-tables::messages.actions.publish'))
                 ->icon('heroicon-o-eye')

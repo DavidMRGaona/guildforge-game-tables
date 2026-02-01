@@ -94,7 +94,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
             <div class="mb-6">
                 <Link
                     href="/campanas"
-                    class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:text-stone-400 dark:hover:text-stone-300 dark:focus:ring-offset-stone-900"
+                    class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:text-stone-400 dark:hover:text-stone-300 dark:focus:ring-offset-stone-900"
                 >
                     <svg
                         class="mr-1 h-4 w-4"
@@ -150,7 +150,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                     </h1>
 
                     <!-- Game System -->
-                    <p class="mb-6 text-xl font-medium text-amber-600 dark:text-amber-500">
+                    <p class="mb-6 text-xl font-medium text-primary">
                         {{ campaign.gameSystemName }}
                     </p>
 
@@ -172,7 +172,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                             </h3>
                             <div class="flex items-center text-stone-700 dark:text-stone-300">
                                 <svg
-                                    class="mr-2 h-5 w-5 text-amber-600"
+                                    class="mr-2 h-5 w-5 text-primary"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -196,7 +196,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                             </h3>
                             <div class="flex items-center text-stone-700 dark:text-stone-300">
                                 <svg
-                                    class="mr-2 h-5 w-5 text-amber-600"
+                                    class="mr-2 h-5 w-5 text-primary"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -243,7 +243,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                                         class="h-2 w-full overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700"
                                     >
                                         <div
-                                            class="h-full bg-amber-500 transition-all"
+                                            class="h-full bg-primary transition-all"
                                             :style="{ width: `${sessionProgress}%` }"
                                         />
                                     </div>
@@ -264,7 +264,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                                         class="flex items-center text-stone-700 dark:text-stone-300"
                                     >
                                         <svg
-                                            class="mr-2 h-5 w-5 text-amber-600"
+                                            class="mr-2 h-5 w-5 text-primary"
                                             fill="none"
                                             stroke="currentColor"
                                             viewBox="0 0 24 24"
@@ -284,7 +284,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                                 <template v-else>
                                     <div class="flex items-center text-stone-700 dark:text-stone-300">
                                         <svg
-                                            class="mr-2 h-5 w-5 text-amber-600"
+                                            class="mr-2 h-5 w-5 text-primary"
                                             fill="none"
                                             stroke="currentColor"
                                             viewBox="0 0 24 24"
@@ -315,7 +315,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                                     class="flex items-center text-stone-700 dark:text-stone-300"
                                 >
                                     <svg
-                                        class="mr-2 h-5 w-5 text-amber-500"
+                                        class="mr-2 h-5 w-5 text-primary"
                                         fill="none"
                                         stroke="currentColor"
                                         viewBox="0 0 24 24"

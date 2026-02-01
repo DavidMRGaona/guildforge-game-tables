@@ -11,6 +11,42 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantMod
 final readonly class NotificationRecipientResolver
 {
     /**
+     * Get the creator's email address by user ID.
+     */
+    public function getCreatorEmail(string $userId): ?string
+    {
+        return \App\Infrastructure\Persistence\Eloquent\Models\UserModel::query()
+            ->where('id', $userId)
+            ->value('email');
+    }
+
+    /**
+     * Get the creator's display name by user ID.
+     */
+    public function getCreatorDisplayName(string $userId): string
+    {
+        return \App\Infrastructure\Persistence\Eloquent\Models\UserModel::query()
+            ->where('id', $userId)
+            ->value('name') ?? '';
+    }
+
+    /**
+     * Get emails of admin/editor users who can moderate game tables.
+     *
+     * @return array<string>
+     */
+    public function getModerationAdminEmails(): array
+    {
+        return \App\Infrastructure\Persistence\Eloquent\Models\UserModel::query()
+            ->whereHas('roles', fn ($query) => $query->whereIn('name', ['admin', 'editor']))
+            ->pluck('email')
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
      * Get emails of game masters that have notify_by_email enabled.
      *
      * @return array<string>
