@@ -54,37 +54,28 @@ final readonly class EventCreationEligibilityService implements EventCreationEli
             return $this->checkWithOverride($config->eligibilityOverride(), $userId);
         }
 
-        // Event has tables enabled (checked above) and no specific override.
-        // This means the event allows table creation - user just needs to be authenticated.
-        if ($userId === null) {
-            return CreationEligibilityDTO::notEligible('authentication_required');
-        }
-
-        return CreationEligibilityDTO::eligible(
-            userTier: null,
-            canCreateTables: true,
-            canCreateCampaigns: false,
-        );
+        // Event has tables enabled but no specific override.
+        // Fall back to global eligibility settings.
+        return $this->globalEligibilityService->canCreateTable($userId);
     }
 
     /**
-     * Check if creation is restricted by early access dates.
+     * Check if creation is restricted by opening date and early access.
      * Returns null if no restriction applies, otherwise returns the eligibility result.
      */
     private function checkEarlyAccess(EventGameTableConfig $config, ?string $userId): ?CreationEligibilityDTO
     {
-        // If early access is not configured, no restriction applies
-        if (! $config->hasEarlyAccess()) {
-            return null;
-        }
-
+        // Check if there's a general opening date configured
         $generalOpenDate = $config->creationOpensAt();
         if ($generalOpenDate === null) {
             return null;
         }
 
         $now = new DateTimeImmutable();
-        $earlyAccessTier = $config->earlyAccessTier();
+
+        // Check if early access is enabled and configured
+        $earlyAccessTier = $config->isEarlyAccessEnabled() ? $config->earlyAccessTier() : null;
+        $hasEarlyAccessTier = $earlyAccessTier !== null;
 
         // Calculate the effective open date for this user
         $effectiveOpenDate = $this->getEffectiveOpenDateForUser(
@@ -95,7 +86,12 @@ final readonly class EventCreationEligibilityService implements EventCreationEli
 
         // If creation hasn't opened yet for this user, return eligibleAt
         if ($effectiveOpenDate > $now) {
-            return CreationEligibilityDTO::eligibleAt($effectiveOpenDate);
+            return CreationEligibilityDTO::eligibleAt(
+                canCreateAt: $effectiveOpenDate,
+                userTier: null,
+                hasEarlyAccess: $hasEarlyAccessTier,
+                publicOpenDate: $generalOpenDate,
+            );
         }
 
         // Creation is open, no restriction
@@ -153,7 +149,10 @@ final readonly class EventCreationEligibilityService implements EventCreationEli
 
         // For all other levels, user must be authenticated
         if ($userId === null) {
-            return CreationEligibilityDTO::notEligible('authentication_required');
+            return CreationEligibilityDTO::notEligible(
+                reason: 'authentication_required',
+                requiresAuthentication: true,
+            );
         }
 
         return match ($override->accessLevel) {

@@ -277,6 +277,7 @@ export interface ProfileCreatedTablesData {
     tables: ProfileCreatedTable[];
     drafts: ProfileCreatedTable[];
     total: number;
+    canCreate: boolean;
 }
 
 /**
@@ -347,6 +348,29 @@ export interface GameTableEditData {
     }>;
     created_at: string | null;
     updated_at: string | null;
+}
+
+export interface ProfileCreatedCampaign {
+    id: string;
+    title: string;
+    slug: string | null;
+    gameSystemName: string;
+    status: string;
+    statusLabel: string;
+    statusColor: string;
+    frequency: string | null;
+    frequencyLabel: string | null;
+    isPublished: boolean;
+    isRecruiting: boolean;
+    maxPlayers: number | null;
+    currentPlayers: number;
+}
+
+export interface ProfileCreatedCampaignsData {
+    campaigns: ProfileCreatedCampaign[];
+    drafts: ProfileCreatedCampaign[];
+    total: number;
+    canCreate: boolean;
 }
 
 // Re-export registration types for convenience

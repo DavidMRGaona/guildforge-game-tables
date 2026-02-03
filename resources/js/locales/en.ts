@@ -14,8 +14,12 @@ export default {
         tables: 'tables',
         eventActions: {
             createTable: 'Create game table',
-            creationOpensAt: 'Table creation opens on {date}',
+            creationOpensAt: 'You can create tables from {date}',
             loginToCreate: 'Log in to create tables',
+            earlyAccessForMembers: 'Early access for members',
+            generalOpeningAt: 'General opening: {date}',
+            publicOpeningAt: 'Registration opens: {date}',
+            earlyAccessActiveFrom: 'Early access active from {date}',
         },
         // Flat keys used by components
         online: 'Online',

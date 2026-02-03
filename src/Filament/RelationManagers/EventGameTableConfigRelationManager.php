@@ -178,6 +178,17 @@ final class EventGameTableConfigRelationManager extends RelationManager
                 ->columns(2)
                 ->visible(fn (Get $get): bool => (bool) $get('tables_enabled')),
 
+            Fieldset::make(__('game-tables::messages.event_config.table_creation'))
+                ->schema([
+                    DateTimePicker::make('creation_opens_at')
+                        ->label(__('game-tables::messages.event_config.creation_opens_at'))
+                        ->helperText(__('game-tables::messages.event_config.creation_opens_at_help'))
+                        ->native(false)
+                        ->displayFormat('d/m/Y H:i')
+                        ->required(),
+                ])
+                ->visible(fn (Get $get): bool => (bool) $get('tables_enabled')),
+
             Section::make(__('game-tables::messages.event_config.eligibility_override'))
                 ->description(__('game-tables::messages.event_config.eligibility_override_description'))
                 ->schema([
@@ -220,14 +231,6 @@ final class EventGameTableConfigRelationManager extends RelationManager
                         ->label(__('game-tables::messages.event_config.early_access_enabled'))
                         ->helperText(__('game-tables::messages.event_config.early_access_enabled_help'))
                         ->live(),
-
-                    DateTimePicker::make('creation_opens_at')
-                        ->label(__('game-tables::messages.event_config.creation_opens_at'))
-                        ->helperText(__('game-tables::messages.event_config.creation_opens_at_help'))
-                        ->native(false)
-                        ->displayFormat('d/m/Y H:i')
-                        ->visible(fn (Get $get): bool => (bool) $get('early_access_enabled'))
-                        ->required(fn (Get $get): bool => (bool) $get('early_access_enabled')),
 
                     Select::make('early_access_type')
                         ->label(__('game-tables::messages.event_config.early_access_type'))

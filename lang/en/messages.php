@@ -633,6 +633,9 @@ return [
         'eligibility_required_permission' => 'Required permission',
         'eligibility_required_permission_help' => 'Permission name required to create tables in this event',
 
+        // Table creation
+        'table_creation' => 'Table creation',
+
         // Early access
         'early_access' => 'Early access',
         'early_access_description' => 'Allows certain users to create tables before the general opening date',

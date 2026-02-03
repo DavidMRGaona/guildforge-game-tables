@@ -158,8 +158,13 @@ final class EventCreationEligibilityServiceTest extends TestCase
             ->once()
             ->andReturn(true);
 
-        // Event has explicit config with tables_enabled=true, so user is eligible directly
-        // (no global fallback when event has explicit config)
+        // Event has tables enabled but no eligibility override - falls back to global service
+        $this->globalEligibilityService
+            ->shouldReceive('canCreateTable')
+            ->with($user->id)
+            ->once()
+            ->andReturn(\Modules\GameTables\Application\DTOs\CreationEligibilityDTO::eligible());
+
         $result = $this->service->canCreateTableForEvent($eventId, $user->id);
 
         $this->assertTrue($result->eligible);
@@ -197,7 +202,13 @@ final class EventCreationEligibilityServiceTest extends TestCase
             ->once()
             ->andReturn(true);
 
-        // Event has explicit config with tables_enabled=true, so user is eligible directly
+        // Event has tables enabled but no eligibility override - falls back to global service
+        $this->globalEligibilityService
+            ->shouldReceive('canCreateTable')
+            ->with($user->id)
+            ->once()
+            ->andReturn(\Modules\GameTables\Application\DTOs\CreationEligibilityDTO::eligible());
+
         $result = $this->service->canCreateTableForEvent($eventId, $user->id);
 
         $this->assertTrue($result->eligible);
@@ -223,7 +234,13 @@ final class EventCreationEligibilityServiceTest extends TestCase
             ->once()
             ->andReturn($config);
 
-        // Event has explicit config with tables_enabled=true, so user is eligible directly
+        // Event has tables enabled but no eligibility override - falls back to global service
+        $this->globalEligibilityService
+            ->shouldReceive('canCreateTable')
+            ->with($user->id)
+            ->once()
+            ->andReturn(\Modules\GameTables\Application\DTOs\CreationEligibilityDTO::eligible());
+
         $result = $this->service->canCreateTableForEvent($eventId, $user->id);
 
         $this->assertTrue($result->eligible);
@@ -246,7 +263,13 @@ final class EventCreationEligibilityServiceTest extends TestCase
             ->once()
             ->andReturn($config);
 
-        // Event has explicit config with tables_enabled=true, so user is eligible directly
+        // Event has tables enabled but no eligibility override - falls back to global service
+        $this->globalEligibilityService
+            ->shouldReceive('canCreateTable')
+            ->with($user->id)
+            ->once()
+            ->andReturn(\Modules\GameTables\Application\DTOs\CreationEligibilityDTO::eligible());
+
         $result = $this->service->canCreateTableForEvent($eventId, $user->id);
 
         $this->assertTrue($result->eligible);

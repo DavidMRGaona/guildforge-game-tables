@@ -45,7 +45,10 @@ final readonly class CreationEligibilityService implements CreationEligibilitySe
 
         // For all other levels, user must be authenticated
         if ($userId === null) {
-            return CreationEligibilityDTO::notEligible('authentication_required');
+            return CreationEligibilityDTO::notEligible(
+                reason: 'authentication_required',
+                requiresAuthentication: true,
+            );
         }
 
         // Check based on access level
@@ -82,7 +85,10 @@ final readonly class CreationEligibilityService implements CreationEligibilitySe
 
         // For all other levels, user must be authenticated
         if ($userId === null) {
-            return CreationEligibilityDTO::notEligible('authentication_required');
+            return CreationEligibilityDTO::notEligible(
+                reason: 'authentication_required',
+                requiresAuthentication: true,
+            );
         }
 
         // Check based on access level

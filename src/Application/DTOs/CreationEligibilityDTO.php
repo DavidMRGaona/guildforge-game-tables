@@ -15,12 +15,16 @@ final readonly class CreationEligibilityDTO
         public ?DateTimeImmutable $canCreateAt,
         public bool $canCreateTables,
         public bool $canCreateCampaigns,
+        public bool $hasEarlyAccess = false,
+        public ?DateTimeImmutable $publicOpenDate = null,
+        public bool $requiresAuthentication = false,
     ) {}
 
     public static function eligible(
         ?int $userTier = null,
         bool $canCreateTables = true,
         bool $canCreateCampaigns = false,
+        bool $hasEarlyAccess = false,
     ): self {
         return new self(
             eligible: true,
@@ -29,11 +33,16 @@ final readonly class CreationEligibilityDTO
             canCreateAt: null,
             canCreateTables: $canCreateTables,
             canCreateCampaigns: $canCreateCampaigns,
+            hasEarlyAccess: $hasEarlyAccess,
+            publicOpenDate: null,
+            requiresAuthentication: false,
         );
     }
 
-    public static function notEligible(string $reason): self
-    {
+    public static function notEligible(
+        string $reason,
+        bool $requiresAuthentication = false,
+    ): self {
         return new self(
             eligible: false,
             reason: $reason,
@@ -41,12 +50,17 @@ final readonly class CreationEligibilityDTO
             canCreateAt: null,
             canCreateTables: false,
             canCreateCampaigns: false,
+            hasEarlyAccess: false,
+            publicOpenDate: null,
+            requiresAuthentication: $requiresAuthentication,
         );
     }
 
     public static function eligibleAt(
         DateTimeImmutable $canCreateAt,
         ?int $userTier = null,
+        bool $hasEarlyAccess = false,
+        ?DateTimeImmutable $publicOpenDate = null,
     ): self {
         return new self(
             eligible: false,
@@ -55,6 +69,9 @@ final readonly class CreationEligibilityDTO
             canCreateAt: $canCreateAt,
             canCreateTables: false,
             canCreateCampaigns: false,
+            hasEarlyAccess: $hasEarlyAccess,
+            publicOpenDate: $publicOpenDate,
+            requiresAuthentication: false,
         );
     }
 
@@ -70,6 +87,9 @@ final readonly class CreationEligibilityDTO
             'can_create_at' => $this->canCreateAt?->format('c'),
             'can_create_tables' => $this->canCreateTables,
             'can_create_campaigns' => $this->canCreateCampaigns,
+            'has_early_access' => $this->hasEarlyAccess,
+            'public_open_date' => $this->publicOpenDate?->format('c'),
+            'requires_authentication' => $this->requiresAuthentication,
         ];
     }
 }

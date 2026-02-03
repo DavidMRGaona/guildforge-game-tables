@@ -724,6 +724,9 @@ return [
         'eligibility_required_permission' => 'Permiso requerido',
         'eligibility_required_permission_help' => 'Nombre del permiso necesario para crear mesas en este evento',
 
+        // Table creation
+        'table_creation' => 'Creación de partidas',
+
         // Early access
         'early_access' => 'Acceso anticipado',
         'early_access_description' => 'Permite que ciertos usuarios creen mesas antes de la fecha de apertura general',

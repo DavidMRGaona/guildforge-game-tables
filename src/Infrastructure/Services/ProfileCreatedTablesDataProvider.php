@@ -5,18 +5,20 @@ declare(strict_types=1);
 namespace Modules\GameTables\Infrastructure\Services;
 
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
+use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 
 final readonly class ProfileCreatedTablesDataProvider
 {
     public function __construct(
         private GameTableRepositoryInterface $gameTableRepository,
+        private CreationEligibilityServiceInterface $eligibilityService,
     ) {}
 
     /**
      * Get created tables data for a user's profile page.
      *
-     * @return array{tables: array<array<string, mixed>>, drafts: array<array<string, mixed>>, total: int}|null
+     * @return array{tables: array<array<string, mixed>>, drafts: array<array<string, mixed>>, total: int, canCreate: bool}|null
      */
     public function getDataForUser(?string $userId): ?array
     {
@@ -24,10 +26,18 @@ final readonly class ProfileCreatedTablesDataProvider
             return null;
         }
 
+        $eligibility = $this->eligibilityService->canCreateTable($userId);
+        $canCreate = $eligibility->eligible && $eligibility->canCreateTables;
+
         $tables = $this->gameTableRepository->getByCreator($userId);
 
         if (count($tables) === 0) {
-            return null;
+            return [
+                'tables' => [],
+                'drafts' => [],
+                'total' => 0,
+                'canCreate' => $canCreate,
+            ];
         }
 
         $published = [];
@@ -48,6 +58,7 @@ final readonly class ProfileCreatedTablesDataProvider
             'tables' => $published,
             'drafts' => $drafts,
             'total' => count($tables),
+            'canCreate' => $canCreate,
         ];
     }
 

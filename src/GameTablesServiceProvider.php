@@ -69,6 +69,7 @@ use Modules\GameTables\Infrastructure\Services\FrontendCreationService;
 use Modules\GameTables\Infrastructure\Services\GameMasterService;
 use Modules\GameTables\Infrastructure\Services\GameTableQueryService;
 use Modules\GameTables\Infrastructure\Services\GameTableService;
+use Modules\GameTables\Infrastructure\Services\ProfileCreatedCampaignsDataProvider;
 use Modules\GameTables\Infrastructure\Services\ProfileCreatedTablesDataProvider;
 use Modules\GameTables\Infrastructure\Services\ProfileGameTablesDataProvider;
 use Modules\GameTables\Infrastructure\Services\RegistrationService;
@@ -137,6 +138,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         $this->shareGameTableCount();
         $this->shareProfileGameTables();
         $this->shareProfileCreatedTables();
+        $this->shareProfileCreatedCampaigns();
         $this->shareEventCreationContext();
     }
 
@@ -220,6 +222,49 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
             }
 
             $provider = app(ProfileCreatedTablesDataProvider::class);
+            $data = $provider->getDataForUser($user->id);
+
+            return $data['total'] ?? 0;
+        });
+    }
+
+    /**
+     * Share profile created campaigns data via Inertia for the profile page.
+     */
+    private function shareProfileCreatedCampaigns(): void
+    {
+        if (! class_exists(Inertia::class)) {
+            return;
+        }
+
+        Inertia::share('profileCreatedCampaigns', function (): ?array {
+            $route = request()->route();
+            if ($route?->getName() !== 'profile.show') {
+                return null;
+            }
+
+            $user = auth()->user();
+            if ($user === null) {
+                return null;
+            }
+
+            $provider = app(ProfileCreatedCampaignsDataProvider::class);
+
+            return $provider->getDataForUser($user->id);
+        });
+
+        Inertia::share('profileCreatedCampaignsTotal', function (): ?int {
+            $route = request()->route();
+            if ($route?->getName() !== 'profile.show') {
+                return null;
+            }
+
+            $user = auth()->user();
+            if ($user === null) {
+                return null;
+            }
+
+            $provider = app(ProfileCreatedCampaignsDataProvider::class);
             $data = $provider->getDataForUser($user->id);
 
             return $data['total'] ?? 0;
@@ -740,6 +785,21 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                     'icon' => 'pencil-square',
                     'labelKey' => 'gameTables.profile.created.tabLabel',
                     'badgeKey' => 'profileCreatedTablesTotal',
+                ],
+            ),
+            new SlotRegistrationDTO(
+                slot: 'profile-sections',
+                component: 'components/profile/ProfileCreatedCampaignsSection.vue',
+                module: $this->moduleName(),
+                order: 16,
+                props: [],
+                dataKeys: ['profileCreatedCampaigns'],
+                profileTab: [
+                    'tabId' => 'gametables-campaigns',
+                    'parentId' => 'gametables',
+                    'icon' => 'book-open',
+                    'labelKey' => 'campaigns.profile.tabLabel',
+                    'badgeKey' => 'profileCreatedCampaignsTotal',
                 ],
             ),
         ];
