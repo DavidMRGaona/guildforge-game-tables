@@ -54,7 +54,7 @@ final readonly class NotificationRecipientResolver
     public function getGameMasterEmails(string $gameTableId): array
     {
         return GameMasterModel::query()
-            ->where('game_table_id', $gameTableId)
+            ->whereHas('gameTables', fn ($query) => $query->where('gametables_tables.id', $gameTableId))
             ->where('notify_by_email', true)
             ->with('user')
             ->get()

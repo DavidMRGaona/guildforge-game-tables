@@ -235,6 +235,7 @@ final class GameTableQueryService implements GameTableQueryServiceInterface
             acceptsRegistrationsInProgress: $table->accepts_registrations_in_progress ?? false,
             isPublished: $table->is_published,
             publishedAt: $table->published_at,
+            frontendCreationStatus: $table->frontend_creation_status,
             notes: $table->notes,
             imagePublicId: $table->image_public_id,
             participants: $participants,
