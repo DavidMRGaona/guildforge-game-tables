@@ -61,7 +61,7 @@ final class GameTablesSettings extends Page implements HasForms
         $settings = $moduleManager->getSettings(new ModuleName('game-tables'));
 
         // Load settings with defaults from config
-        $defaults = config('game-tables');
+        $defaults = config('game-tables', []);
 
         $this->form->fill(array_merge($defaults, $settings));
     }
