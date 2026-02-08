@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -51,7 +52,7 @@ final class FrontendCampaignController extends Controller
      */
     public function store(FrontendCreateCampaignRequest $request): RedirectResponse
     {
-        /** @var \App\Infrastructure\Persistence\Eloquent\Models\UserModel $user */
+        /** @var UserModel $user */
         $user = auth()->user();
 
         $dto = FrontendCreateCampaignDTO::fromArray([
@@ -71,7 +72,7 @@ final class FrontendCampaignController extends Controller
      */
     public function myCampaigns(): Response
     {
-        /** @var \App\Infrastructure\Persistence\Eloquent\Models\UserModel $user */
+        /** @var UserModel $user */
         $user = auth()->user();
         $campaigns = $this->creationService->getUserCampaignDrafts((string) $user->id);
 
@@ -88,7 +89,7 @@ final class FrontendCampaignController extends Controller
      */
     public function edit(string $id): Response
     {
-        /** @var \App\Infrastructure\Persistence\Eloquent\Models\UserModel $user */
+        /** @var UserModel $user */
         $user = auth()->user();
 
         // Get user's drafts and find the one with matching ID
@@ -120,7 +121,7 @@ final class FrontendCampaignController extends Controller
      */
     public function update(string $id, FrontendCreateCampaignRequest $request): RedirectResponse
     {
-        /** @var \App\Infrastructure\Persistence\Eloquent\Models\UserModel $user */
+        /** @var UserModel $user */
         $user = auth()->user();
 
         $dto = FrontendCreateCampaignDTO::fromArray([
@@ -140,7 +141,7 @@ final class FrontendCampaignController extends Controller
      */
     public function submitForReview(string $id): RedirectResponse
     {
-        /** @var \App\Infrastructure\Persistence\Eloquent\Models\UserModel $user */
+        /** @var UserModel $user */
         $user = auth()->user();
 
         $this->creationService->submitCampaignForReview($id, (string) $user->id);
@@ -155,7 +156,7 @@ final class FrontendCampaignController extends Controller
      */
     public function destroy(string $id): RedirectResponse
     {
-        /** @var \App\Infrastructure\Persistence\Eloquent\Models\UserModel $user */
+        /** @var UserModel $user */
         $user = auth()->user();
 
         $this->creationService->deleteCampaignDraft($id, (string) $user->id);

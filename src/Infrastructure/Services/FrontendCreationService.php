@@ -10,11 +10,16 @@ use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Modules\GameTables\Application\DTOs\CampaignResponseDTO;
 use Modules\GameTables\Application\DTOs\FrontendCreateCampaignDTO;
 use Modules\GameTables\Application\DTOs\FrontendCreateGameTableDTO;
+use Modules\GameTables\Application\DTOs\GameMasterResponseDTO;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
 use Modules\GameTables\Application\Services\EventCreationEligibilityServiceInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
+use Modules\GameTables\Application\Services\GameMasterServiceInterface;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
+use Modules\GameTables\Domain\Entities\Campaign;
+use Modules\GameTables\Domain\Enums\CampaignFrequency;
+use Modules\GameTables\Domain\Enums\CampaignStatus;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
@@ -31,13 +36,10 @@ use Modules\GameTables\Domain\Exceptions\CampaignNotFoundException;
 use Modules\GameTables\Domain\Exceptions\GameTableNotFoundException;
 use Modules\GameTables\Domain\Exceptions\NotEditableException;
 use Modules\GameTables\Domain\Exceptions\NotEligibleToCreateException;
-use Modules\GameTables\Domain\Entities\Campaign;
-use Modules\GameTables\Domain\Enums\CampaignStatus;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ContentWarningRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameSystemRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
-use Modules\GameTables\Application\Services\GameMasterServiceInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\GameSystemId;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
@@ -156,6 +158,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
      *     content_warnings: array<array{id: string, name: string, description: string|null, severity: string}>,
      *     genres: array<string, string>,
      *     languages: array<string, string>,
+     *     campaign_frequencies: array<string, string>,
      *     events: array<array{id: string, name: string}>,
      *     campaigns: array<array{id: string, name: string}>
      * }
@@ -169,7 +172,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         $contentWarnings = $this->contentWarningRepository->getActive();
 
         // Get current or future published events (events that haven't ended yet)
-        $now = new \DateTimeImmutable();
+        $now = new \DateTimeImmutable;
         $events = $this->eventRepository->findPublished()
             ->filter(static fn ($event): bool => $event->endDate() >= $now)
             ->sortBy(static fn ($event): \DateTimeImmutable => $event->startDate());
@@ -202,6 +205,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             ),
             'genres' => Genre::options(),
             'languages' => Language::options(),
+            'campaign_frequencies' => CampaignFrequency::options(),
             'events' => $events->map(
                 static fn ($event): array => [
                     'id' => $event->id()->value,

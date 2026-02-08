@@ -6,6 +6,7 @@ namespace Modules\GameTables\Filament\Pages;
 
 use App\Application\Modules\Services\ModuleManagerServiceInterface;
 use App\Domain\Modules\ValueObjects\ModuleName;
+use App\Filament\Concerns\SafeModuleNavigation;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
@@ -24,6 +25,7 @@ use Filament\Pages\Page;
 final class GameTablesSettings extends Page implements HasForms
 {
     use InteractsWithForms;
+    use SafeModuleNavigation;
 
     protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
 

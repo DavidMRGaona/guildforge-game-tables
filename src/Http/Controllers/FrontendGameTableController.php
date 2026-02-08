@@ -6,8 +6,11 @@ namespace Modules\GameTables\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
+use App\Infrastructure\Persistence\Eloquent\Models\User;
+use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\GameTables\Application\DTOs\FrontendCreateGameTableDTO;
@@ -40,7 +43,7 @@ final class FrontendGameTableController extends Controller
 
         // Resolve event by slug if provided
         $event = null;
-        if ($eventSlug !== null && is_string($eventSlug)) {
+        if (is_string($eventSlug)) {
             $event = EventModel::where('slug', $eventSlug)->first();
         }
         $eventId = $event?->id;
@@ -89,7 +92,7 @@ final class FrontendGameTableController extends Controller
      */
     public function store(FrontendCreateGameTableRequest $request): RedirectResponse
     {
-        /** @var \App\Infrastructure\Persistence\Eloquent\Models\User $user */
+        /** @var UserModel $user */
         $user = auth()->user();
 
         $dto = FrontendCreateGameTableDTO::fromArray([
@@ -109,7 +112,7 @@ final class FrontendGameTableController extends Controller
      */
     public function myTables(): Response
     {
-        /** @var \App\Infrastructure\Persistence\Eloquent\Models\User $user */
+        /** @var UserModel $user */
         $user = auth()->user();
         $tables = $this->creationService->getUserDrafts((string) $user->id);
 
@@ -117,7 +120,7 @@ final class FrontendGameTableController extends Controller
 
         return Inertia::render('GameTables/MyTables', [
             'tables' => array_map(
-                fn (GameTableResponseDTO $dto) => $dto->toArray(),
+                static fn (GameTableResponseDTO $dto) => $dto->toArray(),
                 $tables
             ),
             'canCreate' => $eligibility->eligible,
@@ -125,13 +128,13 @@ final class FrontendGameTableController extends Controller
     }
 
     /**
-     * Show edit form for a draft table.
+     * Show an edit form for a draft table.
      */
     public function edit(GameTableModel $gameTable): Response
     {
-        $this->authorize('update', $gameTable);
+        Gate::authorize('update', $gameTable);
 
-        /** @var \App\Infrastructure\Persistence\Eloquent\Models\UserModel $user */
+        /** @var UserModel $user */
         $user = auth()->user();
 
         // Get the table DTO using the service (consistent with architecture)
@@ -140,7 +143,7 @@ final class FrontendGameTableController extends Controller
         // Get form data for the edit form
         $formData = $this->creationService->getCreateFormData();
 
-        // Get event context if table is associated with an event
+        // Get event context if a table is associated with an event
         $eventContext = null;
         if ($gameTable->event_id !== null) {
             $eventContext = $this->eventConfigService->getCreationContext($gameTable->event_id);
@@ -166,9 +169,9 @@ final class FrontendGameTableController extends Controller
      */
     public function update(GameTableModel $gameTable, FrontendCreateGameTableRequest $request): RedirectResponse
     {
-        $this->authorize('update', $gameTable);
+        Gate::authorize('update', $gameTable);
 
-        /** @var \App\Infrastructure\Persistence\Eloquent\Models\UserModel $user */
+        /** @var UserModel $user */
         $user = auth()->user();
 
         $dto = FrontendCreateGameTableDTO::fromArray([
@@ -188,9 +191,9 @@ final class FrontendGameTableController extends Controller
      */
     public function submitForReview(GameTableModel $gameTable): RedirectResponse
     {
-        $this->authorize('submitForReview', $gameTable);
+        Gate::authorize('submitForReview', $gameTable);
 
-        /** @var \App\Infrastructure\Persistence\Eloquent\Models\UserModel $user */
+        /** @var UserModel $user */
         $user = auth()->user();
 
         $this->creationService->submitForReview($gameTable->id, (string) $user->id);
@@ -205,9 +208,9 @@ final class FrontendGameTableController extends Controller
      */
     public function destroy(GameTableModel $gameTable): RedirectResponse
     {
-        $this->authorize('delete', $gameTable);
+        Gate::authorize('delete', $gameTable);
 
-        /** @var \App\Infrastructure\Persistence\Eloquent\Models\UserModel $user */
+        /** @var UserModel $user */
         $user = auth()->user();
 
         $this->creationService->deleteDraft($gameTable->id, (string) $user->id);
