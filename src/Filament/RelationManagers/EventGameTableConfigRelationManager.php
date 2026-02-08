@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Filament\RelationManagers;
 
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
+use App\Infrastructure\Persistence\Eloquent\Models\RoleModel;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Repeater;
@@ -349,9 +350,9 @@ final class EventGameTableConfigRelationManager extends RelationManager
      */
     private function getRoleOptions(): array
     {
-        return [
-            'editor' => 'Editor',
-            'admin' => 'Admin',
-        ];
+        return RoleModel::query()
+            ->orderBy('name')
+            ->pluck('display_name', 'name')
+            ->all();
     }
 }
