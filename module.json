@@ -1,7 +1,7 @@
 {
   "name": "game-tables",
   "displayName": "Mesas de rol",
-  "version": "1.0.2-beta",
+  "version": "1.0.3-beta",
   "namespace": "Modules\\GameTables",
   "provider": "GameTablesServiceProvider",
   "description": "Gestión de mesas de juegos de rol y campañas",
