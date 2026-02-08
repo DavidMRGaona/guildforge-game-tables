@@ -11,12 +11,13 @@ import type { GameSystem } from '../../types/gametables';
 import FormTabs from '../../components/FormTabs.vue';
 import type { FormTab } from '../../components/FormTabs.vue';
 
-type OptionsInput = Record<string, string> | Array<{ value: string; label: string }>;
+type OptionsInput = Record<string, string> | Array<{ value: string; label: string }> | null | undefined;
 
 // Helper to transform {value: label} objects to [{value, label}] arrays
 function objectToOptions(
     obj: OptionsInput
 ): Array<{ value: string; label: string }> {
+    if (!obj) return [];
     if (Array.isArray(obj)) return obj;
     return Object.entries(obj).map(([value, label]) => ({ value, label }));
 }

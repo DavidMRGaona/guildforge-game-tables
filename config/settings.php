@@ -30,12 +30,6 @@ return array (
   ),
   'frontend_creation' => 
   array (
-    'enabled' => true,
-    'allowed_content' => 'both',
-    'access_level' => 'everyone',
-    'publication' => 
-    array (
-      'mode' => NULL,
-    ),
+    'enabled' => false,
   ),
 );
