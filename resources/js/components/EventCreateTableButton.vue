@@ -2,7 +2,6 @@
 import { computed } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import { useAuth } from '@/composables/useAuth';
 
 interface Props {
     event: {
@@ -26,9 +25,12 @@ interface EventCreationEligibility {
 
 const props = defineProps<Props>();
 const { t, locale } = useI18n();
-const { isAuthenticated } = useAuth();
 
 const page = usePage();
+const isAuthenticated = computed(() => {
+    const auth = page.props.auth as { user?: unknown } | undefined;
+    return auth?.user != null;
+});
 
 const eligibility = computed((): EventCreationEligibility | null => {
     return page.props.eventCreationEligibility as EventCreationEligibility | null;
