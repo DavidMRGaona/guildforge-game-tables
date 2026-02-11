@@ -26,11 +26,19 @@ final class NotificationRecipientResolverTest extends TestCase
 
     private NotificationRecipientResolver $resolver;
 
+    private UserModel $tableCreator;
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->resolver = new NotificationRecipientResolver();
+        $this->tableCreator = UserModel::create([
+            'id' => (string) Str::uuid(),
+            'name' => 'Table Creator',
+            'email' => 'creator@example.com',
+            'password' => 'password',
+        ]);
     }
 
     public function test_get_game_master_emails_returns_gm_emails_with_notify_enabled(): void
@@ -46,7 +54,7 @@ final class NotificationRecipientResolverTest extends TestCase
         $gameTable = GameTableModel::create([
             'id' => (string) Str::uuid(),
             'game_system_id' => $gameSystem->id,
-            'created_by' => (string) Str::uuid(),
+            'created_by' => $this->tableCreator->id,
             'title' => 'Test Table',
             'starts_at' => now()->addWeek(),
             'duration_minutes' => 240,
@@ -59,27 +67,28 @@ final class NotificationRecipientResolverTest extends TestCase
             'auto_confirm' => true,
         ]);
 
-        GameMasterModel::create([
+        $gm1 = GameMasterModel::create([
             'id' => (string) Str::uuid(),
-            'game_table_id' => $gameTable->id,
             'first_name' => 'GM',
             'last_name' => 'One',
             'email' => 'gm1@example.com',
-            'role' => GameMasterRole::Primary,
+            'role' => GameMasterRole::Main,
             'notify_by_email' => true,
             'is_name_public' => true,
         ]);
 
-        GameMasterModel::create([
+        $gm2 = GameMasterModel::create([
             'id' => (string) Str::uuid(),
-            'game_table_id' => $gameTable->id,
             'first_name' => 'GM',
             'last_name' => 'Two',
             'email' => 'gm2@example.com',
-            'role' => GameMasterRole::Assistant,
+            'role' => GameMasterRole::CoGm,
             'notify_by_email' => true,
             'is_name_public' => true,
         ]);
+
+        $gameTable->gameMasters()->attach($gm1->id, ['source' => 'local', 'excluded' => false, 'sort_order' => 1]);
+        $gameTable->gameMasters()->attach($gm2->id, ['source' => 'local', 'excluded' => false, 'sort_order' => 2]);
 
         $result = $this->resolver->getGameMasterEmails($gameTable->id);
 
@@ -101,7 +110,7 @@ final class NotificationRecipientResolverTest extends TestCase
         $gameTable = GameTableModel::create([
             'id' => (string) Str::uuid(),
             'game_system_id' => $gameSystem->id,
-            'created_by' => (string) Str::uuid(),
+            'created_by' => $this->tableCreator->id,
             'title' => 'Test Table',
             'starts_at' => now()->addWeek(),
             'duration_minutes' => 240,
@@ -114,27 +123,28 @@ final class NotificationRecipientResolverTest extends TestCase
             'auto_confirm' => true,
         ]);
 
-        GameMasterModel::create([
+        $gmEnabled = GameMasterModel::create([
             'id' => (string) Str::uuid(),
-            'game_table_id' => $gameTable->id,
             'first_name' => 'GM',
             'last_name' => 'Enabled',
             'email' => 'enabled@example.com',
-            'role' => GameMasterRole::Primary,
+            'role' => GameMasterRole::Main,
             'notify_by_email' => true,
             'is_name_public' => true,
         ]);
 
-        GameMasterModel::create([
+        $gmDisabled = GameMasterModel::create([
             'id' => (string) Str::uuid(),
-            'game_table_id' => $gameTable->id,
             'first_name' => 'GM',
             'last_name' => 'Disabled',
             'email' => 'disabled@example.com',
-            'role' => GameMasterRole::Assistant,
+            'role' => GameMasterRole::CoGm,
             'notify_by_email' => false,
             'is_name_public' => true,
         ]);
+
+        $gameTable->gameMasters()->attach($gmEnabled->id, ['source' => 'local', 'excluded' => false, 'sort_order' => 1]);
+        $gameTable->gameMasters()->attach($gmDisabled->id, ['source' => 'local', 'excluded' => false, 'sort_order' => 2]);
 
         $result = $this->resolver->getGameMasterEmails($gameTable->id);
 
@@ -176,15 +186,16 @@ final class NotificationRecipientResolverTest extends TestCase
             'auto_confirm' => true,
         ]);
 
-        GameMasterModel::create([
+        $gameMaster = GameMasterModel::create([
             'id' => (string) Str::uuid(),
-            'game_table_id' => $gameTable->id,
             'user_id' => $user->id,
             'email' => null,
-            'role' => GameMasterRole::Primary,
+            'role' => GameMasterRole::Main,
             'notify_by_email' => true,
             'is_name_public' => true,
         ]);
+
+        $gameTable->gameMasters()->attach($gameMaster->id, ['source' => 'local', 'excluded' => false, 'sort_order' => 1]);
 
         $result = $this->resolver->getGameMasterEmails($gameTable->id);
 
@@ -205,7 +216,7 @@ final class NotificationRecipientResolverTest extends TestCase
         $gameTable = GameTableModel::create([
             'id' => (string) Str::uuid(),
             'game_system_id' => $gameSystem->id,
-            'created_by' => (string) Str::uuid(),
+            'created_by' => $this->tableCreator->id,
             'title' => 'Test Table',
             'starts_at' => now()->addWeek(),
             'duration_minutes' => 240,
@@ -237,7 +248,7 @@ final class NotificationRecipientResolverTest extends TestCase
         $gameTable = GameTableModel::create([
             'id' => (string) Str::uuid(),
             'game_system_id' => $gameSystem->id,
-            'created_by' => (string) Str::uuid(),
+            'created_by' => $this->tableCreator->id,
             'title' => 'Test Table',
             'starts_at' => now()->addWeek(),
             'duration_minutes' => 240,
@@ -269,7 +280,7 @@ final class NotificationRecipientResolverTest extends TestCase
         $gameTable = GameTableModel::create([
             'id' => (string) Str::uuid(),
             'game_system_id' => $gameSystem->id,
-            'created_by' => (string) Str::uuid(),
+            'created_by' => $this->tableCreator->id,
             'title' => 'Test Table',
             'starts_at' => now()->addWeek(),
             'duration_minutes' => 240,
@@ -358,7 +369,7 @@ final class NotificationRecipientResolverTest extends TestCase
         $gameTable = GameTableModel::create([
             'id' => (string) Str::uuid(),
             'game_system_id' => $gameSystem->id,
-            'created_by' => (string) Str::uuid(),
+            'created_by' => $this->tableCreator->id,
             'title' => 'Test Table',
             'starts_at' => now()->addWeek(),
             'duration_minutes' => 240,

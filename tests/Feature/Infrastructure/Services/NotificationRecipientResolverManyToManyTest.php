@@ -23,11 +23,19 @@ final class NotificationRecipientResolverManyToManyTest extends TestCase
 
     private NotificationRecipientResolver $resolver;
 
+    private UserModel $tableCreator;
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->resolver = new NotificationRecipientResolver();
+        $this->tableCreator = UserModel::create([
+            'id' => (string) Str::uuid(),
+            'name' => 'Table Creator',
+            'email' => 'creator@example.com',
+            'password' => 'password',
+        ]);
     }
 
     public function test_get_game_master_emails_returns_correct_emails_through_pivot_relationship(): void
@@ -43,7 +51,7 @@ final class NotificationRecipientResolverManyToManyTest extends TestCase
         $gameTable = GameTableModel::create([
             'id' => (string) Str::uuid(),
             'game_system_id' => $gameSystem->id,
-            'created_by' => (string) Str::uuid(),
+            'created_by' => $this->tableCreator->id,
             'title' => 'Test Table',
             'starts_at' => now()->addWeek(),
             'duration_minutes' => 240,
@@ -92,13 +100,13 @@ final class NotificationRecipientResolverManyToManyTest extends TestCase
         $gameTable = GameTableModel::create([
             'id' => (string) Str::uuid(),
             'game_system_id' => $gameSystem->id,
-            'created_by' => (string) Str::uuid(),
+            'created_by' => $this->tableCreator->id,
             'title' => 'Multiple GMs Table',
             'starts_at' => now()->addWeek(),
             'duration_minutes' => 240,
-            'table_type' => TableType::Campaign,
+            'table_type' => TableType::CampaignSession,
             'table_format' => TableFormat::Online,
-            'status' => TableStatus::Open,
+            'status' => TableStatus::Scheduled,
             'min_players' => 3,
             'max_players' => 6,
             'language' => 'es',
@@ -120,7 +128,7 @@ final class NotificationRecipientResolverManyToManyTest extends TestCase
             'first_name' => 'Bob',
             'last_name' => 'GM',
             'email' => 'bob@example.com',
-            'role' => GameMasterRole::Assistant,
+            'role' => GameMasterRole::CoGm,
             'notify_by_email' => true,
             'is_name_public' => true,
         ]);
@@ -158,13 +166,13 @@ final class NotificationRecipientResolverManyToManyTest extends TestCase
         $gameTable = GameTableModel::create([
             'id' => (string) Str::uuid(),
             'game_system_id' => $gameSystem->id,
-            'created_by' => (string) Str::uuid(),
+            'created_by' => $this->tableCreator->id,
             'title' => 'Notification Test Table',
             'starts_at' => now()->addWeek(),
             'duration_minutes' => 300,
             'table_type' => TableType::OneShot,
             'table_format' => TableFormat::Hybrid,
-            'status' => TableStatus::Open,
+            'status' => TableStatus::Scheduled,
             'min_players' => 2,
             'max_players' => 4,
             'language' => 'es',
@@ -186,7 +194,7 @@ final class NotificationRecipientResolverManyToManyTest extends TestCase
             'first_name' => 'Notify',
             'last_name' => 'Disabled',
             'email' => 'nonotify@example.com',
-            'role' => GameMasterRole::Assistant,
+            'role' => GameMasterRole::CoGm,
             'notify_by_email' => false,
             'is_name_public' => true,
         ]);
@@ -224,7 +232,7 @@ final class NotificationRecipientResolverManyToManyTest extends TestCase
         $gameTable = GameTableModel::create([
             'id' => (string) Str::uuid(),
             'game_system_id' => $gameSystem->id,
-            'created_by' => (string) Str::uuid(),
+            'created_by' => $this->tableCreator->id,
             'title' => 'No GMs Table',
             'starts_at' => now()->addWeek(),
             'duration_minutes' => 240,
@@ -279,7 +287,7 @@ final class NotificationRecipientResolverManyToManyTest extends TestCase
             'duration_minutes' => 240,
             'table_type' => TableType::OneShot,
             'table_format' => TableFormat::Online,
-            'status' => TableStatus::Open,
+            'status' => TableStatus::Scheduled,
             'min_players' => 2,
             'max_players' => 6,
             'language' => 'es',
