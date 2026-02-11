@@ -574,6 +574,7 @@ final class RegistrationServiceTest extends TestCase
             gameSystemId: GameSystemId::generate(),
             createdBy: 'test-user-123',
             title: 'Test Game Table',
+            slug: 'test-game-table',
             timeSlot: $timeSlot,
             tableType: TableType::OneShot,
             tableFormat: TableFormat::InPerson,

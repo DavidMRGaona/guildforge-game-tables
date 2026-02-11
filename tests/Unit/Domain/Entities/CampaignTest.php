@@ -25,6 +25,7 @@ final class CampaignTest extends TestCase
             gameSystemId: $gameSystemId,
             createdBy: $createdById,
             title: 'Curse of Strahd',
+            slug: 'curse-of-strahd',
             status: CampaignStatus::Recruiting,
         );
 
@@ -52,6 +53,7 @@ final class CampaignTest extends TestCase
             gameSystemId: $gameSystemId,
             createdBy: 'user-uuid-123',
             title: 'Waterdeep: Dragon Heist',
+            slug: 'waterdeep-dragon-heist',
             status: CampaignStatus::Active,
             description: 'Una aventura urbana en la Ciudad de los Esplendores',
             frequency: CampaignFrequency::Weekly,
@@ -197,6 +199,7 @@ final class CampaignTest extends TestCase
             gameSystemId: GameSystemId::generate(),
             createdBy: 'user-uuid-123',
             title: 'Test Campaign',
+            slug: 'test-campaign',
             status: CampaignStatus::Active,
             sessionCount: 10,
             currentSession: 5,
@@ -221,6 +224,7 @@ final class CampaignTest extends TestCase
             gameSystemId: GameSystemId::generate(),
             createdBy: 'user-uuid-123',
             title: 'Test Campaign',
+            slug: 'test-campaign',
             status: $status,
             acceptsNewPlayers: $acceptsNewPlayers,
         );

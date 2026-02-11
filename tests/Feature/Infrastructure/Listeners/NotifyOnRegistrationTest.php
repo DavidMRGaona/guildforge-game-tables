@@ -155,6 +155,7 @@ final class NotifyOnRegistrationTest extends TestCase
             gameSystemId: GameSystemId::generate(),
             createdBy: 'user-uuid-123',
             title: 'La Tumba de la Aniquilacion',
+            slug: 'la-tumba-de-la-aniquilacion',
             timeSlot: new TimeSlot(new DateTimeImmutable('2026-02-01 18:00:00'), 240),
             tableType: TableType::OneShot,
             tableFormat: TableFormat::InPerson,
