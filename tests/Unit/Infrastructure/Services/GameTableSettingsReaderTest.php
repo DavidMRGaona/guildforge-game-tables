@@ -37,7 +37,7 @@ final class GameTableSettingsReaderTest extends TestCase
     public function test_notify_on_registration_module_settings_override(): void
     {
         config()->set('game-tables.notifications.notify_on_registration', true);
-        config()->set('modules.settings.gametables.notifications.notify_on_registration', false);
+        config()->set('modules.settings.game-tables.notifications.notify_on_registration', false);
 
         $result = $this->reader->isNotifyOnRegistrationEnabled();
 
