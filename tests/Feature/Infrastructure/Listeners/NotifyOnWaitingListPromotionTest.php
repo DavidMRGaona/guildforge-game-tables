@@ -17,14 +17,14 @@ use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Domain\ValueObjects\TimeSlot;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnWaitingListPromotion;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
-use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
+use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Notifications\WaitingListPromotionGmNotification;
 use Modules\GameTables\Notifications\WaitingListPromotionNotification;
 use Tests\TestCase;
 
 final class NotifyOnWaitingListPromotionTest extends TestCase
 {
-    private NotificationRecipientResolver $recipientResolver;
+    private NotificationRecipientResolverInterface $recipientResolver;
     private GameTableRepositoryInterface $gameTableRepository;
     private NotifyOnWaitingListPromotion $listener;
 
@@ -32,7 +32,7 @@ final class NotifyOnWaitingListPromotionTest extends TestCase
     {
         parent::setUp();
 
-        $this->recipientResolver = $this->createMock(NotificationRecipientResolver::class);
+        $this->recipientResolver = $this->createMock(NotificationRecipientResolverInterface::class);
         $this->gameTableRepository = $this->createMock(GameTableRepositoryInterface::class);
 
         $this->listener = new NotifyOnWaitingListPromotion(
@@ -156,7 +156,7 @@ final class NotifyOnWaitingListPromotionTest extends TestCase
 
         $this->listener->handle($event);
 
-        Notification::assertNotSentOnDemand(WaitingListPromotionNotification::class);
+        Notification::assertSentOnDemandTimes(WaitingListPromotionNotification::class, 0);
 
         Notification::assertSentOnDemand(
             WaitingListPromotionGmNotification::class,
@@ -184,7 +184,7 @@ final class NotifyOnWaitingListPromotionTest extends TestCase
 
         $this->listener->handle($event);
 
-        Notification::assertNothingSentOnDemand();
+        Notification::assertNothingSent();
     }
 
     private function createGameTable(GameTableId $gameTableId): GameTable

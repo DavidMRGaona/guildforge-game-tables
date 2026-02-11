@@ -14,6 +14,7 @@ use Modules\GameTables\Domain\Enums\SchedulingMode;
 use Modules\GameTables\Domain\Repositories\EventGameTableConfigRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\EligibilityOverride;
 use Modules\GameTables\Domain\ValueObjects\TimeSlotDefinition;
+use Illuminate\Support\Str;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\EventGameTableConfigModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentEventGameTableConfigRepository;
 use Tests\TestCase;
@@ -196,17 +197,19 @@ final class EloquentEventGameTableConfigRepositoryTest extends TestCase
 
     public function test_it_returns_null_when_config_not_found(): void
     {
-        $config = $this->repository->findByEvent('non-existent-id');
+        $nonExistentId = (string) Str::uuid();
+        $config = $this->repository->findByEvent($nonExistentId);
 
         $this->assertNull($config);
     }
 
     public function test_it_returns_default_config_when_not_found(): void
     {
-        $config = $this->repository->findByEventOrDefault('non-existent-id');
+        $nonExistentId = (string) Str::uuid();
+        $config = $this->repository->findByEventOrDefault($nonExistentId);
 
         $this->assertNotNull($config);
-        $this->assertEquals('non-existent-id', $config->eventId());
+        $this->assertEquals($nonExistentId, $config->eventId());
         $this->assertFalse($config->isEnabled());
         $this->assertEquals(SchedulingMode::FreeSchedule, $config->schedulingMode());
         $this->assertEmpty($config->timeSlots());

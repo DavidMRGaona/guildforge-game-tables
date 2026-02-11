@@ -10,10 +10,21 @@ use Tests\TestCase;
 
 final class ParticipantRegisteredNotificationTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->app['translator']->addNamespace(
+            'game-tables',
+            base_path('modules/game-tables/lang'),
+        );
+    }
+
     public function test_via_returns_mail_channel(): void
     {
         $notification = new ParticipantRegisteredNotification(
             participantName: 'John Doe',
+            tableId: 'table-uuid-123',
             tableTitle: 'Test Table',
             tableDate: '15/02/2026 18:00',
             tableLocation: 'Sala de juegos',
@@ -31,6 +42,7 @@ final class ParticipantRegisteredNotificationTest extends TestCase
     {
         $notification = new ParticipantRegisteredNotification(
             participantName: 'John Doe',
+            tableId: 'table-uuid-123',
             tableTitle: 'La Tumba de la Aniquilacion',
             tableDate: '15/02/2026 18:00',
             tableLocation: 'Sala de juegos',
@@ -47,6 +59,7 @@ final class ParticipantRegisteredNotificationTest extends TestCase
     {
         $notification = new ParticipantRegisteredNotification(
             participantName: 'John Doe',
+            tableId: 'table-uuid-123',
             tableTitle: 'Test Table',
             tableDate: '15/02/2026 18:00',
             tableLocation: 'Sala de juegos',
@@ -63,6 +76,7 @@ final class ParticipantRegisteredNotificationTest extends TestCase
     {
         $notification = new ParticipantRegisteredNotification(
             participantName: 'John Doe',
+            tableId: 'table-uuid-123',
             tableTitle: 'Test Table',
             tableDate: '15/02/2026 18:00',
             tableLocation: 'Sala de juegos',
@@ -79,6 +93,7 @@ final class ParticipantRegisteredNotificationTest extends TestCase
     {
         $notification = new ParticipantRegisteredNotification(
             participantName: 'John Doe',
+            tableId: 'table-uuid-123',
             tableTitle: 'Test Table',
             tableDate: '15/02/2026 18:00',
             tableLocation: 'Sala de juegos',

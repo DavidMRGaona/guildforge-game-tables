@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Services;
 
+use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 
-final readonly class NotificationRecipientResolver
+final readonly class NotificationRecipientResolver implements NotificationRecipientResolverInterface
 {
     /**
      * Get the creator's email address by user ID.

@@ -8,15 +8,15 @@ use Illuminate\Support\Facades\Notification;
 use Modules\GameTables\Domain\Events\ParticipantRegistered;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
+use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
-use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
 use Modules\GameTables\Notifications\ParticipantRegisteredNotification;
 
 final readonly class NotifyOnRegistration
 {
     public function __construct(
         private GameTableSettingsReader $settingsReader,
-        private NotificationRecipientResolver $recipientResolver,
+        private NotificationRecipientResolverInterface $recipientResolver,
         private GameTableRepositoryInterface $gameTableRepository,
     ) {}
 

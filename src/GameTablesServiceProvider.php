@@ -25,6 +25,7 @@ use Modules\GameTables\Application\Services\EventWithTablesQueryInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Application\Services\GameMasterServiceInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
+use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Modules\GameTables\Console\Commands\GenerateSlugsCommand;
@@ -68,6 +69,7 @@ use Modules\GameTables\Infrastructure\Services\EventWithTablesQuery;
 use Modules\GameTables\Infrastructure\Services\FrontendCreationService;
 use Modules\GameTables\Infrastructure\Services\GameMasterService;
 use Modules\GameTables\Infrastructure\Services\GameTableQueryService;
+use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
 use Modules\GameTables\Infrastructure\Services\GameTableService;
 use Modules\GameTables\Infrastructure\Services\ProfileCreatedCampaignsDataProvider;
 use Modules\GameTables\Infrastructure\Services\ProfileCreatedTablesDataProvider;
@@ -119,6 +121,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         $this->app->bind(GameMasterServiceInterface::class, GameMasterService::class);
         $this->app->bind(EventGameTableConfigServiceInterface::class, EventGameTableConfigService::class);
         $this->app->bind(EventCreationEligibilityServiceInterface::class, EventCreationEligibilityService::class);
+        $this->app->bind(NotificationRecipientResolverInterface::class, NotificationRecipientResolver::class);
 
         // Query service bindings
         $this->app->bind(GameTableQueryServiceInterface::class, GameTableQueryService::class);

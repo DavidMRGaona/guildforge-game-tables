@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Tests\Integration\Infrastructure\Services;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Str;
 use Modules\GameTables\Application\Services\EventWithTablesQueryInterface;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
@@ -16,17 +16,26 @@ use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Services\GameTableQueryService;
-use Tests\TestCase;
+use Tests\Support\Modules\ModuleTestCase;
 
-final class GameTableQueryServiceTest extends TestCase
+final class GameTableQueryServiceTest extends ModuleTestCase
 {
-    use RefreshDatabase;
+    protected ?string $moduleName = 'game-tables';
+    protected bool $autoEnableModule = true;
 
     private GameTableQueryService $queryService;
+    private UserModel $testUser;
 
     protected function setUp(): void
     {
         parent::setUp();
+
+        $this->testUser = UserModel::create([
+            'id' => (string) Str::uuid(),
+            'name' => 'Test User',
+            'email' => 'querytest@example.com',
+            'password' => 'password',
+        ]);
 
         $this->queryService = new GameTableQueryService(
             $this->app->make(GameTableRepositoryInterface::class),
@@ -48,21 +57,21 @@ final class GameTableQueryServiceTest extends TestCase
         $gameTable = GameTableModel::create([
             'id' => (string) Str::uuid(),
             'game_system_id' => $gameSystem->id,
-            'created_by' => (string) Str::uuid(),
+            'created_by' => $this->testUser->id,
             'title' => 'Epic Adventure',
             'slug' => 'epic-adventure',
             'starts_at' => now()->addWeek(),
             'duration_minutes' => 240,
             'table_type' => TableType::OneShot,
             'table_format' => TableFormat::InPerson,
-            'status' => TableStatus::Open,
+            'status' => TableStatus::Scheduled,
             'min_players' => 2,
             'max_players' => 6,
             'language' => 'es',
             'auto_confirm' => true,
             'is_published' => true,
             'published_at' => now(),
-            'frontend_creation_status' => FrontendCreationStatus::Submitted,
+            'frontend_creation_status' => FrontendCreationStatus::PendingReview,
         ]);
 
         $result = $this->queryService->findPublishedBySlug('epic-adventure');
@@ -71,7 +80,7 @@ final class GameTableQueryServiceTest extends TestCase
         $this->assertEquals($gameTable->id, $result->id);
         $this->assertEquals('Epic Adventure', $result->title);
         $this->assertNotNull($result->frontendCreationStatus);
-        $this->assertEquals(FrontendCreationStatus::Submitted, $result->frontendCreationStatus);
+        $this->assertEquals(FrontendCreationStatus::PendingReview, $result->frontendCreationStatus);
     }
 
     public function test_find_published_by_slug_returns_dto_with_null_frontend_creation_status(): void
@@ -87,14 +96,14 @@ final class GameTableQueryServiceTest extends TestCase
         $gameTable = GameTableModel::create([
             'id' => (string) Str::uuid(),
             'game_system_id' => $gameSystem->id,
-            'created_by' => (string) Str::uuid(),
+            'created_by' => $this->testUser->id,
             'title' => 'Admin Created Table',
             'slug' => 'admin-created-table',
             'starts_at' => now()->addWeek(),
             'duration_minutes' => 180,
-            'table_type' => TableType::Campaign,
+            'table_type' => TableType::CampaignSession,
             'table_format' => TableFormat::Online,
-            'status' => TableStatus::Open,
+            'status' => TableStatus::Scheduled,
             'min_players' => 3,
             'max_players' => 5,
             'language' => 'es',
@@ -125,14 +134,14 @@ final class GameTableQueryServiceTest extends TestCase
         $gameTable = GameTableModel::create([
             'id' => (string) Str::uuid(),
             'game_system_id' => $gameSystem->id,
-            'created_by' => (string) Str::uuid(),
+            'created_by' => $this->testUser->id,
             'title' => 'Horror Mystery',
             'slug' => 'horror-mystery',
             'starts_at' => now()->addWeek(),
             'duration_minutes' => 300,
             'table_type' => TableType::OneShot,
             'table_format' => TableFormat::Hybrid,
-            'status' => TableStatus::Open,
+            'status' => TableStatus::Scheduled,
             'min_players' => 2,
             'max_players' => 4,
             'language' => 'es',

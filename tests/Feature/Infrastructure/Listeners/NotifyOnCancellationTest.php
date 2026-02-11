@@ -17,13 +17,13 @@ use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Domain\ValueObjects\TimeSlot;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnCancellation;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
-use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
+use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Notifications\ParticipantCancelledNotification;
 use Tests\TestCase;
 
 final class NotifyOnCancellationTest extends TestCase
 {
-    private NotificationRecipientResolver $recipientResolver;
+    private NotificationRecipientResolverInterface $recipientResolver;
     private GameTableRepositoryInterface $gameTableRepository;
     private NotifyOnCancellation $listener;
 
@@ -31,7 +31,7 @@ final class NotifyOnCancellationTest extends TestCase
     {
         parent::setUp();
 
-        $this->recipientResolver = $this->createMock(NotificationRecipientResolver::class);
+        $this->recipientResolver = $this->createMock(NotificationRecipientResolverInterface::class);
         $this->gameTableRepository = $this->createMock(GameTableRepositoryInterface::class);
 
         $this->listener = new NotifyOnCancellation(
@@ -117,7 +117,7 @@ final class NotifyOnCancellationTest extends TestCase
 
         $this->listener->handle($event);
 
-        Notification::assertNothingSentOnDemand();
+        Notification::assertNothingSent();
     }
 
     public function test_does_not_send_when_game_table_not_found(): void
@@ -145,7 +145,7 @@ final class NotifyOnCancellationTest extends TestCase
 
         $this->listener->handle($event);
 
-        Notification::assertNothingSentOnDemand();
+        Notification::assertNothingSent();
     }
 
     private function createGameTable(GameTableId $gameTableId): GameTable

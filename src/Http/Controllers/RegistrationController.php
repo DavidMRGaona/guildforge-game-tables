@@ -142,7 +142,7 @@ final class RegistrationController extends Controller
                 ->with('error', __('game-tables::messages.errors.invalid_token'));
         }
 
-        $gameTable = $this->gameTableQueryService->find($participant->gameTableId);
+        $gameTable = $this->gameTableQueryService->findPublished($participant->gameTableId);
 
         if ($gameTable === null) {
             return redirect()->route('gametables.index')

@@ -271,6 +271,7 @@ final class EligibilityServiceTest extends TestCase
             registrationType: $registrationType,
             registrationOpensAt: $registrationOpensAt,
             autoConfirm: true,
+            isPublished: true,
         );
     }
 }
