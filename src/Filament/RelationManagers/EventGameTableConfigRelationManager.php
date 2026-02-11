@@ -295,7 +295,7 @@ final class EventGameTableConfigRelationManager extends RelationManager
 
         // Build time slots with full datetime (using event date as reference)
         $timeSlots = [];
-        if ($formData['scheduling_mode'] === SchedulingMode::SlotBased->value && ! empty($formData['time_slots'])) {
+        if (($formData['scheduling_mode'] ?? null) === SchedulingMode::SlotBased->value && ! empty($formData['time_slots'])) {
             $eventDate = $event->start_date?->format('Y-m-d') ?? date('Y-m-d');
             foreach ($formData['time_slots'] as $slot) {
                 if (empty($slot['label']) || empty($slot['start_time']) || empty($slot['end_time'])) {
