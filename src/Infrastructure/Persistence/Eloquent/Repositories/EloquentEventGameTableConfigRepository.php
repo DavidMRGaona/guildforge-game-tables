@@ -79,6 +79,14 @@ final readonly class EloquentEventGameTableConfigRepository implements EventGame
             ->exists();
     }
 
+    public function getEnabledEventIds(): array
+    {
+        return EventGameTableConfigModel::query()
+            ->where('tables_enabled', true)
+            ->pluck('event_id')
+            ->all();
+    }
+
     private function toEntity(EventGameTableConfigModel $model): EventGameTableConfig
     {
         return new EventGameTableConfig(

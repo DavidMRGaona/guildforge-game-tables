@@ -39,6 +39,7 @@ use Modules\GameTables\Domain\Exceptions\NotEligibleToCreateException;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ContentWarningRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameSystemRepositoryInterface;
+use Modules\GameTables\Domain\Repositories\EventGameTableConfigRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\GameSystemId;
@@ -58,6 +59,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         private AuthorizationServiceInterface $authorizationService,
         private EventRepositoryInterface $eventRepository,
         private GameMasterServiceInterface $gameMasterService,
+        private EventGameTableConfigRepositoryInterface $configRepository,
     ) {}
 
     public function createGameTable(FrontendCreateGameTableDTO $dto): GameTableResponseDTO
@@ -171,10 +173,12 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         // Get content warnings
         $contentWarnings = $this->contentWarningRepository->getActive();
 
-        // Get current or future published events (events that haven't ended yet)
+        // Get current or future published events that have tables enabled
         $now = new \DateTimeImmutable;
+        $enabledEventIds = $this->configRepository->getEnabledEventIds();
         $events = $this->eventRepository->findPublished()
             ->filter(static fn ($event): bool => $event->endDate() >= $now)
+            ->filter(static fn ($event): bool => in_array($event->id()->value, $enabledEventIds, true))
             ->sortBy(static fn ($event): \DateTimeImmutable => $event->startDate());
 
         // Get campaigns created by the current user

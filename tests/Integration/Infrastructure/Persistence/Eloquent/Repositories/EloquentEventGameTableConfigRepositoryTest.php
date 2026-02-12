@@ -251,4 +251,42 @@ final class EloquentEventGameTableConfigRepositoryTest extends TestCase
 
         $this->assertTrue($this->repository->exists($event->id));
     }
+
+    public function test_it_returns_enabled_event_ids(): void
+    {
+        $event1 = EventModel::factory()->create();
+        $event2 = EventModel::factory()->create();
+        $event3 = EventModel::factory()->create();
+
+        // Event 1: tables enabled
+        EventGameTableConfigModel::create([
+            'event_id' => $event1->id,
+            'tables_enabled' => true,
+            'scheduling_mode' => 'free',
+            'location_mode' => 'free',
+        ]);
+
+        // Event 2: tables disabled
+        EventGameTableConfigModel::create([
+            'event_id' => $event2->id,
+            'tables_enabled' => false,
+            'scheduling_mode' => 'free',
+            'location_mode' => 'free',
+        ]);
+
+        // Event 3: tables enabled
+        EventGameTableConfigModel::create([
+            'event_id' => $event3->id,
+            'tables_enabled' => true,
+            'scheduling_mode' => 'free',
+            'location_mode' => 'free',
+        ]);
+
+        $enabledIds = $this->repository->getEnabledEventIds();
+
+        $this->assertCount(2, $enabledIds);
+        $this->assertContains($event1->id, $enabledIds);
+        $this->assertContains($event3->id, $enabledIds);
+        $this->assertNotContains($event2->id, $enabledIds);
+    }
 }

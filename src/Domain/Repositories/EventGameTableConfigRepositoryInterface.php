@@ -32,4 +32,11 @@ interface EventGameTableConfigRepositoryInterface
      * Check if a config exists for an event.
      */
     public function exists(string $eventId): bool;
+
+    /**
+     * Get event IDs that have tables enabled.
+     *
+     * @return array<string>
+     */
+    public function getEnabledEventIds(): array;
 }
