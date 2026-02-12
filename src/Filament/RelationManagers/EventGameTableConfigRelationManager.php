@@ -279,11 +279,12 @@ final class EventGameTableConfigRelationManager extends RelationManager
 
     public function save(): void
     {
-        $formData = $this->configForm->getState();
         $eventId = $this->getOwnerRecord()->getKey();
         $service = app(EventGameTableConfigServiceInterface::class);
 
-        if (empty($formData['tables_enabled'])) {
+        // Check raw Livewire state BEFORE getState() to avoid Filament
+        // processing hidden fields whose state keys were already removed
+        if (empty($this->configData['tables_enabled'])) {
             $service->updateConfig(UpdateEventGameTableConfigDTO::fromArray([
                 'event_id' => $eventId,
                 'tables_enabled' => false,
@@ -305,6 +306,8 @@ final class EventGameTableConfigRelationManager extends RelationManager
             return;
         }
 
+        // tables_enabled is true — all fieldsets are visible, getState() is safe
+        $formData = $this->configForm->getState();
         $event = $this->getOwnerRecord();
 
         // Build eligibility override if enabled
