@@ -281,6 +281,30 @@ final class EventGameTableConfigRelationManager extends RelationManager
     {
         $formData = $this->configForm->getState();
         $eventId = $this->getOwnerRecord()->getKey();
+        $service = app(EventGameTableConfigServiceInterface::class);
+
+        if (empty($formData['tables_enabled'])) {
+            $service->updateConfig(UpdateEventGameTableConfigDTO::fromArray([
+                'event_id' => $eventId,
+                'tables_enabled' => false,
+                'scheduling_mode' => SchedulingMode::FreeSchedule->value,
+                'time_slots' => [],
+                'location_mode' => LocationMode::FreeChoice->value,
+                'fixed_location' => null,
+                'eligibility_override' => null,
+                'early_access_enabled' => false,
+                'creation_opens_at' => null,
+                'early_access_tier' => null,
+            ]));
+
+            Notification::make()
+                ->title(__('game-tables::messages.event_config.saved'))
+                ->success()
+                ->send();
+
+            return;
+        }
+
         $event = $this->getOwnerRecord();
 
         // Build eligibility override if enabled
@@ -295,7 +319,7 @@ final class EventGameTableConfigRelationManager extends RelationManager
 
         // Build time slots with full datetime (using event date as reference)
         $timeSlots = [];
-        if (($formData['scheduling_mode'] ?? null) === SchedulingMode::SlotBased->value && ! empty($formData['time_slots'])) {
+        if ($formData['scheduling_mode'] === SchedulingMode::SlotBased->value && ! empty($formData['time_slots'])) {
             $eventDate = $event->start_date?->format('Y-m-d') ?? date('Y-m-d');
             foreach ($formData['time_slots'] as $slot) {
                 if (empty($slot['label']) || empty($slot['start_time']) || empty($slot['end_time'])) {
@@ -323,13 +347,12 @@ final class EventGameTableConfigRelationManager extends RelationManager
             ];
         }
 
-        $service = app(EventGameTableConfigServiceInterface::class);
         $service->updateConfig(UpdateEventGameTableConfigDTO::fromArray([
             'event_id' => $eventId,
-            'tables_enabled' => $formData['tables_enabled'] ?? false,
-            'scheduling_mode' => $formData['scheduling_mode'] ?? SchedulingMode::FreeSchedule->value,
+            'tables_enabled' => true,
+            'scheduling_mode' => $formData['scheduling_mode'],
             'time_slots' => $timeSlots,
-            'location_mode' => $formData['location_mode'] ?? LocationMode::FreeChoice->value,
+            'location_mode' => $formData['location_mode'],
             'fixed_location' => $formData['fixed_location'] ?? null,
             'eligibility_override' => $eligibilityOverride,
             'early_access_enabled' => $formData['early_access_enabled'] ?? false,
