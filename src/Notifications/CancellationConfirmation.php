@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Modules\GameTables\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-final class CancellationConfirmation extends Notification
+final class CancellationConfirmation extends Notification implements ShouldQueue
 {
     use Queueable;
 
