@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Widgets;
 
+use App\Application\Services\DashboardWidgetConfigServiceInterface;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -61,7 +62,13 @@ final class PendingModerationWidget extends BaseWidget
             ])
             ->emptyStateHeading(__('game-tables::messages.widgets.pending_moderation.no_pending'))
             ->emptyStateIcon('heroicon-o-check-circle')
-            ->paginated([5])
-            ->defaultPaginationPageOption(5);
+            ->paginated([$this->getConfiguredLimit()])
+            ->defaultPaginationPageOption($this->getConfiguredLimit());
+    }
+
+    private function getConfiguredLimit(): int
+    {
+        return app(DashboardWidgetConfigServiceInterface::class)
+            ->getLimit(static::class, 5);
     }
 }
