@@ -16,7 +16,12 @@ final class PendingModerationWidget extends BaseWidget
 {
     protected int | string | array $columnSpan = 'full';
 
-    protected static ?int $sort = 1;
+    protected static ?int $sort = 10;
+
+    public static function canView(): bool
+    {
+        return GameTableModel::where('frontend_creation_status', FrontendCreationStatus::PendingReview->value)->exists();
+    }
 
     public function table(Table $table): Table
     {
