@@ -450,7 +450,7 @@ export default {
         firstName: 'Name',
         firstNamePlaceholder: 'Your name',
         email: 'Email',
-        emailPlaceholder: 'your@email.com',
+        emailPlaceholder: "your{'@'}email.com",
         phone: 'Phone (optional)',
         phonePlaceholder: '+1 555 000 0000',
         gdprConsent: 'I accept the',

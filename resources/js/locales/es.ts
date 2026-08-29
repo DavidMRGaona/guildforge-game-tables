@@ -549,7 +549,7 @@ export default {
         firstName: 'Nombre',
         firstNamePlaceholder: 'Tu nombre',
         email: 'Correo electrónico',
-        emailPlaceholder: 'tu@email.com',
+        emailPlaceholder: "tu{'@'}email.com",
         phone: 'Teléfono (opcional)',
         phonePlaceholder: '+34 600 000 000',
         gdprConsent: 'Acepto la',
