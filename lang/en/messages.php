@@ -20,6 +20,10 @@ return [
         'config' => 'Configuration',
     ],
 
+    'calendar' => [
+        'source_label' => 'Game tables',
+    ],
+
     'model' => [
         'game_table' => [
             'singular' => 'Table',

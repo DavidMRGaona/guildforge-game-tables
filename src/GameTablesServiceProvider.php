@@ -849,6 +849,19 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     }
 
     /**
+     * Register calendar sources provided by this module.
+     * Allows game tables to appear in the public calendars.
+     *
+     * @return array<class-string<\App\Application\Calendar\Contracts\CalendarEntrySourceInterface>>
+     */
+    public function registerCalendarSources(): array
+    {
+        return [
+            \Modules\GameTables\Infrastructure\Calendar\GameTableCalendarSource::class,
+        ];
+    }
+
+    /**
      * Get the Filament form schema for module settings.
      *
      * @return array<\Filament\Forms\Components\Component>

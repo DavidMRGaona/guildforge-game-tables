@@ -28,6 +28,10 @@ return [
         'campaigns' => 'Campañas',
     ],
 
+    'calendar' => [
+        'source_label' => 'Partidas',
+    ],
+
     'model' => [
         'game_table' => [
             'singular' => 'Mesa',
