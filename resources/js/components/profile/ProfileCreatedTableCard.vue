@@ -3,6 +3,7 @@ import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import type { ProfileCreatedTable } from '../../types/gametables';
+import { VENUE_TIMEZONE } from '@/utils/datetime';
 
 interface Props {
     table: ProfileCreatedTable;
@@ -19,6 +20,7 @@ const formattedDate = computed(() => {
     if (!props.table.startsAt) return null;
     const date = new Date(props.table.startsAt);
     return date.toLocaleDateString(locale.value, {
+        timeZone: VENUE_TIMEZONE,
         weekday: 'short',
         day: 'numeric',
         month: 'short',

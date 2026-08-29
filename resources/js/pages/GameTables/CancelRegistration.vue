@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { useSeo } from '@/composables/useSeo';
+import { VENUE_TIMEZONE } from '@/utils/datetime';
 
 interface Props {
     participant: {
@@ -44,6 +45,7 @@ const displayName = computed(() => {
 const formattedDate = computed(() => {
     const date = new Date(props.gameTable.startsAt);
     return date.toLocaleDateString(locale.value, {
+        timeZone: VENUE_TIMEZONE,
         weekday: 'long',
         day: 'numeric',
         month: 'long',

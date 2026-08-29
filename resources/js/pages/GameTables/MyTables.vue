@@ -9,6 +9,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
 import StatusBadge from '../../components/StatusBadge.vue';
 import FormatBadge from '../../components/FormatBadge.vue';
 import { useSeo } from '@/composables/useSeo';
+import { VENUE_TIMEZONE } from '@/utils/datetime';
 
 interface GameTableResponseDTO {
     id: string;
@@ -59,6 +60,7 @@ function formatDate(dateString: string | null): string {
     if (!dateString) return '-';
     const date = new Date(dateString);
     return date.toLocaleDateString(locale.value, {
+        timeZone: VENUE_TIMEZONE,
         day: 'numeric',
         month: 'short',
         year: 'numeric',

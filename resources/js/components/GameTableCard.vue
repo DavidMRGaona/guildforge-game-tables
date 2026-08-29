@@ -6,6 +6,7 @@ import type { GameTableListItem } from '../types/gametables';
 import FormatBadge from './FormatBadge.vue';
 import StatusBadge from './StatusBadge.vue';
 import { buildCardImageUrl } from '@/utils/cloudinary';
+import { VENUE_TIMEZONE, venueDayKey } from '@/utils/datetime';
 
 interface Props {
     table: GameTableListItem;
@@ -20,14 +21,15 @@ const imageUrl = computed(() => buildCardImageUrl(props.table.imagePublicId));
 const dateBadge = computed(() => {
     const date = new Date(props.table.startsAt);
     return {
-        day: date.getDate(),
-        month: date.toLocaleDateString(locale.value, { month: 'short' }).toUpperCase(),
+        day: Number(venueDayKey(date).slice(8)),
+        month: date.toLocaleDateString(locale.value, { timeZone: VENUE_TIMEZONE, month: 'short' }).toUpperCase(),
     };
 });
 
 const formattedDate = computed(() => {
     const date = new Date(props.table.startsAt);
     return date.toLocaleDateString(locale.value, {
+        timeZone: VENUE_TIMEZONE,
         weekday: 'short',
         day: 'numeric',
         month: 'short',
@@ -37,6 +39,7 @@ const formattedDate = computed(() => {
 const formattedTime = computed(() => {
     const date = new Date(props.table.startsAt);
     return date.toLocaleTimeString(locale.value, {
+        timeZone: VENUE_TIMEZONE,
         hour: '2-digit',
         minute: '2-digit',
     });

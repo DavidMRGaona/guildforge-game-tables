@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { ParticipantData } from '../types/registration';
 import { getStatusColor, isActiveStatus, isWaitingStatus } from '../types/registration';
+import { VENUE_TIMEZONE } from '@/utils/datetime';
 
 interface Props {
     registration: ParticipantData;
@@ -10,7 +11,11 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
+
+function formatDate(iso: string): string {
+    return new Date(iso).toLocaleDateString(locale.value, { timeZone: VENUE_TIMEZONE });
+}
 
 const stateClasses = computed(() => {
     const color = getStatusColor(props.registration.status);
@@ -141,11 +146,11 @@ const showPosition = computed(() => {
         >
             <p v-if="registration.confirmedAt">
                 {{ t('gameTables.registration.confirmedAt') }}:
-                {{ new Date(registration.confirmedAt).toLocaleDateString() }}
+                {{ formatDate(registration.confirmedAt) }}
             </p>
             <p v-else-if="registration.createdAt">
                 {{ t('gameTables.registration.registeredAt') }}:
-                {{ new Date(registration.createdAt).toLocaleDateString() }}
+                {{ formatDate(registration.createdAt) }}
             </p>
         </div>
     </div>

@@ -12,6 +12,7 @@ import SafetyToolBadge from '../../components/SafetyToolBadge.vue';
 import { useSeo } from '@/composables/useSeo';
 import ModuleSlot from '@/components/layout/ModuleSlot.vue';
 import { buildHeroImageUrl } from '@/utils/cloudinary';
+import { VENUE_TIMEZONE } from '@/utils/datetime';
 
 interface Props {
     table: GameTable;
@@ -31,6 +32,7 @@ useSeo({
 const formattedDate = computed(() => {
     const date = new Date(props.table.startsAt);
     return date.toLocaleDateString(locale.value, {
+        timeZone: VENUE_TIMEZONE,
         weekday: 'long',
         day: 'numeric',
         month: 'long',
@@ -41,6 +43,7 @@ const formattedDate = computed(() => {
 const formattedTime = computed(() => {
     const date = new Date(props.table.startsAt);
     return date.toLocaleTimeString(locale.value, {
+        timeZone: VENUE_TIMEZONE,
         hour: '2-digit',
         minute: '2-digit',
     });
@@ -154,6 +157,7 @@ const formatRegistrationDate = (dateString: string | null): string => {
     if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleDateString(locale.value, {
+        timeZone: VENUE_TIMEZONE,
         day: 'numeric',
         month: 'long',
         year: 'numeric',

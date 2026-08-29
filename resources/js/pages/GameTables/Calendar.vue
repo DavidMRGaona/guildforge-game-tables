@@ -7,6 +7,7 @@ import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import GameTableCard from '../../components/GameTableCard.vue';
 import { useSeo } from '@/composables/useSeo';
+import { VENUE_TIMEZONE, venueDayKey } from '@/utils/datetime';
 
 interface Props {
     tables: GameTableListItem[];
@@ -29,6 +30,7 @@ const currentMonthDate = computed(() => new Date(props.currentMonth));
 
 const monthName = computed(() => {
     const formatted = currentMonthDate.value.toLocaleDateString(locale.value, {
+        timeZone: VENUE_TIMEZONE,
         month: 'long',
         year: 'numeric',
     });
@@ -47,9 +49,9 @@ const groupedTables = computed((): DayGroup[] => {
     const groups: Record<string, GameTableListItem[]> = {};
 
     props.tables.forEach((table) => {
-        const date = new Date(table.startsAt);
-        // Use ISO date string (YYYY-MM-DD) as key for reliable parsing
-        const isoKey = date.toISOString().substring(0, 10);
+        // Group by the calendar day at the venue: toISOString() would bucket
+        // by UTC day and move late-evening tables to the previous day.
+        const isoKey = venueDayKey(new Date(table.startsAt));
 
         if (!groups[isoKey]) {
             groups[isoKey] = [];
@@ -60,16 +62,17 @@ const groupedTables = computed((): DayGroup[] => {
 
     return Object.entries(groups)
         .map(([isoDate, tables]) => {
-            const date = new Date(isoDate + 'T12:00:00');
+            const date = new Date(`${isoDate}T12:00:00Z`);
             return {
                 isoDate,
                 displayDate: date.toLocaleDateString(locale.value, {
+                    timeZone: VENUE_TIMEZONE,
                     year: 'numeric',
                     month: '2-digit',
                     day: '2-digit',
                 }),
-                weekday: date.toLocaleDateString(locale.value, { weekday: 'long' }),
-                day: date.getDate(),
+                weekday: date.toLocaleDateString(locale.value, { timeZone: VENUE_TIMEZONE, weekday: 'long' }),
+                day: Number(isoDate.slice(8)),
                 tables: tables.sort(
                     (a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()
                 ),
@@ -78,19 +81,27 @@ const groupedTables = computed((): DayGroup[] => {
         .sort((a, b) => a.isoDate.localeCompare(b.isoDate));
 });
 
+/**
+ * Shift a 'YYYY-MM' month by whole months.
+ *
+ * Done as plain calendar arithmetic on the string: going through a Date would
+ * mix UTC parsing with local getters and could land on the wrong month.
+ */
+function shiftMonth(month: string, delta: number): string {
+    const [year = 0, monthNumber = 1] = month.split('-').map(Number);
+    const monthsSinceYearZero = year * 12 + (monthNumber - 1) + delta;
+
+    return `${Math.floor(monthsSinceYearZero / 12)}-${String((monthsSinceYearZero % 12) + 1).padStart(2, '0')}`;
+}
+
 function goToPreviousMonth(): void {
     isNavigating.value = true;
-    const prevMonth = new Date(currentMonthDate.value);
-    prevMonth.setMonth(prevMonth.getMonth() - 1);
-    const monthParam = prevMonth.toISOString().substring(0, 7);
-    router.visit(`/mesas/calendario?month=${monthParam}`);
+    router.visit(`/mesas/calendario?month=${shiftMonth(props.currentMonth, -1)}`);
 }
 
 function goToNextMonth(): void {
     isNavigating.value = true;
-    const nextMonth = new Date(currentMonthDate.value);
-    nextMonth.setMonth(nextMonth.getMonth() + 1);
-    const monthParam = nextMonth.toISOString().substring(0, 7);
+    const monthParam = shiftMonth(props.currentMonth, 1);
     router.visit(`/mesas/calendario?month=${monthParam}`);
 }
 </script>

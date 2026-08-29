@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import StatusBadge from '../StatusBadge.vue';
+import { VENUE_TIMEZONE } from '@/utils/datetime';
 
 interface ProfileParticipation {
     id: string;
@@ -36,6 +37,7 @@ const formattedDate = computed(() => {
     }
     const date = new Date(props.participation.gameTableStartsAt);
     return date.toLocaleDateString(locale.value, {
+        timeZone: VENUE_TIMEZONE,
         weekday: 'short',
         day: 'numeric',
         month: 'short',
@@ -49,6 +51,7 @@ const formattedTime = computed(() => {
     }
     const date = new Date(props.participation.gameTableStartsAt);
     return date.toLocaleTimeString(locale.value, {
+        timeZone: VENUE_TIMEZONE,
         hour: '2-digit',
         minute: '2-digit',
     });

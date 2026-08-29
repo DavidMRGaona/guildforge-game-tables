@@ -11,6 +11,7 @@ import type {
 import { isFinalStatus } from '../types/registration';
 import RegistrationStatus from './RegistrationStatus.vue';
 import GuestRegistrationModal from './GuestRegistrationModal.vue';
+import { VENUE_TIMEZONE } from '@/utils/datetime';
 
 interface Props {
     tableId?: string;
@@ -23,7 +24,7 @@ interface Props {
 
 const props = defineProps<Props>();
 const page = usePage();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 // Support both tableId prop directly or extracting from table object (for slot system)
 const resolvedTableId = computed(() => props.tableId ?? props.table?.id ?? '');
@@ -162,7 +163,9 @@ const buttonText = computed(() => {
     }
 
     if (registrationOpensAt.value) {
-        const date = new Date(registrationOpensAt.value).toLocaleDateString();
+        const date = new Date(registrationOpensAt.value).toLocaleDateString(locale.value, {
+            timeZone: VENUE_TIMEZONE,
+        });
         return t('gameTables.registration.opensAt', { date });
     }
 

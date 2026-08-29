@@ -12,6 +12,7 @@ import GameTableCard from '../../components/GameTableCard.vue';
 import { useSeo } from '@/composables/useSeo';
 import ModuleSlot from '@/components/layout/ModuleSlot.vue';
 import { buildHeroImageUrl } from '@/utils/cloudinary';
+import { VENUE_TIMEZONE } from '@/utils/datetime';
 
 interface Props {
     campaign: Campaign;
@@ -32,6 +33,7 @@ const formattedStartDate = computed(() => {
     if (!props.campaign.startDate) return null;
     const date = new Date(props.campaign.startDate);
     return date.toLocaleDateString(locale.value, {
+        timeZone: VENUE_TIMEZONE,
         day: 'numeric',
         month: 'long',
         year: 'numeric',
@@ -42,6 +44,7 @@ const formattedEndDate = computed(() => {
     if (!props.campaign.endDate) return null;
     const date = new Date(props.campaign.endDate);
     return date.toLocaleDateString(locale.value, {
+        timeZone: VENUE_TIMEZONE,
         day: 'numeric',
         month: 'long',
         year: 'numeric',

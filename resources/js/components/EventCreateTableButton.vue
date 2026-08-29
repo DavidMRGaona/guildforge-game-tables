@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
+import { VENUE_TIMEZONE } from '@/utils/datetime';
 
 interface Props {
     event: {
@@ -92,6 +93,7 @@ const publicOpenDate = computed(() => {
 const formattedUserDate = computed(() => {
     if (!userOpenDate.value) return '';
     return userOpenDate.value.toLocaleDateString(locale.value, {
+        timeZone: VENUE_TIMEZONE,
         day: 'numeric',
         month: 'long',
         year: 'numeric',
@@ -101,6 +103,7 @@ const formattedUserDate = computed(() => {
 const formattedPublicDate = computed(() => {
     if (!publicOpenDate.value) return '';
     return publicOpenDate.value.toLocaleDateString(locale.value, {
+        timeZone: VENUE_TIMEZONE,
         day: 'numeric',
         month: 'long',
         year: 'numeric',
