@@ -464,7 +464,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                                 <div
                                     class="h-full transition-all"
                                     :class="[
-                                        playerCapacityPercentage >= 100 ? 'bg-red-500' :
+                                        playerCapacityPercentage >= 100 ? 'bg-error' :
                                         playerCapacityPercentage >= 75 ? 'bg-warning' : 'bg-success'
                                     ]"
                                     :style="{ width: `${playerCapacityPercentage}%` }"

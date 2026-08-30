@@ -182,7 +182,7 @@ function getImageUrl(campaign: CampaignListItem): string | null {
                             <!-- Session Progress Bar (only if there's a defined session count) -->
                             <div v-if="getSessionProgress(campaign) !== null" class="mb-3">
                                 <div
-                                    class="h-2 w-full overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700"
+                                    class="h-2 w-full overflow-hidden rounded-full bg-muted"
                                 >
                                     <div
                                         class="h-full bg-primary transition-all"
@@ -216,19 +216,19 @@ function getImageUrl(campaign: CampaignListItem): string | null {
                             <!-- Capacity (only if maxPlayers is defined) -->
                             <div v-if="campaign.maxPlayers !== null" class="mb-2">
                                 <div
-                                    class="mb-1 flex items-center justify-between text-xs text-stone-600 dark:text-stone-400"
+                                    class="mb-1 flex items-center justify-between text-xs text-base-secondary"
                                 >
                                     <span>{{ t('campaigns.players') }}</span>
                                     <span>{{ campaign.currentPlayers }} / {{ campaign.maxPlayers }}</span>
                                 </div>
                                 <div
-                                    class="h-2 w-full overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700"
+                                    class="h-2 w-full overflow-hidden rounded-full bg-muted"
                                 >
                                     <div
                                         :class="
                                             campaign.currentPlayers >= campaign.maxPlayers
-                                                ? 'bg-red-500'
-                                                : 'bg-green-500'
+                                                ? 'bg-error'
+                                                : 'bg-success'
                                         "
                                         :style="{
                                             width: `${(campaign.currentPlayers / campaign.maxPlayers) * 100}%`,

@@ -243,7 +243,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                                 <p>{{ sessionProgressLabel }}</p>
                                 <div v-if="sessionProgress !== null" class="mt-2">
                                     <div
-                                        class="h-2 w-full overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700"
+                                        class="h-2 w-full overflow-hidden rounded-full bg-muted"
                                     >
                                         <div
                                             class="h-full bg-primary transition-all"

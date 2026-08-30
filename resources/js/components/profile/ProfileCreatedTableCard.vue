@@ -37,10 +37,10 @@ const editUrl = computed(() => `/mesas/mis-mesas/${props.table.id}/editar`);
 const statusColorClasses = computed(() => {
     const colorMap: Record<string, string> = {
         gray: 'bg-muted text-base-secondary',
-        success: 'bg-success-light text-green-700 dark:text-green-400',
-        warning: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-        primary: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-        danger: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+        success: 'bg-success-light text-success',
+        warning: 'bg-warning-light text-warning',
+        primary: 'bg-primary-light text-primary',
+        danger: 'bg-error-light text-error',
     };
     return colorMap[props.table.statusColor] ?? colorMap.gray;
 });

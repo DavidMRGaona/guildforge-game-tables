@@ -65,9 +65,9 @@ const capacityPercentage = computed(() => {
 
 const capacityColor = computed(() => {
     const percentage = capacityPercentage.value;
-    if (percentage >= 100) return 'bg-red-500';
+    if (percentage >= 100) return 'bg-error';
     if (percentage >= 75) return 'bg-warning';
-    return 'bg-green-500';
+    return 'bg-success';
 });
 
 const headerGradient = computed(() => {
@@ -88,12 +88,12 @@ const availabilityBadge = computed(() => {
     if (props.table.isFull) {
         return {
             text: t('gameTables.complete'),
-            classes: 'bg-red-500/90 text-white',
+            classes: 'bg-error text-white',
         };
     }
     return {
         text: t('gameTables.spots', { count: props.table.spotsAvailable }),
-        classes: 'bg-green-500/90 text-white',
+        classes: 'bg-success text-white',
     };
 });
 </script>
@@ -215,7 +215,7 @@ const availabilityBadge = computed(() => {
                         <span class="font-medium">{{ table.currentPlayers }} / {{ table.maxPlayers }}</span>
                     </div>
                     <div
-                        class="h-2.5 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-600"
+                        class="h-2.5 w-full overflow-hidden rounded-full bg-muted"
                         role="progressbar"
                         :aria-valuenow="table.currentPlayers"
                         :aria-valuemin="0"
