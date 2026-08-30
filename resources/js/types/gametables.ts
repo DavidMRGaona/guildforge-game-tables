@@ -19,7 +19,6 @@ export interface GameMaster {
 
 export interface CampaignGameMaster {
     id: string;
-    campaignId: string;
     userId: string | null;
     displayName: string;
     role: string;

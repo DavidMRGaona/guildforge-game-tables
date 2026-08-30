@@ -17,12 +17,14 @@ use Modules\GameTables\Application\Services\EligibilityServiceInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use App\Application\Services\SlugRedirectServiceInterface;
+use Modules\GameTables\Http\Concerns\ReadsListFilters;
 use Modules\GameTables\Http\Resources\GameTableListResource;
 use Modules\GameTables\Http\Resources\GameTableResource;
 
 final class GameTableController extends Controller
 {
     use BuildsPaginatedResponse;
+    use ReadsListFilters;
 
     private const PER_PAGE = 12;
 
@@ -37,11 +39,7 @@ final class GameTableController extends Controller
     {
         $page = $this->getCurrentPage();
 
-        $gameSystemsParam = $request->query('systems');
-        $gameSystemIds = null;
-        if (is_string($gameSystemsParam) && $gameSystemsParam !== '') {
-            $gameSystemIds = array_filter(explode(',', $gameSystemsParam));
-        }
+        $gameSystemIds = $this->readMultiValueFilter($request, 'systems');
 
         $format = $request->query('format');
         $format = is_string($format) && $format !== '' ? $format : null;

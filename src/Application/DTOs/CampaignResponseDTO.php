@@ -39,10 +39,10 @@ final readonly class CampaignResponseDTO
         public array $gameMasters,
         public array $gameTables,
         public bool $hasActiveOrUpcomingTables,
-        public ?FrontendCreationStatus $frontendCreationStatus,
-        public ?string $moderationNotes,
-        public ?DateTimeInterface $createdAt,
-        public ?DateTimeInterface $updatedAt,
+        public ?FrontendCreationStatus $frontendCreationStatus = null,
+        public ?string $moderationNotes = null,
+        public ?DateTimeInterface $createdAt = null,
+        public ?DateTimeInterface $updatedAt = null,
     ) {}
 
     /**

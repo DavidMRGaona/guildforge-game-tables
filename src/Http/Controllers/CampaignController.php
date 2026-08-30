@@ -14,11 +14,13 @@ use Inertia\Response;
 use Modules\GameTables\Application\Services\CampaignQueryServiceInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use App\Application\Services\SlugRedirectServiceInterface;
+use Modules\GameTables\Http\Concerns\ReadsListFilters;
 use Modules\GameTables\Http\Resources\CampaignResource;
 
 final class CampaignController extends Controller
 {
     use BuildsPaginatedResponse;
+    use ReadsListFilters;
 
     private const PER_PAGE = 12;
 
@@ -32,11 +34,7 @@ final class CampaignController extends Controller
     {
         $page = $this->getCurrentPage();
 
-        $gameSystemsParam = $request->query('systems');
-        $gameSystemIds = null;
-        if (is_string($gameSystemsParam) && $gameSystemsParam !== '') {
-            $gameSystemIds = array_filter(explode(',', $gameSystemsParam));
-        }
+        $gameSystemIds = $this->readMultiValueFilter($request, 'systems');
 
         $status = $request->query('status');
         $status = is_string($status) && $status !== '' ? $status : null;

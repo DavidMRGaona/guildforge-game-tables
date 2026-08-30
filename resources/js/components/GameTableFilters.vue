@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, nextTick } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import type { GameSystem, GameTableFilters, EventFilter } from '../types/gametables';
@@ -39,10 +39,10 @@ const statusOptions = [
 ];
 
 function applyFilters(): void {
-    const params: Record<string, string | string[]> = {};
+    const params: Record<string, string> = {};
 
     if (selectedSystems.value.length > 0) {
-        params.systems = selectedSystems.value;
+        params.systems = selectedSystems.value.join(',');
     }
 
     if (selectedFormat.value) {
@@ -161,7 +161,30 @@ const activeFilterPills = computed(() => {
 
 const hasEvents = computed(() => props.events.length > 0);
 
+// True while local state is being realigned with the server's answer, so the
+// watcher below does not navigate again and loop.
+let syncingFromServer = false;
+
+watch(
+    () => props.currentFilters,
+    (filters) => {
+        syncingFromServer = true;
+        selectedSystems.value = [...(filters.systems ?? [])];
+        selectedFormat.value = filters.format ?? '';
+        selectedStatus.value = filters.status ?? '';
+        selectedEvent.value = filters.event ?? '';
+        void nextTick(() => {
+            syncingFromServer = false;
+        });
+    },
+    { deep: true }
+);
+
 watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
+    if (syncingFromServer) {
+        return;
+    }
+
     applyFilters();
 });
 </script>

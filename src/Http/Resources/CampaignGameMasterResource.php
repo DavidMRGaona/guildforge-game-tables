@@ -20,7 +20,6 @@ final class CampaignGameMasterResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'campaignId' => $this->campaignId,
             'userId' => $this->userId,
             'displayName' => $this->displayName,
             'role' => $this->role->value,
