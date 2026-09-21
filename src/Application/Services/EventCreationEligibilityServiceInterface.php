@@ -14,7 +14,9 @@ interface EventCreationEligibilityServiceInterface
 {
     /**
      * Check if a user can create a game table for a specific event.
-     * Takes into account both global eligibility and event-specific overrides.
+     *
+     * An event only allows creation once its config enables tables; global
+     * eligibility and event-specific overrides are checked after that.
      */
     public function canCreateTableForEvent(string $eventId, ?string $userId): CreationEligibilityDTO;
 }

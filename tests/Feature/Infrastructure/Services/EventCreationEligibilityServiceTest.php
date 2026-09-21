@@ -276,41 +276,43 @@ final class EventCreationEligibilityServiceTest extends TestCase
         $this->assertTrue($result->canCreateTables);
     }
 
-    public function test_uses_global_eligibility_when_event_has_no_config(): void
+    public function test_returns_not_eligible_when_event_has_no_config(): void
     {
         $eventId = 'event-123';
         $user = UserModel::factory()->create();
 
+        // No stored config means nobody enabled tables for this event. The admin
+        // panel renders that same absence as an unchecked toggle, so creation has
+        // to stay closed instead of falling back to the global settings.
         $this->configRepository
             ->shouldReceive('findByEvent')
             ->with($eventId)
             ->once()
             ->andReturn(null);
 
-        // When no event config exists, fall back to global settings
+        // The global settings would happily allow creation; the event has to win.
         $this->globalEligibilityService
             ->shouldReceive('canCreateTable')
-            ->with($user->id)
-            ->once()
             ->andReturn(\Modules\GameTables\Application\DTOs\CreationEligibilityDTO::eligible());
 
         $result = $this->service->canCreateTableForEvent($eventId, $user->id);
 
-        $this->assertTrue($result->eligible);
+        $this->assertFalse($result->eligible);
+        $this->assertSame('tables_not_enabled_for_event', $result->reason);
     }
 
-    public function test_uses_global_eligibility_when_event_config_returns_not_eligible(): void
+    public function test_uses_global_eligibility_when_event_enables_tables_without_override(): void
     {
         $eventId = 'event-123';
         $user = UserModel::factory()->create();
+        $config = $this->createConfig(tablesEnabled: true);
 
         $this->configRepository
             ->shouldReceive('findByEvent')
             ->with($eventId)
             ->once()
-            ->andReturn(null);
+            ->andReturn($config);
 
-        // When no event config exists, fall back to global settings (disabled)
         $this->globalEligibilityService
             ->shouldReceive('canCreateTable')
             ->with($user->id)

@@ -33,13 +33,10 @@ final readonly class EventCreationEligibilityService implements EventCreationEli
         // Check if event has specific config
         $config = $this->configRepository->findByEvent($eventId);
 
-        // If no config exists for this event, fall back to global settings
-        if ($config === null) {
-            return $this->globalEligibilityService->canCreateTable($userId);
-        }
-
-        // Event has explicit config - check if tables are enabled
-        if (! $config->isEnabled()) {
+        // A missing config means nobody enabled tables for this event. The admin
+        // panel renders that same absence as an unchecked toggle, so creation has
+        // to stay closed here too instead of falling back to the global settings.
+        if ($config === null || ! $config->isEnabled()) {
             return CreationEligibilityDTO::notEligible('tables_not_enabled_for_event');
         }
 
