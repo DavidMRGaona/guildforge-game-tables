@@ -6,6 +6,7 @@ namespace Modules\GameTables\Tests\Feature\Infrastructure\Listeners;
 
 use DateTimeImmutable;
 use Illuminate\Support\Facades\Notification;
+use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
 use Modules\GameTables\Domain\Enums\TableFormat;
@@ -18,14 +19,15 @@ use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Domain\ValueObjects\TimeSlot;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnRegistration;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
-use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Notifications\ParticipantRegisteredNotification;
 use Tests\TestCase;
 
 final class NotifyOnRegistrationTest extends TestCase
 {
     private NotificationRecipientResolverInterface $recipientResolver;
+
     private GameTableRepositoryInterface $gameTableRepository;
+
     private NotifyOnRegistration $listener;
 
     protected function setUp(): void
@@ -36,7 +38,7 @@ final class NotifyOnRegistrationTest extends TestCase
         $this->gameTableRepository = $this->createMock(GameTableRepositoryInterface::class);
 
         $this->listener = new NotifyOnRegistration(
-            new GameTableSettingsReader(),
+            new GameTableSettingsReader,
             $this->recipientResolver,
             $this->gameTableRepository,
         );

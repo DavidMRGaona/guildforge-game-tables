@@ -42,21 +42,21 @@ final class RegistrationConfirmation extends Notification implements ShouldQueue
             ? __('game-tables::emails.guest_confirmation.role_player')
             : __('game-tables::emails.guest_confirmation.role_spectator');
 
-        $message = (new MailMessage())
+        $message = (new MailMessage)
             ->subject($this->registrationStatusSubject($this->status, $this->tableTitle))
             ->greeting(__('game-tables::emails.user_confirmation.greeting', ['name' => $this->participantName]))
             ->line(__('game-tables::emails.user_confirmation.intro', ['role' => $roleLabel]))
             ->line($this->registrationStatusLine($this->status, $this->waitingListPosition))
             ->line(__('game-tables::emails.user_confirmation.details'));
 
-        $message->line('**' . __('game-tables::emails.user_confirmation.table_title') . ':** ' . $this->tableTitle);
+        $message->line('**'.__('game-tables::emails.user_confirmation.table_title').':** '.$this->tableTitle);
 
         if ($this->tableDate !== null) {
-            $message->line('**' . __('game-tables::emails.user_confirmation.table_date') . ':** ' . $this->tableDate);
+            $message->line('**'.__('game-tables::emails.user_confirmation.table_date').':** '.$this->tableDate);
         }
 
         if ($this->tableLocation !== null) {
-            $message->line('**' . __('game-tables::emails.user_confirmation.table_location') . ':** ' . $this->tableLocation);
+            $message->line('**'.__('game-tables::emails.user_confirmation.table_location').':** '.$this->tableLocation);
         }
 
         $message->action(__('game-tables::emails.user_confirmation.view_table'), $tableUrl);

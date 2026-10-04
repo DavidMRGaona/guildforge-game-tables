@@ -49,7 +49,7 @@ final class GuestRegistrationConfirmation extends Notification implements Should
             ? __('game-tables::emails.guest_confirmation.role_player')
             : __('game-tables::emails.guest_confirmation.role_spectator');
 
-        $message = (new MailMessage())
+        $message = (new MailMessage)
             ->subject($this->registrationStatusSubject($this->status, $this->tableTitle))
             ->greeting(__('game-tables::emails.guest_confirmation.greeting', ['name' => $this->firstName]))
             ->line(__('game-tables::emails.guest_confirmation.intro', ['role' => $roleLabel]))
@@ -57,21 +57,21 @@ final class GuestRegistrationConfirmation extends Notification implements Should
             ->line(__('game-tables::emails.guest_confirmation.details'));
 
         // Add table details
-        $message->line('**' . __('game-tables::emails.guest_confirmation.table_title') . ':** ' . $this->tableTitle);
+        $message->line('**'.__('game-tables::emails.guest_confirmation.table_title').':** '.$this->tableTitle);
 
         if ($this->tableDate !== null) {
-            $message->line('**' . __('game-tables::emails.guest_confirmation.table_date') . ':** ' . $this->tableDate);
+            $message->line('**'.__('game-tables::emails.guest_confirmation.table_date').':** '.$this->tableDate);
         }
 
         if ($this->tableLocation !== null) {
-            $message->line('**' . __('game-tables::emails.guest_confirmation.table_location') . ':** ' . $this->tableLocation);
+            $message->line('**'.__('game-tables::emails.guest_confirmation.table_location').':** '.$this->tableLocation);
         }
 
         return $message
             ->action(__('game-tables::emails.guest_confirmation.view_table'), $tableUrl)
             ->line('')
             ->line(__('game-tables::emails.guest_confirmation.cancel_intro'))
-            ->line('[' . __('game-tables::emails.guest_confirmation.cancel_button') . '](' . $cancelUrl . ')')
+            ->line('['.__('game-tables::emails.guest_confirmation.cancel_button').']('.$cancelUrl.')')
             ->line('')
             ->line(__('game-tables::emails.guest_confirmation.gdpr_notice'));
     }
