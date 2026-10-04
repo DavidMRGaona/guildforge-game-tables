@@ -21,7 +21,7 @@ final readonly class SendRegistrationConfirmation
     {
         $user = UserModel::find($event->userId);
 
-        if ($user === null || $user->email === null) {
+        if ($user === null) {
             return;
         }
 

@@ -40,7 +40,7 @@ final readonly class SendCancellationConfirmation
         // Determine if it's a guest or a registered user
         if ($event->userId !== null) {
             $user = UserModel::find($event->userId);
-            $participantName = $user?->name ?? $this->recipientResolver->getParticipantDisplayName($event->participantId);
+            $participantName = $user->name ?? $this->recipientResolver->getParticipantDisplayName($event->participantId);
 
             Notification::route('mail', $email)
                 ->notify(new CancellationConfirmation(

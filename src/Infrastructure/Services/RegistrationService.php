@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Modules\GameTables\Infrastructure\Services;
 
 use DateTimeImmutable;
+use InvalidArgumentException;
 use Modules\GameTables\Application\DTOs\ParticipantResponseDTO;
 use Modules\GameTables\Application\DTOs\ProfileParticipationDTO;
 use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
-use Modules\GameTables\Application\Services\EligibilityServiceInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Modules\GameTables\Domain\Entities\Participant;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
@@ -32,18 +32,18 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     public function __construct(
         private ParticipantRepositoryInterface $participantRepository,
         private GameTableRepositoryInterface $gameTableRepository,
-        private EligibilityServiceInterface $eligibilityService,
     ) {}
 
     public function register(RegisterParticipantDTO $dto): ParticipantResponseDTO
     {
         $gameTableId = new GameTableId($dto->gameTableId);
+        $userId = $this->requireUserId($dto);
 
         // Check if already registered
-        $existing = $this->participantRepository->findByTableAndUser($gameTableId, $dto->userId);
+        $existing = $this->participantRepository->findByTableAndUser($gameTableId, $userId);
         if ($existing !== null) {
             if ($existing->isActive()) {
-                throw AlreadyRegisteredException::forTable($dto->userId, $dto->gameTableId);
+                throw AlreadyRegisteredException::forTable($userId, $dto->gameTableId);
             }
 
             // Reactivate cancelled registration
@@ -100,6 +100,14 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         }
 
         return ParticipantResponseDTO::fromEntity($participant);
+    }
+
+    /**
+     * Registered-user flows need a user; guests go through registerGuest().
+     */
+    private function requireUserId(RegisterParticipantDTO $dto): string
+    {
+        return $dto->userId ?? throw new InvalidArgumentException('A user ID is required to register a user; use registerGuest() for guests.');
     }
 
     private function reactivateParticipant(
@@ -557,11 +565,12 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     public function registerByAdmin(RegisterParticipantDTO $dto): ParticipantResponseDTO
     {
         $gameTableId = new GameTableId($dto->gameTableId);
+        $userId = $this->requireUserId($dto);
 
         // Check if already registered
-        $existing = $this->participantRepository->findByTableAndUser($gameTableId, $dto->userId);
+        $existing = $this->participantRepository->findByTableAndUser($gameTableId, $userId);
         if ($existing !== null && $existing->isActive()) {
-            throw AlreadyRegisteredException::forTable($dto->userId, $dto->gameTableId);
+            throw AlreadyRegisteredException::forTable($userId, $dto->gameTableId);
         }
 
         $gameTable = $this->gameTableRepository->findOrFail($gameTableId);

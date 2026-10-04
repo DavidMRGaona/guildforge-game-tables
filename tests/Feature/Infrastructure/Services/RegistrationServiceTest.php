@@ -7,8 +7,8 @@ namespace Modules\GameTables\Tests\Feature\Infrastructure\Services;
 use DateTimeImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use InvalidArgumentException;
 use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
-use Modules\GameTables\Application\Services\EligibilityServiceInterface;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Entities\Participant;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
@@ -17,8 +17,6 @@ use Modules\GameTables\Domain\Enums\RegistrationType;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Enums\TableType;
-use Modules\GameTables\Domain\ValueObjects\GameSystemId;
-use Modules\GameTables\Domain\ValueObjects\TimeSlot;
 use Modules\GameTables\Domain\Events\GuestRegistered;
 use Modules\GameTables\Domain\Events\ParticipantCancelled;
 use Modules\GameTables\Domain\Events\ParticipantConfirmed;
@@ -28,8 +26,10 @@ use Modules\GameTables\Domain\Exceptions\CannotCancelException;
 use Modules\GameTables\Domain\Exceptions\ParticipantNotFoundException;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
+use Modules\GameTables\Domain\ValueObjects\GameSystemId;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Domain\ValueObjects\ParticipantId;
+use Modules\GameTables\Domain\ValueObjects\TimeSlot;
 use Modules\GameTables\Infrastructure\Services\RegistrationService;
 use Tests\TestCase;
 
@@ -38,8 +38,9 @@ final class RegistrationServiceTest extends TestCase
     use RefreshDatabase;
 
     private ParticipantRepositoryInterface $participantRepository;
+
     private GameTableRepositoryInterface $gameTableRepository;
-    private EligibilityServiceInterface $eligibilityService;
+
     private RegistrationService $service;
 
     protected function setUp(): void
@@ -48,12 +49,10 @@ final class RegistrationServiceTest extends TestCase
 
         $this->participantRepository = $this->createMock(ParticipantRepositoryInterface::class);
         $this->gameTableRepository = $this->createMock(GameTableRepositoryInterface::class);
-        $this->eligibilityService = $this->createMock(EligibilityServiceInterface::class);
 
         $this->service = new RegistrationService(
             $this->participantRepository,
             $this->gameTableRepository,
-            $this->eligibilityService,
         );
 
         Event::fake();
@@ -655,6 +654,26 @@ final class RegistrationServiceTest extends TestCase
             ParticipantConfirmed::class,
             fn (ParticipantConfirmed $event): bool => $event->automatic === true,
         );
+    }
+
+    public function test_register_without_user_is_rejected(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->service->register(new RegisterParticipantDTO(
+            gameTableId: GameTableId::generate()->value,
+            userId: null,
+        ));
+    }
+
+    public function test_register_by_admin_without_user_is_rejected(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->service->registerByAdmin(new RegisterParticipantDTO(
+            gameTableId: GameTableId::generate()->value,
+            userId: null,
+        ));
     }
 
     public function test_manual_confirm_dispatches_non_automatic_confirmation(): void
