@@ -141,7 +141,8 @@ final class PublishersSeeder extends Seeder
         ];
 
         foreach ($publishers as $publisher) {
-            PublisherModel::query()->updateOrCreate(
+            // Only add missing publishers: never overwrite what an admin edited
+            PublisherModel::query()->firstOrCreate(
                 ['slug' => $publisher['slug']],
                 array_merge($publisher, ['is_active' => true]),
             );

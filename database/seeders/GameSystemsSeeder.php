@@ -449,7 +449,8 @@ final class GameSystemsSeeder extends Seeder
 
             $system['publisher_id'] = $publisherSlug ? ($publishers[$publisherSlug] ?? null) : null;
 
-            GameSystemModel::query()->updateOrCreate(
+            // Only add missing systems: never overwrite what an admin edited
+            GameSystemModel::query()->firstOrCreate(
                 ['slug' => $system['slug']],
                 $system,
             );

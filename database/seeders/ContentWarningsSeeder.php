@@ -237,7 +237,8 @@ final class ContentWarningsSeeder extends Seeder
         ];
 
         foreach ($warnings as $warning) {
-            ContentWarningModel::query()->updateOrCreate(
+            // Only add missing warnings: never overwrite what an admin edited
+            ContentWarningModel::query()->firstOrCreate(
                 ['slug' => $warning['slug']],
                 $warning,
             );
