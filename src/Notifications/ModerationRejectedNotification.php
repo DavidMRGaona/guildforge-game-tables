@@ -30,7 +30,7 @@ final class ModerationRejectedNotification extends Notification implements Shoul
 
     public function toMail(object $notifiable): MailMessage
     {
-        $editUrl = url("/perfil?tab=gametables-created");
+        $editUrl = url("/mesas/mis-mesas/{$this->tableId}/editar");
 
         return (new MailMessage)
             ->subject(__('game-tables::emails.moderation_rejected.subject', ['tableTitle' => $this->tableTitle]))
