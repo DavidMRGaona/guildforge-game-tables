@@ -7,6 +7,7 @@ namespace Modules\GameTables\Tests\Feature\Infrastructure\Listeners;
 use DateTimeImmutable;
 use Illuminate\Support\Facades\Notification;
 use Modules\GameTables\Domain\Entities\GameTable;
+use Modules\GameTables\Domain\Enums\ParticipantStatus;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Enums\TableType;
@@ -79,6 +80,7 @@ final class NotifyOnRegistrationTest extends TestCase
             gameTableId: $gameTableId->value,
             userId: 'user-uuid',
             role: 'player',
+            status: ParticipantStatus::Pending,
         );
 
         $this->listener->handle($event);
@@ -113,6 +115,7 @@ final class NotifyOnRegistrationTest extends TestCase
             gameTableId: $gameTableId->value,
             userId: 'user-uuid',
             role: 'player',
+            status: ParticipantStatus::Pending,
         );
 
         $this->listener->handle($event);
@@ -141,6 +144,7 @@ final class NotifyOnRegistrationTest extends TestCase
             gameTableId: $gameTableId->value,
             userId: 'user-uuid',
             role: 'player',
+            status: ParticipantStatus::Pending,
         );
 
         $this->listener->handle($event);

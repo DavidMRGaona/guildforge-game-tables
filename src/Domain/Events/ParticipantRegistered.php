@@ -6,6 +6,7 @@ namespace Modules\GameTables\Domain\Events;
 
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Modules\GameTables\Domain\Enums\ParticipantStatus;
 
 final class ParticipantRegistered
 {
@@ -17,5 +18,7 @@ final class ParticipantRegistered
         public readonly string $gameTableId,
         public readonly ?string $userId,
         public readonly string $role,
+        public readonly ParticipantStatus $status,
+        public readonly ?int $waitingListPosition = null,
     ) {}
 }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 return [
     'guest_confirmation' => [
-        'subject' => 'Registration confirmation: :tableTitle',
         'greeting' => 'Hello :name,',
         'intro' => 'Your registration as :role has been successfully recorded.',
         'details' => 'Session details:',
@@ -19,8 +18,16 @@ return [
         'role_spectator' => 'spectator',
     ],
 
+    'registration_status' => [
+        'subject_confirmed' => 'Registration confirmed: :tableTitle',
+        'subject_pending' => 'Registration received: :tableTitle',
+        'subject_waiting_list' => 'On the waiting list: :tableTitle',
+        'confirmed' => 'Your spot is confirmed.',
+        'pending' => 'Your registration is pending approval by the organizer. We will email you once it has been reviewed.',
+        'waiting_list' => 'The table is full. You are number :position on the waiting list and we will let you know if a spot opens up.',
+    ],
+
     'user_confirmation' => [
-        'subject' => 'Registration confirmation: :tableTitle',
         'greeting' => 'Hello :name,',
         'intro' => 'Your registration as :role has been successfully recorded.',
         'details' => 'Session details:',

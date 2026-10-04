@@ -86,6 +86,8 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             $participant->gameTableId->value,
             $participant->userId,
             $participant->role->value,
+            $participant->status,
+            $participant->waitingListPosition,
         );
 
         if ($participant->isConfirmed()) {
@@ -93,6 +95,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
                 $participant->id->value,
                 $participant->gameTableId->value,
                 $participant->userId,
+                true, // automatic: confirmed on registration
             );
         }
 
@@ -135,6 +138,8 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             $participant->gameTableId->value,
             $participant->userId,
             $participant->role->value,
+            $participant->status,
+            $participant->waitingListPosition,
         );
 
         if ($participant->isConfirmed()) {
@@ -142,6 +147,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
                 $participant->id->value,
                 $participant->gameTableId->value,
                 $participant->userId,
+                true, // automatic: confirmed on registration
             );
         }
 
@@ -381,6 +387,8 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             $participant->firstName ?? '',
             $participant->role->value,
             $cancellationToken,
+            $participant->status,
+            $participant->waitingListPosition,
         );
 
         if ($participant->isConfirmed()) {
@@ -388,6 +396,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
                 $participant->id->value,
                 $participant->gameTableId->value,
                 null,
+                true, // automatic: confirmed on registration
             );
         }
 
@@ -439,6 +448,8 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             $participant->firstName ?? '',
             $participant->role->value,
             $cancellationToken,
+            $participant->status,
+            $participant->waitingListPosition,
         );
 
         if ($participant->isConfirmed()) {
@@ -446,6 +457,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
                 $participant->id->value,
                 $participant->gameTableId->value,
                 null,
+                true, // automatic: confirmed on registration
             );
         }
 
@@ -589,6 +601,8 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             $participant->gameTableId->value,
             $participant->userId,
             $participant->role->value,
+            $participant->status,
+            $participant->waitingListPosition,
         );
 
         if ($participant->isConfirmed()) {
@@ -596,6 +610,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
                 $participant->id->value,
                 $participant->gameTableId->value,
                 $participant->userId,
+                true, // automatic: confirmed on registration
             );
         }
 
@@ -660,6 +675,8 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             $participant->firstName ?? '',
             $participant->role->value,
             $cancellationToken,
+            $participant->status,
+            $participant->waitingListPosition,
         );
 
         if ($participant->isConfirmed()) {
@@ -667,6 +684,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
                 $participant->id->value,
                 $participant->gameTableId->value,
                 null,
+                true, // automatic: confirmed on registration
             );
         }
 

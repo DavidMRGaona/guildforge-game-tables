@@ -20,6 +20,11 @@ final readonly class SendConfirmationNotification
 
     public function handle(ParticipantConfirmed $event): void
     {
+        // Automatic confirmations are already announced by the registration email
+        if ($event->automatic) {
+            return;
+        }
+
         $gameTable = $this->gameTableRepository->find(new GameTableId($event->gameTableId));
 
         if ($gameTable === null) {

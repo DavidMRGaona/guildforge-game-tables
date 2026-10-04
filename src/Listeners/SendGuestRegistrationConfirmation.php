@@ -36,6 +36,8 @@ final readonly class SendGuestRegistrationConfirmation
                 tableLocation: $tableLocation,
                 cancellationToken: $event->cancellationToken,
                 role: $event->role,
+                status: $event->status,
+                waitingListPosition: $event->waitingListPosition,
             ));
     }
 }

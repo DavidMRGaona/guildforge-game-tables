@@ -16,5 +16,6 @@ final class ParticipantConfirmed
         public readonly string $participantId,
         public readonly string $gameTableId,
         public readonly ?string $userId,
+        public readonly bool $automatic = false,
     ) {}
 }

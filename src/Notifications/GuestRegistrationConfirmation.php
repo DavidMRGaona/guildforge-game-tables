@@ -8,9 +8,12 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Modules\GameTables\Domain\Enums\ParticipantStatus;
+use Modules\GameTables\Notifications\Concerns\DescribesRegistrationStatus;
 
 final class GuestRegistrationConfirmation extends Notification implements ShouldQueue
 {
+    use DescribesRegistrationStatus;
     use Queueable;
 
     public function __construct(
@@ -21,6 +24,8 @@ final class GuestRegistrationConfirmation extends Notification implements Should
         private readonly ?string $tableLocation,
         private readonly string $cancellationToken,
         private readonly string $role,
+        private readonly ParticipantStatus $status,
+        private readonly ?int $waitingListPosition = null,
     ) {}
 
     /**
@@ -45,9 +50,10 @@ final class GuestRegistrationConfirmation extends Notification implements Should
             : __('game-tables::emails.guest_confirmation.role_spectator');
 
         $message = (new MailMessage())
-            ->subject(__('game-tables::emails.guest_confirmation.subject', ['tableTitle' => $this->tableTitle]))
+            ->subject($this->registrationStatusSubject($this->status, $this->tableTitle))
             ->greeting(__('game-tables::emails.guest_confirmation.greeting', ['name' => $this->firstName]))
             ->line(__('game-tables::emails.guest_confirmation.intro', ['role' => $roleLabel]))
+            ->line($this->registrationStatusLine($this->status, $this->waitingListPosition))
             ->line(__('game-tables::emails.guest_confirmation.details'));
 
         // Add table details

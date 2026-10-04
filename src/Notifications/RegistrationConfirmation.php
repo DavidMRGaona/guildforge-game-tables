@@ -8,9 +8,12 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Modules\GameTables\Domain\Enums\ParticipantStatus;
+use Modules\GameTables\Notifications\Concerns\DescribesRegistrationStatus;
 
 final class RegistrationConfirmation extends Notification implements ShouldQueue
 {
+    use DescribesRegistrationStatus;
     use Queueable;
 
     public function __construct(
@@ -20,6 +23,8 @@ final class RegistrationConfirmation extends Notification implements ShouldQueue
         private readonly ?string $tableDate,
         private readonly ?string $tableLocation,
         private readonly string $role,
+        private readonly ParticipantStatus $status,
+        private readonly ?int $waitingListPosition = null,
     ) {}
 
     /**
@@ -38,9 +43,10 @@ final class RegistrationConfirmation extends Notification implements ShouldQueue
             : __('game-tables::emails.guest_confirmation.role_spectator');
 
         $message = (new MailMessage())
-            ->subject(__('game-tables::emails.user_confirmation.subject', ['tableTitle' => $this->tableTitle]))
+            ->subject($this->registrationStatusSubject($this->status, $this->tableTitle))
             ->greeting(__('game-tables::emails.user_confirmation.greeting', ['name' => $this->participantName]))
             ->line(__('game-tables::emails.user_confirmation.intro', ['role' => $roleLabel]))
+            ->line($this->registrationStatusLine($this->status, $this->waitingListPosition))
             ->line(__('game-tables::emails.user_confirmation.details'));
 
         $message->line('**' . __('game-tables::emails.user_confirmation.table_title') . ':** ' . $this->tableTitle);
@@ -53,8 +59,12 @@ final class RegistrationConfirmation extends Notification implements ShouldQueue
             $message->line('**' . __('game-tables::emails.user_confirmation.table_location') . ':** ' . $this->tableLocation);
         }
 
-        return $message
-            ->action(__('game-tables::emails.user_confirmation.view_table'), $tableUrl)
-            ->line(__('game-tables::emails.user_confirmation.outro'));
+        $message->action(__('game-tables::emails.user_confirmation.view_table'), $tableUrl);
+
+        if ($this->status === ParticipantStatus::Confirmed) {
+            $message->line(__('game-tables::emails.user_confirmation.outro'));
+        }
+
+        return $message;
     }
 }

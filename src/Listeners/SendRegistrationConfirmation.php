@@ -42,6 +42,8 @@ final readonly class SendRegistrationConfirmation
                 tableDate: $tableDate,
                 tableLocation: $tableLocation,
                 role: $event->role,
+                status: $event->status,
+                waitingListPosition: $event->waitingListPosition,
             ));
     }
 }

@@ -22,6 +22,7 @@ use Modules\GameTables\Domain\ValueObjects\TimeSlot;
 use Modules\GameTables\Domain\Events\GuestRegistered;
 use Modules\GameTables\Domain\Events\ParticipantCancelled;
 use Modules\GameTables\Domain\Events\ParticipantConfirmed;
+use Modules\GameTables\Domain\Events\ParticipantRegistered;
 use Modules\GameTables\Domain\Exceptions\AlreadyRegisteredException;
 use Modules\GameTables\Domain\Exceptions\CannotCancelException;
 use Modules\GameTables\Domain\Exceptions\ParticipantNotFoundException;
@@ -560,6 +561,120 @@ final class RegistrationServiceTest extends TestCase
         // Assert: new cancellation token generated
         $this->assertNotNull($savedParticipant->cancellationToken);
         $this->assertNotEquals('old-token', $savedParticipant->cancellationToken);
+    }
+
+    public function test_register_with_auto_confirm_dispatches_automatic_confirmation(): void
+    {
+        $gameTableId = GameTableId::generate()->value;
+
+        $this->gameTableRepository
+            ->method('findOrFail')
+            ->willReturn($this->createGameTable($gameTableId, autoConfirm: true));
+
+        $this->service->register(new RegisterParticipantDTO(
+            gameTableId: $gameTableId,
+            userId: 'user-123',
+            role: ParticipantRole::Player,
+        ));
+
+        Event::assertDispatched(
+            ParticipantRegistered::class,
+            fn (ParticipantRegistered $event): bool => $event->status === ParticipantStatus::Confirmed,
+        );
+        Event::assertDispatched(
+            ParticipantConfirmed::class,
+            fn (ParticipantConfirmed $event): bool => $event->automatic === true,
+        );
+    }
+
+    public function test_register_without_auto_confirm_dispatches_pending_registration_only(): void
+    {
+        $gameTableId = GameTableId::generate()->value;
+
+        $this->gameTableRepository
+            ->method('findOrFail')
+            ->willReturn($this->createGameTable($gameTableId, autoConfirm: false));
+
+        $this->service->register(new RegisterParticipantDTO(
+            gameTableId: $gameTableId,
+            userId: 'user-123',
+            role: ParticipantRole::Player,
+        ));
+
+        Event::assertDispatched(
+            ParticipantRegistered::class,
+            fn (ParticipantRegistered $event): bool => $event->status === ParticipantStatus::Pending,
+        );
+        Event::assertNotDispatched(ParticipantConfirmed::class);
+    }
+
+    public function test_register_on_full_table_dispatches_waiting_list_registration_with_position(): void
+    {
+        $gameTableId = GameTableId::generate()->value;
+
+        $this->gameTableRepository
+            ->method('findOrFail')
+            ->willReturn($this->createGameTable($gameTableId));
+
+        $this->participantRepository->method('countConfirmedPlayers')->willReturn(6);
+        $this->participantRepository->method('getNextWaitingListPosition')->willReturn(3);
+
+        $this->service->register(new RegisterParticipantDTO(
+            gameTableId: $gameTableId,
+            userId: 'user-123',
+            role: ParticipantRole::Player,
+        ));
+
+        Event::assertDispatched(
+            ParticipantRegistered::class,
+            fn (ParticipantRegistered $event): bool => $event->status === ParticipantStatus::WaitingList
+                && $event->waitingListPosition === 3,
+        );
+    }
+
+    public function test_register_guest_with_auto_confirm_dispatches_automatic_confirmation(): void
+    {
+        $gameTableId = GameTableId::generate()->value;
+
+        $this->gameTableRepository
+            ->method('findOrFail')
+            ->willReturn($this->createGameTable($gameTableId, autoConfirm: true));
+
+        $this->service->registerGuest(new RegisterParticipantDTO(
+            gameTableId: $gameTableId,
+            userId: null,
+            firstName: 'Bob',
+            email: 'bob@example.com',
+        ));
+
+        Event::assertDispatched(
+            GuestRegistered::class,
+            fn (GuestRegistered $event): bool => $event->status === ParticipantStatus::Confirmed,
+        );
+        Event::assertDispatched(
+            ParticipantConfirmed::class,
+            fn (ParticipantConfirmed $event): bool => $event->automatic === true,
+        );
+    }
+
+    public function test_manual_confirm_dispatches_non_automatic_confirmation(): void
+    {
+        $participant = new Participant(
+            id: ParticipantId::generate(),
+            gameTableId: GameTableId::generate(),
+            userId: 'user-123',
+            role: ParticipantRole::Player,
+            status: ParticipantStatus::Pending,
+        );
+
+        $this->participantRepository->method('findOrFail')->willReturn($participant);
+
+        $this->service->confirm($participant->id->value);
+
+        Event::assertDispatched(
+            ParticipantConfirmed::class,
+            fn (ParticipantConfirmed $event): bool => $event->automatic === false,
+        );
     }
 
     private function createGameTable(

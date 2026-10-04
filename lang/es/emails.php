@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 return [
     'guest_confirmation' => [
-        'subject' => 'Confirmación de inscripción: :tableTitle',
         'greeting' => 'Hola :name,',
         'intro' => 'Tu inscripción como :role ha sido registrada correctamente.',
         'details' => 'Detalles de la partida:',
@@ -19,8 +18,16 @@ return [
         'role_spectator' => 'espectador',
     ],
 
+    'registration_status' => [
+        'subject_confirmed' => 'Inscripción confirmada: :tableTitle',
+        'subject_pending' => 'Inscripción recibida: :tableTitle',
+        'subject_waiting_list' => 'En lista de espera: :tableTitle',
+        'confirmed' => 'Tu plaza está confirmada.',
+        'pending' => 'Tu inscripción está pendiente de confirmación por parte del organizador. Te avisaremos por correo cuando se revise.',
+        'waiting_list' => 'La mesa está completa. Estás en la posición :position de la lista de espera y te avisaremos si se libera una plaza.',
+    ],
+
     'user_confirmation' => [
-        'subject' => 'Confirmación de inscripción: :tableTitle',
         'greeting' => 'Hola :name,',
         'intro' => 'Tu inscripción como :role ha sido registrada correctamente.',
         'details' => 'Detalles de la partida:',
