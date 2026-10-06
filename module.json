@@ -1,13 +1,15 @@
 {
   "name": "game-tables",
   "displayName": "Mesas de rol",
-  "version": "1.0.20-beta",
+  "version": "1.1.0",
   "repository": "DavidMRGaona/guildforge-game-tables",
   "namespace": "Modules\\GameTables",
   "provider": "GameTablesServiceProvider",
   "description": "Gestión de mesas de juegos de rol y campañas",
   "author": "GuildForge",
   "requires": {
+    "core": "^2.6",
+    "filament": "^3.3",
     "php": ">=8.2",
     "laravel": ">=12.0"
   },
