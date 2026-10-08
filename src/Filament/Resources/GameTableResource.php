@@ -563,7 +563,7 @@ final class GameTableResource extends BaseResource
                         ->icon('heroicon-o-x-circle')
                         ->color('danger')
                         ->requiresConfirmation()
-                        ->form([
+                        ->schema([
                             Textarea::make('reason')
                                 ->label(__('game-tables::messages.fields.rejection_reason'))
                                 ->required(),
