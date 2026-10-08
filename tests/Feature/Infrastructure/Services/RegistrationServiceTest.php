@@ -31,6 +31,7 @@ use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Domain\ValueObjects\ParticipantId;
 use Modules\GameTables\Domain\ValueObjects\TimeSlot;
 use Modules\GameTables\Infrastructure\Services\RegistrationService;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Tests\TestCase;
 
 final class RegistrationServiceTest extends TestCase
@@ -147,6 +148,7 @@ final class RegistrationServiceTest extends TestCase
         $this->assertGreaterThan(30, strlen($savedParticipant->cancellationToken));
     }
 
+    #[AllowMockObjectsWithoutExpectations]
     public function test_register_guest_dispatches_guest_registered_event(): void
     {
         $gameTableId = GameTableId::generate()->value;
@@ -179,6 +181,7 @@ final class RegistrationServiceTest extends TestCase
         Event::assertDispatched(GuestRegistered::class);
     }
 
+    #[AllowMockObjectsWithoutExpectations]
     public function test_register_guest_dispatches_confirmed_event_when_auto_confirm(): void
     {
         $gameTableId = GameTableId::generate()->value;
@@ -215,6 +218,8 @@ final class RegistrationServiceTest extends TestCase
 
     public function test_register_guest_throws_when_email_already_registered(): void
     {
+        $this->gameTableRepository->expects($this->never())->method($this->anything());
+
         $gameTableId = GameTableId::generate()->value;
         $email = 'duplicate@example.com';
 
@@ -247,6 +252,8 @@ final class RegistrationServiceTest extends TestCase
 
     public function test_cancel_by_token_cancels_participant(): void
     {
+        $this->gameTableRepository->expects($this->never())->method($this->anything());
+
         $token = 'valid-token-123';
         $participant = new Participant(
             id: ParticipantId::generate(),
@@ -281,6 +288,8 @@ final class RegistrationServiceTest extends TestCase
 
     public function test_cancel_by_token_throws_when_token_not_found(): void
     {
+        $this->gameTableRepository->expects($this->never())->method($this->anything());
+
         $token = 'invalid-token';
 
         $this->participantRepository
@@ -296,6 +305,8 @@ final class RegistrationServiceTest extends TestCase
 
     public function test_cancel_by_token_throws_when_cannot_cancel(): void
     {
+        $this->gameTableRepository->expects($this->never())->method($this->anything());
+
         $token = 'valid-token-123';
         $participant = new Participant(
             id: ParticipantId::generate(),
@@ -321,6 +332,8 @@ final class RegistrationServiceTest extends TestCase
 
     public function test_find_by_token_returns_participant(): void
     {
+        $this->gameTableRepository->expects($this->never())->method($this->anything());
+
         $token = 'valid-token-123';
         $participant = new Participant(
             id: ParticipantId::generate(),
@@ -348,6 +361,8 @@ final class RegistrationServiceTest extends TestCase
 
     public function test_find_by_token_returns_null_when_not_found(): void
     {
+        $this->gameTableRepository->expects($this->never())->method($this->anything());
+
         $token = 'invalid-token';
 
         $this->participantRepository
@@ -562,6 +577,7 @@ final class RegistrationServiceTest extends TestCase
         $this->assertNotEquals('old-token', $savedParticipant->cancellationToken);
     }
 
+    #[AllowMockObjectsWithoutExpectations]
     public function test_register_with_auto_confirm_dispatches_automatic_confirmation(): void
     {
         $gameTableId = GameTableId::generate()->value;
@@ -586,6 +602,7 @@ final class RegistrationServiceTest extends TestCase
         );
     }
 
+    #[AllowMockObjectsWithoutExpectations]
     public function test_register_without_auto_confirm_dispatches_pending_registration_only(): void
     {
         $gameTableId = GameTableId::generate()->value;
@@ -607,6 +624,7 @@ final class RegistrationServiceTest extends TestCase
         Event::assertNotDispatched(ParticipantConfirmed::class);
     }
 
+    #[AllowMockObjectsWithoutExpectations]
     public function test_register_on_full_table_dispatches_waiting_list_registration_with_position(): void
     {
         $gameTableId = GameTableId::generate()->value;
@@ -631,6 +649,7 @@ final class RegistrationServiceTest extends TestCase
         );
     }
 
+    #[AllowMockObjectsWithoutExpectations]
     public function test_register_guest_with_auto_confirm_dispatches_automatic_confirmation(): void
     {
         $gameTableId = GameTableId::generate()->value;
@@ -658,6 +677,9 @@ final class RegistrationServiceTest extends TestCase
 
     public function test_register_without_user_is_rejected(): void
     {
+        $this->gameTableRepository->expects($this->never())->method($this->anything());
+        $this->participantRepository->expects($this->never())->method($this->anything());
+
         $this->expectException(InvalidArgumentException::class);
 
         $this->service->register(new RegisterParticipantDTO(
@@ -668,6 +690,9 @@ final class RegistrationServiceTest extends TestCase
 
     public function test_register_by_admin_without_user_is_rejected(): void
     {
+        $this->gameTableRepository->expects($this->never())->method($this->anything());
+        $this->participantRepository->expects($this->never())->method($this->anything());
+
         $this->expectException(InvalidArgumentException::class);
 
         $this->service->registerByAdmin(new RegisterParticipantDTO(
@@ -676,8 +701,11 @@ final class RegistrationServiceTest extends TestCase
         ));
     }
 
+    #[AllowMockObjectsWithoutExpectations]
     public function test_manual_confirm_dispatches_non_automatic_confirmation(): void
     {
+        $this->gameTableRepository->expects($this->never())->method($this->anything());
+
         $participant = new Participant(
             id: ParticipantId::generate(),
             gameTableId: GameTableId::generate(),

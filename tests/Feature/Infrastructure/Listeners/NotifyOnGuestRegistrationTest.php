@@ -100,6 +100,8 @@ final class NotifyOnGuestRegistrationTest extends TestCase
 
     public function test_does_not_send_when_setting_disabled(): void
     {
+        $this->recipientResolver->expects($this->never())->method($this->anything());
+
         config()->set('game-tables.notifications.notify_on_registration', false);
 
         $gameTableId = GameTableId::generate();

@@ -83,6 +83,8 @@ final class EligibilityServiceTest extends TestCase
 
     public function test_can_guest_register_returns_false_for_members_only_table(): void
     {
+        $this->participantRepository->expects($this->never())->method($this->anything());
+
         $gameTableId = GameTableId::generate()->value;
         $email = 'guest@example.com';
 
@@ -180,6 +182,8 @@ final class EligibilityServiceTest extends TestCase
 
     public function test_can_guest_register_returns_false_when_registration_closed(): void
     {
+        $this->participantRepository->expects($this->never())->method($this->anything());
+
         $gameTableId = GameTableId::generate()->value;
         $email = 'guest@example.com';
 
@@ -202,6 +206,8 @@ final class EligibilityServiceTest extends TestCase
 
     public function test_can_guest_register_returns_false_for_invite_only_table(): void
     {
+        $this->participantRepository->expects($this->never())->method($this->anything());
+
         $gameTableId = GameTableId::generate()->value;
         $email = 'guest@example.com';
 
@@ -224,6 +230,8 @@ final class EligibilityServiceTest extends TestCase
 
     public function test_can_guest_register_returns_false_when_registration_not_yet_open(): void
     {
+        $this->participantRepository->expects($this->never())->method($this->anything());
+
         $gameTableId = GameTableId::generate()->value;
         $email = 'guest@example.com';
 
