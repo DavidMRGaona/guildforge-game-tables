@@ -8,13 +8,16 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Grid;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Illuminate\Support\HtmlString;
+use Filament\Schemas\Components\Flex;
+use Filament\Schemas\Components\Icon;
+use Filament\Schemas\Components\Text;
+use Filament\Support\Enums\FontWeight;
+use Filament\Support\Icons\Heroicon;
 use Modules\GameTables\Domain\Enums\GameMasterRole;
 
 final class GameMasterRepeater
@@ -199,15 +202,16 @@ final class GameMasterRepeater
             Hidden::make('id'),
             Hidden::make('is_inherited'),
 
-            // Show inheritance badge for inherited GMs
-            Placeholder::make('inherited_notice')
-                ->label('')
-                ->content(fn (Get $get): HtmlString => new HtmlString(
-                    '<div class="text-sm text-primary-600 dark:text-primary-400 font-medium flex items-center gap-1">' .
-                    '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>' .
-                    __('game-tables::messages.fields.inherited_from_campaign') .
-                    '</div>'
-                ))
+            // Show inheritance notice for inherited GMs
+            Flex::make([
+                Icon::make(Heroicon::OutlinedInformationCircle)
+                    ->color('primary')
+                    ->grow(false),
+                Text::make(__('game-tables::messages.fields.inherited_from_campaign'))
+                    ->color('primary')
+                    ->weight(FontWeight::Medium),
+            ])
+                ->verticallyAlignCenter()
                 ->visible(fn (Get $get): bool => (bool) $get('is_inherited')),
 
             // Exclude toggle for inherited GMs

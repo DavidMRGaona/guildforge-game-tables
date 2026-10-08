@@ -17,6 +17,7 @@ use Filament\Forms\Components\Toggle;
 use App\Filament\Forms\Components\TimePicker;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
 use Modules\GameTables\Application\DTOs\UpdateEventGameTableConfigDTO;
 use Modules\GameTables\Application\Services\EventGameTableConfigServiceInterface;
@@ -34,7 +35,8 @@ final class EventGameTableConfigRelationManager extends RelationManager
 
     protected static ?string $recordTitleAttribute = 'event_id';
 
-    protected string $view = 'game-tables::filament.relation-managers.game-table-config-form';
+    // The module registers its view namespace at runtime, so Larastan cannot resolve it as a view-string
+    protected string $view = 'game-tables::filament.relation-managers.game-table-config-form'; // @phpstan-ignore property.defaultValue
 
     /** @var array<string, mixed> */
     public array $configData = [];
@@ -87,16 +89,11 @@ final class EventGameTableConfigRelationManager extends RelationManager
         ]);
     }
 
-    /**
-     * @return array<string, \Filament\Schemas\Schema>
-     */
-    protected function getForms(): array
+    public function configForm(Schema $schema): Schema
     {
-        return [
-            'configForm' => $this->makeForm()
-                ->components($this->getFormSchema())
-                ->statePath('configData'),
-        ];
+        return $schema
+            ->components($this->getFormSchema())
+            ->statePath('configData');
     }
 
     /**
