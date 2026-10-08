@@ -4,6 +4,25 @@ declare(strict_types=1);
 
 namespace Modules\GameTables;
 
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
+use Modules\GameTables\Filament\Resources\GameSystemResource;
+use Modules\GameTables\Filament\Resources\ContentWarningResource;
+use Modules\GameTables\Filament\Resources\CampaignResource;
+use Modules\GameTables\Filament\Resources\GameTableResource;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
+use Modules\GameTables\Policies\GameSystemPolicy;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ContentWarningModel;
+use Modules\GameTables\Policies\ContentWarningPolicy;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
+use Modules\GameTables\Policies\CampaignPolicy;
+use Modules\GameTables\Policies\GameTablePolicy;
+use Modules\GameTables\Infrastructure\Calendar\GameTableCalendarSource;
+use Modules\GameTables\Filament\Pages\GameTablesSettings;
+use Modules\GameTables\Filament\Widgets\PendingModerationWidget;
+use Filament\Resources\Resource;
+use App\Application\Calendar\Contracts\CalendarEntrySourceInterface;
+use Filament\Pages\Page;
+use Filament\Widgets\Widget;
 use App\Application\Modules\DTOs\ModuleRouteDTO;
 use App\Application\Modules\DTOs\NavigationItemDTO;
 use App\Application\Modules\DTOs\PagePrefixDTO;
@@ -323,7 +342,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
      */
     private function registerModelObservers(): void
     {
-        \Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel::observe(
+        GameTableModel::observe(
             GameTableObserver::class
         );
     }
@@ -520,15 +539,15 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     /**
      * Register Filament resources provided by this module.
      *
-     * @return array<class-string<\Filament\Resources\Resource>>
+     * @return array<class-string<Resource>>
      */
     public function registerFilamentResources(): array
     {
         return [
-            \Modules\GameTables\Filament\Resources\GameSystemResource::class,
-            \Modules\GameTables\Filament\Resources\ContentWarningResource::class,
-            \Modules\GameTables\Filament\Resources\CampaignResource::class,
-            \Modules\GameTables\Filament\Resources\GameTableResource::class,
+            GameSystemResource::class,
+            ContentWarningResource::class,
+            CampaignResource::class,
+            GameTableResource::class,
         ];
     }
 
@@ -540,10 +559,10 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     public function registerPolicies(): array
     {
         return [
-            \Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel::class => \Modules\GameTables\Policies\GameSystemPolicy::class,
-            \Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ContentWarningModel::class => \Modules\GameTables\Policies\ContentWarningPolicy::class,
-            \Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel::class => \Modules\GameTables\Policies\CampaignPolicy::class,
-            \Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel::class => \Modules\GameTables\Policies\GameTablePolicy::class,
+            GameSystemModel::class => GameSystemPolicy::class,
+            ContentWarningModel::class => ContentWarningPolicy::class,
+            CampaignModel::class => CampaignPolicy::class,
+            GameTableModel::class => GameTablePolicy::class,
         ];
     }
 
@@ -852,46 +871,46 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
      * Register calendar sources provided by this module.
      * Allows game tables to appear in the public calendars.
      *
-     * @return array<class-string<\App\Application\Calendar\Contracts\CalendarEntrySourceInterface>>
+     * @return array<class-string<CalendarEntrySourceInterface>>
      */
     public function registerCalendarSources(): array
     {
         return [
-            \Modules\GameTables\Infrastructure\Calendar\GameTableCalendarSource::class,
+            GameTableCalendarSource::class,
         ];
     }
 
     /**
      * Get the Filament form schema for module settings.
      *
-     * @return array<\Filament\Forms\Components\Component>
+     * @return array<\Filament\Schemas\Components\Component>
      */
     public function getSettingsSchema(): array
     {
-        return \Modules\GameTables\Filament\Pages\GameTablesSettings::getFormSchemaComponents();
+        return GameTablesSettings::getFormSchemaComponents();
     }
 
     /**
      * Register Filament pages provided by this module.
      *
-     * @return array<class-string<\Filament\Pages\Page>>
+     * @return array<class-string<Page>>
      */
     public function registerFilamentPages(): array
     {
         return [
-            \Modules\GameTables\Filament\Pages\GameTablesSettings::class,
+            GameTablesSettings::class,
         ];
     }
 
     /**
      * Register Filament widgets provided by this module.
      *
-     * @return array<class-string<\Filament\Widgets\Widget>>
+     * @return array<class-string<Widget>>
      */
     public function registerFilamentWidgets(): array
     {
         return [
-            \Modules\GameTables\Filament\Widgets\PendingModerationWidget::class,
+            PendingModerationWidget::class,
         ];
     }
 }

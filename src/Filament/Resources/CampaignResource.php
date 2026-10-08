@@ -4,21 +4,24 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Section;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Modules\GameTables\Filament\Resources\CampaignResource\Pages\ListCampaigns;
+use Modules\GameTables\Filament\Resources\CampaignResource\Pages\CreateCampaign;
+use Modules\GameTables\Filament\Resources\CampaignResource\Pages\EditCampaign;
 use App\Filament\Resources\BaseResource;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Tabs;
-use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Form;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -35,7 +38,7 @@ final class CampaignResource extends BaseResource
 {
     protected static ?string $model = CampaignModel::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-book-open';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-book-open';
 
     protected static ?int $navigationSort = 2;
 
@@ -59,10 +62,10 @@ final class CampaignResource extends BaseResource
         return __('game-tables::messages.model.campaign.plural');
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Tabs::make('CampaignTabs')
                     ->tabs([
                         Tab::make(__('game-tables::messages.tabs.basic_info'))
@@ -216,10 +219,10 @@ final class CampaignResource extends BaseResource
                 TernaryFilter::make('is_published')
                     ->label(__('game-tables::messages.fields.is_published')),
             ])
-            ->actions([
+            ->recordActions([
                 EditAction::make(),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
@@ -230,9 +233,9 @@ final class CampaignResource extends BaseResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListCampaigns::route('/'),
-            'create' => Pages\CreateCampaign::route('/create'),
-            'edit' => Pages\EditCampaign::route('/{record}/edit'),
+            'index' => ListCampaigns::route('/'),
+            'create' => CreateCampaign::route('/create'),
+            'edit' => EditCampaign::route('/{record}/edit'),
         ];
     }
 }

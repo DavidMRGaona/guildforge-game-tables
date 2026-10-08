@@ -4,30 +4,33 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Section;
+use Filament\Actions\Action;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\BulkAction;
+use Modules\GameTables\Filament\Resources\GameTableResource\Pages\ListGameTables;
+use Modules\GameTables\Filament\Resources\GameTableResource\Pages\CreateGameTable;
+use Modules\GameTables\Filament\Resources\GameTableResource\Pages\EditGameTable;
 use App\Filament\Resources\BaseResource;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Tabs;
-use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Filament\Notifications\Notification;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Actions\BulkAction;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -58,7 +61,7 @@ final class GameTableResource extends BaseResource
 {
     protected static ?string $model = GameTableModel::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-table-cells';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-table-cells';
 
     protected static ?int $navigationSort = 1;
 
@@ -82,10 +85,10 @@ final class GameTableResource extends BaseResource
         return __('game-tables::messages.model.game_table.plural');
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Tabs::make('GameTableTabs')
                     ->tabs([
                         Tab::make(__('game-tables::messages.tabs.basic_info'))
@@ -485,7 +488,7 @@ final class GameTableResource extends BaseResource
                     ->label(__('game-tables::messages.fields.frontend_creation_status'))
                     ->options(FrontendCreationStatus::options()),
             ])
-            ->actions([
+            ->recordActions([
                 Action::make('approve')
                     ->label(__('game-tables::messages.moderation.approve'))
                     ->icon('heroicon-o-check-circle')
@@ -510,7 +513,7 @@ final class GameTableResource extends BaseResource
                     ->requiresConfirmation()
                     ->modalHeading(__('game-tables::messages.moderation.reject_confirmation'))
                     ->modalDescription(__('game-tables::messages.moderation.reject_description'))
-                    ->form([
+                    ->schema([
                         Textarea::make('reason')
                             ->label(__('game-tables::messages.moderation.rejection_reason'))
                             ->placeholder(__('game-tables::messages.moderation.rejection_reason_placeholder'))
@@ -528,7 +531,7 @@ final class GameTableResource extends BaseResource
                     }),
                 EditAction::make(),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                     BulkAction::make('approve')
@@ -599,9 +602,9 @@ final class GameTableResource extends BaseResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListGameTables::route('/'),
-            'create' => Pages\CreateGameTable::route('/create'),
-            'edit' => Pages\EditGameTable::route('/{record}/edit'),
+            'index' => ListGameTables::route('/'),
+            'create' => CreateGameTable::route('/create'),
+            'edit' => EditGameTable::route('/{record}/edit'),
         ];
     }
 

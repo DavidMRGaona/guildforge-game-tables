@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources\GameTableResource\Pages;
 
+use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
@@ -25,7 +25,7 @@ final class ListGameTables extends ListRecords
     }
 
     /**
-     * @return array<string, Tab>
+     * @return array<string, \Filament\Schemas\Components\Tabs\Tab>
      */
     public function getTabs(): array
     {

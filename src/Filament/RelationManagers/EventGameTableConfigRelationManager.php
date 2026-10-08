@@ -4,18 +4,17 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\RelationManagers;
 
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Fieldset;
+use Filament\Schemas\Components\Utilities\Get;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\RoleModel;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use App\Filament\Forms\Components\TimePicker;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Illuminate\Database\Eloquent\Model;
@@ -27,7 +26,7 @@ use Modules\GameTables\Domain\Enums\SchedulingMode;
 use Modules\GameTables\Domain\Repositories\EventGameTableConfigRepositoryInterface;
 
 /**
- * @property Form $configForm
+ * @property \Filament\Schemas\Schema $configForm
  */
 final class EventGameTableConfigRelationManager extends RelationManager
 {
@@ -35,7 +34,7 @@ final class EventGameTableConfigRelationManager extends RelationManager
 
     protected static ?string $recordTitleAttribute = 'event_id';
 
-    protected static string $view = 'game-tables::filament.relation-managers.game-table-config-form';
+    protected string $view = 'game-tables::filament.relation-managers.game-table-config-form';
 
     /** @var array<string, mixed> */
     public array $configData = [];
@@ -89,19 +88,19 @@ final class EventGameTableConfigRelationManager extends RelationManager
     }
 
     /**
-     * @return array<string, Form>
+     * @return array<string, \Filament\Schemas\Schema>
      */
     protected function getForms(): array
     {
         return [
             'configForm' => $this->makeForm()
-                ->schema($this->getFormSchema())
+                ->components($this->getFormSchema())
                 ->statePath('configData'),
         ];
     }
 
     /**
-     * @return array<\Filament\Forms\Components\Component>
+     * @return array<\Filament\Schemas\Components\Component>
      */
     protected function getFormSchema(): array
     {

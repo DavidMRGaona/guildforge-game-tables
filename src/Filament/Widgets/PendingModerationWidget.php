@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Widgets;
 
+use Filament\Actions\Action;
 use App\Application\Services\DashboardWidgetConfigServiceInterface;
-use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -54,7 +54,7 @@ final class PendingModerationWidget extends BaseWidget
                     ->dateTime('d/m/Y H:i')
                     ->sortable(),
             ])
-            ->actions([
+            ->recordActions([
                 Action::make('view')
                     ->label(__('game-tables::messages.actions.view'))
                     ->icon('heroicon-o-eye')

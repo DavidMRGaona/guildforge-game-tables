@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Forms\Components;
 
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Grid;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
-use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
@@ -13,7 +14,6 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Get;
 use Illuminate\Support\HtmlString;
 use Modules\GameTables\Domain\Enums\GameMasterRole;
 
@@ -104,7 +104,7 @@ final class GameMasterRepeater
     /**
      * Get the schema for a single game master item (campaigns).
      *
-     * @return array<int, \Filament\Forms\Components\Component>
+     * @return array<int, \Filament\Schemas\Components\Component>
      */
     public static function getSchema(): array
     {
@@ -191,7 +191,7 @@ final class GameMasterRepeater
     /**
      * Get the schema for a single game master item (game tables - with inheritance support).
      *
-     * @return array<int, \Filament\Forms\Components\Component>
+     * @return array<int, \Filament\Schemas\Components\Component>
      */
     public static function getSchemaForTable(): array
     {

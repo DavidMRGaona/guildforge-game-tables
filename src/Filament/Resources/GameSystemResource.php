@@ -4,15 +4,18 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources;
 
-use Filament\Forms\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Modules\GameTables\Filament\Resources\GameSystemResource\Pages\ListGameSystems;
+use Modules\GameTables\Filament\Resources\GameSystemResource\Pages\CreateGameSystem;
+use Modules\GameTables\Filament\Resources\GameSystemResource\Pages\EditGameSystem;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Form;
 use App\Filament\Resources\BaseResource;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
@@ -24,7 +27,7 @@ final class GameSystemResource extends BaseResource
 {
     protected static ?string $model = GameSystemModel::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-puzzle-piece';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-puzzle-piece';
 
     protected static ?int $navigationSort = 2;
 
@@ -48,10 +51,10 @@ final class GameSystemResource extends BaseResource
         return __('game-tables::messages.model.game_system.plural');
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Section::make(__('game-tables::messages.sections.basic_info'))
                     ->schema([
                         TextInput::make('name')
@@ -155,10 +158,10 @@ final class GameSystemResource extends BaseResource
                 TernaryFilter::make('is_active')
                     ->label(__('game-tables::messages.fields.is_active')),
             ])
-            ->actions([
+            ->recordActions([
                 EditAction::make(),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
@@ -169,9 +172,9 @@ final class GameSystemResource extends BaseResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListGameSystems::route('/'),
-            'create' => Pages\CreateGameSystem::route('/create'),
-            'edit' => Pages\EditGameSystem::route('/{record}/edit'),
+            'index' => ListGameSystems::route('/'),
+            'create' => CreateGameSystem::route('/create'),
+            'edit' => EditGameSystem::route('/{record}/edit'),
         ];
     }
 }

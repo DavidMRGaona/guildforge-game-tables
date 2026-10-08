@@ -4,15 +4,18 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources;
 
-use Filament\Forms\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Modules\GameTables\Filament\Resources\ContentWarningResource\Pages\ListContentWarnings;
+use Modules\GameTables\Filament\Resources\ContentWarningResource\Pages\CreateContentWarning;
+use Modules\GameTables\Filament\Resources\ContentWarningResource\Pages\EditContentWarning;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Form;
 use App\Filament\Resources\BaseResource;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -26,7 +29,7 @@ final class ContentWarningResource extends BaseResource
 {
     protected static ?string $model = ContentWarningModel::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-exclamation-triangle';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-exclamation-triangle';
 
     protected static ?int $navigationSort = 3;
 
@@ -50,10 +53,10 @@ final class ContentWarningResource extends BaseResource
         return __('game-tables::messages.model.content_warning.plural');
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Section::make(__('game-tables::messages.sections.basic_info'))
                     ->schema([
                         TextInput::make('name')
@@ -131,10 +134,10 @@ final class ContentWarningResource extends BaseResource
                 TernaryFilter::make('is_active')
                     ->label(__('game-tables::messages.fields.is_active')),
             ])
-            ->actions([
+            ->recordActions([
                 EditAction::make(),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
@@ -145,9 +148,9 @@ final class ContentWarningResource extends BaseResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListContentWarnings::route('/'),
-            'create' => Pages\CreateContentWarning::route('/create'),
-            'edit' => Pages\EditContentWarning::route('/{record}/edit'),
+            'index' => ListContentWarnings::route('/'),
+            'create' => CreateContentWarning::route('/create'),
+            'edit' => EditContentWarning::route('/{record}/edit'),
         ];
     }
 }

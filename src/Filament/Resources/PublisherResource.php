@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources;
 
-use Filament\Forms\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Modules\GameTables\Filament\Resources\PublisherResource\Pages\ListPublishers;
+use Modules\GameTables\Filament\Resources\PublisherResource\Pages\CreatePublisher;
+use Modules\GameTables\Filament\Resources\PublisherResource\Pages\EditPublisher;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Form;
 use App\Filament\Resources\BaseResource;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
@@ -23,7 +26,7 @@ final class PublisherResource extends BaseResource
 {
     protected static ?string $model = PublisherModel::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-building-office';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-building-office';
 
     protected static ?int $navigationSort = 1;
 
@@ -47,10 +50,10 @@ final class PublisherResource extends BaseResource
         return __('game-tables::messages.model.publisher.plural');
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Section::make(__('game-tables::messages.sections.basic_info'))
                     ->schema([
                         TextInput::make('name')
@@ -122,10 +125,10 @@ final class PublisherResource extends BaseResource
                 TernaryFilter::make('is_active')
                     ->label(__('game-tables::messages.fields.is_active')),
             ])
-            ->actions([
+            ->recordActions([
                 EditAction::make(),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
@@ -136,9 +139,9 @@ final class PublisherResource extends BaseResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListPublishers::route('/'),
-            'create' => Pages\CreatePublisher::route('/create'),
-            'edit' => Pages\EditPublisher::route('/{record}/edit'),
+            'index' => ListPublishers::route('/'),
+            'create' => CreatePublisher::route('/create'),
+            'edit' => EditPublisher::route('/{record}/edit'),
         ];
     }
 }

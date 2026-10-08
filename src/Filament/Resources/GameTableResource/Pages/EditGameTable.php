@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources\GameTableResource\Pages;
 
+use DateTimeImmutable;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\Textarea;
@@ -140,7 +141,7 @@ final class EditGameTable extends EditRecord
                 ->requiresConfirmation()
                 ->modalHeading(__('game-tables::messages.moderation.reject_confirmation'))
                 ->modalDescription(__('game-tables::messages.moderation.reject_description'))
-                ->form([
+                ->schema([
                     Textarea::make('reason')
                         ->label(__('game-tables::messages.moderation.rejection_reason'))
                         ->placeholder(__('game-tables::messages.moderation.rejection_reason_placeholder'))
@@ -224,7 +225,7 @@ final class EditGameTable extends EditRecord
                     GameTableCancelled::dispatch(
                         $this->record->id,
                         $this->record->title,
-                        new \DateTimeImmutable($this->record->starts_at->toDateTimeString()),
+                        new DateTimeImmutable($this->record->starts_at->toDateTimeString()),
                     );
 
                     Notification::make()
