@@ -6,7 +6,6 @@ import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { FormCombobox, FormSelect, FormCheckboxGroup, FormCheckboxWithTooltip, FormRadioGroup, FormTagsInput, FormNumberInput } from '@/components/form';
 import type { CheckboxGroup, RadioOption } from '@/components/form';
-import { useSeo } from '@/composables/useSeo';
 import type { GameSystem, GameTableEditData } from '../../types/gametables';
 import GameMasterSection from '../../components/GameMasterSection.vue';
 import FormTabs from '../../components/FormTabs.vue';
@@ -90,10 +89,6 @@ interface Props {
 const props = defineProps<Props>();
 
 const { t } = useI18n();
-
-useSeo({
-    title: t('gameTables.edit.title'),
-});
 
 // Active tab state
 const activeTab = ref('basic');

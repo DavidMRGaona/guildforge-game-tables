@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Http\Controllers;
 
+use App\Application\Seo\DTOs\SeoPageDTO;
+use App\Application\Seo\Services\SeoMetadataFactoryInterface;
 use App\Http\Controllers\Controller;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Http\RedirectResponse;
@@ -19,6 +21,7 @@ final class FrontendCampaignController extends Controller
     public function __construct(
         private readonly FrontendCreationServiceInterface $creationService,
         private readonly CreationEligibilityServiceInterface $eligibilityService,
+        private readonly SeoMetadataFactoryInterface $seo,
     ) {}
 
     /**
@@ -35,6 +38,10 @@ final class FrontendCampaignController extends Controller
             return Inertia::render('Campaigns/CreateNotEligible', [
                 'reason' => $eligibility->reason,
                 'canCreateAt' => $eligibility->canCreateAt?->format('c'),
+                'seo' => $this->seo->forPage(new SeoPageDTO(
+                    title: (string) __('game-tables::messages.seo.create_campaign_title'),
+                    noindex: true,
+                ))->toArray(),
             ]);
         }
 
@@ -44,6 +51,10 @@ final class FrontendCampaignController extends Controller
         return Inertia::render('Campaigns/Create', [
             'formData' => $formData,
             'eligibility' => $eligibility->toArray(),
+            'seo' => $this->seo->forPage(new SeoPageDTO(
+                title: (string) __('game-tables::messages.seo.create_campaign_title'),
+                noindex: true,
+            ))->toArray(),
         ]);
     }
 
@@ -81,6 +92,10 @@ final class FrontendCampaignController extends Controller
         return Inertia::render('Campaigns/MyCampaigns', [
             'campaigns' => $campaigns,
             'canCreate' => $eligibility->eligible,
+            'seo' => $this->seo->forPage(new SeoPageDTO(
+                title: (string) __('game-tables::messages.seo.my_campaigns_title'),
+                noindex: true,
+            ))->toArray(),
         ]);
     }
 
@@ -113,6 +128,10 @@ final class FrontendCampaignController extends Controller
         return Inertia::render('Campaigns/Edit', [
             'campaign' => $campaign->toArray(),
             'formData' => $formData,
+            'seo' => $this->seo->forPage(new SeoPageDTO(
+                title: (string) __('game-tables::messages.seo.edit_campaign_title'),
+                noindex: true,
+            ))->toArray(),
         ]);
     }
 

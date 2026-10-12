@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Http\Controllers;
 
+use App\Application\Seo\DTOs\SeoPageDTO;
+use App\Application\Seo\Services\SeoMetadataFactoryInterface;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,6 +33,7 @@ final class RegistrationController extends Controller
         private readonly RegistrationServiceInterface $registrationService,
         private readonly EligibilityServiceInterface $eligibilityService,
         private readonly GameTableQueryServiceInterface $gameTableQueryService,
+        private readonly SeoMetadataFactoryInterface $seo,
     ) {}
 
     /**
@@ -158,6 +161,10 @@ final class RegistrationController extends Controller
             ],
             'token' => $token,
             'canCancel' => ! in_array($participant->status->value, ['cancelled', 'rejected', 'no_show'], true),
+            'seo' => $this->seo->forPage(new SeoPageDTO(
+                title: (string) __('game-tables::messages.seo.cancel_registration_title'),
+                noindex: true,
+            ))->toArray(),
         ]);
     }
 

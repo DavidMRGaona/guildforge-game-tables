@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Http\Controllers;
 
+use App\Application\Seo\DTOs\SeoPageDTO;
+use App\Application\Seo\Services\SeoMetadataFactoryInterface;
 use App\Http\Controllers\Controller;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\User;
@@ -31,6 +33,7 @@ final class FrontendGameTableController extends Controller
         private readonly EventCreationEligibilityServiceInterface $eventEligibilityService,
         private readonly EventGameTableConfigServiceInterface $eventConfigService,
         private readonly GameTableServiceInterface $gameTableService,
+        private readonly SeoMetadataFactoryInterface $seo,
     ) {}
 
     /**
@@ -60,6 +63,10 @@ final class FrontendGameTableController extends Controller
             return Inertia::render('GameTables/CreateNotEligible', [
                 'reason' => $eligibility->reason,
                 'canCreateAt' => $eligibility->canCreateAt?->format('c'),
+                'seo' => $this->seo->forPage(new SeoPageDTO(
+                    title: (string) __('game-tables::messages.seo.create_table_title'),
+                    noindex: true,
+                ))->toArray(),
             ]);
         }
 
@@ -84,6 +91,10 @@ final class FrontendGameTableController extends Controller
             'eligibility' => $eligibility->toArray(),
             'eventContext' => $eventContext?->toArray(),
             'currentUser' => $currentUser,
+            'seo' => $this->seo->forPage(new SeoPageDTO(
+                title: (string) __('game-tables::messages.seo.create_table_title'),
+                noindex: true,
+            ))->toArray(),
         ]);
     }
 
@@ -124,6 +135,10 @@ final class FrontendGameTableController extends Controller
                 $tables
             ),
             'canCreate' => $eligibility->eligible,
+            'seo' => $this->seo->forPage(new SeoPageDTO(
+                title: (string) __('game-tables::messages.seo.my_tables_title'),
+                noindex: true,
+            ))->toArray(),
         ]);
     }
 
@@ -161,6 +176,10 @@ final class FrontendGameTableController extends Controller
             'formData' => $formData,
             'eventContext' => $eventContext?->toArray(),
             'currentUser' => $currentUser,
+            'seo' => $this->seo->forPage(new SeoPageDTO(
+                title: (string) __('game-tables::messages.seo.edit_table_title'),
+                noindex: true,
+            ))->toArray(),
         ]);
     }
 

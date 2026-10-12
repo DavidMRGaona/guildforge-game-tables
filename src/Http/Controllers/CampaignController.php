@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Http\Controllers;
 
+use App\Application\Seo\DTOs\SeoPageDTO;
+use App\Application\Seo\Services\SeoMetadataFactoryInterface;
 use App\Http\Concerns\BuildsPaginatedResponse;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
@@ -28,6 +30,7 @@ final class CampaignController extends Controller
         private readonly CampaignQueryServiceInterface $queryService,
         private readonly GameTableQueryServiceInterface $tableQueryService,
         private readonly SlugRedirectServiceInterface $slugRedirectService,
+        private readonly SeoMetadataFactoryInterface $seo,
     ) {}
 
     public function index(Request $request): Response
@@ -66,6 +69,10 @@ final class CampaignController extends Controller
                 'systems' => $gameSystemIds ?? [],
                 'status' => $status,
             ],
+            'seo' => $this->seo->forPage(new SeoPageDTO(
+                title: (string) __('game-tables::messages.seo.campaigns_title'),
+                description: (string) __('game-tables::messages.seo.campaigns_description'),
+            ))->toArray(),
         ]);
     }
 
@@ -77,6 +84,11 @@ final class CampaignController extends Controller
         if ($campaign !== null) {
             return Inertia::render('Campaigns/Show', [
                 'campaign' => CampaignResource::make($campaign)->resolve(),
+                'seo' => $this->seo->forPage(new SeoPageDTO(
+                    title: $campaign->title,
+                    description: $campaign->description,
+                    imagePublicId: $campaign->imagePublicId,
+                ))->toArray(),
             ]);
         }
 

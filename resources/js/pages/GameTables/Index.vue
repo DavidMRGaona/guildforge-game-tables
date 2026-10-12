@@ -10,7 +10,6 @@ import GameTableCardSkeleton from '../../components/GameTableCardSkeleton.vue';
 import GameTableFilters from '../../components/GameTableFilters.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import EmptyState from '@/components/ui/EmptyState.vue';
-import { useSeo } from '@/composables/useSeo';
 import { usePagination } from '@/composables/usePagination';
 import { useGridLayout, type GridColumns } from '@/composables/useGridLayout';
 
@@ -28,11 +27,6 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const { t } = useI18n();
-
-useSeo({
-    title: t('gameTables.title'),
-    description: t('gameTables.description'),
-});
 
 const isNavigating = ref(false);
 const columns: GridColumns = 3;

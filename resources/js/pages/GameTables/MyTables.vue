@@ -8,7 +8,6 @@ import EmptyState from '@/components/ui/EmptyState.vue';
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
 import StatusBadge from '../../components/StatusBadge.vue';
 import FormatBadge from '../../components/FormatBadge.vue';
-import { useSeo } from '@/composables/useSeo';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 
 interface GameTableResponseDTO {
@@ -42,11 +41,6 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const { t, locale } = useI18n();
-
-useSeo({
-    title: 'Mis mesas',
-    description: 'Administra tus mesas de juego',
-});
 
 const hasTables = computed(() => props.tables.length > 0);
 

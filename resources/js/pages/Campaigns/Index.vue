@@ -9,7 +9,6 @@ import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseCard from '@/components/ui/BaseCard.vue';
 import EmptyState from '@/components/ui/EmptyState.vue';
 import StatusBadge from '../../components/StatusBadge.vue';
-import { useSeo } from '@/composables/useSeo';
 import { usePagination } from '@/composables/usePagination';
 import { useGridLayout, type GridColumns } from '@/composables/useGridLayout';
 import { buildCardImageUrl } from '@/utils/cloudinary';
@@ -26,11 +25,6 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const { t } = useI18n();
-
-useSeo({
-    title: t('campaigns.title'),
-    description: t('campaigns.description'),
-});
 
 const isNavigating = ref(false);
 const columns: GridColumns = 3;

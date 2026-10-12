@@ -6,7 +6,6 @@ import type { GameTableListItem, GameSystem } from '../../types/gametables';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import GameTableCard from '../../components/GameTableCard.vue';
-import { useSeo } from '@/composables/useSeo';
 import { VENUE_TIMEZONE, venueDayKey } from '@/utils/datetime';
 
 interface Props {
@@ -18,11 +17,6 @@ interface Props {
 const props = defineProps<Props>();
 
 const { t, locale } = useI18n();
-
-useSeo({
-    title: t('gameTables.calendar'),
-    description: t('gameTables.description'),
-});
 
 const isNavigating = ref(false);
 

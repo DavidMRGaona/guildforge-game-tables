@@ -9,7 +9,6 @@ import StatusBadge from '../../components/StatusBadge.vue';
 import SafetyToolBadge from '../../components/SafetyToolBadge.vue';
 import ContentWarningBadge from '../../components/ContentWarningBadge.vue';
 import GameTableCard from '../../components/GameTableCard.vue';
-import { useSeo } from '@/composables/useSeo';
 import ModuleSlot from '@/components/layout/ModuleSlot.vue';
 import { buildHeroImageUrl } from '@/utils/cloudinary';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
@@ -21,13 +20,6 @@ interface Props {
 const props = defineProps<Props>();
 
 const { t, locale } = useI18n();
-
-useSeo({
-    title: props.campaign.title,
-    description: props.campaign.description || t('campaigns.description'),
-    type: 'article',
-    canonical: `/campanas/${props.campaign.slug}`,
-});
 
 const formattedStartDate = computed(() => {
     if (!props.campaign.startDate) return null;

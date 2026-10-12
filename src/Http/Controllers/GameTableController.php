@@ -4,15 +4,20 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Http\Controllers;
 
+use App\Application\Seo\DTOs\SeoPageDTO;
+use App\Application\Seo\DTOs\SeoScheduleDTO;
+use App\Application\Seo\Services\SeoMetadataFactoryInterface;
 use App\Http\Concerns\BuildsPaginatedResponse;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
+use DateTimeImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
+use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
 use Modules\GameTables\Application\Services\EligibilityServiceInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
@@ -33,6 +38,7 @@ final class GameTableController extends Controller
         private readonly EligibilityServiceInterface $eligibilityService,
         private readonly RegistrationServiceInterface $registrationService,
         private readonly SlugRedirectServiceInterface $slugRedirectService,
+        private readonly SeoMetadataFactoryInterface $seo,
     ) {}
 
     public function index(Request $request): Response
@@ -96,6 +102,10 @@ final class GameTableController extends Controller
                 'event' => $eventSlug ?? null,
                 'campaign' => $campaignId,
             ],
+            'seo' => $this->seo->forPage(new SeoPageDTO(
+                title: (string) __('game-tables::messages.seo.tables_title'),
+                description: (string) __('game-tables::messages.seo.tables_description'),
+            ))->toArray(),
         ]);
     }
 
@@ -115,6 +125,10 @@ final class GameTableController extends Controller
             'tables' => GameTableListResource::collection($tables)->resolve(),
             'gameSystems' => $gameSystems,
             'currentMonth' => $month->format('Y-m'),
+            'seo' => $this->seo->forPage(new SeoPageDTO(
+                title: (string) __('game-tables::messages.seo.calendar_title'),
+                description: (string) __('game-tables::messages.seo.tables_description'),
+            ))->toArray(),
         ]);
     }
 
@@ -148,7 +162,31 @@ final class GameTableController extends Controller
     /**
      * Render the show page for a game table.
      */
-    private function renderShow(\Modules\GameTables\Application\DTOs\GameTableResponseDTO $table): Response
+    /**
+     * @return array<string, mixed>
+     */
+    private function tableSeo(GameTableResponseDTO $table): array
+    {
+        $schedule = null;
+
+        if ($table->startsAt !== null) {
+            $start = DateTimeImmutable::createFromInterface($table->startsAt);
+            $schedule = new SeoScheduleDTO(
+                start: $start,
+                end: $start->modify("+{$table->durationMinutes} minutes"),
+                location: $table->location,
+            );
+        }
+
+        return $this->seo->forPage(new SeoPageDTO(
+            title: $table->title,
+            description: $table->synopsis,
+            imagePublicId: $table->imagePublicId,
+            schedule: $schedule,
+        ))->toArray();
+    }
+
+    private function renderShow(GameTableResponseDTO $table): Response
     {
         $user = auth()->user();
         $eligibility = null;
@@ -167,6 +205,7 @@ final class GameTableController extends Controller
             'table' => GameTableResource::make($table)->resolve(),
             'eligibility' => $eligibility,
             'userRegistration' => $userRegistration,
+            'seo' => $this->tableSeo($table),
         ]);
     }
 
