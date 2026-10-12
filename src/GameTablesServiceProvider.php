@@ -436,6 +436,12 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         EventModel::resolveRelationUsing('gameTableConfig', function (EventModel $eventModel) {
             return $eventModel->hasOne(EventGameTableConfigModel::class, 'event_id', 'id');
         });
+
+        // Add gameTables() so the core EventModel does not need to reference this module.
+        // While a core still declares the method, the method wins and this is unused.
+        EventModel::resolveRelationUsing('gameTables', function (EventModel $eventModel) {
+            return $eventModel->hasMany(GameTableModel::class, 'event_id');
+        });
     }
 
     /**
@@ -520,7 +526,10 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
 
             $eligibilityService = app(EventCreationEligibilityServiceInterface::class);
             $userId = auth()->id();
-            $eligibility = $eligibilityService->canCreateTableForEvent($event->id, $userId);
+            $eligibility = $eligibilityService->canCreateTableForEvent(
+                $event->id,
+                $userId !== null ? (string) $userId : null,
+            );
 
             return $eligibility->toArray();
         });
