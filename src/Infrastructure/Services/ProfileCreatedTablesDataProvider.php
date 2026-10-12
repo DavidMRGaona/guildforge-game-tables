@@ -7,12 +7,15 @@ namespace Modules\GameTables\Infrastructure\Services;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
+use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
+use Modules\GameTables\Domain\ValueObjects\GameTableId;
 
 final readonly class ProfileCreatedTablesDataProvider
 {
     public function __construct(
         private GameTableRepositoryInterface $gameTableRepository,
         private CreationEligibilityServiceInterface $eligibilityService,
+        private ParticipantRepositoryInterface $participantRepository,
     ) {}
 
     /**
@@ -85,10 +88,8 @@ final readonly class ProfileCreatedTablesDataProvider
             'eventTitle' => $dto->eventTitle,
             'minPlayers' => $dto->minPlayers,
             'maxPlayers' => $dto->maxPlayers,
-            'currentPlayers' => count(array_filter(
-                $dto->participants,
-                fn ($p) => $p->role === 'player' && in_array($p->status, ['confirmed', 'pending'], true),
-            )),
+            // Same count the table's capacity check uses
+            'currentPlayers' => $this->participantRepository->countConfirmedPlayers(new GameTableId($dto->id)),
         ];
     }
 }

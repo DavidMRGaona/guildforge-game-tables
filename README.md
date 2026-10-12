@@ -231,7 +231,6 @@ src/modules/game-tables/
 | `GameTablePublished` | Una mesa fue publicada |
 | `GameTableCancelled` | Una mesa fue cancelada |
 | `GameTableCompleted` | Una mesa fue completada |
-| `RegistrationOpened` | Se abrieron las inscripciones de una mesa |
 | `ParticipantRegistered` | Un usuario se inscribió a una mesa |
 | `ParticipantConfirmed` | Una inscripción fue confirmada |
 | `ParticipantCancelled` | Un participante canceló su inscripción |

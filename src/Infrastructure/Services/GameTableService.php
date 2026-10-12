@@ -15,7 +15,6 @@ use Modules\GameTables\Domain\Events\GameTableCancelled;
 use Modules\GameTables\Domain\Events\GameTableCompleted;
 use Modules\GameTables\Domain\Events\GameTableCreated;
 use Modules\GameTables\Domain\Events\GameTablePublished;
-use Modules\GameTables\Domain\Events\RegistrationOpened;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
@@ -166,18 +165,6 @@ final readonly class GameTableService implements GameTableServiceInterface
         return GameTableResponseDTO::fromEntity($gameTable);
     }
 
-    public function openRegistration(string $id): GameTableResponseDTO
-    {
-        $gameTable = $this->gameTableRepository->findOrFail(new GameTableId($id));
-
-        $gameTable->openRegistration();
-        $this->gameTableRepository->save($gameTable);
-
-        RegistrationOpened::dispatch($gameTable->id->value, $gameTable->title);
-
-        return GameTableResponseDTO::fromEntity($gameTable);
-    }
-
     public function start(string $id): GameTableResponseDTO
     {
         $gameTable = $this->gameTableRepository->findOrFail(new GameTableId($id));
@@ -207,7 +194,7 @@ final readonly class GameTableService implements GameTableServiceInterface
         $gameTable->cancel();
         $this->gameTableRepository->save($gameTable);
 
-        GameTableCancelled::dispatch($gameTable->id->value, $gameTable->title);
+        GameTableCancelled::dispatch($gameTable->id->value, $gameTable->title, $gameTable->timeSlot->startsAt);
 
         return GameTableResponseDTO::fromEntity($gameTable);
     }
