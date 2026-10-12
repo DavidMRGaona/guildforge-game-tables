@@ -8,6 +8,8 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Modules\GameTables\Filament\Resources\GameTableResource;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
 final class ModerationSubmittedNotification extends Notification implements ShouldQueue
 {
@@ -29,7 +31,11 @@ final class ModerationSubmittedNotification extends Notification implements Shou
 
     public function toMail(object $notifiable): MailMessage
     {
-        $reviewUrl = url("/admin/game-tables/{$this->tableId}/edit");
+        // The panel finds game tables by slug; without one, the list of tables to review
+        $slug = GameTableModel::query()->whereKey($this->tableId)->value('slug');
+        $reviewUrl = is_string($slug) && $slug !== ''
+            ? GameTableResource::getUrl('edit', ['record' => $slug])
+            : GameTableResource::getUrl('index');
 
         return (new MailMessage)
             ->subject(__('game-tables::emails.moderation_submitted.subject', ['tableTitle' => $this->tableTitle]))

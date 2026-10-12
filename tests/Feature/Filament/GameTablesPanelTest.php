@@ -8,6 +8,7 @@ use App\Filament\Pages\ModuleSettingsPage;
 use App\Filament\Resources\EventResource\Pages\EditEvent;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Modules\GameTables\Filament\Pages\GameTablesSettings;
@@ -41,6 +42,7 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterMode
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\PublisherModel;
+use Modules\GameTables\Notifications\ModerationSubmittedNotification;
 use Tests\Support\Modules\InteractsWithModulePanel;
 use Tests\Support\Modules\ModuleTestCase;
 
@@ -174,6 +176,16 @@ final class GameTablesPanelTest extends ModuleTestCase
         $table->update(['frontend_creation_status' => 'pending_review']);
 
         Livewire::test(PendingModerationWidget::class)->assertOk()->assertCanSeeTableRecords([$table]);
+    }
+
+    public function test_the_moderation_email_links_to_the_table_in_the_panel(): void
+    {
+        $table = $this->gameTable();
+
+        $url = (new ModerationSubmittedNotification($table->id, $table->title, 'Ana'))->toMail(new AnonymousNotifiable())->actionUrl;
+
+        // The panel finds game tables by slug (GameTableModel::getRouteKeyName())
+        $this->assertSame(GameTableResource::getUrl('edit', ['record' => $table]), $url);
     }
 
     private function campaign(): CampaignModel
