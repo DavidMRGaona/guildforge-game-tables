@@ -30,12 +30,13 @@ final class ProfileCreatedTablesDataProviderTest extends ModuleTestCase
         $this->participant($table, ParticipantRole::GameMaster, ParticipantStatus::Confirmed);
         $this->participant($table, ParticipantRole::Player, ParticipantStatus::Confirmed);
         $this->participant($table, ParticipantRole::Player, ParticipantStatus::Confirmed);
+        $this->participant($table, ParticipantRole::Player, ParticipantStatus::Pending);
         $this->participant($table, ParticipantRole::Player, ParticipantStatus::WaitingList);
         $this->participant($table, ParticipantRole::Player, ParticipantStatus::Cancelled);
 
         $data = app(ProfileCreatedTablesDataProvider::class)->getDataForUser((string) $creator->id);
 
-        // Same count as the table's capacity check: confirmed players only
+        // Same count as the table's capacity check: confirmed players only (pending, waiting list and GMs do not take a seat)
         $this->assertSame(2, $data['tables'][0]['currentPlayers']);
     }
 
