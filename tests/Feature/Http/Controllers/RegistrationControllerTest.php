@@ -38,17 +38,8 @@ final class RegistrationControllerTest extends ModuleTestCase
     {
         parent::setUp();
 
-        // Rebuild route collection so module routes are resolvable by name.
-        // After module boot, routes exist in RouteCollection but not in
-        // CompiledRouteCollection's lookup tables. Replacing with a fresh
-        // RouteCollection re-indexes all routes including the module's.
-        $router = app('router');
-        $oldRoutes = $router->getRoutes();
-        $newRoutes = new \Illuminate\Routing\RouteCollection();
-        foreach ($oldRoutes->getRoutes() as $route) {
-            $newRoutes->add($route);
-        }
-        $router->setRoutes($newRoutes);
+        // Make the module routes, added after boot, resolvable by name
+        app('router')->getRoutes()->refreshNameLookups();
 
         $this->gameTableRepository = app(GameTableRepositoryInterface::class);
         $this->participantRepository = app(ParticipantRepositoryInterface::class);
