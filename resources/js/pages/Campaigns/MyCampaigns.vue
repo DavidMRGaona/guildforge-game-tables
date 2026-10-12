@@ -7,7 +7,6 @@ import BaseButton from '@/components/ui/BaseButton.vue';
 import EmptyState from '@/components/ui/EmptyState.vue';
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
 import StatusBadge from '../../components/StatusBadge.vue';
-import { useSeo } from '@/composables/useSeo';
 
 interface CampaignResponseDTO {
     id: string;
@@ -41,11 +40,6 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const { t } = useI18n();
-
-useSeo({
-    title: t('campaigns.myCampaigns.title'),
-    description: t('campaigns.myCampaigns.subtitle'),
-});
 
 const hasCampaigns = computed(() => props.campaigns.length > 0);
 

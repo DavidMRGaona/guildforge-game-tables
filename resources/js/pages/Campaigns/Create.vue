@@ -6,7 +6,6 @@ import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { FormCombobox, FormSelect, FormCheckboxGroup, FormCheckboxWithTooltip, FormTagsInput, FormNumberInput } from '@/components/form';
 import type { CheckboxGroup } from '@/components/form';
-import { useSeo } from '@/composables/useSeo';
 import type { GameSystem } from '../../types/gametables';
 import FormTabs from '../../components/FormTabs.vue';
 import type { FormTab } from '../../components/FormTabs.vue';
@@ -57,10 +56,6 @@ interface Props {
 const props = defineProps<Props>();
 
 const { t } = useI18n();
-
-useSeo({
-    title: t('campaigns.create.title'),
-});
 
 // Active tab state
 const activeTab = ref('basic');

@@ -751,4 +751,19 @@ return [
         'saved' => 'Configuración guardada',
     ],
 
+    // Server-rendered page metadata (link previews and search engines)
+    'seo' => [
+        'tables_title' => 'Mesas de rol',
+        'tables_description' => 'Encuentra y únete a partidas de rol',
+        'calendar_title' => 'Calendario de mesas',
+        'campaigns_title' => 'Campañas',
+        'campaigns_description' => 'Explora las campañas de rol en curso',
+        'create_table_title' => 'Crear mesa',
+        'edit_table_title' => 'Editar mesa',
+        'my_tables_title' => 'Mis mesas de juego',
+        'cancel_registration_title' => 'Cancelar inscripción',
+        'create_campaign_title' => 'Crear campaña',
+        'edit_campaign_title' => 'Editar campaña',
+        'my_campaigns_title' => 'Mis campañas',
+    ],
 ];

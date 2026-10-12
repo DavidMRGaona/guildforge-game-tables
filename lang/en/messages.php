@@ -660,4 +660,19 @@ return [
         'saved' => 'Configuration saved',
     ],
 
+    // Server-rendered page metadata (link previews and search engines)
+    'seo' => [
+        'tables_title' => 'Game tables',
+        'tables_description' => 'Find and join role-playing sessions',
+        'calendar_title' => 'Game table calendar',
+        'campaigns_title' => 'Campaigns',
+        'campaigns_description' => 'Explore the ongoing role-playing campaigns',
+        'create_table_title' => 'Create table',
+        'edit_table_title' => 'Edit table',
+        'my_tables_title' => 'My game tables',
+        'cancel_registration_title' => 'Cancel registration',
+        'create_campaign_title' => 'Create campaign',
+        'edit_campaign_title' => 'Edit campaign',
+        'my_campaigns_title' => 'My campaigns',
+    ],
 ];

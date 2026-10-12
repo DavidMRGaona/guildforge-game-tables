@@ -4,7 +4,6 @@ import { router, Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
-import { useSeo } from '@/composables/useSeo';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 
 interface Props {
@@ -30,11 +29,6 @@ interface Props {
 const props = defineProps<Props>();
 
 const { t, locale } = useI18n();
-
-useSeo({
-    title: t('gameTables.cancelRegistration.title'),
-    description: t('gameTables.cancelRegistration.title'),
-});
 
 const displayName = computed(() => {
     return props.participant.is_guest

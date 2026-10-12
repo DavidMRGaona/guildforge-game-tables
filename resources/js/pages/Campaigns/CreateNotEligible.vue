@@ -4,7 +4,6 @@ import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
-import { useSeo } from '@/composables/useSeo';
 
 interface Props {
     reason: string;
@@ -14,10 +13,6 @@ interface Props {
 const props = defineProps<Props>();
 
 const { t, d } = useI18n();
-
-useSeo({
-    title: t('campaigns.createNotEligible.title'),
-});
 
 const reasonMessage = computed((): string => {
     const reasonMap: Record<string, string> = {
