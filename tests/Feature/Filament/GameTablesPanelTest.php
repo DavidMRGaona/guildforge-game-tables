@@ -214,6 +214,13 @@ final class GameTablesPanelTest extends ModuleTestCase
         $this->assertSame(GameTableResource::getUrl('edit', ['record' => $table]), $url);
     }
 
+    public function test_the_moderation_email_of_a_missing_table_links_to_the_list(): void
+    {
+        $url = (new ModerationSubmittedNotification((string) Str::uuid(), 'Mesa borrada', 'Ana'))->toMail(new AnonymousNotifiable())->actionUrl;
+
+        $this->assertSame(GameTableResource::getUrl('index'), $url);
+    }
+
     private function campaign(): CampaignModel
     {
         return CampaignModel::create([
