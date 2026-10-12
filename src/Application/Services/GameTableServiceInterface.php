@@ -26,8 +26,6 @@ interface GameTableServiceInterface
 
     public function unpublish(string $id): GameTableResponseDTO;
 
-    public function openRegistration(string $id): GameTableResponseDTO;
-
     public function start(string $id): GameTableResponseDTO;
 
     public function complete(string $id): GameTableResponseDTO;
