@@ -8,9 +8,11 @@ use App\Filament\Pages\ModuleSettingsPage;
 use App\Filament\Resources\EventResource\Pages\EditEvent;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use DateTimeImmutable;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
+use Modules\GameTables\Domain\Enums\SchedulingMode;
 use Modules\GameTables\Filament\Pages\GameTablesSettings;
 use Modules\GameTables\Filament\RelationManagers\EventGameTableConfigRelationManager;
 use Modules\GameTables\Filament\Resources\CampaignResource;
@@ -162,6 +164,30 @@ final class GameTablesPanelTest extends ModuleTestCase
             ->assertHasNoErrors();
 
         $this->assertFalse(EventGameTableConfigModel::query()->where('event_id', $event->id)->firstOrFail()->tables_enabled);
+    }
+
+    public function test_a_mistyped_time_slot_is_a_form_error_not_a_server_error(): void
+    {
+        $event = EventModel::factory()->create();
+
+        $component = Livewire::test(EventGameTableConfigRelationManager::class, ['ownerRecord' => $event, 'pageClass' => EditEvent::class])
+            ->set('configData.tables_enabled', true)
+            ->set('configData.scheduling_mode', SchedulingMode::SlotBased->value)
+            ->set('configData.time_slots', ['slot' => ['label' => 'Mañana', 'start_time' => '10::00', 'end_time' => '14:00', 'max_tables' => null]])
+            ->set('configData.creation_opens_at', '2026-11-01 10:00:00')
+            ->call('save')
+            ->assertHasErrors(['configData.time_slots.slot.start_time']);
+
+        $this->assertNull(EventGameTableConfigModel::query()->where('event_id', $event->id)->first());
+
+        // Typing the seconds is not a mistake: the time picker hands over hours and minutes
+        $component->set('configData.time_slots.slot.start_time', '10:00:00')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $slots = EventGameTableConfigModel::query()->where('event_id', $event->id)->firstOrFail()->time_slots ?? [];
+        $this->assertCount(1, $slots);
+        $this->assertSame('10:00', (new DateTimeImmutable($slots[0]['start_time']))->format('H:i'));
     }
 
     public function test_settings_pages_render(): void
