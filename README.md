@@ -1,276 +1,327 @@
 # Mesas de rol
 
-Sistema de gestión de mesas de juegos de rol y campañas con inscripciones, lista de espera, avisos de contenido, herramientas de seguridad, notificaciones por email y gestión desde el panel de administración.
+Módulo de GuildForge para gestionar mesas de rol y campañas: inscripciones de usuarios e invitados, lista de espera, avisos de contenido, herramientas de seguridad, correos, creación de mesas y campañas desde la web con moderación y gestión desde el panel.
 
 ## Características
 
-- **Mesas de rol**: Creación y gestión de sesiones de juego (one-shot, aventura, sesión de campaña, demo, tutorial)
-- **Campañas**: Agrupación de sesiones en campañas con estado y frecuencia
-- **Inscripciones**: Los usuarios pueden inscribirse como jugador o espectador
-- **Inscripción de invitados**: Los no registrados pueden inscribirse con nombre y email
-- **Lista de espera**: Gestión automática con promoción cuando se liberan plazas
-- **Formatos de mesa**: Presencial, online o híbrido
-- **Avisos de contenido**: Sistema de advertencias con severidad (leve, moderado, grave)
-- **Herramientas de seguridad**: X-Card, Lines & Veils, Open Door, entre otras
-- **Catálogo de sistemas de juego**: Gestión de sistemas de rol con editorial asociada
-- **Calendario**: Vista de calendario de las mesas programadas
-- **Notificaciones por email**: Confirmación, lista de espera, promoción, cancelación
-- **Panel de administración**: Gestión completa desde Filament
+- **Mesas**: sesiones de juego de tipo one-shot, aventura, sesión de campaña, demo o tutorial; presenciales, online o híbridas.
+- **Campañas**: agrupan sesiones, con estado (reclutando, activa, en pausa, completada, cancelada) y frecuencia.
+- **Directores de juego**: director principal y co-directores, propios de la mesa o heredados de la campaña.
+- **Inscripciones**: como jugador o espectador, con confirmación automática o manual por mesa.
+- **Invitados**: quien no tiene cuenta se inscribe con nombre y email en las mesas abiertas a todos, y cancela con un enlace con token.
+- **Lista de espera**: cuando no quedan plazas; al cancelar un jugador confirmado se promociona al primero de la lista.
+- **Tipos de inscripción**: abierta a todos, solo socios (con acceso anticipado opcional) o solo por invitación.
+- **Avisos de contenido** con severidad (leve, moderada, severa) y **herramientas de seguridad** (Carta X, Líneas y velos, Puerta abierta, Estrellas y deseos, Flor de apoyo, Script change, Rosas y espinas, otras).
+- **Catálogo**: sistemas de juego con su editorial.
+- **Creación desde la web**: los usuarios crean mesas y campañas y las envían a revisión; los administradores las aprueban o rechazan.
+- **Integración con eventos**: configuración de mesas por evento, enlace a las mesas del evento y botón para crear una mesa desde su página.
+- **Calendario**: vista `/mesas/calendario` y mesas en el calendario del core.
+- **Perfil**: pestañas con las mesas en las que participa el usuario, las que ha creado y sus campañas.
+- **Correos** de inscripción, confirmación, rechazo, lista de espera, cancelación y moderación.
 
 ## Requisitos
 
-- PHP >= 8.2
-- GuildForge core
+- GuildForge core `^3.2`
+- PHP >= 8.5, Laravel >= 13, Filament 5
+- Opcional: el módulo de socios (`memberships`) para las mesas «Solo socios»
+
+El core rechaza el módulo si no se cumplen (`module.json` → `requires`).
 
 ## Instalación
 
-1. Copiar el módulo a `src/modules/game-tables/`
+1. Descarga `game-tables-X.Y.Z.zip` de la última release de `DavidMRGaona/guildforge-game-tables` en GitHub.
+2. En el panel, activa el modo mantenimiento (**Configuración del sitio** → pestaña **Mantenimiento**).
+3. En **Módulos**, pulsa **Instalar**, sube el ZIP y confirma con **Instalar / actualizar**.
+4. Pulsa **Habilitar** en el módulo: la primera vez ejecuta sus migraciones y seeders (editoriales, sistemas de juego y avisos de contenido).
+5. Desactiva el modo mantenimiento.
 
-2. Descubrir y habilitar el módulo:
+Las versiones nuevas se aplican desde **Actualizaciones de módulos** (también con el modo mantenimiento activo) o con `php artisan module:update game-tables`.
+
+### En desarrollo
+
+Con el repositorio clonado en `src/modules/game-tables`:
 
 ```bash
 php artisan module:discover
 php artisan module:enable game-tables
+php artisan module:build game-tables   # compila los componentes Vue (--force para recompilar)
 ```
 
-3. Ejecutar las migraciones:
-
-```bash
-php artisan migrate
-```
+En las releases los assets los compila el CI y van dentro del ZIP.
 
 ## Configuración
 
-### Configuración global
+Se configura en el panel: **Mesas de rol** → **Configuración** (solo administradores; el mismo formulario está en **Módulos** → **Configuración**). `config/game-tables.php` contiene los valores por defecto que se usan cuando la configuración del panel no tiene una clave.
 
-Valores por defecto en `config/game-tables.php`:
+| Sección | Qué controla |
+|---------|--------------|
+| **Notificaciones** | Correos de inscripción y de cancelación a los directores y al email de la mesa, y correos de promoción desde la lista de espera |
+| **Creación desde web** | Activar la creación desde la web, qué se puede crear (mesas, campañas o ambas), quién puede crear (cualquier persona, usuarios registrados, roles concretos o un permiso) y el modo de publicación (`auto`, `approval`, `role_based`) |
+| Creación de mesas, Integración con socios, Valores por defecto, Límites | Se guardan, pero hoy no cambian el comportamiento (ver [Limitaciones actuales](#limitaciones-actuales)) |
 
-```php
-return [
-    'creators' => env('GAMETABLES_CREATORS', 'admin'),
-    // Valores: 'admin', 'members', 'permission'
+### Configuración por evento
 
-    'membership_integration' => [
-        'enabled' => env('GAMETABLES_MEMBERSHIP_INTEGRATION', true),
-        'fallback_role' => 'member',
-    ],
+El formulario de eventos tiene la pestaña **Configuración de mesas**:
 
-    'defaults' => [
-        'duration_minutes' => 240,
-        'min_players' => 3,
-        'max_players' => 5,
-        'max_spectators' => 0,
-        'language' => 'es',
-        'registration_type' => 'everyone',
-        'members_early_access_days' => 0,
-        'auto_confirm' => true,
-    ],
+- **Habilitar mesas para este evento**: sin esto no se pueden crear mesas desde la web para el evento.
+- **Programación**: horario libre o por turnos (nombre, hora de inicio y fin, máximo de mesas por turno).
+- **Ubicación**: elección libre, ubicación fija o la del evento.
+- **Apertura de la creación** de mesas.
+- **Elegibilidad propia** del evento (nivel de acceso, roles o permiso), en lugar de la global.
+- **Acceso anticipado** por roles o permiso, con los días de antelación.
 
-    'limits' => [
-        'max_players_limit' => 20,
-        'max_spectators_limit' => 50,
-        'max_duration_minutes' => 720,
-        'max_early_access_days' => 30,
-    ],
+## Estados
 
-    'notifications' => [
-        'notify_on_registration' => true,
-        'notify_on_cancellation' => true,
-        'notify_waiting_list_promotion' => true,
-        'reminder_hours_before' => [24, 2],
-    ],
-
-    'feedback' => [
-        'enabled' => true,
-        'allow_anonymous' => false,
-        'days_to_submit' => 7,
-    ],
-];
-```
-
-## Estados de mesa
+### Mesa
 
 | Estado | Valor | Descripción |
 |--------|-------|-------------|
-| Borrador | `draft` | Mesa creada pero no visible |
-| Publicada | `published` | Visible pero sin inscripciones abiertas |
-| Abierta | `open` | Inscripciones abiertas |
-| Completa | `full` | Todas las plazas ocupadas |
-| En curso | `in_progress` | Sesión en desarrollo |
-| Completada | `completed` | Sesión finalizada |
-| Cancelada | `cancelled` | Mesa cancelada |
+| Borrador | `draft` | No publicada |
+| Programada | `scheduled` | Publicada; admite inscripciones según sus fechas |
+| Completa | `full` | Marcada como completa; se sigue mostrando y las inscripciones sin plaza van a la lista de espera |
+| En progreso | `in_progress` | Sesión en juego |
+| Completada | `completed` | Sesión terminada |
+| Cancelada | `cancelled` | Mesa cancelada: se cancelan sus inscripciones y se avisa a los participantes |
 
-## Estados de inscripción
+La publicación es un indicador aparte (`is_published`). **Publicar** deja la mesa en `scheduled` y **Despublicar** la devuelve a `draft`. Las inscripciones se admiten mientras la mesa está publicada y en `scheduled` o `full`, dentro de sus fechas de inscripción; los socios pueden inscribirse antes si la mesa tiene días de acceso anticipado. En el panel, la cabecera de la mesa tiene las acciones **Publicar**, **Despublicar**, **Iniciar**, **Completar** y **Cancelar mesa**.
+
+### Inscripción
 
 | Estado | Valor | Descripción |
 |--------|-------|-------------|
 | Pendiente | `pending` | Pendiente de confirmación |
-| Confirmada | `confirmed` | Inscripción confirmada |
-| Lista de espera | `waiting_list` | En lista de espera |
-| Cancelada | `cancelled` | Cancelada por el usuario |
-| Rechazada | `rejected` | Rechazada por administrador |
-| No presentado | `no_show` | El participante no asistió |
+| Confirmado | `confirmed` | Plaza confirmada |
+| Lista de espera | `waiting_list` | Sin plaza, en espera |
+| Cancelado | `cancelled` | Cancelada por el participante o al cancelarse la mesa |
+| Rechazado | `rejected` | Rechazada por un administrador |
+| No presentado | `no_show` | No asistió |
+
+### Moderación (creación desde la web)
+
+| Estado | Valor | Descripción |
+|--------|-------|-------------|
+| Borrador | `draft` | El autor puede editarla |
+| Pendiente de revisión | `pending_review` | Enviada a revisión |
+| Aprobada | `approved` | Aprobada y publicada |
+| Rechazada | `rejected` | Rechazada con motivo; el autor puede editarla y volver a enviarla |
+
+## Creación desde la web
+
+Con **Creación desde web** activada, los usuarios con sesión iniciada que cumplan el nivel de acceso pueden:
+
+1. Crear una mesa en `/mesas/crear` (o desde el botón de la página de un evento, que la asocia al evento) o una campaña en `/campanas/crear`. Si no cumplen los requisitos, ven una página que explica el motivo.
+2. Editar sus borradores desde **Mis mesas** (`/mesas/mis-mesas`) o **Mis campañas** (`/campanas/mis-campanas`).
+3. Enviarlos a revisión.
+
+Según el modo de publicación:
+
+- `auto`: la mesa se publica al crearla o al enviarla.
+- `approval`: queda pendiente de revisión.
+- `role_based`: se publica directamente para los roles o permisos de autopublicación (`frontend_creation.publication.auto_publish_roles` y `auto_publish_permissions`, sin campo en el panel y vacíos por defecto); el resto queda pendiente.
+
+**Mesas**: al enviar una mesa a revisión se avisa por correo a los usuarios con rol `admin` o `editor`, y aparece en el widget **Mesas pendientes de moderación** del dashboard. En **Mesas de rol** → **Mesas** se aprueba (la mesa se publica) o se rechaza con motivo, una a una o en bloque; el autor recibe un correo en ambos casos.
+
+**Campañas**: al enviarla a revisión queda pendiente, sin correo ni widget; un administrador la publica desde **Mesas de rol** → **Campañas** con el interruptor **Publicado**.
+
+## Panel de administración
+
+| Grupo | Elemento | Contenido |
+|-------|----------|-----------|
+| Mesas de rol | Mesas | Formulario por pestañas (información básica, dirección, horario y ubicación, capacidad y requisitos, contenido y seguridad, inscripciones, publicación), participantes y moderación |
+| Mesas de rol | Campañas | Campañas, sus directores y publicación |
+| Mesas de rol | Avisos de contenido | Catálogo de avisos con severidad |
+| Mesas de rol | Configuración | Configuración del módulo (solo administradores) |
+| Catálogo de juegos | Sistemas de juego | Sistemas con su editorial (las editoriales se crean desde el propio formulario) |
+
+Widget del dashboard: `PendingModerationWidget` (mesas pendientes de revisión; solo se muestra si hay alguna).
+
+## Web pública
+
+### Rutas
+
+| Método | Ruta | Nombre | Acceso |
+|--------|------|--------|--------|
+| `GET` | `/mesas` | `gametables.index` | Público |
+| `GET` | `/mesas/calendario` | `gametables.calendar` | Público |
+| `GET` | `/mesas/{slug}` | `gametables.show` | Público |
+| `POST` | `/mesas/{gameTable}/inscripcion` | `gametables.register` | Usuarios autenticados |
+| `DELETE` | `/mesas/{gameTable}/inscripcion` | `gametables.cancel` | Usuarios autenticados |
+| `POST` | `/mesas/{gameTable}/inscripcion-invitado` | `gametables.register-guest` | Público |
+| `GET` | `/mesas/cancelar/{token}` | `gametables.cancel-confirmation` | Invitados con enlace |
+| `DELETE` | `/mesas/cancelar/{token}` | `gametables.cancel-by-token` | Invitados con enlace |
+| `GET` / `POST` | `/mesas/crear` | `gametables.create` / `gametables.store` | Usuarios autenticados |
+| `GET` | `/mesas/mis-mesas` | `gametables.my-tables` | Usuarios autenticados |
+| `GET` | `/mesas/mis-mesas/{gameTable}/editar` | `gametables.edit` | Autor |
+| `PUT` / `DELETE` | `/mesas/mis-mesas/{gameTable}` | `gametables.update` / `gametables.destroy` | Autor |
+| `POST` | `/mesas/mis-mesas/{gameTable}/enviar-revision` | `gametables.submit-review` | Autor |
+| `GET` | `/campanas` | `campaigns.index` | Público |
+| `GET` | `/campanas/{slug}` | `campaigns.show` | Público |
+| `GET` / `POST` | `/campanas/crear` | `campaigns.frontend-create` / `campaigns.frontend-store` | Usuarios autenticados |
+| `GET` | `/campanas/mis-campanas` | `campaigns.my-campaigns` | Usuarios autenticados |
+| `GET` | `/campanas/mis-campanas/{id}/editar` | `campaigns.frontend-edit` | Autor |
+| `PUT` / `DELETE` | `/campanas/mis-campanas/{id}` | `campaigns.frontend-update` / `campaigns.frontend-destroy` | Autor |
+| `POST` | `/campanas/mis-campanas/{id}/enviar-revision` | `campaigns.submit-review` | Autor |
+
+`{gameTable}` es el identificador de la mesa. El módulo no tiene API: el número de mesas de un evento llega a su página como prop de Inertia (`gameTableCount`). `gametables.index`, `gametables.calendar` y `campaigns.index` aparecen entre las páginas que se pueden enlazar desde el editor de menús.
+
+### Páginas
+
+| Página | Ruta |
+|--------|------|
+| `GameTables/Index` | `/mesas` |
+| `GameTables/Calendar` | `/mesas/calendario` |
+| `GameTables/Show` | `/mesas/{slug}` |
+| `GameTables/CancelRegistration` | `/mesas/cancelar/{token}` |
+| `GameTables/Create`, `GameTables/CreateNotEligible` | `/mesas/crear` |
+| `GameTables/Edit` | `/mesas/mis-mesas/{gameTable}/editar` |
+| `GameTables/MyTables` | `/mesas/mis-mesas` |
+| `Campaigns/Index` | `/campanas` |
+| `Campaigns/Show` | `/campanas/{slug}` |
+| `Campaigns/Create`, `Campaigns/CreateNotEligible` | `/campanas/crear` |
+| `Campaigns/Edit` | `/campanas/mis-campanas/{id}/editar` |
+| `Campaigns/MyCampaigns` | `/campanas/mis-campanas` |
+
+### Componentes
+
+| Componente | Descripción |
+|------------|-------------|
+| `GameTableCard`, `GameTableCardSkeleton` | Tarjeta de mesa y su esqueleto de carga |
+| `GameTableFilters` | Filtros del listado |
+| `RegistrationButton` | Inscripción con selección de rol (slot `game-table-registration`) |
+| `RegistrationStatus` | Estado de la inscripción del usuario |
+| `GuestRegistrationModal` | Inscripción de invitados |
+| `StatusBadge`, `FormatBadge`, `ContentWarningBadge`, `SafetyToolBadge` | Insignias |
+| `GameMasterSection` | Directores de juego |
+| `FormTabs` | Pestañas de los formularios de creación |
+| `EventTablesLink` | Enlace a las mesas del evento (slot `event-detail-actions`) |
+| `EventCreateTableButton` | Botón «crear mesa» en la página del evento (slot `event-detail-actions`) |
+| `profile/*` | Pestañas del perfil: Mesas, Mis mesas y Campañas (slot `profile-sections`) |
+
+## Correos
+
+| Momento | Destinatarios |
+|---------|---------------|
+| Inscripción (usuario o invitado) | Participante; directores y email de la mesa si **Notificaciones** lo permite |
+| Confirmación o rechazo de la inscripción | Participante |
+| Cancelación de la inscripción | Participante; directores y email de la mesa si **Notificaciones** lo permite |
+| Promoción desde la lista de espera | Participante y directores, si **Notificaciones** lo permite |
+| Cancelación de la mesa | Participantes |
+| Mesa enviada a revisión | Usuarios con rol `admin` o `editor` |
+| Mesa aprobada o rechazada | Autor |
+
+## Eventos de dominio
+
+| Evento | Cuándo |
+|--------|--------|
+| `GameTableCreated` | Se crea una mesa |
+| `GameTablePublished` | Se publica una mesa |
+| `GameTableCancelled` | Se cancela una mesa |
+| `GameTableCompleted` | Se completa una mesa |
+| `GameTableSubmittedForReview` | Una mesa creada desde la web se envía a revisión |
+| `GameTableModerationApproved` | Se aprueba una mesa en moderación |
+| `GameTableModerationRejected` | Se rechaza una mesa en moderación |
+| `ParticipantRegistered` | Un usuario se inscribe |
+| `GuestRegistered` | Un invitado se inscribe |
+| `ParticipantConfirmed` | Se confirma una inscripción |
+| `ParticipantRejected` | Se rechaza una inscripción |
+| `ParticipantCancelled` | Se cancela una inscripción |
+| `ParticipantPromotedFromWaitingList` | Un participante sale de la lista de espera |
+
+`CampaignCreated` y `CampaignStatusChanged` están definidos pero hoy no se emiten.
+
+## Permisos
+
+El módulo registra sus permisos con el prefijo `gametables:` (por ejemplo `gametables:gametables.view_any`).
+
+| Permiso | Rol propuesto | Uso |
+|---------|-----------------|-----|
+| `gametables.view_any`, `gametables.view` | editor | Ver mesas en el panel |
+| `gametables.create`, `gametables.update` | editor | Crear y editar mesas |
+| `gametables.delete` | — | Eliminar mesas |
+| `campaigns.view_any`, `campaigns.view` | editor | Ver campañas en el panel |
+| `campaigns.create`, `campaigns.update` | editor | Crear y editar campañas |
+| `campaigns.delete` | — | Eliminar campañas |
+| `gamesystems.view_any`, `gamesystems.manage` | — | Ver y gestionar sistemas de juego |
+| `contentwarnings.view_any`, `contentwarnings.manage` | — | Ver y gestionar avisos de contenido |
+| `gametables.settings` | — | Registrado; la página de configuración solo comprueba que el usuario sea administrador |
+
+La columna de rol indica el rol al que el módulo propone el permiso; habilitar el módulo no lo asigna, se concede en **Roles**. Los administradores tienen acceso completo. Los autores gestionan sus propias mesas y campañas desde «Mis mesas» y «Mis campañas»; una mesa solo se puede editar en borrador o rechazada.
+
+## Comandos
+
+```bash
+php artisan gametables:generate-slugs            # genera slugs de mesas y campañas que no lo tienen
+php artisan gametables:generate-slugs --dry-run  # muestra qué haría sin cambiar nada
+php artisan gametables:generate-slugs --force    # regenera también los existentes
+```
+
+## Limitaciones actuales
+
+- De la página de configuración solo surten efecto **Notificaciones** y **Creación desde web**. **Creación de mesas** e **Integración con socios** no se leen; los valores iniciales del formulario de mesas (duración, jugadores, espectadores) salen de `config/game-tables.php`, y **Límites** no se aplica.
+- Para «Solo socios», un usuario es socio si está vinculado a un socio con estado activo en el módulo `memberships`; sin ese módulo nadie cuenta como socio.
+- Las rutas de creación desde la web exigen sesión iniciada, también con el nivel de acceso «Cualquier persona».
 
 ## Arquitectura
 
 ```
 src/modules/game-tables/
 ├── config/
-│   ├── game-tables.php        # Configuración del módulo
-│   └── module.php             # Activación del módulo
+│   ├── game-tables.php        # Valores por defecto
+│   ├── module.php
+│   └── settings.php           # Valores de la página de configuración
 ├── database/
-│   ├── migrations/            # Migraciones de base de datos
-│   └── seeders/               # Seeders (sistemas, editoriales, avisos)
+│   ├── migrations/
+│   └── seeders/               # Editoriales, sistemas de juego, avisos de contenido; DevelopmentSeeder (solo local y testing)
 ├── lang/
-│   ├── en/                    # Traducciones en inglés
-│   │   ├── emails.php
-│   │   └── messages.php
-│   └── es/                    # Traducciones en español
-│       ├── emails.php
-│       └── messages.php
-├── resources/js/
-│   ├── components/            # Componentes Vue
-│   ├── locales/               # Traducciones i18n (frontend)
-│   ├── pages/
-│   │   ├── GameTables/        # Páginas de mesas
-│   │   └── Campaigns/         # Páginas de campañas
-│   └── types/                 # Tipos TypeScript
+│   ├── en/                    # emails.php, messages.php
+│   └── es/                    # emails.php, messages.php
+├── resources/
+│   ├── css/
+│   ├── js/
+│   │   ├── components/        # Componentes Vue (y profile/)
+│   │   ├── locales/           # Textos del frontend
+│   │   ├── pages/             # GameTables/, Campaigns/
+│   │   └── types/
+│   └── views/filament/        # Vista de la pestaña del formulario de eventos
 ├── routes/
-│   ├── api.php                # Rutas API
-│   └── web.php                # Rutas web
+│   └── web.php
 ├── src/
-│   ├── Application/
-│   │   ├── DTOs/              # Data Transfer Objects
-│   │   └── Services/          # Interfaces de servicios
-│   ├── Console/
-│   │   └── Commands/          # Comandos Artisan
-│   ├── Domain/
-│   │   ├── Entities/          # Entidades de dominio
-│   │   ├── Enums/             # Enumeraciones
-│   │   ├── Events/            # Eventos de dominio
-│   │   ├── Exceptions/        # Excepciones de dominio
-│   │   ├── Repositories/      # Interfaces de repositorios
-│   │   └── ValueObjects/      # Objetos de valor
-│   ├── Filament/
-│   │   ├── Pages/             # Páginas de configuración
-│   │   ├── Resources/         # Recursos CRUD
-│   │   └── Widgets/           # Widgets del dashboard
-│   ├── Http/
-│   │   ├── Controllers/       # Controladores
-│   │   ├── Requests/          # Form Requests
-│   │   └── Resources/         # HTTP Resources (JSON)
-│   ├── Infrastructure/
-│   │   ├── Listeners/         # Listeners de eventos
-│   │   ├── Persistence/       # Repositorios Eloquent
-│   │   └── Services/          # Implementaciones de servicios
-│   ├── Listeners/             # Listeners adicionales
-│   ├── Notifications/         # Notificaciones por email
-│   └── Policies/              # Políticas de autorización
+│   ├── Application/           # DTOs e interfaces de servicios
+│   ├── Console/Commands/      # gametables:generate-slugs
+│   ├── Domain/                # Entidades, enums, eventos, excepciones, repositorios, VOs
+│   ├── Filament/              # Resources, RelationManagers, Pages, Widgets, Forms
+│   ├── Http/                  # Controladores, requests y resources
+│   ├── Infrastructure/        # Calendario, listeners, observers, persistencia y servicios
+│   ├── Listeners/             # Correos de inscripción y moderación
+│   ├── Notifications/
+│   ├── Policies/
+│   └── GameTablesServiceProvider.php
 ├── tests/
-│   ├── Integration/           # Tests de integración
-│   └── Unit/                  # Tests unitarios
-├── module.json                # Manifiesto del módulo
-└── phpunit.xml                # Configuración de tests
+│   ├── Unit/
+│   ├── Integration/
+│   └── Feature/
+├── module.json
+├── package.json
+├── phpunit.xml
+└── vite.config.ts
 ```
-
-## Rutas web
-
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| `GET` | `/mesas` | Listado de mesas |
-| `GET` | `/mesas/calendario` | Vista de calendario |
-| `GET` | `/mesas/{id}` | Detalle de una mesa |
-| `POST` | `/mesas/{id}/inscripcion` | Inscribirse a una mesa (auth) |
-| `DELETE` | `/mesas/{id}/inscripcion` | Cancelar inscripción (auth) |
-| `POST` | `/mesas/{id}/inscripcion-invitado` | Inscripción de invitado |
-| `GET` | `/mesas/cancelar/{token}` | Confirmación de cancelación por token |
-| `DELETE` | `/mesas/cancelar/{token}` | Cancelar inscripción por token |
-| `GET` | `/campanas` | Listado de campañas |
-| `GET` | `/campanas/{id}` | Detalle de una campaña |
-
-## API
-
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| `GET` | `/api/mesas/count` | Obtener número de mesas |
-
-## Componentes Vue
-
-### Componentes
-
-| Componente | Descripción |
-|------------|-------------|
-| `GameTableCard` | Tarjeta resumen de una mesa con fecha, capacidad y director de juego |
-| `GameTableCardSkeleton` | Esqueleto de carga para `GameTableCard` |
-| `GameTableFilters` | Controles de filtrado para el listado de mesas |
-| `RegistrationButton` | Botón de inscripción con gestión de estado y selección de rol |
-| `RegistrationStatus` | Muestra el estado actual de la inscripción del usuario |
-| `GuestRegistrationModal` | Modal de inscripción para invitados |
-| `StatusBadge` | Insignia de estado de la mesa con colores e iconos |
-| `FormatBadge` | Insignia del formato de la mesa (presencial, online, híbrido) |
-| `ContentWarningBadge` | Insignia de aviso de contenido |
-| `SafetyToolBadge` | Insignia de herramienta de seguridad |
-| `EventTablesLink` | Enlace a las mesas de un evento |
-
-### Páginas
-
-| Página | Ruta | Descripción |
-|--------|------|-------------|
-| `GameTables/Index` | `/mesas` | Listado de mesas con filtros y búsqueda |
-| `GameTables/Show` | `/mesas/{id}` | Detalle de una mesa |
-| `GameTables/Calendar` | `/mesas/calendario` | Calendario de mesas |
-| `GameTables/CancelRegistration` | `/mesas/cancelar/{token}` | Confirmación de cancelación |
-| `Campaigns/Index` | `/campanas` | Listado de campañas |
-| `Campaigns/Show` | `/campanas/{id}` | Detalle de una campaña |
-
-## Eventos de dominio
-
-| Evento | Descripción |
-|--------|-------------|
-| `GameTableCreated` | Se creó una nueva mesa |
-| `GameTablePublished` | Una mesa fue publicada |
-| `GameTableCancelled` | Una mesa fue cancelada |
-| `GameTableCompleted` | Una mesa fue completada |
-| `ParticipantRegistered` | Un usuario se inscribió a una mesa |
-| `ParticipantConfirmed` | Una inscripción fue confirmada |
-| `ParticipantCancelled` | Un participante canceló su inscripción |
-| `ParticipantPromotedFromWaitingList` | Un participante fue promocionado de la lista de espera |
-| `GuestRegistered` | Un invitado se inscribió a una mesa |
-| `CampaignCreated` | Se creó una nueva campaña |
-| `CampaignStatusChanged` | El estado de una campaña cambió |
-
-## Permisos
-
-| Permiso | Descripción |
-|---------|-------------|
-| `gametables.view_any` | Ver listado de mesas |
-| `gametables.view` | Ver detalle de mesa |
-| `gametables.create` | Crear mesas |
-| `gametables.update` | Editar mesas |
-| `gametables.delete` | Eliminar mesas |
-| `campaigns.view_any` | Ver listado de campañas |
-| `campaigns.view` | Ver detalle de campaña |
-| `campaigns.create` | Crear campañas |
-| `campaigns.update` | Editar campañas |
-| `campaigns.delete` | Eliminar campañas |
-| `gamesystems.view_any` | Ver sistemas de juego |
-| `gamesystems.manage` | Gestionar sistemas de juego |
-| `contentwarnings.view_any` | Ver avisos de contenido |
-| `contentwarnings.manage` | Gestionar avisos de contenido |
-| `gametables.settings` | Gestionar configuración del módulo |
 
 ## Tests
 
-Ejecutar los tests del módulo:
+Desde `src/` (o dentro del contenedor `guildforge_app`):
 
 ```bash
-# Desde el directorio del módulo
-cd src/modules/game-tables
-../../../vendor/bin/phpunit
-
-# O desde el directorio raíz
-php artisan test --filter=GameTable
+vendor/bin/phpunit -c modules/game-tables/phpunit.xml
+vendor/bin/phpunit -c modules/game-tables/phpunit.xml --testsuite=Unit
 ```
+
+`php artisan test` no ejecuta los tests de los módulos.
+
+## Publicar una versión
+
+1. Sube `version` en `module.json`.
+2. Crea y empuja la etiqueta `vX.Y.Z` (debe coincidir con `version`).
+3. El workflow `release.yml` ejecuta los tests contra el core (`main`, o la variable `GUILDFORGE_HOST_REF`), compila los assets y publica `game-tables-X.Y.Z.zip` con su `.sha256` en la release.
 
 ## Licencia
 
