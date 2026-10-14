@@ -18,6 +18,7 @@ use Filament\Actions\DeleteBulkAction;
 use Modules\GameTables\Filament\Resources\CampaignResource\Pages\ListCampaigns;
 use Modules\GameTables\Filament\Resources\CampaignResource\Pages\CreateCampaign;
 use Modules\GameTables\Filament\Resources\CampaignResource\Pages\EditCampaign;
+use App\Filament\Concerns\ChecksPermissions;
 use App\Filament\Resources\BaseResource;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
@@ -40,11 +41,21 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemMode
 
 final class CampaignResource extends BaseResource
 {
+    use ChecksPermissions;
+
     protected static ?string $model = CampaignModel::class;
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-book-open';
 
     protected static ?int $navigationSort = 2;
+
+    /**
+     * Approving or rejecting needs the update permission: seeing the campaign or being its author is not enough.
+     */
+    public static function canModerate(): bool
+    {
+        return self::userCan('gametables:campaigns.update');
+    }
 
     public static function getNavigationGroup(): ?string
     {
@@ -225,6 +236,7 @@ final class CampaignResource extends BaseResource
             ])
             ->recordActions([
                 Action::make('approve')
+                    ->authorize(fn (): bool => self::canModerate())
                     ->label(__('game-tables::messages.moderation.approve'))
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
@@ -241,6 +253,7 @@ final class CampaignResource extends BaseResource
                             ->send();
                     }),
                 Action::make('reject')
+                    ->authorize(fn (): bool => self::canModerate())
                     ->label(__('game-tables::messages.moderation.reject'))
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')

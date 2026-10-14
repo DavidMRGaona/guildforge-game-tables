@@ -548,6 +548,10 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             throw CampaignNotFoundException::withId($campaignId);
         }
 
+        if ($campaign->frontendCreationStatus !== FrontendCreationStatus::PendingReview) {
+            throw NotEditableException::forStatus($campaign->frontendCreationStatus->value ?? 'not_frontend');
+        }
+
         $campaign->approveFrontendCreation($notes);
         $campaign->publish();
         $this->campaignRepository->save($campaign);
@@ -559,6 +563,10 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
 
         if ($campaign === null) {
             throw CampaignNotFoundException::withId($campaignId);
+        }
+
+        if ($campaign->frontendCreationStatus !== FrontendCreationStatus::PendingReview) {
+            throw NotEditableException::forStatus($campaign->frontendCreationStatus->value ?? 'not_frontend');
         }
 
         $campaign->rejectFrontendCreation($reason);

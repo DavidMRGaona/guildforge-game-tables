@@ -18,6 +18,7 @@ use Filament\Actions\BulkAction;
 use Modules\GameTables\Filament\Resources\GameTableResource\Pages\ListGameTables;
 use Modules\GameTables\Filament\Resources\GameTableResource\Pages\CreateGameTable;
 use Modules\GameTables\Filament\Resources\GameTableResource\Pages\EditGameTable;
+use App\Filament\Concerns\ChecksPermissions;
 use App\Filament\Resources\BaseResource;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Filament\Forms\Components\CheckboxList;
@@ -60,11 +61,21 @@ use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 
 final class GameTableResource extends BaseResource
 {
+    use ChecksPermissions;
+
     protected static ?string $model = GameTableModel::class;
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-table-cells';
 
     protected static ?int $navigationSort = 1;
+
+    /**
+     * Approving or rejecting needs the update permission: seeing the table or being its author is not enough.
+     */
+    public static function canModerate(): bool
+    {
+        return self::userCan('gametables:gametables.update');
+    }
 
     public static function getNavigationGroup(): ?string
     {
@@ -493,6 +504,7 @@ final class GameTableResource extends BaseResource
             ])
             ->recordActions([
                 Action::make('approve')
+                    ->authorize(fn (): bool => self::canModerate())
                     ->label(__('game-tables::messages.moderation.approve'))
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
@@ -510,6 +522,7 @@ final class GameTableResource extends BaseResource
                             ->send();
                     }),
                 Action::make('reject')
+                    ->authorize(fn (): bool => self::canModerate())
                     ->label(__('game-tables::messages.moderation.reject'))
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
@@ -538,6 +551,7 @@ final class GameTableResource extends BaseResource
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                     BulkAction::make('approve')
+                        ->authorize(fn (): bool => self::canModerate())
                         ->label(__('game-tables::messages.bulk_actions.approve'))
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
@@ -562,6 +576,7 @@ final class GameTableResource extends BaseResource
                         })
                         ->deselectRecordsAfterCompletion(),
                     BulkAction::make('reject')
+                        ->authorize(fn (): bool => self::canModerate())
                         ->label(__('game-tables::messages.bulk_actions.reject'))
                         ->icon('heroicon-o-x-circle')
                         ->color('danger')
