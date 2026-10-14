@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, Teleport, Transition } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { router } from '@inertiajs/vue3';
 import type { ParticipantRole } from '../types/registration';
@@ -24,21 +24,25 @@ const props = withDefaults(defineProps<Props>(), {
     waitingListHelp: '',
 });
 
-// The role step is only needed when both roles are admitted
-const choosesRole = computed(() => props.hasSpectatorSlots && props.playerAvailable);
-
-const submitText = computed(() => {
-    if (choosesRole.value) return t('common.next');
-    if (props.playerAvailable && props.waitingList) return t('gameTables.registration.joinWaitingList');
-    return t('guestRegistration.submit');
-});
-
 const emit = defineEmits<{
     (e: 'close'): void;
     (e: 'success'): void;
 }>();
 
 const { t } = useI18n();
+
+// The role step is only needed when both roles are admitted
+const choosesRole = computed(() => props.hasSpectatorSlots && props.playerAvailable);
+
+// Player seats taken and no waiting list: the guest can only be a spectator
+const spectatorOnly = computed(() => props.hasSpectatorSlots && !props.playerAvailable);
+
+const submitText = computed(() => {
+    if (choosesRole.value) return t('common.next');
+    if (spectatorOnly.value) return t('gameTables.registration.registerAsSpectator');
+    if (props.playerAvailable && props.waitingList) return t('gameTables.registration.joinWaitingList');
+    return t('guestRegistration.submit');
+});
 
 const loading = ref(false);
 const error = ref<string | null>(null);
@@ -177,6 +181,14 @@ function goBack(): void {
                         >
                             {{ error }}
                         </div>
+
+                        <!-- Spectator notice (when it is the only option) -->
+                        <p
+                            v-if="step === 'form' && spectatorOnly"
+                            class="mb-4 rounded-lg bg-blue-50 p-3 text-sm text-blue-800 dark:bg-blue-900/20 dark:text-blue-300"
+                        >
+                            {{ t('gameTables.registration.spectatorOnly') }}
+                        </p>
 
                         <!-- Waiting list notice (when it is the only option) -->
                         <p

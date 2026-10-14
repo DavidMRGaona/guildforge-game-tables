@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, Teleport, Transition } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { usePage, router } from '@inertiajs/vue3';
 import type { GameTable } from '../types/gametables';
@@ -128,6 +128,18 @@ const canJoinWaitingList = computed(() => {
 
 const guestJoinsWaitingList = computed(() => props.guestEligibility?.eligible === true && props.guestEligibility.waitingList);
 
+// Player seats taken (and no waiting list) but spectator seats free: only spectators can register
+const spectatorOnly = computed(() => !playerEligible.value && spectatorEligible.value);
+const guestSpectatorOnly = computed(
+    () => props.guestEligibility?.eligible === false && props.guestEligibility.spectator.eligible
+);
+
+// Ties the main button to the line explaining the promotion (aria-describedby)
+const waitingListHelpId = computed(() => `waiting-list-help-${resolvedTableId.value}`);
+const showsWaitingListHelp = computed(
+    () => !canCancel.value && (canJoinWaitingList.value || (canRegisterAsGuest.value && guestJoinsWaitingList.value))
+);
+
 const waitingListHelp = computed(() => {
     return tableData.value?.autoConfirm === false
         ? t('gameTables.registration.waitingListHelpManual')
@@ -163,9 +175,9 @@ const buttonText = computed(() => {
     // For unauthenticated users on open tables, show guest registration option
     if (!isAuthenticated.value) {
         if (canRegisterAsGuest.value) {
-            return guestJoinsWaitingList.value
-                ? t('gameTables.registration.joinWaitingList')
-                : t('guestRegistration.registerAsGuest');
+            if (guestJoinsWaitingList.value) return t('gameTables.registration.joinWaitingList');
+            if (guestSpectatorOnly.value) return t('gameTables.registration.registerAsSpectator');
+            return t('guestRegistration.registerAsGuest');
         }
         return t('gameTables.registration.loginRequired');
     }
@@ -191,6 +203,10 @@ const buttonText = computed(() => {
 
     if (canJoinWaitingList.value) {
         return t('gameTables.registration.joinWaitingList');
+    }
+
+    if (spectatorOnly.value) {
+        return t('gameTables.registration.registerAsSpectator');
     }
 
     return t('gameTables.registration.register');
@@ -553,6 +569,7 @@ onMounted(async () => {
             v-if="!showRoleSelect"
             type="button"
             :disabled="buttonDisabled"
+            :aria-describedby="showsWaitingListHelp ? waitingListHelpId : undefined"
             class="w-full rounded-lg px-6 py-3 text-center font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2"
             :class="{
                 'bg-primary text-white hover:bg-primary-700 focus:ring-primary-500':
@@ -610,7 +627,8 @@ onMounted(async () => {
 
         <!-- How the waiting list works -->
         <p
-            v-if="!canCancel && (canJoinWaitingList || (canRegisterAsGuest && guestJoinsWaitingList))"
+            v-if="showsWaitingListHelp"
+            :id="waitingListHelpId"
             class="mt-2 text-center text-sm text-gray-500 dark:text-stone-400"
         >
             {{ waitingListHelp }}
