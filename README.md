@@ -105,13 +105,15 @@ Activada:
 
 - **Quién**: solo jugadores, usuarios e invitados, cuando las plazas de jugador están completas y se cumplen las demás reglas de inscripción (fechas, acceso anticipado, tipo de inscripción, no estar ya inscrito). La página muestra **Apuntarse a la lista de espera** con una línea que explica la promoción, y cada persona recibe su posición (1, 2…). Los espectadores no tienen lista de espera.
 - **Promoción automática**: cuando un jugador confirmado cancela, el primer jugador de la lista ocupa su plaza; una promoción por plaza liberada, nunca por encima del máximo de jugadores. Los espectadores en espera nunca pasan a una plaza de jugador.
-- **Mesas con confirmación manual**: los jugadores pendientes ocupan plaza (confirmados + pendientes cuentan para el aforo), así que quien llega con la mesa así llena va a la lista detrás de los que ya esperan, y cancelar una inscripción pendiente también libera plaza. El promovido queda pendiente y el director lo confirma o lo rechaza; los correos al participante y a los directores lo dicen. **Confirmar** en el panel no deja superar el máximo de jugadores confirmados (avisa de que la mesa está completa). En las demás mesas el promovido queda confirmado.
+- **Mesas con confirmación manual**: los jugadores pendientes ocupan plaza (confirmados + pendientes cuentan para el aforo), así que quien llega con la mesa así llena va a la lista detrás de los que ya esperan, y cancelar o **Rechazar** una inscripción pendiente también libera plaza y pasa al primero de la lista (a pendiente). El promovido queda pendiente y el director lo confirma o lo rechaza; los correos al participante y a los directores lo dicen. En las demás mesas el promovido queda confirmado.
+- **Límite en el panel**: con la lista activada, **Confirmar** y **Promover** no dejan superar el máximo de jugadores confirmados; avisan de que la mesa está completa y no cambian nada.
+- **Activar la lista en una mesa manual que ya supera su aforo** (confirmados + pendientes por encima de `max_players`): no se toca ninguna fila; quien llega va a la lista, confirmar a un pendiente se rechaza mientras los confirmados estén en el máximo y la lista avanza a medida que se liberen plazas.
 - **Cierre**: la lista se cierra con las inscripciones (fecha de cierre pasada, mesa no publicada o en un estado que no admite inscripciones). Desde entonces no se admiten altas en la lista ni hay promoción automática; las filas se conservan y el director puede promover a mano con la acción **Promover** del panel, que confirma al participante bajo el mismo bloqueo de la mesa y no hace nada si ya no está en espera.
 - **Concurrencia**: las inscripciones (también las del panel), cancelaciones, confirmaciones y promociones de una mesa se hacen en una transacción con bloqueo de la fila de la mesa (en PostgreSQL), así que dos cancelaciones simultáneas no promueven dos veces a la misma persona ni sobrepasan el aforo, y dos peticiones simultáneas no crean dos filas para la misma persona.
 
-Las reglas de promoción (una por plaza, sin pasar el aforo, pendiente en mesas con confirmación manual, sin promoción tras el cierre) se aplican también con la lista desactivada a las filas que añade un administrador. Que los pendientes ocupen plaza y el límite al confirmar solo se aplican con la lista activada: desactivada, en las mesas con confirmación manual solo cuentan los confirmados, como hasta ahora.
+Con la lista desactivada todo sigue como en la versión 2.5.0 salvo esto: los espectadores no dependen de las plazas de jugador, y las reglas de promoción (una por plaza, sin pasar el aforo, pendiente en mesas con confirmación manual, sin promoción tras el cierre) se aplican a las filas en espera que añade un administrador o que quedan de cuando la lista estaba activada; quien llega a una mesa completa recibe «La mesa está completa». Que los pendientes ocupen plaza, que rechazar a un pendiente promueva y el límite de **Confirmar** y **Promover** solo se aplican con la lista activada.
 
-Los emails de los invitados se guardan en minúsculas y se comparan sin distinguir mayúsculas. Un invitado que solo puede entrar como espectador (plazas de jugador completas y sin lista) ve **Inscribirse como espectador** y un aviso de que las plazas de jugador están completas.
+Los emails de los invitados se guardan en minúsculas y se comparan sin distinguir mayúsculas. Quien solo puede entrar como espectador (plazas de jugador completas y sin lista) ve **Inscribirse como espectador**, tenga sesión o no; el invitado ve además un aviso de que las plazas de jugador están completas.
 
 ### Inscripción
 
@@ -290,6 +292,9 @@ php artisan gametables:generate-slugs --force    # regenera también los existen
 ```
 
 ## Limitaciones actuales
+
+- **Editar** un participante en el panel cambia la fila directamente: puede ponerlo como confirmado por encima del aforo y no pasa el email de invitado a minúsculas.
+- Los espectadores pendientes no ocupan plaza en el servidor (solo cuentan los confirmados), aunque la página los cuente al mostrar las plazas libres.
 
 - Las rutas de creación desde la web exigen sesión iniciada, también con el nivel de acceso «Cualquier persona».
 - «Solo por invitación» no tiene sistema de invitaciones: rechaza a los invitados sin cuenta, pero los usuarios con sesión iniciada pueden inscribirse como en una mesa abierta.
