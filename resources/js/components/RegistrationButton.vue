@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { usePage, router } from '@inertiajs/vue3';
 import type { GameTable } from '../types/gametables';
@@ -14,37 +14,29 @@ import RegistrationStatus from './RegistrationStatus.vue';
 import GuestRegistrationModal from './GuestRegistrationModal.vue';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 
+// The table page always sends these props (slot game-table-registration); the module has no API to fetch them
 interface Props {
-    tableId?: string;
-    table?: GameTable;
-    /** Initial eligibility data from server (avoids API call) */
-    eligibility?: EligibilityResponse | null;
+    table: GameTable;
+    /** What the signed-in user can do (null for visitors) */
+    eligibility: EligibilityResponse | null;
     /** What a visitor without an account can do (null for signed-in users) */
-    guestEligibility?: GuestEligibility | null;
-    /** Initial user registration data from server (avoids API call) */
-    userRegistration?: ParticipantData | null;
+    guestEligibility: GuestEligibility | null;
+    /** The signed-in user's registration (null when there is none, or for visitors) */
+    userRegistration: ParticipantData | null;
 }
 
 const props = defineProps<Props>();
 const page = usePage();
 const { t, locale } = useI18n();
 
-// Support both tableId prop directly or extracting from table object (for slot system)
-const resolvedTableId = computed(() => props.tableId ?? props.table?.id ?? '');
+const resolvedTableId = computed(() => props.table.id);
 // Use slug for Inertia routes (user-facing URLs)
-const resolvedTableSlug = computed(() => props.table?.slug ?? '');
+const resolvedTableSlug = computed(() => props.table.slug);
 
-// Check if initial data was provided via props (from Inertia)
-const hasInitialEligibility = props.eligibility !== undefined;
-const hasInitialRegistration = props.userRegistration !== undefined;
-
-// State - initialize from props if available
-const eligibility = ref<EligibilityResponse | null>(props.eligibility ?? null);
-const registration = ref<ParticipantData | null>(props.userRegistration ?? null);
+// State, initialized from the page props
+const eligibility = ref<EligibilityResponse | null>(props.eligibility);
+const registration = ref<ParticipantData | null>(props.userRegistration);
 const loading = ref(false);
-// Skip loading if initial data was provided via props
-const eligibilityLoading = ref(!hasInitialEligibility);
-const registrationLoading = ref(false);
 const error = ref<string | null>(null);
 const showRoleSelect = ref(false);
 const showCancelConfirm = ref(false);
@@ -57,20 +49,14 @@ const notes = ref('');
 watch(
     () => props.eligibility,
     (newEligibility) => {
-        if (newEligibility !== undefined) {
-            eligibility.value = newEligibility;
-            eligibilityLoading.value = false;
-        }
+        eligibility.value = newEligibility;
     }
 );
 
 watch(
     () => props.userRegistration,
     (newRegistration) => {
-        if (newRegistration !== undefined) {
-            registration.value = newRegistration;
-            registrationLoading.value = false;
-        }
+        registration.value = newRegistration;
     }
 );
 
@@ -95,13 +81,7 @@ const waitingListCount = computed(() => {
 });
 
 // Determine if component should render
-const shouldRender = computed(() => {
-    if (!resolvedTableId.value) return false;
-    if (eligibilityLoading.value) return false;
-    // If user is authenticated, wait for registration status to load
-    if (isAuthenticated.value && registrationLoading.value) return false;
-    return true;
-});
+const shouldRender = computed(() => resolvedTableId.value !== '');
 
 // Registration flow conditions: the server computes each role with the rules it applies on submit
 const playerEligible = computed(() => eligibility.value?.eligible === true);
@@ -225,50 +205,6 @@ const buttonDisabled = computed(() => {
     return false;
 });
 
-// API functions
-async function fetchEligibility(): Promise<void> {
-    if (!resolvedTableId.value) return;
-
-    eligibilityLoading.value = true;
-    try {
-        const response = await fetch(`/api/gametables/tables/${resolvedTableId.value}/eligibility`, {
-            credentials: 'include',
-        });
-        const data = await response.json();
-        // API returns data at root level, not wrapped in 'data'
-        eligibility.value = data;
-    } catch (e) {
-        console.error('Failed to fetch eligibility:', e);
-        eligibility.value = {
-            eligible: false,
-            reason: 'error',
-            message: null,
-            canRegisterAt: null,
-            waitingList: false,
-            spectator: { eligible: false, reason: 'error', message: null },
-        };
-    } finally {
-        eligibilityLoading.value = false;
-    }
-}
-
-async function fetchRegistration(): Promise<void> {
-    if (!isAuthenticated.value || !resolvedTableId.value) return;
-
-    registrationLoading.value = true;
-    try {
-        const response = await fetch(`/api/gametables/tables/${resolvedTableId.value}/registration`, {
-            credentials: 'include',
-        });
-        const data = await response.json();
-        registration.value = data.data;
-    } catch (e) {
-        console.error('Failed to fetch user registration:', e);
-    } finally {
-        registrationLoading.value = false;
-    }
-}
-
 function handleRegister(role: ParticipantRole): void {
     loading.value = true;
     error.value = null;
@@ -363,16 +299,6 @@ function cancelRoleSelect(): void {
     showNotesInput.value = false;
     notes.value = '';
 }
-
-onMounted(async () => {
-    // Only fetch if data was not provided via props (from Inertia)
-    if (!hasInitialEligibility) {
-        await fetchEligibility();
-    }
-    if (!hasInitialRegistration) {
-        await fetchRegistration();
-    }
-});
 </script>
 
 <template>

@@ -33,7 +33,6 @@
       "gametables.settings"
     ],
     "routes": [
-      "api",
       "web"
     ],
     "filament": true,
