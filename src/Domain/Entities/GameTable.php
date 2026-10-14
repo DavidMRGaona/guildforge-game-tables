@@ -203,7 +203,7 @@ final class GameTable
         return true;
     }
 
-    public function canUserRegister(bool $isMember, DateTimeImmutable $now): bool
+    public function canUserRegister(bool $isMember, DateTimeImmutable $now, bool $membersEarlyAccess = true): bool
     {
         // Check publication and registrable status
         if (! $this->isPublished || ! $this->status->isRegistrable()) {
@@ -219,7 +219,7 @@ final class GameTable
         }
 
         // Early access for members
-        if ($isMember && $this->isMemberEarlyAccessActive($now)) {
+        if ($membersEarlyAccess && $isMember && $this->isMemberEarlyAccessActive($now)) {
             return true;
         }
 

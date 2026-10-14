@@ -254,12 +254,46 @@ final class EligibilityServiceTest extends TestCase
         $this->assertEquals('registration_not_open', $result['reason']);
     }
 
+    public function test_a_member_registers_early_while_the_membership_integration_is_enabled(): void
+    {
+        config()->set('modules.settings.game-tables.membership_integration.enabled', true);
+        $this->participantRepository->expects($this->once())->method('findByTableAndUser')->willReturn(null);
+        $this->participantRepository->expects($this->once())->method('countConfirmedPlayers')->willReturn(0);
+
+        $result = $this->service->canRegister($this->tableInMembersEarlyAccess(), 'member-1', true, null);
+
+        $this->assertTrue($result['eligible']);
+    }
+
+    public function test_a_member_gets_no_early_access_when_the_membership_integration_is_disabled(): void
+    {
+        config()->set('modules.settings.game-tables.membership_integration.enabled', false);
+        $this->participantRepository->expects($this->never())->method('findByTableAndUser');
+
+        $result = $this->service->canRegister($this->tableInMembersEarlyAccess(), 'member-1', true, null);
+
+        $this->assertFalse($result['eligible']);
+        $this->assertSame('registration_not_open', $result['reason']);
+    }
+
+    private function tableInMembersEarlyAccess(): GameTable
+    {
+        $this->gameTableRepository->expects($this->never())->method('find');
+
+        return $this->createGameTable(
+            id: GameTableId::generate()->value,
+            registrationOpensAt: new DateTimeImmutable('+1 day'),
+            membersEarlyAccessDays: 3,
+        );
+    }
+
     private function createGameTable(
         string $id,
         RegistrationType $registrationType = RegistrationType::Everyone,
         TableStatus $status = TableStatus::Scheduled,
         int $maxPlayers = 6,
         ?DateTimeImmutable $registrationOpensAt = null,
+        int $membersEarlyAccessDays = 0,
     ): GameTable {
         $startsAt = new DateTimeImmutable('+1 week');
         $timeSlot = new TimeSlot($startsAt, 240);
@@ -277,6 +311,7 @@ final class EligibilityServiceTest extends TestCase
             minPlayers: 2,
             maxPlayers: $maxPlayers,
             registrationType: $registrationType,
+            membersEarlyAccessDays: $membersEarlyAccessDays,
             registrationOpensAt: $registrationOpensAt,
             autoConfirm: true,
             isPublished: true,

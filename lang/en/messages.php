@@ -375,9 +375,9 @@ return [
         ],
         'fields' => [
             'membership_enabled' => 'Membership integration enabled',
-            'membership_enabled_help' => 'Enables early access and restrictions for members',
+            'membership_enabled_help' => 'Members can register before opening, by the early access days of each table',
             'early_access_days' => 'Early access days',
-            'early_access_days_help' => 'Days advantage for member registration',
+            'early_access_days_help' => 'Initial member early access days of each new table',
             'default_duration' => 'Default duration (minutes)',
             'default_min_players' => 'Default minimum players',
             'default_max_players' => 'Default maximum players',

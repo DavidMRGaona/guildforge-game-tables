@@ -432,9 +432,9 @@ return [
         ],
         'fields' => [
             'membership_enabled' => 'Integración con socios habilitada',
-            'membership_enabled_help' => 'Permite acceso anticipado y restricciones para socios',
+            'membership_enabled_help' => 'Los socios pueden inscribirse antes de la apertura según los días de acceso anticipado de cada mesa',
             'early_access_days' => 'Días de acceso anticipado',
-            'early_access_days_help' => 'Días de ventaja para inscripción de socios',
+            'early_access_days_help' => 'Valor inicial de los días de ventaja de los socios en cada mesa nueva',
             'default_duration' => 'Duración por defecto (minutos)',
             'default_min_players' => 'Mínimo de jugadores por defecto',
             'default_max_players' => 'Máximo de jugadores por defecto',

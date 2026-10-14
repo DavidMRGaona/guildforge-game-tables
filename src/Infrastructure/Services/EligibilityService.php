@@ -23,6 +23,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
         private ParticipantRepositoryInterface $participantRepository,
         private GameTableRepositoryInterface $gameTableRepository,
         private ?MemberServiceInterface $memberService = null,
+        private GameTableSettingsReader $settings = new GameTableSettingsReader(),
     ) {}
 
     public function checkEligibility(
@@ -40,7 +41,8 @@ final readonly class EligibilityService implements EligibilityServiceInterface
         }
 
         // Check registration window
-        if (! $gameTable->canUserRegister($isMember, $now)) {
+        // Members' early access is part of the membership integration setting
+        if (! $gameTable->canUserRegister($isMember, $now, $this->settings->isMembershipIntegrationEnabled())) {
             if ($gameTable->requiresMembership() && ! $isMember) {
                 throw MembersOnlyException::forTable($gameTable->id->value);
             }
@@ -138,7 +140,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
         // Determine when user can register if early access is in effect
         $canRegisterAt = null;
         if (! $result['eligible'] && $gameTable->registrationOpensAt !== null) {
-            if ($isMember && $gameTable->membersEarlyAccessDays > 0) {
+            if ($isMember && $gameTable->membersEarlyAccessDays > 0 && $this->settings->isMembershipIntegrationEnabled()) {
                 $earlyAccessDate = $gameTable->registrationOpensAt->modify("-{$gameTable->membersEarlyAccessDays} days");
                 if ($now < $earlyAccessDate) {
                     $canRegisterAt = $earlyAccessDate->format('c');
