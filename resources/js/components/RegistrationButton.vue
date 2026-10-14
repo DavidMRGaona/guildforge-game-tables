@@ -7,6 +7,7 @@ import type {
     ParticipantData,
     ParticipantRole,
     EligibilityResponse,
+    GuestEligibility,
 } from '../types/registration';
 import { isFinalStatus } from '../types/registration';
 import RegistrationStatus from './RegistrationStatus.vue';
@@ -18,6 +19,8 @@ interface Props {
     table?: GameTable;
     /** Initial eligibility data from server (avoids API call) */
     eligibility?: EligibilityResponse | null;
+    /** What a visitor without an account can do (null for signed-in users) */
+    guestEligibility?: GuestEligibility | null;
     /** Initial user registration data from server (avoids API call) */
     userRegistration?: ParticipantData | null;
 }
@@ -100,9 +103,12 @@ const shouldRender = computed(() => {
     return true;
 });
 
-// Registration flow conditions
+// Registration flow conditions: the server computes each role with the rules it applies on submit
+const playerEligible = computed(() => eligibility.value?.eligible === true);
+const spectatorEligible = computed(() => eligibility.value?.spectator?.eligible === true);
+
 const canRegister = computed(() => {
-    if (!eligibility.value?.eligible) return false;
+    if (!playerEligible.value && !spectatorEligible.value) return false;
     if (registration.value && !isFinalStatus(registration.value.status)) return false;
     return true;
 });
@@ -114,9 +120,18 @@ const canCancel = computed(() => {
 
 const isTableFull = computed(() => spotsAvailable.value <= 0);
 
+// A player registration goes to the waiting list (only when the module setting is on)
 const canJoinWaitingList = computed(() => {
     if (!canRegister.value) return false;
-    return isTableFull.value;
+    return playerEligible.value && eligibility.value?.waitingList === true;
+});
+
+const guestJoinsWaitingList = computed(() => props.guestEligibility?.eligible === true && props.guestEligibility.waitingList);
+
+const waitingListHelp = computed(() => {
+    return tableData.value?.autoConfirm === false
+        ? t('gameTables.registration.waitingListHelpManual')
+        : t('gameTables.registration.waitingListHelp');
 });
 
 const isRegistrationClosed = computed(() => {
@@ -133,17 +148,14 @@ const isOpenToEveryone = computed(() => {
     return tableData.value?.registrationType === 'everyone';
 });
 
-// Check if guest registration should be offered: the same rules the server applies to guests
-// (open to everyone, a status that admits registrations and a free player seat)
+// Guest registration is offered when the server's guest rules admit a player (seat or waiting
+// list) or a spectator; the email is checked when the form is sent
 const canRegisterAsGuest = computed(() => {
     if (isAuthenticated.value) return false;
     if (!isOpenToEveryone.value) return false;
-    if (isTableFull.value) return false;
-    // For unauthenticated users, check table status directly (eligibility is null for guests)
-    const status = tableData.value?.status;
-    if (status === 'scheduled' || status === 'full') return true;
-    if (status === 'in_progress' && tableData.value?.acceptsRegistrationsInProgress) return true;
-    return false;
+    const guest = props.guestEligibility;
+    if (!guest) return false;
+    return guest.eligible || guest.spectator.eligible;
 });
 
 // Button text and styling
@@ -151,7 +163,9 @@ const buttonText = computed(() => {
     // For unauthenticated users on open tables, show guest registration option
     if (!isAuthenticated.value) {
         if (canRegisterAsGuest.value) {
-            return t('guestRegistration.registerAsGuest');
+            return guestJoinsWaitingList.value
+                ? t('gameTables.registration.joinWaitingList')
+                : t('guestRegistration.registerAsGuest');
         }
         return t('gameTables.registration.loginRequired');
     }
@@ -171,11 +185,11 @@ const buttonText = computed(() => {
         return t('gameTables.registration.opensAt', { date });
     }
 
-    if (!eligibility.value?.eligible) {
+    if (!canRegister.value) {
         return eligibility.value?.message ?? t('gameTables.registration.closed');
     }
 
-    if (isTableFull.value) {
+    if (canJoinWaitingList.value) {
         return t('gameTables.registration.joinWaitingList');
     }
 
@@ -191,7 +205,7 @@ const buttonDisabled = computed(() => {
     }
     if (isRegistrationClosed.value) return true;
     if (registrationOpensAt.value) return true;
-    if (!eligibility.value?.eligible && !canCancel.value) return true;
+    if (!canRegister.value && !canCancel.value) return true;
     return false;
 });
 
@@ -209,7 +223,14 @@ async function fetchEligibility(): Promise<void> {
         eligibility.value = data;
     } catch (e) {
         console.error('Failed to fetch eligibility:', e);
-        eligibility.value = { eligible: false, reason: 'error', message: null, canRegisterAt: null };
+        eligibility.value = {
+            eligible: false,
+            reason: 'error',
+            message: null,
+            canRegisterAt: null,
+            waitingList: false,
+            spectator: { eligible: false, reason: 'error', message: null },
+        };
     } finally {
         eligibilityLoading.value = false;
     }
@@ -298,8 +319,10 @@ function handleClick(): void {
         return;
     }
 
-    // Direct registration as player
-    handleRegister('player');
+    // Direct registration as player (a seat or the waiting list)
+    if (playerEligible.value) {
+        handleRegister('player');
+    }
 }
 
 function closeGuestModal(): void {
@@ -388,33 +411,33 @@ onMounted(async () => {
                             <div v-if="!showNotesInput" class="space-y-3">
                                 <button
                                     type="button"
-                                    :disabled="isTableFull && !canJoinWaitingList"
+                                    :disabled="!playerEligible"
                                     class="w-full rounded-lg px-4 py-3 text-left transition-colors"
                                     :class="{
                                         'bg-primary-light hover:bg-primary-200 dark:bg-primary-900/20 dark:hover:bg-primary-900/30':
-                                            !isTableFull,
+                                            playerEligible && !canJoinWaitingList,
                                         'bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30':
-                                            isTableFull && canJoinWaitingList,
+                                            canJoinWaitingList,
                                         'cursor-not-allowed bg-gray-100 dark:bg-stone-700':
-                                            isTableFull && !canJoinWaitingList,
+                                            !playerEligible,
                                     }"
                                     @click="selectRole('player')"
                                 >
                                     <div class="font-medium text-gray-900 dark:text-stone-100">
-                                        {{ t('gameTables.registration.registerAsPlayer') }}
+                                        {{ canJoinWaitingList ? t('gameTables.registration.joinWaitingList') : t('gameTables.registration.registerAsPlayer') }}
                                     </div>
                                     <div class="mt-1 text-sm text-gray-500 dark:text-stone-400">
-                                        <template v-if="!isTableFull">
-                                            {{ t('gameTables.details.spotsAvailable', { spots: spotsAvailable }) }}
-                                        </template>
-                                        <template v-else-if="canJoinWaitingList">
-                                            {{ t('gameTables.registration.joinWaitingList') }}
+                                        <template v-if="canJoinWaitingList">
+                                            {{ waitingListHelp }}
                                             <template v-if="waitingListCount > 0">
                                                 ({{ waitingListCount }} {{ t('gameTables.participants.waitingList').toLowerCase() }})
                                             </template>
                                         </template>
+                                        <template v-else-if="playerEligible">
+                                            {{ t('gameTables.details.spotsAvailable', { spots: spotsAvailable }) }}
+                                        </template>
                                         <template v-else>
-                                            {{ t('gameTables.details.full') }}
+                                            {{ eligibility?.message ?? t('gameTables.details.full') }}
                                         </template>
                                     </div>
                                 </button>
@@ -422,13 +445,13 @@ onMounted(async () => {
                                 <button
                                     v-if="tableData?.maxSpectators && tableData.maxSpectators > 0"
                                     type="button"
-                                    :disabled="spectatorSpotsAvailable !== null && spectatorSpotsAvailable <= 0"
+                                    :disabled="!spectatorEligible"
                                     class="w-full rounded-lg px-4 py-3 text-left transition-colors"
                                     :class="{
                                         'bg-gray-50 hover:bg-gray-100 dark:bg-stone-700/50 dark:hover:bg-stone-700':
-                                            spectatorSpotsAvailable === null || spectatorSpotsAvailable > 0,
+                                            spectatorEligible,
                                         'cursor-not-allowed bg-gray-100 dark:bg-stone-700':
-                                            spectatorSpotsAvailable !== null && spectatorSpotsAvailable <= 0,
+                                            !spectatorEligible,
                                     }"
                                     @click="selectRole('spectator')"
                                 >
@@ -436,14 +459,17 @@ onMounted(async () => {
                                         {{ t('gameTables.registration.registerAsSpectator') }}
                                     </div>
                                     <div class="mt-1 text-sm text-gray-500 dark:text-stone-400">
-                                        <template v-if="spectatorSpotsAvailable !== null && spectatorSpotsAvailable > 0">
+                                        <template v-if="spectatorEligible && spectatorSpotsAvailable !== null">
                                             {{ t('gameTables.details.spotsAvailable', { spots: spectatorSpotsAvailable }) }}
                                         </template>
-                                        <template v-else-if="spectatorSpotsAvailable === null">
+                                        <template v-else-if="spectatorEligible">
                                             {{ t('gameTables.details.spectators') }}
                                         </template>
-                                        <template v-else>
+                                        <template v-else-if="eligibility?.spectator?.reason === 'spectators_full'">
                                             {{ t('gameTables.registration.spectatorsFull') }}
+                                        </template>
+                                        <template v-else>
+                                            {{ eligibility?.spectator?.message ?? t('gameTables.registration.spectatorsFull') }}
                                         </template>
                                     </div>
                                 </button>
@@ -530,9 +556,9 @@ onMounted(async () => {
             class="w-full rounded-lg px-6 py-3 text-center font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2"
             :class="{
                 'bg-primary text-white hover:bg-primary-700 focus:ring-primary-500':
-                    (isAuthenticated && canRegister && !isTableFull) || canRegisterAsGuest,
+                    (isAuthenticated && canRegister && !canJoinWaitingList) || (canRegisterAsGuest && !guestJoinsWaitingList),
                 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500':
-                    isAuthenticated && canRegister && isTableFull,
+                    (isAuthenticated && canJoinWaitingList) || (canRegisterAsGuest && guestJoinsWaitingList),
                 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500': canCancel,
                 'bg-stone-600 text-white hover:bg-stone-700 focus:ring-stone-500 dark:bg-stone-500 dark:hover:bg-stone-400':
                     !isAuthenticated && !canRegisterAsGuest,
@@ -581,6 +607,14 @@ onMounted(async () => {
                 · {{ waitingListCount }} {{ t('gameTables.participants.waitingList').toLowerCase() }}
             </template>
         </div>
+
+        <!-- How the waiting list works -->
+        <p
+            v-if="!canCancel && (canJoinWaitingList || (canRegisterAsGuest && guestJoinsWaitingList))"
+            class="mt-2 text-center text-sm text-gray-500 dark:text-stone-400"
+        >
+            {{ waitingListHelp }}
+        </p>
 
         <!-- Cancel confirmation modal -->
         <Teleport to="body">
@@ -663,7 +697,10 @@ onMounted(async () => {
         <GuestRegistrationModal
             :is-open="showGuestModal"
             :table-slug="resolvedTableSlug"
-            :has-spectator-slots="(tableData?.maxSpectators ?? 0) > 0"
+            :has-spectator-slots="(tableData?.maxSpectators ?? 0) > 0 && guestEligibility?.spectator.eligible === true"
+            :player-available="guestEligibility?.eligible === true"
+            :waiting-list="guestJoinsWaitingList"
+            :waiting-list-help="waitingListHelp"
             @close="closeGuestModal"
             @success="onGuestSuccess"
         />

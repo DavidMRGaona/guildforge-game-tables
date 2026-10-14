@@ -7,11 +7,30 @@ import type { ParticipantRole } from '../types/registration';
 interface Props {
     isOpen: boolean;
     tableSlug: string;
+    /** A spectator registration is admitted */
     hasSpectatorSlots?: boolean;
+    /** A player registration is admitted (a seat or the waiting list) */
+    playerAvailable?: boolean;
+    /** The player registration goes to the waiting list */
+    waitingList?: boolean;
+    /** How the waiting list works on this table */
+    waitingListHelp?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
     hasSpectatorSlots: false,
+    playerAvailable: true,
+    waitingList: false,
+    waitingListHelp: '',
+});
+
+// The role step is only needed when both roles are admitted
+const choosesRole = computed(() => props.hasSpectatorSlots && props.playerAvailable);
+
+const submitText = computed(() => {
+    if (choosesRole.value) return t('common.next');
+    if (props.playerAvailable && props.waitingList) return t('gameTables.registration.joinWaitingList');
+    return t('guestRegistration.submit');
 });
 
 const emit = defineEmits<{
@@ -64,12 +83,11 @@ const isFormValid = computed(() => {
 function handleFormSubmit(): void {
     if (!isFormValid.value) return;
 
-    // If spectator slots are available, show role selection
-    if (props.hasSpectatorSlots) {
+    // With both roles admitted, choose; otherwise submit the only one
+    if (choosesRole.value) {
         step.value = 'role';
     } else {
-        // Otherwise, submit directly as player
-        submitRegistration('player');
+        submitRegistration(props.playerAvailable ? 'player' : 'spectator');
     }
 }
 
@@ -159,6 +177,14 @@ function goBack(): void {
                         >
                             {{ error }}
                         </div>
+
+                        <!-- Waiting list notice (when it is the only option) -->
+                        <p
+                            v-if="step === 'form' && waitingList && playerAvailable && !choosesRole && waitingListHelp"
+                            class="mb-4 rounded-lg bg-blue-50 p-3 text-sm text-blue-800 dark:bg-blue-900/20 dark:text-blue-300"
+                        >
+                            {{ waitingListHelp }}
+                        </p>
 
                         <!-- Form step -->
                         <form v-if="step === 'form'" class="space-y-4" @submit.prevent="handleFormSubmit">
@@ -291,7 +317,7 @@ function goBack(): void {
                                             ></path>
                                         </svg>
                                     </span>
-                                    <span v-else>{{ hasSpectatorSlots ? $t('common.next') : t('guestRegistration.submit') }}</span>
+                                    <span v-else>{{ submitText }}</span>
                                 </button>
                             </div>
                         </form>
@@ -305,7 +331,10 @@ function goBack(): void {
                                 @click="selectRole('player')"
                             >
                                 <div class="font-medium text-base-primary">
-                                    {{ t('gameTables.registration.registerAsPlayer') }}
+                                    {{ waitingList ? t('gameTables.registration.joinWaitingList') : t('gameTables.registration.registerAsPlayer') }}
+                                </div>
+                                <div v-if="waitingList && waitingListHelp" class="mt-1 text-sm text-base-secondary">
+                                    {{ waitingListHelp }}
                                 </div>
                             </button>
 

@@ -1,11 +1,26 @@
 export type ParticipantStatus = 'pending' | 'confirmed' | 'waiting_list' | 'cancelled' | 'rejected' | 'no_show';
 export type ParticipantRole = 'player' | 'spectator';
 
-export interface EligibilityResponse {
+/** Whether one role can register, and why not. */
+export interface RoleEligibility {
     eligible: boolean;
     reason: string | null;
     message: string | null;
+}
+
+/** What the table page offers a signed-in user: the server applies the same rules on submit. */
+export interface EligibilityResponse extends RoleEligibility {
     canRegisterAt: string | null;
+    /** An eligible player registration goes to the waiting list (player seats taken). */
+    waitingList: boolean;
+    /** Spectators only need a free spectator seat; they have no waiting list. */
+    spectator: RoleEligibility;
+}
+
+/** What the table page offers a visitor without an account (the email is checked on submit). */
+export interface GuestEligibility extends RoleEligibility {
+    waitingList: boolean;
+    spectator: RoleEligibility;
 }
 
 export interface ParticipantData {
