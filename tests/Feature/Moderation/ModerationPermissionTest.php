@@ -68,19 +68,20 @@ final class ModerationPermissionTest extends ModuleTestCase
         $this->assertSame('approved', $campaign->refresh()->frontend_creation_status?->value);
     }
 
-    public function test_a_campaign_not_awaiting_review_cannot_be_approved_or_rejected(): void
+    public function test_a_campaign_not_awaiting_review_cannot_be_approved(): void
     {
         $campaign = $this->campaign(UserModel::factory()->create(), 'draft');
-        $service = app(FrontendCreationServiceInterface::class);
-
-        try {
-            $service->approveCampaign($campaign->id);
-            $this->fail('A draft campaign was approved');
-        } catch (NotEditableException) {
-        }
 
         $this->expectException(NotEditableException::class);
-        $service->rejectCampaign($campaign->id, 'Motivo');
+        app(FrontendCreationServiceInterface::class)->approveCampaign($campaign->id);
+    }
+
+    public function test_a_campaign_not_awaiting_review_cannot_be_rejected(): void
+    {
+        $campaign = $this->campaign(UserModel::factory()->create(), 'approved');
+
+        $this->expectException(NotEditableException::class);
+        app(FrontendCreationServiceInterface::class)->rejectCampaign($campaign->id, 'Motivo');
     }
 
     public function test_a_table_viewer_cannot_approve_or_reject_tables(): void

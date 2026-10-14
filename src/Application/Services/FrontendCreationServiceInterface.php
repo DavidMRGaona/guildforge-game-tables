@@ -115,6 +115,7 @@ interface FrontendCreationServiceInterface
      * Approve a campaign sent for review and publish it.
      *
      * @throws \Modules\GameTables\Domain\Exceptions\CampaignNotFoundException
+     * @throws \Modules\GameTables\Domain\Exceptions\NotEditableException when it is not waiting for review
      */
     public function approveCampaign(string $campaignId, ?string $notes = null): void;
 
@@ -122,6 +123,7 @@ interface FrontendCreationServiceInterface
      * Reject a campaign sent for review.
      *
      * @throws \Modules\GameTables\Domain\Exceptions\CampaignNotFoundException
+     * @throws \Modules\GameTables\Domain\Exceptions\NotEditableException when it is not waiting for review
      */
     public function rejectCampaign(string $campaignId, string $reason): void;
 
