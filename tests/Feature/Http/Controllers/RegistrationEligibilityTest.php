@@ -255,6 +255,9 @@ final class RegistrationEligibilityTest extends ModuleTestCase
         $this->assertSame($before, $this->registrations($table));
     }
 
+    /**
+     * @return TestResponse<\Symfony\Component\HttpFoundation\Response>
+     */
     private function register(GameTableModel $table, string $role = 'player', bool $json = false): TestResponse
     {
         $this->actingAs($this->user);
@@ -263,6 +266,9 @@ final class RegistrationEligibilityTest extends ModuleTestCase
         return $json ? $this->postJson($url, ['role' => $role]) : $this->post($url, ['role' => $role]);
     }
 
+    /**
+     * @return TestResponse<\Symfony\Component\HttpFoundation\Response>
+     */
     private function registerGuest(GameTableModel $table, string $role = 'player'): TestResponse
     {
         return $this->postJson(route('gametables.register-guest', $table->slug), [
