@@ -244,6 +244,26 @@ final class RegistrationEligibilityTest extends ModuleTestCase
         $this->assertSame(1, $this->registrations($table));
     }
 
+    #[\PHPUnit\Framework\Attributes\DataProvider('directorRoles')]
+    public function test_a_user_cannot_register_as_a_director(string $role): void
+    {
+        $table = $this->table();
+
+        $this->register($table, $role, json: true)
+            ->assertStatus(422)
+            ->assertJsonPath('errors.role.0', __('game-tables::messages.validation.invalid_role'));
+
+        $this->assertSame(0, $this->registrations($table));
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function directorRoles(): array
+    {
+        return ['game master' => ['game_master'], 'co-director' => ['co_gm']];
+    }
+
     private function assertRefused(GameTableModel $table, string $reason, string $role = 'player'): void
     {
         $before = $this->registrations($table);
