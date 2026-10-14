@@ -95,7 +95,7 @@ La publicación es un indicador aparte (`is_published`). **Publicar** deja la me
 - Nadie puede tener dos inscripciones activas en la misma mesa, contando la lista de espera (los invitados se distinguen por su email).
 - Desde la web solo se inscribe como jugador o espectador; los directores se asignan en el panel.
 
-La página de la mesa y el servidor usan el mismo cálculo: el servidor decide qué ofrece la página a cada rol (inscripción, lista de espera o el motivo del rechazo) y vuelve a aplicarlo al recibir la inscripción; a los invitados solo se les comprueba el email al enviar. Una inscripción que no cumple las reglas no se crea y se responde con el motivo (error de formulario en la web, 422 a los clientes JSON). Los administradores que añaden participantes desde el panel no están sujetos a ellas. En el panel, la cabecera de la mesa tiene las acciones **Publicar**, **Despublicar**, **Iniciar**, **Completar** y **Cancelar mesa**.
+La página de la mesa y el servidor usan el mismo cálculo: el servidor decide qué ofrece la página a cada rol (inscripción, lista de espera o el motivo del rechazo) y vuelve a aplicarlo al recibir la inscripción; a los invitados solo se les comprueba el email al enviar. Una inscripción que no cumple las reglas no se crea y se responde con el motivo (error de formulario en la web, 422 a los clientes JSON). Los administradores que añaden participantes desde el panel no están sujetos a ellas. En la lista de participantes del panel, el estado solo cambia con las acciones de fila **Confirmar**, **Rechazar** y **Promover**, que pasan por las mismas reglas de aforo y el mismo bloqueo; **Editar** cambia los datos del participante (rol, notas y contacto del invitado, con el email en minúsculas), no su estado. En el panel, la cabecera de la mesa tiene las acciones **Publicar**, **Despublicar**, **Iniciar**, **Completar** y **Cancelar mesa**.
 
 ### Lista de espera
 
@@ -293,7 +293,6 @@ php artisan gametables:generate-slugs --force    # regenera también los existen
 
 ## Limitaciones actuales
 
-- **Editar** un participante en el panel cambia la fila directamente: puede ponerlo como confirmado por encima del aforo y no pasa el email de invitado a minúsculas.
 - Los espectadores pendientes no ocupan plaza en el servidor (solo cuentan los confirmados), aunque la página los cuente al mostrar las plazas libres.
 
 - Las rutas de creación desde la web exigen sesión iniciada, también con el nivel de acceso «Cualquier persona».

@@ -94,12 +94,8 @@ final class ParticipantsRelationManager extends RelationManager
                     ->default(ParticipantRole::Player->value)
                     ->required(),
 
-                Select::make('status')
-                    ->label(__('game-tables::messages.fields.participant_status'))
-                    ->options(ParticipantStatus::options())
-                    ->default(ParticipantStatus::Pending->value)
-                    ->required(),
-
+                // No status field: it changes only through the row actions, which go through the
+                // registration service (its lock, seat limits and promotions)
                 Textarea::make('notes')
                     ->label(__('game-tables::messages.fields.notes'))
                     ->rows(2)
@@ -255,7 +251,15 @@ final class ParticipantsRelationManager extends RelationManager
                         }
                     }),
 
-                EditAction::make(),
+                EditAction::make()
+                    ->mutateDataUsing(function (array $data): array {
+                        // One guest per email and table, whatever the case it is typed in (as on registration)
+                        if (isset($data['email']) && is_string($data['email'])) {
+                            $data['email'] = mb_strtolower(trim($data['email']));
+                        }
+
+                        return $data;
+                    }),
                 DeleteAction::make(),
             ])
             ->toolbarActions([
