@@ -9,7 +9,7 @@ Módulo de GuildForge para gestionar mesas de rol y campañas: inscripciones de 
 - **Directores de juego**: director principal y co-directores, propios de la mesa o heredados de la campaña.
 - **Inscripciones**: como jugador o espectador, con confirmación automática o manual por mesa.
 - **Invitados**: quien no tiene cuenta se inscribe con nombre y email en las mesas abiertas a todos, y cancela con un enlace con token.
-- **Lista de espera**: recoge a quien llega sin plaza (la última plaza pedida a la vez por dos personas, o un participante que un administrador añade a una mesa completa); al cancelar un jugador confirmado se promociona al primero de la lista.
+- **Lista de espera**: recoge a quien llega sin plaza (la última plaza pedida a la vez por dos personas, o un participante que un administrador añade a una mesa completa); al cancelar un jugador confirmado se promociona al primer jugador de la lista (uno por plaza; los espectadores en espera no ocupan plazas de jugador).
 - **Tipos de inscripción**: abierta a todos, solo socios (con acceso anticipado opcional) o solo por invitación.
 - **Avisos de contenido** con severidad (leve, moderada, severa) y **herramientas de seguridad** (Carta X, Líneas y velos, Puerta abierta, Estrellas y deseos, Flor de apoyo, Script change, Rosas y espinas, otras).
 - **Catálogo**: sistemas de juego y editoriales.
@@ -51,7 +51,7 @@ En las releases los assets los compila el CI y van dentro del ZIP.
 
 ## Configuración
 
-Se configura en el panel: **Mesas de rol** → **Configuración** (permiso `gametables.settings`, que los administradores tienen siempre; el mismo formulario está en **Módulos** → **Configuración**). Los valores iniciales son los que trae el módulo en `config/settings.php`; lo que se guarda en el panel prevalece sobre ellos clave a clave.
+Se configura en el panel: **Mesas de rol** → **Configuración** (permiso `gametables.settings`, que los administradores tienen siempre; el mismo formulario está en **Módulos** → **Configuración**, solo para administradores). Los valores iniciales son los que trae el módulo en `config/settings.php`; lo que se guarda en el panel prevalece sobre ellos clave a clave.
 
 | Sección | Qué controla |
 |---------|--------------|
@@ -87,13 +87,14 @@ El formulario de eventos tiene la pestaña **Configuración de mesas**:
 | Completada | `completed` | Sesión terminada |
 | Cancelada | `cancelled` | Mesa cancelada: se cancelan sus inscripciones y se avisa a los participantes |
 
-La publicación es un indicador aparte (`is_published`). **Publicar** deja la mesa en `scheduled` y **Despublicar** la devuelve a `draft`. Las inscripciones se admiten mientras la mesa está publicada y en `scheduled` o `full`, dentro de sus fechas de inscripción; los socios pueden inscribirse antes si la mesa tiene días de acceso anticipado y **Integración con socios** está activada. Además:
+La publicación es un indicador aparte (`is_published`). **Publicar** deja la mesa en `scheduled` y **Despublicar** la devuelve a `draft`. Las inscripciones se admiten mientras la mesa está publicada y en `scheduled` o `full` (o en `in_progress` si tiene activado **Permitir inscripciones durante la partida**), dentro de sus fechas de inscripción; los socios pueden inscribirse antes si la mesa tiene días de acceso anticipado y **Integración con socios** está activada. Además:
 
 - Las mesas «Solo socios» solo admiten socios; los invitados solo pueden inscribirse en las mesas abiertas a todos.
 - Sin plazas de jugador libres no se admiten inscripciones nuevas, tampoco de espectador; como espectador hace falta además una plaza de espectador libre.
 - Nadie puede tener dos inscripciones activas en la misma mesa (los invitados se distinguen por su email).
+- Desde la web solo se inscribe como jugador o espectador; los directores se asignan en el panel.
 
-El servidor aplica estas reglas igual que la página de la mesa: una inscripción que no las cumple no se crea y se responde con el motivo (error de formulario en la web, 422 a los clientes JSON). Los administradores que añaden participantes desde el panel no están sujetos a ellas. En el panel, la cabecera de la mesa tiene las acciones **Publicar**, **Despublicar**, **Iniciar**, **Completar** y **Cancelar mesa**.
+El servidor aplica estas reglas igual que la página de la mesa (a los invitados la página no les comprueba las fechas: lo hace el servidor al enviar): una inscripción que no las cumple no se crea y se responde con el motivo (error de formulario en la web, 422 a los clientes JSON). Los administradores que añaden participantes desde el panel no están sujetos a ellas. En el panel, la cabecera de la mesa tiene las acciones **Publicar**, **Despublicar**, **Iniciar**, **Completar** y **Cancelar mesa**.
 
 ### Inscripción
 
@@ -121,7 +122,7 @@ Con **Creación desde web** activada, los usuarios con sesión iniciada que cump
 
 1. Crear una mesa en `/mesas/crear` (o desde el botón de la página de un evento, que la asocia al evento) o una campaña en `/campanas/crear`. Si no cumplen los requisitos, ven una página que explica el motivo.
 2. Editar sus borradores desde **Mis mesas** (`/mesas/mis-mesas`) o **Mis campañas** (`/campanas/mis-campanas`).
-3. Enviarlos a revisión.
+3. Enviarlos a revisión, solo si están en borrador o rechazados.
 
 Según el modo de publicación:
 
@@ -130,6 +131,8 @@ Según el modo de publicación:
 - `role_based`: se publica directamente para los roles o permisos de autopublicación (`frontend_creation.publication.auto_publish_roles` y `auto_publish_permissions`, sin campo en el panel y vacíos por defecto); el resto queda pendiente.
 
 Las mesas y campañas enviadas a revisión se avisan por correo a los usuarios con rol `admin` o `editor` y aparecen en el widget **Pendientes de moderación** del dashboard.
+
+Aprobar o rechazar requiere el permiso de edición (`gametables.update` para mesas, `campaigns.update` para campañas); verlas o ser su autor no basta.
 
 **Mesas**: en **Mesas de rol** → **Mesas** se aprueban (la mesa se publica) o se rechazan con motivo, una a una o en bloque; el autor recibe un correo en ambos casos.
 
