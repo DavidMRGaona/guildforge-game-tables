@@ -19,6 +19,12 @@ return [
         'enabled' => true,
     ],
 
+    'registration' => [
+        // Full tables offer players a waiting list, promoted automatically
+        // while registrations are open (off: a full table refuses players)
+        'waiting_list_enabled' => false,
+    ],
+
     'defaults' => [
         'members_early_access_days' => 0,
         'duration_minutes' => 240,

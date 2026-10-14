@@ -221,12 +221,15 @@ final class RegistrationEligibilityTest extends ModuleTestCase
         $this->assertRefused($table, 'table_full');
     }
 
-    public function test_a_table_without_free_seats_refuses_spectators_too(): void
+    // Spectator seats do not depend on player seats
+    public function test_a_table_without_free_player_seats_still_accepts_spectators(): void
     {
         $table = $this->table(['max_players' => 2, 'max_spectators' => 3]);
         $this->confirmed($table, 'player', 2);
 
-        $this->assertRefused($table, 'table_full', 'spectator');
+        $this->register($table, 'spectator')->assertRedirect();
+
+        $this->assertSame(3, $this->registrations($table));
     }
 
     public function test_a_table_without_spectator_seats_refuses_spectators(): void

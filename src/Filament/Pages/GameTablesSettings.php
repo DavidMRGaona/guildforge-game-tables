@@ -91,6 +91,13 @@ final class GameTablesSettings extends Page implements HasForms
                 ])
                 ->columns(2),
 
+            Section::make(__('game-tables::messages.settings.sections.registration'))
+                ->schema([
+                    Toggle::make('registration.waiting_list_enabled')
+                        ->label(__('game-tables::messages.settings.fields.waiting_list_enabled'))
+                        ->helperText(__('game-tables::messages.settings.fields.waiting_list_enabled_help')),
+                ]),
+
             Section::make(__('game-tables::messages.settings.sections.defaults'))
                 ->schema([
                     TextInput::make('defaults.duration_minutes')

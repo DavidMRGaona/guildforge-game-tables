@@ -40,6 +40,7 @@ final class GameTablesSettingsWiringTest extends ModuleTestCase
             ->assertOk()
             ->assertFormSet([
                 'membership_integration.enabled' => true,
+                'registration.waiting_list_enabled' => false,
                 'defaults.duration_minutes' => 240,
                 'defaults.min_players' => 3,
                 'defaults.max_players' => 5,
@@ -62,6 +63,17 @@ final class GameTablesSettingsWiringTest extends ModuleTestCase
                 'defaults.min_players' => 3,
                 'frontend_creation.allowed_content' => 'both',
             ]);
+    }
+
+    public function test_the_settings_page_turns_the_waiting_list_on(): void
+    {
+        Livewire::test(GameTablesSettings::class)
+            ->assertFormFieldExists('registration.waiting_list_enabled')
+            ->fillForm(['registration.waiting_list_enabled' => true])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertTrue((new \Modules\GameTables\Infrastructure\Services\GameTableSettingsReader())->isWaitingListEnabled());
     }
 
     // Panel creation is governed by the gametables.create permission and web creation by its access level

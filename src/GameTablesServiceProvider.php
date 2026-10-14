@@ -50,6 +50,7 @@ use Modules\GameTables\Application\Services\MembershipCheckerInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
+use Modules\GameTables\Application\Services\RegistrationLockInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Modules\GameTables\Console\Commands\GenerateSlugsCommand;
 use Modules\GameTables\Domain\Events\CampaignSubmittedForReview;
@@ -98,6 +99,7 @@ use Modules\GameTables\Infrastructure\Services\AssociationRoleMembershipChecker;
 use Modules\GameTables\Infrastructure\Services\ProfileCreatedCampaignsDataProvider;
 use Modules\GameTables\Infrastructure\Services\ProfileCreatedTablesDataProvider;
 use Modules\GameTables\Infrastructure\Services\ProfileGameTablesDataProvider;
+use Modules\GameTables\Infrastructure\Services\DatabaseRegistrationLock;
 use Modules\GameTables\Infrastructure\Services\RegistrationService;
 use Modules\GameTables\Listeners\NotifyAdminsOnCampaignModerationSubmission;
 use Modules\GameTables\Listeners\NotifyAdminsOnModerationSubmission;
@@ -138,6 +140,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         $this->app->bind(CreationEligibilityServiceInterface::class, CreationEligibilityService::class);
         $this->app->bind(FrontendCreationServiceInterface::class, FrontendCreationService::class);
         $this->app->bind(RegistrationServiceInterface::class, RegistrationService::class);
+        $this->app->bind(RegistrationLockInterface::class, DatabaseRegistrationLock::class);
         $this->app->bind(EventWithTablesQueryInterface::class, EventWithTablesQuery::class);
         $this->app->bind(GameMasterServiceInterface::class, GameMasterService::class);
         $this->app->bind(EventGameTableConfigServiceInterface::class, EventGameTableConfigService::class);
@@ -784,7 +787,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                 module: $this->moduleName(),
                 order: 0,
                 props: [],
-                dataKeys: ['table', 'eligibility', 'userRegistration'],
+                dataKeys: ['table', 'eligibility', 'guestEligibility', 'userRegistration'],
             ),
             new SlotRegistrationDTO(
                 slot: 'event-detail-actions',

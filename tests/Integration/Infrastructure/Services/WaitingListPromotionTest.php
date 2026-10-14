@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace Modules\GameTables\Tests\Integration\Infrastructure\Services;
 
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
+use Modules\GameTables\Domain\Exceptions\CannotCancelException;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
+use Modules\GameTables\Notifications\WaitingListPromotionGmNotification;
+use Modules\GameTables\Notifications\WaitingListPromotionNotification;
 use Tests\Support\Modules\ModuleTestCase;
 
 /**
@@ -100,6 +104,145 @@ final class WaitingListPromotionTest extends ModuleTestCase
         $this->assertNotSame('waiting_list', $guest->refresh()->status->value);
     }
 
+    public function test_two_cancellations_promote_two_waiting_players_in_order(): void
+    {
+        $firstLeaving = $this->participant('player', 'confirmed');
+        $secondLeaving = $this->participant('player', 'confirmed');
+        $first = $this->participant('player', 'waiting_list', 1);
+        $second = $this->participant('player', 'waiting_list', 2);
+        $third = $this->participant('player', 'waiting_list', 3);
+
+        app(RegistrationServiceInterface::class)->cancel($firstLeaving->id);
+        app(RegistrationServiceInterface::class)->cancel($secondLeaving->id);
+
+        $this->assertSame('confirmed', $first->refresh()->status->value);
+        $this->assertSame('confirmed', $second->refresh()->status->value);
+        $this->assertSame('waiting_list', $third->refresh()->status->value);
+        $this->assertSame(2, $this->confirmedPlayers());
+    }
+
+    public function test_cancelling_the_same_registration_twice_promotes_once(): void
+    {
+        $leaving = $this->participant('player', 'confirmed');
+        $this->participant('player', 'confirmed');
+        $first = $this->participant('player', 'waiting_list', 1);
+        $second = $this->participant('player', 'waiting_list', 2);
+
+        app(RegistrationServiceInterface::class)->cancel($leaving->id);
+
+        try {
+            app(RegistrationServiceInterface::class)->cancel($leaving->id);
+            $this->fail('A cancelled registration cannot be cancelled again');
+        } catch (CannotCancelException) {
+            // Expected
+        }
+
+        $this->assertSame('confirmed', $first->refresh()->status->value);
+        $this->assertSame('waiting_list', $second->refresh()->status->value);
+        $this->assertSame(2, $this->confirmedPlayers());
+    }
+
+    // A table already over its seats (players added from the panel) promotes nobody until a seat is free
+    public function test_a_promotion_never_exceeds_the_player_seats(): void
+    {
+        $leaving = $this->participant('player', 'confirmed');
+        $this->participant('player', 'confirmed');
+        $this->participant('player', 'confirmed');
+        $waiting = $this->participant('player', 'waiting_list', 1);
+
+        app(RegistrationServiceInterface::class)->cancel($leaving->id);
+
+        $this->assertSame('waiting_list', $waiting->refresh()->status->value);
+        $this->assertSame(2, $this->confirmedPlayers());
+    }
+
+    public function test_on_a_table_with_manual_confirmation_the_promoted_player_is_pending(): void
+    {
+        $this->table->update(['auto_confirm' => false, 'notification_email' => 'mesa@example.test']);
+        $leaving = $this->participant('player', 'confirmed');
+        $this->participant('player', 'confirmed');
+        $first = $this->participant('player', 'waiting_list', 1, email: 'espera@example.test');
+
+        app(RegistrationServiceInterface::class)->cancel($leaving->id);
+
+        $first->refresh();
+        $this->assertSame('pending', $first->status->value);
+        $this->assertNull($first->waiting_list_position);
+        $this->assertNull($first->confirmed_at);
+        $this->assertSame(1, $this->confirmedPlayers());
+
+        Notification::assertSentOnDemand(
+            WaitingListPromotionNotification::class,
+            fn (WaitingListPromotionNotification $notification): bool => $this->mailSays($notification, __('game-tables::emails.waiting_list_promotion.outro_pending')),
+        );
+        Notification::assertSentOnDemand(
+            WaitingListPromotionGmNotification::class,
+            fn (WaitingListPromotionGmNotification $notification): bool => $this->mailSays($notification, __('game-tables::emails.waiting_list_promotion_gm.pending')),
+        );
+    }
+
+    public function test_on_a_table_with_automatic_confirmation_the_promoted_player_is_told_the_seat_is_confirmed(): void
+    {
+        $this->table->update(['notification_email' => 'mesa@example.test']);
+        $leaving = $this->participant('player', 'confirmed');
+        $this->participant('player', 'confirmed');
+        $this->participant('player', 'waiting_list', 1, email: 'espera@example.test');
+
+        app(RegistrationServiceInterface::class)->cancel($leaving->id);
+
+        Notification::assertSentOnDemand(
+            WaitingListPromotionNotification::class,
+            fn (WaitingListPromotionNotification $notification): bool => $this->mailSays($notification, __('game-tables::emails.waiting_list_promotion.outro')),
+        );
+        Notification::assertSentOnDemand(
+            WaitingListPromotionGmNotification::class,
+            fn (WaitingListPromotionGmNotification $notification): bool => ! $this->mailSays($notification, __('game-tables::emails.waiting_list_promotion_gm.pending')),
+        );
+    }
+
+    public function test_after_the_registrations_close_a_cancellation_promotes_nobody(): void
+    {
+        $this->table->update(['registration_closes_at' => now()->subHour()]);
+        $leaving = $this->participant('player', 'confirmed');
+        $this->participant('player', 'confirmed');
+        $waiting = $this->participant('player', 'waiting_list', 1);
+
+        app(RegistrationServiceInterface::class)->cancel($leaving->id);
+
+        $this->assertSame('cancelled', $leaving->refresh()->status->value);
+        $this->assertSame('waiting_list', $waiting->refresh()->status->value);
+        $this->assertSame(1, $waiting->waiting_list_position);
+    }
+
+    public function test_a_table_that_no_longer_admits_registrations_promotes_nobody(): void
+    {
+        $this->table->update(['status' => 'in_progress']);
+        $leaving = $this->participant('player', 'confirmed');
+        $this->participant('player', 'confirmed');
+        $waiting = $this->participant('player', 'waiting_list', 1);
+
+        app(RegistrationServiceInterface::class)->cancel($leaving->id);
+
+        $this->assertSame('waiting_list', $waiting->refresh()->status->value);
+    }
+
+    public function test_the_director_can_still_promote_by_hand_after_the_registrations_close(): void
+    {
+        $this->table->update(['registration_closes_at' => now()->subHour()]);
+        $waiting = $this->participant('player', 'waiting_list', 1);
+
+        app(RegistrationServiceInterface::class)->promoteParticipant($waiting->id);
+
+        $this->assertSame('confirmed', $waiting->refresh()->status->value);
+    }
+
+    private function mailSays(WaitingListPromotionNotification|WaitingListPromotionGmNotification $notification, string $line): bool
+    {
+        $mail = $notification->toMail(new AnonymousNotifiable());
+
+        return in_array($line, [...$mail->introLines, ...$mail->outroLines], true);
+    }
+
     private function confirmedPlayers(): int
     {
         return ParticipantModel::query()
@@ -109,12 +252,12 @@ final class WaitingListPromotionTest extends ModuleTestCase
             ->count();
     }
 
-    private function participant(string $role, string $status, ?int $position = null, ?string $guestToken = null): ParticipantModel
+    private function participant(string $role, string $status, ?int $position = null, ?string $guestToken = null, ?string $email = null): ParticipantModel
     {
         return ParticipantModel::create([
             'id' => (string) Str::uuid(),
             'game_table_id' => $this->table->id,
-            'user_id' => $guestToken === null ? UserModel::factory()->create()->id : null,
+            'user_id' => $guestToken === null ? UserModel::factory()->create($email === null ? [] : ['email' => $email])->id : null,
             'first_name' => $guestToken === null ? null : 'Invitada',
             'email' => $guestToken === null ? null : 'invitada@example.test',
             'cancellation_token' => $guestToken,

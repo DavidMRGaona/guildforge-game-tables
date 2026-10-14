@@ -19,6 +19,8 @@ final class WaitingListPromotionGmNotification extends Notification implements S
         private readonly string $tableTitle,
         private readonly ?string $tableDate,
         private readonly ?string $tableLocation,
+        // False on tables with manual confirmation: the game master has to confirm it
+        private readonly bool $confirmed = true,
     ) {}
 
     /**
@@ -38,6 +40,10 @@ final class WaitingListPromotionGmNotification extends Notification implements S
                 'name' => $this->participantName,
                 'tableTitle' => $this->tableTitle,
             ]));
+
+        if (! $this->confirmed) {
+            $message->line(__('game-tables::emails.waiting_list_promotion_gm.pending'));
+        }
 
         $message->line('**' . __('game-tables::emails.waiting_list_promotion_gm.table_title') . ':** ' . $this->tableTitle);
 

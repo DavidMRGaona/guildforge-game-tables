@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories;
 
 use DateTimeImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Modules\GameTables\Domain\Entities\Participant;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
@@ -56,6 +57,7 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
         $model = ParticipantModel::query()
             ->where('game_table_id', $gameTableId->value)
             ->where('user_id', $userId)
+            ->tap($this->activeFirst(...))
             ->first();
 
         if ($model === null) {
@@ -207,6 +209,20 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
         return $this->toEntity($model);
     }
 
+    /**
+     * Older data may hold a cancelled row next to an active one for the same person:
+     * the active row is the registration.
+     *
+     * @param  Builder<ParticipantModel>  $query
+     */
+    private function activeFirst(Builder $query): void
+    {
+        $query->orderByRaw(
+            'case when status in (?, ?, ?) then 0 else 1 end',
+            [ParticipantStatus::Pending->value, ParticipantStatus::Confirmed->value, ParticipantStatus::WaitingList->value],
+        )->orderByDesc('created_at');
+    }
+
     public function toEntity(ParticipantModel $model): Participant
     {
         return new Participant(
@@ -263,6 +279,7 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
             ->where('game_table_id', $gameTableId->value)
             ->where('email', $email)
             ->whereNull('user_id')
+            ->tap($this->activeFirst(...))
             ->first();
 
         if ($model === null) {

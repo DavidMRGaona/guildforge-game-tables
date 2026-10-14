@@ -87,6 +87,20 @@ final class GameTableSettingsReaderTest extends TestCase
         $this->assertTrue($this->reader->isMembershipIntegrationEnabled());
     }
 
+    // Off by default: the module behaves as before until a site turns the list on
+    public function test_the_waiting_list_is_off_by_default(): void
+    {
+        $this->assertFalse($this->shippedDefaults()['registration']['waiting_list_enabled']);
+        $this->assertFalse($this->reader->isWaitingListEnabled());
+    }
+
+    public function test_the_waiting_list_follows_the_panel_value(): void
+    {
+        config()->set('modules.settings.game-tables', ['registration' => ['waiting_list_enabled' => true]]);
+
+        $this->assertTrue($this->reader->isWaitingListEnabled());
+    }
+
     public function test_the_creators_key_is_no_longer_a_setting(): void
     {
         $this->assertArrayNotHasKey('creators', $this->reader->defaults());

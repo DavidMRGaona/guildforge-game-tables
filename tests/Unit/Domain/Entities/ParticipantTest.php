@@ -122,6 +122,18 @@ final class ParticipantTest extends TestCase
         $this->assertNotNull($participant->confirmedAt);
     }
 
+    public function test_a_promotion_on_a_table_with_manual_confirmation_leaves_the_participant_pending(): void
+    {
+        $participant = $this->createParticipant(status: ParticipantStatus::WaitingList);
+        $participant->waitingListPosition = 1;
+
+        $participant->promoteFromWaitingList(confirm: false);
+
+        $this->assertEquals(ParticipantStatus::Pending, $participant->status);
+        $this->assertNull($participant->waitingListPosition);
+        $this->assertNull($participant->confirmedAt);
+    }
+
     public function test_it_can_mark_as_no_show(): void
     {
         $participant = $this->createParticipant(status: ParticipantStatus::Confirmed);

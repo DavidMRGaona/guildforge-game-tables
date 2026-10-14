@@ -209,6 +209,20 @@ final class GameTable
         return true;
     }
 
+    /**
+     * The waiting list closes with the registrations: when the table stops admitting them
+     * (status, publication) or its closing date has passed. The opening date does not
+     * matter: early registrations may already wait for a seat.
+     */
+    public function isWaitingListOpen(DateTimeImmutable $now): bool
+    {
+        if (! $this->canRegister()) {
+            return false;
+        }
+
+        return $this->registrationClosesAt === null || $now <= $this->registrationClosesAt;
+    }
+
     public function canUserRegister(bool $isMember, DateTimeImmutable $now, bool $membersEarlyAccess = true): bool
     {
         // Check publication and registrable status

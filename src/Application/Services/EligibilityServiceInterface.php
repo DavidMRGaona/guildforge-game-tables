@@ -29,9 +29,10 @@ interface EligibilityServiceInterface
     ): void;
 
     /**
-     * Check if a user can register (non-throwing version).
+     * Check if a user can register (non-throwing version). An eligible player goes to the
+     * waiting list (waitingList) when the player seats are taken and the waiting list is on.
      *
-     * @return array{eligible: bool, reason: string|null}
+     * @return array{eligible: bool, reason: string|null, waitingList: bool}
      */
     public function canRegister(
         GameTable $gameTable,
@@ -53,18 +54,27 @@ interface EligibilityServiceInterface
     public function hasSpectatorCapacity(string $gameTableId): bool;
 
     /**
-     * Check if a user can register by table ID (for API use).
+     * What the table page offers a user: the player registration (or the waiting list) and the
+     * spectator registration, with the same rules as ensureUserCanRegister().
      *
-     * @return array{eligible: bool, reason: string|null, message: string|null, canRegisterAt: string|null}
+     * @return array{eligible: bool, reason: string|null, message: string|null, canRegisterAt: string|null, waitingList: bool, spectator: array{eligible: bool, reason: string|null, message: string|null}}
      */
     public function canRegisterById(string $gameTableId, string $userId): array;
 
     /**
-     * Check if a guest can register for a game table.
+     * What the table page offers a visitor without an account, with the same rules as
+     * ensureGuestCanRegister() except the email, which is not known until the form is sent.
      *
-     * @return array{eligible: bool, reason: string|null, message: string|null}
+     * @return array{eligible: bool, reason: string|null, message: string|null, waitingList: bool, spectator: array{eligible: bool, reason: string|null, message: string|null}}
      */
-    public function canGuestRegister(string $gameTableId, string $email, ParticipantRole $role = ParticipantRole::Player): array;
+    public function guestEligibility(string $gameTableId): array;
+
+    /**
+     * Check if a guest can register for a game table (a null email skips the duplicate check).
+     *
+     * @return array{eligible: bool, reason: string|null, message: string|null, waitingList: bool}
+     */
+    public function canGuestRegister(string $gameTableId, ?string $email, ParticipantRole $role = ParticipantRole::Player): array;
 
     /**
      * Refuse a user registration the table page would not offer.

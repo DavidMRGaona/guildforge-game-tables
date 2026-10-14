@@ -431,6 +431,7 @@ return [
         'title' => 'Configuración del módulo',
         'sections' => [
             'membership' => 'Integración con socios',
+            'registration' => 'Inscripciones',
             'defaults' => 'Valores por defecto',
             'notifications' => 'Notificaciones',
             'limits' => 'Límites',
@@ -440,6 +441,8 @@ return [
         'fields' => [
             'membership_enabled' => 'Integración con socios habilitada',
             'membership_enabled_help' => 'Los socios (quienes tienen el rol de socio elegido en la configuración del sitio) pueden inscribirse antes de la apertura según los días de acceso anticipado de cada mesa',
+            'waiting_list_enabled' => 'Lista de espera',
+            'waiting_list_enabled_help' => 'Con las plazas de jugador completas, los jugadores pueden apuntarse a la lista de espera. Cada plaza liberada pasa automáticamente al primero de la lista mientras las inscripciones sigan abiertas; en las mesas con confirmación manual queda pendiente de que el director la confirme. Los espectadores no tienen lista de espera',
             'early_access_days' => 'Días de acceso anticipado',
             'early_access_days_help' => 'Valor inicial de los días de ventaja de los socios en cada mesa nueva',
             'default_duration' => 'Duración por defecto (minutos)',
@@ -630,6 +633,8 @@ return [
     'success' => [
         'registered' => 'Te has inscrito correctamente',
         'guest_registered' => 'Te has inscrito correctamente. Recibirás un email de confirmación.',
+        'waiting_list' => 'Te has apuntado a la lista de espera (posición :position). Si se libera una plaza, pasarás a la mesa automáticamente y te avisaremos por correo.',
+        'guest_waiting_list' => 'Te has apuntado a la lista de espera (posición :position). Recibirás un email de confirmación y otro si se libera una plaza.',
         'cancelled' => 'Inscripción cancelada correctamente',
     ],
 
