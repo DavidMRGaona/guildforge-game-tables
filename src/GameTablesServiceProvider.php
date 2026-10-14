@@ -6,6 +6,9 @@ namespace Modules\GameTables;
 
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Filament\Resources\GameSystemResource;
+use Modules\GameTables\Filament\Resources\PublisherResource;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\PublisherModel;
+use Modules\GameTables\Policies\PublisherPolicy;
 use Modules\GameTables\Filament\Resources\ContentWarningResource;
 use Modules\GameTables\Filament\Resources\CampaignResource;
 use Modules\GameTables\Filament\Resources\GameTableResource;
@@ -549,6 +552,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     {
         return [
             GameSystemResource::class,
+            PublisherResource::class,
             ContentWarningResource::class,
             CampaignResource::class,
             GameTableResource::class,
@@ -564,6 +568,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     {
         return [
             GameSystemModel::class => GameSystemPolicy::class,
+            PublisherModel::class => PublisherPolicy::class,
             ContentWarningModel::class => ContentWarningPolicy::class,
             CampaignModel::class => CampaignPolicy::class,
             GameTableModel::class => GameTablePolicy::class,
@@ -741,11 +746,20 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                 module: 'gametables',
             ),
             new NavigationItemDTO(
+                label: __('game-tables::messages.navigation.publishers'),
+                route: 'filament.admin.resources.publishers.index',
+                icon: 'heroicon-o-building-office',
+                group: __('game-tables::messages.navigation.group'),
+                sort: 4,
+                permissions: ['gametables:gamesystems.view_any'],
+                module: 'gametables',
+            ),
+            new NavigationItemDTO(
                 label: __('game-tables::messages.navigation.content_warnings'),
                 route: 'filament.admin.resources.content-warnings.index',
                 icon: 'heroicon-o-exclamation-triangle',
                 group: __('game-tables::messages.navigation.group'),
-                sort: 4,
+                sort: 5,
                 permissions: ['gametables:contentwarnings.view_any'],
                 module: 'gametables',
             ),
