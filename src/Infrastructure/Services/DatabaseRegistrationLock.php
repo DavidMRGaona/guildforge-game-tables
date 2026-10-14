@@ -11,8 +11,10 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 
 /**
- * A row lock (SELECT … FOR UPDATE) on the table, held until the transaction ends.
- * SQLite has no row locks, but it runs one write transaction at a time.
+ * A row lock (SELECT … FOR UPDATE) on the table, held until the transaction ends (PostgreSQL).
+ * SQLite ignores FOR UPDATE: it runs one write transaction at a time, but a transaction only takes
+ * the write lock at its first write, so the reads before it are not serialised. That is enough for
+ * the test suite, not a guarantee; the guarantee is PostgreSQL's row lock.
  */
 final readonly class DatabaseRegistrationLock implements RegistrationLockInterface
 {

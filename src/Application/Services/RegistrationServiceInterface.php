@@ -16,6 +16,9 @@ interface RegistrationServiceInterface
 
     public function cancelByUser(string $gameTableId, string $userId): ParticipantResponseDTO;
 
+    /**
+     * @throws \Modules\GameTables\Domain\Exceptions\TableFullException with the waiting list on, when no player seat is free
+     */
     public function confirm(string $participantId): ParticipantResponseDTO;
 
     public function reject(string $participantId): ParticipantResponseDTO;
@@ -23,7 +26,7 @@ interface RegistrationServiceInterface
     public function promoteFromWaitingList(string $gameTableId): ?ParticipantResponseDTO;
 
     /**
-     * Promote a specific participant from waiting list.
+     * Promote a specific participant from waiting list (confirmed; unchanged if no longer waiting).
      * For admin use when promoting a specific person instead of the first in queue.
      */
     public function promoteParticipant(string $participantId): ParticipantResponseDTO;

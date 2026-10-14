@@ -165,6 +165,15 @@ final class GameTable
         return $confirmedPlayers < $this->maxPlayers;
     }
 
+    /**
+     * With the waiting list on, a table with manual confirmation counts pending players as taken
+     * seats: newcomers queue behind the list instead of piling up as pending registrations.
+     */
+    public function pendingPlayersHoldSeats(bool $waitingListEnabled): bool
+    {
+        return $waitingListEnabled && ! $this->autoConfirm;
+    }
+
     public function availablePlayerSlots(int $confirmedPlayers): int
     {
         return max(0, $this->maxPlayers - $confirmedPlayers);

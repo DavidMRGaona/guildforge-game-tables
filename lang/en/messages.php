@@ -383,9 +383,9 @@ return [
         ],
         'fields' => [
             'membership_enabled' => 'Membership integration enabled',
-            'membership_enabled_help' => 'Members (users with the member role chosen in the site settings) can register before opening, by the early access days of each table',
+            'membership_enabled_help' => 'Members (users with the association member role chosen in the site settings) can register before opening, by the early access days of each table',
             'waiting_list_enabled' => 'Waiting list',
-            'waiting_list_enabled_help' => 'When the player seats are taken, players can join the waiting list. Each freed seat goes automatically to the first in the list while registrations are open; on tables with manual confirmation it waits for the game master to confirm it. Spectators have no waiting list',
+            'waiting_list_enabled_help' => 'When the player seats are taken, players can join the waiting list. Each freed seat goes automatically to the first in the list while registrations are open; once they close, automatic promotion stops and the game master can promote by hand. On tables with manual confirmation pending players hold seats and the promoted player waits for the game master to confirm them. Spectators have no waiting list',
             'early_access_days' => 'Early access days',
             'early_access_days_help' => 'Initial member early access days of each new table',
             'default_duration' => 'Default duration (minutes)',
@@ -544,8 +544,10 @@ return [
         'registered' => 'You have successfully registered',
         'cancelled' => 'Registration cancelled successfully',
         'guest_registered' => 'You have been registered successfully. You will receive a confirmation email.',
-        'waiting_list' => 'You have joined the waiting list (position :position). If a seat is freed you will take it automatically and we will let you know by email.',
-        'guest_waiting_list' => 'You have joined the waiting list (position :position). You will receive a confirmation email and another one if a seat is freed.',
+        'waiting_list' => 'You have joined the waiting list (position :position). If a seat is freed before registrations close, you will take it automatically and we will let you know by email.',
+        'waiting_list_manual' => 'You have joined the waiting list (position :position). If a seat is freed before registrations close, you will take it pending confirmation by the game master and we will let you know by email.',
+        'guest_waiting_list' => 'You have joined the waiting list (position :position). You will receive a confirmation email and another one if a seat is freed before registrations close.',
+        'guest_spectator_registered' => 'You have registered as a spectator. You will receive a confirmation email.',
     ],
 
     /*

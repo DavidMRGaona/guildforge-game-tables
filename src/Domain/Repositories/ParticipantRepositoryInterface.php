@@ -61,6 +61,8 @@ interface ParticipantRepositoryInterface
 
     public function countConfirmedSpectators(GameTableId $gameTableId): int;
 
+    public function countPendingPlayers(GameTableId $gameTableId): int;
+
     public function getNextWaitingListPosition(GameTableId $gameTableId): int;
 
     /**

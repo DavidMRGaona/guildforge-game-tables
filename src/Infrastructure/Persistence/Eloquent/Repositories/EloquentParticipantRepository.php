@@ -183,6 +183,15 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
             ->count();
     }
 
+    public function countPendingPlayers(GameTableId $gameTableId): int
+    {
+        return ParticipantModel::query()
+            ->where('game_table_id', $gameTableId->value)
+            ->where('status', ParticipantStatus::Pending->value)
+            ->where('role', ParticipantRole::Player->value)
+            ->count();
+    }
+
     public function getNextWaitingListPosition(GameTableId $gameTableId): int
     {
         $maxPosition = ParticipantModel::query()
@@ -277,7 +286,8 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
     {
         $model = ParticipantModel::query()
             ->where('game_table_id', $gameTableId->value)
-            ->where('email', $email)
+            // Guest emails are stored in lowercase; older rows may keep capitals
+            ->whereRaw('lower(email) = ?', [mb_strtolower(trim($email))])
             ->whereNull('user_id')
             ->tap($this->activeFirst(...))
             ->first();

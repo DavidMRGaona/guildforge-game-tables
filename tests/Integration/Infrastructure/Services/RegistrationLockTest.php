@@ -120,6 +120,49 @@ final class RegistrationLockTest extends ModuleTestCase
         ], $lock->calls);
     }
 
+    public function test_admin_additions_and_promotions_go_through_the_table_lock(): void
+    {
+        $lock = $this->recordingLock();
+        $service = app(RegistrationServiceInterface::class);
+
+        $byAdmin = $service->registerByAdmin(new RegisterParticipantDTO(
+            gameTableId: $this->table->id,
+            userId: UserModel::factory()->create()->id,
+            role: ParticipantRole::Player,
+        ));
+        $service->registerGuestByAdmin(new RegisterParticipantDTO(
+            gameTableId: $this->table->id,
+            userId: null,
+            role: ParticipantRole::Player,
+            firstName: 'Invitada',
+            email: 'invitada@example.test',
+        ));
+        $service->promoteFromWaitingList($this->table->id);
+        $service->promoteParticipant($byAdmin->id);
+        $service->confirm($byAdmin->id);
+
+        $this->assertSame([
+            'table:'.$this->table->id,
+            'table:'.$this->table->id,
+            'table:'.$this->table->id,
+            'participant:'.$byAdmin->id,
+            'participant:'.$byAdmin->id,
+        ], $lock->calls);
+    }
+
+    public function test_an_admin_guest_email_is_stored_in_lowercase(): void
+    {
+        $guest = app(RegistrationServiceInterface::class)->registerGuestByAdmin(new RegisterParticipantDTO(
+            gameTableId: $this->table->id,
+            userId: null,
+            role: ParticipantRole::Player,
+            firstName: 'Invitada',
+            email: 'Invitada@Example.TEST',
+        ));
+
+        $this->assertSame('invitada@example.test', ParticipantModel::query()->findOrFail($guest->id)->email);
+    }
+
     /**
      * @return RegistrationLockInterface&object{calls: list<string>}
      */

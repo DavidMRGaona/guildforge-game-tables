@@ -103,9 +103,13 @@ final readonly class EligibilityService implements EligibilityServiceInterface
             return false;
         }
 
-        $confirmedPlayers = $this->participantRepository->countConfirmedPlayers($gameTable->id);
+        $takenSeats = $this->participantRepository->countConfirmedPlayers($gameTable->id);
 
-        if ($gameTable->hasCapacity($confirmedPlayers)) {
+        if ($gameTable->pendingPlayersHoldSeats($this->settings->isWaitingListEnabled())) {
+            $takenSeats += $this->participantRepository->countPendingPlayers($gameTable->id);
+        }
+
+        if ($gameTable->hasCapacity($takenSeats)) {
             return false;
         }
 

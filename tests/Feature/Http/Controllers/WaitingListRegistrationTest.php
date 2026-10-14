@@ -253,6 +253,105 @@ final class WaitingListRegistrationTest extends ModuleTestCase
         $this->assertSame(1, ParticipantModel::query()->where('game_table_id', $table->id)->count());
     }
 
+    // With the list on, pending players of a manual table hold seats: page and server agree
+    public function test_with_the_list_on_a_manual_table_full_of_pending_players_offers_the_waiting_list(): void
+    {
+        $this->enableWaitingList();
+        $table = $this->table(['max_players' => 2, 'auto_confirm' => false]);
+        $this->confirmed($table, 'player', 1);
+        $this->pending($table, 1);
+
+        $this->actingAs($this->user)->get(route('gametables.show', $table->slug))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('table.spotsAvailable', 0)
+                ->where('eligibility.eligible', true)
+                ->where('eligibility.waitingList', true));
+
+        $this->register($this->user, $table)->assertRedirect();
+
+        $this->assertSame('waiting_list', $this->rowOf($table, $this->user->id)->status->value);
+        $this->assertSame(1, $this->rowOf($table, $this->user->id)->waiting_list_position);
+    }
+
+    public function test_with_the_list_off_pending_players_of_a_manual_table_do_not_hold_seats(): void
+    {
+        $table = $this->table(['max_players' => 2, 'auto_confirm' => false]);
+        $this->confirmed($table, 'player', 1);
+        $this->pending($table, 1);
+
+        $this->register($this->user, $table)->assertRedirect();
+
+        $this->assertSame('pending', $this->rowOf($table, $this->user->id)->status->value);
+    }
+
+    public function test_a_waiting_player_learns_the_promotion_waits_for_the_director_on_a_manual_table(): void
+    {
+        $this->enableWaitingList();
+        $table = $this->fullTable(['auto_confirm' => false]);
+
+        $this->actingAs($this->user)->post(route('gametables.register', $table->slug), ['role' => 'player'])
+            ->assertSessionHas('success', __('game-tables::messages.success.waiting_list_manual', ['position' => 1]));
+    }
+
+    public function test_a_waiting_player_learns_the_promotion_is_automatic(): void
+    {
+        $this->enableWaitingList();
+        $table = $this->fullTable();
+
+        $this->actingAs($this->user)->post(route('gametables.register', $table->slug), ['role' => 'player'])
+            ->assertSessionHas('success', __('game-tables::messages.success.waiting_list', ['position' => 1]));
+    }
+
+    public function test_a_guest_email_is_matched_whatever_its_case(): void
+    {
+        $this->enableWaitingList();
+        $table = $this->fullTable();
+
+        $this->registerGuest($table, 'Invitada@Example.TEST')->assertRedirect();
+        $this->registerGuest($table, 'invitada@example.test')
+            ->assertStatus(422)
+            ->assertJsonPath('errors.registration.0', __('game-tables::messages.errors.guest_already_registered'));
+
+        $this->assertSame('invitada@example.test', $this->guestRowOf($table, 'invitada@example.test')->email);
+        $this->assertSame(1, ParticipantModel::query()->where('game_table_id', $table->id)->whereNull('user_id')->count());
+    }
+
+    public function test_an_older_guest_row_with_capitals_is_still_found(): void
+    {
+        $table = $this->table();
+        ParticipantModel::create([
+            'id' => (string) Str::uuid(),
+            'game_table_id' => $table->id,
+            'first_name' => 'Invitada',
+            'email' => 'Antigua@Example.test',
+            'role' => 'player',
+            'status' => 'confirmed',
+            'confirmed_at' => now(),
+        ]);
+
+        $this->registerGuest($table, 'antigua@example.test')
+            ->assertStatus(422)
+            ->assertJsonPath('errors.registration.0', __('game-tables::messages.errors.guest_already_registered'));
+    }
+
+    public function test_a_guest_who_can_only_be_a_spectator_is_told_so(): void
+    {
+        $table = $this->fullTable(['max_spectators' => 2]);
+
+        $this->get(route('gametables.show', $table->slug))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('guestEligibility.eligible', false)
+                ->where('guestEligibility.spectator.eligible', true));
+
+        $this->app['auth']->forgetGuards();
+        $this->post(route('gametables.register-guest', $table->slug), [
+            'first_name' => 'Invitada',
+            'email' => 'invitada@example.test',
+            'role' => 'spectator',
+            'gdpr_consent' => true,
+        ])->assertSessionHas('success', __('game-tables::messages.success.guest_spectator_registered'));
+    }
+
     /**
      * @return TestResponse<\Symfony\Component\HttpFoundation\Response>
      */
@@ -315,6 +414,19 @@ final class WaitingListRegistrationTest extends ModuleTestCase
                 'role' => $role,
                 'status' => 'confirmed',
                 'confirmed_at' => now(),
+            ]);
+        }
+    }
+
+    private function pending(GameTableModel $table, int $count): void
+    {
+        for ($i = 0; $i < $count; $i++) {
+            ParticipantModel::create([
+                'id' => (string) Str::uuid(),
+                'game_table_id' => $table->id,
+                'user_id' => UserModel::factory()->create()->id,
+                'role' => 'player',
+                'status' => 'pending',
             ]);
         }
     }

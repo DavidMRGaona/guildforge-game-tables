@@ -8,8 +8,11 @@ use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
+use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
+use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Exceptions\CannotCancelException;
+use Modules\GameTables\Domain\Exceptions\TableFullException;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
@@ -234,6 +237,112 @@ final class WaitingListPromotionTest extends ModuleTestCase
         app(RegistrationServiceInterface::class)->promoteParticipant($waiting->id);
 
         $this->assertSame('confirmed', $waiting->refresh()->status->value);
+    }
+
+    // With the waiting list on, a table with manual confirmation counts pending players as taken seats
+    public function test_on_a_manual_table_with_the_list_on_a_newcomer_waits_behind_the_list(): void
+    {
+        $this->manualTableWithTheListOn();
+        $leaving = $this->participant('player', 'confirmed');
+        $this->participant('player', 'confirmed');
+        $first = $this->participant('player', 'waiting_list', 1);
+        $second = $this->participant('player', 'waiting_list', 2);
+
+        app(RegistrationServiceInterface::class)->cancel($leaving->id);
+        $newcomer = app(RegistrationServiceInterface::class)->register(new RegisterParticipantDTO(
+            gameTableId: $this->table->id,
+            userId: UserModel::factory()->create()->id,
+            role: ParticipantRole::Player,
+        ));
+
+        $this->assertSame('pending', $first->refresh()->status->value);
+        $this->assertSame('waiting_list', $second->refresh()->status->value);
+        $this->assertSame('waiting_list', $newcomer->status->value);
+        $this->assertSame(3, $newcomer->waitingListPosition);
+    }
+
+    public function test_on_a_manual_table_with_the_list_on_a_cancelled_pending_player_frees_a_seat(): void
+    {
+        $this->manualTableWithTheListOn();
+        $this->participant('player', 'confirmed');
+        $pending = $this->participant('player', 'pending');
+        $first = $this->participant('player', 'waiting_list', 1);
+
+        app(RegistrationServiceInterface::class)->cancel($pending->id);
+
+        $this->assertSame('pending', $first->refresh()->status->value);
+    }
+
+    public function test_with_the_list_off_a_cancelled_pending_player_promotes_nobody(): void
+    {
+        $this->table->update(['auto_confirm' => false]);
+        $this->participant('player', 'confirmed');
+        $pending = $this->participant('player', 'pending');
+        $waiting = $this->participant('player', 'waiting_list', 1);
+
+        app(RegistrationServiceInterface::class)->cancel($pending->id);
+
+        $this->assertSame('waiting_list', $waiting->refresh()->status->value);
+    }
+
+    public function test_with_the_list_on_confirming_never_exceeds_the_player_seats(): void
+    {
+        $this->manualTableWithTheListOn();
+        $this->participant('player', 'confirmed');
+        $this->participant('player', 'confirmed');
+        $pending = $this->participant('player', 'pending');
+
+        try {
+            app(RegistrationServiceInterface::class)->confirm($pending->id);
+            $this->fail('A full table cannot confirm another player');
+        } catch (TableFullException) {
+            // Expected
+        }
+
+        $this->assertSame('pending', $pending->refresh()->status->value);
+        $this->assertSame(2, $this->confirmedPlayers());
+    }
+
+    public function test_with_the_list_on_confirming_a_pending_player_with_a_free_seat_works(): void
+    {
+        $this->manualTableWithTheListOn();
+        $this->participant('player', 'confirmed');
+        $pending = $this->participant('player', 'pending');
+
+        app(RegistrationServiceInterface::class)->confirm($pending->id);
+
+        $this->assertSame('confirmed', $pending->refresh()->status->value);
+    }
+
+    public function test_with_the_list_off_confirming_keeps_the_previous_behaviour(): void
+    {
+        $this->table->update(['auto_confirm' => false]);
+        $this->participant('player', 'confirmed');
+        $this->participant('player', 'confirmed');
+        $pending = $this->participant('player', 'pending');
+
+        app(RegistrationServiceInterface::class)->confirm($pending->id);
+
+        $this->assertSame('confirmed', $pending->refresh()->status->value);
+    }
+
+    public function test_promoting_by_hand_someone_no_longer_waiting_changes_nothing(): void
+    {
+        $cancelled = $this->participant('player', 'cancelled');
+        $confirmed = $this->participant('player', 'confirmed');
+
+        app(RegistrationServiceInterface::class)->promoteParticipant($cancelled->id);
+        app(RegistrationServiceInterface::class)->promoteParticipant($confirmed->id);
+
+        $this->assertSame('cancelled', $cancelled->refresh()->status->value);
+        $this->assertSame('confirmed', $confirmed->refresh()->status->value);
+        Notification::assertNothingSent();
+    }
+
+    private function manualTableWithTheListOn(): void
+    {
+        config()->set('modules.settings.game-tables.registration.waiting_list_enabled', true);
+        $this->table->update(['auto_confirm' => false]);
     }
 
     private function mailSays(WaitingListPromotionNotification|WaitingListPromotionGmNotification $notification, string $line): bool

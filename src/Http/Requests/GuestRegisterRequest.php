@@ -16,6 +16,18 @@ final class GuestRegisterRequest extends FormRequest
     }
 
     /**
+     * One guest per email and table, whatever the case it is typed in.
+     */
+    protected function prepareForValidation(): void
+    {
+        $email = $this->input('email');
+
+        if (is_string($email)) {
+            $this->merge(['email' => mb_strtolower(trim($email))]);
+        }
+    }
+
+    /**
      * @return array<string, array<int, mixed>>
      */
     public function rules(): array
