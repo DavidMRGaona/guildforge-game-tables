@@ -383,3 +383,22 @@ export interface GameTableShowProps {
     eligibility: import('./registration').EligibilityResponse | null;
     userRegistration: import('./registration').ParticipantData | null;
 }
+
+/**
+ * Default values of the public table form (panel settings: Valores por defecto).
+ */
+export interface TableFormDefaults {
+    duration_minutes: number;
+    min_players: number;
+    max_players: number;
+    max_spectators: number;
+}
+
+/**
+ * Upper bounds of the public table form (panel settings: Límites).
+ */
+export interface TableFormLimits {
+    max_players: number;
+    max_spectators: number;
+    max_duration_minutes: number;
+}

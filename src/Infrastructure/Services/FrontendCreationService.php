@@ -83,7 +83,12 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         }
 
         // 3. Convert to CreateGameTableDTO
-        $createDto = $dto->toCreateGameTableDTO($registrationClosesAt);
+        $createDto = $dto->toCreateGameTableDTO(
+            $registrationClosesAt,
+            $this->settingsReader->defaultRegistrationType(),
+            $this->settingsReader->defaultAutoConfirm(),
+            $this->settingsReader->defaultMembersEarlyAccessDays(),
+        );
 
         // 4. Create the table (GameTableService handles the creation)
         $gameTable = $this->gameTableService->create($createDto);
@@ -162,7 +167,9 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
      *     languages: array<string, string>,
      *     campaign_frequencies: array<string, string>,
      *     events: array<array{id: string, name: string}>,
-     *     campaigns: array<array{id: string, name: string}>
+     *     campaigns: array<array{id: string, name: string}>,
+     *     defaults: array{duration_minutes: int, min_players: int, max_players: int, max_spectators: int},
+     *     limits: array{max_players: int, max_spectators: int, max_duration_minutes: int}
      * }
      */
     public function getCreateFormData(): array
@@ -221,6 +228,17 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
                 static fn ($campaign): array => ['id' => $campaign->id->value, 'name' => $campaign->title],
                 $campaigns,
             ),
+            'defaults' => [
+                'duration_minutes' => $this->settingsReader->defaultDurationMinutes(),
+                'min_players' => $this->settingsReader->defaultMinPlayers(),
+                'max_players' => $this->settingsReader->defaultMaxPlayers(),
+                'max_spectators' => $this->settingsReader->defaultMaxSpectators(),
+            ],
+            'limits' => [
+                'max_players' => $this->settingsReader->maxPlayersLimit(),
+                'max_spectators' => $this->settingsReader->maxSpectatorsLimit(),
+                'max_duration_minutes' => $this->settingsReader->maxDurationMinutes(),
+            ],
         ];
     }
 
