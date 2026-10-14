@@ -12,8 +12,8 @@ Módulo de GuildForge para gestionar mesas de rol y campañas: inscripciones de 
 - **Lista de espera**: cuando no quedan plazas; al cancelar un jugador confirmado se promociona al primero de la lista.
 - **Tipos de inscripción**: abierta a todos, solo socios (con acceso anticipado opcional) o solo por invitación.
 - **Avisos de contenido** con severidad (leve, moderada, severa) y **herramientas de seguridad** (Carta X, Líneas y velos, Puerta abierta, Estrellas y deseos, Flor de apoyo, Script change, Rosas y espinas, otras).
-- **Catálogo**: sistemas de juego con su editorial.
-- **Creación desde la web**: los usuarios crean mesas y campañas y las envían a revisión; los administradores las aprueban o rechazan.
+- **Catálogo**: sistemas de juego y editoriales.
+- **Creación desde la web**: los usuarios crean mesas y campañas y las envían a revisión; administradores y editores reciben un correo y las aprueban o rechazan desde el panel.
 - **Integración con eventos**: configuración de mesas por evento, enlace a las mesas del evento y botón para crear una mesa desde su página.
 - **Calendario**: vista `/mesas/calendario` y mesas en el calendario del core.
 - **Perfil**: pestañas con las mesas en las que participa el usuario, las que ha creado y sus campañas.
@@ -51,13 +51,17 @@ En las releases los assets los compila el CI y van dentro del ZIP.
 
 ## Configuración
 
-Se configura en el panel: **Mesas de rol** → **Configuración** (solo administradores; el mismo formulario está en **Módulos** → **Configuración**). `config/game-tables.php` contiene los valores por defecto que se usan cuando la configuración del panel no tiene una clave.
+Se configura en el panel: **Mesas de rol** → **Configuración** (solo administradores; el mismo formulario está en **Módulos** → **Configuración**). Los valores iniciales son los que trae el módulo en `config/settings.php`; lo que se guarda en el panel prevalece sobre ellos clave a clave.
 
 | Sección | Qué controla |
 |---------|--------------|
+| **Integración con socios** | Si los socios pueden inscribirse antes de la apertura según los días de acceso anticipado de cada mesa (desactivada, se inscriben con la apertura general) y los días de acceso anticipado con los que empieza cada mesa nueva del panel |
+| **Valores por defecto** | Duración y número de jugadores y espectadores con los que empiezan los formularios de mesa del panel y de la web; confirmación automática y tipo de inscripción de las mesas nuevas del panel y de las creadas desde la web |
 | **Notificaciones** | Correos de inscripción y de cancelación a los directores y al email de la mesa, y correos de promoción desde la lista de espera |
-| **Creación desde web** | Activar la creación desde la web, qué se puede crear (mesas, campañas o ambas), quién puede crear (cualquier persona, usuarios registrados, roles concretos o un permiso) y el modo de publicación (`auto`, `approval`, `role_based`) |
-| Creación de mesas, Integración con socios, Valores por defecto, Límites | Se guardan, pero hoy no cambian el comportamiento (ver [Limitaciones actuales](#limitaciones-actuales)) |
+| **Límites** | Máximo de jugadores, de espectadores y de duración en los formularios de mesa del panel y de la web (también al validar el envío) |
+| **Creación desde web** | Activar la creación desde la web, qué se puede crear (mesas, campañas o ambas), quién puede crear (cualquier persona, usuarios registrados, roles concretos separados por comas o un permiso) y el modo de publicación (`auto`, `approval`, `role_based`) |
+
+Quién crea mesas en el panel lo decide el permiso `gametables.create` (ver [Permisos](#permisos)); quién las crea desde la web, **Creación desde web**.
 
 ### Configuración por evento
 
@@ -83,7 +87,7 @@ El formulario de eventos tiene la pestaña **Configuración de mesas**:
 | Completada | `completed` | Sesión terminada |
 | Cancelada | `cancelled` | Mesa cancelada: se cancelan sus inscripciones y se avisa a los participantes |
 
-La publicación es un indicador aparte (`is_published`). **Publicar** deja la mesa en `scheduled` y **Despublicar** la devuelve a `draft`. Las inscripciones se admiten mientras la mesa está publicada y en `scheduled` o `full`, dentro de sus fechas de inscripción; los socios pueden inscribirse antes si la mesa tiene días de acceso anticipado. En el panel, la cabecera de la mesa tiene las acciones **Publicar**, **Despublicar**, **Iniciar**, **Completar** y **Cancelar mesa**.
+La publicación es un indicador aparte (`is_published`). **Publicar** deja la mesa en `scheduled` y **Despublicar** la devuelve a `draft`. Las inscripciones se admiten mientras la mesa está publicada y en `scheduled` o `full`, dentro de sus fechas de inscripción; los socios pueden inscribirse antes si la mesa tiene días de acceso anticipado y **Integración con socios** está activada. En el panel, la cabecera de la mesa tiene las acciones **Publicar**, **Despublicar**, **Iniciar**, **Completar** y **Cancelar mesa**.
 
 ### Inscripción
 
@@ -119,9 +123,11 @@ Según el modo de publicación:
 - `approval`: queda pendiente de revisión.
 - `role_based`: se publica directamente para los roles o permisos de autopublicación (`frontend_creation.publication.auto_publish_roles` y `auto_publish_permissions`, sin campo en el panel y vacíos por defecto); el resto queda pendiente.
 
-**Mesas**: al enviar una mesa a revisión se avisa por correo a los usuarios con rol `admin` o `editor`, y aparece en el widget **Mesas pendientes de moderación** del dashboard. En **Mesas de rol** → **Mesas** se aprueba (la mesa se publica) o se rechaza con motivo, una a una o en bloque; el autor recibe un correo en ambos casos.
+Las mesas y campañas enviadas a revisión se avisan por correo a los usuarios con rol `admin` o `editor` y aparecen en el widget **Pendientes de moderación** del dashboard.
 
-**Campañas**: al enviarla a revisión queda pendiente, sin correo ni widget; un administrador la publica desde **Mesas de rol** → **Campañas** con el interruptor **Publicado**.
+**Mesas**: en **Mesas de rol** → **Mesas** se aprueban (la mesa se publica) o se rechazan con motivo, una a una o en bloque; el autor recibe un correo en ambos casos.
+
+**Campañas**: en **Mesas de rol** → **Campañas** se aprueban (la campaña se publica) o se rechazan con motivo, una a una; el autor ve el motivo del rechazo en **Mis campañas**, sin correo.
 
 ## Panel de administración
 
@@ -131,9 +137,10 @@ Según el modo de publicación:
 | Mesas de rol | Campañas | Campañas, sus directores y publicación |
 | Mesas de rol | Avisos de contenido | Catálogo de avisos con severidad |
 | Mesas de rol | Configuración | Configuración del módulo (solo administradores) |
-| Catálogo de juegos | Sistemas de juego | Sistemas con su editorial (las editoriales se crean desde el propio formulario) |
+| Catálogo de juegos | Editoriales | Editoriales de los sistemas de juego (también se crean desde el formulario de sistemas) |
+| Catálogo de juegos | Sistemas de juego | Sistemas con su editorial |
 
-Widget del dashboard: `PendingModerationWidget` (mesas pendientes de revisión; solo se muestra si hay alguna).
+Widget del dashboard: `PendingModerationWidget` (mesas y campañas pendientes de revisión; solo se muestra si hay alguna).
 
 ## Web pública
 
@@ -206,7 +213,7 @@ Widget del dashboard: `PendingModerationWidget` (mesas pendientes de revisión; 
 | Cancelación de la inscripción | Participante; directores y email de la mesa si **Notificaciones** lo permite |
 | Promoción desde la lista de espera | Participante y directores, si **Notificaciones** lo permite |
 | Cancelación de la mesa | Participantes |
-| Mesa enviada a revisión | Usuarios con rol `admin` o `editor` |
+| Mesa o campaña enviada a revisión | Usuarios con rol `admin` o `editor` |
 | Mesa aprobada o rechazada | Autor |
 
 ## Eventos de dominio
@@ -220,6 +227,7 @@ Widget del dashboard: `PendingModerationWidget` (mesas pendientes de revisión; 
 | `GameTableSubmittedForReview` | Una mesa creada desde la web se envía a revisión |
 | `GameTableModerationApproved` | Se aprueba una mesa en moderación |
 | `GameTableModerationRejected` | Se rechaza una mesa en moderación |
+| `CampaignSubmittedForReview` | Una campaña creada desde la web se envía a revisión |
 | `ParticipantRegistered` | Un usuario se inscribe |
 | `GuestRegistered` | Un invitado se inscribe |
 | `ParticipantConfirmed` | Se confirma una inscripción |
@@ -241,7 +249,7 @@ El módulo registra sus permisos con el prefijo `gametables:` (por ejemplo `game
 | `campaigns.view_any`, `campaigns.view` | editor | Ver campañas en el panel |
 | `campaigns.create`, `campaigns.update` | editor | Crear y editar campañas |
 | `campaigns.delete` | — | Eliminar campañas |
-| `gamesystems.view_any`, `gamesystems.manage` | — | Ver y gestionar sistemas de juego |
+| `gamesystems.view_any`, `gamesystems.manage` | — | Ver y gestionar sistemas de juego y editoriales |
 | `contentwarnings.view_any`, `contentwarnings.manage` | — | Ver y gestionar avisos de contenido |
 | `gametables.settings` | — | Registrado; la página de configuración solo comprueba que el usuario sea administrador |
 
@@ -257,7 +265,6 @@ php artisan gametables:generate-slugs --force    # regenera también los existen
 
 ## Limitaciones actuales
 
-- De la página de configuración solo surten efecto **Notificaciones** y **Creación desde web**. **Creación de mesas** e **Integración con socios** no se leen; los valores iniciales del formulario de mesas (duración, jugadores, espectadores) salen de `config/game-tables.php`, y **Límites** no se aplica.
 - Para «Solo socios», un usuario es socio si está vinculado a un socio con estado activo en el módulo `memberships`; sin ese módulo nadie cuenta como socio.
 - Las rutas de creación desde la web exigen sesión iniciada, también con el nivel de acceso «Cualquier persona».
 
@@ -266,9 +273,8 @@ php artisan gametables:generate-slugs --force    # regenera también los existen
 ```
 src/modules/game-tables/
 ├── config/
-│   ├── game-tables.php        # Valores por defecto
 │   ├── module.php
-│   └── settings.php           # Valores de la página de configuración
+│   └── settings.php           # Valores iniciales de la página de configuración
 ├── database/
 │   ├── migrations/
 │   └── seeders/               # Editoriales, sistemas de juego, avisos de contenido; DevelopmentSeeder (solo local y testing)
