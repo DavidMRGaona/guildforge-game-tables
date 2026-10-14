@@ -7,14 +7,10 @@ namespace Modules\GameTables\Tests\Feature\Http\Controllers;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
-use Modules\GameTables\Application\Services\EligibilityServiceInterface;
-use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
-use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
+use Modules\GameTables\Application\Services\MembershipCheckerInterface;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
-use Modules\GameTables\Infrastructure\Services\EligibilityService;
-use Modules\Memberships\Application\Services\MemberServiceInterface;
 use Tests\Support\Modules\ModuleTestCase;
 
 /**
@@ -96,6 +92,14 @@ final class RegistrationEligibilityTest extends ModuleTestCase
         $this->register($table)->assertRedirect();
 
         $this->assertSame(1, $this->registrations($table));
+    }
+
+    // Without the memberships module enabled nobody counts as a member
+    public function test_without_the_memberships_module_a_members_only_table_refuses_everyone(): void
+    {
+        $this->assertFalse(app(MembershipCheckerInterface::class)->isActiveMember($this->user->id));
+
+        $this->assertRefused($this->table(['registration_type' => 'members_only']), 'members_only');
     }
 
     public function test_a_members_only_table_refuses_a_non_member(): void
@@ -351,14 +355,16 @@ final class RegistrationEligibilityTest extends ModuleTestCase
 
     private function actAsMember(bool $isMember): void
     {
-        $members = $this->createStub(MemberServiceInterface::class);
-        $members->method('getActiveMembers')->willReturn($isMember ? [(object) ['userId' => $this->user->id]] : []);
+        $memberId = $isMember ? $this->user->id : null;
 
-        $this->app->bind(EligibilityServiceInterface::class, fn (): EligibilityService => new EligibilityService(
-            app(ParticipantRepositoryInterface::class),
-            app(GameTableRepositoryInterface::class),
-            $members,
-        ));
+        $this->app->instance(MembershipCheckerInterface::class, new class($memberId) implements MembershipCheckerInterface {
+            public function __construct(private readonly ?string $memberId) {}
+
+            public function isActiveMember(string $userId): bool
+            {
+                return $userId === $this->memberId;
+            }
+        });
     }
 
     private function tableInEarlyAccess(): GameTableModel

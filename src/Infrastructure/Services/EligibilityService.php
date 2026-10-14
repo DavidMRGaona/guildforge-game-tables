@@ -7,6 +7,7 @@ namespace Modules\GameTables\Infrastructure\Services;
 use DateMalformedStringException;
 use DateTimeImmutable;
 use Modules\GameTables\Application\Services\EligibilityServiceInterface;
+use Modules\GameTables\Application\Services\MembershipCheckerInterface;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Exceptions\AlreadyRegisteredException;
@@ -17,14 +18,13 @@ use Modules\GameTables\Domain\Exceptions\TableFullException;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
-use Modules\Memberships\Application\Services\MemberServiceInterface;
 
 final readonly class EligibilityService implements EligibilityServiceInterface
 {
     public function __construct(
         private ParticipantRepositoryInterface $participantRepository,
         private GameTableRepositoryInterface $gameTableRepository,
-        private ?MemberServiceInterface $memberService = null,
+        private ?MembershipCheckerInterface $membershipChecker = null,
         private GameTableSettingsReader $settings = new GameTableSettingsReader(),
     ) {}
 
@@ -180,14 +180,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
 
     private function checkMembership(string $userId): bool
     {
-        if ($this->memberService === null) {
-            return false;
-        }
-
-        // Find member by searching active members linked to this user
-        $activeMembers = $this->memberService->getActiveMembers();
-        return array_any($activeMembers, fn($member) => $member->userId === $userId);
-
+        return $this->membershipChecker?->isActiveMember($userId) ?? false;
     }
 
     private function translateReason(string $reason): string
