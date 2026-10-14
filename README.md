@@ -9,7 +9,7 @@ Módulo de GuildForge para gestionar mesas de rol y campañas: inscripciones de 
 - **Directores de juego**: director principal y co-directores, propios de la mesa o heredados de la campaña.
 - **Inscripciones**: como jugador o espectador, con confirmación automática o manual por mesa.
 - **Invitados**: quien no tiene cuenta se inscribe con nombre y email en las mesas abiertas a todos, y cancela con un enlace con token.
-- **Lista de espera**: cuando no quedan plazas; al cancelar un jugador confirmado se promociona al primero de la lista.
+- **Lista de espera**: recoge a quien llega sin plaza (la última plaza pedida a la vez por dos personas, o un participante que un administrador añade a una mesa completa); al cancelar un jugador confirmado se promociona al primero de la lista.
 - **Tipos de inscripción**: abierta a todos, solo socios (con acceso anticipado opcional) o solo por invitación.
 - **Avisos de contenido** con severidad (leve, moderada, severa) y **herramientas de seguridad** (Carta X, Líneas y velos, Puerta abierta, Estrellas y deseos, Flor de apoyo, Script change, Rosas y espinas, otras).
 - **Catálogo**: sistemas de juego y editoriales.
@@ -51,7 +51,7 @@ En las releases los assets los compila el CI y van dentro del ZIP.
 
 ## Configuración
 
-Se configura en el panel: **Mesas de rol** → **Configuración** (solo administradores; el mismo formulario está en **Módulos** → **Configuración**). Los valores iniciales son los que trae el módulo en `config/settings.php`; lo que se guarda en el panel prevalece sobre ellos clave a clave.
+Se configura en el panel: **Mesas de rol** → **Configuración** (permiso `gametables.settings`, que los administradores tienen siempre; el mismo formulario está en **Módulos** → **Configuración**). Los valores iniciales son los que trae el módulo en `config/settings.php`; lo que se guarda en el panel prevalece sobre ellos clave a clave.
 
 | Sección | Qué controla |
 |---------|--------------|
@@ -82,12 +82,18 @@ El formulario de eventos tiene la pestaña **Configuración de mesas**:
 |--------|-------|-------------|
 | Borrador | `draft` | No publicada |
 | Programada | `scheduled` | Publicada; admite inscripciones según sus fechas |
-| Completa | `full` | Marcada como completa; se sigue mostrando y las inscripciones sin plaza van a la lista de espera |
+| Completa | `full` | Marcada como completa; se sigue mostrando y admite inscripciones mientras queden plazas |
 | En progreso | `in_progress` | Sesión en juego |
 | Completada | `completed` | Sesión terminada |
 | Cancelada | `cancelled` | Mesa cancelada: se cancelan sus inscripciones y se avisa a los participantes |
 
-La publicación es un indicador aparte (`is_published`). **Publicar** deja la mesa en `scheduled` y **Despublicar** la devuelve a `draft`. Las inscripciones se admiten mientras la mesa está publicada y en `scheduled` o `full`, dentro de sus fechas de inscripción; los socios pueden inscribirse antes si la mesa tiene días de acceso anticipado y **Integración con socios** está activada. En el panel, la cabecera de la mesa tiene las acciones **Publicar**, **Despublicar**, **Iniciar**, **Completar** y **Cancelar mesa**.
+La publicación es un indicador aparte (`is_published`). **Publicar** deja la mesa en `scheduled` y **Despublicar** la devuelve a `draft`. Las inscripciones se admiten mientras la mesa está publicada y en `scheduled` o `full`, dentro de sus fechas de inscripción; los socios pueden inscribirse antes si la mesa tiene días de acceso anticipado y **Integración con socios** está activada. Además:
+
+- Las mesas «Solo socios» solo admiten socios; los invitados solo pueden inscribirse en las mesas abiertas a todos.
+- Sin plazas de jugador libres no se admiten inscripciones nuevas, tampoco de espectador; como espectador hace falta además una plaza de espectador libre.
+- Nadie puede tener dos inscripciones activas en la misma mesa (los invitados se distinguen por su email).
+
+El servidor aplica estas reglas igual que la página de la mesa: una inscripción que no las cumple no se crea y se responde con el motivo (error de formulario en la web, 422 a los clientes JSON). Los administradores que añaden participantes desde el panel no están sujetos a ellas. En el panel, la cabecera de la mesa tiene las acciones **Publicar**, **Despublicar**, **Iniciar**, **Completar** y **Cancelar mesa**.
 
 ### Inscripción
 
@@ -136,7 +142,7 @@ Las mesas y campañas enviadas a revisión se avisan por correo a los usuarios c
 | Mesas de rol | Mesas | Formulario por pestañas (información básica, dirección, horario y ubicación, capacidad y requisitos, contenido y seguridad, inscripciones, publicación), participantes y moderación |
 | Mesas de rol | Campañas | Campañas, sus directores y publicación |
 | Mesas de rol | Avisos de contenido | Catálogo de avisos con severidad |
-| Mesas de rol | Configuración | Configuración del módulo (solo administradores) |
+| Mesas de rol | Configuración | Configuración del módulo (permiso `gametables.settings`) |
 | Catálogo de juegos | Editoriales | Editoriales de los sistemas de juego (también se crean desde el formulario de sistemas) |
 | Catálogo de juegos | Sistemas de juego | Sistemas con su editorial |
 
@@ -251,7 +257,7 @@ El módulo registra sus permisos con el prefijo `gametables:` (por ejemplo `game
 | `campaigns.delete` | — | Eliminar campañas |
 | `gamesystems.view_any`, `gamesystems.manage` | — | Ver y gestionar sistemas de juego y editoriales |
 | `contentwarnings.view_any`, `contentwarnings.manage` | — | Ver y gestionar avisos de contenido |
-| `gametables.settings` | — | Registrado; la página de configuración solo comprueba que el usuario sea administrador |
+| `gametables.settings` | — | Abrir y guardar la página de configuración del módulo |
 
 La columna de rol indica el rol al que el módulo propone el permiso; habilitar el módulo no lo asigna, se concede en **Roles**. Los administradores tienen acceso completo. Los autores gestionan sus propias mesas y campañas desde «Mis mesas» y «Mis campañas»; una mesa solo se puede editar en borrador o rechazada.
 
@@ -267,6 +273,7 @@ php artisan gametables:generate-slugs --force    # regenera también los existen
 
 - Para «Solo socios», un usuario es socio si está vinculado a un socio con estado activo en el módulo `memberships`; sin ese módulo nadie cuenta como socio.
 - Las rutas de creación desde la web exigen sesión iniciada, también con el nivel de acceso «Cualquier persona».
+- «Solo por invitación» no tiene sistema de invitaciones: rechaza a los invitados sin cuenta, pero los usuarios con sesión iniciada pueden inscribirse como en una mesa abierta.
 
 ## Arquitectura
 
