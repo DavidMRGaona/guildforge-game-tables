@@ -207,6 +207,7 @@ final class CampaignQueryService implements CampaignQueryServiceInterface
             eventId: $table->event_id,
             eventTitle: $table->event?->title,
             imagePublicId: $table->image_public_id,
+            synopsis: $table->synopsis,
         );
     }
 

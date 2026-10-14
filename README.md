@@ -15,7 +15,7 @@ Módulo de GuildForge para gestionar mesas de rol y campañas: inscripciones de 
 - **Catálogo**: sistemas de juego y editoriales.
 - **Creación desde la web**: los usuarios crean mesas y campañas y las envían a revisión; administradores y editores reciben un correo y las aprueban o rechazan desde el panel.
 - **Integración con eventos**: configuración de mesas por evento, enlace a las mesas del evento y botón para crear una mesa desde su página.
-- **Calendario**: vista `/mesas/calendario` y mesas en el calendario del core.
+- **Calendario**: vista `/mesas/calendario` y mesas en el calendario del core, cuya ficha muestra imagen, sinopsis, lugar, sistema, director, plazas y modalidad.
 - **Perfil**: pestañas con las mesas en las que participa el usuario, las que ha creado y sus campañas.
 - **Correos** de inscripción, confirmación, rechazo, lista de espera, cancelación y moderación.
 
