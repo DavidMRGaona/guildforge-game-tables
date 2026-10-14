@@ -178,6 +178,30 @@ final class GameTablesPanelTest extends ModuleTestCase
         $this->assertSame('pending', $pending->refresh()->status->value);
     }
 
+    public function test_promoting_a_player_on_a_full_table_shows_a_notice_instead_of_failing(): void
+    {
+        config()->set('modules.settings.game-tables.registration.waiting_list_enabled', true);
+        $table = $this->gameTable();
+        $table->update(['max_players' => 1]);
+        foreach (['confirmed' => null, 'waiting_list' => 1] as $status => $position) {
+            ParticipantModel::create([
+                'id' => (string) Str::uuid(),
+                'game_table_id' => $table->id,
+                'user_id' => UserModel::factory()->create()->id,
+                'role' => 'player',
+                'status' => $status,
+                'waiting_list_position' => $position,
+            ]);
+        }
+        $waiting = ParticipantModel::query()->where('game_table_id', $table->id)->where('status', 'waiting_list')->firstOrFail();
+
+        Livewire::test(ParticipantsRelationManager::class, ['ownerRecord' => $table, 'pageClass' => EditGameTable::class])
+            ->callTableAction('promote', $waiting)
+            ->assertNotified(__('game-tables::messages.errors.table_full'));
+
+        $this->assertSame('waiting_list', $waiting->refresh()->status->value);
+    }
+
     public function test_event_config_relation_manager_saves_the_configuration(): void
     {
         $event = EventModel::factory()->create();

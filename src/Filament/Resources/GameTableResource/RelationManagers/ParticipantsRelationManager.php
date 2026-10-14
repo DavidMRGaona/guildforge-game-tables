@@ -243,7 +243,16 @@ final class ParticipantsRelationManager extends RelationManager
                     ->visible(fn (ParticipantModel $record): bool => $record->status === ParticipantStatus::WaitingList)
                     ->action(function (ParticipantModel $record): void {
                         $registrationService = app(RegistrationServiceInterface::class);
-                        $registrationService->promoteParticipant($record->id);
+
+                        try {
+                            $registrationService->promoteParticipant($record->id);
+                        } catch (TableFullException) {
+                            // With the waiting list on, a promotion never exceeds the player seats
+                            Notification::make()
+                                ->title(__('game-tables::messages.errors.table_full'))
+                                ->danger()
+                                ->send();
+                        }
                     }),
 
                 EditAction::make(),

@@ -8,6 +8,8 @@ use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia as Assert;
+use Modules\GameTables\Application\Services\RegistrationServiceInterface;
+use Modules\GameTables\Domain\Exceptions\TableFullException;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
@@ -350,6 +352,52 @@ final class WaitingListRegistrationTest extends ModuleTestCase
             'role' => 'spectator',
             'gdpr_consent' => true,
         ])->assertSessionHas('success', __('game-tables::messages.success.guest_spectator_registered'));
+    }
+
+    // Turning the list on over a manual table already past its seats (confirmed + pending)
+    public function test_turning_the_list_on_over_an_overbooked_manual_table(): void
+    {
+        $table = $this->table(['max_players' => 2, 'auto_confirm' => false]);
+        $this->confirmed($table, 'player', 2);
+        $this->pending($table, 1);
+        $this->enableWaitingList();
+
+        $this->register($this->user, $table)->assertRedirect();
+        $this->assertSame('waiting_list', $this->rowOf($table, $this->user->id)->status->value);
+
+        $pending = ParticipantModel::query()->where('game_table_id', $table->id)->where('status', 'pending')->firstOrFail();
+        try {
+            app(RegistrationServiceInterface::class)->confirm($pending->id);
+            $this->fail('Confirming cannot exceed the player seats');
+        } catch (TableFullException) {
+            // Expected
+        }
+        $this->assertSame('pending', $pending->refresh()->status->value);
+        $this->assertSame(2, $this->confirmedPlayers($table));
+    }
+
+    // Turning the list off keeps the rows already waiting: they are promoted with the common rules
+    public function test_turning_the_list_off_with_players_waiting(): void
+    {
+        $table = $this->fullTable();
+        $waiting = ParticipantModel::create([
+            'id' => (string) Str::uuid(),
+            'game_table_id' => $table->id,
+            'user_id' => UserModel::factory()->create()->id,
+            'role' => 'player',
+            'status' => 'waiting_list',
+            'waiting_list_position' => 1,
+        ]);
+
+        $this->register($this->user, $table)
+            ->assertStatus(422)
+            ->assertJsonPath('errors.registration.0', __('game-tables::messages.errors.table_full'));
+
+        $leaving = ParticipantModel::query()->where('game_table_id', $table->id)->where('status', 'confirmed')->firstOrFail();
+        app(RegistrationServiceInterface::class)->cancel($leaving->id);
+
+        $this->assertSame('confirmed', $waiting->refresh()->status->value);
+        $this->assertSame(2, $this->confirmedPlayers($table));
     }
 
     /**

@@ -339,6 +339,64 @@ final class WaitingListPromotionTest extends ModuleTestCase
         Notification::assertNothingSent();
     }
 
+    public function test_on_a_manual_table_with_the_list_on_rejecting_a_pending_player_promotes_the_first_waiting(): void
+    {
+        $this->manualTableWithTheListOn();
+        $this->participant('player', 'confirmed');
+        $pending = $this->participant('player', 'pending');
+        $first = $this->participant('player', 'waiting_list', 1, email: 'espera@example.test');
+        $second = $this->participant('player', 'waiting_list', 2);
+
+        app(RegistrationServiceInterface::class)->reject($pending->id);
+
+        $this->assertSame('rejected', $pending->refresh()->status->value);
+        $this->assertSame('pending', $first->refresh()->status->value);
+        $this->assertSame('waiting_list', $second->refresh()->status->value);
+        Notification::assertSentOnDemand(WaitingListPromotionNotification::class);
+    }
+
+    public function test_with_the_list_off_rejecting_a_pending_player_promotes_nobody(): void
+    {
+        $this->table->update(['auto_confirm' => false]);
+        $this->participant('player', 'confirmed');
+        $pending = $this->participant('player', 'pending');
+        $waiting = $this->participant('player', 'waiting_list', 1);
+
+        app(RegistrationServiceInterface::class)->reject($pending->id);
+
+        $this->assertSame('rejected', $pending->refresh()->status->value);
+        $this->assertSame('waiting_list', $waiting->refresh()->status->value);
+    }
+
+    public function test_with_the_list_on_promoting_by_hand_never_exceeds_the_player_seats(): void
+    {
+        config()->set('modules.settings.game-tables.registration.waiting_list_enabled', true);
+        $this->participant('player', 'confirmed');
+        $this->participant('player', 'confirmed');
+        $waiting = $this->participant('player', 'waiting_list', 1);
+
+        try {
+            app(RegistrationServiceInterface::class)->promoteParticipant($waiting->id);
+            $this->fail('A full table cannot take another player by hand');
+        } catch (TableFullException) {
+            // Expected
+        }
+
+        $this->assertSame('waiting_list', $waiting->refresh()->status->value);
+        $this->assertSame(2, $this->confirmedPlayers());
+    }
+
+    public function test_with_the_list_off_promoting_by_hand_keeps_the_previous_behaviour(): void
+    {
+        $this->participant('player', 'confirmed');
+        $this->participant('player', 'confirmed');
+        $waiting = $this->participant('player', 'waiting_list', 1);
+
+        app(RegistrationServiceInterface::class)->promoteParticipant($waiting->id);
+
+        $this->assertSame('confirmed', $waiting->refresh()->status->value);
+    }
+
     private function manualTableWithTheListOn(): void
     {
         config()->set('modules.settings.game-tables.registration.waiting_list_enabled', true);

@@ -392,16 +392,30 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
     public function reject(string $participantId): ParticipantResponseDTO
     {
-        $participant = $this->participantRepository->findOrFail(new ParticipantId($participantId));
+        [$participant, $promoted] = $this->lock->forParticipant($participantId, function () use ($participantId): array {
+            $participant = $this->participantRepository->findOrFail(new ParticipantId($participantId));
+            $wasPendingPlayer = $participant->isPending() && $participant->isPlayer();
 
-        $participant->reject();
-        $this->participantRepository->save($participant);
+            $participant->reject();
+            $this->participantRepository->save($participant);
+
+            // Where pending players hold seats, rejecting one frees a seat for the waiting list
+            $promoted = $wasPendingPlayer
+                ? $this->promoteNext($participant->gameTableId, freedByPending: true)
+                : null;
+
+            return [$participant, $promoted];
+        });
 
         ParticipantRejected::dispatch(
             $participant->id->value,
             $participant->gameTableId->value,
             $participant->userId,
         );
+
+        if ($promoted !== null) {
+            $this->announcePromotion($promoted);
+        }
 
         return ParticipantResponseDTO::fromEntity($participant);
     }
@@ -570,7 +584,8 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     }
 
     /**
-     * The director's choice from the panel: confirmed, whatever the dates and the setting.
+     * The director's choice from the panel: confirmed, whatever the dates. With the waiting list on
+     * it never exceeds the player seats (TableFullException); off, it works as before.
      */
     public function promoteParticipant(string $participantId): ParticipantResponseDTO
     {
@@ -581,6 +596,9 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             if (! $participant->isOnWaitingList()) {
                 return [$participant, false];
             }
+
+            // With the waiting list on, not even the director goes over the player seats
+            $this->ensureSeatToConfirm($participant);
 
             $participant->promoteFromWaitingList();
             $this->participantRepository->save($participant);
