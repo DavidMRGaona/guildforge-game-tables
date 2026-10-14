@@ -74,7 +74,6 @@ use Modules\GameTables\Infrastructure\Listeners\NotifyOnCancellation;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnGuestRegistration;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnRegistration;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnWaitingListPromotion;
-use Modules\GameTables\Infrastructure\Listeners\PromoteFromWaitingListOnCancellation;
 use Modules\GameTables\Infrastructure\Observers\GameTableObserver;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\EventGameTableConfigModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentCampaignRepository;
@@ -352,11 +351,6 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
      */
     private function registerEventListeners(): void
     {
-        Event::listen(
-            ParticipantCancelled::class,
-            [PromoteFromWaitingListOnCancellation::class, 'handle']
-        );
-
         Event::listen(
             GuestRegistered::class,
             [SendGuestRegistrationConfirmation::class, 'handle']
