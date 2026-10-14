@@ -16,7 +16,7 @@ export default {
             createTable: 'Crear partida',
             creationOpensAt: 'Podrás crear a partir del {date}',
             loginToCreate: 'Inicia sesión para crear partidas',
-            earlyAccessForMembers: 'Early access para socios',
+            earlyAccessForMembers: 'Acceso anticipado para socios',
             generalOpeningAt: 'Apertura general: {date}',
             publicOpeningAt: 'Apertura de inscripciones: {date}',
             earlyAccessActiveFrom: 'Early access activo desde {date}',

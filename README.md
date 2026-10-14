@@ -21,9 +21,8 @@ Módulo de GuildForge para gestionar mesas de rol y campañas: inscripciones de 
 
 ## Requisitos
 
-- GuildForge core `^3.2`
+- GuildForge core `^3.8`
 - PHP >= 8.5, Laravel >= 13, Filament 5
-- Opcional: el módulo de socios (`memberships`) para las mesas «Solo socios»
 
 El core rechaza el módulo si no se cumplen (`module.json` → `requires`).
 
@@ -87,7 +86,7 @@ El formulario de eventos tiene la pestaña **Configuración de mesas**:
 | Completada | `completed` | Sesión terminada |
 | Cancelada | `cancelled` | Mesa cancelada: se cancelan sus inscripciones y se avisa a los participantes |
 
-La publicación es un indicador aparte (`is_published`). **Publicar** deja la mesa en `scheduled` y **Despublicar** la devuelve a `draft`. Las inscripciones se admiten mientras la mesa está publicada y en `scheduled` o `full` (o en `in_progress` si tiene activado **Permitir inscripciones durante la partida**), dentro de sus fechas de inscripción; los socios pueden inscribirse antes si la mesa tiene días de acceso anticipado y **Integración con socios** está activada. Además:
+La publicación es un indicador aparte (`is_published`). **Publicar** deja la mesa en `scheduled` y **Despublicar** la devuelve a `draft`. Las inscripciones se admiten mientras la mesa está publicada y en `scheduled` o `full` (o en `in_progress` si tiene activado **Permitir inscripciones durante la partida**), dentro de sus fechas de inscripción; los socios pueden inscribirse antes si la mesa tiene días de acceso anticipado y **Integración con socios** está activada. Socio es quien tiene el rol de socio del core: el que se elige en **Configuración del sitio** (`socio` por defecto); no depende del módulo de socios. Si ese ajuste no apunta a un rol válido, nadie cuenta como socio: no hay acceso anticipado y las mesas «Solo socios» no admiten a nadie. Además:
 
 - Las mesas «Solo socios» solo admiten socios; los invitados solo pueden inscribirse en las mesas abiertas a todos.
 - Sin plazas de jugador libres no se admiten inscripciones nuevas, tampoco de espectador; como espectador hace falta además una plaza de espectador libre.
@@ -274,7 +273,6 @@ php artisan gametables:generate-slugs --force    # regenera también los existen
 
 ## Limitaciones actuales
 
-- Para «Solo socios», un usuario es socio si está vinculado a un socio con estado activo en el módulo `memberships`; sin ese módulo nadie cuenta como socio.
 - Las rutas de creación desde la web exigen sesión iniciada, también con el nivel de acceso «Cualquier persona».
 - «Solo por invitación» no tiene sistema de invitaciones: rechaza a los invitados sin cuenta, pero los usuarios con sesión iniciada pueden inscribirse como en una mesa abierta.
 

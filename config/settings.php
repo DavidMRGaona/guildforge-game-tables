@@ -51,7 +51,7 @@ return [
         'allowed_roles' => '',
         // Permission key (access level 'permission')
         'required_permission' => null,
-        // Early creation tiers: [['tier' => 1, 'type' => 'role', 'value' => 'member', 'days_before' => 3], ...]
+        // Early creation tiers: [['tier' => 1, 'type' => 'role', 'value' => 'socio', 'days_before' => 3], ...]
         'priority_tiers' => [],
         'publication' => [
             // 'auto', 'approval' or 'role_based'

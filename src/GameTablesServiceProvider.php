@@ -94,7 +94,7 @@ use Modules\GameTables\Infrastructure\Services\GameMasterService;
 use Modules\GameTables\Infrastructure\Services\GameTableQueryService;
 use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
 use Modules\GameTables\Infrastructure\Services\GameTableService;
-use Modules\GameTables\Infrastructure\Services\MembershipsModuleMembershipChecker;
+use Modules\GameTables\Infrastructure\Services\AssociationRoleMembershipChecker;
 use Modules\GameTables\Infrastructure\Services\ProfileCreatedCampaignsDataProvider;
 use Modules\GameTables\Infrastructure\Services\ProfileCreatedTablesDataProvider;
 use Modules\GameTables\Infrastructure\Services\ProfileGameTablesDataProvider;
@@ -134,7 +134,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         // Service bindings
         $this->app->bind(GameTableServiceInterface::class, GameTableService::class);
         $this->app->bind(EligibilityServiceInterface::class, EligibilityService::class);
-        $this->app->bind(MembershipCheckerInterface::class, MembershipsModuleMembershipChecker::class);
+        $this->app->bind(MembershipCheckerInterface::class, AssociationRoleMembershipChecker::class);
         $this->app->bind(CreationEligibilityServiceInterface::class, CreationEligibilityService::class);
         $this->app->bind(FrontendCreationServiceInterface::class, FrontendCreationService::class);
         $this->app->bind(RegistrationServiceInterface::class, RegistrationService::class);

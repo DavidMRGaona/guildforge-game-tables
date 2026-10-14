@@ -382,7 +382,7 @@ return [
         ],
         'fields' => [
             'membership_enabled' => 'Membership integration enabled',
-            'membership_enabled_help' => 'Members can register before opening, by the early access days of each table',
+            'membership_enabled_help' => 'Members (users with the member role chosen in the site settings) can register before opening, by the early access days of each table',
             'early_access_days' => 'Early access days',
             'early_access_days_help' => 'Initial member early access days of each new table',
             'default_duration' => 'Default duration (minutes)',

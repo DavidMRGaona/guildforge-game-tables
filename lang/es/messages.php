@@ -439,7 +439,7 @@ return [
         ],
         'fields' => [
             'membership_enabled' => 'Integración con socios habilitada',
-            'membership_enabled_help' => 'Los socios pueden inscribirse antes de la apertura según los días de acceso anticipado de cada mesa',
+            'membership_enabled_help' => 'Los socios (quienes tienen el rol de socio elegido en la configuración del sitio) pueden inscribirse antes de la apertura según los días de acceso anticipado de cada mesa',
             'early_access_days' => 'Días de acceso anticipado',
             'early_access_days_help' => 'Valor inicial de los días de ventaja de los socios en cada mesa nueva',
             'default_duration' => 'Duración por defecto (minutos)',
