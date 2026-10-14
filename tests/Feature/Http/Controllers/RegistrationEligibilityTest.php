@@ -264,6 +264,37 @@ final class RegistrationEligibilityTest extends ModuleTestCase
         return ['game master' => ['game_master'], 'co-director' => ['co_gm']];
     }
 
+    public function test_a_table_in_progress_that_accepts_late_registrations_admits_users_and_guests(): void
+    {
+        $table = $this->table(['status' => 'in_progress', 'accepts_registrations_in_progress' => true]);
+
+        $this->register($table)->assertRedirect();
+        $this->registerGuest($table)->assertRedirect();
+
+        $this->assertSame(2, $this->registrations($table));
+    }
+
+    public function test_a_table_in_progress_refuses_users_and_guests_by_default(): void
+    {
+        $table = $this->table(['status' => 'in_progress']);
+
+        $this->assertRefused($table, 'registration_closed');
+        $this->registerGuest($table)
+            ->assertStatus(422)
+            ->assertJsonPath('errors.registration.0', __('game-tables::messages.errors.registration_closed'));
+
+        $this->assertSame(0, $this->registrations($table));
+    }
+
+    public function test_a_guest_registers_to_a_full_status_table_with_free_seats(): void
+    {
+        $table = $this->table(['status' => 'full']);
+
+        $this->registerGuest($table)->assertRedirect();
+
+        $this->assertSame(1, $this->registrations($table));
+    }
+
     private function assertRefused(GameTableModel $table, string $reason, string $role = 'player'): void
     {
         $before = $this->registrations($table);
