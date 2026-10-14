@@ -149,7 +149,7 @@ final class RegistrationControllerTest extends ModuleTestCase
         ]);
 
         $response->assertRedirect();
-        $response->assertSessionHas('error');
+        $response->assertSessionHasErrors('registration');
 
         $participant = $this->participantRepository->findByTableAndEmail(
             $gameTable->id,
@@ -179,7 +179,7 @@ final class RegistrationControllerTest extends ModuleTestCase
         ]);
 
         $response->assertRedirect();
-        $response->assertSessionHas('error');
+        $response->assertSessionHasErrors('registration');
     }
 
     public function test_guest_cannot_register_for_invite_only_table(): void
@@ -195,7 +195,7 @@ final class RegistrationControllerTest extends ModuleTestCase
         ]);
 
         $response->assertRedirect();
-        $response->assertSessionHas('error');
+        $response->assertSessionHasErrors('registration');
     }
 
     public function test_guest_can_register_with_optional_phone(): void
@@ -301,7 +301,7 @@ final class RegistrationControllerTest extends ModuleTestCase
 
     public function test_guest_can_register_as_spectator(): void
     {
-        $gameTable = $this->createGameTable();
+        $gameTable = $this->createGameTable(maxSpectators: 2);
 
         $this->post(route('gametables.register-guest', $gameTable->slug), [
             'first_name' => 'Bob',
@@ -322,6 +322,7 @@ final class RegistrationControllerTest extends ModuleTestCase
     private function createGameTable(
         ?GameTableId $id = null,
         RegistrationType $registrationType = RegistrationType::Everyone,
+        int $maxSpectators = 0,
     ): GameTable {
         $startsAt = new DateTimeImmutable('+1 week');
         $timeSlot = new TimeSlot($startsAt, 240);
@@ -338,6 +339,7 @@ final class RegistrationControllerTest extends ModuleTestCase
             status: TableStatus::Scheduled,
             minPlayers: 2,
             maxPlayers: 6,
+            maxSpectators: $maxSpectators,
             registrationType: $registrationType,
             autoConfirm: true,
             isPublished: true,

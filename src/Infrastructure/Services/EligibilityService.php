@@ -8,9 +8,11 @@ use DateMalformedStringException;
 use DateTimeImmutable;
 use Modules\GameTables\Application\Services\EligibilityServiceInterface;
 use Modules\GameTables\Domain\Entities\GameTable;
+use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Exceptions\AlreadyRegisteredException;
 use Modules\GameTables\Domain\Exceptions\MembersOnlyException;
 use Modules\GameTables\Domain\Exceptions\RegistrationClosedException;
+use Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException;
 use Modules\GameTables\Domain\Exceptions\TableFullException;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
@@ -32,6 +34,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
         bool $isMember,
         ?int $userAge,
         ?DateTimeImmutable $now = null,
+        ParticipantRole $role = ParticipantRole::Player,
     ): void {
         $now ??= new DateTimeImmutable();
 
@@ -66,6 +69,22 @@ final readonly class EligibilityService implements EligibilityServiceInterface
         if (! $gameTable->hasCapacity($confirmedPlayers)) {
             throw TableFullException::forTable($gameTable->id->value);
         }
+
+        if ($role === ParticipantRole::Spectator) {
+            $this->checkSpectatorSeats($gameTable);
+        }
+    }
+
+    /**
+     * @throws TableFullException
+     */
+    private function checkSpectatorSeats(GameTable $gameTable): void
+    {
+        $confirmedSpectators = $this->participantRepository->countConfirmedSpectators($gameTable->id);
+
+        if ($gameTable->availableSpectatorSlots($confirmedSpectators) === 0) {
+            throw TableFullException::forSpectators($gameTable->id->value);
+        }
     }
 
     /**
@@ -77,9 +96,10 @@ final readonly class EligibilityService implements EligibilityServiceInterface
         bool $isMember,
         ?int $userAge,
         ?DateTimeImmutable $now = null,
+        ParticipantRole $role = ParticipantRole::Player,
     ): array {
         try {
-            $this->checkEligibility($gameTable, $userId, $isMember, $userAge, $now);
+            $this->checkEligibility($gameTable, $userId, $isMember, $userAge, $now, $role);
 
             return ['eligible' => true, 'reason' => null];
         } catch (RegistrationClosedException $e) {
@@ -189,7 +209,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
     /**
      * @return array{eligible: bool, reason: string|null, message: string|null}
      */
-    public function canGuestRegister(string $gameTableId, string $email): array
+    public function canGuestRegister(string $gameTableId, string $email, ParticipantRole $role = ParticipantRole::Player): array
     {
         $tableId = new GameTableId($gameTableId);
         $gameTable = $this->gameTableRepository->find($tableId);
@@ -257,10 +277,51 @@ final readonly class EligibilityService implements EligibilityServiceInterface
             ];
         }
 
+        if ($role === ParticipantRole::Spectator) {
+            try {
+                $this->checkSpectatorSeats($gameTable);
+            } catch (TableFullException $e) {
+                return [
+                    'eligible' => false,
+                    'reason' => $e->reason,
+                    'message' => $this->translateReason($e->reason),
+                ];
+            }
+        }
+
         return [
             'eligible' => true,
             'reason' => null,
             'message' => null,
         ];
+    }
+
+    public function ensureUserCanRegister(string $gameTableId, string $userId, ParticipantRole $role = ParticipantRole::Player): void
+    {
+        $gameTable = $this->gameTableRepository->find(new GameTableId($gameTableId));
+
+        if ($gameTable === null) {
+            throw RegistrationNotAllowedException::because('not_found', $this->translateReason('not_found'));
+        }
+
+        // The same check that decides what the table page offers
+        $result = $this->canRegister($gameTable, $userId, $this->checkMembership($userId), null, new DateTimeImmutable(), $role);
+
+        if (! $result['eligible']) {
+            $reason = $result['reason'] ?? 'registration_closed';
+
+            throw RegistrationNotAllowedException::because($reason, $this->translateReason($reason));
+        }
+    }
+
+    public function ensureGuestCanRegister(string $gameTableId, string $email, ParticipantRole $role = ParticipantRole::Player): void
+    {
+        $result = $this->canGuestRegister($gameTableId, $email, $role);
+
+        if (! $result['eligible']) {
+            $reason = $result['reason'] ?? 'registration_closed';
+
+            throw RegistrationNotAllowedException::because($reason, $result['message'] ?? $this->translateReason($reason));
+        }
     }
 }
