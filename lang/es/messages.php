@@ -408,9 +408,10 @@ return [
             'no_data' => 'Sin datos disponibles',
         ],
         'pending_moderation' => [
-            'title' => 'Mesas pendientes de moderación',
+            'title' => 'Pendientes de moderación',
+            'type' => 'Tipo',
             'count' => ':count mesa(s) pendiente(s)',
-            'no_pending' => 'No hay mesas pendientes de revisión',
+            'no_pending' => 'No hay mesas ni campañas pendientes de revisión',
             'view_all' => 'Ver todas',
         ],
     ],
@@ -550,6 +551,11 @@ return [
         'reject_description' => 'El creador será notificado del rechazo con el motivo indicado.',
         'rejection_reason' => 'Motivo del rechazo',
         'rejection_reason_placeholder' => 'Explica por qué se rechaza esta mesa...',
+        'campaign_approve_confirmation' => '¿Aprobar esta campaña?',
+        'campaign_approve_description' => 'La campaña será publicada y visible para todos los usuarios.',
+        'campaign_reject_confirmation' => '¿Rechazar esta campaña?',
+        'campaign_reject_description' => 'La campaña no se publicará; su creador verá el motivo en sus campañas.',
+        'campaign_rejection_reason_placeholder' => 'Explica por qué se rechaza esta campaña...',
     ],
 
     /*
@@ -630,6 +636,8 @@ return [
         'table_cancelled' => 'Mesa cancelada correctamente',
         'table_approved' => 'Mesa aprobada correctamente',
         'table_rejected' => 'Mesa rechazada correctamente',
+        'campaign_approved' => 'Campaña aprobada correctamente',
+        'campaign_rejected' => 'Campaña rechazada correctamente',
     ],
 
     /*

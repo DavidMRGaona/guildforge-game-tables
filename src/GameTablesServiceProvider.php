@@ -51,6 +51,7 @@ use Modules\GameTables\Application\Services\NotificationRecipientResolverInterfa
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Modules\GameTables\Console\Commands\GenerateSlugsCommand;
+use Modules\GameTables\Domain\Events\CampaignSubmittedForReview;
 use Modules\GameTables\Domain\Events\GameTableCancelled;
 use Modules\GameTables\Domain\Events\GameTableModerationApproved;
 use Modules\GameTables\Domain\Events\GameTableModerationRejected;
@@ -97,6 +98,7 @@ use Modules\GameTables\Infrastructure\Services\ProfileCreatedCampaignsDataProvid
 use Modules\GameTables\Infrastructure\Services\ProfileCreatedTablesDataProvider;
 use Modules\GameTables\Infrastructure\Services\ProfileGameTablesDataProvider;
 use Modules\GameTables\Infrastructure\Services\RegistrationService;
+use Modules\GameTables\Listeners\NotifyAdminsOnCampaignModerationSubmission;
 use Modules\GameTables\Listeners\NotifyAdminsOnModerationSubmission;
 use Modules\GameTables\Listeners\NotifyUserOnModerationApproved;
 use Modules\GameTables\Listeners\NotifyUserOnModerationRejected;
@@ -409,6 +411,11 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         Event::listen(
             GameTableSubmittedForReview::class,
             [NotifyAdminsOnModerationSubmission::class, 'handle']
+        );
+
+        Event::listen(
+            CampaignSubmittedForReview::class,
+            [NotifyAdminsOnCampaignModerationSubmission::class, 'handle']
         );
 
         Event::listen(

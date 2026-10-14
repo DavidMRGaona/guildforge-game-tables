@@ -31,6 +31,7 @@ use Modules\GameTables\Domain\Enums\TableType;
 use Modules\GameTables\Domain\Enums\Tone;
 use Modules\GameTables\Domain\Events\GameTableModerationApproved;
 use Modules\GameTables\Domain\Events\GameTableModerationRejected;
+use Modules\GameTables\Domain\Events\CampaignSubmittedForReview;
 use Modules\GameTables\Domain\Events\GameTableSubmittedForReview;
 use Modules\GameTables\Domain\Exceptions\CampaignNotFoundException;
 use Modules\GameTables\Domain\Exceptions\GameTableNotFoundException;
@@ -511,11 +512,46 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         // Check if auto-publish eligible
         $mode = $this->settingsReader->getPublicationMode();
 
-        if ($mode === 'auto' || $this->checkAutoPublishEligibility($userId)) {
+        $autoPublish = $mode === 'auto' || $this->checkAutoPublishEligibility($userId);
+
+        if ($autoPublish) {
             $campaign->approveFrontendCreation();
             $campaign->publish();
         }
 
+        $this->campaignRepository->save($campaign);
+
+        if (! $autoPublish) {
+            CampaignSubmittedForReview::dispatch(
+                $campaign->id->value,
+                $campaign->title,
+                $campaign->createdBy,
+            );
+        }
+    }
+
+    public function approveCampaign(string $campaignId, ?string $notes = null): void
+    {
+        $campaign = $this->campaignRepository->find(new CampaignId($campaignId));
+
+        if ($campaign === null) {
+            throw CampaignNotFoundException::withId($campaignId);
+        }
+
+        $campaign->approveFrontendCreation($notes);
+        $campaign->publish();
+        $this->campaignRepository->save($campaign);
+    }
+
+    public function rejectCampaign(string $campaignId, string $reason): void
+    {
+        $campaign = $this->campaignRepository->find(new CampaignId($campaignId));
+
+        if ($campaign === null) {
+            throw CampaignNotFoundException::withId($campaignId);
+        }
+
+        $campaign->rejectFrontendCreation($reason);
         $this->campaignRepository->save($campaign);
     }
 

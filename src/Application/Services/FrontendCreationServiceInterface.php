@@ -112,6 +112,20 @@ interface FrontendCreationServiceInterface
     public function submitCampaignForReview(string $campaignId, string $userId): void;
 
     /**
+     * Approve a campaign sent for review and publish it.
+     *
+     * @throws \Modules\GameTables\Domain\Exceptions\CampaignNotFoundException
+     */
+    public function approveCampaign(string $campaignId, ?string $notes = null): void;
+
+    /**
+     * Reject a campaign sent for review.
+     *
+     * @throws \Modules\GameTables\Domain\Exceptions\CampaignNotFoundException
+     */
+    public function rejectCampaign(string $campaignId, string $reason): void;
+
+    /**
      * Delete a draft campaign.
      *
      * @throws \Modules\GameTables\Domain\Exceptions\CampaignNotFoundException

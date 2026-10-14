@@ -353,9 +353,10 @@ return [
             'no_data' => 'No data available',
         ],
         'pending_moderation' => [
-            'title' => 'Tables pending moderation',
+            'title' => 'Pending moderation',
+            'type' => 'Type',
             'count' => ':count table(s) pending',
-            'no_pending' => 'No tables pending review',
+            'no_pending' => 'No tables or campaigns pending review',
             'view_all' => 'View all',
         ],
     ],
@@ -462,12 +463,19 @@ return [
         'reject_description' => 'The creator will be notified of the rejection with the reason provided.',
         'rejection_reason' => 'Rejection reason',
         'rejection_reason_placeholder' => 'Explain why this table is being rejected...',
+        'campaign_approve_confirmation' => 'Approve this campaign?',
+        'campaign_approve_description' => 'The campaign will be published and visible to all users.',
+        'campaign_reject_confirmation' => 'Reject this campaign?',
+        'campaign_reject_description' => 'The campaign will not be published; its creator will see the reason in their campaigns.',
+        'campaign_rejection_reason_placeholder' => 'Explain why this campaign is rejected...',
     ],
 
     'notifications' => [
         'table_cancelled' => 'Table cancelled successfully',
         'table_approved' => 'Table approved successfully',
         'table_rejected' => 'Table rejected successfully',
+        'campaign_approved' => 'Campaign approved successfully',
+        'campaign_rejected' => 'Campaign rejected successfully',
     ],
 
     /*

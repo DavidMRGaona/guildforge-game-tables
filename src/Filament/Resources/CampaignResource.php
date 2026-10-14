@@ -8,7 +8,11 @@ use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Section;
+use Filament\Actions\Action;
 use Filament\Actions\EditAction;
+use Filament\Notifications\Notification;
+use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
+use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Modules\GameTables\Filament\Resources\CampaignResource\Pages\ListCampaigns;
@@ -220,6 +224,43 @@ final class CampaignResource extends BaseResource
                     ->label(__('game-tables::messages.fields.is_published')),
             ])
             ->recordActions([
+                Action::make('approve')
+                    ->label(__('game-tables::messages.moderation.approve'))
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading(__('game-tables::messages.moderation.campaign_approve_confirmation'))
+                    ->modalDescription(__('game-tables::messages.moderation.campaign_approve_description'))
+                    ->visible(fn (CampaignModel $record): bool => $record->frontend_creation_status === FrontendCreationStatus::PendingReview)
+                    ->action(function (CampaignModel $record): void {
+                        app(FrontendCreationServiceInterface::class)->approveCampaign($record->id);
+
+                        Notification::make()
+                            ->title(__('game-tables::messages.notifications.campaign_approved'))
+                            ->success()
+                            ->send();
+                    }),
+                Action::make('reject')
+                    ->label(__('game-tables::messages.moderation.reject'))
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->modalHeading(__('game-tables::messages.moderation.campaign_reject_confirmation'))
+                    ->modalDescription(__('game-tables::messages.moderation.campaign_reject_description'))
+                    ->schema([
+                        Textarea::make('reason')
+                            ->label(__('game-tables::messages.moderation.rejection_reason'))
+                            ->placeholder(__('game-tables::messages.moderation.campaign_rejection_reason_placeholder'))
+                            ->required(),
+                    ])
+                    ->visible(fn (CampaignModel $record): bool => $record->frontend_creation_status === FrontendCreationStatus::PendingReview)
+                    ->action(function (CampaignModel $record, array $data): void {
+                        app(FrontendCreationServiceInterface::class)->rejectCampaign($record->id, (string) $data['reason']);
+
+                        Notification::make()
+                            ->title(__('game-tables::messages.notifications.campaign_rejected'))
+                            ->success()
+                            ->send();
+                    }),
                 EditAction::make(),
             ])
             ->toolbarActions([
