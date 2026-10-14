@@ -115,6 +115,9 @@ final class GameTableCalendarSourceTest extends TestCase
             'maxPlayers' => 6,
             'status' => TableStatus::Scheduled,
             'startsAt' => new DateTimeImmutable('2026-09-15 10:00:00'),
+            'synopsis' => 'A perilous journey through the Mwangi Expanse.',
+            'location' => 'Local de la asociación',
+            'imagePublicId' => 'game-tables/2026/09/cover',
         ]);
 
         $queryService = $this->createStub(GameTableQueryServiceInterface::class);
@@ -135,9 +138,96 @@ final class GameTableCalendarSourceTest extends TestCase
         $this->assertFalse($details['isFull']);
         $this->assertSame('scheduled', $details['status']);
         $this->assertSame([], $details['tags']);
-        $this->assertSame('', $details['description']);
+        $this->assertSame('A perilous journey through the Mwangi Expanse.', $details['description']);
+        $this->assertSame('Local de la asociación', $details['location']);
+        $this->assertSame('game-tables/2026/09/cover', $details['imagePublicId']);
         $this->assertArrayNotHasKey('memberPrice', $details);
         $this->assertArrayNotHasKey('nonMemberPrice', $details);
+    }
+
+    public function test_details_fall_back_to_empty_description_and_null_media_when_table_has_none(): void
+    {
+        $dto = $this->makeListDTO([
+            'synopsis' => null,
+            'location' => null,
+            'imagePublicId' => null,
+        ]);
+
+        $queryService = $this->createStub(GameTableQueryServiceInterface::class);
+        $queryService->method('getUpcomingTables')->willReturn([$dto]);
+
+        $details = (new GameTableCalendarSource($queryService))->findByDateRange(
+            new DateTimeImmutable('2026-09-01'),
+            new DateTimeImmutable('2026-09-30'),
+        )[0]->details;
+
+        $this->assertSame('', $details['description']);
+        $this->assertNull($details['location']);
+        $this->assertNull($details['imagePublicId']);
+    }
+
+    public function test_details_meta_lists_system_game_master_players_and_format_in_order(): void
+    {
+        $dto = $this->makeListDTO([
+            'gameSystemName' => 'Pathfinder',
+            'mainGameMasterName' => 'Alice',
+            'currentPlayers' => 3,
+            'maxPlayers' => 6,
+            'tableFormat' => TableFormat::Online,
+        ]);
+
+        $queryService = $this->createStub(GameTableQueryServiceInterface::class);
+        $queryService->method('getUpcomingTables')->willReturn([$dto]);
+
+        $meta = (new GameTableCalendarSource($queryService))->findByDateRange(
+            new DateTimeImmutable('2026-09-01'),
+            new DateTimeImmutable('2026-09-30'),
+        )[0]->details['meta'];
+
+        $this->assertSame([
+            ['icon' => 'dice', 'label' => __('game-tables::messages.calendar.meta.game_system'), 'value' => 'Pathfinder'],
+            ['icon' => 'user', 'label' => __('game-tables::messages.calendar.meta.game_master'), 'value' => 'Alice'],
+            ['icon' => 'users', 'label' => __('game-tables::messages.calendar.meta.players'), 'value' => '3/6'],
+            ['icon' => 'monitor', 'label' => __('game-tables::messages.calendar.meta.format'), 'value' => TableFormat::Online->label()],
+        ], $meta);
+    }
+
+    public function test_details_meta_marks_players_as_full_when_table_is_full(): void
+    {
+        $dto = $this->makeListDTO([
+            'currentPlayers' => 6,
+            'maxPlayers' => 6,
+        ]);
+
+        $queryService = $this->createStub(GameTableQueryServiceInterface::class);
+        $queryService->method('getUpcomingTables')->willReturn([$dto]);
+
+        $meta = (new GameTableCalendarSource($queryService))->findByDateRange(
+            new DateTimeImmutable('2026-09-01'),
+            new DateTimeImmutable('2026-09-30'),
+        )[0]->details['meta'];
+
+        $players = array_values(array_filter($meta, fn (array $row): bool => $row['icon'] === 'users'))[0];
+
+        $this->assertSame('6/6 · '.__('game-tables::messages.enums.table_status.full'), $players['value']);
+    }
+
+    public function test_details_meta_skips_rows_without_a_value(): void
+    {
+        $dto = $this->makeListDTO([
+            'gameSystemName' => '',
+            'mainGameMasterName' => '',
+        ]);
+
+        $queryService = $this->createStub(GameTableQueryServiceInterface::class);
+        $queryService->method('getUpcomingTables')->willReturn([$dto]);
+
+        $meta = (new GameTableCalendarSource($queryService))->findByDateRange(
+            new DateTimeImmutable('2026-09-01'),
+            new DateTimeImmutable('2026-09-30'),
+        )[0]->details['meta'];
+
+        $this->assertSame(['users', 'monitor'], array_column($meta, 'icon'));
     }
 
     public function test_find_by_date_range_marks_details_as_full_when_current_players_reach_max(): void
@@ -188,6 +278,7 @@ final class GameTableCalendarSourceTest extends TestCase
             'eventId' => null,
             'eventTitle' => null,
             'imagePublicId' => null,
+            'synopsis' => null,
         ];
 
         $data = array_merge($defaults, $overrides);
@@ -213,6 +304,7 @@ final class GameTableCalendarSourceTest extends TestCase
             eventId: $data['eventId'],
             eventTitle: $data['eventTitle'],
             imagePublicId: $data['imagePublicId'],
+            synopsis: $data['synopsis'],
         );
     }
 }

@@ -30,6 +30,12 @@ return [
 
     'calendar' => [
         'source_label' => 'Partidas',
+        'meta' => [
+            'game_system' => 'Sistema de juego',
+            'game_master' => 'Director de juego',
+            'players' => 'Jugadores',
+            'format' => 'Modalidad',
+        ],
     ],
 
     'model' => [

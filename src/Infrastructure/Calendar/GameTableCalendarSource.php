@@ -77,8 +77,36 @@ final readonly class GameTableCalendarSource implements CalendarEntrySourceInter
                 'isFull' => $table->currentPlayers >= $table->maxPlayers,
                 'status' => $table->status->value,
                 'tags' => [],
-                'description' => '',
+                'description' => $table->synopsis ?? '',
+                'location' => $table->location,
+                'imagePublicId' => $table->imagePublicId,
+                'meta' => $this->meta($table),
             ],
         );
+    }
+
+    /**
+     * Rows the core detail panel renders generically, in display order.
+     * Labels are translated here so the frontend stays agnostic of this module.
+     *
+     * @return array<int, array{icon: string, label: string, value: string}>
+     */
+    private function meta(GameTableListDTO $table): array
+    {
+        $isFull = $table->currentPlayers >= $table->maxPlayers;
+        $players = "{$table->currentPlayers}/{$table->maxPlayers}";
+
+        if ($isFull) {
+            $players .= ' · '.__('game-tables::messages.enums.table_status.full');
+        }
+
+        $rows = [
+            ['icon' => 'dice', 'label' => __('game-tables::messages.calendar.meta.game_system'), 'value' => $table->gameSystemName],
+            ['icon' => 'user', 'label' => __('game-tables::messages.calendar.meta.game_master'), 'value' => $table->mainGameMasterName],
+            ['icon' => 'users', 'label' => __('game-tables::messages.calendar.meta.players'), 'value' => $players],
+            ['icon' => 'monitor', 'label' => __('game-tables::messages.calendar.meta.format'), 'value' => $table->tableFormat->label()],
+        ];
+
+        return array_values(array_filter($rows, fn (array $row): bool => $row['value'] !== ''));
     }
 }

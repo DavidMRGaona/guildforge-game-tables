@@ -33,6 +33,7 @@ final readonly class GameTableListDTO
         public ?string $eventId,
         public ?string $eventTitle,
         public ?string $imagePublicId,
+        public ?string $synopsis = null,
     ) {}
 
     public static function fromEntity(
@@ -64,6 +65,7 @@ final readonly class GameTableListDTO
             eventId: $gameTable->eventId,
             eventTitle: $eventTitle,
             imagePublicId: $gameTable->imagePublicId,
+            synopsis: $gameTable->synopsis,
         );
     }
 
@@ -100,6 +102,7 @@ final readonly class GameTableListDTO
             'event_id' => $this->eventId,
             'event_title' => $this->eventTitle,
             'image_public_id' => $this->imagePublicId,
+            'synopsis' => $this->synopsis,
         ];
     }
 }

@@ -22,6 +22,12 @@ return [
 
     'calendar' => [
         'source_label' => 'Game tables',
+        'meta' => [
+            'game_system' => 'Game system',
+            'game_master' => 'Game master',
+            'players' => 'Players',
+            'format' => 'Format',
+        ],
     ],
 
     'model' => [
