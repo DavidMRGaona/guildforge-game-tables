@@ -56,6 +56,7 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterMode
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ContentWarningModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
+use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 
 final class GameTableResource extends BaseResource
 {
@@ -87,6 +88,8 @@ final class GameTableResource extends BaseResource
 
     public static function form(Schema $schema): Schema
     {
+        $settings = app(GameTableSettingsReader::class);
+
         return $schema
             ->components([
                 Tabs::make('GameTableTabs')
@@ -214,8 +217,8 @@ final class GameTableResource extends BaseResource
                                     ->label(__('game-tables::messages.fields.duration_minutes'))
                                     ->numeric()
                                     ->minValue(30)
-                                    ->maxValue(720)
-                                    ->default(config('game-tables.defaults.duration_minutes', 240))
+                                    ->maxValue($settings->maxDurationMinutes())
+                                    ->default($settings->defaultDurationMinutes())
                                     ->required(),
 
                                 Select::make('table_format')
@@ -253,24 +256,24 @@ final class GameTableResource extends BaseResource
                                     ->label(__('game-tables::messages.fields.min_players'))
                                     ->numeric()
                                     ->minValue(1)
-                                    ->maxValue(20)
-                                    ->default(config('game-tables.defaults.min_players', 3))
+                                    ->maxValue($settings->maxPlayersLimit())
+                                    ->default($settings->defaultMinPlayers())
                                     ->required(),
 
                                 TextInput::make('max_players')
                                     ->label(__('game-tables::messages.fields.max_players'))
                                     ->numeric()
                                     ->minValue(1)
-                                    ->maxValue(20)
-                                    ->default(config('game-tables.defaults.max_players', 5))
+                                    ->maxValue($settings->maxPlayersLimit())
+                                    ->default($settings->defaultMaxPlayers())
                                     ->required(),
 
                                 TextInput::make('max_spectators')
                                     ->label(__('game-tables::messages.fields.max_spectators'))
                                     ->numeric()
                                     ->minValue(0)
-                                    ->maxValue(50)
-                                    ->default(config('game-tables.defaults.max_spectators', 0)),
+                                    ->maxValue($settings->maxSpectatorsLimit())
+                                    ->default($settings->defaultMaxSpectators()),
 
                                 TextInput::make('minimum_age')
                                     ->label(__('game-tables::messages.fields.minimum_age'))
@@ -348,7 +351,7 @@ final class GameTableResource extends BaseResource
                                 Select::make('registration_type')
                                     ->label(__('game-tables::messages.fields.registration_type'))
                                     ->options(RegistrationType::options())
-                                    ->default(RegistrationType::Everyone->value)
+                                    ->default($settings->defaultRegistrationType()->value)
                                     ->native(false)
                                     ->required(),
 
@@ -357,7 +360,7 @@ final class GameTableResource extends BaseResource
                                     ->numeric()
                                     ->minValue(0)
                                     ->maxValue(30)
-                                    ->default(0)
+                                    ->default($settings->defaultMembersEarlyAccessDays())
                                     ->required(),
 
                                 DateTimePicker::make('registration_opens_at')
@@ -372,7 +375,7 @@ final class GameTableResource extends BaseResource
 
                                 Toggle::make('auto_confirm')
                                     ->label(__('game-tables::messages.fields.auto_confirm'))
-                                    ->default(true),
+                                    ->default($settings->defaultAutoConfirm()),
 
                                 Toggle::make('accepts_registrations_in_progress')
                                     ->label(__('game-tables::messages.fields.accepts_registrations_in_progress'))

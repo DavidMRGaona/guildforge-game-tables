@@ -18,6 +18,7 @@ use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 
 /**
  * @property \Filament\Schemas\Schema $form
@@ -58,14 +59,10 @@ final class GameTablesSettings extends Page implements HasForms
         return auth()->user()?->isAdmin() ?? false;
     }
 
-    public function mount(ModuleManagerServiceInterface $moduleManager): void
+    public function mount(GameTableSettingsReader $settings): void
     {
-        $settings = $moduleManager->getSettings(new ModuleName('game-tables'));
-
-        // Load settings with defaults from config
-        $defaults = config('game-tables', []);
-
-        $this->form->fill(array_merge($defaults, $settings));
+        // Saved values over the shipped defaults (config/settings.php)
+        $this->form->fill($settings->all());
     }
 
     /**
@@ -76,35 +73,18 @@ final class GameTablesSettings extends Page implements HasForms
     public static function getFormSchemaComponents(): array
     {
         return [
-            Section::make(__('game-tables::messages.settings.sections.creation'))
-                ->schema([
-                    Select::make('creators')
-                        ->label(__('game-tables::messages.settings.fields.creators'))
-                        ->helperText(__('game-tables::messages.settings.fields.creators_help'))
-                        ->options([
-                            'admin' => __('game-tables::messages.settings.creators.admin'),
-                            'members' => __('game-tables::messages.settings.creators.members'),
-                            'permission' => __('game-tables::messages.settings.creators.permission'),
-                        ])
-                        ->default('admin')
-                        ->native(false)
-                        ->required(),
-                ]),
-
             Section::make(__('game-tables::messages.settings.sections.membership'))
                 ->schema([
                     Toggle::make('membership_integration.enabled')
                         ->label(__('game-tables::messages.settings.fields.membership_enabled'))
-                        ->helperText(__('game-tables::messages.settings.fields.membership_enabled_help'))
-                        ->default(true),
+                        ->helperText(__('game-tables::messages.settings.fields.membership_enabled_help')),
 
                     TextInput::make('defaults.members_early_access_days')
                         ->label(__('game-tables::messages.settings.fields.early_access_days'))
                         ->helperText(__('game-tables::messages.settings.fields.early_access_days_help'))
                         ->numeric()
                         ->minValue(0)
-                        ->maxValue(30)
-                        ->default(0),
+                        ->maxValue(30),
                 ])
                 ->columns(2),
 
@@ -115,7 +95,6 @@ final class GameTablesSettings extends Page implements HasForms
                         ->numeric()
                         ->minValue(30)
                         ->maxValue(720)
-                        ->default(240)
                         ->required(),
 
                     TextInput::make('defaults.min_players')
@@ -123,7 +102,6 @@ final class GameTablesSettings extends Page implements HasForms
                         ->numeric()
                         ->minValue(1)
                         ->maxValue(20)
-                        ->default(3)
                         ->required(),
 
                     TextInput::make('defaults.max_players')
@@ -131,20 +109,17 @@ final class GameTablesSettings extends Page implements HasForms
                         ->numeric()
                         ->minValue(1)
                         ->maxValue(20)
-                        ->default(5)
                         ->required(),
 
                     TextInput::make('defaults.max_spectators')
                         ->label(__('game-tables::messages.settings.fields.default_max_spectators'))
                         ->numeric()
                         ->minValue(0)
-                        ->maxValue(50)
-                        ->default(0),
+                        ->maxValue(50),
 
                     Toggle::make('defaults.auto_confirm')
                         ->label(__('game-tables::messages.settings.fields.auto_confirm'))
-                        ->helperText(__('game-tables::messages.settings.fields.auto_confirm_help'))
-                        ->default(true),
+                        ->helperText(__('game-tables::messages.settings.fields.auto_confirm_help')),
 
                     Select::make('defaults.registration_type')
                         ->label(__('game-tables::messages.settings.fields.default_registration_type'))
@@ -152,7 +127,6 @@ final class GameTablesSettings extends Page implements HasForms
                             'everyone' => __('game-tables::messages.registration_types.everyone'),
                             'members_only' => __('game-tables::messages.registration_types.members_only'),
                         ])
-                        ->default('everyone')
                         ->native(false),
                 ])
                 ->columns(3),
@@ -160,16 +134,13 @@ final class GameTablesSettings extends Page implements HasForms
             Section::make(__('game-tables::messages.settings.sections.notifications'))
                 ->schema([
                     Toggle::make('notifications.notify_on_registration')
-                        ->label(__('game-tables::messages.settings.fields.notify_on_registration'))
-                        ->default(true),
+                        ->label(__('game-tables::messages.settings.fields.notify_on_registration')),
 
                     Toggle::make('notifications.notify_on_cancellation')
-                        ->label(__('game-tables::messages.settings.fields.notify_on_cancellation'))
-                        ->default(true),
+                        ->label(__('game-tables::messages.settings.fields.notify_on_cancellation')),
 
                     Toggle::make('notifications.notify_waiting_list_promotion')
-                        ->label(__('game-tables::messages.settings.fields.notify_waiting_list'))
-                        ->default(true),
+                        ->label(__('game-tables::messages.settings.fields.notify_waiting_list')),
                 ])
                 ->columns(3),
 
@@ -180,7 +151,6 @@ final class GameTablesSettings extends Page implements HasForms
                         ->numeric()
                         ->minValue(1)
                         ->maxValue(100)
-                        ->default(20)
                         ->required(),
 
                     TextInput::make('limits.max_spectators_limit')
@@ -188,7 +158,6 @@ final class GameTablesSettings extends Page implements HasForms
                         ->numeric()
                         ->minValue(0)
                         ->maxValue(200)
-                        ->default(50)
                         ->required(),
 
                     TextInput::make('limits.max_duration_minutes')
@@ -196,7 +165,6 @@ final class GameTablesSettings extends Page implements HasForms
                         ->numeric()
                         ->minValue(60)
                         ->maxValue(1440)
-                        ->default(720)
                         ->required(),
                 ])
                 ->columns(3),
@@ -207,7 +175,6 @@ final class GameTablesSettings extends Page implements HasForms
                     Toggle::make('frontend_creation.enabled')
                         ->label(__('game-tables::messages.settings.fields.frontend_creation_enabled'))
                         ->helperText(__('game-tables::messages.settings.fields.frontend_creation_enabled_help'))
-                        ->default(false)
                         ->live(),
 
                     Select::make('frontend_creation.allowed_content')
@@ -217,7 +184,6 @@ final class GameTablesSettings extends Page implements HasForms
                             'campaigns' => __('game-tables::messages.settings.allowed_content.campaigns'),
                             'both' => __('game-tables::messages.settings.allowed_content.both'),
                         ])
-                        ->default('tables')
                         ->native(false)
                         ->visible(fn (Get $get): bool => (bool) $get('frontend_creation.enabled')),
 
@@ -230,7 +196,6 @@ final class GameTablesSettings extends Page implements HasForms
                             'role' => __('game-tables::messages.settings.access_level.role'),
                             'permission' => __('game-tables::messages.settings.access_level.permission'),
                         ])
-                        ->default('registered')
                         ->native(false)
                         ->live()
                         ->visible(fn (Get $get): bool => (bool) $get('frontend_creation.enabled')),
@@ -261,7 +226,6 @@ final class GameTablesSettings extends Page implements HasForms
                             'approval' => __('game-tables::messages.settings.publication_mode.approval'),
                             'role_based' => __('game-tables::messages.settings.publication_mode.role_based'),
                         ])
-                        ->default('approval')
                         ->native(false)
                         ->visible(fn (Get $get): bool => (bool) $get('frontend_creation.enabled')),
                 ])

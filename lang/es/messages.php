@@ -423,7 +423,6 @@ return [
     'settings' => [
         'title' => 'Configuración del módulo',
         'sections' => [
-            'creation' => 'Creación de mesas',
             'membership' => 'Integración con socios',
             'defaults' => 'Valores por defecto',
             'notifications' => 'Notificaciones',
@@ -432,8 +431,6 @@ return [
             'frontend_creation_description' => 'Permite que los usuarios creen mesas y campañas desde el frontend público',
         ],
         'fields' => [
-            'creators' => 'Quién puede crear mesas',
-            'creators_help' => 'Define quiénes pueden crear nuevas mesas de juego',
             'membership_enabled' => 'Integración con socios habilitada',
             'membership_enabled_help' => 'Permite acceso anticipado y restricciones para socios',
             'early_access_days' => 'Días de acceso anticipado',
@@ -463,11 +460,6 @@ return [
             'required_permission_help' => 'Nombre del permiso necesario para crear',
             'publication_mode' => 'Modo de publicación',
             'publication_mode_help' => 'Cómo se publican las mesas creadas por usuarios',
-        ],
-        'creators' => [
-            'admin' => 'Solo administradores',
-            'members' => 'Cualquier socio',
-            'permission' => 'Usuarios con permiso específico',
         ],
         'allowed_content' => [
             'tables' => 'Solo mesas',

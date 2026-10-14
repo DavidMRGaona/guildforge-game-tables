@@ -117,11 +117,6 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         // Register model extensions early so they're available before Filament loads
         $this->registerModelExtensions();
 
-        $configPath = $this->modulePath('config/game-tables.php');
-        if (file_exists($configPath)) {
-            $this->forceLoadConfig($configPath, 'game-tables');
-        }
-
         // Repository bindings
         $this->app->bind(GameSystemRepositoryInterface::class, EloquentGameSystemRepository::class);
         $this->app->bind(ContentWarningRepositoryInterface::class, EloquentContentWarningRepository::class);

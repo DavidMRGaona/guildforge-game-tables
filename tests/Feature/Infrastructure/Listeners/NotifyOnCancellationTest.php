@@ -45,7 +45,7 @@ final class NotifyOnCancellationTest extends TestCase
 
     public function test_sends_notification_to_gms_and_table_email(): void
     {
-        config()->set('game-tables.notifications.notify_on_cancellation', true);
+        config()->set('modules.settings.game-tables.notifications.notify_on_cancellation', true);
 
         $gameTableId = GameTableId::generate();
         $gameTable = $this->createGameTable($gameTableId);
@@ -102,7 +102,7 @@ final class NotifyOnCancellationTest extends TestCase
     {
         $this->recipientResolver->expects($this->never())->method($this->anything());
 
-        config()->set('game-tables.notifications.notify_on_cancellation', false);
+        config()->set('modules.settings.game-tables.notifications.notify_on_cancellation', false);
 
         $gameTableId = GameTableId::generate();
 
@@ -124,7 +124,7 @@ final class NotifyOnCancellationTest extends TestCase
 
     public function test_does_not_send_when_game_table_not_found(): void
     {
-        config()->set('game-tables.notifications.notify_on_cancellation', true);
+        config()->set('modules.settings.game-tables.notifications.notify_on_cancellation', true);
 
         $gameTableId = GameTableId::generate();
 

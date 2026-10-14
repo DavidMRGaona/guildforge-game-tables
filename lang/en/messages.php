@@ -368,15 +368,12 @@ return [
     'settings' => [
         'title' => 'Module settings',
         'sections' => [
-            'creation' => 'Table creation',
             'membership' => 'Membership integration',
             'defaults' => 'Default values',
             'notifications' => 'Notifications',
             'limits' => 'Limits',
         ],
         'fields' => [
-            'creators' => 'Who can create tables',
-            'creators_help' => 'Defines who can create new game tables',
             'membership_enabled' => 'Membership integration enabled',
             'membership_enabled_help' => 'Enables early access and restrictions for members',
             'early_access_days' => 'Early access days',
@@ -394,11 +391,6 @@ return [
             'max_players_limit' => 'Maximum players limit',
             'max_spectators_limit' => 'Maximum spectators limit',
             'max_duration' => 'Maximum duration (minutes)',
-        ],
-        'creators' => [
-            'admin' => 'Administrators only',
-            'members' => 'Any member',
-            'permission' => 'Users with specific permission',
         ],
     ],
 
