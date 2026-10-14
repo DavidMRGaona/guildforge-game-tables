@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Filament\Widgets;
 
 use App\Application\Services\DashboardWidgetConfigServiceInterface;
+use DateTimeInterface;
 use Filament\Actions\Action;
 use Filament\Support\ArrayRecord;
 use Filament\Tables\Columns\TextColumn;
@@ -74,6 +75,8 @@ final class PendingModerationWidget extends BaseWidget
 
     /**
      * Oldest first, tables and campaigns together.
+     *
+     * @return LengthAwarePaginator<int, array<string, mixed>>
      */
     private function pendingRecords(int $page, int $recordsPerPage): LengthAwarePaginator
     {
@@ -110,7 +113,7 @@ final class PendingModerationWidget extends BaseWidget
 
         /** @var Collection<int, array<string, mixed>> $records */
         $records = $tables->toBase()->concat($campaigns->toBase())
-            ->sortBy(fn (array $record): int => $record['created_at']?->getTimestamp() ?? 0)
+            ->sortBy(static fn (array $record): int => $record['created_at'] instanceof DateTimeInterface ? $record['created_at']->getTimestamp() : 0)
             ->values();
 
         return new LengthAwarePaginator(

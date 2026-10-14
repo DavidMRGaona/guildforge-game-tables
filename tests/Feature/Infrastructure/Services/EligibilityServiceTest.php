@@ -21,14 +21,15 @@ use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Domain\ValueObjects\ParticipantId;
 use Modules\GameTables\Infrastructure\Services\EligibilityService;
+use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 
 final class EligibilityServiceTest extends TestCase
 {
     use RefreshDatabase;
 
-    private ParticipantRepositoryInterface $participantRepository;
-    private GameTableRepositoryInterface $gameTableRepository;
+    private ParticipantRepositoryInterface&MockObject $participantRepository;
+    private GameTableRepositoryInterface&MockObject $gameTableRepository;
     private EligibilityService $service;
 
     protected function setUp(): void
