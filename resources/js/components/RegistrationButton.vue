@@ -133,13 +133,15 @@ const isOpenToEveryone = computed(() => {
     return tableData.value?.registrationType === 'everyone';
 });
 
-// Check if guest registration should be offered (unauthenticated + open to everyone + table is scheduled or in_progress with acceptsRegistrationsInProgress)
+// Check if guest registration should be offered: the same rules the server applies to guests
+// (open to everyone, a status that admits registrations and a free player seat)
 const canRegisterAsGuest = computed(() => {
     if (isAuthenticated.value) return false;
     if (!isOpenToEveryone.value) return false;
+    if (isTableFull.value) return false;
     // For unauthenticated users, check table status directly (eligibility is null for guests)
     const status = tableData.value?.status;
-    if (status === 'scheduled') return true;
+    if (status === 'scheduled' || status === 'full') return true;
     if (status === 'in_progress' && tableData.value?.acceptsRegistrationsInProgress) return true;
     return false;
 });

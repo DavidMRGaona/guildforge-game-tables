@@ -6,7 +6,7 @@ import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { FormCombobox, FormSelect, FormCheckboxGroup, FormCheckboxWithTooltip, FormRadioGroup, FormTagsInput, FormNumberInput } from '@/components/form';
 import type { CheckboxGroup, RadioOption } from '@/components/form';
-import type { GameSystem } from '../../types/gametables';
+import type { GameSystem, TableFormDefaults, TableFormLimits } from '../../types/gametables';
 import GameMasterSection from '../../components/GameMasterSection.vue';
 import FormTabs from '../../components/FormTabs.vue';
 import type { FormTab } from '../../components/FormTabs.vue';
@@ -47,6 +47,8 @@ interface FormData {
     content_warnings: ContentWarning[];
     events: ContextOption[];
     campaigns: ContextOption[];
+    defaults: TableFormDefaults;
+    limits: TableFormLimits;
 }
 
 interface Eligibility {
@@ -145,12 +147,12 @@ const form = useForm({
     game_system_id: '' as string | null,
     title: '',
     starts_at: '',
-    duration_minutes: 240,
+    duration_minutes: props.formData.defaults.duration_minutes,
     table_type: 'one_shot',
     table_format: 'in_person',
-    min_players: 3,
-    max_players: 5,
-    max_spectators: 0,
+    min_players: props.formData.defaults.min_players,
+    max_players: props.formData.defaults.max_players,
+    max_spectators: props.formData.defaults.max_spectators,
     event_id: null as string | null,
     campaign_id: null as string | null,
     synopsis: '',
@@ -592,6 +594,7 @@ function submit(): void {
                                         v-model="form.duration_minutes"
                                         name="duration_minutes"
                                         :min="30"
+                                        :max="formData.limits.max_duration_minutes"
                                         :step="30"
                                         required
                                         :error="form.errors.duration_minutes"
@@ -765,6 +768,7 @@ function submit(): void {
                                                 v-model="form.min_players"
                                                 name="min_players"
                                                 :min="1"
+                                                :max="formData.limits.max_players"
                                                 required
                                                 :error="form.errors.min_players"
                                                 class="mt-1"
@@ -783,6 +787,7 @@ function submit(): void {
                                                 v-model="form.max_players"
                                                 name="max_players"
                                                 :min="1"
+                                                :max="formData.limits.max_players"
                                                 required
                                                 :error="form.errors.max_players"
                                                 class="mt-1"
@@ -804,6 +809,7 @@ function submit(): void {
                                         v-model="form.max_spectators"
                                         name="max_spectators"
                                         :min="0"
+                                        :max="formData.limits.max_spectators"
                                         :error="form.errors.max_spectators"
                                         class="mt-1"
                                     />

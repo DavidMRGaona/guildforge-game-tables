@@ -63,7 +63,10 @@ interface ParticipantRepositoryInterface
 
     public function getNextWaitingListPosition(GameTableId $gameTableId): int;
 
-    public function getFirstInWaitingList(GameTableId $gameTableId): ?Participant;
+    /**
+     * First in the waiting list, optionally only among the participants with the given role.
+     */
+    public function getFirstInWaitingList(GameTableId $gameTableId, ?ParticipantRole $role = null): ?Participant;
 
     public function findByTableAndEmail(GameTableId $gameTableId, string $email): ?Participant;
 

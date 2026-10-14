@@ -6,6 +6,7 @@ namespace Modules\GameTables\Application\Services;
 
 use DateTimeImmutable;
 use Modules\GameTables\Domain\Entities\GameTable;
+use Modules\GameTables\Domain\Enums\ParticipantRole;
 
 interface EligibilityServiceInterface
 {
@@ -24,6 +25,7 @@ interface EligibilityServiceInterface
         bool $isMember,
         ?int $userAge,
         ?DateTimeImmutable $now = null,
+        ParticipantRole $role = ParticipantRole::Player,
     ): void;
 
     /**
@@ -37,6 +39,7 @@ interface EligibilityServiceInterface
         bool $isMember,
         ?int $userAge,
         ?DateTimeImmutable $now = null,
+        ParticipantRole $role = ParticipantRole::Player,
     ): array;
 
     /**
@@ -61,5 +64,19 @@ interface EligibilityServiceInterface
      *
      * @return array{eligible: bool, reason: string|null, message: string|null}
      */
-    public function canGuestRegister(string $gameTableId, string $email): array;
+    public function canGuestRegister(string $gameTableId, string $email, ParticipantRole $role = ParticipantRole::Player): array;
+
+    /**
+     * Refuse a user registration the table page would not offer.
+     *
+     * @throws \Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException
+     */
+    public function ensureUserCanRegister(string $gameTableId, string $userId, ParticipantRole $role = ParticipantRole::Player): void;
+
+    /**
+     * Refuse a guest registration the table page would not offer.
+     *
+     * @throws \Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException
+     */
+    public function ensureGuestCanRegister(string $gameTableId, string $email, ParticipantRole $role = ParticipantRole::Player): void;
 }

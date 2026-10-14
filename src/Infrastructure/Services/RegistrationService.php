@@ -183,7 +183,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             $wasConfirmed,
         );
 
-        // If was confirmed, try to promote from waiting list
+        // The only promotion path: one waiting player per freed player seat
         if ($wasConfirmed && $participant->isPlayer()) {
             $this->promoteFromWaitingList($gameTableId->value);
         }
@@ -240,7 +240,8 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     public function promoteFromWaitingList(string $gameTableId): ?ParticipantResponseDTO
     {
         $tableId = new GameTableId($gameTableId);
-        $participant = $this->participantRepository->getFirstInWaitingList($tableId);
+        // A freed seat is a player seat: spectators in the list are never moved into it
+        $participant = $this->participantRepository->getFirstInWaitingList($tableId, ParticipantRole::Player);
 
         if ($participant === null) {
             return null;
@@ -497,7 +498,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             $wasConfirmed,
         );
 
-        // If was confirmed, try to promote from waiting list
+        // The only promotion path: one waiting player per freed player seat
         if ($wasConfirmed && $participant->isPlayer()) {
             $this->promoteFromWaitingList($gameTableId->value);
         }

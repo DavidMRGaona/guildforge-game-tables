@@ -6,6 +6,9 @@ namespace Modules\GameTables;
 
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Filament\Resources\GameSystemResource;
+use Modules\GameTables\Filament\Resources\PublisherResource;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\PublisherModel;
+use Modules\GameTables\Policies\PublisherPolicy;
 use Modules\GameTables\Filament\Resources\ContentWarningResource;
 use Modules\GameTables\Filament\Resources\CampaignResource;
 use Modules\GameTables\Filament\Resources\GameTableResource;
@@ -48,6 +51,7 @@ use Modules\GameTables\Application\Services\NotificationRecipientResolverInterfa
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Modules\GameTables\Console\Commands\GenerateSlugsCommand;
+use Modules\GameTables\Domain\Events\CampaignSubmittedForReview;
 use Modules\GameTables\Domain\Events\GameTableCancelled;
 use Modules\GameTables\Domain\Events\GameTableModerationApproved;
 use Modules\GameTables\Domain\Events\GameTableModerationRejected;
@@ -70,7 +74,6 @@ use Modules\GameTables\Infrastructure\Listeners\NotifyOnCancellation;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnGuestRegistration;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnRegistration;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnWaitingListPromotion;
-use Modules\GameTables\Infrastructure\Listeners\PromoteFromWaitingListOnCancellation;
 use Modules\GameTables\Infrastructure\Observers\GameTableObserver;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\EventGameTableConfigModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentCampaignRepository;
@@ -94,6 +97,7 @@ use Modules\GameTables\Infrastructure\Services\ProfileCreatedCampaignsDataProvid
 use Modules\GameTables\Infrastructure\Services\ProfileCreatedTablesDataProvider;
 use Modules\GameTables\Infrastructure\Services\ProfileGameTablesDataProvider;
 use Modules\GameTables\Infrastructure\Services\RegistrationService;
+use Modules\GameTables\Listeners\NotifyAdminsOnCampaignModerationSubmission;
 use Modules\GameTables\Listeners\NotifyAdminsOnModerationSubmission;
 use Modules\GameTables\Listeners\NotifyUserOnModerationApproved;
 use Modules\GameTables\Listeners\NotifyUserOnModerationRejected;
@@ -116,11 +120,6 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
 
         // Register model extensions early so they're available before Filament loads
         $this->registerModelExtensions();
-
-        $configPath = $this->modulePath('config/game-tables.php');
-        if (file_exists($configPath)) {
-            $this->forceLoadConfig($configPath, 'game-tables');
-        }
 
         // Repository bindings
         $this->app->bind(GameSystemRepositoryInterface::class, EloquentGameSystemRepository::class);
@@ -353,11 +352,6 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     private function registerEventListeners(): void
     {
         Event::listen(
-            ParticipantCancelled::class,
-            [PromoteFromWaitingListOnCancellation::class, 'handle']
-        );
-
-        Event::listen(
             GuestRegistered::class,
             [SendGuestRegistrationConfirmation::class, 'handle']
         );
@@ -411,6 +405,11 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         Event::listen(
             GameTableSubmittedForReview::class,
             [NotifyAdminsOnModerationSubmission::class, 'handle']
+        );
+
+        Event::listen(
+            CampaignSubmittedForReview::class,
+            [NotifyAdminsOnCampaignModerationSubmission::class, 'handle']
         );
 
         Event::listen(
@@ -554,6 +553,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     {
         return [
             GameSystemResource::class,
+            PublisherResource::class,
             ContentWarningResource::class,
             CampaignResource::class,
             GameTableResource::class,
@@ -569,6 +569,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     {
         return [
             GameSystemModel::class => GameSystemPolicy::class,
+            PublisherModel::class => PublisherPolicy::class,
             ContentWarningModel::class => ContentWarningPolicy::class,
             CampaignModel::class => CampaignPolicy::class,
             GameTableModel::class => GameTablePolicy::class,
@@ -746,11 +747,20 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                 module: 'gametables',
             ),
             new NavigationItemDTO(
+                label: __('game-tables::messages.navigation.publishers'),
+                route: 'filament.admin.resources.publishers.index',
+                icon: 'heroicon-o-building-office',
+                group: __('game-tables::messages.navigation.group'),
+                sort: 4,
+                permissions: ['gametables:gamesystems.view_any'],
+                module: 'gametables',
+            ),
+            new NavigationItemDTO(
                 label: __('game-tables::messages.navigation.content_warnings'),
                 route: 'filament.admin.resources.content-warnings.index',
                 icon: 'heroicon-o-exclamation-triangle',
                 group: __('game-tables::messages.navigation.group'),
-                sort: 4,
+                sort: 5,
                 permissions: ['gametables:contentwarnings.view_any'],
                 module: 'gametables',
             ),

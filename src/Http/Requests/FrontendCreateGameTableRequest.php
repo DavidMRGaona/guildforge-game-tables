@@ -14,6 +14,7 @@ use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableType;
 use Modules\GameTables\Domain\Enums\Tone;
+use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 
 final class FrontendCreateGameTableRequest extends FormRequest
 {
@@ -27,16 +28,19 @@ final class FrontendCreateGameTableRequest extends FormRequest
      */
     public function rules(): array
     {
+        $settings = app(GameTableSettingsReader::class);
+        $maxPlayers = $settings->maxPlayersLimit();
+
         return [
             'game_system_id' => ['required', 'uuid', 'exists:gametables_game_systems,id'],
             'title' => ['required', 'string', 'min:5', 'max:200'],
             'starts_at' => ['required', 'date', 'after:now'],
-            'duration_minutes' => ['required', 'integer', 'min:30', 'max:720'],
+            'duration_minutes' => ['required', 'integer', 'min:30', 'max:'.$settings->maxDurationMinutes()],
             'table_type' => ['required', 'string', Rule::in(TableType::values())],
             'table_format' => ['required', 'string', Rule::in(TableFormat::values())],
-            'min_players' => ['required', 'integer', 'min:1', 'max:20'],
-            'max_players' => ['required', 'integer', 'min:1', 'max:20', 'gte:min_players'],
-            'max_spectators' => ['sometimes', 'integer', 'min:0', 'max:50'],
+            'min_players' => ['required', 'integer', 'min:1', 'max:'.$maxPlayers],
+            'max_players' => ['required', 'integer', 'min:1', 'max:'.$maxPlayers, 'gte:min_players'],
+            'max_spectators' => ['sometimes', 'integer', 'min:0', 'max:'.$settings->maxSpectatorsLimit()],
             'event_id' => ['nullable', 'uuid', 'exists:events,id'],
             'campaign_id' => ['nullable', 'uuid', 'exists:gametables_campaigns,id'],
             'synopsis' => ['nullable', 'string', 'max:5000'],

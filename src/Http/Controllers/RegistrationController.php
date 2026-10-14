@@ -9,6 +9,7 @@ use App\Application\Seo\Services\SeoMetadataFactoryInterface;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
@@ -18,11 +19,8 @@ use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Exceptions\AlreadyRegisteredException;
 use Modules\GameTables\Domain\Exceptions\CannotCancelException;
-use Modules\GameTables\Domain\Exceptions\MembersOnlyException;
-use Modules\GameTables\Domain\Exceptions\MinimumAgeException;
 use Modules\GameTables\Domain\Exceptions\ParticipantNotFoundException;
-use Modules\GameTables\Domain\Exceptions\RegistrationClosedException;
-use Modules\GameTables\Domain\Exceptions\TableFullException;
+use Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException;
 use Modules\GameTables\Http\Requests\GuestRegisterRequest;
 use Modules\GameTables\Http\Requests\RegisterRequest;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
@@ -38,6 +36,8 @@ final class RegistrationController extends Controller
 
     /**
      * Register to a game table.
+     *
+     * @throws ValidationException when the table does not admit the registration
      */
     public function register(RegisterRequest $request, GameTableModel $gameTable): RedirectResponse
     {
@@ -47,9 +47,11 @@ final class RegistrationController extends Controller
             return back()->with('error', __('game-tables::messages.errors.unauthenticated'));
         }
 
+        $role = ParticipantRole::from((string) $request->validated('role', ParticipantRole::Player->value));
+
         try {
-            $roleValue = $request->validated('role', ParticipantRole::Player->value);
-            $role = ParticipantRole::from($roleValue);
+            // The same rules the table page applies before offering the button
+            $this->eligibilityService->ensureUserCanRegister($gameTable->id, (string) $user->id, $role);
 
             $this->registrationService->register(new RegisterParticipantDTO(
                 gameTableId: $gameTable->id,
@@ -57,19 +59,13 @@ final class RegistrationController extends Controller
                 role: $role,
                 notes: $request->validated('notes'),
             ));
-
-            return back()->with('success', __('game-tables::messages.success.registered'));
-        } catch (RegistrationClosedException) {
-            return back()->with('error', __('game-tables::messages.errors.registration_closed'));
-        } catch (TableFullException) {
-            return back()->with('error', __('game-tables::messages.errors.table_full'));
+        } catch (RegistrationNotAllowedException $e) {
+            throw $this->refusal($e->getMessage());
         } catch (AlreadyRegisteredException) {
-            return back()->with('error', __('game-tables::messages.errors.already_registered'));
-        } catch (MembersOnlyException) {
-            return back()->with('error', __('game-tables::messages.errors.members_only'));
-        } catch (MinimumAgeException) {
-            return back()->with('error', __('game-tables::messages.errors.minimum_age'));
+            throw $this->refusal(__('game-tables::messages.errors.already_registered'));
         }
+
+        return back()->with('success', __('game-tables::messages.success.registered'));
     }
 
     /**
@@ -96,21 +92,16 @@ final class RegistrationController extends Controller
 
     /**
      * Register as a guest (no authentication required).
+     *
+     * @throws ValidationException when the table does not admit the registration
      */
     public function registerGuest(GuestRegisterRequest $request, GameTableModel $gameTable): RedirectResponse
     {
         $validated = $request->validated();
-
-        // Check guest eligibility
-        $eligibility = $this->eligibilityService->canGuestRegister($gameTable->id, $validated['email']);
-
-        if (! $eligibility['eligible']) {
-            return back()->with('error', $eligibility['message'] ?? __('game-tables::messages.errors.registration_closed'));
-        }
+        $role = ParticipantRole::from((string) ($validated['role'] ?? ParticipantRole::Player->value));
 
         try {
-            $roleValue = $validated['role'] ?? ParticipantRole::Player->value;
-            $role = ParticipantRole::from($roleValue);
+            $this->eligibilityService->ensureGuestCanRegister($gameTable->id, $validated['email'], $role);
 
             $this->registrationService->registerGuest(new RegisterParticipantDTO(
                 gameTableId: $gameTable->id,
@@ -122,15 +113,21 @@ final class RegistrationController extends Controller
                 email: $validated['email'],
                 phone: $validated['phone'] ?? null,
             ));
-
-            return back()->with('success', __('game-tables::messages.success.guest_registered'));
-        } catch (RegistrationClosedException) {
-            return back()->with('error', __('game-tables::messages.errors.registration_closed'));
-        } catch (TableFullException) {
-            return back()->with('error', __('game-tables::messages.errors.table_full'));
+        } catch (RegistrationNotAllowedException $e) {
+            throw $this->refusal($e->getMessage());
         } catch (AlreadyRegisteredException) {
-            return back()->with('error', __('game-tables::messages.errors.guest_already_registered'));
+            throw $this->refusal(__('game-tables::messages.errors.guest_already_registered'));
         }
+
+        return back()->with('success', __('game-tables::messages.success.guest_registered'));
+    }
+
+    /**
+     * A refused registration: a form error on the table page, a 422 for JSON clients.
+     */
+    private function refusal(string $message): ValidationException
+    {
+        return ValidationException::withMessages(['registration' => $message]);
     }
 
     /**

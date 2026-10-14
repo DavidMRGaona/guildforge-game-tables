@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
 use Modules\GameTables\Domain\Enums\Genre;
+use Modules\GameTables\Domain\Enums\RegistrationType;
 use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableType;
@@ -111,9 +112,16 @@ final readonly class FrontendCreateGameTableDTO
      * Sets sensible defaults for admin-only fields.
      *
      * @param DateTimeImmutable|null $registrationClosesAt Default registration close date (e.g., from event)
+     * @param RegistrationType $registrationType Admin-only field: the module's default
+     * @param bool $autoConfirm Admin-only field: the module's default
+     * @param int $membersEarlyAccessDays Admin-only field: the module's default
      */
-    public function toCreateGameTableDTO(?DateTimeImmutable $registrationClosesAt = null): CreateGameTableDTO
-    {
+    public function toCreateGameTableDTO(
+        ?DateTimeImmutable $registrationClosesAt = null,
+        RegistrationType $registrationType = RegistrationType::Everyone,
+        bool $autoConfirm = true,
+        int $membersEarlyAccessDays = 0,
+    ): CreateGameTableDTO {
         return new CreateGameTableDTO(
             gameSystemId: $this->gameSystemId,
             createdBy: $this->createdBy,
@@ -139,7 +147,10 @@ final readonly class FrontendCreateGameTableDTO
             safetyTools: $this->safetyTools,
             contentWarningIds: $this->contentWarningIds,
             customWarnings: $this->customWarnings,
+            registrationType: $registrationType,
+            membersEarlyAccessDays: $membersEarlyAccessDays,
             registrationClosesAt: $registrationClosesAt,
+            autoConfirm: $autoConfirm,
             notes: $this->notes,
         );
     }

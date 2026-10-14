@@ -116,7 +116,7 @@ final class GameTable
      */
     public function isRegistrationOpen(DateTimeImmutable $now): bool
     {
-        if (! $this->isPublished || ! $this->status->isRegistrable()) {
+        if (! $this->canRegister()) {
             return false;
         }
 
@@ -146,7 +146,13 @@ final class GameTable
      */
     public function canRegister(): bool
     {
-        return $this->isPublished && $this->status->isRegistrable();
+        if (! $this->isPublished) {
+            return false;
+        }
+
+        // A table in play admits registrations only if it says so
+        return $this->status->isRegistrable()
+            || ($this->status === TableStatus::InProgress && $this->acceptsRegistrationsInProgress);
     }
 
     public function requiresInvitation(): bool
@@ -203,10 +209,10 @@ final class GameTable
         return true;
     }
 
-    public function canUserRegister(bool $isMember, DateTimeImmutable $now): bool
+    public function canUserRegister(bool $isMember, DateTimeImmutable $now, bool $membersEarlyAccess = true): bool
     {
         // Check publication and registrable status
-        if (! $this->isPublished || ! $this->status->isRegistrable()) {
+        if (! $this->canRegister()) {
             return false;
         }
 
@@ -219,7 +225,7 @@ final class GameTable
         }
 
         // Early access for members
-        if ($isMember && $this->isMemberEarlyAccessActive($now)) {
+        if ($membersEarlyAccess && $isMember && $this->isMemberEarlyAccessActive($now)) {
             return true;
         }
 

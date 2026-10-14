@@ -46,7 +46,7 @@ final class NotifyOnWaitingListPromotionTest extends TestCase
 
     public function test_sends_notification_to_participant_and_gms(): void
     {
-        config()->set('game-tables.notifications.notify_waiting_list_promotion', true);
+        config()->set('modules.settings.game-tables.notifications.notify_waiting_list_promotion', true);
 
         $gameTableId = GameTableId::generate();
         $gameTable = $this->createGameTable($gameTableId);
@@ -113,7 +113,7 @@ final class NotifyOnWaitingListPromotionTest extends TestCase
 
     public function test_does_not_send_to_participant_when_no_email(): void
     {
-        config()->set('game-tables.notifications.notify_waiting_list_promotion', true);
+        config()->set('modules.settings.game-tables.notifications.notify_waiting_list_promotion', true);
 
         $gameTableId = GameTableId::generate();
         $gameTable = $this->createGameTable($gameTableId);
@@ -170,7 +170,7 @@ final class NotifyOnWaitingListPromotionTest extends TestCase
     {
         $this->recipientResolver->expects($this->never())->method($this->anything());
 
-        config()->set('game-tables.notifications.notify_waiting_list_promotion', false);
+        config()->set('modules.settings.game-tables.notifications.notify_waiting_list_promotion', false);
 
         $gameTableId = GameTableId::generate();
 

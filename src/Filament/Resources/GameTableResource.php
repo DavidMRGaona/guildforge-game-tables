@@ -18,6 +18,7 @@ use Filament\Actions\BulkAction;
 use Modules\GameTables\Filament\Resources\GameTableResource\Pages\ListGameTables;
 use Modules\GameTables\Filament\Resources\GameTableResource\Pages\CreateGameTable;
 use Modules\GameTables\Filament\Resources\GameTableResource\Pages\EditGameTable;
+use App\Filament\Concerns\ChecksPermissions;
 use App\Filament\Resources\BaseResource;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Filament\Forms\Components\CheckboxList;
@@ -56,14 +57,25 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterMode
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ContentWarningModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
+use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 
 final class GameTableResource extends BaseResource
 {
+    use ChecksPermissions;
+
     protected static ?string $model = GameTableModel::class;
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-table-cells';
 
     protected static ?int $navigationSort = 1;
+
+    /**
+     * Approving or rejecting needs the update permission: seeing the table or being its author is not enough.
+     */
+    public static function canModerate(): bool
+    {
+        return self::userCan('gametables:gametables.update');
+    }
 
     public static function getNavigationGroup(): ?string
     {
@@ -87,6 +99,8 @@ final class GameTableResource extends BaseResource
 
     public static function form(Schema $schema): Schema
     {
+        $settings = app(GameTableSettingsReader::class);
+
         return $schema
             ->components([
                 Tabs::make('GameTableTabs')
@@ -214,8 +228,8 @@ final class GameTableResource extends BaseResource
                                     ->label(__('game-tables::messages.fields.duration_minutes'))
                                     ->numeric()
                                     ->minValue(30)
-                                    ->maxValue(720)
-                                    ->default(config('game-tables.defaults.duration_minutes', 240))
+                                    ->maxValue($settings->maxDurationMinutes())
+                                    ->default($settings->defaultDurationMinutes())
                                     ->required(),
 
                                 Select::make('table_format')
@@ -253,24 +267,24 @@ final class GameTableResource extends BaseResource
                                     ->label(__('game-tables::messages.fields.min_players'))
                                     ->numeric()
                                     ->minValue(1)
-                                    ->maxValue(20)
-                                    ->default(config('game-tables.defaults.min_players', 3))
+                                    ->maxValue($settings->maxPlayersLimit())
+                                    ->default($settings->defaultMinPlayers())
                                     ->required(),
 
                                 TextInput::make('max_players')
                                     ->label(__('game-tables::messages.fields.max_players'))
                                     ->numeric()
                                     ->minValue(1)
-                                    ->maxValue(20)
-                                    ->default(config('game-tables.defaults.max_players', 5))
+                                    ->maxValue($settings->maxPlayersLimit())
+                                    ->default($settings->defaultMaxPlayers())
                                     ->required(),
 
                                 TextInput::make('max_spectators')
                                     ->label(__('game-tables::messages.fields.max_spectators'))
                                     ->numeric()
                                     ->minValue(0)
-                                    ->maxValue(50)
-                                    ->default(config('game-tables.defaults.max_spectators', 0)),
+                                    ->maxValue($settings->maxSpectatorsLimit())
+                                    ->default($settings->defaultMaxSpectators()),
 
                                 TextInput::make('minimum_age')
                                     ->label(__('game-tables::messages.fields.minimum_age'))
@@ -348,7 +362,7 @@ final class GameTableResource extends BaseResource
                                 Select::make('registration_type')
                                     ->label(__('game-tables::messages.fields.registration_type'))
                                     ->options(RegistrationType::options())
-                                    ->default(RegistrationType::Everyone->value)
+                                    ->default($settings->defaultRegistrationType()->value)
                                     ->native(false)
                                     ->required(),
 
@@ -357,7 +371,7 @@ final class GameTableResource extends BaseResource
                                     ->numeric()
                                     ->minValue(0)
                                     ->maxValue(30)
-                                    ->default(0)
+                                    ->default($settings->defaultMembersEarlyAccessDays())
                                     ->required(),
 
                                 DateTimePicker::make('registration_opens_at')
@@ -372,7 +386,7 @@ final class GameTableResource extends BaseResource
 
                                 Toggle::make('auto_confirm')
                                     ->label(__('game-tables::messages.fields.auto_confirm'))
-                                    ->default(true),
+                                    ->default($settings->defaultAutoConfirm()),
 
                                 Toggle::make('accepts_registrations_in_progress')
                                     ->label(__('game-tables::messages.fields.accepts_registrations_in_progress'))
@@ -490,6 +504,7 @@ final class GameTableResource extends BaseResource
             ])
             ->recordActions([
                 Action::make('approve')
+                    ->authorize(fn (): bool => self::canModerate())
                     ->label(__('game-tables::messages.moderation.approve'))
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
@@ -507,6 +522,7 @@ final class GameTableResource extends BaseResource
                             ->send();
                     }),
                 Action::make('reject')
+                    ->authorize(fn (): bool => self::canModerate())
                     ->label(__('game-tables::messages.moderation.reject'))
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
@@ -535,6 +551,7 @@ final class GameTableResource extends BaseResource
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                     BulkAction::make('approve')
+                        ->authorize(fn (): bool => self::canModerate())
                         ->label(__('game-tables::messages.bulk_actions.approve'))
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
@@ -559,6 +576,7 @@ final class GameTableResource extends BaseResource
                         })
                         ->deselectRecordsAfterCompletion(),
                     BulkAction::make('reject')
+                        ->authorize(fn (): bool => self::canModerate())
                         ->label(__('game-tables::messages.bulk_actions.reject'))
                         ->icon('heroicon-o-x-circle')
                         ->color('danger')

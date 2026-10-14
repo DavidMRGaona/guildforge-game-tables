@@ -191,11 +191,12 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
         return ($maxPosition ?? 0) + 1;
     }
 
-    public function getFirstInWaitingList(GameTableId $gameTableId): ?Participant
+    public function getFirstInWaitingList(GameTableId $gameTableId, ?ParticipantRole $role = null): ?Participant
     {
         $model = ParticipantModel::query()
             ->where('game_table_id', $gameTableId->value)
             ->where('status', ParticipantStatus::WaitingList->value)
+            ->when($role !== null, fn ($query) => $query->where('role', $role?->value))
             ->orderBy('waiting_list_position', 'asc')
             ->first();
 

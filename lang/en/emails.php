@@ -107,6 +107,16 @@ return [
         'outro' => 'Please review the table and approve or reject it.',
     ],
 
+    'campaign_moderation_submitted' => [
+        'subject' => 'New campaign pending moderation: :campaignTitle',
+        'greeting' => 'Hello,',
+        'intro' => 'A new campaign has been submitted for review.',
+        'campaign_title' => 'Campaign',
+        'created_by' => 'Created by',
+        'review_campaign' => 'Review campaign',
+        'outro' => 'Please review the campaign and approve or reject it.',
+    ],
+
     'moderation_approved' => [
         'subject' => 'Your table has been approved: :tableTitle',
         'greeting' => 'Hello :name,',

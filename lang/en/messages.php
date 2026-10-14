@@ -353,9 +353,10 @@ return [
             'no_data' => 'No data available',
         ],
         'pending_moderation' => [
-            'title' => 'Tables pending moderation',
+            'title' => 'Pending moderation',
+            'type' => 'Type',
             'count' => ':count table(s) pending',
-            'no_pending' => 'No tables pending review',
+            'no_pending' => 'No tables or campaigns pending review',
             'view_all' => 'View all',
         ],
     ],
@@ -368,19 +369,16 @@ return [
     'settings' => [
         'title' => 'Module settings',
         'sections' => [
-            'creation' => 'Table creation',
             'membership' => 'Membership integration',
             'defaults' => 'Default values',
             'notifications' => 'Notifications',
             'limits' => 'Limits',
         ],
         'fields' => [
-            'creators' => 'Who can create tables',
-            'creators_help' => 'Defines who can create new game tables',
             'membership_enabled' => 'Membership integration enabled',
-            'membership_enabled_help' => 'Enables early access and restrictions for members',
+            'membership_enabled_help' => 'Members can register before opening, by the early access days of each table',
             'early_access_days' => 'Early access days',
-            'early_access_days_help' => 'Days advantage for member registration',
+            'early_access_days_help' => 'Initial member early access days of each new table',
             'default_duration' => 'Default duration (minutes)',
             'default_min_players' => 'Default minimum players',
             'default_max_players' => 'Default maximum players',
@@ -394,11 +392,6 @@ return [
             'max_players_limit' => 'Maximum players limit',
             'max_spectators_limit' => 'Maximum spectators limit',
             'max_duration' => 'Maximum duration (minutes)',
-        ],
-        'creators' => [
-            'admin' => 'Administrators only',
-            'members' => 'Any member',
-            'permission' => 'Users with specific permission',
         ],
     ],
 
@@ -470,12 +463,19 @@ return [
         'reject_description' => 'The creator will be notified of the rejection with the reason provided.',
         'rejection_reason' => 'Rejection reason',
         'rejection_reason_placeholder' => 'Explain why this table is being rejected...',
+        'campaign_approve_confirmation' => 'Approve this campaign?',
+        'campaign_approve_description' => 'The campaign will be published and visible to all users.',
+        'campaign_reject_confirmation' => 'Reject this campaign?',
+        'campaign_reject_description' => 'The campaign will not be published; its creator will see the reason in their campaigns.',
+        'campaign_rejection_reason_placeholder' => 'Explain why this campaign is rejected...',
     ],
 
     'notifications' => [
         'table_cancelled' => 'Table cancelled successfully',
         'table_approved' => 'Table approved successfully',
         'table_rejected' => 'Table rejected successfully',
+        'campaign_approved' => 'Campaign approved successfully',
+        'campaign_rejected' => 'Campaign rejected successfully',
     ],
 
     /*

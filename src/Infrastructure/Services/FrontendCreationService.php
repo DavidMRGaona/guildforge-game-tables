@@ -31,6 +31,7 @@ use Modules\GameTables\Domain\Enums\TableType;
 use Modules\GameTables\Domain\Enums\Tone;
 use Modules\GameTables\Domain\Events\GameTableModerationApproved;
 use Modules\GameTables\Domain\Events\GameTableModerationRejected;
+use Modules\GameTables\Domain\Events\CampaignSubmittedForReview;
 use Modules\GameTables\Domain\Events\GameTableSubmittedForReview;
 use Modules\GameTables\Domain\Exceptions\CampaignNotFoundException;
 use Modules\GameTables\Domain\Exceptions\GameTableNotFoundException;
@@ -83,7 +84,12 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         }
 
         // 3. Convert to CreateGameTableDTO
-        $createDto = $dto->toCreateGameTableDTO($registrationClosesAt);
+        $createDto = $dto->toCreateGameTableDTO(
+            $registrationClosesAt,
+            $this->settingsReader->defaultRegistrationType(),
+            $this->settingsReader->defaultAutoConfirm(),
+            $this->settingsReader->defaultMembersEarlyAccessDays(),
+        );
 
         // 4. Create the table (GameTableService handles the creation)
         $gameTable = $this->gameTableService->create($createDto);
@@ -162,7 +168,9 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
      *     languages: array<string, string>,
      *     campaign_frequencies: array<string, string>,
      *     events: array<array{id: string, name: string}>,
-     *     campaigns: array<array{id: string, name: string}>
+     *     campaigns: array<array{id: string, name: string}>,
+     *     defaults: array{duration_minutes: int, min_players: int, max_players: int, max_spectators: int},
+     *     limits: array{max_players: int, max_spectators: int, max_duration_minutes: int}
      * }
      */
     public function getCreateFormData(): array
@@ -221,6 +229,17 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
                 static fn ($campaign): array => ['id' => $campaign->id->value, 'name' => $campaign->title],
                 $campaigns,
             ),
+            'defaults' => [
+                'duration_minutes' => $this->settingsReader->defaultDurationMinutes(),
+                'min_players' => $this->settingsReader->defaultMinPlayers(),
+                'max_players' => $this->settingsReader->defaultMaxPlayers(),
+                'max_spectators' => $this->settingsReader->defaultMaxSpectators(),
+            ],
+            'limits' => [
+                'max_players' => $this->settingsReader->maxPlayersLimit(),
+                'max_spectators' => $this->settingsReader->maxSpectatorsLimit(),
+                'max_duration_minutes' => $this->settingsReader->maxDurationMinutes(),
+            ],
         ];
     }
 
@@ -261,6 +280,11 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
 
         if ($table->createdBy !== $userId) {
             throw NotEditableException::forStatus('not_owner');
+        }
+
+        // Only drafts and rejected tables go to review: a repeated request sends nothing
+        if ($table->frontendCreationStatus?->canSubmitForReview() !== true) {
+            throw NotEditableException::forStatus($table->frontendCreationStatus->value ?? 'not_frontend');
         }
 
         // For now, submitting for review means publishing the table
@@ -487,17 +511,65 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             throw NotEditableException::forStatus('not_owner');
         }
 
+        // Only drafts and rejected campaigns go to review: a repeated request sends nothing
+        if ($campaign->frontendCreationStatus?->canSubmitForReview() !== true) {
+            throw NotEditableException::forStatus($campaign->frontendCreationStatus->value ?? 'not_frontend');
+        }
+
         // Submit for moderation
         $campaign->submitForModeration();
 
         // Check if auto-publish eligible
         $mode = $this->settingsReader->getPublicationMode();
 
-        if ($mode === 'auto' || $this->checkAutoPublishEligibility($userId)) {
+        $autoPublish = $mode === 'auto' || $this->checkAutoPublishEligibility($userId);
+
+        if ($autoPublish) {
             $campaign->approveFrontendCreation();
             $campaign->publish();
         }
 
+        $this->campaignRepository->save($campaign);
+
+        if (! $autoPublish) {
+            CampaignSubmittedForReview::dispatch(
+                $campaign->id->value,
+                $campaign->title,
+                $campaign->createdBy,
+            );
+        }
+    }
+
+    public function approveCampaign(string $campaignId, ?string $notes = null): void
+    {
+        $campaign = $this->campaignRepository->find(new CampaignId($campaignId));
+
+        if ($campaign === null) {
+            throw CampaignNotFoundException::withId($campaignId);
+        }
+
+        if ($campaign->frontendCreationStatus !== FrontendCreationStatus::PendingReview) {
+            throw NotEditableException::forStatus($campaign->frontendCreationStatus->value ?? 'not_frontend');
+        }
+
+        $campaign->approveFrontendCreation($notes);
+        $campaign->publish();
+        $this->campaignRepository->save($campaign);
+    }
+
+    public function rejectCampaign(string $campaignId, string $reason): void
+    {
+        $campaign = $this->campaignRepository->find(new CampaignId($campaignId));
+
+        if ($campaign === null) {
+            throw CampaignNotFoundException::withId($campaignId);
+        }
+
+        if ($campaign->frontendCreationStatus !== FrontendCreationStatus::PendingReview) {
+            throw NotEditableException::forStatus($campaign->frontendCreationStatus->value ?? 'not_frontend');
+        }
+
+        $campaign->rejectFrontendCreation($reason);
         $this->campaignRepository->save($campaign);
     }
 

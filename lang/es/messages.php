@@ -408,9 +408,10 @@ return [
             'no_data' => 'Sin datos disponibles',
         ],
         'pending_moderation' => [
-            'title' => 'Mesas pendientes de moderación',
+            'title' => 'Pendientes de moderación',
+            'type' => 'Tipo',
             'count' => ':count mesa(s) pendiente(s)',
-            'no_pending' => 'No hay mesas pendientes de revisión',
+            'no_pending' => 'No hay mesas ni campañas pendientes de revisión',
             'view_all' => 'Ver todas',
         ],
     ],
@@ -423,7 +424,6 @@ return [
     'settings' => [
         'title' => 'Configuración del módulo',
         'sections' => [
-            'creation' => 'Creación de mesas',
             'membership' => 'Integración con socios',
             'defaults' => 'Valores por defecto',
             'notifications' => 'Notificaciones',
@@ -432,12 +432,10 @@ return [
             'frontend_creation_description' => 'Permite que los usuarios creen mesas y campañas desde el frontend público',
         ],
         'fields' => [
-            'creators' => 'Quién puede crear mesas',
-            'creators_help' => 'Define quiénes pueden crear nuevas mesas de juego',
             'membership_enabled' => 'Integración con socios habilitada',
-            'membership_enabled_help' => 'Permite acceso anticipado y restricciones para socios',
+            'membership_enabled_help' => 'Los socios pueden inscribirse antes de la apertura según los días de acceso anticipado de cada mesa',
             'early_access_days' => 'Días de acceso anticipado',
-            'early_access_days_help' => 'Días de ventaja para inscripción de socios',
+            'early_access_days_help' => 'Valor inicial de los días de ventaja de los socios en cada mesa nueva',
             'default_duration' => 'Duración por defecto (minutos)',
             'default_min_players' => 'Mínimo de jugadores por defecto',
             'default_max_players' => 'Máximo de jugadores por defecto',
@@ -463,11 +461,6 @@ return [
             'required_permission_help' => 'Nombre del permiso necesario para crear',
             'publication_mode' => 'Modo de publicación',
             'publication_mode_help' => 'Cómo se publican las mesas creadas por usuarios',
-        ],
-        'creators' => [
-            'admin' => 'Solo administradores',
-            'members' => 'Cualquier socio',
-            'permission' => 'Usuarios con permiso específico',
         ],
         'allowed_content' => [
             'tables' => 'Solo mesas',
@@ -558,6 +551,11 @@ return [
         'reject_description' => 'El creador será notificado del rechazo con el motivo indicado.',
         'rejection_reason' => 'Motivo del rechazo',
         'rejection_reason_placeholder' => 'Explica por qué se rechaza esta mesa...',
+        'campaign_approve_confirmation' => '¿Aprobar esta campaña?',
+        'campaign_approve_description' => 'La campaña será publicada y visible para todos los usuarios.',
+        'campaign_reject_confirmation' => '¿Rechazar esta campaña?',
+        'campaign_reject_description' => 'La campaña no se publicará; su creador verá el motivo en sus campañas.',
+        'campaign_rejection_reason_placeholder' => 'Explica por qué se rechaza esta campaña...',
     ],
 
     /*
@@ -638,6 +636,8 @@ return [
         'table_cancelled' => 'Mesa cancelada correctamente',
         'table_approved' => 'Mesa aprobada correctamente',
         'table_rejected' => 'Mesa rechazada correctamente',
+        'campaign_approved' => 'Campaña aprobada correctamente',
+        'campaign_rejected' => 'Campaña rechazada correctamente',
     ],
 
     /*

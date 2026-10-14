@@ -114,6 +114,7 @@ final class EditGameTable extends EditRecord
     {
         return [
             Action::make('approveModeration')
+                ->authorize(fn (): bool => GameTableResource::canModerate())
                 ->label(__('game-tables::messages.moderation.approve'))
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
@@ -135,6 +136,7 @@ final class EditGameTable extends EditRecord
                 }),
 
             Action::make('rejectModeration')
+                ->authorize(fn (): bool => GameTableResource::canModerate())
                 ->label(__('game-tables::messages.moderation.reject'))
                 ->icon('heroicon-o-x-circle')
                 ->color('danger')

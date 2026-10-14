@@ -139,6 +139,16 @@ return [
         'outro' => 'Por favor, revisa la mesa y apruébala o recházala.',
     ],
 
+    'campaign_moderation_submitted' => [
+        'subject' => 'Nueva campaña pendiente de moderación: :campaignTitle',
+        'greeting' => 'Hola,',
+        'intro' => 'Se ha enviado una nueva campaña para revisión.',
+        'campaign_title' => 'Campaña',
+        'created_by' => 'Creada por',
+        'review_campaign' => 'Revisar campaña',
+        'outro' => 'Por favor, revisa la campaña y apruébala o recházala.',
+    ],
+
     'moderation_approved' => [
         'subject' => 'Tu mesa ha sido aprobada: :tableTitle',
         'greeting' => 'Hola :name,',

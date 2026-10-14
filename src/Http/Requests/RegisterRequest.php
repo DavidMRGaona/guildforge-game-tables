@@ -24,7 +24,8 @@ final class RegisterRequest extends FormRequest
             'role' => [
                 'sometimes',
                 'string',
-                Rule::in(array_column(ParticipantRole::cases(), 'value')),
+                // Directors are assigned in the panel, never by signing up
+                Rule::in([ParticipantRole::Player->value, ParticipantRole::Spectator->value]),
             ],
             'notes' => ['nullable', 'string', 'max:500'],
         ];
