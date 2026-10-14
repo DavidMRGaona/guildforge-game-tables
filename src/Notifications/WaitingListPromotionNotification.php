@@ -19,6 +19,8 @@ final class WaitingListPromotionNotification extends Notification implements Sho
         private readonly string $tableTitle,
         private readonly ?string $tableDate,
         private readonly ?string $tableLocation,
+        // False on tables with manual confirmation: pending until the game master confirms
+        private readonly bool $confirmed = true,
     ) {}
 
     /**
@@ -51,6 +53,8 @@ final class WaitingListPromotionNotification extends Notification implements Sho
         return $message
             ->action(__('game-tables::emails.waiting_list_promotion.view_table'), $tableUrl)
             ->line('')
-            ->line(__('game-tables::emails.waiting_list_promotion.outro'));
+            ->line($this->confirmed
+                ? __('game-tables::emails.waiting_list_promotion.outro')
+                : __('game-tables::emails.waiting_list_promotion.outro_pending'));
     }
 }

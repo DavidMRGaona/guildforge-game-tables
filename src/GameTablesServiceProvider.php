@@ -50,6 +50,7 @@ use Modules\GameTables\Application\Services\MembershipCheckerInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
+use Modules\GameTables\Application\Services\RegistrationLockInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Modules\GameTables\Console\Commands\GenerateSlugsCommand;
 use Modules\GameTables\Domain\Events\CampaignSubmittedForReview;
@@ -94,10 +95,11 @@ use Modules\GameTables\Infrastructure\Services\GameMasterService;
 use Modules\GameTables\Infrastructure\Services\GameTableQueryService;
 use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
 use Modules\GameTables\Infrastructure\Services\GameTableService;
-use Modules\GameTables\Infrastructure\Services\MembershipsModuleMembershipChecker;
+use Modules\GameTables\Infrastructure\Services\AssociationRoleMembershipChecker;
 use Modules\GameTables\Infrastructure\Services\ProfileCreatedCampaignsDataProvider;
 use Modules\GameTables\Infrastructure\Services\ProfileCreatedTablesDataProvider;
 use Modules\GameTables\Infrastructure\Services\ProfileGameTablesDataProvider;
+use Modules\GameTables\Infrastructure\Services\DatabaseRegistrationLock;
 use Modules\GameTables\Infrastructure\Services\RegistrationService;
 use Modules\GameTables\Listeners\NotifyAdminsOnCampaignModerationSubmission;
 use Modules\GameTables\Listeners\NotifyAdminsOnModerationSubmission;
@@ -134,10 +136,11 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         // Service bindings
         $this->app->bind(GameTableServiceInterface::class, GameTableService::class);
         $this->app->bind(EligibilityServiceInterface::class, EligibilityService::class);
-        $this->app->bind(MembershipCheckerInterface::class, MembershipsModuleMembershipChecker::class);
+        $this->app->bind(MembershipCheckerInterface::class, AssociationRoleMembershipChecker::class);
         $this->app->bind(CreationEligibilityServiceInterface::class, CreationEligibilityService::class);
         $this->app->bind(FrontendCreationServiceInterface::class, FrontendCreationService::class);
         $this->app->bind(RegistrationServiceInterface::class, RegistrationService::class);
+        $this->app->bind(RegistrationLockInterface::class, DatabaseRegistrationLock::class);
         $this->app->bind(EventWithTablesQueryInterface::class, EventWithTablesQuery::class);
         $this->app->bind(GameMasterServiceInterface::class, GameMasterService::class);
         $this->app->bind(EventGameTableConfigServiceInterface::class, EventGameTableConfigService::class);
@@ -784,7 +787,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                 module: $this->moduleName(),
                 order: 0,
                 props: [],
-                dataKeys: ['table', 'eligibility', 'userRegistration'],
+                dataKeys: ['table', 'eligibility', 'guestEligibility', 'userRegistration'],
             ),
             new SlotRegistrationDTO(
                 slot: 'event-detail-actions',

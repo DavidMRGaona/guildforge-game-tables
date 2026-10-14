@@ -13,10 +13,10 @@ use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
-use Modules\GameTables\Application\Services\EligibilityServiceInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
+use Modules\GameTables\Domain\Enums\ParticipantStatus;
 use Modules\GameTables\Domain\Exceptions\AlreadyRegisteredException;
 use Modules\GameTables\Domain\Exceptions\CannotCancelException;
 use Modules\GameTables\Domain\Exceptions\ParticipantNotFoundException;
@@ -29,7 +29,6 @@ final class RegistrationController extends Controller
 {
     public function __construct(
         private readonly RegistrationServiceInterface $registrationService,
-        private readonly EligibilityServiceInterface $eligibilityService,
         private readonly GameTableQueryServiceInterface $gameTableQueryService,
         private readonly SeoMetadataFactoryInterface $seo,
     ) {}
@@ -50,10 +49,8 @@ final class RegistrationController extends Controller
         $role = ParticipantRole::from((string) $request->validated('role', ParticipantRole::Player->value));
 
         try {
-            // The same rules the table page applies before offering the button
-            $this->eligibilityService->ensureUserCanRegister($gameTable->id, (string) $user->id, $role);
-
-            $this->registrationService->register(new RegisterParticipantDTO(
+            // Checks, under the table lock, the same rules the table page applies before offering the button
+            $registration = $this->registrationService->register(new RegisterParticipantDTO(
                 gameTableId: $gameTable->id,
                 userId: (string) $user->id,
                 role: $role,
@@ -63,6 +60,13 @@ final class RegistrationController extends Controller
             throw $this->refusal($e->getMessage());
         } catch (AlreadyRegisteredException) {
             throw $this->refusal(__('game-tables::messages.errors.already_registered'));
+        }
+
+        if ($registration->status === ParticipantStatus::WaitingList) {
+            // On tables with manual confirmation the promoted player still waits for the director
+            $key = $gameTable->auto_confirm ? 'waiting_list' : 'waiting_list_manual';
+
+            return back()->with('success', __('game-tables::messages.success.'.$key, ['position' => $registration->waitingListPosition]));
         }
 
         return back()->with('success', __('game-tables::messages.success.registered'));
@@ -101,9 +105,8 @@ final class RegistrationController extends Controller
         $role = ParticipantRole::from((string) ($validated['role'] ?? ParticipantRole::Player->value));
 
         try {
-            $this->eligibilityService->ensureGuestCanRegister($gameTable->id, $validated['email'], $role);
-
-            $this->registrationService->registerGuest(new RegisterParticipantDTO(
+            // Checks, under the table lock, the same rules the table page applies to guests
+            $registration = $this->registrationService->registerGuest(new RegisterParticipantDTO(
                 gameTableId: $gameTable->id,
                 userId: null,
                 role: $role,
@@ -119,7 +122,11 @@ final class RegistrationController extends Controller
             throw $this->refusal(__('game-tables::messages.errors.guest_already_registered'));
         }
 
-        return back()->with('success', __('game-tables::messages.success.guest_registered'));
+        return back()->with('success', match (true) {
+            $registration->status === ParticipantStatus::WaitingList => __('game-tables::messages.success.guest_waiting_list', ['position' => $registration->waitingListPosition]),
+            $registration->role === ParticipantRole::Spectator => __('game-tables::messages.success.guest_spectator_registered'),
+            default => __('game-tables::messages.success.guest_registered'),
+        });
     }
 
     /**

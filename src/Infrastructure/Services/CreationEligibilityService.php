@@ -10,14 +10,12 @@ use DateTimeImmutable;
 use Modules\GameTables\Application\DTOs\CreationEligibilityDTO;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
 use Modules\GameTables\Domain\Enums\CreationAccessLevel;
-use Modules\Memberships\Application\Services\MemberServiceInterface;
 
 final readonly class CreationEligibilityService implements CreationEligibilityServiceInterface
 {
     public function __construct(
         private GameTableSettingsReader $settingsReader,
         private AuthorizationServiceInterface $authorizationService,
-        private ?MemberServiceInterface $memberService = null,
     ) {}
 
     public function canCreateTable(?string $userId): CreationEligibilityDTO

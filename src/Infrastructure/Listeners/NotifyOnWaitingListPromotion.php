@@ -47,6 +47,7 @@ final readonly class NotifyOnWaitingListPromotion
                     tableTitle: $gameTable->title,
                     tableDate: $tableDate,
                     tableLocation: $tableLocation,
+                    confirmed: $event->confirmed,
                 ));
         }
 
@@ -57,6 +58,7 @@ final readonly class NotifyOnWaitingListPromotion
             tableTitle: $gameTable->title,
             tableDate: $tableDate,
             tableLocation: $tableLocation,
+            confirmed: $event->confirmed,
         );
 
         $emails = $this->recipientResolver->getGameMasterEmails($event->gameTableId);

@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Tests\Feature\Http\Controllers;
 
+use App\Application\Authorization\Services\AssociationMembershipServiceInterface;
+use App\Application\Authorization\Services\AuthorizationServiceInterface;
+use App\Application\Services\SettingsServiceInterface;
+use App\Infrastructure\Persistence\Eloquent\Models\RoleModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
@@ -94,12 +98,77 @@ final class RegistrationEligibilityTest extends ModuleTestCase
         $this->assertSame(1, $this->registrations($table));
     }
 
-    // Without the memberships module enabled nobody counts as a member
-    public function test_without_the_memberships_module_a_members_only_table_refuses_everyone(): void
+    // The association member is the core role chosen in the site settings ("socio" by default)
+    public function test_a_user_with_the_association_member_role_registers_during_the_early_access(): void
     {
-        $this->assertFalse(app(MembershipCheckerInterface::class)->isActiveMember($this->user->id));
+        $this->grant($this->user, 'socio');
+        $table = $this->tableInEarlyAccess();
 
+        $this->register($table)->assertRedirect();
+
+        $this->assertSame(1, $this->registrations($table));
+    }
+
+    public function test_a_user_with_only_the_member_role_waits_for_the_opening(): void
+    {
+        $this->grant($this->user, 'member');
+
+        $this->assertRefused($this->tableInEarlyAccess(), 'registration_not_open');
+    }
+
+    public function test_the_configured_association_member_role_is_respected(): void
+    {
+        $this->configureAssociationRole('junta');
+        $this->grant($this->user, 'junta');
+        $table = $this->tableInEarlyAccess();
+
+        $this->register($table)->assertRedirect();
+
+        $this->assertSame(1, $this->registrations($table));
+    }
+
+    public function test_the_default_role_no_longer_counts_once_another_role_is_configured(): void
+    {
+        $this->configureAssociationRole('junta');
+        $this->grant($this->user, 'socio');
+
+        $this->assertRefused($this->tableInEarlyAccess(), 'registration_not_open');
+    }
+
+    public function test_a_user_with_the_association_member_role_registers_to_a_members_only_table(): void
+    {
+        $this->grant($this->user, 'socio');
+        $table = $this->table(['registration_type' => 'members_only']);
+
+        $this->register($table)->assertRedirect();
+
+        $this->assertSame(1, $this->registrations($table));
+    }
+
+    // A base role in the setting means nobody is an association member: the general rules apply
+    public function test_without_an_association_member_role_nobody_gets_early_access(): void
+    {
+        $this->configureAssociationRole('member');
+        $this->grant($this->user, 'member');
+
+        $this->assertFalse(app(MembershipCheckerInterface::class)->isActiveMember($this->user->id));
+        $this->assertRefused($this->tableInEarlyAccess(), 'registration_not_open');
         $this->assertRefused($this->table(['registration_type' => 'members_only']), 'members_only');
+    }
+
+    public function test_without_an_association_member_role_open_tables_work_as_before(): void
+    {
+        $this->configureAssociationRole('member');
+        $table = $this->table(['registration_opens_at' => now()->subDay()]);
+
+        $this->register($table)->assertRedirect();
+
+        $this->assertSame(1, $this->registrations($table));
+    }
+
+    public function test_an_unknown_user_is_not_an_association_member(): void
+    {
+        $this->assertFalse(app(MembershipCheckerInterface::class)->isActiveMember((string) Str::uuid()));
     }
 
     public function test_a_members_only_table_refuses_a_non_member(): void
@@ -152,12 +221,15 @@ final class RegistrationEligibilityTest extends ModuleTestCase
         $this->assertRefused($table, 'table_full');
     }
 
-    public function test_a_table_without_free_seats_refuses_spectators_too(): void
+    // Spectator seats do not depend on player seats
+    public function test_a_table_without_free_player_seats_still_accepts_spectators(): void
     {
         $table = $this->table(['max_players' => 2, 'max_spectators' => 3]);
         $this->confirmed($table, 'player', 2);
 
-        $this->assertRefused($table, 'table_full', 'spectator');
+        $this->register($table, 'spectator')->assertRedirect();
+
+        $this->assertSame(3, $this->registrations($table));
     }
 
     public function test_a_table_without_spectator_seats_refuses_spectators(): void
@@ -365,6 +437,18 @@ final class RegistrationEligibilityTest extends ModuleTestCase
                 return $userId === $this->memberId;
             }
         });
+    }
+
+    private function grant(UserModel $user, string $roleName): void
+    {
+        $role = RoleModel::query()->firstOrCreate(['name' => $roleName], ['display_name' => ucfirst($roleName)]);
+        $user->roles()->syncWithoutDetaching([$role->id]);
+        app(AuthorizationServiceInterface::class)->invalidateCache();
+    }
+
+    private function configureAssociationRole(string $roleName): void
+    {
+        app(SettingsServiceInterface::class)->set(AssociationMembershipServiceInterface::SETTING_KEY, $roleName);
     }
 
     private function tableInEarlyAccess(): GameTableModel

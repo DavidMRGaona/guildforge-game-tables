@@ -19,6 +19,12 @@ return [
         'enabled' => true,
     ],
 
+    'registration' => [
+        // Full tables offer players a waiting list, promoted automatically
+        // while registrations are open (off: a full table refuses players)
+        'waiting_list_enabled' => false,
+    ],
+
     'defaults' => [
         'members_early_access_days' => 0,
         'duration_minutes' => 240,
@@ -51,7 +57,7 @@ return [
         'allowed_roles' => '',
         // Permission key (access level 'permission')
         'required_permission' => null,
-        // Early creation tiers: [['tier' => 1, 'type' => 'role', 'value' => 'member', 'days_before' => 3], ...]
+        // Early creation tiers: [['tier' => 1, 'type' => 'role', 'value' => 'socio', 'days_before' => 3], ...]
         'priority_tiers' => [],
         'publication' => [
             // 'auto', 'approval' or 'role_based'

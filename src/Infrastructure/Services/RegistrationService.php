@@ -9,7 +9,10 @@ use InvalidArgumentException;
 use Modules\GameTables\Application\DTOs\ParticipantResponseDTO;
 use Modules\GameTables\Application\DTOs\ProfileParticipationDTO;
 use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
+use Modules\GameTables\Application\Services\EligibilityServiceInterface;
+use Modules\GameTables\Application\Services\RegistrationLockInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
+use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Entities\Participant;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
@@ -22,82 +25,38 @@ use Modules\GameTables\Domain\Events\ParticipantRejected;
 use Modules\GameTables\Domain\Exceptions\AlreadyRegisteredException;
 use Modules\GameTables\Domain\Exceptions\CannotCancelException;
 use Modules\GameTables\Domain\Exceptions\ParticipantNotFoundException;
+use Modules\GameTables\Domain\Exceptions\TableFullException;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Domain\ValueObjects\ParticipantId;
 
+/**
+ * Registrations, cancellations and promotions run under the lock of their table
+ * (RegistrationLockInterface); their events are dispatched once the lock is released.
+ */
 final readonly class RegistrationService implements RegistrationServiceInterface
 {
     public function __construct(
         private ParticipantRepositoryInterface $participantRepository,
         private GameTableRepositoryInterface $gameTableRepository,
+        private EligibilityServiceInterface $eligibilityService,
+        private RegistrationLockInterface $lock,
+        private GameTableSettingsReader $settings = new GameTableSettingsReader(),
     ) {}
 
     public function register(RegisterParticipantDTO $dto): ParticipantResponseDTO
     {
-        $gameTableId = new GameTableId($dto->gameTableId);
         $userId = $this->requireUserId($dto);
 
-        // Check if already registered
-        $existing = $this->participantRepository->findByTableAndUser($gameTableId, $userId);
-        if ($existing !== null) {
-            if ($existing->isActive()) {
-                throw AlreadyRegisteredException::forTable($userId, $dto->gameTableId);
-            }
+        $participant = $this->lock->forTable($dto->gameTableId, function () use ($dto, $userId): Participant {
+            // The same rules the table page applies, checked under the lock
+            $this->eligibilityService->ensureUserCanRegister($dto->gameTableId, $userId, $dto->role);
 
-            // Reactivate cancelled registration
-            return $this->reactivateParticipant($existing, $dto);
-        }
+            return $this->placeUser($dto, $userId);
+        });
 
-        $gameTable = $this->gameTableRepository->findOrFail($gameTableId);
-
-        // Determine if should go to waiting list
-        $shouldWaitList = false;
-        if ($dto->role === ParticipantRole::Player) {
-            $confirmedPlayers = $this->participantRepository->countConfirmedPlayers($gameTableId);
-            $shouldWaitList = ! $gameTable->hasCapacity($confirmedPlayers);
-        } elseif ($dto->role === ParticipantRole::Spectator) {
-            $confirmedSpectators = $this->participantRepository->countConfirmedSpectators($gameTableId);
-            $shouldWaitList = $gameTable->availableSpectatorSlots($confirmedSpectators) === 0;
-        }
-
-        $participant = new Participant(
-            id: ParticipantId::generate(),
-            gameTableId: $gameTableId,
-            userId: $dto->userId,
-            role: $dto->role,
-            status: ParticipantStatus::Pending,
-            notes: $dto->notes,
-            createdAt: new DateTimeImmutable,
-        );
-
-        if ($shouldWaitList) {
-            $position = $this->participantRepository->getNextWaitingListPosition($gameTableId);
-            $participant->addToWaitingList($position);
-        } elseif ($gameTable->autoConfirm) {
-            $participant->confirm();
-        }
-
-        $this->participantRepository->save($participant);
-
-        ParticipantRegistered::dispatch(
-            $participant->id->value,
-            $participant->gameTableId->value,
-            $participant->userId,
-            $participant->role->value,
-            $participant->status,
-            $participant->waitingListPosition,
-        );
-
-        if ($participant->isConfirmed()) {
-            ParticipantConfirmed::dispatch(
-                $participant->id->value,
-                $participant->gameTableId->value,
-                $participant->userId,
-                true, // automatic: confirmed on registration
-            );
-        }
+        $this->announceUserRegistration($participant);
 
         return ParticipantResponseDTO::fromEntity($participant);
     }
@@ -110,37 +69,135 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         return $dto->userId ?? throw new InvalidArgumentException('A user ID is required to register a user; use registerGuest() for guests.');
     }
 
-    private function reactivateParticipant(
-        Participant $participant,
-        RegisterParticipantDTO $dto,
-    ): ParticipantResponseDTO {
-        $gameTableId = $participant->gameTableId;
+    /**
+     * One row per user and table: a cancelled registration is reactivated, an active one refused.
+     */
+    private function placeUser(RegisterParticipantDTO $dto, string $userId): Participant
+    {
+        $gameTableId = new GameTableId($dto->gameTableId);
+
+        $existing = $this->participantRepository->findByTableAndUser($gameTableId, $userId);
+        if ($existing !== null && $existing->isActive()) {
+            throw AlreadyRegisteredException::forTable($userId, $dto->gameTableId);
+        }
+
         $gameTable = $this->gameTableRepository->findOrFail($gameTableId);
 
-        // Reset participant state
-        $participant->reactivate();
-        $participant->changeRole($dto->role);
-        $participant->updateNotes($dto->notes);
+        if ($existing !== null) {
+            $participant = $existing;
+            $participant->reactivate();
+            $participant->changeRole($dto->role);
+            $participant->updateNotes($dto->notes);
+        } else {
+            $participant = new Participant(
+                id: ParticipantId::generate(),
+                gameTableId: $gameTableId,
+                userId: $userId,
+                role: $dto->role,
+                status: ParticipantStatus::Pending,
+                notes: $dto->notes,
+                createdAt: new DateTimeImmutable,
+            );
+        }
 
-        // Determine new status based on capacity
+        $this->seat($participant, $gameTable);
+        $this->participantRepository->save($participant);
+
+        return $participant;
+    }
+
+    /**
+     * One row per guest email and table: a cancelled registration is reactivated with a new
+     * token, an active one refused.
+     */
+    private function placeGuest(RegisterParticipantDTO $dto): Participant
+    {
+        $gameTableId = new GameTableId($dto->gameTableId);
+
+        // One guest per email and table, whatever the case it is typed in
+        $email = $dto->email !== null ? mb_strtolower(trim($dto->email)) : null;
+
+        $existing = $email !== null
+            ? $this->participantRepository->findByTableAndEmail($gameTableId, $email)
+            : null;
+
+        if ($existing !== null && $existing->isActive()) {
+            throw AlreadyRegisteredException::forGuestEmail((string) $email, $dto->gameTableId);
+        }
+
+        $gameTable = $this->gameTableRepository->findOrFail($gameTableId);
+        $cancellationToken = bin2hex(random_bytes(32));
+
+        if ($existing !== null) {
+            $participant = $existing;
+            $participant->reactivate();
+            $participant->changeRole($dto->role);
+            $participant->updateNotes($dto->notes);
+            $participant->firstName = $dto->firstName;
+            $participant->lastName = $dto->lastName;
+            $participant->phone = $dto->phone;
+            $participant->setCancellationToken($cancellationToken);
+        } else {
+            $participant = new Participant(
+                id: ParticipantId::generate(),
+                gameTableId: $gameTableId,
+                userId: null,
+                role: $dto->role,
+                status: ParticipantStatus::Pending,
+                notes: $dto->notes,
+                createdAt: new DateTimeImmutable,
+                firstName: $dto->firstName,
+                lastName: $dto->lastName,
+                email: $email,
+                phone: $dto->phone,
+                cancellationToken: $cancellationToken,
+            );
+        }
+
+        $this->seat($participant, $gameTable);
+        $this->participantRepository->save($participant);
+
+        return $participant;
+    }
+
+    /**
+     * A free seat (confirmed when the table confirms automatically, pending otherwise) or the
+     * next position of the waiting list.
+     */
+    private function seat(Participant $participant, GameTable $gameTable): void
+    {
         $shouldWaitList = false;
-        if ($dto->role === ParticipantRole::Player) {
-            $confirmedPlayers = $this->participantRepository->countConfirmedPlayers($gameTableId);
-            $shouldWaitList = ! $gameTable->hasCapacity($confirmedPlayers);
-        } elseif ($dto->role === ParticipantRole::Spectator) {
-            $confirmedSpectators = $this->participantRepository->countConfirmedSpectators($gameTableId);
+        if ($participant->role === ParticipantRole::Player) {
+            $shouldWaitList = ! $gameTable->hasCapacity($this->takenPlayerSeats($gameTable));
+        } elseif ($participant->role === ParticipantRole::Spectator) {
+            $confirmedSpectators = $this->participantRepository->countConfirmedSpectators($gameTable->id);
             $shouldWaitList = $gameTable->availableSpectatorSlots($confirmedSpectators) === 0;
         }
 
         if ($shouldWaitList) {
-            $position = $this->participantRepository->getNextWaitingListPosition($gameTableId);
+            $position = $this->participantRepository->getNextWaitingListPosition($gameTable->id);
             $participant->addToWaitingList($position);
         } elseif ($gameTable->autoConfirm) {
             $participant->confirm();
         }
+    }
 
-        $this->participantRepository->save($participant);
+    /**
+     * Confirmed players, plus pending ones when they hold seats (waiting list on, manual confirmation).
+     */
+    private function takenPlayerSeats(GameTable $gameTable): int
+    {
+        $taken = $this->participantRepository->countConfirmedPlayers($gameTable->id);
 
+        if ($gameTable->pendingPlayersHoldSeats($this->settings->isWaitingListEnabled())) {
+            $taken += $this->participantRepository->countPendingPlayers($gameTable->id);
+        }
+
+        return $taken;
+    }
+
+    private function announceUserRegistration(Participant $participant): void
+    {
         ParticipantRegistered::dispatch(
             $participant->id->value,
             $participant->gameTableId->value,
@@ -158,37 +215,125 @@ final readonly class RegistrationService implements RegistrationServiceInterface
                 true, // automatic: confirmed on registration
             );
         }
+    }
 
-        return ParticipantResponseDTO::fromEntity($participant);
+    private function announceGuestRegistration(Participant $participant): void
+    {
+        GuestRegistered::dispatch(
+            $participant->id->value,
+            $participant->gameTableId->value,
+            $participant->email ?? '',
+            $participant->firstName ?? '',
+            $participant->role->value,
+            $participant->cancellationToken ?? '',
+            $participant->status,
+            $participant->waitingListPosition,
+        );
+
+        if ($participant->isConfirmed()) {
+            ParticipantConfirmed::dispatch(
+                $participant->id->value,
+                $participant->gameTableId->value,
+                null,
+                true, // automatic: confirmed on registration
+            );
+        }
     }
 
     public function cancel(string $participantId): ParticipantResponseDTO
     {
-        $participant = $this->participantRepository->findOrFail(new ParticipantId($participantId));
+        [$participant, $wasConfirmed, $promoted] = $this->lock->forParticipant(
+            $participantId,
+            // Read under the lock: a registration cancelled twice at once frees one seat
+            fn (): array => $this->cancelLocked($this->participantRepository->findOrFail(new ParticipantId($participantId))),
+        );
 
+        $this->announceCancellation($participant, $participant->userId, $wasConfirmed, $promoted);
+
+        return ParticipantResponseDTO::fromEntity($participant);
+    }
+
+    /**
+     * @return array{Participant, bool, Participant|null} the cancelled participant, whether it was confirmed, the promoted one
+     */
+    private function cancelLocked(Participant $participant): array
+    {
         if (! $participant->canBeCancelled()) {
-            throw CannotCancelException::notAllowed($participantId);
+            throw CannotCancelException::notAllowed($participant->id->value);
         }
 
         $wasConfirmed = $participant->isConfirmed();
-        $gameTableId = $participant->gameTableId;
+        $wasPending = $participant->isPending();
 
         $participant->cancel();
         $this->participantRepository->save($participant);
 
+        // The only automatic promotion: one waiting player per freed player seat (a pending
+        // player frees one only where pending players hold seats)
+        $promoted = $participant->isPlayer() && ($wasConfirmed || $wasPending)
+            ? $this->promoteNext($participant->gameTableId, freedByPending: ! $wasConfirmed)
+            : null;
+
+        return [$participant, $wasConfirmed, $promoted];
+    }
+
+    private function announceCancellation(Participant $participant, ?string $userId, bool $wasConfirmed, ?Participant $promoted): void
+    {
         ParticipantCancelled::dispatch(
             $participant->id->value,
             $participant->gameTableId->value,
-            $participant->userId,
+            $userId,
             $wasConfirmed,
         );
 
-        // The only promotion path: one waiting player per freed player seat
-        if ($wasConfirmed && $participant->isPlayer()) {
-            $this->promoteFromWaitingList($gameTableId->value);
+        if ($promoted !== null) {
+            $this->announcePromotion($promoted);
+        }
+    }
+
+    /**
+     * Moves the first waiting player into a freed seat, while the waiting list is open and a
+     * player seat is free. Runs under the table lock.
+     */
+    private function promoteNext(GameTableId $gameTableId, bool $freedByPending = false): ?Participant
+    {
+        // A freed seat is a player seat: spectators in the list are never moved into it
+        $participant = $this->participantRepository->getFirstInWaitingList($gameTableId, ParticipantRole::Player);
+
+        if ($participant === null) {
+            return null;
         }
 
-        return ParticipantResponseDTO::fromEntity($participant);
+        $gameTable = $this->gameTableRepository->find($gameTableId);
+
+        // Closed with the registrations: the director promotes by hand from the panel
+        if ($gameTable === null || ! $gameTable->isWaitingListOpen(new DateTimeImmutable())) {
+            return null;
+        }
+
+        if ($freedByPending && ! $gameTable->pendingPlayersHoldSeats($this->settings->isWaitingListEnabled())) {
+            return null;
+        }
+
+        if (! $gameTable->hasCapacity($this->takenPlayerSeats($gameTable))) {
+            return null;
+        }
+
+        // A table with manual confirmation keeps the director's say: the promoted player waits as pending
+        $participant->promoteFromWaitingList($gameTable->autoConfirm);
+        $this->participantRepository->save($participant);
+
+        return $participant;
+    }
+
+    private function announcePromotion(Participant $participant): void
+    {
+        ParticipantPromotedFromWaitingList::dispatch(
+            $participant->id->value,
+            $participant->gameTableId->value,
+            $participant->userId,
+            $participant->isConfirmed(),
+        );
     }
 
     public function cancelByUser(string $gameTableId, string $userId): ParticipantResponseDTO
@@ -207,10 +352,16 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
     public function confirm(string $participantId): ParticipantResponseDTO
     {
-        $participant = $this->participantRepository->findOrFail(new ParticipantId($participantId));
+        $participant = $this->lock->forParticipant($participantId, function () use ($participantId): Participant {
+            $participant = $this->participantRepository->findOrFail(new ParticipantId($participantId));
 
-        $participant->confirm();
-        $this->participantRepository->save($participant);
+            $this->ensureSeatToConfirm($participant);
+
+            $participant->confirm();
+            $this->participantRepository->save($participant);
+
+            return $participant;
+        });
 
         ParticipantConfirmed::dispatch(
             $participant->id->value,
@@ -221,12 +372,40 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         return ParticipantResponseDTO::fromEntity($participant);
     }
 
+    /**
+     * With the waiting list on, a confirmation never takes the table over its player seats.
+     *
+     * @throws TableFullException
+     */
+    private function ensureSeatToConfirm(Participant $participant): void
+    {
+        if (! $this->settings->isWaitingListEnabled() || ! $participant->isPlayer() || $participant->isConfirmed()) {
+            return;
+        }
+
+        $gameTable = $this->gameTableRepository->findOrFail($participant->gameTableId);
+
+        if (! $gameTable->hasCapacity($this->participantRepository->countConfirmedPlayers($gameTable->id))) {
+            throw TableFullException::forTable($gameTable->id->value);
+        }
+    }
+
     public function reject(string $participantId): ParticipantResponseDTO
     {
-        $participant = $this->participantRepository->findOrFail(new ParticipantId($participantId));
+        [$participant, $promoted] = $this->lock->forParticipant($participantId, function () use ($participantId): array {
+            $participant = $this->participantRepository->findOrFail(new ParticipantId($participantId));
+            $wasPendingPlayer = $participant->isPending() && $participant->isPlayer();
 
-        $participant->reject();
-        $this->participantRepository->save($participant);
+            $participant->reject();
+            $this->participantRepository->save($participant);
+
+            // Where pending players hold seats, rejecting one frees a seat for the waiting list
+            $promoted = $wasPendingPlayer
+                ? $this->promoteNext($participant->gameTableId, freedByPending: true)
+                : null;
+
+            return [$participant, $promoted];
+        });
 
         ParticipantRejected::dispatch(
             $participant->id->value,
@@ -234,27 +413,22 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             $participant->userId,
         );
 
+        if ($promoted !== null) {
+            $this->announcePromotion($promoted);
+        }
+
         return ParticipantResponseDTO::fromEntity($participant);
     }
 
     public function promoteFromWaitingList(string $gameTableId): ?ParticipantResponseDTO
     {
-        $tableId = new GameTableId($gameTableId);
-        // A freed seat is a player seat: spectators in the list are never moved into it
-        $participant = $this->participantRepository->getFirstInWaitingList($tableId, ParticipantRole::Player);
+        $participant = $this->lock->forTable($gameTableId, fn (): ?Participant => $this->promoteNext(new GameTableId($gameTableId)));
 
         if ($participant === null) {
             return null;
         }
 
-        $participant->promoteFromWaitingList();
-        $this->participantRepository->save($participant);
-
-        ParticipantPromotedFromWaitingList::dispatch(
-            $participant->id->value,
-            $participant->gameTableId->value,
-            $participant->userId,
-        );
+        $this->announcePromotion($participant);
 
         return ParticipantResponseDTO::fromEntity($participant);
     }
@@ -333,175 +507,37 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         return ParticipantResponseDTO::fromEntity($participant);
     }
 
+
     public function registerGuest(RegisterParticipantDTO $dto): ParticipantResponseDTO
     {
-        $gameTableId = new GameTableId($dto->gameTableId);
-
-        // Check if guest with this email is already registered
-        if ($dto->email !== null) {
-            $existing = $this->participantRepository->findByTableAndEmail($gameTableId, $dto->email);
-            if ($existing !== null) {
-                if ($existing->isActive()) {
-                    throw AlreadyRegisteredException::forGuestEmail($dto->email, $dto->gameTableId);
-                }
-
-                // Reactivate cancelled guest registration
-                return $this->reactivateGuestParticipant($existing, $dto);
+        $participant = $this->lock->forTable($dto->gameTableId, function () use ($dto): Participant {
+            if ($dto->email !== null) {
+                // The same rules the table page applies, checked under the lock
+                $this->eligibilityService->ensureGuestCanRegister($dto->gameTableId, $dto->email, $dto->role);
             }
-        }
 
-        $gameTable = $this->gameTableRepository->findOrFail($gameTableId);
+            return $this->placeGuest($dto);
+        });
 
-        // Generate cancellation token
-        $cancellationToken = bin2hex(random_bytes(32));
-
-        // Determine if should go to waiting list
-        $shouldWaitList = false;
-        if ($dto->role === ParticipantRole::Player) {
-            $confirmedPlayers = $this->participantRepository->countConfirmedPlayers($gameTableId);
-            $shouldWaitList = ! $gameTable->hasCapacity($confirmedPlayers);
-        } elseif ($dto->role === ParticipantRole::Spectator) {
-            $confirmedSpectators = $this->participantRepository->countConfirmedSpectators($gameTableId);
-            $shouldWaitList = $gameTable->availableSpectatorSlots($confirmedSpectators) === 0;
-        }
-
-        $participant = new Participant(
-            id: ParticipantId::generate(),
-            gameTableId: $gameTableId,
-            userId: null,
-            role: $dto->role,
-            status: ParticipantStatus::Pending,
-            notes: $dto->notes,
-            createdAt: new DateTimeImmutable,
-            firstName: $dto->firstName,
-            lastName: $dto->lastName,
-            email: $dto->email,
-            phone: $dto->phone,
-            cancellationToken: $cancellationToken,
-        );
-
-        if ($shouldWaitList) {
-            $position = $this->participantRepository->getNextWaitingListPosition($gameTableId);
-            $participant->addToWaitingList($position);
-        } elseif ($gameTable->autoConfirm) {
-            $participant->confirm();
-        }
-
-        $this->participantRepository->save($participant);
-
-        GuestRegistered::dispatch(
-            $participant->id->value,
-            $participant->gameTableId->value,
-            $participant->email ?? '',
-            $participant->firstName ?? '',
-            $participant->role->value,
-            $cancellationToken,
-            $participant->status,
-            $participant->waitingListPosition,
-        );
-
-        if ($participant->isConfirmed()) {
-            ParticipantConfirmed::dispatch(
-                $participant->id->value,
-                $participant->gameTableId->value,
-                null,
-                true, // automatic: confirmed on registration
-            );
-        }
-
-        return ParticipantResponseDTO::fromEntity($participant);
-    }
-
-    private function reactivateGuestParticipant(
-        Participant $participant,
-        RegisterParticipantDTO $dto,
-    ): ParticipantResponseDTO {
-        $gameTableId = $participant->gameTableId;
-        $gameTable = $this->gameTableRepository->findOrFail($gameTableId);
-
-        // Reset participant state and update guest info
-        $participant->reactivate();
-        $participant->changeRole($dto->role);
-        $participant->updateNotes($dto->notes);
-        $participant->firstName = $dto->firstName;
-        $participant->lastName = $dto->lastName;
-        $participant->phone = $dto->phone;
-
-        // Generate new cancellation token
-        $cancellationToken = bin2hex(random_bytes(32));
-        $participant->setCancellationToken($cancellationToken);
-
-        // Determine new status based on capacity
-        $shouldWaitList = false;
-        if ($dto->role === ParticipantRole::Player) {
-            $confirmedPlayers = $this->participantRepository->countConfirmedPlayers($gameTableId);
-            $shouldWaitList = ! $gameTable->hasCapacity($confirmedPlayers);
-        } elseif ($dto->role === ParticipantRole::Spectator) {
-            $confirmedSpectators = $this->participantRepository->countConfirmedSpectators($gameTableId);
-            $shouldWaitList = $gameTable->availableSpectatorSlots($confirmedSpectators) === 0;
-        }
-
-        if ($shouldWaitList) {
-            $position = $this->participantRepository->getNextWaitingListPosition($gameTableId);
-            $participant->addToWaitingList($position);
-        } elseif ($gameTable->autoConfirm) {
-            $participant->confirm();
-        }
-
-        $this->participantRepository->save($participant);
-
-        GuestRegistered::dispatch(
-            $participant->id->value,
-            $participant->gameTableId->value,
-            $participant->email ?? '',
-            $participant->firstName ?? '',
-            $participant->role->value,
-            $cancellationToken,
-            $participant->status,
-            $participant->waitingListPosition,
-        );
-
-        if ($participant->isConfirmed()) {
-            ParticipantConfirmed::dispatch(
-                $participant->id->value,
-                $participant->gameTableId->value,
-                null,
-                true, // automatic: confirmed on registration
-            );
-        }
+        $this->announceGuestRegistration($participant);
 
         return ParticipantResponseDTO::fromEntity($participant);
     }
 
     public function cancelByToken(string $token): ParticipantResponseDTO
     {
-        $participant = $this->participantRepository->findByCancellationToken($token);
+        [$participant, $wasConfirmed, $promoted] = $this->lock->forCancellationToken($token, function () use ($token): array {
+            // Read under the lock: a link followed twice at once frees one seat
+            $participant = $this->participantRepository->findByCancellationToken($token);
 
-        if ($participant === null) {
-            throw ParticipantNotFoundException::byToken($token);
-        }
+            if ($participant === null) {
+                throw ParticipantNotFoundException::byToken($token);
+            }
 
-        if (! $participant->canBeCancelled()) {
-            throw CannotCancelException::notAllowed($participant->id->value);
-        }
+            return $this->cancelLocked($participant);
+        });
 
-        $wasConfirmed = $participant->isConfirmed();
-        $gameTableId = $participant->gameTableId;
-
-        $participant->cancel();
-        $this->participantRepository->save($participant);
-
-        ParticipantCancelled::dispatch(
-            $participant->id->value,
-            $participant->gameTableId->value,
-            null,
-            $wasConfirmed,
-        );
-
-        // The only promotion path: one waiting player per freed player seat
-        if ($wasConfirmed && $participant->isPlayer()) {
-            $this->promoteFromWaitingList($gameTableId->value);
-        }
+        $this->announceCancellation($participant, null, $wasConfirmed, $promoted);
 
         return ParticipantResponseDTO::fromEntity($participant);
     }
@@ -547,156 +583,53 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         );
     }
 
+    /**
+     * The director's choice from the panel: confirmed, whatever the dates. With the waiting list on
+     * it never exceeds the player seats (TableFullException); off, it works as before.
+     */
     public function promoteParticipant(string $participantId): ParticipantResponseDTO
     {
-        $participant = $this->participantRepository->findOrFail(new ParticipantId($participantId));
+        [$participant, $promoted] = $this->lock->forParticipant($participantId, function () use ($participantId): array {
+            $participant = $this->participantRepository->findOrFail(new ParticipantId($participantId));
 
-        $participant->promoteFromWaitingList();
-        $this->participantRepository->save($participant);
+            // Promoted, cancelled or confirmed meanwhile: nothing to do
+            if (! $participant->isOnWaitingList()) {
+                return [$participant, false];
+            }
 
-        ParticipantPromotedFromWaitingList::dispatch(
-            $participant->id->value,
-            $participant->gameTableId->value,
-            $participant->userId,
-        );
+            // With the waiting list on, not even the director goes over the player seats
+            $this->ensureSeatToConfirm($participant);
+
+            $participant->promoteFromWaitingList();
+            $this->participantRepository->save($participant);
+
+            return [$participant, true];
+        });
+
+        if ($promoted) {
+            $this->announcePromotion($participant);
+        }
 
         return ParticipantResponseDTO::fromEntity($participant);
     }
 
     public function registerByAdmin(RegisterParticipantDTO $dto): ParticipantResponseDTO
     {
-        $gameTableId = new GameTableId($dto->gameTableId);
         $userId = $this->requireUserId($dto);
 
-        // Check if already registered
-        $existing = $this->participantRepository->findByTableAndUser($gameTableId, $userId);
-        if ($existing !== null && $existing->isActive()) {
-            throw AlreadyRegisteredException::forTable($userId, $dto->gameTableId);
-        }
+        // Admins skip the eligibility rules: a full table puts the participant in the waiting list
+        $participant = $this->lock->forTable($dto->gameTableId, fn (): Participant => $this->placeUser($dto, $userId));
 
-        $gameTable = $this->gameTableRepository->findOrFail($gameTableId);
-
-        // Admin can bypass waiting list checks, directly set status
-        $participant = new Participant(
-            id: ParticipantId::generate(),
-            gameTableId: $gameTableId,
-            userId: $dto->userId,
-            role: $dto->role,
-            status: ParticipantStatus::Pending,
-            notes: $dto->notes,
-            createdAt: new DateTimeImmutable,
-        );
-
-        // Determine if should go to waiting list based on capacity
-        $shouldWaitList = false;
-        if ($dto->role === ParticipantRole::Player) {
-            $confirmedPlayers = $this->participantRepository->countConfirmedPlayers($gameTableId);
-            $shouldWaitList = ! $gameTable->hasCapacity($confirmedPlayers);
-        } elseif ($dto->role === ParticipantRole::Spectator) {
-            $confirmedSpectators = $this->participantRepository->countConfirmedSpectators($gameTableId);
-            $shouldWaitList = $gameTable->availableSpectatorSlots($confirmedSpectators) === 0;
-        }
-
-        if ($shouldWaitList) {
-            $position = $this->participantRepository->getNextWaitingListPosition($gameTableId);
-            $participant->addToWaitingList($position);
-        } elseif ($gameTable->autoConfirm) {
-            $participant->confirm();
-        }
-
-        $this->participantRepository->save($participant);
-
-        ParticipantRegistered::dispatch(
-            $participant->id->value,
-            $participant->gameTableId->value,
-            $participant->userId,
-            $participant->role->value,
-            $participant->status,
-            $participant->waitingListPosition,
-        );
-
-        if ($participant->isConfirmed()) {
-            ParticipantConfirmed::dispatch(
-                $participant->id->value,
-                $participant->gameTableId->value,
-                $participant->userId,
-                true, // automatic: confirmed on registration
-            );
-        }
+        $this->announceUserRegistration($participant);
 
         return ParticipantResponseDTO::fromEntity($participant);
     }
 
     public function registerGuestByAdmin(RegisterParticipantDTO $dto): ParticipantResponseDTO
     {
-        $gameTableId = new GameTableId($dto->gameTableId);
+        $participant = $this->lock->forTable($dto->gameTableId, fn (): Participant => $this->placeGuest($dto));
 
-        // Check if guest with this email is already registered
-        if ($dto->email !== null) {
-            $existing = $this->participantRepository->findByTableAndEmail($gameTableId, $dto->email);
-            if ($existing !== null && $existing->isActive()) {
-                throw AlreadyRegisteredException::forGuestEmail($dto->email, $dto->gameTableId);
-            }
-        }
-
-        $gameTable = $this->gameTableRepository->findOrFail($gameTableId);
-
-        // Generate cancellation token
-        $cancellationToken = bin2hex(random_bytes(32));
-
-        // Determine if should go to waiting list
-        $shouldWaitList = false;
-        if ($dto->role === ParticipantRole::Player) {
-            $confirmedPlayers = $this->participantRepository->countConfirmedPlayers($gameTableId);
-            $shouldWaitList = ! $gameTable->hasCapacity($confirmedPlayers);
-        } elseif ($dto->role === ParticipantRole::Spectator) {
-            $confirmedSpectators = $this->participantRepository->countConfirmedSpectators($gameTableId);
-            $shouldWaitList = $gameTable->availableSpectatorSlots($confirmedSpectators) === 0;
-        }
-
-        $participant = new Participant(
-            id: ParticipantId::generate(),
-            gameTableId: $gameTableId,
-            userId: null,
-            role: $dto->role,
-            status: ParticipantStatus::Pending,
-            notes: $dto->notes,
-            createdAt: new DateTimeImmutable,
-            firstName: $dto->firstName,
-            lastName: $dto->lastName,
-            email: $dto->email,
-            phone: $dto->phone,
-            cancellationToken: $cancellationToken,
-        );
-
-        if ($shouldWaitList) {
-            $position = $this->participantRepository->getNextWaitingListPosition($gameTableId);
-            $participant->addToWaitingList($position);
-        } elseif ($gameTable->autoConfirm) {
-            $participant->confirm();
-        }
-
-        $this->participantRepository->save($participant);
-
-        GuestRegistered::dispatch(
-            $participant->id->value,
-            $participant->gameTableId->value,
-            $participant->email ?? '',
-            $participant->firstName ?? '',
-            $participant->role->value,
-            $cancellationToken,
-            $participant->status,
-            $participant->waitingListPosition,
-        );
-
-        if ($participant->isConfirmed()) {
-            ParticipantConfirmed::dispatch(
-                $participant->id->value,
-                $participant->gameTableId->value,
-                null,
-                true, // automatic: confirmed on registration
-            );
-        }
+        $this->announceGuestRegistration($participant);
 
         return ParticipantResponseDTO::fromEntity($participant);
     }

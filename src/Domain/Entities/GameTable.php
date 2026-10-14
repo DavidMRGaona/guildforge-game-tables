@@ -165,6 +165,15 @@ final class GameTable
         return $confirmedPlayers < $this->maxPlayers;
     }
 
+    /**
+     * With the waiting list on, a table with manual confirmation counts pending players as taken
+     * seats: newcomers queue behind the list instead of piling up as pending registrations.
+     */
+    public function pendingPlayersHoldSeats(bool $waitingListEnabled): bool
+    {
+        return $waitingListEnabled && ! $this->autoConfirm;
+    }
+
     public function availablePlayerSlots(int $confirmedPlayers): int
     {
         return max(0, $this->maxPlayers - $confirmedPlayers);
@@ -207,6 +216,20 @@ final class GameTable
         }
 
         return true;
+    }
+
+    /**
+     * The waiting list closes with the registrations: when the table stops admitting them
+     * (status, publication) or its closing date has passed. The opening date does not
+     * matter: early registrations may already wait for a seat.
+     */
+    public function isWaitingListOpen(DateTimeImmutable $now): bool
+    {
+        if (! $this->canRegister()) {
+            return false;
+        }
+
+        return $this->registrationClosesAt === null || $now <= $this->registrationClosesAt;
     }
 
     public function canUserRegister(bool $isMember, DateTimeImmutable $now, bool $membersEarlyAccess = true): bool

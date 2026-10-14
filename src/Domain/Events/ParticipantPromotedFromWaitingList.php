@@ -16,5 +16,7 @@ final class ParticipantPromotedFromWaitingList
         public readonly string $participantId,
         public readonly string $gameTableId,
         public readonly ?string $userId,
+        // False on tables with manual confirmation: the promoted player waits as pending
+        public readonly bool $confirmed = true,
     ) {}
 }

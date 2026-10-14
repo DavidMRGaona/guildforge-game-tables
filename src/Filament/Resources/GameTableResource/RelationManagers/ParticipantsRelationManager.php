@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources\GameTableResource\RelationManagers;
 
+use Filament\Notifications\Notification;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Grid;
@@ -25,6 +26,7 @@ use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
+use Modules\GameTables\Domain\Exceptions\TableFullException;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 
@@ -211,7 +213,16 @@ final class ParticipantsRelationManager extends RelationManager
                     ->visible(fn (ParticipantModel $record): bool => $record->status === ParticipantStatus::Pending)
                     ->action(function (ParticipantModel $record): void {
                         $registrationService = app(RegistrationServiceInterface::class);
-                        $registrationService->confirm($record->id);
+
+                        try {
+                            $registrationService->confirm($record->id);
+                        } catch (TableFullException) {
+                            // With the waiting list on, a confirmation never exceeds the player seats
+                            Notification::make()
+                                ->title(__('game-tables::messages.errors.table_full'))
+                                ->danger()
+                                ->send();
+                        }
                     }),
 
                 Action::make('reject')
@@ -232,7 +243,16 @@ final class ParticipantsRelationManager extends RelationManager
                     ->visible(fn (ParticipantModel $record): bool => $record->status === ParticipantStatus::WaitingList)
                     ->action(function (ParticipantModel $record): void {
                         $registrationService = app(RegistrationServiceInterface::class);
-                        $registrationService->promoteParticipant($record->id);
+
+                        try {
+                            $registrationService->promoteParticipant($record->id);
+                        } catch (TableFullException) {
+                            // With the waiting list on, a promotion never exceeds the player seats
+                            Notification::make()
+                                ->title(__('game-tables::messages.errors.table_full'))
+                                ->danger()
+                                ->send();
+                        }
                     }),
 
                 EditAction::make(),

@@ -65,6 +65,11 @@ final class GameTableSettingsReader
         return $this->bool('membership_integration.enabled', true);
     }
 
+    public function isWaitingListEnabled(): bool
+    {
+        return $this->bool('registration.waiting_list_enabled', false);
+    }
+
     public function defaultDurationMinutes(): int
     {
         return $this->int('defaults.duration_minutes', 240);

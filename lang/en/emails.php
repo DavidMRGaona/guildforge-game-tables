@@ -80,12 +80,14 @@ return [
         'table_location' => 'Location',
         'view_table' => 'View table',
         'outro' => 'Your spot has been automatically confirmed. See you at the session!',
+        'outro_pending' => 'Your registration is pending until the game master confirms it. We will let you know by email when it is reviewed.',
     ],
 
     'waiting_list_promotion_gm' => [
         'subject' => 'Waiting list promotion for table: :tableTitle',
         'greeting' => 'Hello,',
         'intro' => ':name has been promoted from the waiting list for the table :tableTitle.',
+        'pending' => 'The table has manual confirmation: the registration is pending until you confirm or reject it in the panel.',
         'table_title' => 'Table',
         'table_date' => 'Date',
         'table_location' => 'Location',

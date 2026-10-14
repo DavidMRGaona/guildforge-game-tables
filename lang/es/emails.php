@@ -80,12 +80,14 @@ return [
         'table_location' => 'Ubicación',
         'view_table' => 'Ver mesa',
         'outro' => 'Tu plaza ha sido confirmada automáticamente. ¡Nos vemos en la partida!',
+        'outro_pending' => 'Tu inscripción queda pendiente de que el director de juego la confirme. Te avisaremos por correo cuando se revise.',
     ],
 
     'waiting_list_promotion_gm' => [
         'subject' => 'Promoción de lista de espera en mesa: :tableTitle',
         'greeting' => 'Hola,',
         'intro' => ':name ha sido promovido/a desde la lista de espera en la mesa :tableTitle.',
+        'pending' => 'La mesa tiene confirmación manual: la inscripción queda pendiente hasta que la confirmes o la rechaces en el panel.',
         'table_title' => 'Mesa',
         'table_date' => 'Fecha',
         'table_location' => 'Ubicación',

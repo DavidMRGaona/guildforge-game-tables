@@ -190,9 +190,13 @@ final class GameTableController extends Controller
     {
         $user = auth()->user();
         $eligibility = null;
+        $guestEligibility = null;
         $userRegistration = null;
 
-        if ($user !== null) {
+        if ($user === null) {
+            // What a visitor without an account can do: the same rules the guest registration applies
+            $guestEligibility = $this->eligibilityService->guestEligibility($table->id);
+        } else {
             // Get user eligibility
             $eligibility = $this->eligibilityService->canRegisterById($table->id, (string) $user->id);
 
@@ -204,6 +208,7 @@ final class GameTableController extends Controller
         return Inertia::render('GameTables/Show', [
             'table' => GameTableResource::make($table)->resolve(),
             'eligibility' => $eligibility,
+            'guestEligibility' => $guestEligibility,
             'userRegistration' => $userRegistration,
             'seo' => $this->tableSeo($table),
         ]);

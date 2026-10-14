@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Tests\Feature\Infrastructure\Services;
 
+use Closure;
 use DateTimeImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use InvalidArgumentException;
 use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
+use Modules\GameTables\Application\Services\EligibilityServiceInterface;
+use Modules\GameTables\Application\Services\RegistrationLockInterface;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Entities\Participant;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
@@ -54,6 +57,25 @@ final class RegistrationServiceTest extends TestCase
         $this->service = new RegistrationService(
             $this->participantRepository,
             $this->gameTableRepository,
+            // Eligibility and locking have their own tests; here they let every call through
+            $this->createStub(EligibilityServiceInterface::class),
+            new class implements RegistrationLockInterface
+            {
+                public function forTable(string $gameTableId, Closure $callback): mixed
+                {
+                    return $callback();
+                }
+
+                public function forParticipant(string $participantId, Closure $callback): mixed
+                {
+                    return $callback();
+                }
+
+                public function forCancellationToken(string $token, Closure $callback): mixed
+                {
+                    return $callback();
+                }
+            },
         );
 
         Event::fake();

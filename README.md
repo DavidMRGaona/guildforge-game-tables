@@ -9,7 +9,7 @@ Módulo de GuildForge para gestionar mesas de rol y campañas: inscripciones de 
 - **Directores de juego**: director principal y co-directores, propios de la mesa o heredados de la campaña.
 - **Inscripciones**: como jugador o espectador, con confirmación automática o manual por mesa.
 - **Invitados**: quien no tiene cuenta se inscribe con nombre y email en las mesas abiertas a todos, y cancela con un enlace con token.
-- **Lista de espera**: recoge a quien llega sin plaza (la última plaza pedida a la vez por dos personas, o un participante que un administrador añade a una mesa completa); al cancelar un jugador confirmado se promociona al primer jugador de la lista (uno por plaza; los espectadores en espera no ocupan plazas de jugador).
+- **Lista de espera** (ajuste, desactivada por defecto): con las plazas de jugador completas, los jugadores se apuntan a la lista y cada plaza liberada pasa al primero mientras las inscripciones sigan abiertas. Ver [Lista de espera](#lista-de-espera).
 - **Tipos de inscripción**: abierta a todos, solo socios (con acceso anticipado opcional) o solo por invitación.
 - **Avisos de contenido** con severidad (leve, moderada, severa) y **herramientas de seguridad** (Carta X, Líneas y velos, Puerta abierta, Estrellas y deseos, Flor de apoyo, Script change, Rosas y espinas, otras).
 - **Catálogo**: sistemas de juego y editoriales.
@@ -21,9 +21,8 @@ Módulo de GuildForge para gestionar mesas de rol y campañas: inscripciones de 
 
 ## Requisitos
 
-- GuildForge core `^3.2`
+- GuildForge core `^3.8`
 - PHP >= 8.5, Laravel >= 13, Filament 5
-- Opcional: el módulo de socios (`memberships`) para las mesas «Solo socios»
 
 El core rechaza el módulo si no se cumplen (`module.json` → `requires`).
 
@@ -55,9 +54,10 @@ Se configura en el panel: **Mesas de rol** → **Configuración** (permiso `game
 
 | Sección | Qué controla |
 |---------|--------------|
+| **Inscripciones** | **Lista de espera**: si las mesas con las plazas de jugador completas ofrecen la lista de espera (desactivada: la mesa completa rechaza a los jugadores). Ver [Lista de espera](#lista-de-espera) |
 | **Integración con socios** | Si los socios pueden inscribirse antes de la apertura según los días de acceso anticipado de cada mesa (desactivada, se inscriben con la apertura general) y los días de acceso anticipado con los que empieza cada mesa nueva del panel |
 | **Valores por defecto** | Duración y número de jugadores y espectadores con los que empiezan los formularios de mesa del panel y de la web; confirmación automática y tipo de inscripción de las mesas nuevas del panel y de las creadas desde la web |
-| **Notificaciones** | Correos de inscripción y de cancelación a los directores y al email de la mesa, y correos de promoción desde la lista de espera |
+| **Notificaciones** | Correos de inscripción y de cancelación a los directores y al email de la mesa, y correos de promoción desde la lista de espera (al participante y a los directores) |
 | **Límites** | Máximo de jugadores, de espectadores y de duración en los formularios de mesa del panel y de la web (también al validar el envío) |
 | **Creación desde web** | Activar la creación desde la web, qué se puede crear (mesas, campañas o ambas), quién puede crear (cualquier persona, usuarios registrados, roles concretos separados por comas o un permiso) y el modo de publicación (`auto`, `approval`, `role_based`) |
 
@@ -87,14 +87,33 @@ El formulario de eventos tiene la pestaña **Configuración de mesas**:
 | Completada | `completed` | Sesión terminada |
 | Cancelada | `cancelled` | Mesa cancelada: se cancelan sus inscripciones y se avisa a los participantes |
 
-La publicación es un indicador aparte (`is_published`). **Publicar** deja la mesa en `scheduled` y **Despublicar** la devuelve a `draft`. Las inscripciones se admiten mientras la mesa está publicada y en `scheduled` o `full` (o en `in_progress` si tiene activado **Permitir inscripciones durante la partida**), dentro de sus fechas de inscripción; los socios pueden inscribirse antes si la mesa tiene días de acceso anticipado y **Integración con socios** está activada. Además:
+La publicación es un indicador aparte (`is_published`). **Publicar** deja la mesa en `scheduled` y **Despublicar** la devuelve a `draft`. Las inscripciones se admiten mientras la mesa está publicada y en `scheduled` o `full` (o en `in_progress` si tiene activado **Permitir inscripciones durante la partida**), dentro de sus fechas de inscripción; los socios pueden inscribirse antes si la mesa tiene días de acceso anticipado y **Integración con socios** está activada. Socio es quien tiene el rol de socio del core: el que se elige en **Configuración del sitio** (`socio` por defecto); no depende del módulo de socios. Si ese ajuste no apunta a un rol válido, nadie cuenta como socio: no hay acceso anticipado y las mesas «Solo socios» no admiten a nadie. Además:
 
 - Las mesas «Solo socios» solo admiten socios; los invitados solo pueden inscribirse en las mesas abiertas a todos.
-- Sin plazas de jugador libres no se admiten inscripciones nuevas, tampoco de espectador; como espectador hace falta además una plaza de espectador libre.
-- Nadie puede tener dos inscripciones activas en la misma mesa (los invitados se distinguen por su email).
+- Sin plazas de jugador libres no se admiten jugadores nuevos, salvo en la lista de espera si está activada.
+- Los espectadores solo necesitan una plaza de espectador libre, aunque las de jugador estén completas; no tienen lista de espera.
+- Nadie puede tener dos inscripciones activas en la misma mesa, contando la lista de espera (los invitados se distinguen por su email).
 - Desde la web solo se inscribe como jugador o espectador; los directores se asignan en el panel.
 
-El servidor aplica estas reglas igual que la página de la mesa (a los invitados la página no les comprueba las fechas: lo hace el servidor al enviar): una inscripción que no las cumple no se crea y se responde con el motivo (error de formulario en la web, 422 a los clientes JSON). Los administradores que añaden participantes desde el panel no están sujetos a ellas. En el panel, la cabecera de la mesa tiene las acciones **Publicar**, **Despublicar**, **Iniciar**, **Completar** y **Cancelar mesa**.
+La página de la mesa y el servidor usan el mismo cálculo: el servidor decide qué ofrece la página a cada rol (inscripción, lista de espera o el motivo del rechazo) y vuelve a aplicarlo al recibir la inscripción; a los invitados solo se les comprueba el email al enviar. Una inscripción que no cumple las reglas no se crea y se responde con el motivo (error de formulario en la web, 422 a los clientes JSON). Los administradores que añaden participantes desde el panel no están sujetos a ellas. En el panel, la cabecera de la mesa tiene las acciones **Publicar**, **Despublicar**, **Iniciar**, **Completar** y **Cancelar mesa**.
+
+### Lista de espera
+
+Se activa en **Configuración** → **Inscripciones** → **Lista de espera** (`registration.waiting_list_enabled`, desactivada por defecto). Desactivada, una mesa con las plazas de jugador completas rechaza a los jugadores; la lista solo recoge a quien añade un administrador desde el panel.
+
+Activada:
+
+- **Quién**: solo jugadores, usuarios e invitados, cuando las plazas de jugador están completas y se cumplen las demás reglas de inscripción (fechas, acceso anticipado, tipo de inscripción, no estar ya inscrito). La página muestra **Apuntarse a la lista de espera** con una línea que explica la promoción, y cada persona recibe su posición (1, 2…). Los espectadores no tienen lista de espera.
+- **Promoción automática**: cuando un jugador confirmado cancela, el primer jugador de la lista ocupa su plaza; una promoción por plaza liberada, nunca por encima del máximo de jugadores. Los espectadores en espera nunca pasan a una plaza de jugador.
+- **Mesas con confirmación manual**: los jugadores pendientes ocupan plaza (confirmados + pendientes cuentan para el aforo), así que quien llega con la mesa así llena va a la lista detrás de los que ya esperan, y cancelar o **Rechazar** una inscripción pendiente también libera plaza y pasa al primero de la lista (a pendiente). El promovido queda pendiente y el director lo confirma o lo rechaza; los correos al participante y a los directores lo dicen. En las demás mesas el promovido queda confirmado.
+- **Límite en el panel**: con la lista activada, **Confirmar** y **Promover** no dejan superar el máximo de jugadores confirmados; avisan de que la mesa está completa y no cambian nada.
+- **Activar la lista en una mesa manual que ya supera su aforo** (confirmados + pendientes por encima de `max_players`): no se toca ninguna fila; quien llega va a la lista, confirmar a un pendiente se rechaza mientras los confirmados estén en el máximo y la lista avanza a medida que se liberen plazas.
+- **Cierre**: la lista se cierra con las inscripciones (fecha de cierre pasada, mesa no publicada o en un estado que no admite inscripciones). Desde entonces no se admiten altas en la lista ni hay promoción automática; las filas se conservan y el director puede promover a mano con la acción **Promover** del panel, que confirma al participante bajo el mismo bloqueo de la mesa y no hace nada si ya no está en espera.
+- **Concurrencia**: las inscripciones (también las del panel), cancelaciones, confirmaciones y promociones de una mesa se hacen en una transacción con bloqueo de la fila de la mesa (en PostgreSQL), así que dos cancelaciones simultáneas no promueven dos veces a la misma persona ni sobrepasan el aforo, y dos peticiones simultáneas no crean dos filas para la misma persona.
+
+Con la lista desactivada todo sigue como en la versión 2.5.0 salvo esto: los espectadores no dependen de las plazas de jugador, y las reglas de promoción (una por plaza, sin pasar el aforo, pendiente en mesas con confirmación manual, sin promoción tras el cierre) se aplican a las filas en espera que añade un administrador o que quedan de cuando la lista estaba activada; quien llega a una mesa completa recibe «La mesa está completa». Que los pendientes ocupen plaza, que rechazar a un pendiente promueva y el límite de **Confirmar** y **Promover** solo se aplican con la lista activada.
+
+Los emails de los invitados se guardan en minúsculas y se comparan sin distinguir mayúsculas. Quien solo puede entrar como espectador (plazas de jugador completas y sin lista) ve **Inscribirse como espectador**, tenga sesión o no; el invitado ve además un aviso de que las plazas de jugador están completas.
 
 ### Inscripción
 
@@ -220,7 +239,7 @@ Widget del dashboard: `PendingModerationWidget` (mesas y campañas pendientes de
 | Inscripción (usuario o invitado) | Participante; directores y email de la mesa si **Notificaciones** lo permite |
 | Confirmación o rechazo de la inscripción | Participante |
 | Cancelación de la inscripción | Participante; directores y email de la mesa si **Notificaciones** lo permite |
-| Promoción desde la lista de espera | Participante y directores, si **Notificaciones** lo permite |
+| Promoción desde la lista de espera | Participante y directores, si **Notificaciones** lo permite; en las mesas con confirmación manual indican que la inscripción queda pendiente |
 | Cancelación de la mesa | Participantes |
 | Mesa o campaña enviada a revisión | Usuarios con rol `admin` o `editor` |
 | Mesa aprobada o rechazada | Autor |
@@ -274,7 +293,9 @@ php artisan gametables:generate-slugs --force    # regenera también los existen
 
 ## Limitaciones actuales
 
-- Para «Solo socios», un usuario es socio si está vinculado a un socio con estado activo en el módulo `memberships`; sin ese módulo nadie cuenta como socio.
+- **Editar** un participante en el panel cambia la fila directamente: puede ponerlo como confirmado por encima del aforo y no pasa el email de invitado a minúsculas.
+- Los espectadores pendientes no ocupan plaza en el servidor (solo cuentan los confirmados), aunque la página los cuente al mostrar las plazas libres.
+
 - Las rutas de creación desde la web exigen sesión iniciada, también con el nivel de acceso «Cualquier persona».
 - «Solo por invitación» no tiene sistema de invitaciones: rechaza a los invitados sin cuenta, pero los usuarios con sesión iniciada pueden inscribirse como en una mesa abierta.
 

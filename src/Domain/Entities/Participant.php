@@ -61,11 +61,22 @@ final class Participant
         $this->waitingListPosition = $position;
     }
 
-    public function promoteFromWaitingList(): void
+    /**
+     * Leaves the waiting list: confirmed, or pending when the table confirms by hand.
+     */
+    public function promoteFromWaitingList(bool $confirm = true): void
     {
-        $this->status = ParticipantStatus::Confirmed;
         $this->waitingListPosition = null;
-        $this->confirmedAt = new DateTimeImmutable();
+
+        if ($confirm) {
+            $this->status = ParticipantStatus::Confirmed;
+            $this->confirmedAt = new DateTimeImmutable();
+
+            return;
+        }
+
+        $this->status = ParticipantStatus::Pending;
+        $this->confirmedAt = null;
     }
 
     public function markAsNoShow(): void

@@ -222,6 +222,44 @@ final class GameTableTest extends TestCase
         $this->assertFalse($gameTable->isPublicRegistrationOpen($now));
     }
 
+    public function test_the_waiting_list_is_open_while_the_table_admits_registrations(): void
+    {
+        $table = $this->createGameTable(TableStatus::Scheduled);
+        $table->isPublished = true;
+
+        $this->assertTrue($table->isWaitingListOpen(new DateTimeImmutable('2026-01-20 10:00:00')));
+    }
+
+    public function test_the_waiting_list_closes_with_the_registration_closing_date(): void
+    {
+        $table = $this->createGameTable(TableStatus::Scheduled);
+        $table->isPublished = true;
+        $table->registrationClosesAt = new DateTimeImmutable('2026-01-31 20:00:00');
+
+        $this->assertTrue($table->isWaitingListOpen(new DateTimeImmutable('2026-01-31 20:00:00')));
+        $this->assertFalse($table->isWaitingListOpen(new DateTimeImmutable('2026-01-31 20:00:01')));
+    }
+
+    public function test_the_waiting_list_closes_when_the_table_stops_admitting_registrations(): void
+    {
+        $unpublished = $this->createGameTable(TableStatus::Scheduled);
+        $inProgress = $this->createGameTable(TableStatus::InProgress);
+        $inProgress->isPublished = true;
+
+        $this->assertFalse($unpublished->isWaitingListOpen(new DateTimeImmutable('2026-01-20 10:00:00')));
+        $this->assertFalse($inProgress->isWaitingListOpen(new DateTimeImmutable('2026-01-20 10:00:00')));
+    }
+
+    // Members registered during the early access may already be waiting before the public opening
+    public function test_the_waiting_list_does_not_wait_for_the_public_opening(): void
+    {
+        $table = $this->createGameTable(TableStatus::Scheduled);
+        $table->isPublished = true;
+        $table->registrationOpensAt = new DateTimeImmutable('2026-01-30 10:00:00');
+
+        $this->assertTrue($table->isWaitingListOpen(new DateTimeImmutable('2026-01-28 10:00:00')));
+    }
+
     private function createGameTable(
         TableStatus $status = TableStatus::Draft,
         RegistrationType $registrationType = RegistrationType::Everyone,
