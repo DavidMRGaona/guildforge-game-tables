@@ -439,8 +439,8 @@ return [
             'frontend_creation_description' => 'Permite que los usuarios creen mesas y campañas desde el frontend público',
         ],
         'fields' => [
-            'membership_enabled' => 'Integración con socios habilitada',
-            'membership_enabled_help' => 'Los socios (quienes tienen el rol de socio elegido en la configuración del sitio) pueden inscribirse antes de la apertura según los días de acceso anticipado de cada mesa',
+            'membership_enabled' => 'Acceso anticipado para socios',
+            'membership_enabled_help' => 'Quienes tienen el rol de socio elegido en la configuración del sitio pueden inscribirse antes de la apertura, según los días de acceso anticipado de cada mesa. No depende del módulo de gestión de socios',
             'waiting_list_enabled' => 'Lista de espera',
             'waiting_list_enabled_help' => 'Con las plazas de jugador completas, los jugadores pueden apuntarse a la lista de espera. Cada plaza liberada pasa automáticamente al primero de la lista mientras las inscripciones sigan abiertas; al cerrarse, la promoción automática se detiene y el director puede promover a mano. En las mesas con confirmación manual los pendientes ocupan plaza y el promovido queda pendiente de que el director lo confirme. Los espectadores no tienen lista de espera',
             'early_access_days' => 'Días de acceso anticipado',

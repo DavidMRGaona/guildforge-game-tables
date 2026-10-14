@@ -382,8 +382,8 @@ return [
             'limits' => 'Limits',
         ],
         'fields' => [
-            'membership_enabled' => 'Membership integration enabled',
-            'membership_enabled_help' => 'Members (users with the association member role chosen in the site settings) can register before opening, by the early access days of each table',
+            'membership_enabled' => 'Early access for association members',
+            'membership_enabled_help' => 'Holders of the association member role chosen in the site settings can register before opening, by the early access days of each table. It does not depend on the memberships module',
             'waiting_list_enabled' => 'Waiting list',
             'waiting_list_enabled_help' => 'When the player seats are taken, players can join the waiting list. Each freed seat goes automatically to the first in the list while registrations are open; once they close, automatic promotion stops and the game master can promote by hand. On tables with manual confirmation pending players hold seats and the promoted player waits for the game master to confirm them. Spectators have no waiting list',
             'early_access_days' => 'Early access days',
