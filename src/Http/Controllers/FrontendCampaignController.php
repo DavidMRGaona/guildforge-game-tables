@@ -11,6 +11,8 @@ use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\GameTables\Domain\Exceptions\NotEditableException;
+use Modules\GameTables\Domain\Exceptions\CampaignNotFoundException;
 use Modules\GameTables\Application\DTOs\FrontendCreateCampaignDTO;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
@@ -163,7 +165,14 @@ final class FrontendCampaignController extends Controller
         /** @var UserModel $user */
         $user = auth()->user();
 
-        $this->creationService->submitCampaignForReview($id, (string) $user->id);
+        try {
+            $this->creationService->submitCampaignForReview($id, (string) $user->id);
+        } catch (CampaignNotFoundException) {
+            abort(404);
+        } catch (NotEditableException) {
+            // Not the author's, or not a draft or rejected campaign (as the table policy answers)
+            abort(403);
+        }
 
         return redirect()
             ->route('campaigns.my-campaigns')

@@ -282,6 +282,11 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             throw NotEditableException::forStatus('not_owner');
         }
 
+        // Only drafts and rejected tables go to review: a repeated request sends nothing
+        if ($table->frontendCreationStatus?->canSubmitForReview() !== true) {
+            throw NotEditableException::forStatus($table->frontendCreationStatus->value ?? 'not_frontend');
+        }
+
         // For now, submitting for review means publishing the table
         // if the publication mode is 'auto' or user has auto-publish privileges
         $mode = $this->settingsReader->getPublicationMode();
@@ -504,6 +509,11 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
 
         if ($campaign->createdBy !== $userId) {
             throw NotEditableException::forStatus('not_owner');
+        }
+
+        // Only drafts and rejected campaigns go to review: a repeated request sends nothing
+        if ($campaign->frontendCreationStatus?->canSubmitForReview() !== true) {
+            throw NotEditableException::forStatus($campaign->frontendCreationStatus->value ?? 'not_frontend');
         }
 
         // Submit for moderation
