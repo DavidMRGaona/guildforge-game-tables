@@ -9,6 +9,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use App\Application\Modules\Services\ModuleManagerServiceInterface;
 use App\Domain\Modules\ValueObjects\ModuleName;
+use App\Filament\Concerns\ChecksPermissions;
 use App\Filament\Concerns\SafeModuleNavigation;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
@@ -25,6 +26,7 @@ use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
  */
 final class GameTablesSettings extends Page implements HasForms
 {
+    use ChecksPermissions;
     use InteractsWithForms;
     use SafeModuleNavigation;
 
@@ -56,7 +58,8 @@ final class GameTablesSettings extends Page implements HasForms
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->isAdmin() ?? false;
+        // Granted in Roles; admins hold every permission
+        return self::userCan('gametables:gametables.settings');
     }
 
     public function mount(GameTableSettingsReader $settings): void
@@ -243,6 +246,9 @@ final class GameTablesSettings extends Page implements HasForms
 
     public function save(ModuleManagerServiceInterface $moduleManager): void
     {
+        // Livewire methods can be called without the page's button
+        abort_unless(self::canAccess(), 403);
+
         $formData = $this->form->getState();
 
         $moduleManager->updateSettings(new ModuleName('game-tables'), $formData);
