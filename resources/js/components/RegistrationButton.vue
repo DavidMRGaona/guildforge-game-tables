@@ -117,6 +117,12 @@ const showsWaitingListHelp = computed(
     () => !canCancel.value && (canJoinWaitingList.value || (canRegisterAsGuest.value && guestJoinsWaitingList.value))
 );
 
+// The role options keep their explanation outside the button (a disabled button gets no focus)
+// and tie it to the button with aria-describedby
+const roleDialogTitleId = computed(() => `role-dialog-title-${resolvedTableId.value}`);
+const playerOptionHelpId = computed(() => `role-player-help-${resolvedTableId.value}`);
+const spectatorOptionHelpId = computed(() => `role-spectator-help-${resolvedTableId.value}`);
+
 const waitingListHelp = computed(() => {
     return tableData.value?.autoConfirm === false
         ? t('gameTables.registration.waitingListHelpManual')
@@ -340,32 +346,41 @@ function cancelRoleSelect(): void {
                     >
                         <div
                             v-if="showRoleSelect"
+                            role="dialog"
+                            aria-modal="true"
+                            :aria-labelledby="roleDialogTitleId"
                             class="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl dark:bg-stone-800"
                         >
-                            <h3 class="mb-4 text-center text-lg font-semibold text-gray-900 dark:text-stone-100">
+                            <h3
+                                :id="roleDialogTitleId"
+                                class="mb-4 text-center text-lg font-semibold text-gray-900 dark:text-stone-100"
+                            >
                                 {{ showNotesInput ? t('gameTables.registration.addNotes') : t('gameTables.registration.selectRole') }}
                             </h3>
 
                             <!-- Role buttons -->
                             <div v-if="!showNotesInput" class="space-y-3">
-                                <button
-                                    type="button"
-                                    :disabled="!playerEligible"
-                                    class="w-full rounded-lg px-4 py-3 text-left transition-colors"
+                                <!-- The whole card is the button (stretched over it); the reason sits outside it -->
+                                <div
+                                    class="relative w-full rounded-lg px-4 py-3 text-left transition-colors"
                                     :class="{
                                         'bg-primary-light hover:bg-primary-200 dark:bg-primary-900/20 dark:hover:bg-primary-900/30':
                                             playerEligible && !canJoinWaitingList,
                                         'bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30':
                                             canJoinWaitingList,
-                                        'cursor-not-allowed bg-gray-100 dark:bg-stone-700':
-                                            !playerEligible,
+                                        'bg-gray-100 dark:bg-stone-700': !playerEligible,
                                     }"
-                                    @click="selectRole('player')"
                                 >
-                                    <div class="font-medium text-gray-900 dark:text-stone-100">
+                                    <button
+                                        type="button"
+                                        :disabled="!playerEligible"
+                                        :aria-describedby="playerOptionHelpId"
+                                        class="w-full text-left font-medium text-gray-900 before:absolute before:inset-0 before:rounded-lg focus:outline-none focus-visible:before:ring-2 focus-visible:before:ring-primary-500 disabled:cursor-not-allowed dark:text-stone-100"
+                                        @click="selectRole('player')"
+                                    >
                                         {{ canJoinWaitingList ? t('gameTables.registration.joinWaitingList') : t('gameTables.registration.registerAsPlayer') }}
-                                    </div>
-                                    <div class="mt-1 text-sm text-gray-500 dark:text-stone-400">
+                                    </button>
+                                    <p :id="playerOptionHelpId" class="mt-1 text-sm text-gray-500 dark:text-stone-400">
                                         <template v-if="canJoinWaitingList">
                                             {{ waitingListHelp }}
                                             <template v-if="waitingListCount > 0">
@@ -378,26 +393,28 @@ function cancelRoleSelect(): void {
                                         <template v-else>
                                             {{ eligibility?.message ?? t('gameTables.details.full') }}
                                         </template>
-                                    </div>
-                                </button>
+                                    </p>
+                                </div>
 
-                                <button
+                                <div
                                     v-if="tableData?.maxSpectators && tableData.maxSpectators > 0"
-                                    type="button"
-                                    :disabled="!spectatorEligible"
-                                    class="w-full rounded-lg px-4 py-3 text-left transition-colors"
+                                    class="relative w-full rounded-lg px-4 py-3 text-left transition-colors"
                                     :class="{
                                         'bg-gray-50 hover:bg-gray-100 dark:bg-stone-700/50 dark:hover:bg-stone-700':
                                             spectatorEligible,
-                                        'cursor-not-allowed bg-gray-100 dark:bg-stone-700':
-                                            !spectatorEligible,
+                                        'bg-gray-100 dark:bg-stone-700': !spectatorEligible,
                                     }"
-                                    @click="selectRole('spectator')"
                                 >
-                                    <div class="font-medium text-gray-900 dark:text-stone-100">
+                                    <button
+                                        type="button"
+                                        :disabled="!spectatorEligible"
+                                        :aria-describedby="spectatorOptionHelpId"
+                                        class="w-full text-left font-medium text-gray-900 before:absolute before:inset-0 before:rounded-lg focus:outline-none focus-visible:before:ring-2 focus-visible:before:ring-primary-500 disabled:cursor-not-allowed dark:text-stone-100"
+                                        @click="selectRole('spectator')"
+                                    >
                                         {{ t('gameTables.registration.registerAsSpectator') }}
-                                    </div>
-                                    <div class="mt-1 text-sm text-gray-500 dark:text-stone-400">
+                                    </button>
+                                    <p :id="spectatorOptionHelpId" class="mt-1 text-sm text-gray-500 dark:text-stone-400">
                                         <template v-if="spectatorEligible && spectatorSpotsAvailable !== null">
                                             {{ t('gameTables.details.spotsAvailable', { spots: spectatorSpotsAvailable }) }}
                                         </template>
@@ -410,8 +427,8 @@ function cancelRoleSelect(): void {
                                         <template v-else>
                                             {{ eligibility?.spectator?.message ?? t('gameTables.registration.spectatorsFull') }}
                                         </template>
-                                    </div>
-                                </button>
+                                    </p>
+                                </div>
                             </div>
 
                             <!-- Notes input -->
