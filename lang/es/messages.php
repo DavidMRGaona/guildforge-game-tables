@@ -430,7 +430,7 @@ return [
     'settings' => [
         'title' => 'Configuración del módulo',
         'sections' => [
-            'membership' => 'Integración con socios',
+            'membership' => 'Acceso anticipado para socios',
             'registration' => 'Inscripciones',
             'defaults' => 'Valores por defecto',
             'notifications' => 'Notificaciones',

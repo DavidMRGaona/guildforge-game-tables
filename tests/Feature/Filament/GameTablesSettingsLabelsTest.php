@@ -53,6 +53,15 @@ final class GameTablesSettingsLabelsTest extends ModuleTestCase
         $this->assertStringContainsStringIgnoringCase($inHelp, $help);
     }
 
+    #[DataProvider('locales')]
+    public function test_the_section_is_named_after_early_access(string $locale, string $inLabel, string $inHelp): void
+    {
+        $heading = __('game-tables::messages.settings.sections.membership', [], $locale);
+
+        $this->assertStringContainsStringIgnoringCase($inLabel, $heading);
+        $this->assertStringNotContainsStringIgnoringCase('integra', $heading);
+    }
+
     public function test_the_settings_page_keeps_the_saved_key_under_the_new_label(): void
     {
         Livewire::test(GameTablesSettings::class)

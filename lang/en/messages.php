@@ -375,7 +375,7 @@ return [
     'settings' => [
         'title' => 'Module settings',
         'sections' => [
-            'membership' => 'Membership integration',
+            'membership' => 'Early access for association members',
             'registration' => 'Registrations',
             'defaults' => 'Default values',
             'notifications' => 'Notifications',

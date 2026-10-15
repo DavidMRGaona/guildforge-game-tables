@@ -80,9 +80,6 @@ const waitingListCount = computed(() => {
     return tableData.value?.waitingListCount ?? 0;
 });
 
-// Determine if component should render
-const shouldRender = computed(() => resolvedTableId.value !== '');
-
 // Registration flow conditions: the server computes each role with the rules it applies on submit
 const playerEligible = computed(() => eligibility.value?.eligible === true);
 const spectatorEligible = computed(() => eligibility.value?.spectator?.eligible === true);
@@ -302,7 +299,7 @@ function cancelRoleSelect(): void {
 </script>
 
 <template>
-    <div v-if="shouldRender" class="registration-button-container">
+    <div class="registration-button-container">
         <!-- Current registration status -->
         <RegistrationStatus
             v-if="registration && !isFinalStatus(registration.status)"
