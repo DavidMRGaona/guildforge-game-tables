@@ -45,6 +45,7 @@ use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\GameSystemId;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 
 final readonly class FrontendCreationService implements FrontendCreationServiceInterface
 {
@@ -135,7 +136,8 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             gameSystemId: new GameSystemId($dto->gameSystemId),
             createdBy: $dto->createdBy,
             title: $dto->title,
-            slug: \Illuminate\Support\Str::slug($dto->title),
+            // Same unique slug as a campaign created from the panel (title plus the start of the id)
+            slug: (new CampaignModel)->generateUniqueSlug($dto->title, $campaignId->value),
             status: CampaignStatus::Recruiting,
             description: $dto->synopsis,
             frequency: $dto->frequency,
@@ -481,8 +483,8 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         }
 
         // Update the campaign
+        // The slug is left as it is: the model renews it when the title changes and keeps the old one redirecting
         $campaign->title = $dto->title;
-        $campaign->slug = \Illuminate\Support\Str::slug($dto->title);
         $campaign->description = $dto->synopsis;
         $campaign->frequency = $dto->frequency;
         $campaign->maxPlayers = $dto->maxPlayers;
