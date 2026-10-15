@@ -295,6 +295,50 @@ final class EmailVerificationGateTest extends ModuleTestCase
         }
     }
 
+    public function test_the_edit_forms_send_an_account_that_must_verify_to_the_notice_and_change_nothing(): void
+    {
+        $this->requireVerification();
+        $user = $this->mustVerifyUser();
+        $table = $this->tableDraftOf($user);
+        $campaign = $this->campaignDraftOf($user);
+
+        foreach ([route('gametables.edit', $table), route('campaigns.frontend-edit', $campaign->id)] as $url) {
+            $this->actingAs($user)
+                ->withHeaders($this->inertiaHeaders())
+                ->get($url)
+                ->assertRedirect(route('verification.notice'));
+        }
+
+        foreach ([route('gametables.update', $table), route('campaigns.frontend-update', $campaign->id)] as $url) {
+            $this->actingAs($user)
+                ->withHeaders($this->inertiaHeaders())
+                ->from(route('profile.show'))
+                ->put($url, ['title' => 'Editada sin verificar'])
+                ->assertRedirect(route('verification.notice'));
+        }
+
+        $this->assertSame('Mesa en borrador', GameTableModel::query()->findOrFail($table->id)->title);
+        $this->assertSame('Campaña en borrador', CampaignModel::query()->findOrFail($campaign->id)->title);
+    }
+
+    public function test_authors_that_need_not_verify_open_the_edit_forms_as_before(): void
+    {
+        foreach ($this->accountsThatNeedNotVerify() as $user) {
+            $table = $this->tableDraftOf($user);
+            $campaign = $this->campaignDraftOf($user);
+
+            $this->actingAs($user)
+                ->get(route('gametables.edit', $table))
+                ->assertOk()
+                ->assertInertia(fn (Assert $page) => $page->component('GameTables/Edit', false));
+
+            $this->actingAs($user)
+                ->get(route('campaigns.frontend-edit', $campaign->id))
+                ->assertOk()
+                ->assertInertia(fn (Assert $page) => $page->component('Campaigns/Edit', false));
+        }
+    }
+
     public function test_a_creation_sent_anyway_lands_on_the_notice_and_creates_nothing(): void
     {
         $this->requireVerification();
@@ -371,6 +415,49 @@ final class EmailVerificationGateTest extends ModuleTestCase
             'role' => 'player',
             'status' => 'confirmed',
             'confirmed_at' => now(),
+        ]);
+    }
+
+    private function tableDraftOf(UserModel $user): GameTableModel
+    {
+        $id = (string) Str::uuid();
+
+        return GameTableModel::create([
+            'id' => $id,
+            'game_system_id' => $this->table->game_system_id,
+            'created_by' => $user->id,
+            'title' => 'Mesa en borrador',
+            'slug' => 'mesa-en-borrador-'.$id,
+            'starts_at' => now()->addWeek(),
+            'duration_minutes' => 240,
+            'table_type' => 'one_shot',
+            'table_format' => 'in_person',
+            'status' => 'draft',
+            'min_players' => 1,
+            'max_players' => 5,
+            'language' => 'es',
+            'registration_type' => 'everyone',
+            'auto_confirm' => true,
+            'is_published' => false,
+            'frontend_creation_status' => 'draft',
+        ]);
+    }
+
+    private function campaignDraftOf(UserModel $user): CampaignModel
+    {
+        $id = (string) Str::uuid();
+
+        return CampaignModel::create([
+            'id' => $id,
+            'game_system_id' => $this->table->game_system_id,
+            'created_by' => $user->id,
+            'title' => 'Campaña en borrador',
+            'slug' => 'campana-en-borrador-'.$id,
+            'frequency' => 'weekly',
+            'status' => 'recruiting',
+            'max_players' => 5,
+            'is_published' => false,
+            'frontend_creation_status' => 'draft',
         ]);
     }
 
