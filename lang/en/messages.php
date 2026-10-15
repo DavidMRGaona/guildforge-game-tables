@@ -402,6 +402,12 @@ return [
             'max_spectators_limit' => 'Maximum spectators limit',
             'max_duration' => 'Maximum duration (minutes)',
         ],
+        'validation' => [
+            'above_players_limit' => 'It cannot exceed the maximum players limit (:limit)',
+            'above_spectators_limit' => 'It cannot exceed the maximum spectators limit (:limit)',
+            'above_duration_limit' => 'It cannot exceed the maximum duration (:limit minutes)',
+            'min_above_max_players' => 'It cannot exceed the default maximum players (:limit)',
+        ],
     ],
 
     /*

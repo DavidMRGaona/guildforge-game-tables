@@ -471,6 +471,12 @@ return [
             'publication_mode' => 'Modo de publicación',
             'publication_mode_help' => 'Cómo se publican las mesas creadas por usuarios',
         ],
+        'validation' => [
+            'above_players_limit' => 'No puede superar el límite máximo de jugadores (:limit)',
+            'above_spectators_limit' => 'No puede superar el límite máximo de espectadores (:limit)',
+            'above_duration_limit' => 'No puede superar la duración máxima (:limit minutos)',
+            'min_above_max_players' => 'No puede superar el máximo de jugadores por defecto (:limit)',
+        ],
         'allowed_content' => [
             'tables' => 'Solo mesas',
             'campaigns' => 'Solo campañas',
