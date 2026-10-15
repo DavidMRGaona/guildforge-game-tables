@@ -392,20 +392,43 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     }
 
     /**
-     * With the waiting list on, a confirmation never takes the table over its player seats.
+     * With the waiting list on, a confirmation never takes the table over its player or spectator
+     * seats. Someone who already holds a seat (pending where pending registrations hold seats)
+     * only needs a free one among the confirmed; anyone else needs a seat free in SeatCounter.
      *
      * @throws TableFullException
      */
     private function ensureSeatToConfirm(Participant $participant): void
     {
-        if (! $this->settings->isWaitingListEnabled() || ! $participant->isPlayer() || $participant->isConfirmed()) {
+        if (! $this->settings->isWaitingListEnabled() || $participant->isConfirmed()) {
+            return;
+        }
+
+        if (! $participant->isPlayer() && ! $participant->isSpectator()) {
             return;
         }
 
         $gameTable = $this->gameTableRepository->findOrFail($participant->gameTableId);
+        $holdsSeat = $participant->isPending() && $this->seats->pendingHoldSeats($gameTable);
 
-        if (! $gameTable->hasCapacity($this->participantRepository->countConfirmedPlayers($gameTable->id))) {
-            throw TableFullException::forTable($gameTable->id->value);
+        if ($participant->isPlayer()) {
+            $taken = $holdsSeat
+                ? $this->participantRepository->countConfirmedPlayers($gameTable->id)
+                : $this->seats->takenPlayerSeats($gameTable);
+
+            if (! $gameTable->hasCapacity($taken)) {
+                throw TableFullException::forTable($gameTable->id->value);
+            }
+
+            return;
+        }
+
+        $taken = $holdsSeat
+            ? $this->participantRepository->countConfirmedSpectators($gameTable->id)
+            : $this->seats->takenSpectatorSeats($gameTable);
+
+        if ($gameTable->availableSpectatorSlots($taken) === 0) {
+            throw TableFullException::forSpectators($gameTable->id->value);
         }
     }
 
@@ -605,7 +628,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
     /**
      * The director's choice from the panel: confirmed, whatever the dates. With the waiting list on
-     * it never exceeds the player seats (TableFullException); off, it works as before.
+     * it never exceeds the player or spectator seats (TableFullException); off, it works as before.
      */
     public function promoteParticipant(string $participantId): ParticipantResponseDTO
     {
@@ -617,7 +640,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
                 return [$participant, false];
             }
 
-            // With the waiting list on, not even the director goes over the player seats
+            // With the waiting list on, not even the director goes over the seats
             $this->ensureSeatToConfirm($participant);
 
             $participant->promoteFromWaitingList();

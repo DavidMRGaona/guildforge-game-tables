@@ -97,7 +97,8 @@ final class ParticipantsRelationManager extends RelationManager
                     ->required(),
 
                 // No status field: it changes only through the row actions, which go through the
-                // registration service (its lock, seat limits and promotions)
+                // registration service and its lock; with the waiting list on they never go over
+                // the seats (with it off, Confirm and Promote do not check them, as before)
                 Textarea::make('notes')
                     ->label(__('game-tables::messages.fields.notes'))
                     ->rows(2)
@@ -105,6 +106,14 @@ final class ParticipantsRelationManager extends RelationManager
                     ->columnSpanFull(),
             ])
             ->columns(2);
+    }
+
+    private static function notifySeatsFull(TableFullException $exception): void
+    {
+        Notification::make()
+            ->title(__('game-tables::messages.errors.'.$exception->reason))
+            ->danger()
+            ->send();
     }
 
     public function table(Table $table): Table
@@ -218,12 +227,9 @@ final class ParticipantsRelationManager extends RelationManager
 
                         try {
                             $registrationService->confirm($record->id);
-                        } catch (TableFullException) {
-                            // With the waiting list on, a confirmation never exceeds the player seats
-                            Notification::make()
-                                ->title(__('game-tables::messages.errors.table_full'))
-                                ->danger()
-                                ->send();
+                        } catch (TableFullException $exception) {
+                            // With the waiting list on, a confirmation never exceeds the player or spectator seats
+                            self::notifySeatsFull($exception);
                         }
                     }),
 
@@ -248,12 +254,9 @@ final class ParticipantsRelationManager extends RelationManager
 
                         try {
                             $registrationService->promoteParticipant($record->id);
-                        } catch (TableFullException) {
-                            // With the waiting list on, a promotion never exceeds the player seats
-                            Notification::make()
-                                ->title(__('game-tables::messages.errors.table_full'))
-                                ->danger()
-                                ->send();
+                        } catch (TableFullException $exception) {
+                            // With the waiting list on, a promotion never exceeds the player or spectator seats
+                            self::notifySeatsFull($exception);
                         }
                     }),
 
