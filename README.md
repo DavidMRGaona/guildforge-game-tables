@@ -21,7 +21,7 @@ Módulo de GuildForge para gestionar mesas de rol y campañas: inscripciones de 
 
 ## Requisitos
 
-- GuildForge core `^3.8`
+- GuildForge core `^3.10` (indica a las páginas si la cuenta debe verificar su email; ver [Verificación de email](#verificación-de-email))
 - PHP >= 8.5, Laravel >= 13, Filament 5
 
 El core rechaza el módulo si no se cumplen (`module.json` → `requires`).
@@ -166,6 +166,17 @@ Aprobar o rechazar requiere el permiso de edición (`gametables.update` para mes
 
 **Campañas**: en **Mesas de rol** → **Campañas** se aprueban (la campaña se publica) o se rechazan con motivo, una a una; el autor ve el motivo del rechazo en **Mis campañas**, sin correo.
 
+## Verificación de email
+
+Con **Requerir verificación de email** activado en el core, el servidor cierra a las cuentas que deben verificar su email (sin verificar y creadas desde la fecha de corte del core) todas las rutas con sesión del módulo: inscribirse y cancelar la inscripción, y crear, editar, enviar a revisión o borrar mesas y campañas desde la web. Las visitas van a la página de aviso de verificación y las peticiones JSON reciben un 403. El módulo no cambia esas reglas; la interfaz las anticipa con `useVerificationGate()` del core (`auth.user.mustVerifyEmail`):
+
+- **Botón de inscripción** de la página de la mesa: si la cuenta podría inscribirse o cancelar su inscripción, el botón se muestra desactivado con el motivo («Para inscribirte, verifica tu email.» o «Para cancelar tu inscripción, verifica tu email.») y el enlace «Ver cómo →» al aviso; el diálogo de rol no llega a abrirse. Si el botón ya estaba desactivado por otro motivo (inscripciones cerradas, sin plazas), se muestra como antes.
+- **Crear mesa** en la página del evento y **crear mesa o campaña** en las pestañas del perfil: desactivados con su motivo y el enlace al aviso (en el perfil, el motivo se muestra una vez por pestaña).
+- **Editar** un borrador desde el perfil: desactivado con «Para editar, verifica tu email.» y el enlace al aviso.
+- Los formularios de creación y edición, **Mis mesas** y **Mis campañas** no llegan a mostrarse a esas cuentas: el servidor las lleva al aviso. Si una inscripción se envía igualmente (por ejemplo, porque el estado cambió en otra pestaña), la página termina en el aviso sin mostrar error ni mensaje de éxito.
+
+Los invitados (inscripción sin cuenta y cancelación con el enlace del correo), las cuentas verificadas, las creadas antes de la fecha de corte y todas cuando el ajuste está desactivado ven y usan el módulo como antes.
+
 ## Panel de administración
 
 | Grupo | Elemento | Contenido |
@@ -240,6 +251,7 @@ Widget del dashboard: `PendingModerationWidget` (mesas y campañas pendientes de
 | `EventTablesLink` | Enlace a las mesas del evento (slot `event-detail-actions`) |
 | `EventCreateTableButton` | Botón «crear mesa» en la página del evento (slot `event-detail-actions`) |
 | `profile/*` | Pestañas del perfil: Mesas, Mis mesas y Campañas (slot `profile-sections`) |
+| `VerificationBlockedButton` | Acción desactivada con su motivo mientras la cuenta debe verificar su email (ver [Verificación de email](#verificación-de-email)) |
 
 ## Correos
 
