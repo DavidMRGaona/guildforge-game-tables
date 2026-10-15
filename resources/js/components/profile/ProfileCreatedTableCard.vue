@@ -2,19 +2,25 @@
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
+import { useVerificationGate } from '@/composables/useVerificationGate';
 import type { ProfileCreatedTable } from '../../types/gametables';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 
 interface Props {
     table: ProfileCreatedTable;
     showEditLink?: boolean;
+    /** Id of the section's line saying why editing is disabled (shown once per drafts list) */
+    editReasonId?: string | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
     showEditLink: false,
+    editReasonId: null,
 });
 
 const { t, locale } = useI18n();
+// The edit form's routes are closed to accounts that must verify their email
+const gate = useVerificationGate();
 
 const formattedDate = computed(() => {
     if (!props.table.startsAt) return null;
@@ -32,7 +38,10 @@ const tableUrl = computed(() =>
     props.table.slug ? `/mesas/${props.table.slug}` : null
 );
 
-const editUrl = computed(() => `/mesas/mis-mesas/${props.table.id}/editar`);
+// The {gameTable} routes find the table by its slug, not its id
+const editUrl = computed(() =>
+    props.table.slug ? `/mesas/mis-mesas/${props.table.slug}/editar` : null
+);
 
 const statusColorClasses = computed(() => {
     const colorMap: Record<string, string> = {
@@ -113,13 +122,24 @@ const playersText = computed(() => {
                 </span>
 
                 <!-- Edit link for drafts -->
-                <Link
-                    v-if="showEditLink && !table.isPublished"
-                    :href="editUrl"
-                    class="text-sm text-primary hover:text-primary-700"
-                >
-                    {{ t('gameTables.profile.created.edit') }}
-                </Link>
+                <template v-if="showEditLink && !table.isPublished && editUrl">
+                    <button
+                        v-if="gate.blocked.value"
+                        type="button"
+                        disabled
+                        :aria-describedby="editReasonId ?? undefined"
+                        class="cursor-not-allowed text-sm text-primary opacity-60"
+                    >
+                        {{ t('gameTables.profile.created.edit') }}
+                    </button>
+                    <Link
+                        v-else
+                        :href="editUrl"
+                        class="text-sm text-primary hover:text-primary-700"
+                    >
+                        {{ t('gameTables.profile.created.edit') }}
+                    </Link>
+                </template>
             </div>
         </div>
     </div>

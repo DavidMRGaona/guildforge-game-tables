@@ -6,6 +6,8 @@ namespace Modules\GameTables\Listeners;
 
 use Illuminate\Support\Facades\Notification;
 use Modules\GameTables\Domain\Events\GameTableModerationRejected;
+use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
+use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
 use Modules\GameTables\Notifications\ModerationRejectedNotification;
 
@@ -13,6 +15,7 @@ final readonly class NotifyUserOnModerationRejected
 {
     public function __construct(
         private NotificationRecipientResolver $recipientResolver,
+        private GameTableRepositoryInterface $gameTableRepository,
     ) {}
 
     public function handle(GameTableModerationRejected $event): void
@@ -30,6 +33,8 @@ final readonly class NotifyUserOnModerationRejected
             tableTitle: $event->title,
             userName: $creatorName,
             reason: $event->reason,
+            // The link's canonical form; without it the email links by id, which also works
+            tableSlug: $this->gameTableRepository->find(new GameTableId($event->gameTableId))?->slug,
         );
 
         Notification::route('mail', $creatorEmail)->notify($notification);

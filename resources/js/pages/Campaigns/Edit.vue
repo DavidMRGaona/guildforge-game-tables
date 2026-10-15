@@ -252,7 +252,8 @@ function scrollToFirstError(): void {
 }
 
 function submit(): void {
-    form.put(`/campanas/mis-campanas/${props.campaign.id}/editar`, {
+    // PUT /campanas/mis-campanas/{id} (campaigns.frontend-update); /editar is the GET of this page
+    form.put(`/campanas/mis-campanas/${props.campaign.id}`, {
         preserveScroll: true,
         onError: () => {
             nextTick(() => {

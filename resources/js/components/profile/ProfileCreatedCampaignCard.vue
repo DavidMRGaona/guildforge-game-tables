@@ -2,18 +2,24 @@
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
+import { useVerificationGate } from '@/composables/useVerificationGate';
 import type { ProfileCreatedCampaign } from '../../types/gametables';
 
 interface Props {
     campaign: ProfileCreatedCampaign;
     showEditLink?: boolean;
+    /** Id of the section's line saying why editing is disabled (shown once per drafts list) */
+    editReasonId?: string | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
     showEditLink: false,
+    editReasonId: null,
 });
 
 const { t } = useI18n();
+// The edit form's routes are closed to accounts that must verify their email
+const gate = useVerificationGate();
 
 const campaignUrl = computed(() =>
     props.campaign.slug ? `/campanas/${props.campaign.slug}` : null
@@ -104,13 +110,24 @@ const playersText = computed(() => {
                 </span>
 
                 <!-- Edit link for drafts -->
-                <Link
-                    v-if="showEditLink && !campaign.isPublished"
-                    :href="editUrl"
-                    class="text-sm text-primary hover:text-primary-700"
-                >
-                    {{ t('campaigns.profile.edit') }}
-                </Link>
+                <template v-if="showEditLink && !campaign.isPublished">
+                    <button
+                        v-if="gate.blocked.value"
+                        type="button"
+                        disabled
+                        :aria-describedby="editReasonId ?? undefined"
+                        class="cursor-not-allowed text-sm text-primary opacity-60"
+                    >
+                        {{ t('campaigns.profile.edit') }}
+                    </button>
+                    <Link
+                        v-else
+                        :href="editUrl"
+                        class="text-sm text-primary hover:text-primary-700"
+                    >
+                        {{ t('campaigns.profile.edit') }}
+                    </Link>
+                </template>
             </div>
         </div>
     </div>

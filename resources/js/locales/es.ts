@@ -12,6 +12,10 @@ export default {
         viewTable: 'Ver mesa',
         viewEventTablesCount: 'Ver mesa | Ver {count} mesas',
         tables: 'mesas',
+        // Reason next to an action closed until the account verifies its email (the core has the others)
+        verificationGate: {
+            edit: 'Para editar, verifica tu email.',
+        },
         eventActions: {
             createTable: 'Crear partida',
             creationOpensAt: 'Podrás crear a partir del {date}',
