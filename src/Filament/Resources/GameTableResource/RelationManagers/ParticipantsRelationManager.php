@@ -20,6 +20,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Closure;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
@@ -58,6 +59,8 @@ final class ParticipantsRelationManager extends RelationManager
                     ->required()
                     ->live()
                     ->dehydrated(false)
+                    // Who the registration belongs to changes only by cancelling it and adding again
+                    ->disabled(fn (string $operation): bool => $operation === 'edit')
                     ->afterStateHydrated(function (Select $component, ?string $state, ?ParticipantModel $record): void {
                         if ($record !== null) {
                             $component->state($record->user_id !== null ? 'user' : 'external');
@@ -69,35 +72,44 @@ final class ParticipantsRelationManager extends RelationManager
                     ->relationship('user', 'name')
                     ->searchable()
                     ->preload()
-                    ->visible(fn (Get $get): bool => $get('participant_type') === 'user')
-                    ->required(fn (Get $get): bool => $get('participant_type') === 'user'),
+                    ->disabled(fn (string $operation): bool => $operation === 'edit')
+                    ->visible(fn (Get $get, string $operation, ?ParticipantModel $record): bool => ! self::isGuestForm($get, $operation, $record))
+                    ->required(fn (Get $get, string $operation): bool => $operation !== 'edit' && $get('participant_type') === 'user'),
 
                 Grid::make(2)
                     ->schema([
                         TextInput::make('first_name')
                             ->label(__('game-tables::messages.fields.first_name'))
-                            ->required(fn (Get $get): bool => $get('participant_type') === 'external'),
+                            ->required(fn (Get $get, string $operation, ?ParticipantModel $record): bool => self::isGuestForm($get, $operation, $record)),
                         TextInput::make('last_name')
                             ->label(__('game-tables::messages.fields.last_name')),
                     ])
-                    ->visible(fn (Get $get): bool => $get('participant_type') === 'external'),
+                    ->visible(fn (Get $get, string $operation, ?ParticipantModel $record): bool => self::isGuestForm($get, $operation, $record)),
 
                 Grid::make(2)
                     ->schema([
                         TextInput::make('email')
                             ->label(__('game-tables::messages.fields.email'))
-                            ->email(),
+                            ->email()
+                            // Adding goes through the registration service, which refuses it too
+                            ->rule(
+                                fn (?ParticipantModel $record): Closure => self::emailFreeAtTable($record),
+                                fn (string $operation): bool => $operation === 'edit',
+                            ),
                         TextInput::make('phone')
                             ->label(__('game-tables::messages.fields.phone'))
                             ->tel(),
                     ])
-                    ->visible(fn (Get $get): bool => $get('participant_type') === 'external'),
+                    ->visible(fn (Get $get, string $operation, ?ParticipantModel $record): bool => self::isGuestForm($get, $operation, $record)),
 
+                // On Edit the role is fixed: a new role is a new seat, so it means cancelling and
+                // adding again, which go through the table lock and the seat rules
                 Select::make('role')
                     ->label(__('game-tables::messages.fields.participant_role'))
                     ->options(ParticipantRole::participantOptions())
                     ->default(ParticipantRole::Player->value)
-                    ->required(),
+                    ->required()
+                    ->disabled(fn (string $operation): bool => $operation === 'edit'),
 
                 // No status field: it changes only through the row actions, which go through the
                 // registration service and its lock; with the waiting list on they never go over
@@ -109,6 +121,48 @@ final class ParticipantsRelationManager extends RelationManager
                     ->columnSpanFull(),
             ])
             ->columns(2);
+    }
+
+    /**
+     * The guest fields show for a guest: chosen in the form when adding, the record's own when
+     * editing (the type cannot change, so a state sent with the form is not trusted).
+     */
+    private static function isGuestForm(Get $get, string $operation, ?ParticipantModel $record): bool
+    {
+        if ($operation === 'edit') {
+            return $record !== null && $record->user_id === null;
+        }
+
+        return $get('participant_type') === 'external';
+    }
+
+    /**
+     * One active guest per email and table, whatever the case it is typed in (as on registration).
+     */
+    private static function emailFreeAtTable(?ParticipantModel $record): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail) use ($record): void {
+            if ($record === null || ! is_string($value) || trim($value) === '') {
+                return;
+            }
+
+            $activeStatuses = array_map(
+                fn (ParticipantStatus $status): string => $status->value,
+                array_filter(ParticipantStatus::cases(), fn (ParticipantStatus $status): bool => $status->isActive()),
+            );
+
+            $taken = ParticipantModel::query()
+                ->where('game_table_id', $record->game_table_id)
+                ->whereKeyNot($record->getKey())
+                ->whereNull('user_id')
+                ->whereIn('status', $activeStatuses)
+                ->whereRaw('LOWER(email) = ?', [mb_strtolower(trim($value))])
+                ->exists();
+
+            if ($taken) {
+                $fail(__('game-tables::messages.errors.guest_already_registered'));
+            }
+        };
     }
 
     /**

@@ -100,7 +100,7 @@ La página de la mesa y el servidor usan el mismo cálculo: el servidor cuenta l
 
 - **Cancelar inscripción** (pide confirmación; para inscripciones pendientes, confirmadas o en la lista de espera, las que se pueden cancelar) hace lo mismo que la cancelación del propio participante: libera la plaza y pasa al primero de la lista de espera cuando corresponde, que recibe su aviso de promoción de siempre. El participante, usuario o invitado, recibe un correo propio («La organización ha cancelado tu inscripción en…»); los directores no reciben el aviso de cancelación (sí el de promoción, si alguien pasa de la lista).
 - **No presentado** (pide confirmación; solo para participantes confirmados, una vez empezada la mesa) no envía correos ni promueve a nadie.
-- **Editar** cambia los datos del participante (rol, notas y contacto del invitado, con el email en minúsculas), no su estado.
+- **Editar** cambia las notas y el contacto del invitado (el email en minúsculas, y no el de otro invitado activo de la misma mesa: «Ya existe una inscripción con este email»), no el estado. El rol, el tipo de participante y el usuario no se editan: un cambio de rol o de persona es otra plaza, así que se cancela la inscripción y se añade de nuevo, que pasa por el bloqueo y las reglas de aforo.
 
 En el panel, la cabecera de la mesa tiene las acciones **Publicar**, **Despublicar**, **Iniciar**, **Completar** y **Cancelar mesa**.
 
