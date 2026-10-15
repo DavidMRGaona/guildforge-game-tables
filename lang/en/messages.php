@@ -533,6 +533,7 @@ return [
     'errors' => [
         'unauthenticated' => 'You must be logged in to perform this action',
         'registration_closed' => 'Registration is closed',
+        'registration_not_open' => 'Registration is not open yet',
         'table_full' => 'The table is full',
         'spectators_full' => 'No spectator seats are left',
         'already_registered' => 'You are already registered for this table',
