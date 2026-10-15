@@ -51,10 +51,14 @@ const roleDialogHeading = ref<HTMLElement | null>(null);
 const playerOptionButton = ref<HTMLButtonElement | null>(null);
 const spectatorOptionButton = ref<HTMLButtonElement | null>(null);
 
+// Closed while a request is running (a successful registration): the trigger comes back disabled
+let restoreFocusWhenIdle = false;
+
 watch(showRoleSelect, async (open) => {
     await nextTick();
 
     if (open) {
+        restoreFocusWhenIdle = false;
         const firstEnabledOption = [playerOptionButton.value, spectatorOptionButton.value].find(
             (button): button is HTMLButtonElement => button !== null && !button.disabled
         );
@@ -62,8 +66,23 @@ watch(showRoleSelect, async (open) => {
         return;
     }
 
+    if (loading.value) {
+        restoreFocusWhenIdle = true;
+        return;
+    }
+
     // The trigger is re-rendered once the dialog closes; if another state hides it, leave focus alone
     triggerButton.value?.focus();
+});
+
+watch(loading, async (isLoading) => {
+    if (isLoading || !restoreFocusWhenIdle) return;
+
+    restoreFocusWhenIdle = false;
+    await nextTick();
+    if (!showRoleSelect.value) {
+        triggerButton.value?.focus();
+    }
 });
 
 // Watch for prop changes (when Inertia reloads data after mutations)
