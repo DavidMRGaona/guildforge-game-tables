@@ -172,7 +172,7 @@ Con **Requerir verificación de email** activado en el core, el servidor cierra 
 
 - **Botón de inscripción** de la página de la mesa: si la cuenta podría inscribirse o cancelar su inscripción, el botón se muestra desactivado con el motivo («Para inscribirte, verifica tu email.» o «Para cancelar tu inscripción, verifica tu email.») y el enlace «Ver cómo →» al aviso; el diálogo de rol no llega a abrirse. Si el botón ya estaba desactivado por otro motivo (inscripciones cerradas, sin plazas), se muestra como antes.
 - **Crear mesa** en la página del evento y **crear mesa o campaña** en las pestañas del perfil: desactivados con su motivo y el enlace al aviso (en el perfil, el motivo se muestra una vez por pestaña).
-- **Editar** un borrador desde el perfil: desactivado con «Para editar, verifica tu email.» y el enlace al aviso.
+- **Editar** un borrador desde el perfil: desactivado; la lista de borradores muestra una vez «Para editar, verifica tu email.» con el enlace al aviso.
 - Los formularios de creación y edición, **Mis mesas** y **Mis campañas** no llegan a mostrarse a esas cuentas: el servidor las lleva al aviso. Si una inscripción se envía igualmente (por ejemplo, porque el estado cambió en otra pestaña), la página termina en el aviso sin mostrar error ni mensaje de éxito.
 
 Los invitados (inscripción sin cuenta y cancelación con el enlace del correo), las cuentas verificadas, las creadas antes de la fecha de corte y todas cuando el ajuste está desactivado ven y usan el módulo como antes.

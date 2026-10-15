@@ -3,17 +3,19 @@ import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useVerificationGate } from '@/composables/useVerificationGate';
-import VerificationBlockedButton from '../VerificationBlockedButton.vue';
 import type { ProfileCreatedTable } from '../../types/gametables';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 
 interface Props {
     table: ProfileCreatedTable;
     showEditLink?: boolean;
+    /** Id of the section's line saying why editing is disabled (shown once per drafts list) */
+    editReasonId?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
     showEditLink: false,
+    editReasonId: undefined,
 });
 
 const { t, locale } = useI18n();
@@ -118,14 +120,15 @@ const playersText = computed(() => {
 
                 <!-- Edit link for drafts -->
                 <template v-if="showEditLink && !table.isPublished">
-                    <VerificationBlockedButton
+                    <button
                         v-if="gate.blocked.value"
-                        :reason="t('gameTables.verificationGate.edit')"
-                        align="end"
-                        button-class="text-sm text-primary"
+                        type="button"
+                        disabled
+                        :aria-describedby="editReasonId"
+                        class="cursor-not-allowed text-sm text-primary opacity-60"
                     >
                         {{ t('gameTables.profile.created.edit') }}
-                    </VerificationBlockedButton>
+                    </button>
                     <Link
                         v-else
                         :href="editUrl"

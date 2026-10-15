@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { ref, computed } from 'vue';
+import { ref, computed, useId } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useVerificationGate } from '@/composables/useVerificationGate';
 import VerificationBlockedButton from '../VerificationBlockedButton.vue';
@@ -15,6 +15,8 @@ const props = defineProps<Props>();
 const { t } = useI18n();
 // The creation form's routes are closed to accounts that must verify their email
 const gate = useVerificationGate();
+// One reason for every draft's disabled «Editar» (aria-describedby), not one per card
+const editReasonId = useId();
 
 const showDraftsSection = ref(true);
 
@@ -108,11 +110,26 @@ function toggleDraftsSection(): void {
             </button>
 
             <div v-if="showDraftsSection" class="space-y-3">
+                <p
+                    v-if="gate.blocked.value"
+                    :id="editReasonId"
+                    class="rounded-md bg-warning-bg px-3 py-2 text-sm text-base-primary"
+                >
+                    {{ t('gameTables.verificationGate.edit') }}
+                    <Link
+                        :href="gate.noticeUrl"
+                        class="font-semibold underline underline-offset-2 hover:no-underline"
+                    >
+                        {{ gate.linkLabel.value }}
+                        <span aria-hidden="true">→</span>
+                    </Link>
+                </p>
                 <ProfileCreatedTableCard
                     v-for="table in draftTables"
                     :key="table.id"
                     :table="table"
                     :show-edit-link="true"
+                    :edit-reason-id="editReasonId"
                 />
             </div>
         </section>
