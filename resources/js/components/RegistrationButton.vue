@@ -8,9 +8,9 @@ const TRIGGER_FOCUS_HANDOFF_MS = 5000;
 </script>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { usePage, router } from '@inertiajs/vue3';
+import { Link, usePage, router } from '@inertiajs/vue3';
 import type { GameTable } from '../types/gametables';
 import type {
     ParticipantData,
@@ -22,6 +22,7 @@ import { isFinalStatus } from '../types/registration';
 import RegistrationStatus from './RegistrationStatus.vue';
 import GuestRegistrationModal from './GuestRegistrationModal.vue';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
+import { useVerificationGate, type VerificationGateAction } from '@/composables/useVerificationGate';
 
 // The table page always sends these props (slot game-table-registration); the module has no API to fetch them
 interface Props {
@@ -37,6 +38,9 @@ interface Props {
 const props = defineProps<Props>();
 const page = usePage();
 const { t, locale } = useI18n();
+// Registering and cancelling are closed to accounts that must verify their email (guests are not)
+const gate = useVerificationGate();
+const verificationReasonId = useId();
 
 const resolvedTableId = computed(() => props.table.id);
 // Use slug for Inertia routes (user-facing URLs)
@@ -302,6 +306,24 @@ const buttonText = computed(() => {
     return t('gameTables.registration.register');
 });
 
+// What the button would do for a signed-in account that must verify its email first; null when
+// the gate does not apply or the button is disabled for its own reasons anyway
+const verificationBlockedAction = computed<VerificationGateAction | null>(() => {
+    if (!gate.blocked.value || !isAuthenticated.value) return null;
+    if (isRegistrationClosed.value || registrationOpensAt.value) return null;
+    if (registration.value && canCancel.value) return 'cancelRegistration';
+    return canRegister.value ? 'register' : null;
+});
+const verificationBlocked = computed(() => verificationBlockedAction.value !== null);
+
+const triggerDescribedBy = computed(() => {
+    const ids = [
+        showsWaitingListHelp.value ? waitingListHelpId.value : null,
+        verificationBlocked.value ? verificationReasonId : null,
+    ].filter((id): id is string => id !== null);
+    return ids.length > 0 ? ids.join(' ') : undefined;
+});
+
 const buttonDisabled = computed(() => {
     if (loading.value) return true;
     if (!isAuthenticated.value) {
@@ -309,6 +331,7 @@ const buttonDisabled = computed(() => {
         if (canRegisterAsGuest.value) return false;
         return false; // Login redirect still works
     }
+    if (verificationBlocked.value) return true;
     if (isRegistrationClosed.value) return true;
     if (registrationOpensAt.value) return true;
     if (!canRegister.value && !canCancel.value) return true;
@@ -316,6 +339,8 @@ const buttonDisabled = computed(() => {
 });
 
 function handleRegister(role: ParticipantRole): void {
+    if (gate.blocked.value) return;
+
     loading.value = true;
     error.value = null;
 
@@ -327,7 +352,10 @@ function handleRegister(role: ParticipantRole): void {
         },
         {
             preserveScroll: true,
-            onSuccess: () => {
+            onSuccess: (visitedPage) => {
+                // Must verify after all (e.g. changed in another tab): the server sent us to the notice
+                if (gate.isVerificationRequired(visitedPage)) return;
+
                 oweTriggerFocus();
                 showRoleSelect.value = false;
                 showNotesInput.value = false;
@@ -345,6 +373,8 @@ function handleRegister(role: ParticipantRole): void {
 
 function handleCancel(): void {
     showCancelConfirm.value = false;
+    if (gate.blocked.value) return;
+
     loading.value = true;
     error.value = null;
 
@@ -370,6 +400,9 @@ function handleClick(): void {
         window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
         return;
     }
+
+    // The button is disabled and says why; the role dialog never opens
+    if (verificationBlocked.value) return;
 
     if (registration.value && canCancel.value) {
         showCancelConfirm.value = true;
@@ -623,18 +656,18 @@ function cancelRoleSelect(): void {
             ref="triggerButton"
             type="button"
             :disabled="buttonDisabled"
-            :aria-describedby="showsWaitingListHelp ? waitingListHelpId : undefined"
+            :aria-describedby="triggerDescribedBy"
             class="w-full rounded-lg px-6 py-3 text-center font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2"
             :class="{
                 'bg-primary text-white hover:bg-primary-700 focus:ring-primary-500':
-                    (isAuthenticated && canRegister && !canJoinWaitingList) || (canRegisterAsGuest && !guestJoinsWaitingList),
+                    (isAuthenticated && canRegister && !canJoinWaitingList && !verificationBlocked) || (canRegisterAsGuest && !guestJoinsWaitingList),
                 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500':
-                    (isAuthenticated && canJoinWaitingList) || (canRegisterAsGuest && guestJoinsWaitingList),
-                'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500': canCancel,
+                    (isAuthenticated && canJoinWaitingList && !verificationBlocked) || (canRegisterAsGuest && guestJoinsWaitingList),
+                'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500': canCancel && !verificationBlocked,
                 'bg-stone-600 text-white hover:bg-stone-700 focus:ring-stone-500 dark:bg-stone-500 dark:hover:bg-stone-400':
                     !isAuthenticated && !canRegisterAsGuest,
                 'cursor-not-allowed bg-gray-300 text-gray-500 dark:bg-stone-700 dark:text-stone-500':
-                    isAuthenticated && buttonDisabled && !canCancel,
+                    isAuthenticated && buttonDisabled && (!canCancel || verificationBlocked),
             }"
             @click="handleClick"
         >
@@ -662,6 +695,22 @@ function cancelRoleSelect(): void {
             </span>
             <span v-else>{{ buttonText }}</span>
         </button>
+
+        <!-- Why the button is disabled while the account must verify its email -->
+        <p
+            v-if="verificationBlockedAction"
+            :id="verificationReasonId"
+            class="mt-2 rounded-md bg-warning-bg p-3 text-center text-sm text-base-primary"
+        >
+            {{ gate.reason(verificationBlockedAction) }}
+            <Link
+                :href="gate.noticeUrl"
+                class="font-semibold underline underline-offset-2 hover:no-underline"
+            >
+                {{ gate.linkLabel.value }}
+                <span aria-hidden="true">→</span>
+            </Link>
+        </p>
 
         <!-- Capacity info -->
         <div
