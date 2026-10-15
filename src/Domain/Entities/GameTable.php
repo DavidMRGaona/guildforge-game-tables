@@ -173,7 +173,15 @@ final class GameTable
      */
     public function pendingParticipantsHoldSeats(bool $waitingListEnabled): bool
     {
-        return $waitingListEnabled && ! $this->autoConfirm;
+        return self::pendingHoldSeatsWhen($waitingListEnabled, $this->autoConfirm);
+    }
+
+    /**
+     * The same rule for callers that only hold the table's confirmation mode (table lists).
+     */
+    public static function pendingHoldSeatsWhen(bool $waitingListEnabled, bool $autoConfirm): bool
+    {
+        return $waitingListEnabled && ! $autoConfirm;
     }
 
     public function availablePlayerSlots(int $takenPlayerSeats): int

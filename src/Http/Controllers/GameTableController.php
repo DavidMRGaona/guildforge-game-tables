@@ -209,7 +209,7 @@ final class GameTableController extends Controller
 
         return Inertia::render('GameTables/Show', [
             // Seats counted by the server with the rule it applies on registration
-            'table' => GameTableResource::make($table, $this->seatCounter->forTable($table->id))->resolve(),
+            'table' => GameTableResource::make($table, $this->seatCounter->forTable($table))->resolve(),
             'eligibility' => $eligibility,
             'guestEligibility' => $guestEligibility,
             'userRegistration' => $userRegistration,

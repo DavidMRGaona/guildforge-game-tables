@@ -29,7 +29,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
         private ?MembershipCheckerInterface $membershipChecker = null,
         private GameTableSettingsReader $settings = new GameTableSettingsReader(),
     ) {
-        $this->seats = new SeatCounter($participantRepository, $gameTableRepository, $settings);
+        $this->seats = new SeatCounter($participantRepository, $settings);
     }
 
     public function checkEligibility(

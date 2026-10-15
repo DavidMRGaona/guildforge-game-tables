@@ -47,7 +47,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         private RegistrationLockInterface $lock,
         private GameTableSettingsReader $settings = new GameTableSettingsReader(),
     ) {
-        $this->seats = new SeatCounter($participantRepository, $gameTableRepository, $settings);
+        $this->seats = new SeatCounter($participantRepository, $settings);
     }
 
     public function register(RegisterParticipantDTO $dto): ParticipantResponseDTO
