@@ -177,6 +177,41 @@ final class ParticipantsDeleteTest extends ModuleTestCase
         $this->assertSame('confirmed', $confirmed->refresh()->status->value);
     }
 
+    // A re-registration reactivates the same row (placeUser/placeGuest): if it lands after the
+    // action read the row as cancelled, the delete must not remove the now active registration
+    public function test_a_row_reactivated_after_it_was_read_is_not_deleted(): void
+    {
+        $table = $this->table();
+        $row = $this->participant($table, 'cancelled');
+        $component = $this->participants($table)->mountTableAction('delete', $row);
+        $this->reactivateWhenRead($row);
+
+        $component->callMountedAction()
+            ->assertNotified('No se ha borrado: la inscripción ya no está cancelada ni rechazada');
+
+        $this->assertModelExists($row);
+        $this->assertSame('confirmed', $row->refresh()->status->value);
+    }
+
+    public function test_bulk_delete_does_not_remove_a_row_reactivated_after_it_was_read(): void
+    {
+        $table = $this->table();
+        $row = $this->participant($table, 'cancelled');
+        $this->reactivateWhenRead($row);
+
+        $this->participants($table)
+            ->callTableBulkAction('delete', [$row])
+            ->assertNotified(
+                Notification::make()
+                    ->danger()
+                    ->title('No se ha borrado ninguna inscripción')
+                    ->body('1 inscripción no se ha borrado: solo se pueden borrar las canceladas o rechazadas; antes hay que cancelarla con «Cancelar inscripción».'),
+            );
+
+        $this->assertModelExists($row);
+        $this->assertSame('confirmed', $row->refresh()->status->value);
+    }
+
     // Deleting is managing the participants: the same permission as the status actions
     public function test_an_editor_who_may_update_the_table_can_delete_cancelled_and_rejected_rows(): void
     {
@@ -289,6 +324,19 @@ final class ParticipantsDeleteTest extends ModuleTestCase
         $user->roles()->attach($role->id);
 
         return $user;
+    }
+
+    /**
+     * Every time the row is loaded, its owner registers again in the database, behind the back of
+     * the model just loaded (which still says cancelled).
+     */
+    private function reactivateWhenRead(ParticipantModel $row): void
+    {
+        ParticipantModel::retrieved(function (ParticipantModel $loaded) use ($row): void {
+            if ($loaded->getKey() === $row->getKey()) {
+                ParticipantModel::query()->whereKey($row->getKey())->update(['status' => 'confirmed', 'confirmed_at' => now()]);
+            }
+        });
     }
 
     private function setWaitingList(bool $enabled): void

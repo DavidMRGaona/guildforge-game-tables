@@ -700,10 +700,12 @@ return [
             'no_show' => 'No presentado',
             'no_show_description' => 'Queda marcado como no presentado. No se envía ningún email ni se promueve a nadie de la lista de espera.',
             'move_to_waiting' => 'Mover a lista de espera',
+            'delete_not_allowed' => 'No se ha borrado: la inscripción ya no está cancelada ni rechazada',
             'bulk_delete' => [
                 'deleted' => '{1} Se ha borrado 1 inscripción|[2,*] Se han borrado :count inscripciones',
                 'none_deleted' => 'No se ha borrado ninguna inscripción',
                 'skipped' => '{1} 1 inscripción no se ha borrado: solo se pueden borrar las canceladas o rechazadas; antes hay que cancelarla con «Cancelar inscripción».|[2,*] :count inscripciones no se han borrado: solo se pueden borrar las canceladas o rechazadas; antes hay que cancelarlas con «Cancelar inscripción».',
+                'failed' => '{1} 1 inscripción no se ha podido borrar por un error.|[2,*] :count inscripciones no se han podido borrar por un error.',
             ],
         ],
         'sessions' => [

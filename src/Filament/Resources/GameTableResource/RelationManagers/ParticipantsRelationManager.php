@@ -21,6 +21,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Closure;
+use Throwable;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -203,8 +204,27 @@ final class ParticipantsRelationManager extends RelationManager
     }
 
     /**
-     * Bulk «Borrar»: deletes the selected cancelled or rejected rows, leaves the others and says
-     * how many went each way.
+     * Deletes the row only if it is still cancelled or rejected when the DELETE runs: a
+     * re-registration (placeUser/placeGuest) reactivates the same row, and it may land after the
+     * row was read. Participants have no model events, so a query delete loses nothing.
+     */
+    private static function deleteIfCancelledOrRejected(Model $record): bool
+    {
+        $deletable = array_map(
+            fn (ParticipantStatus $status): string => $status->value,
+            array_values(array_filter(ParticipantStatus::cases(), fn (ParticipantStatus $status): bool => $status->canBeDeleted())),
+        );
+
+        return ParticipantModel::query()
+            ->whereKey($record->getKey())
+            ->whereIn('status', $deletable)
+            ->delete() > 0;
+    }
+
+    /**
+     * Bulk «Borrar»: deletes the selected rows that are still cancelled or rejected, leaves the
+     * others and says how many went each way. A row that fails is reported and counted apart, and
+     * the loop goes on, so the notice always counts the rows already deleted.
      *
      * @param  EloquentCollection<int, Model>  $records
      */
@@ -212,16 +232,14 @@ final class ParticipantsRelationManager extends RelationManager
     {
         $deleted = 0;
         $skipped = 0;
+        $failed = 0;
 
         foreach ($records as $record) {
-            if (! $record instanceof ParticipantModel || ! $record->status->canBeDeleted()) {
-                $skipped++;
-
-                continue;
-            }
-
-            if ($record->delete() === true) {
-                $deleted++;
+            try {
+                self::deleteIfCancelledOrRejected($record) ? $deleted++ : $skipped++;
+            } catch (Throwable $exception) {
+                report($exception);
+                $failed++;
             }
         }
 
@@ -230,13 +248,21 @@ final class ParticipantsRelationManager extends RelationManager
             $deleted > 0 ? trans_choice($key.'deleted', $deleted, ['count' => $deleted]) : __($key.'none_deleted'),
         );
 
-        if ($skipped === 0) {
+        if ($skipped === 0 && $failed === 0) {
             $notification->success()->send();
 
             return;
         }
 
-        $notification->body(trans_choice($key.'skipped', $skipped, ['count' => $skipped]));
+        $body = [];
+        if ($skipped > 0) {
+            $body[] = trans_choice($key.'skipped', $skipped, ['count' => $skipped]);
+        }
+        if ($failed > 0) {
+            $body[] = trans_choice($key.'failed', $failed, ['count' => $failed]);
+        }
+
+        $notification->body(implode(' ', $body));
         ($deleted > 0 ? $notification->warning() : $notification->danger())->send();
     }
 
@@ -461,7 +487,20 @@ final class ParticipantsRelationManager extends RelationManager
                 // Only rows that hold no seat: the others are cancelled first (lock, freed seat, promotion)
                 DeleteAction::make()
                     ->visible(fn (ParticipantModel $record): bool => $record->status->canBeDeleted())
-                    ->authorize(fn (): bool => $this->canDeleteParticipants()),
+                    ->authorize(fn (): bool => $this->canDeleteParticipants())
+                    ->using(function (Model $record): bool {
+                        if (self::deleteIfCancelledOrRejected($record)) {
+                            return true;
+                        }
+
+                        // Registered again meanwhile: the row is active, so it stays
+                        Notification::make()
+                            ->title(__('game-tables::messages.relation_managers.participants.delete_not_allowed'))
+                            ->danger()
+                            ->send();
+
+                        return false;
+                    }),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
