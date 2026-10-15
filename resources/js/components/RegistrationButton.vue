@@ -1,5 +1,14 @@
+<script lang="ts">
+// Shared by every instance. The table page renders this component through a module slot, and the
+// slot resolves a new async component on each Inertia visit, so a successful registration
+// re-creates it: the focus owed to the registration button is handed to the next instance.
+const triggerFocusOwed = new Map<string, number>(); // table id → until (ms)
+const triggerFocusers = new Map<string, () => boolean>(); // table id → the live instance's focus
+const TRIGGER_FOCUS_HANDOFF_MS = 5000;
+</script>
+
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue';
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { usePage, router } from '@inertiajs/vue3';
 import type { GameTable } from '../types/gametables';
@@ -50,6 +59,53 @@ const triggerButton = ref<HTMLButtonElement | null>(null);
 const roleDialogHeading = ref<HTMLElement | null>(null);
 const playerOptionButton = ref<HTMLButtonElement | null>(null);
 const spectatorOptionButton = ref<HTMLButtonElement | null>(null);
+const notesInput = ref<HTMLElement | null>(null);
+
+// The chosen role's option when it can still be chosen, else the first enabled one, else the heading
+function focusRoleOption(preferred: ParticipantRole | null): void {
+    const options = { player: playerOptionButton.value, spectator: spectatorOptionButton.value };
+    const isEnabled = (button: HTMLButtonElement | null): button is HTMLButtonElement => button !== null && !button.disabled;
+    const preferredOption = preferred !== null ? options[preferred] : null;
+    const target = isEnabled(preferredOption)
+        ? preferredOption
+        : [options.player, options.spectator].find(isEnabled);
+    (target ?? roleDialogHeading.value)?.focus();
+}
+
+// Focuses this instance's registration button when it is on the page and enabled
+function focusTrigger(): boolean {
+    const button = triggerButton.value;
+    if (button === null || !button.isConnected || button.disabled) return false;
+
+    button.focus();
+    triggerFocusOwed.delete(resolvedTableId.value);
+    return true;
+}
+
+// After a successful registration: whichever instance shows the button takes the focus
+function oweTriggerFocus(): void {
+    triggerFocusOwed.set(resolvedTableId.value, Date.now() + TRIGGER_FOCUS_HANDOFF_MS);
+    void nextTick(() => triggerFocusers.get(resolvedTableId.value)?.());
+}
+
+onMounted(async () => {
+    triggerFocusers.set(resolvedTableId.value, focusTrigger);
+
+    const until = triggerFocusOwed.get(resolvedTableId.value);
+    if (until === undefined) return;
+    if (Date.now() > until) {
+        triggerFocusOwed.delete(resolvedTableId.value);
+        return;
+    }
+    await nextTick();
+    focusTrigger();
+});
+
+onBeforeUnmount(() => {
+    if (triggerFocusers.get(resolvedTableId.value) === focusTrigger) {
+        triggerFocusers.delete(resolvedTableId.value);
+    }
+});
 
 // Closed while a request is running (a successful registration): the trigger comes back disabled
 let restoreFocusWhenIdle = false;
@@ -59,10 +115,7 @@ watch(showRoleSelect, async (open) => {
 
     if (open) {
         restoreFocusWhenIdle = false;
-        const firstEnabledOption = [playerOptionButton.value, spectatorOptionButton.value].find(
-            (button): button is HTMLButtonElement => button !== null && !button.disabled
-        );
-        (firstEnabledOption ?? roleDialogHeading.value)?.focus();
+        focusRoleOption(null);
         return;
     }
 
@@ -72,7 +125,21 @@ watch(showRoleSelect, async (open) => {
     }
 
     // The trigger is re-rendered once the dialog closes; if another state hides it, leave focus alone
-    triggerButton.value?.focus();
+    focusTrigger();
+});
+
+// Switching steps removes the focused button: into the notes on the way in, back to the chosen
+// role on «Volver»
+watch(showNotesInput, async (notesStep) => {
+    await nextTick();
+    if (!showRoleSelect.value) return;
+
+    if (notesStep) {
+        notesInput.value?.focus();
+        return;
+    }
+
+    focusRoleOption(selectedRole.value);
 });
 
 watch(loading, async (isLoading) => {
@@ -81,7 +148,7 @@ watch(loading, async (isLoading) => {
     restoreFocusWhenIdle = false;
     await nextTick();
     if (!showRoleSelect.value) {
-        triggerButton.value?.focus();
+        focusTrigger();
     }
 });
 
@@ -261,6 +328,7 @@ function handleRegister(role: ParticipantRole): void {
         {
             preserveScroll: true,
             onSuccess: () => {
+                oweTriggerFocus();
                 showRoleSelect.value = false;
                 showNotesInput.value = false;
                 notes.value = '';
@@ -486,6 +554,7 @@ function cancelRoleSelect(): void {
                                     </label>
                                     <textarea
                                         id="registration-notes"
+                                        ref="notesInput"
                                         v-model="notes"
                                         rows="3"
                                         class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 dark:focus:border-primary-400"
