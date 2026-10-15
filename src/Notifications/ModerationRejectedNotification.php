@@ -18,6 +18,7 @@ final class ModerationRejectedNotification extends Notification implements Shoul
         private readonly string $tableTitle,
         private readonly string $userName,
         private readonly string $reason,
+        private readonly ?string $tableSlug = null,
     ) {}
 
     /**
@@ -30,7 +31,10 @@ final class ModerationRejectedNotification extends Notification implements Shoul
 
     public function toMail(object $notifiable): MailMessage
     {
-        $editUrl = url("/mesas/mis-mesas/{$this->tableId}/editar");
+        // The slug is the canonical form of the link; the edit page also accepts the id. isset():
+        // a notification queued before this property existed comes back without it
+        $key = isset($this->tableSlug) && $this->tableSlug !== '' ? $this->tableSlug : $this->tableId;
+        $editUrl = url("/mesas/mis-mesas/{$key}/editar");
 
         return (new MailMessage)
             ->subject(__('game-tables::emails.moderation_rejected.subject', ['tableTitle' => $this->tableTitle]))
