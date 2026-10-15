@@ -10,9 +10,11 @@ use App\Http\Controllers\Controller;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\User;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\GameTables\Application\DTOs\FrontendCreateGameTableDTO;
@@ -145,8 +147,9 @@ final class FrontendGameTableController extends Controller
     /**
      * Show an edit form for a draft table.
      */
-    public function edit(GameTableModel $gameTable): Response
+    public function edit(string $gameTable): Response
     {
+        $gameTable = $this->findAuthorTable($gameTable);
         Gate::authorize('update', $gameTable);
 
         /** @var UserModel $user */
@@ -186,8 +189,9 @@ final class FrontendGameTableController extends Controller
     /**
      * Update a draft table.
      */
-    public function update(GameTableModel $gameTable, FrontendCreateGameTableRequest $request): RedirectResponse
+    public function update(string $gameTable, FrontendCreateGameTableRequest $request): RedirectResponse
     {
+        $gameTable = $this->findAuthorTable($gameTable);
         Gate::authorize('update', $gameTable);
 
         /** @var UserModel $user */
@@ -208,8 +212,9 @@ final class FrontendGameTableController extends Controller
     /**
      * Submit a draft for review.
      */
-    public function submitForReview(GameTableModel $gameTable): RedirectResponse
+    public function submitForReview(string $gameTable): RedirectResponse
     {
+        $gameTable = $this->findAuthorTable($gameTable);
         Gate::authorize('submitForReview', $gameTable);
 
         /** @var UserModel $user */
@@ -225,8 +230,9 @@ final class FrontendGameTableController extends Controller
     /**
      * Delete a draft table.
      */
-    public function destroy(GameTableModel $gameTable): RedirectResponse
+    public function destroy(string $gameTable): RedirectResponse
     {
+        $gameTable = $this->findAuthorTable($gameTable);
         Gate::authorize('delete', $gameTable);
 
         /** @var UserModel $user */
@@ -237,5 +243,25 @@ final class FrontendGameTableController extends Controller
         return redirect()
             ->route('gametables.my-tables')
             ->with('success', __('game-tables::messages.frontend.table_deleted'));
+    }
+
+    /**
+     * The {gameTable} of the author's routes (Mis mesas): found by its slug, the canonical form
+     * of every link, or else by its id, which rejection emails sent before 2.8.0 carry. Who may
+     * act on it is still decided by the policy.
+     */
+    private function findAuthorTable(string $key): GameTableModel
+    {
+        $table = GameTableModel::query()->where('slug', $key)->first();
+
+        if ($table === null && Str::isUuid($key)) {
+            $table = GameTableModel::query()->find($key);
+        }
+
+        if ($table === null) {
+            throw (new ModelNotFoundException)->setModel(GameTableModel::class, [$key]);
+        }
+
+        return $table;
     }
 }

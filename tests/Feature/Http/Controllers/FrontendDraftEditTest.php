@@ -116,6 +116,82 @@ final class FrontendDraftEditTest extends ModuleTestCase
                 ->where('table.id', $table->id));
     }
 
+    public function test_an_edit_link_built_with_the_slug_or_the_id_opens_the_edit_page_for_the_author(): void
+    {
+        $table = $this->tableDraft();
+
+        // The slug is the canonical form; rejection emails sent before 2.8.0 carry the id
+        foreach (["/mesas/mis-mesas/{$table->slug}/editar", "/mesas/mis-mesas/{$table->id}/editar"] as $url) {
+            $this->actingAs($this->author)
+                ->get($url)
+                ->assertOk()
+                ->assertInertia(fn (Assert $page) => $page
+                    ->component('GameTables/Edit', false)
+                    ->where('table.id', $table->id));
+        }
+    }
+
+    public function test_the_named_edit_route_builds_the_link_with_the_slug(): void
+    {
+        $table = $this->tableDraft();
+
+        $this->assertSame(url('/mesas/mis-mesas/mesa-en-borrador/editar'), route('gametables.edit', $table));
+    }
+
+    public function test_a_draft_saved_with_the_id_is_updated_as_with_the_slug(): void
+    {
+        $table = $this->tableDraft();
+
+        $this->actingAs($this->author)
+            ->put("/mesas/mis-mesas/{$table->id}", $this->tableData('Mesa corregida por id'))
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('gametables.my-tables'));
+
+        $this->assertSame('Mesa corregida por id', GameTableModel::query()->findOrFail($table->id)->title);
+    }
+
+    public function test_another_account_is_refused_with_either_link_as_before(): void
+    {
+        $table = $this->tableDraft();
+        $other = UserModel::factory()->create();
+
+        foreach ([$table->slug, $table->id] as $key) {
+            $this->actingAs($other)->get("/mesas/mis-mesas/{$key}/editar")->assertForbidden();
+            $this->actingAs($other)->put("/mesas/mis-mesas/{$key}", $this->tableData('Ajena'))->assertForbidden();
+            $this->actingAs($other)->post("/mesas/mis-mesas/{$key}/enviar-revision")->assertForbidden();
+            $this->actingAs($other)->delete("/mesas/mis-mesas/{$key}")->assertForbidden();
+        }
+
+        $this->assertSame('Mesa en borrador', GameTableModel::query()->findOrFail($table->id)->title);
+    }
+
+    public function test_a_link_to_no_table_is_not_found(): void
+    {
+        foreach (['no-existe', (string) Str::uuid()] as $key) {
+            $this->actingAs($this->author)->get("/mesas/mis-mesas/{$key}/editar")->assertNotFound();
+        }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function tableData(string $title): array
+    {
+        return [
+            'game_system_id' => $this->gameSystem->id,
+            'title' => $title,
+            'starts_at' => now()->addWeeks(2)->toIso8601String(),
+            'duration_minutes' => 240,
+            'table_type' => 'one_shot',
+            'table_format' => 'in_person',
+            'min_players' => 2,
+            'max_players' => 5,
+            'language' => 'es',
+            'experience_level' => 'none',
+            'character_creation' => 'pre_generated',
+        ];
+    }
+
     /**
      * The first URL template after `$call` in the Vue file, with each `${expression}` replaced
      * by its value; fails on an expression the test does not know.

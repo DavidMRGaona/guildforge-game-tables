@@ -217,7 +217,7 @@ Widget del dashboard: `PendingModerationWidget` (mesas y campañas pendientes de
 | `PUT` / `DELETE` | `/campanas/mis-campanas/{id}` | `campaigns.frontend-update` / `campaigns.frontend-destroy` | Autor |
 | `POST` | `/campanas/mis-campanas/{id}/enviar-revision` | `campaigns.submit-review` | Autor |
 
-`{gameTable}` es el identificador de la mesa. El módulo no tiene API: el número de mesas de un evento llega a su página como prop de Inertia (`gameTableCount`). `gametables.index`, `gametables.calendar` y `campaigns.index` aparecen entre las páginas que se pueden enlazar desde el editor de menús.
+`{gameTable}` es el slug de la mesa; en las rutas de **Mis mesas** (`/mesas/mis-mesas/…`) también vale su id, la forma que llevan los correos de rechazo enviados antes de la versión 2.8.0 (los nuevos enlazan por slug). En las rutas de **Mis campañas**, `{id}` es el id de la campaña. El módulo no tiene API: el número de mesas de un evento llega a su página como prop de Inertia (`gameTableCount`). `gametables.index`, `gametables.calendar` y `campaigns.index` aparecen entre las páginas que se pueden enlazar desde el editor de menús.
 
 ### Páginas
 

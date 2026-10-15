@@ -302,7 +302,8 @@ final class EmailVerificationGateTest extends ModuleTestCase
         $table = $this->tableDraftOf($user);
         $campaign = $this->campaignDraftOf($user);
 
-        foreach ([route('gametables.edit', $table), route('campaigns.frontend-edit', $campaign->id)] as $url) {
+        // The id form is the one rejection emails sent before 2.8.0 carry
+        foreach ([route('gametables.edit', $table), "/mesas/mis-mesas/{$table->id}/editar", route('campaigns.frontend-edit', $campaign->id)] as $url) {
             $this->actingAs($user)
                 ->withHeaders($this->inertiaHeaders())
                 ->get($url)
