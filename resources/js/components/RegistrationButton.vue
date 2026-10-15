@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { usePage, router } from '@inertiajs/vue3';
 import type { GameTable } from '../types/gametables';
@@ -44,6 +44,27 @@ const showNotesInput = ref(false);
 const showGuestModal = ref(false);
 const selectedRole = ref<ParticipantRole>('player');
 const notes = ref('');
+
+// Focus for the role dialog: into it on open, back to the button that opened it on close
+const triggerButton = ref<HTMLButtonElement | null>(null);
+const roleDialogHeading = ref<HTMLElement | null>(null);
+const playerOptionButton = ref<HTMLButtonElement | null>(null);
+const spectatorOptionButton = ref<HTMLButtonElement | null>(null);
+
+watch(showRoleSelect, async (open) => {
+    await nextTick();
+
+    if (open) {
+        const firstEnabledOption = [playerOptionButton.value, spectatorOptionButton.value].find(
+            (button): button is HTMLButtonElement => button !== null && !button.disabled
+        );
+        (firstEnabledOption ?? roleDialogHeading.value)?.focus();
+        return;
+    }
+
+    // The trigger is re-rendered once the dialog closes; if another state hides it, leave focus alone
+    triggerButton.value?.focus();
+});
 
 // Watch for prop changes (when Inertia reloads data after mutations)
 watch(
@@ -353,7 +374,9 @@ function cancelRoleSelect(): void {
                         >
                             <h3
                                 :id="roleDialogTitleId"
-                                class="mb-4 text-center text-lg font-semibold text-gray-900 dark:text-stone-100"
+                                ref="roleDialogHeading"
+                                tabindex="-1"
+                                class="mb-4 text-center text-lg font-semibold text-gray-900 focus:outline-none dark:text-stone-100"
                             >
                                 {{ showNotesInput ? t('gameTables.registration.addNotes') : t('gameTables.registration.selectRole') }}
                             </h3>
@@ -372,6 +395,7 @@ function cancelRoleSelect(): void {
                                     }"
                                 >
                                     <button
+                                        ref="playerOptionButton"
                                         type="button"
                                         :disabled="!playerEligible"
                                         :aria-describedby="playerOptionHelpId"
@@ -406,6 +430,7 @@ function cancelRoleSelect(): void {
                                     }"
                                 >
                                     <button
+                                        ref="spectatorOptionButton"
                                         type="button"
                                         :disabled="!spectatorEligible"
                                         :aria-describedby="spectatorOptionHelpId"
@@ -507,6 +532,7 @@ function cancelRoleSelect(): void {
         <!-- Main action button -->
         <button
             v-if="!showRoleSelect"
+            ref="triggerButton"
             type="button"
             :disabled="buttonDisabled"
             :aria-describedby="showsWaitingListHelp ? waitingListHelpId : undefined"
