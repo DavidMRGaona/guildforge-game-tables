@@ -240,6 +240,15 @@ final class ParticipantsRelationManager extends RelationManager
         ($deleted > 0 ? $notification->warning() : $notification->danger())->send();
     }
 
+    /**
+     * Deleting is managing the participants too; the explicit check replaces Filament's default
+     * one, so it keeps its read-only rule.
+     */
+    private function canDeleteParticipants(): bool
+    {
+        return ! $this->isReadOnly() && $this->canManageParticipants();
+    }
+
     private static function notifySeatsFull(TableFullException $exception): void
     {
         Notification::make()
@@ -451,11 +460,13 @@ final class ParticipantsRelationManager extends RelationManager
                     }),
                 // Only rows that hold no seat: the others are cancelled first (lock, freed seat, promotion)
                 DeleteAction::make()
-                    ->visible(fn (ParticipantModel $record): bool => $record->status->canBeDeleted()),
+                    ->visible(fn (ParticipantModel $record): bool => $record->status->canBeDeleted())
+                    ->authorize(fn (): bool => $this->canDeleteParticipants()),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
+                        ->authorize(fn (): bool => $this->canDeleteParticipants())
                         ->action(fn (EloquentCollection $records) => self::deleteCancelledOrRejected($records))
                         ->successNotification(null)
                         ->failureNotification(null),

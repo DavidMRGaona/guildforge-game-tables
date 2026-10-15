@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Tests\Feature\Filament;
 
+use App\Infrastructure\Persistence\Eloquent\Models\PermissionModel;
+use App\Infrastructure\Persistence\Eloquent\Models\RoleModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Filament\Actions\Testing\TestAction;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportTesting\Testable;
@@ -174,6 +177,64 @@ final class ParticipantsDeleteTest extends ModuleTestCase
         $this->assertSame('confirmed', $confirmed->refresh()->status->value);
     }
 
+    // Deleting is managing the participants: the same permission as the status actions
+    public function test_an_editor_who_may_update_the_table_can_delete_cancelled_and_rejected_rows(): void
+    {
+        $table = $this->table();
+        $cancelled = $this->participant($table, 'cancelled');
+        $rejected = $this->participant($table, 'rejected');
+        $bulkCancelled = $this->participant($table, 'cancelled');
+        $this->actingAs($this->editorWith(['gametables:gametables.view_any', 'gametables:gametables.update']));
+
+        $this->participants($table)
+            ->assertTableActionVisible('delete', $cancelled)
+            ->callTableAction('delete', $cancelled)
+            ->callTableAction('delete', $rejected);
+        $this->participants($table)->callTableBulkAction('delete', [$bulkCancelled]);
+
+        $this->assertModelMissing($cancelled);
+        $this->assertModelMissing($rejected);
+        $this->assertModelMissing($bulkCancelled);
+    }
+
+    public function test_an_editor_without_the_update_permission_does_not_get_the_delete_actions(): void
+    {
+        $table = $this->table();
+        $cancelled = $this->participant($table, 'cancelled');
+        $this->actingAs($this->editorWith(['gametables:gametables.view_any', 'gametables:gametables.view']));
+
+        $this->participants($table)
+            ->assertTableActionHidden('delete', $cancelled)
+            ->assertTableBulkActionHidden('delete');
+    }
+
+    // Hiding the buttons is not enough: the server must refuse the calls as well
+    public function test_an_editor_without_the_update_permission_cannot_delete_by_calling_the_actions(): void
+    {
+        $table = $this->table();
+        $cancelled = $this->participant($table, 'cancelled');
+        $rejected = $this->participant($table, 'rejected');
+        $this->actingAs($this->editorWith(['gametables:gametables.view_any', 'gametables:gametables.view']));
+        $rowContext = ['table' => true, 'recordKey' => $cancelled->getKey()];
+        $bulkContext = ['table' => true, 'bulk' => true];
+
+        $this->participants($table)
+            ->call('mountAction', 'delete', [], $rowContext)
+            ->assertSet('mountedActions', [])
+            ->set('mountedActions', [['name' => 'delete', 'arguments' => [], 'context' => $rowContext, 'data' => []]])
+            ->call('callMountedAction');
+
+        $this->participants($table)
+            ->selectTableRecords([$cancelled->getKey(), $rejected->getKey()])
+            ->mountAction(TestAction::make('delete')->table()->bulk())
+            ->assertSet('mountedActions', [])
+            ->set('mountedActions', [['name' => 'delete', 'arguments' => [], 'context' => $bulkContext, 'data' => []]])
+            ->call('callMountedAction');
+
+        $this->assertModelExists($cancelled);
+        $this->assertModelExists($rejected);
+    }
+
     /**
      * @return array<string, array{bool}>
      */
@@ -207,6 +268,27 @@ final class ParticipantsDeleteTest extends ModuleTestCase
     private function participants(GameTableModel $table): Testable
     {
         return Livewire::test(ParticipantsRelationManager::class, ['ownerRecord' => $table, 'pageClass' => EditGameTable::class]);
+    }
+
+    /**
+     * @param  array<string>  $permissionKeys
+     */
+    private function editorWith(array $permissionKeys): UserModel
+    {
+        $role = RoleModel::create(['name' => 'tester_'.uniqid(), 'display_name' => 'Permissions tester']);
+
+        foreach ($permissionKeys as $key) {
+            $permission = PermissionModel::firstOrCreate(
+                ['key' => $key],
+                ['label' => $key, 'resource' => 'gametables', 'action' => Str::afterLast($key, '.'), 'module' => 'gametables'],
+            );
+            $role->permissions()->attach($permission->id);
+        }
+
+        $user = UserModel::factory()->editor()->create();
+        $user->roles()->attach($role->id);
+
+        return $user;
     }
 
     private function setWaitingList(bool $enabled): void
