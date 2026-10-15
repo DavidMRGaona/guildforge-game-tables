@@ -147,7 +147,7 @@ return [
         'registered_at' => 'Registered at',
         'confirmed_at' => 'Confirmed at',
         'cancelled_at' => 'Cancelled at',
-        'waiting_list_position' => 'Waiting list position',
+        'waiting_list_position' => 'Place on the waiting list',
         'player_notes' => 'Player notes',
         'gm_notes' => 'GM notes',
 

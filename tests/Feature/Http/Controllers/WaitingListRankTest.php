@@ -6,6 +6,7 @@ namespace Modules\GameTables\Tests\Feature\Http\Controllers;
 
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
@@ -123,6 +124,18 @@ final class WaitingListRankTest extends ModuleTestCase
         $this->assertSame(1, $participations[0]->waitingListPosition);
     }
 
+    #[DataProvider('waitingListSetting')]
+    public function test_the_profile_gives_each_place_on_several_lists_with_one_query_for_all(bool $waitingList): void
+    {
+        $this->setWaitingList($waitingList);
+        [$oneList, $oneQueries] = $this->profileWaitingAt([2]);
+        [$threeLists, $threeQueries] = $this->profileWaitingAt([1, 3, 2]);
+
+        $this->assertSame([3, null], array_values($oneList));
+        $this->assertSame([2, 4, 3, null], array_values($threeLists));
+        $this->assertSame($oneQueries, $threeQueries);
+    }
+
     public function test_the_message_and_the_email_after_joining_give_the_place_among_those_waiting(): void
     {
         $this->setWaitingList(true);
@@ -236,6 +249,40 @@ final class WaitingListRankTest extends ModuleTestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->where('userRegistration.status', 'cancelled')
                 ->where('userRegistration.waitingListPosition', null));
+    }
+
+    /**
+     * A user waiting behind the given number of people at each of several tables (cancelled rows
+     * in between), and confirmed at one more: the places the profile gives and its query count.
+     *
+     * @param  list<int>  $aheadAtEachTable
+     * @return array{array<string, int|null>, int}
+     */
+    private function profileWaitingAt(array $aheadAtEachTable): array
+    {
+        $user = UserModel::factory()->create();
+
+        foreach ($aheadAtEachTable as $ahead) {
+            $table = $this->fullTable();
+            $this->rows($table, 'player', 'waiting_list', $ahead, ['waiting_list_position' => 1]);
+            $this->rows($table, 'player', 'cancelled', 1, ['waiting_list_position' => 1]);
+            $this->rows($table, 'player', 'waiting_list', 1, ['user_id' => $user->id, 'waiting_list_position' => 9]);
+            $this->travel(1)->minutes();
+        }
+        $this->rows($this->table(['starts_at' => now()->addMonth()]), 'player', 'confirmed', 1, ['user_id' => $user->id]);
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $participations = $this->service()->getByUserForProfile((string) $user->id);
+        $queries = count(DB::getQueryLog());
+        DB::disableQueryLog();
+
+        $places = [];
+        foreach ($participations as $participation) {
+            $places[$participation->gameTableId] = $participation->waitingListPosition;
+        }
+
+        return [$places, $queries];
     }
 
     private function service(): RegistrationServiceInterface

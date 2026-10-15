@@ -633,6 +633,15 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     {
         $data = $this->participantRepository->getActiveByUserWithTableData($userId);
 
+        // Every place among those waiting, for all the user's waiting lists, in one query
+        $waitingAt = [];
+        foreach ($data as $item) {
+            if ($item['participant']->isOnWaitingList()) {
+                $waitingAt[] = new GameTableId($item['game_table_id']);
+            }
+        }
+        $places = $this->participantRepository->getWaitingListRanks($waitingAt);
+
         $now = new \DateTimeImmutable;
 
         return array_map(
@@ -650,7 +659,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
                 statusKey: $item['participant']->status->value,
                 statusColor: $item['participant']->status->color(),
                 // The place among those waiting, not the stored position (which may have gaps)
-                waitingListPosition: $this->rankOf($item['participant']),
+                waitingListPosition: $item['participant']->isOnWaitingList() ? ($places[$item['participant']->id->value] ?? null) : null,
                 isUpcoming: $item['game_table_starts_at'] !== null && $item['game_table_starts_at'] > $now,
             ),
             $data,

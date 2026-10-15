@@ -84,6 +84,15 @@ interface ParticipantRepositoryInterface
      */
     public function getWaitingListRank(ParticipantId $participantId): ?int;
 
+    /**
+     * The places of everyone waiting at the given tables (as getWaitingListRank() gives them), in
+     * one query, for lists that show many: participant id => place.
+     *
+     * @param  array<GameTableId>  $gameTableIds
+     * @return array<string, int>
+     */
+    public function getWaitingListRanks(array $gameTableIds): array;
+
     public function findByTableAndEmail(GameTableId $gameTableId, string $email): ?Participant;
 
     public function findByCancellationToken(string $token): ?Participant;

@@ -178,7 +178,7 @@ return [
         'registered_at' => 'Fecha de inscripción',
         'confirmed_at' => 'Fecha de confirmación',
         'cancelled_at' => 'Fecha de cancelación',
-        'waiting_list_position' => 'Posición en lista de espera',
+        'waiting_list_position' => 'Puesto en lista de espera',
         'player_notes' => 'Notas del jugador',
         'gm_notes' => 'Notas del director',
 

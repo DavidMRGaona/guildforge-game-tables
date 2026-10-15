@@ -22,6 +22,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Closure;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
@@ -32,7 +33,7 @@ use Modules\GameTables\Domain\Exceptions\CannotCancelException;
 use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
 use Modules\GameTables\Domain\Exceptions\TableFullException;
 use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
-use Modules\GameTables\Domain\ValueObjects\ParticipantId;
+use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 
@@ -40,9 +41,36 @@ final class ParticipantsRelationManager extends RelationManager
 {
     protected static string $relationship = 'participants';
 
+    /**
+     * The places among those waiting, computed once per request for the whole table.
+     *
+     * @var array<string, int>|null
+     */
+    private ?array $waitingListPlaces = null;
+
     public static function getTitle(Model $ownerRecord, string $pageClass): string
     {
         return __('game-tables::messages.relation_managers.participants.title');
+    }
+
+    /**
+     * Livewire hook: an action of this request may have moved the list, so each render counts again.
+     */
+    public function rendering(): void
+    {
+        $this->waitingListPlaces = null;
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private function waitingListPlaces(): array
+    {
+        /** @var GameTableModel $ownerRecord */
+        $ownerRecord = $this->getOwnerRecord();
+
+        return $this->waitingListPlaces ??= app(ParticipantRepositoryInterface::class)
+            ->getWaitingListRanks([new GameTableId($ownerRecord->id)]);
     }
 
     public function form(Schema $schema): Schema
@@ -185,6 +213,8 @@ final class ParticipantsRelationManager extends RelationManager
     {
         return $table
             ->recordTitleAttribute('display_name')
+            // The name column reads the user of each row
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with('user'))
             ->columns([
                 TextColumn::make('display_name')
                     ->label(__('game-tables::messages.fields.name'))
@@ -216,15 +246,10 @@ final class ParticipantsRelationManager extends RelationManager
                     ->label(__('game-tables::messages.fields.waiting_list_position'))
                     // The place among those waiting for the same role: stored positions keep gaps
                     ->state(fn (ParticipantModel $record): ?int => $record->status === ParticipantStatus::WaitingList
-                        ? app(ParticipantRepositoryInterface::class)->getWaitingListRank(new ParticipantId($record->id))
+                        ? ($this->waitingListPlaces()[$record->id] ?? null)
                         : null)
                     ->numeric()
-                    ->visible(function (): bool {
-                        /** @var GameTableModel $ownerRecord */
-                        $ownerRecord = $this->getOwnerRecord();
-
-                        return $ownerRecord->participants()->where('status', ParticipantStatus::WaitingList->value)->exists();
-                    }),
+                    ->visible(fn (): bool => $this->waitingListPlaces() !== []),
 
                 TextColumn::make('confirmed_at')
                     ->label(__('game-tables::messages.fields.confirmed_at'))

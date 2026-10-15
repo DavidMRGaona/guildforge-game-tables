@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Tests\Feature\Filament;
 
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
@@ -76,6 +77,82 @@ final class ParticipantsWaitingListPlaceTest extends ModuleTestCase
             ->assertTableColumnStateSet('waiting_list_position', 2, $fourth)
             ->assertTableColumnStateSet('waiting_list_position', 1, $spectator)
             ->assertTableColumnStateSet('waiting_list_position', null, $left);
+    }
+
+    #[DataProvider('waitingListSetting')]
+    public function test_the_column_shows_only_while_someone_waits(bool $waitingList): void
+    {
+        config()->set('modules.settings.game-tables.registration.waiting_list_enabled', $waitingList);
+        $table = $this->table();
+        $this->participant($table, 'player', 'confirmed');
+        $this->participant($table, 'player', 'cancelled', 1);
+
+        $this->participants($table)->assertTableColumnHidden('waiting_list_position');
+
+        $this->participant($table, 'spectator', 'waiting_list', 2);
+
+        $this->participants($table)->assertTableColumnVisible('waiting_list_position');
+    }
+
+    #[DataProvider('waitingListSetting')]
+    public function test_after_a_promotion_the_places_are_counted_again(bool $waitingList): void
+    {
+        config()->set('modules.settings.game-tables.registration.waiting_list_enabled', $waitingList);
+        $table = $this->table();
+        $first = $this->participant($table, 'player', 'waiting_list', 1);
+        $second = $this->participant($table, 'player', 'waiting_list', 2);
+
+        $this->participants($table)
+            ->assertTableColumnStateSet('waiting_list_position', 2, $second)
+            ->callTableAction('promote', $first)
+            ->assertHasNoTableActionErrors()
+            ->assertTableColumnStateSet('waiting_list_position', 1, $second)
+            ->assertTableColumnStateSet('waiting_list_position', null, $first);
+    }
+
+    #[DataProvider('waitingListSetting')]
+    public function test_the_places_take_one_query_for_the_whole_table(bool $waitingList): void
+    {
+        config()->set('modules.settings.game-tables.registration.waiting_list_enabled', $waitingList);
+        $small = $this->table();
+        $large = $this->table();
+        foreach ([[$small, 2], [$large, 6]] as [$table, $waiting]) {
+            $this->participant($table, 'player', 'confirmed');
+            for ($position = 1; $position <= $waiting; $position++) {
+                $this->participant($table, 'player', 'waiting_list', $position * 2);
+            }
+        }
+
+        $this->assertSame($this->queriesToList($small), $this->queriesToList($large));
+    }
+
+    /**
+     * @return array<string, array{string, string}>
+     */
+    public static function placeLabels(): array
+    {
+        return [
+            'es' => ['es', 'Puesto en lista de espera'],
+            'en' => ['en', 'Place on the waiting list'],
+        ];
+    }
+
+    #[DataProvider('placeLabels')]
+    public function test_the_column_is_labelled_as_the_place(string $locale, string $label): void
+    {
+        $this->assertSame($label, __('game-tables::messages.fields.waiting_list_position', [], $locale));
+    }
+
+    private function queriesToList(GameTableModel $table): int
+    {
+        $component = $this->participants($table);
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $component->call('$refresh')->assertOk();
+        $count = count(DB::getQueryLog());
+        DB::disableQueryLog();
+
+        return $count;
     }
 
     /**
