@@ -72,15 +72,15 @@ return [
     ],
 
     'organization_cancellation' => [
-        'subject' => 'The organisers have cancelled your registration for :tableTitle',
+        'subject' => 'The organizers have cancelled your registration for :tableTitle',
         'greeting' => 'Hello :name,',
-        'intro' => 'The organisers have cancelled your registration for the table :tableTitle.',
+        'intro' => 'The organizers have cancelled your registration for the table :tableTitle.',
         'details' => 'Table details:',
         'table_title' => 'Table',
         'table_date' => 'Date',
         'table_location' => 'Location',
         'view_table' => 'View table',
-        'outro' => 'If you think this is a mistake, please contact the organisers.',
+        'outro' => 'If you think this is a mistake, please contact the organizers.',
         'guest_gdpr_notice' => 'Your data will be automatically deleted in accordance with our privacy policy.',
     ],
 

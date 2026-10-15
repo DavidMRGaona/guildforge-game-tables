@@ -53,8 +53,8 @@ final class OrganizationCancellationNotificationTest extends TestCase
         app()->setLocale('en');
         $mail = $this->notification(guest: false)->toMail(new AnonymousNotifiable);
 
-        $this->assertSame('The organisers have cancelled your registration for La tumba', $mail->subject);
-        $this->assertContains('The organisers have cancelled your registration for the table La tumba.', $mail->introLines);
+        $this->assertSame('The organizers have cancelled your registration for La tumba', $mail->subject);
+        $this->assertContains('The organizers have cancelled your registration for the table La tumba.', $mail->introLines);
     }
 
     private function notification(bool $guest): OrganizationCancellationNotification

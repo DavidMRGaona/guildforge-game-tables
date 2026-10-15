@@ -607,7 +607,7 @@ return [
             'reject' => 'Reject',
             'promote' => 'Promote',
             'cancel_registration' => 'Cancel registration',
-            'cancel_registration_description' => 'Their seat is freed (and, where it applies, the first person on the waiting list takes it). They will be told by email that the organisers have cancelled their registration.',
+            'cancel_registration_description' => 'Their seat is freed (and, where it applies, the first person on the waiting list takes it). They will be told by email that the organizers have cancelled their registration.',
             'no_show' => 'No-show',
             'no_show_description' => 'They are marked as a no-show. No email is sent and nobody is promoted from the waiting list.',
             'move_to_waiting' => 'Move to waiting list',
