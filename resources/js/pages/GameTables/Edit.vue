@@ -423,7 +423,8 @@ function scrollToFirstError(): void {
 }
 
 function submit(): void {
-    form.put(`/mesas/mis-mesas/${props.table.id}`, {
+    // The {gameTable} routes find the table by its slug, not its id
+    form.put(`/mesas/mis-mesas/${props.table.slug}`, {
         preserveScroll: true,
         onError: () => {
             nextTick(() => {

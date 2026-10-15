@@ -38,7 +38,10 @@ const tableUrl = computed(() =>
     props.table.slug ? `/mesas/${props.table.slug}` : null
 );
 
-const editUrl = computed(() => `/mesas/mis-mesas/${props.table.id}/editar`);
+// The {gameTable} routes find the table by its slug, not its id
+const editUrl = computed(() =>
+    props.table.slug ? `/mesas/mis-mesas/${props.table.slug}/editar` : null
+);
 
 const statusColorClasses = computed(() => {
     const colorMap: Record<string, string> = {
@@ -119,7 +122,7 @@ const playersText = computed(() => {
                 </span>
 
                 <!-- Edit link for drafts -->
-                <template v-if="showEditLink && !table.isPublished">
+                <template v-if="showEditLink && !table.isPublished && editUrl">
                     <button
                         v-if="gate.blocked.value"
                         type="button"
