@@ -35,6 +35,7 @@ use Modules\GameTables\Domain\ValueObjects\ParticipantId;
 use Modules\GameTables\Domain\ValueObjects\TimeSlot;
 use Modules\GameTables\Infrastructure\Services\RegistrationService;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 
 final class RegistrationServiceTest extends TestCase
@@ -647,7 +648,7 @@ final class RegistrationServiceTest extends TestCase
     }
 
     #[AllowMockObjectsWithoutExpectations]
-    public function test_register_on_full_table_dispatches_waiting_list_registration_with_position(): void
+    public function test_register_on_full_table_dispatches_waiting_list_registration_with_its_place(): void
     {
         $gameTableId = GameTableId::generate()->value;
 
@@ -656,7 +657,11 @@ final class RegistrationServiceTest extends TestCase
             ->willReturn($this->createGameTable($gameTableId));
 
         $this->participantRepository->method('countConfirmedPlayers')->willReturn(6);
-        $this->participantRepository->method('getNextWaitingListPosition')->willReturn(3);
+        $this->participantRepository->method('getNextWaitingListPosition')->willReturn(4);
+        // Someone ahead left the list: stored position 4, second among those waiting
+        /** @var MockObject&ParticipantRepositoryInterface $participants */
+        $participants = $this->participantRepository;
+        $participants->method('getWaitingListRank')->willReturn(2);
 
         $this->service->register(new RegisterParticipantDTO(
             gameTableId: $gameTableId,
@@ -667,7 +672,7 @@ final class RegistrationServiceTest extends TestCase
         Event::assertDispatched(
             ParticipantRegistered::class,
             fn (ParticipantRegistered $event): bool => $event->status === ParticipantStatus::WaitingList
-                && $event->waitingListPosition === 3,
+                && $event->waitingListPosition === 2,
         );
     }
 

@@ -27,6 +27,8 @@ use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
 use Modules\GameTables\Domain\Exceptions\TableFullException;
+use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
+use Modules\GameTables\Domain\ValueObjects\ParticipantId;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 
@@ -138,6 +140,10 @@ final class ParticipantsRelationManager extends RelationManager
 
                 TextColumn::make('waiting_list_position')
                     ->label(__('game-tables::messages.fields.waiting_list_position'))
+                    // The place among those waiting for the same role: stored positions keep gaps
+                    ->state(fn (ParticipantModel $record): ?int => $record->status === ParticipantStatus::WaitingList
+                        ? app(ParticipantRepositoryInterface::class)->getWaitingListRank(new ParticipantId($record->id))
+                        : null)
                     ->numeric()
                     ->visible(function (): bool {
                         /** @var GameTableModel $ownerRecord */

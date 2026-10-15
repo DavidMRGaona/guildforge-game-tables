@@ -25,9 +25,11 @@ final readonly class ParticipantResponseDTO
         public bool $isGuest = false,
         public ?string $firstName = null,
         public ?string $email = null,
+        // The place among those waiting for the same role (1-based); the stored position may have gaps
+        public ?int $waitingListRank = null,
     ) {}
 
-    public static function fromEntity(Participant $participant, string $userName = ''): self
+    public static function fromEntity(Participant $participant, string $userName = '', ?int $waitingListRank = null): self
     {
         $displayName = $userName;
         if ($participant->isGuest()) {
@@ -48,6 +50,7 @@ final readonly class ParticipantResponseDTO
             isGuest: $participant->isGuest(),
             firstName: $participant->firstName,
             email: $participant->email,
+            waitingListRank: $waitingListRank,
         );
     }
 
@@ -68,6 +71,7 @@ final readonly class ParticipantResponseDTO
             'status_label' => $this->status->label(),
             'status_color' => $this->status->color(),
             'waiting_list_position' => $this->waitingListPosition,
+            'waiting_list_rank' => $this->waitingListRank,
             'notes' => $this->notes,
             'confirmed_at' => $this->confirmedAt?->format('c'),
             'created_at' => $this->createdAt?->format('c'),

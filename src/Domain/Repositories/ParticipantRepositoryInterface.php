@@ -74,8 +74,15 @@ interface ParticipantRepositoryInterface
 
     /**
      * First in the waiting list, optionally only among the participants with the given role.
+     * The waiting list order is the stored position, then the registration date.
      */
     public function getFirstInWaitingList(GameTableId $gameTableId, ?ParticipantRole $role = null): ?Participant;
+
+    /**
+     * The participant's place (1-based) among those waiting for the same role, in the waiting
+     * list order; null when they are not on the waiting list. Stored positions may have gaps.
+     */
+    public function getWaitingListRank(ParticipantId $participantId): ?int;
 
     public function findByTableAndEmail(GameTableId $gameTableId, string $email): ?Participant;
 

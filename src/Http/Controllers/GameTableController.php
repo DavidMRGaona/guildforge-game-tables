@@ -235,7 +235,8 @@ final class GameTableController extends Controller
             'status' => $dto->status->value,
             'statusLabel' => $dto->status->label(),
             'statusColor' => $dto->status->color(),
-            'waitingListPosition' => $dto->waitingListPosition,
+            // The place among those waiting, not the stored position (which may have gaps)
+            'waitingListPosition' => $dto->waitingListRank,
             'notes' => $dto->notes,
             'confirmedAt' => $dto->confirmedAt?->format('c'),
             'createdAt' => $dto->createdAt?->format('c'),
