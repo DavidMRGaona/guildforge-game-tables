@@ -71,6 +71,19 @@ return [
         'guest_gdpr_notice' => 'Your data will be automatically deleted in accordance with our privacy policy.',
     ],
 
+    'organization_cancellation' => [
+        'subject' => 'The organisers have cancelled your registration for :tableTitle',
+        'greeting' => 'Hello :name,',
+        'intro' => 'The organisers have cancelled your registration for the table :tableTitle.',
+        'details' => 'Table details:',
+        'table_title' => 'Table',
+        'table_date' => 'Date',
+        'table_location' => 'Location',
+        'view_table' => 'View table',
+        'outro' => 'If you think this is a mistake, please contact the organisers.',
+        'guest_gdpr_notice' => 'Your data will be automatically deleted in accordance with our privacy policy.',
+    ],
+
     'waiting_list_promotion' => [
         'subject' => 'Spot available at table: :tableTitle',
         'greeting' => 'Hello :name,',

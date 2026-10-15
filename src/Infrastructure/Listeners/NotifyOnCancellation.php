@@ -22,7 +22,8 @@ final readonly class NotifyOnCancellation
 
     public function handle(ParticipantCancelled $event): void
     {
-        if (! $this->settingsReader->isNotifyOnCancellationEnabled()) {
+        // Cancelled by the organisation from the panel: the directors are not told
+        if ($event->byOrganization || ! $this->settingsReader->isNotifyOnCancellationEnabled()) {
             return;
         }
 

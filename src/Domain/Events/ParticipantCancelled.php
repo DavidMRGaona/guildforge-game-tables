@@ -17,5 +17,8 @@ final class ParticipantCancelled
         public readonly string $gameTableId,
         public readonly ?string $userId,
         public readonly bool $wasConfirmed,
+        // True when the organisation cancelled it from the panel: the participant gets its own
+        // notice and the directors none
+        public readonly bool $byOrganization = false,
     ) {}
 }

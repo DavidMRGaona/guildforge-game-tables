@@ -17,6 +17,15 @@ interface RegistrationServiceInterface
     public function cancelByUser(string $gameTableId, string $userId): ParticipantResponseDTO;
 
     /**
+     * Cancelled by the organisation from the panel: the same as cancel() (lock, freed seat,
+     * promotion), but the participant is told the organisation cancelled it and the directors
+     * get nothing.
+     *
+     * @throws \Modules\GameTables\Domain\Exceptions\CannotCancelException when the registration is no longer active
+     */
+    public function cancelByAdmin(string $participantId): ParticipantResponseDTO;
+
+    /**
      * @throws \Modules\GameTables\Domain\Exceptions\TableFullException with the waiting list on, when no player or spectator seat is free
      */
     public function confirm(string $participantId): ParticipantResponseDTO;
@@ -47,6 +56,11 @@ interface RegistrationServiceInterface
      */
     public function registerGuestByAdmin(RegisterParticipantDTO $dto): ParticipantResponseDTO;
 
+    /**
+     * A confirmed participant who did not come, once the table has started (no emails, no promotion).
+     *
+     * @throws \Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException before the start or without a confirmed seat
+     */
     public function markAsNoShow(string $participantId): ParticipantResponseDTO;
 
     /**

@@ -24,6 +24,7 @@ use Modules\GameTables\Domain\Events\ParticipantRegistered;
 use Modules\GameTables\Domain\Events\ParticipantRejected;
 use Modules\GameTables\Domain\Exceptions\AlreadyRegisteredException;
 use Modules\GameTables\Domain\Exceptions\CannotCancelException;
+use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
 use Modules\GameTables\Domain\Exceptions\ParticipantNotFoundException;
 use Modules\GameTables\Domain\Exceptions\TableFullException;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
@@ -261,13 +262,27 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
     public function cancel(string $participantId): ParticipantResponseDTO
     {
+        return $this->cancelById($participantId, byOrganization: false);
+    }
+
+    /**
+     * The same cancellation as the participant's own (lock, seat freed, promotion); only the
+     * emails differ: the participant is told the organisation cancelled it, the directors nothing.
+     */
+    public function cancelByAdmin(string $participantId): ParticipantResponseDTO
+    {
+        return $this->cancelById($participantId, byOrganization: true);
+    }
+
+    private function cancelById(string $participantId, bool $byOrganization): ParticipantResponseDTO
+    {
         [$participant, $wasConfirmed, $promoted] = $this->lock->forParticipant(
             $participantId,
             // Read under the lock: a registration cancelled twice at once frees one seat
             fn (): array => $this->cancelLocked($this->participantRepository->findOrFail(new ParticipantId($participantId))),
         );
 
-        $this->announceCancellation($participant, $participant->userId, $wasConfirmed, $promoted);
+        $this->announceCancellation($participant, $participant->userId, $wasConfirmed, $promoted, $byOrganization);
 
         return $this->toResponse($participant);
     }
@@ -296,13 +311,14 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         return [$participant, $wasConfirmed, $promoted];
     }
 
-    private function announceCancellation(Participant $participant, ?string $userId, bool $wasConfirmed, ?Participant $promoted): void
+    private function announceCancellation(Participant $participant, ?string $userId, bool $wasConfirmed, ?Participant $promoted, bool $byOrganization = false): void
     {
         ParticipantCancelled::dispatch(
             $participant->id->value,
             $participant->gameTableId->value,
             $userId,
             $wasConfirmed,
+            $byOrganization,
         );
 
         if ($promoted !== null) {
@@ -475,12 +491,27 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         return $this->toResponse($participant);
     }
 
+    /**
+     * A confirmed participant who did not come, once the table has started. No emails and no
+     * promotion: the session is already under way.
+     *
+     * @throws InvalidStatusTransitionException before the start or without a confirmed seat
+     */
     public function markAsNoShow(string $participantId): ParticipantResponseDTO
     {
-        $participant = $this->participantRepository->findOrFail(new ParticipantId($participantId));
+        $participant = $this->lock->forParticipant($participantId, function () use ($participantId): Participant {
+            $participant = $this->participantRepository->findOrFail(new ParticipantId($participantId));
+            $gameTable = $this->gameTableRepository->findOrFail($participant->gameTableId);
 
-        $participant->markAsNoShow();
-        $this->participantRepository->save($participant);
+            if (! $gameTable->timeSlot->hasStarted(new DateTimeImmutable())) {
+                throw InvalidStatusTransitionException::fromTo($participant->status->value, ParticipantStatus::NoShow->value);
+            }
+
+            $participant->markAsNoShow();
+            $this->participantRepository->save($participant);
+
+            return $participant;
+        });
 
         return $this->toResponse($participant);
     }

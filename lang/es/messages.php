@@ -625,6 +625,7 @@ return [
         'minimum_age' => 'No cumples con la edad mínima requerida',
         'not_found' => 'No se encontró la inscripción',
         'cannot_cancel' => 'No es posible cancelar la inscripción en este momento',
+        'cannot_mark_no_show' => 'Solo se puede marcar como no presentado a un participante confirmado, una vez empezada la mesa',
         'table_not_found' => 'No se encontró la mesa',
         'campaign_not_found' => 'No se encontró la campaña',
         'invalid_token' => 'El enlace de cancelación no es válido o ha expirado',
@@ -688,6 +689,10 @@ return [
             'confirm' => 'Confirmar',
             'reject' => 'Rechazar',
             'promote' => 'Promover',
+            'cancel_registration' => 'Cancelar inscripción',
+            'cancel_registration_description' => 'Se libera su plaza (y, si corresponde, pasa a ocuparla el primero de la lista de espera). Se le avisará por email de que la organización ha cancelado su inscripción.',
+            'no_show' => 'No presentado',
+            'no_show_description' => 'Queda marcado como no presentado. No se envía ningún email ni se promueve a nadie de la lista de espera.',
             'move_to_waiting' => 'Mover a lista de espera',
         ],
         'sessions' => [

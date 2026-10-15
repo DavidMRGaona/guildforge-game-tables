@@ -534,6 +534,7 @@ return [
         'minimum_age' => 'You do not meet the minimum age requirement',
         'not_found' => 'Registration not found',
         'cannot_cancel' => 'Unable to cancel registration at this time',
+        'cannot_mark_no_show' => 'Only a confirmed participant can be marked as a no-show, once the table has started',
         'table_not_found' => 'Table not found',
         'campaign_not_found' => 'Campaign not found',
         'guest_already_registered' => 'This email is already registered for this table',
@@ -598,6 +599,10 @@ return [
             'confirm' => 'Confirm',
             'reject' => 'Reject',
             'promote' => 'Promote',
+            'cancel_registration' => 'Cancel registration',
+            'cancel_registration_description' => 'Their seat is freed (and, where it applies, the first person on the waiting list takes it). They will be told by email that the organisers have cancelled their registration.',
+            'no_show' => 'No-show',
+            'no_show_description' => 'They are marked as a no-show. No email is sent and nobody is promoted from the waiting list.',
             'move_to_waiting' => 'Move to waiting list',
         ],
         'sessions' => [

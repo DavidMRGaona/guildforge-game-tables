@@ -96,7 +96,13 @@ La publicación es un indicador aparte (`is_published`). **Publicar** deja la me
 - Nadie puede tener dos inscripciones activas en la misma mesa, contando la lista de espera (los invitados se distinguen por su email).
 - Desde la web solo se inscribe como jugador o espectador; los directores se asignan en el panel.
 
-La página de la mesa y el servidor usan el mismo cálculo: el servidor cuenta las plazas ocupadas y libres de jugador y de espectador y los jugadores que esperan en la lista, y la página muestra esas cifras tal cual; el servidor decide qué ofrece la página a cada rol (inscripción, lista de espera o el motivo del rechazo) y vuelve a aplicarlo al recibir la inscripción; a los invitados solo se les comprueba el email al enviar. Una inscripción que no cumple las reglas no se crea y se responde con el motivo (error de formulario en la web, 422 a los clientes JSON). Los administradores que añaden participantes desde el panel no están sujetos a ellas. En la lista de participantes del panel, el estado solo cambia con las acciones de fila **Confirmar**, **Rechazar** y **Promover**, que pasan por las mismas reglas de aforo y el mismo bloqueo; **Editar** cambia los datos del participante (rol, notas y contacto del invitado, con el email en minúsculas), no su estado. En el panel, la cabecera de la mesa tiene las acciones **Publicar**, **Despublicar**, **Iniciar**, **Completar** y **Cancelar mesa**.
+La página de la mesa y el servidor usan el mismo cálculo: el servidor cuenta las plazas ocupadas y libres de jugador y de espectador y los jugadores que esperan en la lista, y la página muestra esas cifras tal cual; el servidor decide qué ofrece la página a cada rol (inscripción, lista de espera o el motivo del rechazo) y vuelve a aplicarlo al recibir la inscripción; a los invitados solo se les comprueba el email al enviar. Una inscripción que no cumple las reglas no se crea y se responde con el motivo (error de formulario en la web, 422 a los clientes JSON). Los administradores que añaden participantes desde el panel no están sujetos a ellas. En la lista de participantes del panel, el estado solo cambia con las acciones de fila **Confirmar**, **Rechazar**, **Promover**, **Cancelar inscripción** y **No presentado**, que pasan por el servicio de inscripciones y el bloqueo de la mesa; con la lista de espera activada, **Confirmar** y **Promover** nunca superan las plazas de jugador ni de espectador (desactivada no las comprueban, como antes). Las ve quien puede editar la mesa, igual que la página en la que están.
+
+- **Cancelar inscripción** (pide confirmación; para inscripciones pendientes, confirmadas o en la lista de espera, las que se pueden cancelar) hace lo mismo que la cancelación del propio participante: libera la plaza y pasa al primero de la lista de espera cuando corresponde, que recibe su aviso de promoción de siempre. El participante, usuario o invitado, recibe un correo propio («La organización ha cancelado tu inscripción en…»); los directores no reciben el aviso de cancelación (sí el de promoción, si alguien pasa de la lista).
+- **No presentado** (pide confirmación; solo para participantes confirmados, una vez empezada la mesa) no envía correos ni promueve a nadie.
+- **Editar** cambia los datos del participante (rol, notas y contacto del invitado, con el email en minúsculas), no su estado.
+
+En el panel, la cabecera de la mesa tiene las acciones **Publicar**, **Despublicar**, **Iniciar**, **Completar** y **Cancelar mesa**.
 
 ### Lista de espera
 
@@ -106,7 +112,7 @@ Activada:
 
 - **Quién**: solo jugadores, usuarios e invitados, cuando las plazas de jugador están completas y se cumplen las demás reglas de inscripción (fechas, acceso anticipado, tipo de inscripción, no estar ya inscrito). La página muestra **Apuntarse a la lista de espera** con una línea que explica la promoción, y cada persona recibe su puesto (1, 2…). Los espectadores no tienen lista de espera.
 - **Puesto**: el número que ven la página de la mesa, el perfil, el mensaje y el correo de inscripción y la columna del panel es el puesto entre quienes esperan con el mismo rol, por posición guardada y después por fecha de inscripción. Las posiciones guardadas no se reescriben cuando alguien sale de la lista, así que pueden tener huecos; el puesto no. El orden de promoción es ese mismo.
-- **Promoción automática**: cuando un jugador confirmado cancela, el primer jugador de la lista ocupa su plaza; una promoción por plaza liberada, nunca por encima del máximo de jugadores. Los espectadores en espera nunca pasan a una plaza de jugador.
+- **Promoción automática**: cuando un jugador confirmado cancela (o la organización cancela su inscripción desde el panel), el primer jugador de la lista ocupa su plaza; una promoción por plaza liberada, nunca por encima del máximo de jugadores. Los espectadores en espera nunca pasan a una plaza de jugador.
 - **Mesas con confirmación manual**: los jugadores pendientes ocupan plaza (confirmados + pendientes cuentan para el aforo), así que quien llega con la mesa así llena va a la lista detrás de los que ya esperan, y cancelar o **Rechazar** una inscripción pendiente también libera plaza y pasa al primero de la lista (a pendiente). El promovido queda pendiente y el director lo confirma o lo rechaza; los correos al participante y a los directores lo dicen. En las demás mesas el promovido queda confirmado. Los espectadores pendientes también ocupan plaza de espectador: con esas plazas así llenas, la web rechaza a los espectadores nuevos («No quedan plazas de espectador disponibles») y el panel los añade a la lista de espera.
 - **Límite en el panel**: con la lista activada, **Confirmar** y **Promover** no dejan superar las plazas de jugador ni las de espectador, contadas como en la inscripción (en mesas con confirmación manual también ocupan plaza los pendientes; un pendiente que ya ocupa la suya solo necesita hueco entre los confirmados). Avisan de que la mesa está completa o de que no quedan plazas de espectador y no cambian nada.
 - **Activar la lista en una mesa manual que ya supera su aforo** (confirmados + pendientes por encima de `max_players`): no se toca ninguna fila; quien llega va a la lista, confirmar a un pendiente se rechaza mientras los confirmados estén en el máximo y la lista avanza a medida que se liberen plazas.
@@ -124,9 +130,9 @@ Los emails de los invitados se guardan en minúsculas y se comparan sin distingu
 | Pendiente | `pending` | Pendiente de confirmación |
 | Confirmado | `confirmed` | Plaza confirmada |
 | Lista de espera | `waiting_list` | Sin plaza, en espera |
-| Cancelado | `cancelled` | Cancelada por el participante o al cancelarse la mesa |
+| Cancelado | `cancelled` | Cancelada por el participante, por la organización desde el panel o al cancelarse la mesa |
 | Rechazado | `rejected` | Rechazada por un administrador |
-| No presentado | `no_show` | No asistió |
+| No presentado | `no_show` | No asistió; lo marca la organización desde el panel, una vez empezada la mesa |
 
 ### Moderación (creación desde la web)
 
@@ -240,7 +246,8 @@ Widget del dashboard: `PendingModerationWidget` (mesas y campañas pendientes de
 |---------|---------------|
 | Inscripción (usuario o invitado) | Participante; directores y email de la mesa si **Notificaciones** lo permite |
 | Confirmación o rechazo de la inscripción | Participante |
-| Cancelación de la inscripción | Participante; directores y email de la mesa si **Notificaciones** lo permite |
+| Cancelación de la inscripción por el participante | Participante; directores y email de la mesa si **Notificaciones** lo permite |
+| Cancelación de la inscripción por la organización (panel) | Participante, con su propio correo; los directores y el email de la mesa no reciben el aviso de cancelación (sí el de promoción si alguien sale de la lista de espera) |
 | Promoción desde la lista de espera | Participante y directores, si **Notificaciones** lo permite; en las mesas con confirmación manual indican que la inscripción queda pendiente |
 | Cancelación de la mesa | Participantes |
 | Mesa o campaña enviada a revisión | Usuarios con rol `admin` o `editor` |
@@ -262,7 +269,7 @@ Widget del dashboard: `PendingModerationWidget` (mesas y campañas pendientes de
 | `GuestRegistered` | Un invitado se inscribe |
 | `ParticipantConfirmed` | Se confirma una inscripción |
 | `ParticipantRejected` | Se rechaza una inscripción |
-| `ParticipantCancelled` | Se cancela una inscripción |
+| `ParticipantCancelled` | Se cancela una inscripción (`byOrganization` cuando la cancela la organización desde el panel) |
 | `ParticipantPromotedFromWaitingList` | Un participante sale de la lista de espera |
 
 `CampaignCreated` y `CampaignStatusChanged` están definidos pero hoy no se emiten.

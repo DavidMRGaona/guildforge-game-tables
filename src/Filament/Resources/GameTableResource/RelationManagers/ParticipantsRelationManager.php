@@ -22,10 +22,13 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Gate;
 use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
+use Modules\GameTables\Domain\Exceptions\CannotCancelException;
+use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
 use Modules\GameTables\Domain\Exceptions\TableFullException;
 use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\ParticipantId;
@@ -106,6 +109,14 @@ final class ParticipantsRelationManager extends RelationManager
                     ->columnSpanFull(),
             ])
             ->columns(2);
+    }
+
+    /**
+     * The status row actions are for whoever may edit the table, the same as the page they are on.
+     */
+    private function canManageParticipants(): bool
+    {
+        return Gate::allows('update', $this->getOwnerRecord());
     }
 
     private static function notifySeatsFull(TableFullException $exception): void
@@ -222,6 +233,7 @@ final class ParticipantsRelationManager extends RelationManager
                     ->icon('heroicon-o-check')
                     ->color('success')
                     ->visible(fn (ParticipantModel $record): bool => $record->status === ParticipantStatus::Pending)
+                    ->authorize(fn (): bool => $this->canManageParticipants())
                     ->action(function (ParticipantModel $record): void {
                         $registrationService = app(RegistrationServiceInterface::class);
 
@@ -238,6 +250,7 @@ final class ParticipantsRelationManager extends RelationManager
                     ->icon('heroicon-o-x-mark')
                     ->color('danger')
                     ->visible(fn (ParticipantModel $record): bool => $record->status === ParticipantStatus::Pending)
+                    ->authorize(fn (): bool => $this->canManageParticipants())
                     ->requiresConfirmation()
                     ->action(function (ParticipantModel $record): void {
                         $registrationService = app(RegistrationServiceInterface::class);
@@ -249,6 +262,7 @@ final class ParticipantsRelationManager extends RelationManager
                     ->icon('heroicon-o-arrow-up')
                     ->color('info')
                     ->visible(fn (ParticipantModel $record): bool => $record->status === ParticipantStatus::WaitingList)
+                    ->authorize(fn (): bool => $this->canManageParticipants())
                     ->action(function (ParticipantModel $record): void {
                         $registrationService = app(RegistrationServiceInterface::class);
 
@@ -257,6 +271,54 @@ final class ParticipantsRelationManager extends RelationManager
                         } catch (TableFullException $exception) {
                             // With the waiting list on, a promotion never exceeds the player or spectator seats
                             self::notifySeatsFull($exception);
+                        }
+                    }),
+
+                // The participant's own cancellation (lock, freed seat, promotion), with its own
+                // email to the participant and none to the directors
+                Action::make('cancelRegistration')
+                    ->label(__('game-tables::messages.relation_managers.participants.cancel_registration'))
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->visible(fn (ParticipantModel $record): bool => $record->status->canBeCancelled())
+                    ->authorize(fn (): bool => $this->canManageParticipants())
+                    ->requiresConfirmation()
+                    ->modalDescription(__('game-tables::messages.relation_managers.participants.cancel_registration_description'))
+                    ->action(function (ParticipantModel $record): void {
+                        try {
+                            app(RegistrationServiceInterface::class)->cancelByAdmin($record->id);
+                        } catch (CannotCancelException) {
+                            // Cancelled, rejected or marked meanwhile
+                            Notification::make()
+                                ->title(__('game-tables::messages.errors.cannot_cancel'))
+                                ->danger()
+                                ->send();
+                        }
+                    }),
+
+                // Only someone with a confirmed seat, once the table has started; no emails, no promotion
+                Action::make('markNoShow')
+                    ->label(__('game-tables::messages.relation_managers.participants.no_show'))
+                    ->icon('heroicon-o-user-minus')
+                    ->color('gray')
+                    ->visible(function (ParticipantModel $record): bool {
+                        /** @var GameTableModel $ownerRecord */
+                        $ownerRecord = $this->getOwnerRecord();
+
+                        return $record->status === ParticipantStatus::Confirmed
+                            && ! $ownerRecord->starts_at->isFuture();
+                    })
+                    ->authorize(fn (): bool => $this->canManageParticipants())
+                    ->requiresConfirmation()
+                    ->modalDescription(__('game-tables::messages.relation_managers.participants.no_show_description'))
+                    ->action(function (ParticipantModel $record): void {
+                        try {
+                            app(RegistrationServiceInterface::class)->markAsNoShow($record->id);
+                        } catch (InvalidStatusTransitionException) {
+                            Notification::make()
+                                ->title(__('game-tables::messages.errors.cannot_mark_no_show'))
+                                ->danger()
+                                ->send();
                         }
                     }),
 
