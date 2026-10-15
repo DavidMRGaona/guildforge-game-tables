@@ -202,6 +202,32 @@ final class ParticipantsCancelAndNoShowTest extends ModuleTestCase
         $this->assertSame('confirmed', $confirmed->refresh()->status->value);
     }
 
+    // Hiding the buttons is not enough: the server must refuse the call as well
+    public function test_an_editor_without_the_update_permission_cannot_run_the_actions(): void
+    {
+        $table = $this->tableWithDirector(['starts_at' => now()->subHour()]);
+        $confirmed = $this->participant($table, 'confirmed');
+        $pending = $this->participant($table, 'pending');
+        $this->actingAs($this->editorWith(['gametables:gametables.view_any', 'gametables:gametables.view']));
+
+        // callTableAction() stops at the hidden button, so call the component as a forged request would
+        foreach ([['cancelRegistration', $confirmed], ['confirm', $pending], ['markNoShow', $confirmed]] as [$action, $row]) {
+            $context = ['table' => true, 'recordKey' => $row->getKey()];
+
+            // Mounting it the normal way, then running it as if the client had mounted it anyway
+            $this->participants($table)
+                ->call('mountAction', $action, [], $context)
+                ->assertSet('mountedActions', [])
+                ->set('mountedActions', [['name' => $action, 'arguments' => [], 'context' => $context, 'data' => []]])
+                ->call('callMountedAction');
+        }
+
+        $this->assertSame('confirmed', $confirmed->refresh()->status->value);
+        $this->assertNull($confirmed->cancelled_at);
+        $this->assertSame('pending', $pending->refresh()->status->value);
+        Notification::assertNothingSent();
+    }
+
     public function test_an_editor_with_the_update_permission_gets_the_actions(): void
     {
         $table = $this->table(['starts_at' => now()->subHour()]);
