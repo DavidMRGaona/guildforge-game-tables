@@ -7,15 +7,13 @@ namespace Modules\GameTables\Infrastructure\Services;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
-use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
-use Modules\GameTables\Domain\ValueObjects\GameTableId;
 
 final readonly class ProfileCreatedTablesDataProvider
 {
     public function __construct(
         private GameTableRepositoryInterface $gameTableRepository,
         private CreationEligibilityServiceInterface $eligibilityService,
-        private ParticipantRepositoryInterface $participantRepository,
+        private SeatCounter $seatCounter,
     ) {}
 
     /**
@@ -48,7 +46,7 @@ final readonly class ProfileCreatedTablesDataProvider
 
         foreach ($tables as $table) {
             $dto = GameTableResponseDTO::fromEntity($table);
-            $data = $this->formatTableForProfile($dto);
+            $data = $this->formatTableForProfile($dto, $this->seatCounter->takenPlayerSeats($table));
 
             if ($table->isPublished) {
                 $published[] = $data;
@@ -70,7 +68,7 @@ final readonly class ProfileCreatedTablesDataProvider
      *
      * @return array<string, mixed>
      */
-    private function formatTableForProfile(GameTableResponseDTO $dto): array
+    private function formatTableForProfile(GameTableResponseDTO $dto, int $takenPlayerSeats): array
     {
         return [
             'id' => $dto->id,
@@ -88,8 +86,8 @@ final readonly class ProfileCreatedTablesDataProvider
             'eventTitle' => $dto->eventTitle,
             'minPlayers' => $dto->minPlayers,
             'maxPlayers' => $dto->maxPlayers,
-            // Same count the table's capacity check uses
-            'currentPlayers' => $this->participantRepository->countConfirmedPlayers(new GameTableId($dto->id)),
+            // The taken seats the table page shows
+            'currentPlayers' => $takenPlayerSeats,
         ];
     }
 }

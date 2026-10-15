@@ -19,6 +19,7 @@ use Modules\GameTables\Domain\ValueObjects\GameSystemId;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Domain\ValueObjects\TimeSlot;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
+use Modules\GameTables\Infrastructure\Services\SeatCounter;
 
 final readonly class EloquentGameTableRepository implements GameTableRepositoryInterface
 {
@@ -214,9 +215,9 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
         DateTimeInterface $from,
         DateTimeInterface $to,
     ): Collection {
-        return GameTableModel::query()
-            ->with(['gameSystem', 'creator'])
-            ->withCount('participants')
+        // Everything the calendar cards read, loaded with the list (no query per table)
+        return SeatCounter::withPlayerSeatCounts(GameTableModel::query())
+            ->with(['gameSystem', 'creator', 'event', 'gameMasters.user'])
             ->where('is_published', true)
             ->whereNotIn('status', [TableStatus::Cancelled->value, TableStatus::Draft->value])
             ->whereBetween('starts_at', [$from, $to])

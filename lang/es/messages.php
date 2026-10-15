@@ -178,7 +178,7 @@ return [
         'registered_at' => 'Fecha de inscripción',
         'confirmed_at' => 'Fecha de confirmación',
         'cancelled_at' => 'Fecha de cancelación',
-        'waiting_list_position' => 'Posición en lista de espera',
+        'waiting_list_position' => 'Puesto en lista de espera',
         'player_notes' => 'Notas del jugador',
         'gm_notes' => 'Notas del director',
 
@@ -430,7 +430,7 @@ return [
     'settings' => [
         'title' => 'Configuración del módulo',
         'sections' => [
-            'membership' => 'Integración con socios',
+            'membership' => 'Acceso anticipado para socios',
             'registration' => 'Inscripciones',
             'defaults' => 'Valores por defecto',
             'notifications' => 'Notificaciones',
@@ -439,8 +439,8 @@ return [
             'frontend_creation_description' => 'Permite que los usuarios creen mesas y campañas desde el frontend público',
         ],
         'fields' => [
-            'membership_enabled' => 'Integración con socios habilitada',
-            'membership_enabled_help' => 'Los socios (quienes tienen el rol de socio elegido en la configuración del sitio) pueden inscribirse antes de la apertura según los días de acceso anticipado de cada mesa',
+            'membership_enabled' => 'Acceso anticipado para socios',
+            'membership_enabled_help' => 'Quienes tienen el rol de socio elegido en la configuración del sitio pueden inscribirse antes de la apertura, según los días de acceso anticipado de cada mesa. No depende del módulo de gestión de socios',
             'waiting_list_enabled' => 'Lista de espera',
             'waiting_list_enabled_help' => 'Con las plazas de jugador completas, los jugadores pueden apuntarse a la lista de espera. Cada plaza liberada pasa automáticamente al primero de la lista mientras las inscripciones sigan abiertas; al cerrarse, la promoción automática se detiene y el director puede promover a mano. En las mesas con confirmación manual los pendientes ocupan plaza y el promovido queda pendiente de que el director lo confirme. Los espectadores no tienen lista de espera',
             'early_access_days' => 'Días de acceso anticipado',
@@ -470,6 +470,12 @@ return [
             'required_permission_help' => 'Nombre del permiso necesario para crear',
             'publication_mode' => 'Modo de publicación',
             'publication_mode_help' => 'Cómo se publican las mesas creadas por usuarios',
+        ],
+        'validation' => [
+            'above_players_limit' => 'No puede superar el límite máximo de jugadores (:limit)',
+            'above_spectators_limit' => 'No puede superar el límite máximo de espectadores (:limit)',
+            'above_duration_limit' => 'No puede superar la duración máxima (:limit minutos)',
+            'min_above_max_players' => 'No puede superar el máximo de jugadores por defecto (:limit)',
         ],
         'allowed_content' => [
             'tables' => 'Solo mesas',
@@ -625,6 +631,7 @@ return [
         'minimum_age' => 'No cumples con la edad mínima requerida',
         'not_found' => 'No se encontró la inscripción',
         'cannot_cancel' => 'No es posible cancelar la inscripción en este momento',
+        'cannot_mark_no_show' => 'Solo se puede marcar como no presentado a un participante confirmado, una vez empezada la mesa',
         'table_not_found' => 'No se encontró la mesa',
         'campaign_not_found' => 'No se encontró la campaña',
         'invalid_token' => 'El enlace de cancelación no es válido o ha expirado',
@@ -688,7 +695,18 @@ return [
             'confirm' => 'Confirmar',
             'reject' => 'Rechazar',
             'promote' => 'Promover',
+            'cancel_registration' => 'Cancelar inscripción',
+            'cancel_registration_description' => 'Se libera su plaza (y, si corresponde, pasa a ocuparla el primero de la lista de espera). Se le avisará por email de que la organización ha cancelado su inscripción.',
+            'no_show' => 'No presentado',
+            'no_show_description' => 'Queda marcado como no presentado. No se envía ningún email ni se promueve a nadie de la lista de espera.',
             'move_to_waiting' => 'Mover a lista de espera',
+            'delete_not_allowed' => 'No se ha borrado: la inscripción ya no está cancelada ni rechazada',
+            'bulk_delete' => [
+                'deleted' => '{1} Se ha borrado 1 inscripción|[2,*] Se han borrado :count inscripciones',
+                'none_deleted' => 'No se ha borrado ninguna inscripción',
+                'skipped' => '{1} 1 inscripción no se ha borrado: solo se pueden borrar las canceladas o rechazadas; antes hay que cancelarla con «Cancelar inscripción».|[2,*] :count inscripciones no se han borrado: solo se pueden borrar las canceladas o rechazadas; antes hay que cancelarlas con «Cancelar inscripción».',
+                'failed' => '{1} 1 inscripción no se ha podido borrar por un error.|[2,*] :count inscripciones no se han podido borrar por un error.',
+            ],
         ],
         'sessions' => [
             'title' => 'Sesiones',

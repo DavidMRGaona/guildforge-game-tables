@@ -49,14 +49,6 @@ export interface RegistrationResponse {
     message: string;
 }
 
-export interface EligibilityApiResponse {
-    data: EligibilityResponse;
-}
-
-export interface UserRegistrationResponse {
-    data: ParticipantData | null;
-}
-
 /**
  * Get the color name for a participant status.
  */

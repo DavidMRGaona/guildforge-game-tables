@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Pages;
 
+use Closure;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
@@ -100,11 +101,14 @@ final class GameTablesSettings extends Page implements HasForms
 
             Section::make(__('game-tables::messages.settings.sections.defaults'))
                 ->schema([
+                    // The fixed bounds stay as outer bounds; each default also stays within the
+                    // limit sent in the same submission, so a new table never starts above it
                     TextInput::make('defaults.duration_minutes')
                         ->label(__('game-tables::messages.settings.fields.default_duration'))
                         ->numeric()
                         ->minValue(30)
                         ->maxValue(720)
+                        ->rule(self::notAbove('limits.max_duration_minutes', 'above_duration_limit'))
                         ->required(),
 
                     TextInput::make('defaults.min_players')
@@ -112,6 +116,8 @@ final class GameTablesSettings extends Page implements HasForms
                         ->numeric()
                         ->minValue(1)
                         ->maxValue(20)
+                        ->rule(self::notAbove('limits.max_players_limit', 'above_players_limit'))
+                        ->rule(self::notAbove('defaults.max_players', 'min_above_max_players'))
                         ->required(),
 
                     TextInput::make('defaults.max_players')
@@ -119,13 +125,15 @@ final class GameTablesSettings extends Page implements HasForms
                         ->numeric()
                         ->minValue(1)
                         ->maxValue(20)
+                        ->rule(self::notAbove('limits.max_players_limit', 'above_players_limit'))
                         ->required(),
 
                     TextInput::make('defaults.max_spectators')
                         ->label(__('game-tables::messages.settings.fields.default_max_spectators'))
                         ->numeric()
                         ->minValue(0)
-                        ->maxValue(50),
+                        ->maxValue(50)
+                        ->rule(self::notAbove('limits.max_spectators_limit', 'above_spectators_limit')),
 
                     Toggle::make('defaults.auto_confirm')
                         ->label(__('game-tables::messages.settings.fields.auto_confirm'))
@@ -242,6 +250,23 @@ final class GameTablesSettings extends Page implements HasForms
                 ->columns(2)
                 ->collapsible(),
         ];
+    }
+
+    /**
+     * Refuses a value above the one held by another field of the same submission (not the stored
+     * one, which this save may change). A non-numeric bound is left to that field's own rules.
+     */
+    private static function notAbove(string $boundPath, string $messageKey): Closure
+    {
+        return fn (Get $get): Closure => function (string $attribute, mixed $value, Closure $fail) use ($get, $boundPath, $messageKey): void {
+            $bound = $get($boundPath);
+
+            if (! is_numeric($value) || ! is_numeric($bound) || (float) $value <= (float) $bound) {
+                return;
+            }
+
+            $fail(__('game-tables::messages.settings.validation.'.$messageKey, ['limit' => (int) $bound]));
+        };
     }
 
     public function form(Schema $schema): Schema

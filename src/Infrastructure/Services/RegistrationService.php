@@ -24,6 +24,7 @@ use Modules\GameTables\Domain\Events\ParticipantRegistered;
 use Modules\GameTables\Domain\Events\ParticipantRejected;
 use Modules\GameTables\Domain\Exceptions\AlreadyRegisteredException;
 use Modules\GameTables\Domain\Exceptions\CannotCancelException;
+use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
 use Modules\GameTables\Domain\Exceptions\ParticipantNotFoundException;
 use Modules\GameTables\Domain\Exceptions\TableFullException;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
@@ -37,28 +38,56 @@ use Modules\GameTables\Domain\ValueObjects\ParticipantId;
  */
 final readonly class RegistrationService implements RegistrationServiceInterface
 {
+    private SeatCounter $seats;
+
     public function __construct(
         private ParticipantRepositoryInterface $participantRepository,
         private GameTableRepositoryInterface $gameTableRepository,
         private EligibilityServiceInterface $eligibilityService,
         private RegistrationLockInterface $lock,
         private GameTableSettingsReader $settings = new GameTableSettingsReader(),
-    ) {}
+    ) {
+        $this->seats = new SeatCounter($participantRepository, $settings);
+    }
 
     public function register(RegisterParticipantDTO $dto): ParticipantResponseDTO
     {
         $userId = $this->requireUserId($dto);
 
-        $participant = $this->lock->forTable($dto->gameTableId, function () use ($dto, $userId): Participant {
+        [$participant, $rank] = $this->lock->forTable($dto->gameTableId, function () use ($dto, $userId): array {
             // The same rules the table page applies, checked under the lock
             $this->eligibilityService->ensureUserCanRegister($dto->gameTableId, $userId, $dto->role);
 
-            return $this->placeUser($dto, $userId);
+            return $this->withRank($this->placeUser($dto, $userId));
         });
 
-        $this->announceUserRegistration($participant);
+        $this->announceUserRegistration($participant, $rank);
 
-        return ParticipantResponseDTO::fromEntity($participant);
+        return ParticipantResponseDTO::fromEntity($participant, waitingListRank: $rank);
+    }
+
+    /**
+     * @return array{Participant, int|null} the participant and its place among those waiting
+     */
+    private function withRank(Participant $participant): array
+    {
+        return [$participant, $this->rankOf($participant)];
+    }
+
+    /**
+     * The place shown to someone on the waiting list: their rank among those waiting for the same
+     * role, not the stored position, which keeps the gaps left by those who leave.
+     */
+    private function rankOf(Participant $participant): ?int
+    {
+        return $participant->isOnWaitingList()
+            ? $this->participantRepository->getWaitingListRank($participant->id)
+            : null;
+    }
+
+    private function toResponse(Participant $participant): ParticipantResponseDTO
+    {
+        return ParticipantResponseDTO::fromEntity($participant, waitingListRank: $this->rankOf($participant));
     }
 
     /**
@@ -162,16 +191,15 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
     /**
      * A free seat (confirmed when the table confirms automatically, pending otherwise) or the
-     * next position of the waiting list.
+     * next position of the waiting list. Taken seats are those of SeatCounter.
      */
     private function seat(Participant $participant, GameTable $gameTable): void
     {
         $shouldWaitList = false;
         if ($participant->role === ParticipantRole::Player) {
-            $shouldWaitList = ! $gameTable->hasCapacity($this->takenPlayerSeats($gameTable));
+            $shouldWaitList = ! $gameTable->hasCapacity($this->seats->takenPlayerSeats($gameTable));
         } elseif ($participant->role === ParticipantRole::Spectator) {
-            $confirmedSpectators = $this->participantRepository->countConfirmedSpectators($gameTable->id);
-            $shouldWaitList = $gameTable->availableSpectatorSlots($confirmedSpectators) === 0;
+            $shouldWaitList = $gameTable->availableSpectatorSlots($this->seats->takenSpectatorSeats($gameTable)) === 0;
         }
 
         if ($shouldWaitList) {
@@ -183,20 +211,9 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     }
 
     /**
-     * Confirmed players, plus pending ones when they hold seats (waiting list on, manual confirmation).
+     * @param  int|null  $waitingListRank  the place among those waiting, for the confirmation email
      */
-    private function takenPlayerSeats(GameTable $gameTable): int
-    {
-        $taken = $this->participantRepository->countConfirmedPlayers($gameTable->id);
-
-        if ($gameTable->pendingPlayersHoldSeats($this->settings->isWaitingListEnabled())) {
-            $taken += $this->participantRepository->countPendingPlayers($gameTable->id);
-        }
-
-        return $taken;
-    }
-
-    private function announceUserRegistration(Participant $participant): void
+    private function announceUserRegistration(Participant $participant, ?int $waitingListRank): void
     {
         ParticipantRegistered::dispatch(
             $participant->id->value,
@@ -204,7 +221,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             $participant->userId,
             $participant->role->value,
             $participant->status,
-            $participant->waitingListPosition,
+            $waitingListRank,
         );
 
         if ($participant->isConfirmed()) {
@@ -217,7 +234,10 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         }
     }
 
-    private function announceGuestRegistration(Participant $participant): void
+    /**
+     * @param  int|null  $waitingListRank  the place among those waiting, for the confirmation email
+     */
+    private function announceGuestRegistration(Participant $participant, ?int $waitingListRank): void
     {
         GuestRegistered::dispatch(
             $participant->id->value,
@@ -227,7 +247,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             $participant->role->value,
             $participant->cancellationToken ?? '',
             $participant->status,
-            $participant->waitingListPosition,
+            $waitingListRank,
         );
 
         if ($participant->isConfirmed()) {
@@ -242,15 +262,29 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
     public function cancel(string $participantId): ParticipantResponseDTO
     {
+        return $this->cancelById($participantId, byOrganization: false);
+    }
+
+    /**
+     * The same cancellation as the participant's own (lock, seat freed, promotion); only the
+     * emails differ: the participant is told the organisation cancelled it, the directors nothing.
+     */
+    public function cancelByAdmin(string $participantId): ParticipantResponseDTO
+    {
+        return $this->cancelById($participantId, byOrganization: true);
+    }
+
+    private function cancelById(string $participantId, bool $byOrganization): ParticipantResponseDTO
+    {
         [$participant, $wasConfirmed, $promoted] = $this->lock->forParticipant(
             $participantId,
             // Read under the lock: a registration cancelled twice at once frees one seat
             fn (): array => $this->cancelLocked($this->participantRepository->findOrFail(new ParticipantId($participantId))),
         );
 
-        $this->announceCancellation($participant, $participant->userId, $wasConfirmed, $promoted);
+        $this->announceCancellation($participant, $participant->userId, $wasConfirmed, $promoted, $byOrganization);
 
-        return ParticipantResponseDTO::fromEntity($participant);
+        return $this->toResponse($participant);
     }
 
     /**
@@ -277,13 +311,14 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         return [$participant, $wasConfirmed, $promoted];
     }
 
-    private function announceCancellation(Participant $participant, ?string $userId, bool $wasConfirmed, ?Participant $promoted): void
+    private function announceCancellation(Participant $participant, ?string $userId, bool $wasConfirmed, ?Participant $promoted, bool $byOrganization = false): void
     {
         ParticipantCancelled::dispatch(
             $participant->id->value,
             $participant->gameTableId->value,
             $userId,
             $wasConfirmed,
+            $byOrganization,
         );
 
         if ($promoted !== null) {
@@ -311,11 +346,11 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             return null;
         }
 
-        if ($freedByPending && ! $gameTable->pendingPlayersHoldSeats($this->settings->isWaitingListEnabled())) {
+        if ($freedByPending && ! $this->seats->pendingHoldSeats($gameTable)) {
             return null;
         }
 
-        if (! $gameTable->hasCapacity($this->takenPlayerSeats($gameTable))) {
+        if (! $gameTable->hasCapacity($this->seats->takenPlayerSeats($gameTable))) {
             return null;
         }
 
@@ -369,24 +404,47 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             $participant->userId,
         );
 
-        return ParticipantResponseDTO::fromEntity($participant);
+        return $this->toResponse($participant);
     }
 
     /**
-     * With the waiting list on, a confirmation never takes the table over its player seats.
+     * With the waiting list on, a confirmation never takes the table over its player or spectator
+     * seats. Someone who already holds a seat (pending where pending registrations hold seats)
+     * only needs a free one among the confirmed; anyone else needs a seat free in SeatCounter.
      *
      * @throws TableFullException
      */
     private function ensureSeatToConfirm(Participant $participant): void
     {
-        if (! $this->settings->isWaitingListEnabled() || ! $participant->isPlayer() || $participant->isConfirmed()) {
+        if (! $this->settings->isWaitingListEnabled() || $participant->isConfirmed()) {
+            return;
+        }
+
+        if (! $participant->isPlayer() && ! $participant->isSpectator()) {
             return;
         }
 
         $gameTable = $this->gameTableRepository->findOrFail($participant->gameTableId);
+        $holdsSeat = $participant->isPending() && $this->seats->pendingHoldSeats($gameTable);
 
-        if (! $gameTable->hasCapacity($this->participantRepository->countConfirmedPlayers($gameTable->id))) {
-            throw TableFullException::forTable($gameTable->id->value);
+        if ($participant->isPlayer()) {
+            $taken = $holdsSeat
+                ? $this->participantRepository->countConfirmedPlayers($gameTable->id)
+                : $this->seats->takenPlayerSeats($gameTable);
+
+            if (! $gameTable->hasCapacity($taken)) {
+                throw TableFullException::forTable($gameTable->id->value);
+            }
+
+            return;
+        }
+
+        $taken = $holdsSeat
+            ? $this->participantRepository->countConfirmedSpectators($gameTable->id)
+            : $this->seats->takenSpectatorSeats($gameTable);
+
+        if ($gameTable->availableSpectatorSlots($taken) === 0) {
+            throw TableFullException::forSpectators($gameTable->id->value);
         }
     }
 
@@ -417,7 +475,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             $this->announcePromotion($promoted);
         }
 
-        return ParticipantResponseDTO::fromEntity($participant);
+        return $this->toResponse($participant);
     }
 
     public function promoteFromWaitingList(string $gameTableId): ?ParticipantResponseDTO
@@ -430,17 +488,32 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
         $this->announcePromotion($participant);
 
-        return ParticipantResponseDTO::fromEntity($participant);
+        return $this->toResponse($participant);
     }
 
+    /**
+     * A confirmed participant who did not come, once the table has started. No emails and no
+     * promotion: the session is already under way.
+     *
+     * @throws InvalidStatusTransitionException before the start or without a confirmed seat
+     */
     public function markAsNoShow(string $participantId): ParticipantResponseDTO
     {
-        $participant = $this->participantRepository->findOrFail(new ParticipantId($participantId));
+        $participant = $this->lock->forParticipant($participantId, function () use ($participantId): Participant {
+            $participant = $this->participantRepository->findOrFail(new ParticipantId($participantId));
+            $gameTable = $this->gameTableRepository->findOrFail($participant->gameTableId);
 
-        $participant->markAsNoShow();
-        $this->participantRepository->save($participant);
+            if (! $gameTable->timeSlot->hasStarted(new DateTimeImmutable())) {
+                throw InvalidStatusTransitionException::fromTo($participant->status->value, ParticipantStatus::NoShow->value);
+            }
 
-        return ParticipantResponseDTO::fromEntity($participant);
+            $participant->markAsNoShow();
+            $this->participantRepository->save($participant);
+
+            return $participant;
+        });
+
+        return $this->toResponse($participant);
     }
 
     /**
@@ -451,7 +524,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         $participants = $this->participantRepository->getByGameTable(new GameTableId($gameTableId));
 
         return array_map(
-            fn (Participant $p): ParticipantResponseDTO => ParticipantResponseDTO::fromEntity($p),
+            fn (Participant $p): ParticipantResponseDTO => $this->toResponse($p),
             $participants,
         );
     }
@@ -464,7 +537,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         $participants = $this->participantRepository->getWaitingList(new GameTableId($gameTableId));
 
         return array_map(
-            fn (Participant $p): ParticipantResponseDTO => ParticipantResponseDTO::fromEntity($p),
+            fn (Participant $p): ParticipantResponseDTO => $this->toResponse($p),
             $participants,
         );
     }
@@ -477,7 +550,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         $participants = $this->participantRepository->getByUser($userId);
 
         return array_map(
-            fn (Participant $p): ParticipantResponseDTO => ParticipantResponseDTO::fromEntity($p),
+            fn (Participant $p): ParticipantResponseDTO => $this->toResponse($p),
             $participants,
         );
     }
@@ -490,7 +563,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             return null;
         }
 
-        return ParticipantResponseDTO::fromEntity($participant);
+        return $this->toResponse($participant);
     }
 
     public function findByTableAndUser(string $gameTableId, string $userId): ?ParticipantResponseDTO
@@ -504,24 +577,24 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             return null;
         }
 
-        return ParticipantResponseDTO::fromEntity($participant);
+        return $this->toResponse($participant);
     }
 
 
     public function registerGuest(RegisterParticipantDTO $dto): ParticipantResponseDTO
     {
-        $participant = $this->lock->forTable($dto->gameTableId, function () use ($dto): Participant {
+        [$participant, $rank] = $this->lock->forTable($dto->gameTableId, function () use ($dto): array {
             if ($dto->email !== null) {
                 // The same rules the table page applies, checked under the lock
                 $this->eligibilityService->ensureGuestCanRegister($dto->gameTableId, $dto->email, $dto->role);
             }
 
-            return $this->placeGuest($dto);
+            return $this->withRank($this->placeGuest($dto));
         });
 
-        $this->announceGuestRegistration($participant);
+        $this->announceGuestRegistration($participant, $rank);
 
-        return ParticipantResponseDTO::fromEntity($participant);
+        return ParticipantResponseDTO::fromEntity($participant, waitingListRank: $rank);
     }
 
     public function cancelByToken(string $token): ParticipantResponseDTO
@@ -539,7 +612,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
         $this->announceCancellation($participant, null, $wasConfirmed, $promoted);
 
-        return ParticipantResponseDTO::fromEntity($participant);
+        return $this->toResponse($participant);
     }
 
     public function findByToken(string $token): ?ParticipantResponseDTO
@@ -550,7 +623,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             return null;
         }
 
-        return ParticipantResponseDTO::fromEntity($participant);
+        return $this->toResponse($participant);
     }
 
     /**
@@ -559,6 +632,15 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     public function getByUserForProfile(string $userId): array
     {
         $data = $this->participantRepository->getActiveByUserWithTableData($userId);
+
+        // Every place among those waiting, for all the user's waiting lists, in one query
+        $waitingAt = [];
+        foreach ($data as $item) {
+            if ($item['participant']->isOnWaitingList()) {
+                $waitingAt[] = new GameTableId($item['game_table_id']);
+            }
+        }
+        $places = $this->participantRepository->getWaitingListRanks($waitingAt);
 
         $now = new \DateTimeImmutable;
 
@@ -576,7 +658,8 @@ final readonly class RegistrationService implements RegistrationServiceInterface
                 status: $item['participant']->status->label(),
                 statusKey: $item['participant']->status->value,
                 statusColor: $item['participant']->status->color(),
-                waitingListPosition: $item['participant']->waitingListPosition,
+                // The place among those waiting, not the stored position (which may have gaps)
+                waitingListPosition: $item['participant']->isOnWaitingList() ? ($places[$item['participant']->id->value] ?? null) : null,
                 isUpcoming: $item['game_table_starts_at'] !== null && $item['game_table_starts_at'] > $now,
             ),
             $data,
@@ -585,7 +668,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
     /**
      * The director's choice from the panel: confirmed, whatever the dates. With the waiting list on
-     * it never exceeds the player seats (TableFullException); off, it works as before.
+     * it never exceeds the player or spectator seats (TableFullException); off, it works as before.
      */
     public function promoteParticipant(string $participantId): ParticipantResponseDTO
     {
@@ -597,7 +680,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
                 return [$participant, false];
             }
 
-            // With the waiting list on, not even the director goes over the player seats
+            // With the waiting list on, not even the director goes over the seats
             $this->ensureSeatToConfirm($participant);
 
             $participant->promoteFromWaitingList();
@@ -610,7 +693,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             $this->announcePromotion($participant);
         }
 
-        return ParticipantResponseDTO::fromEntity($participant);
+        return $this->toResponse($participant);
     }
 
     public function registerByAdmin(RegisterParticipantDTO $dto): ParticipantResponseDTO
@@ -618,19 +701,19 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         $userId = $this->requireUserId($dto);
 
         // Admins skip the eligibility rules: a full table puts the participant in the waiting list
-        $participant = $this->lock->forTable($dto->gameTableId, fn (): Participant => $this->placeUser($dto, $userId));
+        [$participant, $rank] = $this->lock->forTable($dto->gameTableId, fn (): array => $this->withRank($this->placeUser($dto, $userId)));
 
-        $this->announceUserRegistration($participant);
+        $this->announceUserRegistration($participant, $rank);
 
-        return ParticipantResponseDTO::fromEntity($participant);
+        return ParticipantResponseDTO::fromEntity($participant, waitingListRank: $rank);
     }
 
     public function registerGuestByAdmin(RegisterParticipantDTO $dto): ParticipantResponseDTO
     {
-        $participant = $this->lock->forTable($dto->gameTableId, fn (): Participant => $this->placeGuest($dto));
+        [$participant, $rank] = $this->lock->forTable($dto->gameTableId, fn (): array => $this->withRank($this->placeGuest($dto)));
 
-        $this->announceGuestRegistration($participant);
+        $this->announceGuestRegistration($participant, $rank);
 
-        return ParticipantResponseDTO::fromEntity($participant);
+        return ParticipantResponseDTO::fromEntity($participant, waitingListRank: $rank);
     }
 }

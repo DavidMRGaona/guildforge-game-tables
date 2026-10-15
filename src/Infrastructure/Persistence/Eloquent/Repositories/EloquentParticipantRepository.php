@@ -113,10 +113,7 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
      */
     public function getWaitingList(GameTableId $gameTableId): array
     {
-        return ParticipantModel::query()
-            ->where('game_table_id', $gameTableId->value)
-            ->where('status', ParticipantStatus::WaitingList->value)
-            ->orderBy('waiting_list_position', 'asc')
+        return $this->waitingList($gameTableId)
             ->get()
             ->map(fn (ParticipantModel $model): Participant => $this->toEntity($model))
             ->all();
@@ -192,6 +189,20 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
             ->count();
     }
 
+    public function countPendingSpectators(GameTableId $gameTableId): int
+    {
+        return ParticipantModel::query()
+            ->where('game_table_id', $gameTableId->value)
+            ->where('status', ParticipantStatus::Pending->value)
+            ->where('role', ParticipantRole::Spectator->value)
+            ->count();
+    }
+
+    public function countWaiting(GameTableId $gameTableId, ParticipantRole $role): int
+    {
+        return $this->waitingList($gameTableId, $role)->count();
+    }
+
     public function getNextWaitingListPosition(GameTableId $gameTableId): int
     {
         $maxPosition = ParticipantModel::query()
@@ -204,18 +215,73 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
 
     public function getFirstInWaitingList(GameTableId $gameTableId, ?ParticipantRole $role = null): ?Participant
     {
-        $model = ParticipantModel::query()
-            ->where('game_table_id', $gameTableId->value)
-            ->where('status', ParticipantStatus::WaitingList->value)
-            ->when($role !== null, fn ($query) => $query->where('role', $role?->value))
-            ->orderBy('waiting_list_position', 'asc')
-            ->first();
+        $model = $this->waitingList($gameTableId, $role)->first();
 
         if ($model === null) {
             return null;
         }
 
         return $this->toEntity($model);
+    }
+
+    public function getWaitingListRank(ParticipantId $participantId): ?int
+    {
+        $model = ParticipantModel::query()->find($participantId->value);
+
+        if ($model === null || $model->status !== ParticipantStatus::WaitingList) {
+            return null;
+        }
+
+        return $this->getWaitingListRanks([new GameTableId($model->game_table_id)])[$model->id] ?? null;
+    }
+
+    public function getWaitingListRanks(array $gameTableIds): array
+    {
+        if ($gameTableIds === []) {
+            return [];
+        }
+
+        $query = ParticipantModel::query()
+            ->whereIn('game_table_id', array_map(fn (GameTableId $id): string => $id->value, $gameTableIds))
+            ->where('status', ParticipantStatus::WaitingList->value);
+
+        // Rows come in the waiting list order; each table and role keeps its own count
+        $ranks = [];
+        $places = [];
+
+        foreach ($this->inWaitingListOrder($query)->get(['id', 'game_table_id', 'role']) as $model) {
+            $list = $model->game_table_id.'|'.$model->role->value;
+            $places[$list] = ($places[$list] ?? 0) + 1;
+            $ranks[$model->id] = $places[$list];
+        }
+
+        return $ranks;
+    }
+
+    /**
+     * The waiting list in its order: stored position, then registration date (the id only makes
+     * ties deterministic). Promotions and the places shown both read it.
+     *
+     * @return Builder<ParticipantModel>
+     */
+    private function waitingList(GameTableId $gameTableId, ?ParticipantRole $role = null): Builder
+    {
+        return $this->inWaitingListOrder(ParticipantModel::query()
+            ->where('game_table_id', $gameTableId->value)
+            ->where('status', ParticipantStatus::WaitingList->value)
+            ->when($role !== null, fn (Builder $query) => $query->where('role', $role?->value)));
+    }
+
+    /**
+     * @param  Builder<ParticipantModel>  $query
+     * @return Builder<ParticipantModel>
+     */
+    private function inWaitingListOrder(Builder $query): Builder
+    {
+        return $query
+            ->orderBy('waiting_list_position', 'asc')
+            ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc');
     }
 
     /**

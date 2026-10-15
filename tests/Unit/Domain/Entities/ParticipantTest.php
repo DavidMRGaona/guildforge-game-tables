@@ -8,8 +8,10 @@ use DateTimeImmutable;
 use Modules\GameTables\Domain\Entities\Participant;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
+use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Domain\ValueObjects\ParticipantId;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class ParticipantTest extends TestCase
@@ -142,6 +144,37 @@ final class ParticipantTest extends TestCase
 
         $this->assertEquals(ParticipantStatus::NoShow, $participant->status);
         $this->assertTrue($participant->isNoShow());
+    }
+
+    /**
+     * @return array<string, array{ParticipantStatus}>
+     */
+    public static function statusesWithoutAConfirmedSeat(): array
+    {
+        return [
+            'pending' => [ParticipantStatus::Pending],
+            'waiting list' => [ParticipantStatus::WaitingList],
+            'cancelled' => [ParticipantStatus::Cancelled],
+            'rejected' => [ParticipantStatus::Rejected],
+            'no show' => [ParticipantStatus::NoShow],
+        ];
+    }
+
+    // Only someone who held a confirmed seat can fail to show up
+    #[DataProvider('statusesWithoutAConfirmedSeat')]
+    public function test_only_a_confirmed_participant_can_be_marked_as_no_show(ParticipantStatus $status): void
+    {
+        $participant = $this->createParticipant(status: $status);
+
+        try {
+            $participant->markAsNoShow();
+            $this->fail('A participant without a confirmed seat was marked as no-show.');
+        } catch (InvalidStatusTransitionException $exception) {
+            $this->assertSame($status->value, $exception->from);
+            $this->assertSame(ParticipantStatus::NoShow->value, $exception->to);
+        }
+
+        $this->assertSame($status, $participant->status);
     }
 
     public function test_it_checks_if_can_be_cancelled(): void

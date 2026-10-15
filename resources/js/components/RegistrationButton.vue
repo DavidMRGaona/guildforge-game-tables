@@ -1,5 +1,14 @@
+<script lang="ts">
+// Shared by every instance. The table page renders this component through a module slot, and the
+// slot resolves a new async component on each Inertia visit, so a successful registration
+// re-creates it: the focus owed to the registration button is handed to the next instance.
+const triggerFocusOwed = new Map<string, number>(); // table id → until (ms)
+const triggerFocusers = new Map<string, () => boolean>(); // table id → the live instance's focus
+const TRIGGER_FOCUS_HANDOFF_MS = 5000;
+</script>
+
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { usePage, router } from '@inertiajs/vue3';
 import type { GameTable } from '../types/gametables';
@@ -14,37 +23,29 @@ import RegistrationStatus from './RegistrationStatus.vue';
 import GuestRegistrationModal from './GuestRegistrationModal.vue';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 
+// The table page always sends these props (slot game-table-registration); the module has no API to fetch them
 interface Props {
-    tableId?: string;
-    table?: GameTable;
-    /** Initial eligibility data from server (avoids API call) */
-    eligibility?: EligibilityResponse | null;
+    table: GameTable;
+    /** What the signed-in user can do (null for visitors) */
+    eligibility: EligibilityResponse | null;
     /** What a visitor without an account can do (null for signed-in users) */
-    guestEligibility?: GuestEligibility | null;
-    /** Initial user registration data from server (avoids API call) */
-    userRegistration?: ParticipantData | null;
+    guestEligibility: GuestEligibility | null;
+    /** The signed-in user's registration (null when there is none, or for visitors) */
+    userRegistration: ParticipantData | null;
 }
 
 const props = defineProps<Props>();
 const page = usePage();
 const { t, locale } = useI18n();
 
-// Support both tableId prop directly or extracting from table object (for slot system)
-const resolvedTableId = computed(() => props.tableId ?? props.table?.id ?? '');
+const resolvedTableId = computed(() => props.table.id);
 // Use slug for Inertia routes (user-facing URLs)
-const resolvedTableSlug = computed(() => props.table?.slug ?? '');
+const resolvedTableSlug = computed(() => props.table.slug);
 
-// Check if initial data was provided via props (from Inertia)
-const hasInitialEligibility = props.eligibility !== undefined;
-const hasInitialRegistration = props.userRegistration !== undefined;
-
-// State - initialize from props if available
-const eligibility = ref<EligibilityResponse | null>(props.eligibility ?? null);
-const registration = ref<ParticipantData | null>(props.userRegistration ?? null);
+// State, initialized from the page props
+const eligibility = ref<EligibilityResponse | null>(props.eligibility);
+const registration = ref<ParticipantData | null>(props.userRegistration);
 const loading = ref(false);
-// Skip loading if initial data was provided via props
-const eligibilityLoading = ref(!hasInitialEligibility);
-const registrationLoading = ref(false);
 const error = ref<string | null>(null);
 const showRoleSelect = ref(false);
 const showCancelConfirm = ref(false);
@@ -53,24 +54,116 @@ const showGuestModal = ref(false);
 const selectedRole = ref<ParticipantRole>('player');
 const notes = ref('');
 
+// Focus for the role dialog: into it on open, back to the button that opened it on close
+const triggerButton = ref<HTMLButtonElement | null>(null);
+const roleDialogHeading = ref<HTMLElement | null>(null);
+const playerOptionButton = ref<HTMLButtonElement | null>(null);
+const spectatorOptionButton = ref<HTMLButtonElement | null>(null);
+const notesInput = ref<HTMLElement | null>(null);
+
+// The chosen role's option when it can still be chosen, else the first enabled one, else the heading
+function focusRoleOption(preferred: ParticipantRole | null): void {
+    const options = { player: playerOptionButton.value, spectator: spectatorOptionButton.value };
+    const isEnabled = (button: HTMLButtonElement | null): button is HTMLButtonElement => button !== null && !button.disabled;
+    const preferredOption = preferred !== null ? options[preferred] : null;
+    const target = isEnabled(preferredOption)
+        ? preferredOption
+        : [options.player, options.spectator].find(isEnabled);
+    (target ?? roleDialogHeading.value)?.focus();
+}
+
+// Focuses this instance's registration button when it is on the page and enabled
+function focusTrigger(): boolean {
+    const button = triggerButton.value;
+    if (button === null || !button.isConnected || button.disabled) return false;
+
+    button.focus();
+    triggerFocusOwed.delete(resolvedTableId.value);
+    return true;
+}
+
+// After a successful registration: whichever instance shows the button takes the focus
+function oweTriggerFocus(): void {
+    triggerFocusOwed.set(resolvedTableId.value, Date.now() + TRIGGER_FOCUS_HANDOFF_MS);
+    void nextTick(() => triggerFocusers.get(resolvedTableId.value)?.());
+}
+
+onMounted(async () => {
+    triggerFocusers.set(resolvedTableId.value, focusTrigger);
+
+    const until = triggerFocusOwed.get(resolvedTableId.value);
+    if (until === undefined) return;
+    if (Date.now() > until) {
+        triggerFocusOwed.delete(resolvedTableId.value);
+        return;
+    }
+    await nextTick();
+    focusTrigger();
+});
+
+onBeforeUnmount(() => {
+    if (triggerFocusers.get(resolvedTableId.value) === focusTrigger) {
+        triggerFocusers.delete(resolvedTableId.value);
+    }
+});
+
+// Closed while a request is running (a successful registration): the trigger comes back disabled
+let restoreFocusWhenIdle = false;
+
+watch(showRoleSelect, async (open) => {
+    await nextTick();
+
+    if (open) {
+        restoreFocusWhenIdle = false;
+        focusRoleOption(null);
+        return;
+    }
+
+    if (loading.value) {
+        restoreFocusWhenIdle = true;
+        return;
+    }
+
+    // The trigger is re-rendered once the dialog closes; if another state hides it, leave focus alone
+    focusTrigger();
+});
+
+// Switching steps removes the focused button: into the notes on the way in, back to the chosen
+// role on «Volver»
+watch(showNotesInput, async (notesStep) => {
+    await nextTick();
+    if (!showRoleSelect.value) return;
+
+    if (notesStep) {
+        notesInput.value?.focus();
+        return;
+    }
+
+    focusRoleOption(selectedRole.value);
+});
+
+watch(loading, async (isLoading) => {
+    if (isLoading || !restoreFocusWhenIdle) return;
+
+    restoreFocusWhenIdle = false;
+    await nextTick();
+    if (!showRoleSelect.value) {
+        focusTrigger();
+    }
+});
+
 // Watch for prop changes (when Inertia reloads data after mutations)
 watch(
     () => props.eligibility,
     (newEligibility) => {
-        if (newEligibility !== undefined) {
-            eligibility.value = newEligibility;
-            eligibilityLoading.value = false;
-        }
+        eligibility.value = newEligibility;
     }
 );
 
 watch(
     () => props.userRegistration,
     (newRegistration) => {
-        if (newRegistration !== undefined) {
-            registration.value = newRegistration;
-            registrationLoading.value = false;
-        }
+        registration.value = newRegistration;
     }
 );
 
@@ -92,15 +185,6 @@ const spectatorSpotsAvailable = computed(() => {
 
 const waitingListCount = computed(() => {
     return tableData.value?.waitingListCount ?? 0;
-});
-
-// Determine if component should render
-const shouldRender = computed(() => {
-    if (!resolvedTableId.value) return false;
-    if (eligibilityLoading.value) return false;
-    // If user is authenticated, wait for registration status to load
-    if (isAuthenticated.value && registrationLoading.value) return false;
-    return true;
 });
 
 // Registration flow conditions: the server computes each role with the rules it applies on submit
@@ -139,6 +223,12 @@ const waitingListHelpId = computed(() => `waiting-list-help-${resolvedTableId.va
 const showsWaitingListHelp = computed(
     () => !canCancel.value && (canJoinWaitingList.value || (canRegisterAsGuest.value && guestJoinsWaitingList.value))
 );
+
+// The role options keep their explanation outside the button (a disabled button gets no focus)
+// and tie it to the button with aria-describedby
+const roleDialogTitleId = computed(() => `role-dialog-title-${resolvedTableId.value}`);
+const playerOptionHelpId = computed(() => `role-player-help-${resolvedTableId.value}`);
+const spectatorOptionHelpId = computed(() => `role-spectator-help-${resolvedTableId.value}`);
 
 const waitingListHelp = computed(() => {
     return tableData.value?.autoConfirm === false
@@ -225,50 +315,6 @@ const buttonDisabled = computed(() => {
     return false;
 });
 
-// API functions
-async function fetchEligibility(): Promise<void> {
-    if (!resolvedTableId.value) return;
-
-    eligibilityLoading.value = true;
-    try {
-        const response = await fetch(`/api/gametables/tables/${resolvedTableId.value}/eligibility`, {
-            credentials: 'include',
-        });
-        const data = await response.json();
-        // API returns data at root level, not wrapped in 'data'
-        eligibility.value = data;
-    } catch (e) {
-        console.error('Failed to fetch eligibility:', e);
-        eligibility.value = {
-            eligible: false,
-            reason: 'error',
-            message: null,
-            canRegisterAt: null,
-            waitingList: false,
-            spectator: { eligible: false, reason: 'error', message: null },
-        };
-    } finally {
-        eligibilityLoading.value = false;
-    }
-}
-
-async function fetchRegistration(): Promise<void> {
-    if (!isAuthenticated.value || !resolvedTableId.value) return;
-
-    registrationLoading.value = true;
-    try {
-        const response = await fetch(`/api/gametables/tables/${resolvedTableId.value}/registration`, {
-            credentials: 'include',
-        });
-        const data = await response.json();
-        registration.value = data.data;
-    } catch (e) {
-        console.error('Failed to fetch user registration:', e);
-    } finally {
-        registrationLoading.value = false;
-    }
-}
-
 function handleRegister(role: ParticipantRole): void {
     loading.value = true;
     error.value = null;
@@ -282,6 +328,7 @@ function handleRegister(role: ParticipantRole): void {
         {
             preserveScroll: true,
             onSuccess: () => {
+                oweTriggerFocus();
                 showRoleSelect.value = false;
                 showNotesInput.value = false;
                 notes.value = '';
@@ -363,20 +410,10 @@ function cancelRoleSelect(): void {
     showNotesInput.value = false;
     notes.value = '';
 }
-
-onMounted(async () => {
-    // Only fetch if data was not provided via props (from Inertia)
-    if (!hasInitialEligibility) {
-        await fetchEligibility();
-    }
-    if (!hasInitialRegistration) {
-        await fetchRegistration();
-    }
-});
 </script>
 
 <template>
-    <div v-if="shouldRender" class="registration-button-container">
+    <div class="registration-button-container">
         <!-- Current registration status -->
         <RegistrationStatus
             v-if="registration && !isFinalStatus(registration.status)"
@@ -417,32 +454,44 @@ onMounted(async () => {
                     >
                         <div
                             v-if="showRoleSelect"
+                            role="dialog"
+                            aria-modal="true"
+                            :aria-labelledby="roleDialogTitleId"
                             class="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl dark:bg-stone-800"
                         >
-                            <h3 class="mb-4 text-center text-lg font-semibold text-gray-900 dark:text-stone-100">
+                            <h3
+                                :id="roleDialogTitleId"
+                                ref="roleDialogHeading"
+                                tabindex="-1"
+                                class="mb-4 text-center text-lg font-semibold text-gray-900 focus:outline-none dark:text-stone-100"
+                            >
                                 {{ showNotesInput ? t('gameTables.registration.addNotes') : t('gameTables.registration.selectRole') }}
                             </h3>
 
                             <!-- Role buttons -->
                             <div v-if="!showNotesInput" class="space-y-3">
-                                <button
-                                    type="button"
-                                    :disabled="!playerEligible"
-                                    class="w-full rounded-lg px-4 py-3 text-left transition-colors"
+                                <!-- The whole card is the button (stretched over it); the reason sits outside it -->
+                                <div
+                                    class="relative w-full rounded-lg px-4 py-3 text-left transition-colors"
                                     :class="{
                                         'bg-primary-light hover:bg-primary-200 dark:bg-primary-900/20 dark:hover:bg-primary-900/30':
                                             playerEligible && !canJoinWaitingList,
                                         'bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30':
                                             canJoinWaitingList,
-                                        'cursor-not-allowed bg-gray-100 dark:bg-stone-700':
-                                            !playerEligible,
+                                        'bg-gray-100 dark:bg-stone-700': !playerEligible,
                                     }"
-                                    @click="selectRole('player')"
                                 >
-                                    <div class="font-medium text-gray-900 dark:text-stone-100">
+                                    <button
+                                        ref="playerOptionButton"
+                                        type="button"
+                                        :disabled="!playerEligible"
+                                        :aria-describedby="playerOptionHelpId"
+                                        class="w-full text-left font-medium text-gray-900 before:absolute before:inset-0 before:rounded-lg focus:outline-none focus-visible:before:ring-2 focus-visible:before:ring-primary-500 disabled:cursor-not-allowed dark:text-stone-100"
+                                        @click="selectRole('player')"
+                                    >
                                         {{ canJoinWaitingList ? t('gameTables.registration.joinWaitingList') : t('gameTables.registration.registerAsPlayer') }}
-                                    </div>
-                                    <div class="mt-1 text-sm text-gray-500 dark:text-stone-400">
+                                    </button>
+                                    <p :id="playerOptionHelpId" class="mt-1 text-sm text-gray-500 dark:text-stone-400">
                                         <template v-if="canJoinWaitingList">
                                             {{ waitingListHelp }}
                                             <template v-if="waitingListCount > 0">
@@ -455,26 +504,29 @@ onMounted(async () => {
                                         <template v-else>
                                             {{ eligibility?.message ?? t('gameTables.details.full') }}
                                         </template>
-                                    </div>
-                                </button>
+                                    </p>
+                                </div>
 
-                                <button
+                                <div
                                     v-if="tableData?.maxSpectators && tableData.maxSpectators > 0"
-                                    type="button"
-                                    :disabled="!spectatorEligible"
-                                    class="w-full rounded-lg px-4 py-3 text-left transition-colors"
+                                    class="relative w-full rounded-lg px-4 py-3 text-left transition-colors"
                                     :class="{
                                         'bg-gray-50 hover:bg-gray-100 dark:bg-stone-700/50 dark:hover:bg-stone-700':
                                             spectatorEligible,
-                                        'cursor-not-allowed bg-gray-100 dark:bg-stone-700':
-                                            !spectatorEligible,
+                                        'bg-gray-100 dark:bg-stone-700': !spectatorEligible,
                                     }"
-                                    @click="selectRole('spectator')"
                                 >
-                                    <div class="font-medium text-gray-900 dark:text-stone-100">
+                                    <button
+                                        ref="spectatorOptionButton"
+                                        type="button"
+                                        :disabled="!spectatorEligible"
+                                        :aria-describedby="spectatorOptionHelpId"
+                                        class="w-full text-left font-medium text-gray-900 before:absolute before:inset-0 before:rounded-lg focus:outline-none focus-visible:before:ring-2 focus-visible:before:ring-primary-500 disabled:cursor-not-allowed dark:text-stone-100"
+                                        @click="selectRole('spectator')"
+                                    >
                                         {{ t('gameTables.registration.registerAsSpectator') }}
-                                    </div>
-                                    <div class="mt-1 text-sm text-gray-500 dark:text-stone-400">
+                                    </button>
+                                    <p :id="spectatorOptionHelpId" class="mt-1 text-sm text-gray-500 dark:text-stone-400">
                                         <template v-if="spectatorEligible && spectatorSpotsAvailable !== null">
                                             {{ t('gameTables.details.spotsAvailable', { spots: spectatorSpotsAvailable }) }}
                                         </template>
@@ -487,8 +539,8 @@ onMounted(async () => {
                                         <template v-else>
                                             {{ eligibility?.spectator?.message ?? t('gameTables.registration.spectatorsFull') }}
                                         </template>
-                                    </div>
-                                </button>
+                                    </p>
+                                </div>
                             </div>
 
                             <!-- Notes input -->
@@ -502,6 +554,7 @@ onMounted(async () => {
                                     </label>
                                     <textarea
                                         id="registration-notes"
+                                        ref="notesInput"
                                         v-model="notes"
                                         rows="3"
                                         class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 dark:focus:border-primary-400"
@@ -567,6 +620,7 @@ onMounted(async () => {
         <!-- Main action button -->
         <button
             v-if="!showRoleSelect"
+            ref="triggerButton"
             type="button"
             :disabled="buttonDisabled"
             :aria-describedby="showsWaitingListHelp ? waitingListHelpId : undefined"

@@ -71,6 +71,19 @@ return [
         'guest_gdpr_notice' => 'Tus datos serán eliminados automáticamente de acuerdo con nuestra política de privacidad.',
     ],
 
+    'organization_cancellation' => [
+        'subject' => 'La organización ha cancelado tu inscripción en :tableTitle',
+        'greeting' => 'Hola :name,',
+        'intro' => 'La organización ha cancelado tu inscripción en la mesa :tableTitle.',
+        'details' => 'Detalles de la mesa:',
+        'table_title' => 'Mesa',
+        'table_date' => 'Fecha',
+        'table_location' => 'Ubicación',
+        'view_table' => 'Ver mesa',
+        'outro' => 'Si crees que se trata de un error, ponte en contacto con la organización.',
+        'guest_gdpr_notice' => 'Tus datos serán eliminados automáticamente de acuerdo con nuestra política de privacidad.',
+    ],
+
     'waiting_list_promotion' => [
         'subject' => 'Plaza disponible en mesa: :tableTitle',
         'greeting' => 'Hola :name,',

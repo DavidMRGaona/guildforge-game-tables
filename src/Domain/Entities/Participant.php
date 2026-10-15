@@ -7,6 +7,7 @@ namespace Modules\GameTables\Domain\Entities;
 use DateTimeImmutable;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
+use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Domain\ValueObjects\ParticipantId;
 
@@ -79,8 +80,17 @@ final class Participant
         $this->confirmedAt = null;
     }
 
+    /**
+     * Only someone who held a confirmed seat can fail to show up.
+     *
+     * @throws InvalidStatusTransitionException
+     */
     public function markAsNoShow(): void
     {
+        if (! $this->isConfirmed()) {
+            throw InvalidStatusTransitionException::fromTo($this->status->value, ParticipantStatus::NoShow->value);
+        }
+
         $this->status = ParticipantStatus::NoShow;
     }
 

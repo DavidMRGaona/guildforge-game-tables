@@ -20,6 +20,7 @@ final class CampaignQueryService implements CampaignQueryServiceInterface
 {
     public function __construct(
         private readonly CampaignRepositoryInterface $campaignRepository,
+        private readonly SeatCounter $seatCounter,
     ) {}
 
     public function getPublishedCampaignsPaginated(
@@ -170,11 +171,6 @@ final class CampaignQueryService implements CampaignQueryServiceInterface
 
     private function toGameTableListDTO(GameTableModel $table): GameTableListDTO
     {
-        $confirmedPlayers = $table->participants
-            ->where('status', 'confirmed')
-            ->where('role', 'player')
-            ->count();
-
         $mainGm = $table->gameMasters->firstWhere('is_main', true);
         $mainGameMasterName = '';
         if ($mainGm !== null) {
@@ -200,7 +196,8 @@ final class CampaignQueryService implements CampaignQueryServiceInterface
             onlineUrl: $table->online_url,
             minPlayers: $table->min_players,
             maxPlayers: $table->max_players,
-            currentPlayers: $confirmedPlayers,
+            // The taken seats the table page shows
+            currentPlayers: $this->seatCounter->takenPlayerSeatsOf($table),
             isPublished: $table->is_published,
             creatorName: $table->creator?->name ?? '',
             mainGameMasterName: $mainGameMasterName,

@@ -17,7 +17,16 @@ interface RegistrationServiceInterface
     public function cancelByUser(string $gameTableId, string $userId): ParticipantResponseDTO;
 
     /**
-     * @throws \Modules\GameTables\Domain\Exceptions\TableFullException with the waiting list on, when no player seat is free
+     * Cancelled by the organisation from the panel: the same as cancel() (lock, freed seat,
+     * promotion), but the participant is told the organisation cancelled it and the directors
+     * get nothing.
+     *
+     * @throws \Modules\GameTables\Domain\Exceptions\CannotCancelException when the registration is no longer active
+     */
+    public function cancelByAdmin(string $participantId): ParticipantResponseDTO;
+
+    /**
+     * @throws \Modules\GameTables\Domain\Exceptions\TableFullException with the waiting list on, when no player or spectator seat is free
      */
     public function confirm(string $participantId): ParticipantResponseDTO;
 
@@ -33,7 +42,7 @@ interface RegistrationServiceInterface
      * Promote a specific participant from waiting list (confirmed; unchanged if no longer waiting).
      * For admin use when promoting a specific person instead of the first in queue.
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\TableFullException with the waiting list on, when no player seat is free
+     * @throws \Modules\GameTables\Domain\Exceptions\TableFullException with the waiting list on, when no player or spectator seat is free
      */
     public function promoteParticipant(string $participantId): ParticipantResponseDTO;
 
@@ -47,6 +56,11 @@ interface RegistrationServiceInterface
      */
     public function registerGuestByAdmin(RegisterParticipantDTO $dto): ParticipantResponseDTO;
 
+    /**
+     * A confirmed participant who did not come, once the table has started (no emails, no promotion).
+     *
+     * @throws \Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException before the start or without a confirmed seat
+     */
     public function markAsNoShow(string $participantId): ParticipantResponseDTO;
 
     /**

@@ -166,22 +166,32 @@ final class GameTable
     }
 
     /**
-     * With the waiting list on, a table with manual confirmation counts pending players as taken
-     * seats: newcomers queue behind the list instead of piling up as pending registrations.
+     * With the waiting list on, a table with manual confirmation counts pending players and pending
+     * spectators as taken seats: newcomers queue behind the list (players) or are refused
+     * (spectators) instead of piling up as pending registrations. Otherwise only confirmed
+     * registrations take seats.
      */
-    public function pendingPlayersHoldSeats(bool $waitingListEnabled): bool
+    public function pendingParticipantsHoldSeats(bool $waitingListEnabled): bool
     {
-        return $waitingListEnabled && ! $this->autoConfirm;
+        return self::pendingHoldSeatsWhen($waitingListEnabled, $this->autoConfirm);
     }
 
-    public function availablePlayerSlots(int $confirmedPlayers): int
+    /**
+     * The same rule for callers that only hold the table's confirmation mode (table lists).
+     */
+    public static function pendingHoldSeatsWhen(bool $waitingListEnabled, bool $autoConfirm): bool
     {
-        return max(0, $this->maxPlayers - $confirmedPlayers);
+        return $waitingListEnabled && ! $autoConfirm;
     }
 
-    public function availableSpectatorSlots(int $confirmedSpectators): int
+    public function availablePlayerSlots(int $takenPlayerSeats): int
     {
-        return max(0, $this->maxSpectators - $confirmedSpectators);
+        return max(0, $this->maxPlayers - $takenPlayerSeats);
+    }
+
+    public function availableSpectatorSlots(int $takenSpectatorSeats): int
+    {
+        return max(0, $this->maxSpectators - $takenSpectatorSeats);
     }
 
     public function isOnline(): bool

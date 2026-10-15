@@ -63,12 +63,35 @@ interface ParticipantRepositoryInterface
 
     public function countPendingPlayers(GameTableId $gameTableId): int;
 
+    public function countPendingSpectators(GameTableId $gameTableId): int;
+
+    /**
+     * Participants with the given role who are on the waiting list now.
+     */
+    public function countWaiting(GameTableId $gameTableId, ParticipantRole $role): int;
+
     public function getNextWaitingListPosition(GameTableId $gameTableId): int;
 
     /**
      * First in the waiting list, optionally only among the participants with the given role.
+     * The waiting list order is the stored position, then the registration date.
      */
     public function getFirstInWaitingList(GameTableId $gameTableId, ?ParticipantRole $role = null): ?Participant;
+
+    /**
+     * The participant's place (1-based) among those waiting for the same role, in the waiting
+     * list order; null when they are not on the waiting list. Stored positions may have gaps.
+     */
+    public function getWaitingListRank(ParticipantId $participantId): ?int;
+
+    /**
+     * The places of everyone waiting at the given tables (as getWaitingListRank() gives them), in
+     * one query, for lists that show many: participant id => place.
+     *
+     * @param  array<GameTableId>  $gameTableIds
+     * @return array<string, int>
+     */
+    public function getWaitingListRanks(array $gameTableIds): array;
 
     public function findByTableAndEmail(GameTableId $gameTableId, string $email): ?Participant;
 

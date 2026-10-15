@@ -66,7 +66,8 @@ final class RegistrationController extends Controller
             // On tables with manual confirmation the promoted player still waits for the director
             $key = $gameTable->auto_confirm ? 'waiting_list' : 'waiting_list_manual';
 
-            return back()->with('success', __('game-tables::messages.success.'.$key, ['position' => $registration->waitingListPosition]));
+            // The place among those waiting, not the stored position (which may have gaps)
+            return back()->with('success', __('game-tables::messages.success.'.$key, ['position' => $registration->waitingListRank]));
         }
 
         return back()->with('success', __('game-tables::messages.success.registered'));
@@ -123,7 +124,7 @@ final class RegistrationController extends Controller
         }
 
         return back()->with('success', match (true) {
-            $registration->status === ParticipantStatus::WaitingList => __('game-tables::messages.success.guest_waiting_list', ['position' => $registration->waitingListPosition]),
+            $registration->status === ParticipantStatus::WaitingList => __('game-tables::messages.success.guest_waiting_list', ['position' => $registration->waitingListRank]),
             $registration->role === ParticipantRole::Spectator => __('game-tables::messages.success.guest_spectator_registered'),
             default => __('game-tables::messages.success.guest_registered'),
         });

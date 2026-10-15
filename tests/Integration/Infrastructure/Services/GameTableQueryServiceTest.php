@@ -16,6 +16,7 @@ use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Services\GameTableQueryService;
+use Modules\GameTables\Infrastructure\Services\SeatCounter;
 use Tests\Support\Modules\ModuleTestCase;
 
 final class GameTableQueryServiceTest extends ModuleTestCase
@@ -41,6 +42,7 @@ final class GameTableQueryServiceTest extends ModuleTestCase
             $this->app->make(GameTableRepositoryInterface::class),
             $this->app->make(GameSystemRepositoryInterface::class),
             $this->app->make(EventWithTablesQueryInterface::class),
+            $this->app->make(SeatCounter::class),
         );
     }
 

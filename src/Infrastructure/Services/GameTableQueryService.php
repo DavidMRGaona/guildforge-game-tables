@@ -25,6 +25,7 @@ final class GameTableQueryService implements GameTableQueryServiceInterface
         private readonly GameTableRepositoryInterface $gameTableRepository,
         private readonly GameSystemRepositoryInterface $gameSystemRepository,
         private readonly EventWithTablesQueryInterface $eventWithTablesQuery,
+        private readonly SeatCounter $seatCounter,
     ) {}
 
     public function getPublishedTablesPaginated(
@@ -108,9 +109,8 @@ final class GameTableQueryService implements GameTableQueryServiceInterface
         ?string $eventId = null,
         ?string $campaignId = null,
     ): \Illuminate\Database\Eloquent\Builder {
-        $query = GameTableModel::query()
+        $query = SeatCounter::withPlayerSeatCounts(GameTableModel::query())
             ->with(['gameSystem', 'creator', 'event', 'gameMasters.user'])
-            ->withCount('participants')
             ->where('is_published', true)
             ->whereNotIn('status', [TableStatus::Cancelled->value, TableStatus::Draft->value]);
 
@@ -162,7 +162,8 @@ final class GameTableQueryService implements GameTableQueryServiceInterface
             onlineUrl: $table->online_url,
             minPlayers: $table->min_players,
             maxPlayers: $table->max_players,
-            currentPlayers: $table->participants_count ?? 0,
+            // The taken seats the table page shows
+            currentPlayers: $this->seatCounter->takenPlayerSeatsOf($table),
             isPublished: $table->is_published,
             creatorName: $table->creator?->name ?? '',
             mainGameMasterName: $mainGameMasterName,

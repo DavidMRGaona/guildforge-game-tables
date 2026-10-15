@@ -12,6 +12,7 @@ use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
 use Modules\GameTables\Notifications\CancellationConfirmation;
 use Modules\GameTables\Notifications\GuestCancellationConfirmation;
+use Modules\GameTables\Notifications\OrganizationCancellationNotification;
 
 final readonly class SendCancellationConfirmation
 {
@@ -36,6 +37,25 @@ final readonly class SendCancellationConfirmation
 
         $tableDate = $gameTable->timeSlot->startsAt->format('d/m/Y H:i');
         $tableLocation = $gameTable->location;
+
+        // Cancelled by the organisation from the panel: its own notice, to users and guests alike
+        if ($event->byOrganization) {
+            $participantName = $event->userId !== null
+                ? (UserModel::find($event->userId)->name ?? $this->recipientResolver->getParticipantDisplayName($event->participantId))
+                : $this->recipientResolver->getParticipantDisplayName($event->participantId);
+
+            Notification::route('mail', $email)
+                ->notify(new OrganizationCancellationNotification(
+                    participantName: $participantName,
+                    tableId: $event->gameTableId,
+                    tableTitle: $gameTable->title,
+                    tableDate: $tableDate,
+                    tableLocation: $tableLocation,
+                    guest: $event->userId === null,
+                ));
+
+            return;
+        }
 
         // Determine if it's a guest or a registered user
         if ($event->userId !== null) {
