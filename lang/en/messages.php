@@ -611,6 +611,11 @@ return [
             'no_show' => 'No-show',
             'no_show_description' => 'They are marked as a no-show. No email is sent and nobody is promoted from the waiting list.',
             'move_to_waiting' => 'Move to waiting list',
+            'bulk_delete' => [
+                'deleted' => '{1} 1 registration deleted|[2,*] :count registrations deleted',
+                'none_deleted' => 'No registration deleted',
+                'skipped' => '{1} 1 registration was not deleted: only cancelled or rejected ones can be deleted; cancel it first with “Cancel registration”.|[2,*] :count registrations were not deleted: only cancelled or rejected ones can be deleted; cancel them first with “Cancel registration”.',
+            ],
         ],
         'sessions' => [
             'title' => 'Sessions',

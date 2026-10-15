@@ -75,6 +75,15 @@ enum ParticipantStatus: string
     }
 
     /**
+     * Only a registration that neither holds nor waits for a seat, and is not a record of
+     * attendance; the others are cancelled first, which frees the seat and moves the list.
+     */
+    public function canBeDeleted(): bool
+    {
+        return in_array($this, [self::Cancelled, self::Rejected], true);
+    }
+
+    /**
      * @return array<string, string>
      */
     public static function options(): array

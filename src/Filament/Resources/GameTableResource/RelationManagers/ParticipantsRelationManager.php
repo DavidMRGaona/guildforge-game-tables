@@ -23,6 +23,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Closure;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
@@ -199,6 +200,44 @@ final class ParticipantsRelationManager extends RelationManager
     private function canManageParticipants(): bool
     {
         return Gate::allows('update', $this->getOwnerRecord());
+    }
+
+    /**
+     * Bulk «Borrar»: deletes the selected cancelled or rejected rows, leaves the others and says
+     * how many went each way.
+     *
+     * @param  EloquentCollection<int, Model>  $records
+     */
+    private static function deleteCancelledOrRejected(EloquentCollection $records): void
+    {
+        $deleted = 0;
+        $skipped = 0;
+
+        foreach ($records as $record) {
+            if (! $record instanceof ParticipantModel || ! $record->status->canBeDeleted()) {
+                $skipped++;
+
+                continue;
+            }
+
+            if ($record->delete() === true) {
+                $deleted++;
+            }
+        }
+
+        $key = 'game-tables::messages.relation_managers.participants.bulk_delete.';
+        $notification = Notification::make()->title(
+            $deleted > 0 ? trans_choice($key.'deleted', $deleted, ['count' => $deleted]) : __($key.'none_deleted'),
+        );
+
+        if ($skipped === 0) {
+            $notification->success()->send();
+
+            return;
+        }
+
+        $notification->body(trans_choice($key.'skipped', $skipped, ['count' => $skipped]));
+        ($deleted > 0 ? $notification->warning() : $notification->danger())->send();
     }
 
     private static function notifySeatsFull(TableFullException $exception): void
@@ -410,11 +449,16 @@ final class ParticipantsRelationManager extends RelationManager
 
                         return $data;
                     }),
-                DeleteAction::make(),
+                // Only rows that hold no seat: the others are cancelled first (lock, freed seat, promotion)
+                DeleteAction::make()
+                    ->visible(fn (ParticipantModel $record): bool => $record->status->canBeDeleted()),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->action(fn (EloquentCollection $records) => self::deleteCancelledOrRejected($records))
+                        ->successNotification(null)
+                        ->failureNotification(null),
                 ]),
             ])
             ->defaultSort('created_at', 'asc');
