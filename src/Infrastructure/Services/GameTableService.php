@@ -21,6 +21,7 @@ use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\GameSystemId;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Domain\ValueObjects\TimeSlot;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
 final readonly class GameTableService implements GameTableServiceInterface
 {
@@ -31,12 +32,15 @@ final readonly class GameTableService implements GameTableServiceInterface
 
     public function create(CreateGameTableDTO $dto): GameTableResponseDTO
     {
+        $id = GameTableId::generate();
+
         $gameTable = new GameTable(
-            id: GameTableId::generate(),
+            id: $id,
             gameSystemId: new GameSystemId($dto->gameSystemId),
             createdBy: $dto->createdBy,
             title: $dto->title,
-            slug: \Illuminate\Support\Str::slug($dto->title),
+            // Same unique slug as a table created from the panel (title plus the start of the id)
+            slug: (new GameTableModel)->generateUniqueSlug($dto->title, $id->value),
             timeSlot: new TimeSlot($dto->startsAt, $dto->durationMinutes),
             tableType: $dto->tableType,
             tableFormat: $dto->tableFormat,
