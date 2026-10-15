@@ -2,6 +2,8 @@
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
+import { useVerificationGate } from '@/composables/useVerificationGate';
+import VerificationBlockedButton from '../VerificationBlockedButton.vue';
 import type { ProfileCreatedCampaign } from '../../types/gametables';
 
 interface Props {
@@ -14,6 +16,8 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const { t } = useI18n();
+// The edit form's routes are closed to accounts that must verify their email
+const gate = useVerificationGate();
 
 const campaignUrl = computed(() =>
     props.campaign.slug ? `/campanas/${props.campaign.slug}` : null
@@ -104,13 +108,23 @@ const playersText = computed(() => {
                 </span>
 
                 <!-- Edit link for drafts -->
-                <Link
-                    v-if="showEditLink && !campaign.isPublished"
-                    :href="editUrl"
-                    class="text-sm text-primary hover:text-primary-700"
-                >
-                    {{ t('campaigns.profile.edit') }}
-                </Link>
+                <template v-if="showEditLink && !campaign.isPublished">
+                    <VerificationBlockedButton
+                        v-if="gate.blocked.value"
+                        :reason="t('gameTables.verificationGate.edit')"
+                        align="end"
+                        button-class="text-sm text-primary"
+                    >
+                        {{ t('campaigns.profile.edit') }}
+                    </VerificationBlockedButton>
+                    <Link
+                        v-else
+                        :href="editUrl"
+                        class="text-sm text-primary hover:text-primary-700"
+                    >
+                        {{ t('campaigns.profile.edit') }}
+                    </Link>
+                </template>
             </div>
         </div>
     </div>

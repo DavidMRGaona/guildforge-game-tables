@@ -3,6 +3,8 @@ import { computed } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
+import { useVerificationGate } from '@/composables/useVerificationGate';
+import VerificationBlockedButton from './VerificationBlockedButton.vue';
 
 interface Props {
     event: {
@@ -28,6 +30,8 @@ const props = defineProps<Props>();
 const { t, locale } = useI18n();
 
 const page = usePage();
+// GET /mesas/crear is closed to accounts that must verify their email
+const gate = useVerificationGate();
 const isAuthenticated = computed(() => {
     const auth = page.props.auth as { user?: unknown } | undefined;
     return auth?.user != null;
@@ -116,9 +120,23 @@ const createTableUrl = computed(() => {
 </script>
 
 <template>
+    <!-- State 1b: Could create now, but the account must verify its email first -->
+    <VerificationBlockedButton
+        v-if="canCreateNow && gate.blocked.value"
+        :reason="gate.reason('createTable')"
+        button-class="inline-flex items-center gap-2 rounded-lg border border-primary-200 bg-primary-50 px-4 py-2.5 text-sm font-medium text-primary-700 dark:border-primary-800/40 dark:bg-primary-900/20 dark:text-primary-400"
+    >
+        <!-- Plus icon -->
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        <span>{{ t('gameTables.eventActions.createTable') }}</span>
+    </VerificationBlockedButton>
+
     <!-- State 1: Can create now -->
     <Link
-        v-if="canCreateNow"
+        v-else-if="canCreateNow"
         :href="createTableUrl"
         class="inline-flex items-center gap-2 rounded-lg border border-primary-200 bg-primary-50 px-4 py-2.5 text-sm font-medium text-primary-700 transition-colors hover:bg-primary-100 hover:text-primary-800 dark:border-primary-800/40 dark:bg-primary-900/20 dark:text-primary-400 dark:hover:bg-primary-900/30 dark:hover:text-primary-300"
     >

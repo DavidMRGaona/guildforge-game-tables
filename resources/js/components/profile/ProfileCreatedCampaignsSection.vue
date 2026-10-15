@@ -2,6 +2,8 @@
 import { useI18n } from 'vue-i18n';
 import { ref, computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
+import { useVerificationGate } from '@/composables/useVerificationGate';
+import VerificationBlockedButton from '../VerificationBlockedButton.vue';
 import ProfileCreatedCampaignCard from './ProfileCreatedCampaignCard.vue';
 import type { ProfileCreatedCampaignsData, ProfileCreatedCampaign } from '../../types/gametables';
 
@@ -11,6 +13,8 @@ interface Props {
 
 const props = defineProps<Props>();
 const { t } = useI18n();
+// The creation form's routes are closed to accounts that must verify their email
+const gate = useVerificationGate();
 
 const showDraftsSection = ref(true);
 
@@ -30,7 +34,19 @@ function toggleDraftsSection(): void {
     <div v-if="profileCreatedCampaigns && totalCampaigns > 0" class="space-y-10">
         <!-- Top create button -->
         <div v-if="canCreate" class="flex justify-end">
+            <VerificationBlockedButton
+                v-if="gate.blocked.value"
+                :reason="gate.reason('createCampaign')"
+                align="end"
+                button-class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm"
+            >
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                {{ t('campaigns.profile.createNew') }}
+            </VerificationBlockedButton>
             <Link
+                v-else
                 :href="createUrl"
                 class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
             >
@@ -102,7 +118,8 @@ function toggleDraftsSection(): void {
         </section>
 
         <!-- Create new campaign link (secondary) -->
-        <div v-if="canCreate" class="flex justify-center border-t border-default pt-8">
+        <!-- Only once on the page while blocked: the top one says why -->
+        <div v-if="canCreate && !gate.blocked.value" class="flex justify-center border-t border-default pt-8">
             <Link
                 :href="createUrl"
                 class="inline-flex items-center gap-2 rounded-lg border-2 border-primary px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary-light dark:hover:bg-primary-950/20"
@@ -141,7 +158,19 @@ function toggleDraftsSection(): void {
             {{ t('campaigns.profile.noCampaignsDescription') }}
         </p>
         <div v-if="canCreate" class="mt-6">
+            <VerificationBlockedButton
+                v-if="gate.blocked.value"
+                :reason="gate.reason('createCampaign')"
+                align="center"
+                button-class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white"
+            >
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                {{ t('campaigns.profile.createFirst') }}
+            </VerificationBlockedButton>
             <Link
+                v-else
                 :href="createUrl"
                 class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700"
             >

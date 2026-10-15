@@ -2,6 +2,8 @@
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
+import { useVerificationGate } from '@/composables/useVerificationGate';
+import VerificationBlockedButton from '../VerificationBlockedButton.vue';
 import type { ProfileCreatedTable } from '../../types/gametables';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 
@@ -15,6 +17,8 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const { t, locale } = useI18n();
+// The edit form's routes are closed to accounts that must verify their email
+const gate = useVerificationGate();
 
 const formattedDate = computed(() => {
     if (!props.table.startsAt) return null;
@@ -113,13 +117,23 @@ const playersText = computed(() => {
                 </span>
 
                 <!-- Edit link for drafts -->
-                <Link
-                    v-if="showEditLink && !table.isPublished"
-                    :href="editUrl"
-                    class="text-sm text-primary hover:text-primary-700"
-                >
-                    {{ t('gameTables.profile.created.edit') }}
-                </Link>
+                <template v-if="showEditLink && !table.isPublished">
+                    <VerificationBlockedButton
+                        v-if="gate.blocked.value"
+                        :reason="t('gameTables.verificationGate.edit')"
+                        align="end"
+                        button-class="text-sm text-primary"
+                    >
+                        {{ t('gameTables.profile.created.edit') }}
+                    </VerificationBlockedButton>
+                    <Link
+                        v-else
+                        :href="editUrl"
+                        class="text-sm text-primary hover:text-primary-700"
+                    >
+                        {{ t('gameTables.profile.created.edit') }}
+                    </Link>
+                </template>
             </div>
         </div>
     </div>

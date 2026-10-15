@@ -12,6 +12,10 @@ export default {
         viewTable: 'View table',
         viewEventTablesCount: 'View {count} table | View {count} tables',
         tables: 'tables',
+        // Reason next to an action closed until the account verifies its email (the core has the others)
+        verificationGate: {
+            edit: 'To edit, verify your email.',
+        },
         eventActions: {
             createTable: 'Create game table',
             creationOpensAt: 'You can create tables from {date}',
