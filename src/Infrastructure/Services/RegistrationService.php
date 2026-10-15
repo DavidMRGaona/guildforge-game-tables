@@ -37,13 +37,17 @@ use Modules\GameTables\Domain\ValueObjects\ParticipantId;
  */
 final readonly class RegistrationService implements RegistrationServiceInterface
 {
+    private SeatCounter $seats;
+
     public function __construct(
         private ParticipantRepositoryInterface $participantRepository,
         private GameTableRepositoryInterface $gameTableRepository,
         private EligibilityServiceInterface $eligibilityService,
         private RegistrationLockInterface $lock,
         private GameTableSettingsReader $settings = new GameTableSettingsReader(),
-    ) {}
+    ) {
+        $this->seats = new SeatCounter($participantRepository, $gameTableRepository, $settings);
+    }
 
     public function register(RegisterParticipantDTO $dto): ParticipantResponseDTO
     {
@@ -162,16 +166,15 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
     /**
      * A free seat (confirmed when the table confirms automatically, pending otherwise) or the
-     * next position of the waiting list.
+     * next position of the waiting list. Taken seats are those of SeatCounter.
      */
     private function seat(Participant $participant, GameTable $gameTable): void
     {
         $shouldWaitList = false;
         if ($participant->role === ParticipantRole::Player) {
-            $shouldWaitList = ! $gameTable->hasCapacity($this->takenPlayerSeats($gameTable));
+            $shouldWaitList = ! $gameTable->hasCapacity($this->seats->takenPlayerSeats($gameTable));
         } elseif ($participant->role === ParticipantRole::Spectator) {
-            $confirmedSpectators = $this->participantRepository->countConfirmedSpectators($gameTable->id);
-            $shouldWaitList = $gameTable->availableSpectatorSlots($confirmedSpectators) === 0;
+            $shouldWaitList = $gameTable->availableSpectatorSlots($this->seats->takenSpectatorSeats($gameTable)) === 0;
         }
 
         if ($shouldWaitList) {
@@ -180,20 +183,6 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         } elseif ($gameTable->autoConfirm) {
             $participant->confirm();
         }
-    }
-
-    /**
-     * Confirmed players, plus pending ones when they hold seats (waiting list on, manual confirmation).
-     */
-    private function takenPlayerSeats(GameTable $gameTable): int
-    {
-        $taken = $this->participantRepository->countConfirmedPlayers($gameTable->id);
-
-        if ($gameTable->pendingPlayersHoldSeats($this->settings->isWaitingListEnabled())) {
-            $taken += $this->participantRepository->countPendingPlayers($gameTable->id);
-        }
-
-        return $taken;
     }
 
     private function announceUserRegistration(Participant $participant): void
@@ -311,11 +300,11 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             return null;
         }
 
-        if ($freedByPending && ! $gameTable->pendingPlayersHoldSeats($this->settings->isWaitingListEnabled())) {
+        if ($freedByPending && ! $this->seats->pendingHoldSeats($gameTable)) {
             return null;
         }
 
-        if (! $gameTable->hasCapacity($this->takenPlayerSeats($gameTable))) {
+        if (! $gameTable->hasCapacity($this->seats->takenPlayerSeats($gameTable))) {
             return null;
         }
 

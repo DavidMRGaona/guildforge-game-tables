@@ -8,27 +8,25 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\GameTables\Application\DTOs\GameMasterResponseDTO;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
+use Modules\GameTables\Application\DTOs\TableSeatsDTO;
 
 /**
+ * The seats come counted by the server (SeatCounter), with the rule it applies on registration.
+ *
  * @mixin GameTableResponseDTO
  */
 final class GameTableResource extends JsonResource
 {
+    public function __construct(GameTableResponseDTO $resource, private readonly TableSeatsDTO $seats)
+    {
+        parent::__construct($resource);
+    }
+
     /**
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array
     {
-        $currentPlayers = count(array_filter(
-            $this->participants,
-            fn ($p) => $p->role->value === 'player' && in_array($p->status->value, ['confirmed', 'pending'])
-        ));
-
-        $currentSpectators = count(array_filter(
-            $this->participants,
-            fn ($p) => $p->role->value === 'spectator' && in_array($p->status->value, ['confirmed', 'pending'])
-        ));
-
         $mainGm = array_filter($this->gameMasters, fn (GameMasterResponseDTO $gm) => $gm->isMain);
         $mainGameMaster = reset($mainGm) ?: null;
         $mainGameMasterName = $mainGameMaster?->displayName ?? $this->creatorName;
@@ -87,14 +85,11 @@ final class GameTableResource extends JsonResource
             'imagePublicId' => $this->imagePublicId,
             'gameMasters' => GameMasterResource::collection($this->gameMasters)->resolve(),
             'mainGameMasterName' => $mainGameMasterName,
-            'currentPlayers' => $currentPlayers,
-            'currentSpectators' => $currentSpectators,
-            'spotsAvailable' => max(0, $this->maxPlayers - $currentPlayers),
-            'spectatorSpotsAvailable' => max(0, $this->maxSpectators - $currentSpectators),
-            'waitingListCount' => count(array_filter(
-                $this->participants,
-                fn ($p) => $p->waitingListPosition !== null
-            )),
+            'currentPlayers' => $this->seats->takenPlayerSeats,
+            'currentSpectators' => $this->seats->takenSpectatorSeats,
+            'spotsAvailable' => $this->seats->freePlayerSeats,
+            'spectatorSpotsAvailable' => $this->seats->freeSpectatorSeats,
+            'waitingListCount' => $this->seats->waitingPlayers,
             'createdAt' => $this->createdAt?->format('c'),
             'updatedAt' => $this->updatedAt?->format('c'),
         ];

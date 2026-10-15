@@ -63,6 +63,13 @@ interface ParticipantRepositoryInterface
 
     public function countPendingPlayers(GameTableId $gameTableId): int;
 
+    public function countPendingSpectators(GameTableId $gameTableId): int;
+
+    /**
+     * Participants with the given role who are on the waiting list now.
+     */
+    public function countWaiting(GameTableId $gameTableId, ParticipantRole $role): int;
+
     public function getNextWaitingListPosition(GameTableId $gameTableId): int;
 
     /**

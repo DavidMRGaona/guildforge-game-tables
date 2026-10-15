@@ -25,6 +25,7 @@ use App\Application\Services\SlugRedirectServiceInterface;
 use Modules\GameTables\Http\Concerns\ReadsListFilters;
 use Modules\GameTables\Http\Resources\GameTableListResource;
 use Modules\GameTables\Http\Resources\GameTableResource;
+use Modules\GameTables\Infrastructure\Services\SeatCounter;
 
 final class GameTableController extends Controller
 {
@@ -39,6 +40,7 @@ final class GameTableController extends Controller
         private readonly RegistrationServiceInterface $registrationService,
         private readonly SlugRedirectServiceInterface $slugRedirectService,
         private readonly SeoMetadataFactoryInterface $seo,
+        private readonly SeatCounter $seatCounter,
     ) {}
 
     public function index(Request $request): Response
@@ -206,7 +208,8 @@ final class GameTableController extends Controller
         }
 
         return Inertia::render('GameTables/Show', [
-            'table' => GameTableResource::make($table)->resolve(),
+            // Seats counted by the server with the rule it applies on registration
+            'table' => GameTableResource::make($table, $this->seatCounter->forTable($table->id))->resolve(),
             'eligibility' => $eligibility,
             'guestEligibility' => $guestEligibility,
             'userRegistration' => $userRegistration,

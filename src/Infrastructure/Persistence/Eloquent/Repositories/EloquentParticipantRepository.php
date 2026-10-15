@@ -192,6 +192,24 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
             ->count();
     }
 
+    public function countPendingSpectators(GameTableId $gameTableId): int
+    {
+        return ParticipantModel::query()
+            ->where('game_table_id', $gameTableId->value)
+            ->where('status', ParticipantStatus::Pending->value)
+            ->where('role', ParticipantRole::Spectator->value)
+            ->count();
+    }
+
+    public function countWaiting(GameTableId $gameTableId, ParticipantRole $role): int
+    {
+        return ParticipantModel::query()
+            ->where('game_table_id', $gameTableId->value)
+            ->where('status', ParticipantStatus::WaitingList->value)
+            ->where('role', $role->value)
+            ->count();
+    }
+
     public function getNextWaitingListPosition(GameTableId $gameTableId): int
     {
         $maxPosition = ParticipantModel::query()

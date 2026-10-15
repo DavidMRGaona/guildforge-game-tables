@@ -21,12 +21,16 @@ use Modules\GameTables\Domain\ValueObjects\GameTableId;
 
 final readonly class EligibilityService implements EligibilityServiceInterface
 {
+    private SeatCounter $seats;
+
     public function __construct(
         private ParticipantRepositoryInterface $participantRepository,
         private GameTableRepositoryInterface $gameTableRepository,
         private ?MembershipCheckerInterface $membershipChecker = null,
         private GameTableSettingsReader $settings = new GameTableSettingsReader(),
-    ) {}
+    ) {
+        $this->seats = new SeatCounter($participantRepository, $gameTableRepository, $settings);
+    }
 
     public function checkEligibility(
         GameTable $gameTable,
@@ -90,6 +94,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
     /**
      * Spectators need a free spectator seat, whatever the player seats; they have no waiting list.
      * Players need a free player seat or, when the setting is on, go to the waiting list.
+     * Taken seats are those of SeatCounter, the count the table page shows.
      *
      * @return bool whether a player registration goes to the waiting list
      *
@@ -103,13 +108,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
             return false;
         }
 
-        $takenSeats = $this->participantRepository->countConfirmedPlayers($gameTable->id);
-
-        if ($gameTable->pendingPlayersHoldSeats($this->settings->isWaitingListEnabled())) {
-            $takenSeats += $this->participantRepository->countPendingPlayers($gameTable->id);
-        }
-
-        if ($gameTable->hasCapacity($takenSeats)) {
+        if ($gameTable->hasCapacity($this->seats->takenPlayerSeats($gameTable))) {
             return false;
         }
 
@@ -125,9 +124,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
      */
     private function checkSpectatorSeats(GameTable $gameTable): void
     {
-        $confirmedSpectators = $this->participantRepository->countConfirmedSpectators($gameTable->id);
-
-        if ($gameTable->availableSpectatorSlots($confirmedSpectators) === 0) {
+        if ($gameTable->availableSpectatorSlots($this->seats->takenSpectatorSeats($gameTable)) === 0) {
             throw TableFullException::forSpectators($gameTable->id->value);
         }
     }

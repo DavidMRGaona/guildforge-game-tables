@@ -528,6 +528,7 @@ return [
         'unauthenticated' => 'You must be logged in to perform this action',
         'registration_closed' => 'Registration is closed',
         'table_full' => 'The table is full',
+        'spectators_full' => 'No spectator seats are left',
         'already_registered' => 'You are already registered for this table',
         'members_only' => 'This table is for members only',
         'minimum_age' => 'You do not meet the minimum age requirement',
