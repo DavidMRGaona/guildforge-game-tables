@@ -9,12 +9,12 @@ interface Props {
     campaign: ProfileCreatedCampaign;
     showEditLink?: boolean;
     /** Id of the section's line saying why editing is disabled (shown once per drafts list) */
-    editReasonId?: string;
+    editReasonId?: string | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
     showEditLink: false,
-    editReasonId: undefined,
+    editReasonId: null,
 });
 
 const { t } = useI18n();
@@ -115,7 +115,7 @@ const playersText = computed(() => {
                         v-if="gate.blocked.value"
                         type="button"
                         disabled
-                        :aria-describedby="editReasonId"
+                        :aria-describedby="editReasonId ?? undefined"
                         class="cursor-not-allowed text-sm text-primary opacity-60"
                     >
                         {{ t('campaigns.profile.edit') }}
