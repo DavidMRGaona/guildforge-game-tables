@@ -544,6 +544,7 @@ return [
         'minimum_age' => 'You do not meet the minimum age requirement',
         'not_found' => 'Registration not found',
         'cannot_cancel' => 'Unable to cancel registration at this time',
+        'cannot_cancel_started' => 'The session has already started: you can no longer cancel your registration',
         'cannot_mark_no_show' => 'Only a confirmed participant can be marked as a no-show, once the table has started',
         'table_not_found' => 'Table not found',
         'campaign_not_found' => 'Campaign not found',

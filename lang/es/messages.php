@@ -634,6 +634,7 @@ return [
         'minimum_age' => 'No cumples con la edad mínima requerida',
         'not_found' => 'No se encontró la inscripción',
         'cannot_cancel' => 'No es posible cancelar la inscripción en este momento',
+        'cannot_cancel_started' => 'La partida ya ha comenzado: ya no puedes cancelar la inscripción',
         'cannot_mark_no_show' => 'Solo se puede marcar como no presentado a un participante confirmado, una vez empezada la mesa',
         'table_not_found' => 'No se encontró la mesa',
         'campaign_not_found' => 'No se encontró la campaña',

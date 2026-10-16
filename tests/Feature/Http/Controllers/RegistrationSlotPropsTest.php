@@ -152,6 +152,13 @@ final class RegistrationSlotPropsTest extends ModuleTestCase
         }
     }
 
+    public function test_the_cannot_cancel_started_message_is_translated_in_both_languages(): void
+    {
+        foreach (['es' => 'La partida ya ha comenzado: ya no puedes cancelar la inscripción', 'en' => 'The session has already started: you can no longer cancel your registration'] as $locale => $text) {
+            $this->assertSame($text, trans('game-tables::messages.errors.cannot_cancel_started', [], $locale));
+        }
+    }
+
     private function assertSlotProps(Assert $page): Assert
     {
         $page->component('GameTables/Show', shouldExist: false);
