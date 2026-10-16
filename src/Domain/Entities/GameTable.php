@@ -111,21 +111,6 @@ final class GameTable
         $this->status = $status;
     }
 
-    /**
-     * Checks if registration is currently open based on publication state, status, and dates.
-     */
-    public function isRegistrationOpen(DateTimeImmutable $now): bool
-    {
-        if (! $this->canRegister()) {
-            return false;
-        }
-
-        $opensAt = $this->registrationOpensAt ?? $this->timeSlot->startsAt;
-        $closesAt = $this->registrationClosesAt ?? $this->timeSlot->startsAt;
-
-        return $now >= $opensAt && $now <= $closesAt;
-    }
-
     public function isActive(): bool
     {
         return $this->status->isActive();
@@ -142,7 +127,9 @@ final class GameTable
     }
 
     /**
-     * Checks if the table is in a state that allows registration (published and registrable status).
+     * Whether the status and publication admit registrations; the dates are checked apart. A table
+     * that admits registrations in play may also be in progress: its window is decided by time
+     * (isPastRegistrationDeadline()), not by when the director marks it started.
      */
     public function canRegister(): bool
     {
@@ -153,6 +140,27 @@ final class GameTable
         // A table in play admits registrations only if it says so
         return $this->status->isRegistrable()
             || ($this->status === TableStatus::InProgress && $this->acceptsRegistrationsInProgress);
+    }
+
+    /**
+     * Whether the time of the table alone closes registrations: from its start or, when it admits
+     * registrations in play, from its end. A configured closing date can only close them earlier
+     * (isPublicRegistrationOpen()).
+     */
+    public function isPastRegistrationDeadline(DateTimeImmutable $now): bool
+    {
+        return $this->acceptsRegistrationsInProgress
+            ? $this->timeSlot->hasEnded($now)
+            : $this->timeSlot->hasStarted($now);
+    }
+
+    /**
+     * Participants (users, and guests with their link) cancel their own registration only before
+     * the table starts, also on tables that admit registrations in play. The panel has no limit.
+     */
+    public function canParticipantWithdraw(DateTimeImmutable $now): bool
+    {
+        return ! $this->timeSlot->hasStarted($now);
     }
 
     public function requiresInvitation(): bool
@@ -215,8 +223,44 @@ final class GameTable
         return $now >= $memberAccessStart && $now < $this->registrationOpensAt;
     }
 
+    /**
+     * The moment registrations really close: the configured closing date or the limit of the
+     * table (its start, or its end when it admits registrations in play), whichever comes first.
+     */
+    public function effectiveRegistrationClosesAt(): DateTimeImmutable
+    {
+        return self::effectiveClosingFor(
+            $this->timeSlot->startsAt,
+            $this->timeSlot->durationMinutes,
+            $this->acceptsRegistrationsInProgress,
+            $this->registrationClosesAt,
+        );
+    }
+
+    public static function effectiveClosingFor(
+        \DateTimeInterface $startsAt,
+        int $durationMinutes,
+        bool $acceptsRegistrationsInProgress,
+        ?\DateTimeInterface $configuredClosesAt,
+    ): DateTimeImmutable {
+        $slot = new TimeSlot(DateTimeImmutable::createFromInterface($startsAt), $durationMinutes);
+        $limit = $acceptsRegistrationsInProgress ? $slot->endsAt() : $slot->startsAt;
+
+        if ($configuredClosesAt === null) {
+            return $limit;
+        }
+
+        $configured = DateTimeImmutable::createFromInterface($configuredClosesAt);
+
+        return $configured < $limit ? $configured : $limit;
+    }
+
     public function isPublicRegistrationOpen(DateTimeImmutable $now): bool
     {
+        if ($this->isPastRegistrationDeadline($now)) {
+            return false;
+        }
+
         if ($this->registrationOpensAt !== null && $now < $this->registrationOpensAt) {
             return false;
         }
@@ -230,12 +274,13 @@ final class GameTable
 
     /**
      * The waiting list closes with the registrations: when the table stops admitting them
-     * (status, publication) or its closing date has passed. The opening date does not
-     * matter: early registrations may already wait for a seat.
+     * (status, publication), its closing date has passed or it has started, also on tables that
+     * admit registrations in play. The opening date does not matter: early registrations may
+     * already wait for a seat.
      */
     public function isWaitingListOpen(DateTimeImmutable $now): bool
     {
-        if (! $this->canRegister()) {
+        if (! $this->canRegister() || $this->timeSlot->hasStarted($now)) {
             return false;
         }
 
@@ -246,6 +291,11 @@ final class GameTable
     {
         // Check publication and registrable status
         if (! $this->canRegister()) {
+            return false;
+        }
+
+        // The time of the table closes every registration, members' early access included
+        if ($this->isPastRegistrationDeadline($now)) {
             return false;
         }
 
@@ -262,7 +312,7 @@ final class GameTable
             return true;
         }
 
-        return $this->isRegistrationOpen($now);
+        return $this->isPublicRegistrationOpen($now);
     }
 
     public function meetsAgeRequirement(?int $userAge): bool

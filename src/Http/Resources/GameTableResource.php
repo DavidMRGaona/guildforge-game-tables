@@ -77,6 +77,7 @@ final class GameTableResource extends JsonResource
             'membersEarlyAccessDays' => $this->membersEarlyAccessDays,
             'registrationOpensAt' => $this->registrationOpensAt?->format('c'),
             'registrationClosesAt' => $this->registrationClosesAt?->format('c'),
+            'effectiveRegistrationClosesAt' => $this->effectiveRegistrationClosesAt?->format('c'),
             'autoConfirm' => $this->autoConfirm,
             'acceptsRegistrationsInProgress' => $this->acceptsRegistrationsInProgress,
             'isPublished' => $this->isPublished,

@@ -24,6 +24,8 @@ interface Props {
     };
     token: string;
     canCancel: boolean;
+    /** The registration is active but the table has started: it can no longer be cancelled here */
+    tableStarted: boolean;
 }
 
 const props = defineProps<Props>();
@@ -32,7 +34,7 @@ const { t, locale } = useI18n();
 
 const displayName = computed(() => {
     return props.participant.is_guest
-        ? props.participant.first_name || t('gameTables.cancelRegistration.guest')
+        ? props.participant.first_name || t('cancelRegistration.guest')
         : props.participant.user_name;
 });
 
@@ -80,7 +82,7 @@ function handleCancel(): void {
                         </svg>
                     </div>
                     <h1 class="text-2xl font-bold text-base-primary">
-                        {{ t('gameTables.cancelRegistration.title') }}
+                        {{ t('cancelRegistration.title') }}
                     </h1>
                 </div>
 
@@ -89,7 +91,7 @@ function handleCancel(): void {
                     <dl class="space-y-2">
                         <div class="flex justify-between">
                             <dt class="text-sm text-base-muted">
-                                {{ t('gameTables.cancelRegistration.participant') }}
+                                {{ t('cancelRegistration.participant') }}
                             </dt>
                             <dd class="text-sm font-medium text-base-primary">
                                 {{ displayName }}
@@ -97,7 +99,7 @@ function handleCancel(): void {
                         </div>
                         <div class="flex justify-between">
                             <dt class="text-sm text-base-muted">
-                                {{ t('gameTables.cancelRegistration.table') }}
+                                {{ t('cancelRegistration.table') }}
                             </dt>
                             <dd class="text-sm font-medium text-base-primary">
                                 {{ gameTable.title }}
@@ -105,7 +107,7 @@ function handleCancel(): void {
                         </div>
                         <div class="flex justify-between">
                             <dt class="text-sm text-base-muted">
-                                {{ t('gameTables.cancelRegistration.date') }}
+                                {{ t('cancelRegistration.date') }}
                             </dt>
                             <dd class="text-sm font-medium text-base-primary">
                                 {{ formattedDate }}
@@ -113,7 +115,7 @@ function handleCancel(): void {
                         </div>
                         <div class="flex justify-between">
                             <dt class="text-sm text-base-muted">
-                                {{ t('gameTables.cancelRegistration.role') }}
+                                {{ t('cancelRegistration.role') }}
                             </dt>
                             <dd class="text-sm font-medium text-base-primary">
                                 {{ participant.role_label }}
@@ -121,7 +123,7 @@ function handleCancel(): void {
                         </div>
                         <div class="flex justify-between">
                             <dt class="text-sm text-base-muted">
-                                {{ t('gameTables.cancelRegistration.status') }}
+                                {{ t('cancelRegistration.status') }}
                             </dt>
                             <dd class="text-sm font-medium text-base-primary">
                                 {{ participant.status_label }}
@@ -133,7 +135,7 @@ function handleCancel(): void {
                 <!-- Can cancel -->
                 <template v-if="canCancel">
                     <p class="mb-6 text-center text-base-secondary">
-                        {{ t('gameTables.cancelRegistration.confirm', { tableTitle: gameTable.title }) }}
+                        {{ t('cancelRegistration.confirm', { tableTitle: gameTable.title }) }}
                     </p>
 
                     <div class="flex gap-4">
@@ -154,7 +156,7 @@ function handleCancel(): void {
                             :loading="isLoading"
                             @click="handleCancel"
                         >
-                            {{ t('gameTables.cancelRegistration.confirmButton') }}
+                            {{ t('cancelRegistration.confirmButton') }}
                         </BaseButton>
                     </div>
                 </template>
@@ -163,7 +165,7 @@ function handleCancel(): void {
                 <template v-else>
                     <div class="mb-6 rounded-lg bg-warning-light p-4 text-center">
                         <p class="text-sm text-warning">
-                            {{ t('gameTables.cancelRegistration.alreadyCancelled') }}
+                            {{ tableStarted ? t('cancelRegistration.tableStarted') : t('cancelRegistration.alreadyCancelled') }}
                         </p>
                     </div>
 
@@ -172,7 +174,7 @@ function handleCancel(): void {
                             variant="primary"
                             class="w-full"
                         >
-                            {{ t('gameTables.cancelRegistration.viewTable') }}
+                            {{ t('cancelRegistration.viewTable') }}
                         </BaseButton>
                     </Link>
                 </template>

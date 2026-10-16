@@ -21,6 +21,8 @@ use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Domain\ValueObjects\ParticipantId;
 use Modules\GameTables\Infrastructure\Services\EligibilityService;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 
@@ -277,6 +279,153 @@ final class EligibilityServiceTest extends TestCase
         $this->assertSame('registration_not_open', $result['reason']);
     }
 
+    /**
+     * @return array<string, array{bool, ParticipantRole}>
+     */
+    public static function inviteOnlyApplicants(): array
+    {
+        return [
+            'member as player' => [true, ParticipantRole::Player],
+            'non-member as player' => [false, ParticipantRole::Player],
+            'member as spectator' => [true, ParticipantRole::Spectator],
+            'non-member as spectator' => [false, ParticipantRole::Spectator],
+        ];
+    }
+
+    // Nobody signs up by themselves for an invite table: the organisation adds the players
+    #[DataProvider('inviteOnlyApplicants')]
+    public function test_an_invite_table_refuses_every_user_with_its_window_open(bool $isMember, ParticipantRole $role): void
+    {
+        $this->gameTableRepository->expects($this->never())->method($this->anything());
+        $this->participantRepository->expects($this->never())->method($this->anything());
+        $table = $this->createGameTable(id: GameTableId::generate()->value, registrationType: RegistrationType::Invite);
+
+        $result = $this->service->canRegister($table, 'user-1', $isMember, null, null, $role);
+
+        $this->assertFalse($result['eligible']);
+        $this->assertSame('invitation_only', $result['reason']);
+        $this->assertFalse($result['waitingList']);
+    }
+
+    // The refusal comes first: a full table with the waiting list on still says "solo por invitacion"
+    public function test_an_invite_table_offers_no_waiting_list(): void
+    {
+        config()->set('modules.settings.game-tables.registration.waiting_list_enabled', true);
+        $this->gameTableRepository->expects($this->never())->method($this->anything());
+        $this->participantRepository->expects($this->never())->method($this->anything());
+        $table = $this->createGameTable(id: GameTableId::generate()->value, registrationType: RegistrationType::Invite, maxPlayers: 1);
+
+        $result = $this->service->canRegister($table, 'user-1', true, null);
+
+        $this->assertSame('invitation_only', $result['reason']);
+        $this->assertFalse($result['waitingList']);
+    }
+
+    public function test_registration_is_refused_from_the_start_of_the_table(): void
+    {
+        $this->gameTableRepository->expects($this->never())->method($this->anything());
+        $this->participantRepository->expects($this->never())->method($this->anything());
+        $startsAt = new DateTimeImmutable('2030-01-10 18:00:00');
+        $table = $this->createGameTable(id: GameTableId::generate()->value, startsAt: $startsAt);
+
+        $result = $this->service->canRegister($table, 'user-1', false, null, $startsAt);
+
+        $this->assertFalse($result['eligible']);
+        $this->assertSame('table_started', $result['reason']);
+    }
+
+    // Waiting never reopens a table that started or ended, so no opening date is announced for it
+    #[AllowMockObjectsWithoutExpectations]
+    #[DataProvider('closedForGoodTables')]
+    public function test_no_opening_date_is_announced_for_a_table_that_can_never_reopen(
+        RegistrationType $type,
+        string $startsAt,
+        bool $inPlay,
+        string $reason,
+    ): void {
+        $id = GameTableId::generate()->value;
+        $table = $this->createGameTable(
+            id: $id,
+            registrationType: $type,
+            registrationOpensAt: new DateTimeImmutable('+1 day'),
+            startsAt: new DateTimeImmutable($startsAt),
+            acceptsRegistrationsInProgress: $inPlay,
+        );
+        $this->gameTableRepository->method('find')->willReturn($table);
+
+        $result = $this->service->canRegisterById($id, 'user-1');
+
+        $this->assertFalse($result['eligible']);
+        $this->assertSame($reason, $result['reason']);
+        $this->assertNull($result['canRegisterAt']);
+    }
+
+    /**
+     * @return array<string, array{RegistrationType, string, bool, string}>
+     */
+    public static function closedForGoodTables(): array
+    {
+        return [
+            'invite only' => [RegistrationType::Invite, '+1 week', false, 'invitation_only'],
+            'started' => [RegistrationType::Everyone, '-1 hour', false, 'table_started'],
+            'ended in play' => [RegistrationType::Everyone, '-1 week', true, 'table_ended'],
+        ];
+    }
+
+    public function test_registration_is_admitted_until_the_start(): void
+    {
+        $this->gameTableRepository->expects($this->never())->method($this->anything());
+        $this->participantRepository->expects($this->once())->method('findByTableAndUser')->willReturn(null);
+        $startsAt = new DateTimeImmutable('2030-01-10 18:00:00');
+        $table = $this->createGameTable(id: GameTableId::generate()->value, startsAt: $startsAt);
+
+        $result = $this->service->canRegister($table, 'user-1', false, null, $startsAt->modify('-1 second'));
+
+        $this->assertTrue($result['eligible']);
+    }
+
+    public function test_a_table_admitting_registrations_in_play_refuses_them_from_its_end(): void
+    {
+        $this->gameTableRepository->expects($this->never())->method($this->anything());
+        $this->participantRepository->expects($this->never())->method($this->anything());
+        $startsAt = new DateTimeImmutable('2030-01-10 18:00:00');
+        $table = $this->createGameTable(id: GameTableId::generate()->value, startsAt: $startsAt, acceptsRegistrationsInProgress: true);
+
+        $result = $this->service->canRegister($table, 'user-1', false, null, $startsAt->modify('+240 minutes'));
+
+        $this->assertFalse($result['eligible']);
+        $this->assertSame('table_ended', $result['reason']);
+    }
+
+    public function test_during_the_session_a_full_table_offers_no_waiting_list(): void
+    {
+        config()->set('modules.settings.game-tables.registration.waiting_list_enabled', true);
+        $this->gameTableRepository->expects($this->never())->method($this->anything());
+        $this->participantRepository->expects($this->once())->method('findByTableAndUser')->willReturn(null);
+        $startsAt = new DateTimeImmutable('2030-01-10 18:00:00');
+        $table = $this->createGameTable(id: GameTableId::generate()->value, startsAt: $startsAt, maxPlayers: 0, acceptsRegistrationsInProgress: true);
+
+        $result = $this->service->canRegister($table, 'user-1', false, null, $startsAt->modify('+1 hour'));
+
+        $this->assertFalse($result['eligible']);
+        $this->assertSame('table_full', $result['reason']);
+        $this->assertFalse($result['waitingList']);
+    }
+
+    public function test_before_the_start_a_full_table_offers_the_waiting_list(): void
+    {
+        config()->set('modules.settings.game-tables.registration.waiting_list_enabled', true);
+        $this->gameTableRepository->expects($this->never())->method($this->anything());
+        $this->participantRepository->expects($this->once())->method('findByTableAndUser')->willReturn(null);
+        $startsAt = new DateTimeImmutable('2030-01-10 18:00:00');
+        $table = $this->createGameTable(id: GameTableId::generate()->value, startsAt: $startsAt, maxPlayers: 0, acceptsRegistrationsInProgress: true);
+
+        $result = $this->service->canRegister($table, 'user-1', false, null, $startsAt->modify('-1 hour'));
+
+        $this->assertTrue($result['eligible']);
+        $this->assertTrue($result['waitingList']);
+    }
+
     private function tableInMembersEarlyAccess(): GameTable
     {
         $this->gameTableRepository->expects($this->never())->method('find');
@@ -295,9 +444,10 @@ final class EligibilityServiceTest extends TestCase
         int $maxPlayers = 6,
         ?DateTimeImmutable $registrationOpensAt = null,
         int $membersEarlyAccessDays = 0,
+        ?DateTimeImmutable $startsAt = null,
+        bool $acceptsRegistrationsInProgress = false,
     ): GameTable {
-        $startsAt = new DateTimeImmutable('+1 week');
-        $timeSlot = new TimeSlot($startsAt, 240);
+        $timeSlot = new TimeSlot($startsAt ?? new DateTimeImmutable('+1 week'), 240);
 
         return new GameTable(
             id: new GameTableId($id),
@@ -315,6 +465,7 @@ final class EligibilityServiceTest extends TestCase
             membersEarlyAccessDays: $membersEarlyAccessDays,
             registrationOpensAt: $registrationOpensAt,
             autoConfirm: true,
+            acceptsRegistrationsInProgress: $acceptsRegistrationsInProgress,
             isPublished: true,
         );
     }

@@ -152,8 +152,8 @@ export default {
             yourStatus: 'Tu inscripción',
             loginRequired: 'Inicia sesión para inscribirte',
             joinWaitingList: 'Apuntarse a la lista de espera',
-            waitingListHelp: 'La mesa está completa. Si se libera una plaza antes del cierre de inscripciones, pasarás a ella automáticamente por orden de lista y te avisaremos por correo.',
-            waitingListHelpManual: 'La mesa está completa. Si se libera una plaza antes del cierre de inscripciones, pasarás a ella por orden de lista, pendiente de que el director te confirme, y te avisaremos por correo.',
+            waitingListHelp: 'La mesa está completa. Si se libera una plaza antes del inicio de la partida (o del cierre de inscripciones, si es anterior), pasarás a ella automáticamente por orden de lista y te avisaremos por correo.',
+            waitingListHelpManual: 'La mesa está completa. Si se libera una plaza antes del inicio de la partida (o del cierre de inscripciones, si es anterior), pasarás a ella por orden de lista, pendiente de que el director te confirme, y te avisaremos por correo.',
             spectatorOnly: 'Las plazas de jugador están completas: te inscribirás como espectador',
             selectRole: 'Selecciona tu rol',
             addNotes: 'Añadir notas (opcional)',
@@ -162,6 +162,7 @@ export default {
             spectatorsFull: 'Sin plazas de espectador',
             confirmedAt: 'Confirmado el',
             registeredAt: 'Inscrito el',
+            withdrawalClosed: 'La partida ya ha comenzado: ya no puedes cancelar la inscripción',
         },
         status: {
             draft: 'Borrador',
@@ -581,5 +582,6 @@ export default {
         alreadyCancelled: 'Esta inscripción ya ha sido cancelada o no puede ser modificada.',
         viewTable: 'Ver mesa',
         guest: 'Invitado',
+        tableStarted: 'La partida ya ha comenzado: ya no puedes cancelar la inscripción.',
     },
 };

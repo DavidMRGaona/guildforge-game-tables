@@ -64,6 +64,15 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         private EventGameTableConfigRepositoryInterface $configRepository,
     ) {}
 
+    /**
+     * Registrations close at the start of the table at the latest (the panel refuses a later date),
+     * so the event start is only a valid default when the table does not start before it.
+     */
+    private function cappedToTableStart(\DateTimeImmutable $eventStart, \DateTimeImmutable $tableStart): \DateTimeImmutable
+    {
+        return $eventStart < $tableStart ? $eventStart : $tableStart;
+    }
+
     public function createGameTable(FrontendCreateGameTableDTO $dto): GameTableResponseDTO
     {
         // 1. Check eligibility - use event-specific if event ID provided
@@ -80,7 +89,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         if ($dto->eventId !== null) {
             $event = $this->eventRepository->findById(new \App\Domain\ValueObjects\EventId($dto->eventId));
             if ($event !== null) {
-                $registrationClosesAt = $event->startDate();
+                $registrationClosesAt = $this->cappedToTableStart($event->startDate(), $dto->startsAt);
             }
         }
 
@@ -335,8 +344,16 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         if ($dto->eventId !== null && $registrationClosesAt === null) {
             $event = $this->eventRepository->findById(new \App\Domain\ValueObjects\EventId($dto->eventId));
             if ($event !== null) {
-                $registrationClosesAt = $event->startDate();
+                $registrationClosesAt = $this->cappedToTableStart($event->startDate(), $dto->startsAt);
             }
+        }
+
+        // A kept date must not end up after the (possibly earlier) start of the table
+        if ($registrationClosesAt !== null) {
+            $registrationClosesAt = $this->cappedToTableStart(
+                \DateTimeImmutable::createFromInterface($registrationClosesAt),
+                $dto->startsAt,
+            );
         }
 
         // Update the table via the service

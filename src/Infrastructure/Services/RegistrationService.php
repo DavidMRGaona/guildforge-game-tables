@@ -262,7 +262,57 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
     public function cancel(string $participantId): ParticipantResponseDTO
     {
+        $participant = $this->participantRepository->find(new ParticipantId($participantId));
+
+        // An unknown id still fails under the lock, as before
+        if ($participant !== null) {
+            $this->ensureTableNotStarted($participant);
+        }
+
         return $this->cancelById($participantId, byOrganization: false);
+    }
+
+    /**
+     * Participants cancel by themselves only before the table starts, also on tables that admit
+     * registrations in play. Checked before the lock (the start does not change under it) and
+     * never in cancelLocked(), which the panel's cancellations share. A registration that cannot
+     * be cancelled anyway is left to cancelLocked() so it reports its status error.
+     *
+     * @throws CannotCancelException
+     */
+    private function ensureTableNotStarted(Participant $participant): void
+    {
+        if (! $participant->canBeCancelled()) {
+            return;
+        }
+
+        if (! $this->tableAdmitsWithdrawal($participant->gameTableId, new DateTimeImmutable())) {
+            throw CannotCancelException::tableStarted($participant->id->value);
+        }
+    }
+
+    /**
+     * Without its table there is no start to compare with: the participant cannot cancel by
+     * themselves (the panel still can).
+     */
+    private function tableAdmitsWithdrawal(GameTableId $gameTableId, DateTimeImmutable $now): bool
+    {
+        $gameTable = $this->gameTableRepository->find($gameTableId);
+
+        return $gameTable !== null && $gameTable->canParticipantWithdraw($now);
+    }
+
+    public function withdrawalRefusal(string $participantId, ?DateTimeImmutable $now = null): ?string
+    {
+        $participant = $this->participantRepository->find(new ParticipantId($participantId));
+
+        if ($participant === null || ! $participant->canBeCancelled()) {
+            return 'not_allowed';
+        }
+
+        return $this->tableAdmitsWithdrawal($participant->gameTableId, $now ?? new DateTimeImmutable())
+            ? null
+            : 'table_started';
     }
 
     /**
@@ -382,7 +432,9 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             throw ParticipantNotFoundException::forUserInTable($userId, $gameTableId);
         }
 
-        return $this->cancel($participant->id->value);
+        $this->ensureTableNotStarted($participant);
+
+        return $this->cancelById($participant->id->value, byOrganization: false);
     }
 
     public function confirm(string $participantId): ParticipantResponseDTO
@@ -584,10 +636,8 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     public function registerGuest(RegisterParticipantDTO $dto): ParticipantResponseDTO
     {
         [$participant, $rank] = $this->lock->forTable($dto->gameTableId, function () use ($dto): array {
-            if ($dto->email !== null) {
-                // The same rules the table page applies, checked under the lock
-                $this->eligibilityService->ensureGuestCanRegister($dto->gameTableId, $dto->email, $dto->role);
-            }
+            // The same rules the table page applies, checked under the lock (also without email)
+            $this->eligibilityService->ensureGuestCanRegister($dto->gameTableId, $dto->email, $dto->role);
 
             return $this->withRank($this->placeGuest($dto));
         });
@@ -599,6 +649,11 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
     public function cancelByToken(string $token): ParticipantResponseDTO
     {
+        $participant = $this->participantRepository->findByCancellationToken($token)
+            ?? throw ParticipantNotFoundException::byToken($token);
+
+        $this->ensureTableNotStarted($participant);
+
         [$participant, $wasConfirmed, $promoted] = $this->lock->forCancellationToken($token, function () use ($token): array {
             // Read under the lock: a link followed twice at once frees one seat
             $participant = $this->participantRepository->findByCancellationToken($token);

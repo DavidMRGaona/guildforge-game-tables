@@ -90,8 +90,8 @@ final class RegistrationController extends Controller
             return back()->with('success', __('game-tables::messages.success.cancelled'));
         } catch (ParticipantNotFoundException) {
             return back()->with('error', __('game-tables::messages.errors.not_found'));
-        } catch (CannotCancelException) {
-            return back()->with('error', __('game-tables::messages.errors.cannot_cancel'));
+        } catch (CannotCancelException $e) {
+            return back()->with('error', $this->cancellationRefusal($e));
         }
     }
 
@@ -139,6 +139,17 @@ final class RegistrationController extends Controller
     }
 
     /**
+     * Why a participant's own cancellation was refused: the table has started, or the
+     * registration is no longer active.
+     */
+    private function cancellationRefusal(CannotCancelException $e): string
+    {
+        return (string) __($e->reason === 'table_started'
+            ? 'game-tables::messages.errors.cannot_cancel_started'
+            : 'game-tables::messages.errors.cannot_cancel');
+    }
+
+    /**
      * Show the cancellation confirmation page.
      */
     public function showCancelConfirmation(string $token): Response|RedirectResponse
@@ -157,6 +168,9 @@ final class RegistrationController extends Controller
                 ->with('error', __('game-tables::messages.errors.table_not_found'));
         }
 
+        // The rule the cancellation applies: an active registration on a table that has not started
+        $refusal = $this->registrationService->withdrawalRefusal($participant->id);
+
         return Inertia::render('GameTables/CancelRegistration', [
             'participant' => $participant->toArray(),
             'gameTable' => [
@@ -165,7 +179,8 @@ final class RegistrationController extends Controller
                 'startsAt' => $gameTable->startsAt,
             ],
             'token' => $token,
-            'canCancel' => ! in_array($participant->status->value, ['cancelled', 'rejected', 'no_show'], true),
+            'canCancel' => $refusal === null,
+            'tableStarted' => $refusal === 'table_started',
             'seo' => $this->seo->forPage(new SeoPageDTO(
                 title: (string) __('game-tables::messages.seo.cancel_registration_title'),
                 noindex: true,
@@ -186,9 +201,9 @@ final class RegistrationController extends Controller
         } catch (ParticipantNotFoundException) {
             return redirect()->route('gametables.index')
                 ->with('error', __('game-tables::messages.errors.invalid_token'));
-        } catch (CannotCancelException) {
+        } catch (CannotCancelException $e) {
             return redirect()->route('gametables.index')
-                ->with('error', __('game-tables::messages.errors.cannot_cancel'));
+                ->with('error', $this->cancellationRefusal($e));
         }
     }
 }

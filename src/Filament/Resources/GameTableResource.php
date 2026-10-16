@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources;
 
+use Carbon\CarbonImmutable;
+use Closure;
+use DateTimeInterface;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
@@ -382,7 +385,9 @@ final class GameTableResource extends BaseResource
                                 DateTimePicker::make('registration_closes_at')
                                     ->label(__('game-tables::messages.fields.registration_closes_at'))
                                     ->native(false)
-                                    ->displayFormat('d/m/Y H:i'),
+                                    ->displayFormat('d/m/Y H:i')
+                                    ->helperText(__('game-tables::messages.fields.registration_closes_at_help'))
+                                    ->rule(self::closesNoLaterThanTheTable()),
 
                                 Toggle::make('auto_confirm')
                                     ->label(__('game-tables::messages.fields.auto_confirm'))
@@ -624,6 +629,64 @@ final class GameTableResource extends BaseResource
             'create' => CreateGameTable::route('/create'),
             'edit' => EditGameTable::route('/{record}/edit'),
         ];
+    }
+
+    /**
+     * The closing date cannot pass the moment the server closes registrations anyway
+     * (GameTable::isPastRegistrationDeadline()): the start of the table or, when it admits
+     * registrations in play, its end.
+     */
+    private static function closesNoLaterThanTheTable(): Closure
+    {
+        return fn (Get $get): Closure => function (string $attribute, mixed $value, Closure $fail) use ($get): void {
+            // The rule must never throw: reading a malformed date from the form state can already
+            // fail, and the field itself reports it
+            try {
+                $closesAt = self::toDate($value);
+                $startsAt = self::toDate($get('starts_at'));
+                $inPlay = (bool) $get('accepts_registrations_in_progress');
+                $duration = $get('duration_minutes');
+            } catch (\Throwable) {
+                return;
+            }
+
+            if ($closesAt === null || $startsAt === null) {
+                return;
+            }
+
+            // The duration field reports its own error
+            if ($inPlay && (! is_numeric($duration) || (int) $duration < 1 || (int) $duration > 525600)) {
+                return;
+            }
+
+            $limit = $inPlay ? $startsAt->addMinutes((int) $duration) : $startsAt;
+
+            if ($closesAt <= $limit) {
+                return;
+            }
+
+            $fail(__('game-tables::messages.validation.'.($inPlay ? 'registration_closes_after_end' : 'registration_closes_after_start'), [
+                'date' => $limit->format('d/m/Y H:i'),
+            ]));
+        };
+    }
+
+    private static function toDate(mixed $value): ?CarbonImmutable
+    {
+        if ($value instanceof DateTimeInterface) {
+            return CarbonImmutable::instance($value);
+        }
+
+        if (! is_string($value) || $value === '') {
+            return null;
+        }
+
+        // The rule must never throw: an unparseable date is reported by the field itself
+        try {
+            return CarbonImmutable::parse($value);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /**

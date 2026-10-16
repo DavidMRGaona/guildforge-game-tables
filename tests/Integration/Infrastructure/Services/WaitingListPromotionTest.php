@@ -397,6 +397,53 @@ final class WaitingListPromotionTest extends ModuleTestCase
         $this->assertSame('confirmed', $waiting->refresh()->status->value);
     }
 
+    public function test_after_the_start_a_participant_cannot_cancel(): void
+    {
+        $this->table->update(['starts_at' => now()->subMinute()]);
+        $leaving = $this->participant('player', 'confirmed');
+        $waiting = $this->participant('player', 'waiting_list', 1);
+
+        try {
+            app(RegistrationServiceInterface::class)->cancel($leaving->id);
+            $this->fail('A participant cancelled after the start of the table');
+        } catch (CannotCancelException $e) {
+            $this->assertSame('table_started', $e->reason);
+        }
+
+        $this->assertSame('confirmed', $leaving->refresh()->status->value);
+        $this->assertSame('waiting_list', $waiting->refresh()->status->value);
+    }
+
+    public function test_after_the_start_the_organisation_cancels_and_promotes_nobody(): void
+    {
+        $this->table->update(['starts_at' => now()->subMinute()]);
+        $leaving = $this->participant('player', 'confirmed');
+        $this->participant('player', 'confirmed');
+        $waiting = $this->participant('player', 'waiting_list', 1);
+
+        app(RegistrationServiceInterface::class)->cancelByAdmin($leaving->id);
+
+        $this->assertSame('cancelled', $leaving->refresh()->status->value);
+        $this->assertSame('waiting_list', $waiting->refresh()->status->value);
+        Notification::assertSentTimes(WaitingListPromotionNotification::class, 0);
+        $this->assertSame(1, $this->confirmedPlayers());
+    }
+
+    // Tables that admit registrations in play close the waiting list at the start as well
+    public function test_after_the_start_rejecting_a_pending_player_promotes_nobody(): void
+    {
+        $this->manualTableWithTheListOn();
+        $this->table->update(['starts_at' => now()->subMinute(), 'accepts_registrations_in_progress' => true]);
+        $this->participant('player', 'confirmed');
+        $pending = $this->participant('player', 'pending');
+        $waiting = $this->participant('player', 'waiting_list', 1);
+
+        app(RegistrationServiceInterface::class)->reject($pending->id);
+
+        $this->assertSame('rejected', $pending->refresh()->status->value);
+        $this->assertSame('waiting_list', $waiting->refresh()->status->value);
+    }
+
     private function manualTableWithTheListOn(): void
     {
         config()->set('modules.settings.game-tables.registration.waiting_list_enabled', true);

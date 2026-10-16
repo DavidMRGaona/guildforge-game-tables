@@ -133,6 +133,7 @@ export interface GameTable {
     membersEarlyAccessDays: number;
     registrationOpensAt: string | null;
     registrationClosesAt: string | null;
+    effectiveRegistrationClosesAt: string | null;
     autoConfirm: boolean;
     acceptsRegistrationsInProgress: boolean;
     isPublished: boolean;

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Application\Services;
 
+use DateTimeImmutable;
 use Modules\GameTables\Application\DTOs\ParticipantResponseDTO;
 use Modules\GameTables\Application\DTOs\ProfileParticipationDTO;
 use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
@@ -12,8 +13,19 @@ interface RegistrationServiceInterface
 {
     public function register(RegisterParticipantDTO $dto): ParticipantResponseDTO;
 
+    /**
+     * The participant's own cancellation: refused once the table has started.
+     *
+     * @throws \Modules\GameTables\Domain\Exceptions\CannotCancelException when the table has started or the registration is no longer active
+     */
     public function cancel(string $participantId): ParticipantResponseDTO;
 
+    /**
+     * The signed-in user's own cancellation: refused once the table has started.
+     *
+     * @throws \Modules\GameTables\Domain\Exceptions\ParticipantNotFoundException when the user has no registration in the table
+     * @throws \Modules\GameTables\Domain\Exceptions\CannotCancelException when the table has started or the registration is no longer active
+     */
     public function cancelByUser(string $gameTableId, string $userId): ParticipantResponseDTO;
 
     /**
@@ -88,9 +100,20 @@ interface RegistrationServiceInterface
     public function registerGuest(RegisterParticipantDTO $dto): ParticipantResponseDTO;
 
     /**
-     * Cancel a registration using a cancellation token.
+     * Cancel a registration using a cancellation token (the guest's own cancellation): refused
+     * once the table has started.
+     *
+     * @throws \Modules\GameTables\Domain\Exceptions\ParticipantNotFoundException when no registration has the token
+     * @throws \Modules\GameTables\Domain\Exceptions\CannotCancelException when the table has started or the registration is no longer active
      */
     public function cancelByToken(string $token): ParticipantResponseDTO;
+
+    /**
+     * Why the participant can no longer cancel the registration themselves (the table page or the
+     * emailed link): 'not_allowed' when it is not active or does not exist, 'table_started' once
+     * the table has started; null while they can. The panel's cancellations have no such limit.
+     */
+    public function withdrawalRefusal(string $participantId, ?DateTimeImmutable $now = null): ?string;
 
     /**
      * Find a participant by cancellation token.

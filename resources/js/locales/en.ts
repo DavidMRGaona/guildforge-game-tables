@@ -141,8 +141,8 @@ export default {
             yourStatus: 'Your registration',
             loginRequired: 'Log in to register',
             joinWaitingList: 'Join the waiting list',
-            waitingListHelp: 'The table is full. If a seat is freed before registrations close, you will take it automatically, in waiting list order, and we will let you know by email.',
-            waitingListHelpManual: 'The table is full. If a seat is freed before registrations close, you will take it in waiting list order, pending confirmation by the game master, and we will let you know by email.',
+            waitingListHelp: 'The table is full. If a seat is freed before the table starts (or before registrations close, if that comes first), you will take it automatically, in waiting list order, and we will let you know by email.',
+            waitingListHelpManual: 'The table is full. If a seat is freed before the table starts (or before registrations close, if that comes first), you will take it in waiting list order, pending confirmation by the game master, and we will let you know by email.',
             spectatorOnly: 'Player seats are taken: you will register as a spectator',
             selectRole: 'Select your role',
             addNotes: 'Add notes (optional)',
@@ -151,6 +151,7 @@ export default {
             spectatorsFull: 'No spectator spots available',
             confirmedAt: 'Confirmed on',
             registeredAt: 'Registered on',
+            withdrawalClosed: 'The session has already started: you can no longer cancel your registration',
         },
         status: {
             draft: 'Draft',
@@ -482,5 +483,6 @@ export default {
         alreadyCancelled: 'This registration has already been cancelled or cannot be modified.',
         viewTable: 'View table',
         guest: 'Guest',
+        tableStarted: 'The session has already started: you can no longer cancel your registration.',
     },
 };

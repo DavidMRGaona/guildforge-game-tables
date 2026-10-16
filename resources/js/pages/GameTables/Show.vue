@@ -173,7 +173,7 @@ const hasSafetySection = computed(() => {
 const hasRegistrationInfo = computed(() => {
     return (
         props.table.registrationOpensAt ||
-        props.table.registrationClosesAt ||
+        props.table.effectiveRegistrationClosesAt ||
         props.table.membersEarlyAccessDays > 0
     );
 });
@@ -529,9 +529,9 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                                 {{ formatRegistrationDate(table.registrationOpensAt) }}
                             </p>
 
-                            <p v-if="table.registrationClosesAt">
+                            <p v-if="table.effectiveRegistrationClosesAt">
                                 <span class="font-medium">{{ t('gameTables.registration.closesAtDate') }}:</span>
-                                {{ formatRegistrationDate(table.registrationClosesAt) }}
+                                {{ formatRegistrationDate(table.effectiveRegistrationClosesAt) }}
                             </p>
 
                             <p

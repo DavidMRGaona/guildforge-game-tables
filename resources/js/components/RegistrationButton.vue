@@ -201,9 +201,13 @@ const canRegister = computed(() => {
     return true;
 });
 
+// An active registration decides the button: closed reasons only affect who is not registered
+const hasActiveRegistration = computed(() => !!registration.value && !isFinalStatus(registration.value.status));
+
+// The server decides: an active registration on a table that has not started
 const canCancel = computed(() => {
-    if (!registration.value) return false;
-    return !isFinalStatus(registration.value.status);
+    if (!hasActiveRegistration.value) return false;
+    return eligibility.value?.canCancel === true;
 });
 
 const isTableFull = computed(() => spotsAvailable.value <= 0);
@@ -240,9 +244,13 @@ const waitingListHelp = computed(() => {
         : t('gameTables.registration.waitingListHelp');
 });
 
+// Reasons that close the registrations for everyone, whatever the seats
+const CLOSED_REASONS: readonly string[] = ['registration_closed', 'table_started', 'table_ended', 'invitation_only'];
+
 const isRegistrationClosed = computed(() => {
     if (!eligibility.value) return true;
-    return !eligibility.value.eligible && eligibility.value.reason === 'registration_closed';
+    const reason = eligibility.value.reason;
+    return !eligibility.value.eligible && reason !== null && CLOSED_REASONS.includes(reason);
 });
 
 const registrationOpensAt = computed(() => {
@@ -264,6 +272,15 @@ const canRegisterAsGuest = computed(() => {
     return guest.eligible || guest.spectator.eligible;
 });
 
+// A visitor on a table closed for everyone (not full, not members only): the server's message
+// replaces the invitation to log in, since signing in would not open anything
+const guestRegistrationClosed = computed(() => {
+    if (isAuthenticated.value) return false;
+    const guest = props.guestEligibility;
+    if (!guest || guest.eligible || guest.spectator.eligible) return false;
+    return guest.reason !== null && CLOSED_REASONS.includes(guest.reason);
+});
+
 // Button text and styling
 const buttonText = computed(() => {
     // For unauthenticated users on open tables, show guest registration option
@@ -273,15 +290,23 @@ const buttonText = computed(() => {
             if (guestSpectatorOnly.value) return t('gameTables.registration.registerAsSpectator');
             return t('guestRegistration.registerAsGuest');
         }
+        if (guestRegistrationClosed.value) {
+            return props.guestEligibility?.message ?? t('gameTables.registration.closed');
+        }
         return t('gameTables.registration.loginRequired');
     }
 
-    if (registration.value && !isFinalStatus(registration.value.status)) {
-        return t('gameTables.registration.cancelRegistration');
+    if (hasActiveRegistration.value) {
+        return canCancel.value
+            ? t('gameTables.registration.cancelRegistration')
+            : t('gameTables.registration.withdrawalClosed');
     }
 
     if (isRegistrationClosed.value) {
-        return t('gameTables.registration.closed');
+        // Say why: the time of the table or the invitation
+        return eligibility.value?.reason === 'registration_closed'
+            ? t('gameTables.registration.closed')
+            : (eligibility.value?.message ?? t('gameTables.registration.closed'));
     }
 
     if (registrationOpensAt.value) {
@@ -310,8 +335,8 @@ const buttonText = computed(() => {
 // the gate does not apply or the button is disabled for its own reasons anyway
 const verificationBlockedAction = computed<VerificationGateAction | null>(() => {
     if (!gate.blocked.value || !isAuthenticated.value) return null;
+    if (hasActiveRegistration.value) return canCancel.value ? 'cancelRegistration' : null;
     if (isRegistrationClosed.value || registrationOpensAt.value) return null;
-    if (registration.value && canCancel.value) return 'cancelRegistration';
     return canRegister.value ? 'register' : null;
 });
 const verificationBlocked = computed(() => verificationBlockedAction.value !== null);
@@ -329,9 +354,11 @@ const buttonDisabled = computed(() => {
     if (!isAuthenticated.value) {
         // For guest registration, button is enabled if open to everyone
         if (canRegisterAsGuest.value) return false;
-        return false; // Login redirect still works
+        // Nothing to log in for when the table is closed for everyone
+        return guestRegistrationClosed.value; // Otherwise the login redirect still works
     }
     if (verificationBlocked.value) return true;
+    if (hasActiveRegistration.value) return !canCancel.value;
     if (isRegistrationClosed.value) return true;
     if (registrationOpensAt.value) return true;
     if (!canRegister.value && !canCancel.value) return true;
@@ -404,8 +431,9 @@ function handleClick(): void {
     // The button is disabled and says why; the role dialog never opens
     if (verificationBlocked.value) return;
 
-    if (registration.value && canCancel.value) {
-        showCancelConfirm.value = true;
+    // An active registration can only be cancelled: it never falls through to registering
+    if (hasActiveRegistration.value) {
+        if (canCancel.value) showCancelConfirm.value = true;
         return;
     }
 

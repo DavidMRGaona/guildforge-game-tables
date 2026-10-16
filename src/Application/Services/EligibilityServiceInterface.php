@@ -88,5 +88,5 @@ interface EligibilityServiceInterface
      *
      * @throws \Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException
      */
-    public function ensureGuestCanRegister(string $gameTableId, string $email, ParticipantRole $role = ParticipantRole::Player): void;
+    public function ensureGuestCanRegister(string $gameTableId, ?string $email, ParticipantRole $role = ParticipantRole::Player): void;
 }

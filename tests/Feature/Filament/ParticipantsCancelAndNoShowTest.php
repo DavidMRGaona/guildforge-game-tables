@@ -291,6 +291,21 @@ final class ParticipantsCancelAndNoShowTest extends ModuleTestCase
         Notification::assertNothingSent();
     }
 
+    // The panel has no time limit, but after the start nobody leaves the waiting list automatically
+    public function test_after_the_start_the_organisation_cancels_and_nobody_is_promoted(): void
+    {
+        $this->setWaitingList(true);
+        $table = $this->table(['max_players' => 1, 'starts_at' => now()->subHour()]);
+        $row = $this->participant($table, 'confirmed');
+        $waiting = $this->participant($table, 'waiting_list', ['waiting_list_position' => 1]);
+
+        $this->participants($table)->callTableAction('cancelRegistration', $row)->assertHasNoTableActionErrors();
+
+        $this->assertSame('cancelled', $row->refresh()->status->value);
+        $this->assertSame('waiting_list', $waiting->refresh()->status->value);
+        Notification::assertSentTimes(WaitingListPromotionNotification::class, 0);
+    }
+
     /**
      * @return Testable<ParticipantsRelationManager>
      */

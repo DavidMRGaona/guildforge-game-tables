@@ -129,6 +129,45 @@ final class RegistrationSlotPropsTest extends ModuleTestCase
         $this->assertSame($routeFiles, $listed);
     }
 
+    // The button shows why instead of "Las inscripciones abren el..."
+    public function test_an_invite_table_tells_a_signed_in_user_it_is_by_invitation_only(): void
+    {
+        $this->table->update(['registration_type' => 'invite', 'registration_opens_at' => now()->addDay()]);
+
+        $this->actingAs(UserModel::factory()->create())
+            ->get(route('gametables.show', $this->table->slug))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('eligibility.eligible', false)
+                ->where('eligibility.reason', 'invitation_only')
+                ->where('eligibility.message', 'Esta mesa es solo por invitación: la organización inscribe a los jugadores')
+                ->where('eligibility.canRegisterAt', null)
+                ->where('eligibility.spectator.reason', 'invitation_only'));
+    }
+
+    public function test_the_invitation_only_message_is_translated_in_both_languages(): void
+    {
+        foreach (['es' => 'Esta mesa es solo por invitación: la organización inscribe a los jugadores', 'en' => 'This table is by invitation only: the organisation registers the players'] as $locale => $text) {
+            $this->assertSame($text, trans('game-tables::messages.errors.invitation_only', [], $locale));
+        }
+    }
+
+    public function test_the_cannot_cancel_started_message_is_translated_in_both_languages(): void
+    {
+        foreach (['es' => 'La partida ya ha comenzado: ya no puedes cancelar la inscripción', 'en' => 'The session has already started: you can no longer cancel your registration'] as $locale => $text) {
+            $this->assertSame($text, trans('game-tables::messages.errors.cannot_cancel_started', [], $locale));
+        }
+    }
+
+    public function test_the_in_play_help_text_is_translated_in_both_languages(): void
+    {
+        foreach (['es' => 'Admite inscripciones desde el inicio hasta el final de la partida, aunque no se haya pulsado «Iniciar», solo con plazas libres: sin lista de espera ni bajas', 'en' => 'Admits registrations from the start to the end of the session, even if «Start» was not pressed, only with free seats: no waiting list and no cancellations'] as $locale => $text) {
+            $this->assertSame($text, trans('game-tables::messages.fields.accepts_registrations_in_progress_help', [], $locale));
+        }
+
+        $this->assertSame('Allow registrations during the session', trans('game-tables::messages.fields.accepts_registrations_in_progress', [], 'en'));
+    }
+
     private function assertSlotProps(Assert $page): Assert
     {
         $page->component('GameTables/Show', shouldExist: false);

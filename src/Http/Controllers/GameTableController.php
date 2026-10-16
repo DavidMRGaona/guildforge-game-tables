@@ -199,12 +199,15 @@ final class GameTableController extends Controller
             // What a visitor without an account can do: the same rules the guest registration applies
             $guestEligibility = $this->eligibilityService->guestEligibility($table->id);
         } else {
-            // Get user eligibility
-            $eligibility = $this->eligibilityService->canRegisterById($table->id, (string) $user->id);
-
             // Get current user's registration
             $registration = $this->registrationService->findByTableAndUser($table->id, (string) $user->id);
             $userRegistration = $registration !== null ? $this->formatRegistrationForFrontend($registration) : null;
+
+            $eligibility = [
+                ...$this->eligibilityService->canRegisterById($table->id, (string) $user->id),
+                // Whether the button may offer the cancellation: the rule the server applies on submit
+                'canCancel' => $registration !== null && $this->registrationService->withdrawalRefusal($registration->id) === null,
+            ];
         }
 
         return Inertia::render('GameTables/Show', [
