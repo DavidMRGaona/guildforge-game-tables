@@ -418,8 +418,9 @@ function handleClick(): void {
     // The button is disabled and says why; the role dialog never opens
     if (verificationBlocked.value) return;
 
-    if (registration.value && canCancel.value) {
-        showCancelConfirm.value = true;
+    // An active registration can only be cancelled: it never falls through to registering
+    if (hasActiveRegistration.value) {
+        if (canCancel.value) showCancelConfirm.value = true;
         return;
     }
 

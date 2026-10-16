@@ -49,34 +49,48 @@ final class RegistrationButtonSourceTest extends TestCase
         $source = $this->source('components/RegistrationButton.vue');
 
         $disabled = $this->computedBody($source, 'buttonDisabled');
-        $this->assertLessThan(
-            strpos($disabled, 'isRegistrationClosed.value'),
-            strpos($disabled, 'hasActiveRegistration.value'),
-            'buttonDisabled must look at the active registration before the closed reasons'
-        );
         $this->assertStringContainsString('if (hasActiveRegistration.value) return !canCancel.value;', $disabled);
+        $this->assertBefore($disabled, 'hasActiveRegistration.value', 'isRegistrationClosed.value');
 
         $gate = $this->computedBody($source, 'verificationBlockedAction');
-        $this->assertLessThan(
-            strpos($gate, 'isRegistrationClosed.value'),
-            strpos($gate, 'hasActiveRegistration.value'),
-            'verificationBlockedAction must look at the active registration before the closed reasons'
-        );
+        $this->assertStringContainsString("if (hasActiveRegistration.value) return canCancel.value ? 'cancelRegistration' : null;", $gate);
+        $this->assertBefore($gate, 'hasActiveRegistration.value', 'isRegistrationClosed.value');
 
         $text = $this->computedBody($source, 'buttonText');
-        $this->assertLessThan(
-            strpos($text, 'isRegistrationClosed.value'),
-            strpos($text, 'hasActiveRegistration.value'),
-        );
         $this->assertStringContainsString("t('gameTables.registration.withdrawalClosed')", $text);
+        $this->assertBefore($text, 'hasActiveRegistration.value', 'isRegistrationClosed.value');
+    }
+
+    public function test_a_click_with_an_active_registration_never_falls_through_to_registering(): void
+    {
+        $source = $this->source('components/RegistrationButton.vue');
+        $found = preg_match('/^function handleClick\(\).*?^\}/ms', $source, $match);
+        $this->assertSame(1, $found);
+
+        $this->assertStringContainsString(
+            "if (hasActiveRegistration.value) {\n        if (canCancel.value) showCancelConfirm.value = true;\n        return;\n    }",
+            $match[0]
+        );
+        $this->assertBefore($match[0], 'hasActiveRegistration.value', 'showRoleSelect.value = true');
     }
 
     public function test_a_closed_table_shows_the_server_message_unless_only_the_date_closed_it(): void
     {
         $text = $this->computedBody($this->source('components/RegistrationButton.vue'), 'buttonText');
 
-        $this->assertStringContainsString("eligibility.value?.reason === 'registration_closed'", $text);
-        $this->assertStringContainsString('eligibility.value?.message', $text);
+        $this->assertStringContainsString(
+            "eligibility.value?.reason === 'registration_closed'\n            ? t('gameTables.registration.closed')\n            : (eligibility.value?.message ?? t('gameTables.registration.closed'));",
+            $text
+        );
+    }
+
+    private function assertBefore(string $haystack, string $first, string $second): void
+    {
+        $a = strpos($haystack, $first);
+        $b = strpos($haystack, $second);
+        $this->assertNotFalse($a, "{$first} missing");
+        $this->assertNotFalse($b, "{$second} missing");
+        $this->assertLessThan($b, $a, "{$first} must come before {$second}");
     }
 
     public function test_the_eligibility_type_carries_the_cancel_flag(): void
