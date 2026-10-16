@@ -11,7 +11,7 @@ return [
         'table_date' => 'Date',
         'table_location' => 'Location',
         'view_table' => 'View table',
-        'cancel_intro' => 'If you need to cancel your registration, use the following link:',
+        'cancel_intro' => 'If you need to cancel your registration before the table starts, use the following link:',
         'cancel_button' => 'Cancel registration',
         'gdpr_notice' => 'Your data will be automatically deleted after the session date, in accordance with our privacy policy.',
         'role_player' => 'player',

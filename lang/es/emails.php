@@ -11,7 +11,7 @@ return [
         'table_date' => 'Fecha',
         'table_location' => 'Ubicación',
         'view_table' => 'Ver mesa',
-        'cancel_intro' => 'Si necesitas cancelar tu inscripción, usa el siguiente enlace:',
+        'cancel_intro' => 'Si necesitas cancelar tu inscripción antes del inicio de la partida, usa el siguiente enlace:',
         'cancel_button' => 'Cancelar inscripción',
         'gdpr_notice' => 'Tus datos serán eliminados automáticamente después de la fecha de la partida, de acuerdo con nuestra política de privacidad.',
         'role_player' => 'jugador',
