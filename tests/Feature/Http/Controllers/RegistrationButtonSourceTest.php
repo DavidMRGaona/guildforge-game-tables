@@ -93,6 +93,26 @@ final class RegistrationButtonSourceTest extends TestCase
         $this->assertLessThan($b, $a, "{$first} must come before {$second}");
     }
 
+    public function test_a_visitor_on_a_closed_table_sees_the_server_message_disabled_instead_of_the_login_button(): void
+    {
+        $source = $this->source('components/RegistrationButton.vue');
+
+        $closed = $this->computedBody($source, 'guestRegistrationClosed');
+        $this->assertStringContainsString('if (isAuthenticated.value) return false;', $closed);
+        $this->assertStringContainsString('if (!guest || guest.eligible || guest.spectator.eligible) return false;', $closed);
+        $this->assertStringContainsString('return guest.reason !== null && CLOSED_REASONS.includes(guest.reason);', $closed);
+
+        $text = $this->computedBody($source, 'buttonText');
+        $this->assertStringContainsString(
+            "if (guestRegistrationClosed.value) {\n            return props.guestEligibility?.message ?? t('gameTables.registration.closed');\n        }\n        return t('gameTables.registration.loginRequired');",
+            $text
+        );
+
+        $disabled = $this->computedBody($source, 'buttonDisabled');
+        $this->assertStringContainsString('return guestRegistrationClosed.value;', $disabled);
+        $this->assertStringNotContainsString('return false; // Login redirect still works', $disabled);
+    }
+
     public function test_the_eligibility_type_carries_the_cancel_flag(): void
     {
         $this->assertMatchesRegularExpression('/canCancel: boolean;/', $this->source('types/registration.ts'));

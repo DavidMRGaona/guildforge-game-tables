@@ -272,6 +272,15 @@ const canRegisterAsGuest = computed(() => {
     return guest.eligible || guest.spectator.eligible;
 });
 
+// A visitor on a table closed for everyone (not full, not members only): the server's message
+// replaces the invitation to log in, since signing in would not open anything
+const guestRegistrationClosed = computed(() => {
+    if (isAuthenticated.value) return false;
+    const guest = props.guestEligibility;
+    if (!guest || guest.eligible || guest.spectator.eligible) return false;
+    return guest.reason !== null && CLOSED_REASONS.includes(guest.reason);
+});
+
 // Button text and styling
 const buttonText = computed(() => {
     // For unauthenticated users on open tables, show guest registration option
@@ -280,6 +289,9 @@ const buttonText = computed(() => {
             if (guestJoinsWaitingList.value) return t('gameTables.registration.joinWaitingList');
             if (guestSpectatorOnly.value) return t('gameTables.registration.registerAsSpectator');
             return t('guestRegistration.registerAsGuest');
+        }
+        if (guestRegistrationClosed.value) {
+            return props.guestEligibility?.message ?? t('gameTables.registration.closed');
         }
         return t('gameTables.registration.loginRequired');
     }
@@ -342,7 +354,8 @@ const buttonDisabled = computed(() => {
     if (!isAuthenticated.value) {
         // For guest registration, button is enabled if open to everyone
         if (canRegisterAsGuest.value) return false;
-        return false; // Login redirect still works
+        // Nothing to log in for when the table is closed for everyone
+        return guestRegistrationClosed.value; // Otherwise the login redirect still works
     }
     if (verificationBlocked.value) return true;
     if (hasActiveRegistration.value) return !canCancel.value;
