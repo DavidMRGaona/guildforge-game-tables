@@ -639,18 +639,23 @@ final class GameTableResource extends BaseResource
     private static function closesNoLaterThanTheTable(): Closure
     {
         return fn (Get $get): Closure => function (string $attribute, mixed $value, Closure $fail) use ($get): void {
-            $closesAt = self::toDate($value);
-            $startsAt = self::toDate($get('starts_at'));
+            // The rule must never throw: reading a malformed date from the form state can already
+            // fail, and the field itself reports it
+            try {
+                $closesAt = self::toDate($value);
+                $startsAt = self::toDate($get('starts_at'));
+                $inPlay = (bool) $get('accepts_registrations_in_progress');
+                $duration = $get('duration_minutes');
+            } catch (\Throwable) {
+                return;
+            }
 
             if ($closesAt === null || $startsAt === null) {
                 return;
             }
 
-            $inPlay = (bool) $get('accepts_registrations_in_progress');
-            $duration = $get('duration_minutes');
-
             // The duration field reports its own error
-            if ($inPlay && ! is_numeric($duration)) {
+            if ($inPlay && (! is_numeric($duration) || (int) $duration < 1 || (int) $duration > 525600)) {
                 return;
             }
 
@@ -672,7 +677,16 @@ final class GameTableResource extends BaseResource
             return CarbonImmutable::instance($value);
         }
 
-        return is_string($value) && $value !== '' ? CarbonImmutable::parse($value) : null;
+        if (! is_string($value) || $value === '') {
+            return null;
+        }
+
+        // The rule must never throw: an unparseable date is reported by the field itself
+        try {
+            return CarbonImmutable::parse($value);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /**

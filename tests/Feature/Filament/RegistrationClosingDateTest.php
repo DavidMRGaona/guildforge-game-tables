@@ -98,6 +98,26 @@ final class RegistrationClosingDateTest extends ModuleTestCase
             ->assertHasNoFormErrors(['registration_closes_at']);
     }
 
+    public function test_unparseable_dates_give_a_validation_error_instead_of_an_exception(): void
+    {
+        $this->save(['starts_at' => 'garbage', 'registration_closes_at' => 'garbage'])
+            ->assertHasFormErrors(['starts_at']);
+    }
+
+    public function test_an_unparseable_closing_date_alone_does_not_throw(): void
+    {
+        $this->save(['registration_closes_at' => 'garbage'])
+            ->assertHasFormErrors(['registration_closes_at']);
+    }
+
+    public function test_an_empty_or_absurd_duration_in_play_does_not_throw(): void
+    {
+        foreach ([null, '', -5, 'abc'] as $duration) {
+            $this->save(['duration_minutes' => $duration, 'accepts_registrations_in_progress' => true, 'registration_closes_at' => '2030-01-10 22:00:00'])
+                ->assertHasNoFormErrors(['registration_closes_at']);
+        }
+    }
+
     public function test_the_message_is_shown_in_english_under_the_en_locale(): void
     {
         app()->setLocale('en');
