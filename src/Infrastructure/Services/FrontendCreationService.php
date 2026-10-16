@@ -348,6 +348,14 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             }
         }
 
+        // A kept date must not end up after the (possibly earlier) start of the table
+        if ($registrationClosesAt !== null) {
+            $registrationClosesAt = $this->cappedToTableStart(
+                \DateTimeImmutable::createFromInterface($registrationClosesAt),
+                $dto->startsAt,
+            );
+        }
+
         // Update the table via the service
         $updateDto = new \Modules\GameTables\Application\DTOs\UpdateGameTableDTO(
             id: $tableId,
