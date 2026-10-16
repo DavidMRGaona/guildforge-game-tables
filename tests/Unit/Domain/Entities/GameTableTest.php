@@ -18,6 +18,7 @@ use Modules\GameTables\Domain\Enums\Tone;
 use Modules\GameTables\Domain\ValueObjects\GameSystemId;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Domain\ValueObjects\TimeSlot;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class GameTableTest extends TestCase
@@ -258,6 +259,129 @@ final class GameTableTest extends TestCase
         $table->registrationOpensAt = new DateTimeImmutable('2026-01-30 10:00:00');
 
         $this->assertTrue($table->isWaitingListOpen(new DateTimeImmutable('2026-01-28 10:00:00')));
+    }
+
+    public function test_registrations_close_at_the_start_of_the_table(): void
+    {
+        $table = $this->publishedTable();
+
+        $this->assertTrue($table->isPublicRegistrationOpen(new DateTimeImmutable('2026-02-01 17:59:59')));
+        $this->assertFalse($table->isPublicRegistrationOpen(new DateTimeImmutable('2026-02-01 18:00:00')));
+        $this->assertTrue($table->canUserRegister(false, new DateTimeImmutable('2026-02-01 17:59:59')));
+        $this->assertFalse($table->canUserRegister(false, new DateTimeImmutable('2026-02-01 18:00:00')));
+    }
+
+    public function test_a_closing_date_after_the_start_does_not_keep_registrations_open(): void
+    {
+        $table = $this->publishedTable();
+        $table->registrationClosesAt = new DateTimeImmutable('2026-02-02 10:00:00');
+
+        $this->assertTrue($table->isPastRegistrationDeadline(new DateTimeImmutable('2026-02-01 18:00:00')));
+        $this->assertFalse($table->isPublicRegistrationOpen(new DateTimeImmutable('2026-02-01 18:00:00')));
+    }
+
+    // Guards the configured date: it keeps closing first, inclusive of its exact second
+    public function test_a_closing_date_before_the_start_still_closes_them_first(): void
+    {
+        $table = $this->publishedTable();
+        $table->registrationClosesAt = new DateTimeImmutable('2026-01-31 20:00:00');
+
+        $this->assertTrue($table->isPublicRegistrationOpen(new DateTimeImmutable('2026-01-31 20:00:00')));
+        $this->assertFalse($table->isPublicRegistrationOpen(new DateTimeImmutable('2026-01-31 20:00:01')));
+    }
+
+    public function test_a_table_admitting_registrations_in_play_closes_them_at_its_end(): void
+    {
+        $table = $this->publishedTable(inPlay: true);
+
+        $this->assertFalse($table->isPastRegistrationDeadline(new DateTimeImmutable('2026-02-01 18:00:00')));
+        $this->assertTrue($table->isPublicRegistrationOpen(new DateTimeImmutable('2026-02-01 21:59:59')));
+        $this->assertTrue($table->isPastRegistrationDeadline(new DateTimeImmutable('2026-02-01 22:00:00')));
+        $this->assertFalse($table->isPublicRegistrationOpen(new DateTimeImmutable('2026-02-01 22:00:00')));
+    }
+
+    public function test_in_play_a_configured_closing_date_still_closes_them_first(): void
+    {
+        $table = $this->publishedTable(inPlay: true);
+        $table->registrationClosesAt = new DateTimeImmutable('2026-02-01 20:00:00');
+
+        $this->assertTrue($table->isPublicRegistrationOpen(new DateTimeImmutable('2026-02-01 20:00:00')));
+        $this->assertFalse($table->isPublicRegistrationOpen(new DateTimeImmutable('2026-02-01 20:00:01')));
+
+        $table->registrationClosesAt = new DateTimeImmutable('2026-02-03 10:00:00');
+
+        $this->assertFalse($table->isPublicRegistrationOpen(new DateTimeImmutable('2026-02-01 22:00:00')));
+    }
+
+    /**
+     * @return array<string, array{TableStatus, bool}>
+     */
+    public static function statusesDuringTheSession(): array
+    {
+        return [
+            'scheduled' => [TableStatus::Scheduled, true],
+            'full' => [TableStatus::Full, true],
+            'in progress' => [TableStatus::InProgress, true],
+            'completed' => [TableStatus::Completed, false],
+            'cancelled' => [TableStatus::Cancelled, false],
+            'draft' => [TableStatus::Draft, false],
+        ];
+    }
+
+    // In play, the time opens the session to registrations, not the director pressing «Iniciar»
+    #[DataProvider('statusesDuringTheSession')]
+    public function test_in_play_the_time_decides_whatever_the_manual_status(TableStatus $status, bool $admits): void
+    {
+        $table = $this->publishedTable(inPlay: true, status: $status);
+
+        $this->assertSame($admits, $table->canUserRegister(false, new DateTimeImmutable('2026-02-01 19:00:00')));
+    }
+
+    public function test_a_table_without_registrations_in_play_refuses_them_during_the_session(): void
+    {
+        $now = new DateTimeImmutable('2026-02-01 19:00:00');
+
+        $this->assertFalse($this->publishedTable()->canUserRegister(false, $now));
+        $this->assertFalse($this->publishedTable(status: TableStatus::InProgress)->canUserRegister(false, $now));
+    }
+
+    public function test_members_early_access_ends_at_the_start_of_the_table(): void
+    {
+        $table = $this->publishedTable();
+        $table->registrationOpensAt = new DateTimeImmutable('2026-02-05 10:00:00');
+        $table->membersEarlyAccessDays = 7;
+
+        $this->assertTrue($table->canUserRegister(true, new DateTimeImmutable('2026-02-01 17:00:00')));
+        $this->assertTrue($table->isMemberEarlyAccessActive(new DateTimeImmutable('2026-02-01 18:30:00')));
+        $this->assertFalse($table->canUserRegister(true, new DateTimeImmutable('2026-02-01 18:30:00')));
+    }
+
+    public function test_the_waiting_list_closes_at_the_start_of_the_table(): void
+    {
+        $table = $this->publishedTable();
+
+        $this->assertTrue($table->isWaitingListOpen(new DateTimeImmutable('2026-02-01 17:59:59')));
+        $this->assertFalse($table->isWaitingListOpen(new DateTimeImmutable('2026-02-01 18:00:00')));
+        $this->assertFalse($this->publishedTable(inPlay: true)->isWaitingListOpen(new DateTimeImmutable('2026-02-01 18:00:00')));
+    }
+
+    public function test_participants_withdraw_only_before_the_start(): void
+    {
+        foreach ([false, true] as $inPlay) {
+            $table = $this->publishedTable(inPlay: $inPlay);
+
+            $this->assertTrue($table->canParticipantWithdraw(new DateTimeImmutable('2026-02-01 17:59:59')));
+            $this->assertFalse($table->canParticipantWithdraw(new DateTimeImmutable('2026-02-01 18:00:00')));
+        }
+    }
+
+    private function publishedTable(bool $inPlay = false, TableStatus $status = TableStatus::Scheduled): GameTable
+    {
+        $table = $this->createGameTable($status);
+        $table->isPublished = true;
+        $table->acceptsRegistrationsInProgress = $inPlay;
+
+        return $table;
     }
 
     private function createGameTable(
