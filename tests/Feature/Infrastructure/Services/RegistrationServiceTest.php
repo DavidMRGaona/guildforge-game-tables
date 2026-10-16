@@ -9,6 +9,7 @@ use DateTimeImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use InvalidArgumentException;
+use LogicException;
 use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
 use Modules\GameTables\Application\Services\EligibilityServiceInterface;
 use Modules\GameTables\Application\Services\RegistrationLockInterface;
@@ -35,6 +36,7 @@ use Modules\GameTables\Domain\ValueObjects\ParticipantId;
 use Modules\GameTables\Domain\ValueObjects\TimeSlot;
 use Modules\GameTables\Infrastructure\Services\RegistrationService;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 
@@ -275,8 +277,6 @@ final class RegistrationServiceTest extends TestCase
 
     public function test_cancel_by_token_cancels_participant(): void
     {
-        $this->gameTableRepository->expects($this->never())->method($this->anything());
-
         $token = 'valid-token-123';
         $participant = new Participant(
             id: ParticipantId::generate(),
@@ -289,11 +289,17 @@ final class RegistrationServiceTest extends TestCase
             cancellationToken: $token,
         );
 
+        // Read once to check the start before the lock, once more under it
         $this->participantRepository
-            ->expects($this->once())
+            ->expects($this->exactly(2))
             ->method('findByCancellationToken')
             ->with($token)
             ->willReturn($participant);
+
+        $this->gameTableRepository
+            ->expects($this->once())
+            ->method('find')
+            ->willReturn($this->createGameTable($participant->gameTableId->value));
 
         $this->participantRepository
             ->expects($this->once())
@@ -328,8 +334,6 @@ final class RegistrationServiceTest extends TestCase
 
     public function test_cancel_by_token_throws_when_cannot_cancel(): void
     {
-        $this->gameTableRepository->expects($this->never())->method($this->anything());
-
         $token = 'valid-token-123';
         $participant = new Participant(
             id: ParticipantId::generate(),
@@ -343,14 +347,20 @@ final class RegistrationServiceTest extends TestCase
         );
 
         $this->participantRepository
-            ->expects($this->once())
+            ->expects($this->exactly(2))
             ->method('findByCancellationToken')
             ->with($token)
             ->willReturn($participant);
 
-        $this->expectException(CannotCancelException::class);
+        // Not cancellable anyway: the status error is reported without looking at the start
+        $this->gameTableRepository->expects($this->never())->method($this->anything());
 
-        $this->service->cancelByToken($token);
+        try {
+            $this->service->cancelByToken($token);
+            $this->fail('A cancelled registration was cancelled again');
+        } catch (CannotCancelException $e) {
+            $this->assertSame('not_allowed', $e->reason);
+        }
     }
 
     public function test_find_by_token_returns_participant(): void
@@ -751,12 +761,210 @@ final class RegistrationServiceTest extends TestCase
         );
     }
 
+    public function test_cancel_by_token_after_the_start_is_refused_before_taking_the_lock(): void
+    {
+        $participant = $this->participantWith(ParticipantStatus::Confirmed, token: 'started-token');
+        $this->participantRepository->expects($this->once())->method('findByCancellationToken')->with('started-token')->willReturn($participant);
+        $this->participantRepository->expects($this->never())->method('save');
+        $this->gameTableRepository->expects($this->once())->method('find')->willReturn($this->startedTable($participant));
+
+        $this->assertRefusedBecauseStarted(fn () => $this->serviceWhoseLockMustNotRun()->cancelByToken('started-token'));
+        Event::assertNotDispatched(ParticipantCancelled::class);
+    }
+
+    public function test_cancel_after_the_start_is_refused_before_taking_the_lock(): void
+    {
+        $participant = $this->participantWith(ParticipantStatus::Confirmed);
+        $this->participantRepository->expects($this->once())->method('find')->willReturn($participant);
+        $this->participantRepository->expects($this->never())->method('save');
+        $this->gameTableRepository->expects($this->once())->method('find')->willReturn($this->startedTable($participant));
+
+        $this->assertRefusedBecauseStarted(fn () => $this->serviceWhoseLockMustNotRun()->cancel($participant->id->value));
+    }
+
+    public function test_cancel_by_user_after_the_start_is_refused_before_taking_the_lock(): void
+    {
+        $participant = $this->participantWith(ParticipantStatus::WaitingList);
+        $this->participantRepository->expects($this->once())->method('findByTableAndUser')->willReturn($participant);
+        $this->participantRepository->expects($this->never())->method('save');
+        $this->gameTableRepository->expects($this->once())->method('find')->willReturn($this->startedTable($participant));
+
+        $this->assertRefusedBecauseStarted(
+            fn () => $this->serviceWhoseLockMustNotRun()->cancelByUser($participant->gameTableId->value, 'user-123'),
+        );
+    }
+
+    // The panel has no time limit: it never even looks at the table's start
+    public function test_the_organisation_cancels_without_looking_at_the_start(): void
+    {
+        $participant = $this->participantWith(ParticipantStatus::Confirmed);
+        $this->participantRepository->expects($this->once())->method('findOrFail')->willReturn($participant);
+        $this->gameTableRepository->expects($this->never())->method($this->anything());
+
+        $result = $this->service->cancelByAdmin($participant->id->value);
+
+        $this->assertSame(ParticipantStatus::Cancelled, $result->status);
+    }
+
+    /**
+     * @return array<string, array{ParticipantStatus, string, string|null}>
+     */
+    public static function withdrawalCases(): array
+    {
+        return [
+            'confirmed before the start' => [ParticipantStatus::Confirmed, '+1 hour', null],
+            'pending before the start' => [ParticipantStatus::Pending, '+1 hour', null],
+            'waiting before the start' => [ParticipantStatus::WaitingList, '+1 hour', null],
+            'confirmed after the start' => [ParticipantStatus::Confirmed, '-1 minute', 'table_started'],
+            'waiting after the start' => [ParticipantStatus::WaitingList, '-1 minute', 'table_started'],
+            'cancelled before the start' => [ParticipantStatus::Cancelled, '+1 hour', 'not_allowed'],
+            'cancelled after the start' => [ParticipantStatus::Cancelled, '-1 minute', 'not_allowed'],
+        ];
+    }
+
+    #[DataProvider('withdrawalCases')]
+    public function test_withdrawal_refusal(ParticipantStatus $status, string $startsAt, ?string $expected): void
+    {
+        $participant = $this->participantWith($status);
+        $this->participantRepository->expects($this->once())->method('find')->willReturn($participant);
+        $this->gameTableRepository
+            ->expects($expected === 'not_allowed' ? $this->never() : $this->once())
+            ->method('find')
+            ->willReturn($this->createGameTable($participant->gameTableId->value, startsAt: new DateTimeImmutable($startsAt)));
+
+        $this->assertSame($expected, $this->service->withdrawalRefusal($participant->id->value));
+    }
+
+    public function test_withdrawal_closes_at_the_exact_start(): void
+    {
+        $participant = $this->participantWith(ParticipantStatus::Confirmed);
+        $startsAt = new DateTimeImmutable('2030-01-10 18:00:00');
+        $this->participantRepository->expects($this->exactly(2))->method('find')->willReturn($participant);
+        $this->gameTableRepository->expects($this->exactly(2))->method('find')
+            ->willReturn($this->createGameTable($participant->gameTableId->value, startsAt: $startsAt));
+
+        $this->assertNull($this->service->withdrawalRefusal($participant->id->value, $startsAt->modify('-1 second')));
+        $this->assertSame('table_started', $this->service->withdrawalRefusal($participant->id->value, $startsAt));
+    }
+
+    public function test_an_unknown_registration_cannot_be_withdrawn(): void
+    {
+        $this->participantRepository->expects($this->once())->method('find')->willReturn(null);
+        $this->gameTableRepository->expects($this->never())->method($this->anything());
+
+        $this->assertSame('not_allowed', $this->service->withdrawalRefusal(ParticipantId::generate()->value));
+    }
+
+    private function participantWith(ParticipantStatus $status, ?string $token = null): Participant
+    {
+        return new Participant(
+            id: ParticipantId::generate(),
+            gameTableId: GameTableId::generate(),
+            userId: $token === null ? 'user-123' : null,
+            role: ParticipantRole::Player,
+            status: $status,
+            waitingListPosition: $status === ParticipantStatus::WaitingList ? 1 : null,
+            firstName: $token === null ? null : 'Invitada',
+            email: $token === null ? null : 'invitada@example.test',
+            cancellationToken: $token,
+        );
+    }
+
+    private function startedTable(Participant $participant): GameTable
+    {
+        return $this->createGameTable($participant->gameTableId->value, startsAt: new DateTimeImmutable('-1 minute'));
+    }
+
+    /**
+     * The same service with a lock that fails if taken: proves the start is checked first.
+     */
+    private function serviceWhoseLockMustNotRun(): RegistrationService
+    {
+        return new RegistrationService(
+            $this->participantRepository,
+            $this->gameTableRepository,
+            $this->createStub(EligibilityServiceInterface::class),
+            new class implements RegistrationLockInterface
+            {
+                public function forTable(string $gameTableId, Closure $callback): mixed
+                {
+                    throw new LogicException('The lock must not be taken');
+                }
+
+                public function forParticipant(string $participantId, Closure $callback): mixed
+                {
+                    throw new LogicException('The lock must not be taken');
+                }
+
+                public function forCancellationToken(string $token, Closure $callback): mixed
+                {
+                    throw new LogicException('The lock must not be taken');
+                }
+            },
+        );
+    }
+
+    private function assertRefusedBecauseStarted(Closure $cancel): void
+    {
+        try {
+            $cancel();
+            $this->fail('A participant cancelled after the start of the table');
+        } catch (CannotCancelException $e) {
+            $this->assertSame('table_started', $e->reason);
+        }
+    }
+
+    // Ruling C3: an already cancelled registration reports the status error after the start too
+    public function test_cancel_by_token_of_a_cancelled_registration_after_the_start_reports_not_allowed(): void
+    {
+        $participant = $this->participantWith(ParticipantStatus::Cancelled, token: 'gone-token');
+        $this->participantRepository->expects($this->exactly(2))->method('findByCancellationToken')->willReturn($participant);
+        $this->gameTableRepository->expects($this->never())->method($this->anything());
+
+        try {
+            $this->service->cancelByToken('gone-token');
+            $this->fail('A cancelled registration was cancelled again');
+        } catch (CannotCancelException $e) {
+            $this->assertSame('not_allowed', $e->reason);
+        }
+    }
+
+    public function test_cancel_by_user_of_a_cancelled_registration_after_the_start_reports_not_allowed(): void
+    {
+        $participant = $this->participantWith(ParticipantStatus::Cancelled);
+        $this->participantRepository->expects($this->once())->method('findByTableAndUser')->willReturn($participant);
+        $this->participantRepository->expects($this->once())->method('findOrFail')->willReturn($participant);
+        $this->gameTableRepository->expects($this->never())->method($this->anything());
+
+        try {
+            $this->service->cancelByUser($participant->gameTableId->value, 'user-123');
+            $this->fail('A cancelled registration was cancelled again');
+        } catch (CannotCancelException $e) {
+            $this->assertSame('not_allowed', $e->reason);
+        }
+    }
+
+    public function test_cancel_of_a_cancelled_registration_after_the_start_reports_not_allowed(): void
+    {
+        $participant = $this->participantWith(ParticipantStatus::Cancelled);
+        $this->participantRepository->expects($this->once())->method('find')->willReturn($participant);
+        $this->participantRepository->expects($this->once())->method('findOrFail')->willReturn($participant);
+        $this->gameTableRepository->expects($this->never())->method($this->anything());
+
+        try {
+            $this->service->cancel($participant->id->value);
+            $this->fail('A cancelled registration was cancelled again');
+        } catch (CannotCancelException $e) {
+            $this->assertSame('not_allowed', $e->reason);
+        }
+    }
+
     private function createGameTable(
         string $id,
         bool $autoConfirm = true,
+        ?DateTimeImmutable $startsAt = null,
     ): GameTable {
-        $startsAt = new DateTimeImmutable('+1 week');
-        $timeSlot = new TimeSlot($startsAt, 240);
+        $timeSlot = new TimeSlot($startsAt ?? new DateTimeImmutable('+1 week'), 240);
 
         return new GameTable(
             id: new GameTableId($id),
