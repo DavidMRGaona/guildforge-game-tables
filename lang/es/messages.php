@@ -627,6 +627,7 @@ return [
         'already_registered' => 'Ya estás inscrito en esta mesa',
         'guest_already_registered' => 'Ya existe una inscripción con este email',
         'members_only' => 'Esta mesa es solo para socios',
+        'invitation_only' => 'Esta mesa es solo por invitación: la organización inscribe a los jugadores',
         'guests_not_allowed' => 'Esta mesa no permite inscripciones de invitados',
         'minimum_age' => 'No cumples con la edad mínima requerida',
         'not_found' => 'No se encontró la inscripción',

@@ -7,6 +7,8 @@ namespace Modules\GameTables\Tests\Feature\Http\Controllers;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use DateTimeImmutable;
 use Illuminate\Support\Str;
+use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
+use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Entities\Participant;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
@@ -196,6 +198,34 @@ final class RegistrationControllerTest extends ModuleTestCase
 
         $response->assertRedirect();
         $response->assertSessionHasErrors('registration');
+    }
+
+    public function test_a_signed_in_user_cannot_register_for_invite_only_table(): void
+    {
+        $gameTable = $this->createGameTable(registrationType: RegistrationType::Invite);
+
+        foreach (['player', 'spectator'] as $role) {
+            $this->actingAs($this->testUser)
+                ->post(route('gametables.register', $gameTable->slug), ['role' => $role])
+                ->assertRedirect()
+                ->assertSessionHasErrors(['registration' => 'Esta mesa es solo por invitación: la organización inscribe a los jugadores']);
+        }
+
+        $this->assertNull($this->participantRepository->findByTableAndUser($gameTable->id, $this->testUser->id));
+    }
+
+    // The organisation fills invite tables from the panel, which skips the eligibility rules
+    public function test_the_organisation_still_adds_a_user_to_an_invite_only_table(): void
+    {
+        $gameTable = $this->createGameTable(registrationType: RegistrationType::Invite);
+
+        $result = app(RegistrationServiceInterface::class)->registerByAdmin(new RegisterParticipantDTO(
+            gameTableId: $gameTable->id->value,
+            userId: $this->testUser->id,
+            role: ParticipantRole::Player,
+        ));
+
+        $this->assertSame(ParticipantStatus::Confirmed, $result->status);
     }
 
     public function test_guest_can_register_with_optional_phone(): void

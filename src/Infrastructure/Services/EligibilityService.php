@@ -67,6 +67,12 @@ final readonly class EligibilityService implements EligibilityServiceInterface
             throw RegistrationClosedException::forTable($gameTable->id->value);
         }
 
+        // Invite tables are filled by the organisation from the panel: nobody signs up by themselves,
+        // whatever the dates, the membership or the seats
+        if ($gameTable->requiresInvitation()) {
+            throw RegistrationClosedException::invitationOnly($gameTable->id->value);
+        }
+
         // Check registration window
         // Members' early access is part of the membership integration setting
         if (! $gameTable->canUserRegister($isMember, $now, $this->settings->isMembershipIntegrationEnabled())) {
@@ -199,7 +205,8 @@ final readonly class EligibilityService implements EligibilityServiceInterface
 
         // Determine when user can register if early access is in effect
         $canRegisterAt = null;
-        if (! $result['eligible'] && $gameTable->registrationOpensAt !== null) {
+        // No opening date to announce to someone who can never register by themselves
+        if (! $result['eligible'] && $result['reason'] !== 'invitation_only' && $gameTable->registrationOpensAt !== null) {
             if ($isMember && $gameTable->membersEarlyAccessDays > 0 && $this->settings->isMembershipIntegrationEnabled()) {
                 $earlyAccessDate = $gameTable->registrationOpensAt->modify("-{$gameTable->membersEarlyAccessDays} days");
                 if ($now < $earlyAccessDate) {
@@ -262,6 +269,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
             'registration_closed' => __('game-tables::messages.errors.registration_closed'),
             'registration_not_open' => __('game-tables::messages.errors.registration_not_open'),
             'members_only' => __('game-tables::messages.errors.members_only'),
+            'invitation_only' => __('game-tables::messages.errors.invitation_only'),
             'already_registered' => __('game-tables::messages.errors.already_registered'),
             'guest_already_registered' => __('game-tables::messages.errors.guest_already_registered'),
             'table_full' => __('game-tables::messages.errors.table_full'),

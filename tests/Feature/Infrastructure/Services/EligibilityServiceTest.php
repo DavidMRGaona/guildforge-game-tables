@@ -21,6 +21,7 @@ use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Domain\ValueObjects\ParticipantId;
 use Modules\GameTables\Infrastructure\Services\EligibilityService;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 
@@ -275,6 +276,48 @@ final class EligibilityServiceTest extends TestCase
 
         $this->assertFalse($result['eligible']);
         $this->assertSame('registration_not_open', $result['reason']);
+    }
+
+    /**
+     * @return array<string, array{bool, ParticipantRole}>
+     */
+    public static function inviteOnlyApplicants(): array
+    {
+        return [
+            'member as player' => [true, ParticipantRole::Player],
+            'non-member as player' => [false, ParticipantRole::Player],
+            'member as spectator' => [true, ParticipantRole::Spectator],
+            'non-member as spectator' => [false, ParticipantRole::Spectator],
+        ];
+    }
+
+    // Nobody signs up by themselves for an invite table: the organisation adds the players
+    #[DataProvider('inviteOnlyApplicants')]
+    public function test_an_invite_table_refuses_every_user_with_its_window_open(bool $isMember, ParticipantRole $role): void
+    {
+        $this->gameTableRepository->expects($this->never())->method($this->anything());
+        $this->participantRepository->expects($this->never())->method($this->anything());
+        $table = $this->createGameTable(id: GameTableId::generate()->value, registrationType: RegistrationType::Invite);
+
+        $result = $this->service->canRegister($table, 'user-1', $isMember, null, null, $role);
+
+        $this->assertFalse($result['eligible']);
+        $this->assertSame('invitation_only', $result['reason']);
+        $this->assertFalse($result['waitingList']);
+    }
+
+    // The refusal comes first: a full table with the waiting list on still says "solo por invitacion"
+    public function test_an_invite_table_offers_no_waiting_list(): void
+    {
+        config()->set('modules.settings.game-tables.registration.waiting_list_enabled', true);
+        $this->gameTableRepository->expects($this->never())->method($this->anything());
+        $this->participantRepository->expects($this->never())->method($this->anything());
+        $table = $this->createGameTable(id: GameTableId::generate()->value, registrationType: RegistrationType::Invite, maxPlayers: 1);
+
+        $result = $this->service->canRegister($table, 'user-1', true, null);
+
+        $this->assertSame('invitation_only', $result['reason']);
+        $this->assertFalse($result['waitingList']);
     }
 
     private function tableInMembersEarlyAccess(): GameTable

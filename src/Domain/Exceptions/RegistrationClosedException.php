@@ -39,4 +39,12 @@ final class RegistrationClosedException extends DomainException
             'registration_closed'
         );
     }
+
+    public static function invitationOnly(string $tableId): self
+    {
+        return new self(
+            "Game table '{$tableId}' is by invitation only: the organisation registers its players.",
+            'invitation_only'
+        );
+    }
 }
