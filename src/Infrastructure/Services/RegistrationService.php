@@ -636,10 +636,8 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     public function registerGuest(RegisterParticipantDTO $dto): ParticipantResponseDTO
     {
         [$participant, $rank] = $this->lock->forTable($dto->gameTableId, function () use ($dto): array {
-            if ($dto->email !== null) {
-                // The same rules the table page applies, checked under the lock
-                $this->eligibilityService->ensureGuestCanRegister($dto->gameTableId, $dto->email, $dto->role);
-            }
+            // The same rules the table page applies, checked under the lock (also without email)
+            $this->eligibilityService->ensureGuestCanRegister($dto->gameTableId, $dto->email, $dto->role);
 
             return $this->withRank($this->placeGuest($dto));
         });

@@ -959,10 +959,69 @@ final class RegistrationServiceTest extends TestCase
         }
     }
 
+    // A guest without email gets no shortcut: the same eligibility rules apply
+    #[DataProvider('tablesRefusingGuests')]
+    public function test_register_guest_without_email_still_runs_the_eligibility_check(string $startsAt, RegistrationType $type, string $reason): void
+    {
+        $id = GameTableId::generate()->value;
+        $table = $this->createGameTable($id, startsAt: new DateTimeImmutable($startsAt), registrationType: $type);
+        $this->gameTableRepository->method('find')->willReturn($table);
+        $this->gameTableRepository->expects($this->never())->method('findOrFail');
+        $this->participantRepository->expects($this->never())->method('save');
+
+        $service = new RegistrationService(
+            $this->participantRepository,
+            $this->gameTableRepository,
+            new \Modules\GameTables\Infrastructure\Services\EligibilityService($this->participantRepository, $this->gameTableRepository),
+            new class implements RegistrationLockInterface
+            {
+                public function forTable(string $gameTableId, Closure $callback): mixed
+                {
+                    return $callback();
+                }
+
+                public function forParticipant(string $participantId, Closure $callback): mixed
+                {
+                    return $callback();
+                }
+
+                public function forCancellationToken(string $token, Closure $callback): mixed
+                {
+                    return $callback();
+                }
+            },
+        );
+
+        try {
+            $service->registerGuest(new RegisterParticipantDTO(
+                gameTableId: $id,
+                userId: null,
+                role: ParticipantRole::Player,
+                firstName: 'John',
+                email: null,
+            ));
+            $this->fail('A guest without email skipped the eligibility check');
+        } catch (\Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException $e) {
+            $this->assertSame($reason, $e->reason);
+        }
+    }
+
+    /**
+     * @return array<string, array{string, RegistrationType, string}>
+     */
+    public static function tablesRefusingGuests(): array
+    {
+        return [
+            'started table' => ['-1 hour', RegistrationType::Everyone, 'registration_closed'],
+            'invite only table' => ['+1 week', RegistrationType::Invite, 'guests_not_allowed'],
+        ];
+    }
+
     private function createGameTable(
         string $id,
         bool $autoConfirm = true,
         ?DateTimeImmutable $startsAt = null,
+        RegistrationType $registrationType = RegistrationType::Everyone,
     ): GameTable {
         $timeSlot = new TimeSlot($startsAt ?? new DateTimeImmutable('+1 week'), 240);
 
@@ -978,7 +1037,7 @@ final class RegistrationServiceTest extends TestCase
             status: TableStatus::Scheduled,
             minPlayers: 2,
             maxPlayers: 6,
-            registrationType: RegistrationType::Everyone,
+            registrationType: $registrationType,
             autoConfirm: $autoConfirm,
         );
     }

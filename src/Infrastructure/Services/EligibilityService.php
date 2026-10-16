@@ -394,7 +394,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
         }
     }
 
-    public function ensureGuestCanRegister(string $gameTableId, string $email, ParticipantRole $role = ParticipantRole::Player): void
+    public function ensureGuestCanRegister(string $gameTableId, ?string $email, ParticipantRole $role = ParticipantRole::Player): void
     {
         $result = $this->canGuestRegister($gameTableId, $email, $role);
 
