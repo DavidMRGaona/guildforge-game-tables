@@ -21,6 +21,7 @@ use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Domain\ValueObjects\ParticipantId;
 use Modules\GameTables\Infrastructure\Services\EligibilityService;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
@@ -331,6 +332,44 @@ final class EligibilityServiceTest extends TestCase
 
         $this->assertFalse($result['eligible']);
         $this->assertSame('table_started', $result['reason']);
+    }
+
+    // Waiting never reopens a table that started or ended, so no opening date is announced for it
+    #[AllowMockObjectsWithoutExpectations]
+    #[DataProvider('closedForGoodTables')]
+    public function test_no_opening_date_is_announced_for_a_table_that_can_never_reopen(
+        RegistrationType $type,
+        string $startsAt,
+        bool $inPlay,
+        string $reason,
+    ): void {
+        $id = GameTableId::generate()->value;
+        $table = $this->createGameTable(
+            id: $id,
+            registrationType: $type,
+            registrationOpensAt: new DateTimeImmutable('+1 day'),
+            startsAt: new DateTimeImmutable($startsAt),
+            acceptsRegistrationsInProgress: $inPlay,
+        );
+        $this->gameTableRepository->method('find')->willReturn($table);
+
+        $result = $this->service->canRegisterById($id, 'user-1');
+
+        $this->assertFalse($result['eligible']);
+        $this->assertSame($reason, $result['reason']);
+        $this->assertNull($result['canRegisterAt']);
+    }
+
+    /**
+     * @return array<string, array{RegistrationType, string, bool, string}>
+     */
+    public static function closedForGoodTables(): array
+    {
+        return [
+            'invite only' => [RegistrationType::Invite, '+1 week', false, 'invitation_only'],
+            'started' => [RegistrationType::Everyone, '-1 hour', false, 'table_started'],
+            'ended in play' => [RegistrationType::Everyone, '-1 week', true, 'table_ended'],
+        ];
     }
 
     public function test_registration_is_admitted_until_the_start(): void

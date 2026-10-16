@@ -227,8 +227,10 @@ final readonly class EligibilityService implements EligibilityServiceInterface
 
         // Determine when user can register if early access is in effect
         $canRegisterAt = null;
-        // No opening date to announce to someone who can never register by themselves
-        if (! $result['eligible'] && $result['reason'] !== 'invitation_only' && $gameTable->registrationOpensAt !== null) {
+        // No opening date to announce when waiting can never reopen the table: nobody signs up
+        // by themselves (invitation only), or it has started or ended
+        $neverReopens = in_array($result['reason'], ['invitation_only', 'table_started', 'table_ended'], true);
+        if (! $result['eligible'] && ! $neverReopens && $gameTable->registrationOpensAt !== null) {
             if ($isMember && $gameTable->membersEarlyAccessDays > 0 && $this->settings->isMembershipIntegrationEnabled()) {
                 $earlyAccessDate = $gameTable->registrationOpensAt->modify("-{$gameTable->membersEarlyAccessDays} days");
                 if ($now < $earlyAccessDate) {
