@@ -73,6 +73,9 @@ final readonly class EligibilityService implements EligibilityServiceInterface
             throw RegistrationClosedException::invitationOnly($gameTable->id->value);
         }
 
+        // The time of the table closes registrations whatever its dates and the early access
+        $this->ensureTableTimeAdmits($gameTable, $now);
+
         // Check registration window
         // Members' early access is part of the membership integration setting
         if (! $gameTable->canUserRegister($isMember, $now, $this->settings->isMembershipIntegrationEnabled())) {
@@ -94,19 +97,21 @@ final readonly class EligibilityService implements EligibilityServiceInterface
             throw AlreadyRegisteredException::forTable($userId, $gameTable->id->value);
         }
 
-        return $this->checkSeats($gameTable, $role);
+        return $this->checkSeats($gameTable, $role, $now);
     }
 
     /**
      * Spectators need a free spectator seat, whatever the player seats; they have no waiting list.
-     * Players need a free player seat or, when the setting is on, go to the waiting list.
+     * Players need a free player seat or, when the setting is on and the waiting list is still
+     * open (not once the table has started, also on tables that admit registrations in play), go
+     * to the waiting list.
      * Taken seats are those of SeatCounter, the count the table page shows.
      *
      * @return bool whether a player registration goes to the waiting list
      *
      * @throws TableFullException
      */
-    private function checkSeats(GameTable $gameTable, ParticipantRole $role): bool
+    private function checkSeats(GameTable $gameTable, ParticipantRole $role, DateTimeImmutable $now): bool
     {
         if ($role === ParticipantRole::Spectator) {
             $this->checkSpectatorSeats($gameTable);
@@ -118,11 +123,28 @@ final readonly class EligibilityService implements EligibilityServiceInterface
             return false;
         }
 
-        if (! $this->settings->isWaitingListEnabled()) {
+        if (! $this->settings->isWaitingListEnabled() || ! $gameTable->isWaitingListOpen($now)) {
             throw TableFullException::forTable($gameTable->id->value);
         }
 
         return true;
+    }
+
+    /**
+     * A table closes its registrations at its start, or at its end when it admits registrations
+     * in play, whatever its configured dates.
+     *
+     * @throws RegistrationClosedException
+     */
+    private function ensureTableTimeAdmits(GameTable $gameTable, DateTimeImmutable $now): void
+    {
+        if (! $gameTable->isPastRegistrationDeadline($now)) {
+            return;
+        }
+
+        throw $gameTable->acceptsRegistrationsInProgress
+            ? RegistrationClosedException::tableEnded($gameTable->id->value)
+            : RegistrationClosedException::tableStarted($gameTable->id->value);
     }
 
     /**
@@ -270,6 +292,8 @@ final readonly class EligibilityService implements EligibilityServiceInterface
             'registration_not_open' => __('game-tables::messages.errors.registration_not_open'),
             'members_only' => __('game-tables::messages.errors.members_only'),
             'invitation_only' => __('game-tables::messages.errors.invitation_only'),
+            'table_started' => __('game-tables::messages.errors.table_started'),
+            'table_ended' => __('game-tables::messages.errors.table_ended'),
             'already_registered' => __('game-tables::messages.errors.already_registered'),
             'guest_already_registered' => __('game-tables::messages.errors.guest_already_registered'),
             'table_full' => __('game-tables::messages.errors.table_full'),
@@ -302,8 +326,16 @@ final readonly class EligibilityService implements EligibilityServiceInterface
             return $this->guestRefusal('registration_closed');
         }
 
-        // Check registration window for public (guests don't get early access)
         $now = new DateTimeImmutable();
+
+        // The time of the table closes registrations whatever its dates
+        try {
+            $this->ensureTableTimeAdmits($gameTable, $now);
+        } catch (RegistrationClosedException $e) {
+            return $this->guestRefusal($e->reason);
+        }
+
+        // Check registration window for public (guests don't get early access)
         if (! $gameTable->isPublicRegistrationOpen($now)) {
             if ($gameTable->registrationOpensAt !== null && $now < $gameTable->registrationOpensAt) {
                 return $this->guestRefusal('registration_not_open');
@@ -321,7 +353,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
         }
 
         try {
-            $waitingList = $this->checkSeats($gameTable, $role);
+            $waitingList = $this->checkSeats($gameTable, $role, $now);
         } catch (TableFullException $e) {
             return $this->guestRefusal($e->reason);
         }

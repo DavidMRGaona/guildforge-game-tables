@@ -371,14 +371,83 @@ final class RegistrationEligibilityTest extends ModuleTestCase
         $this->assertSame(1, $this->registrations($table));
     }
 
-    private function assertRefused(GameTableModel $table, string $reason, string $role = 'player'): void
+    public function test_a_table_that_has_started_refuses_users_and_guests(): void
+    {
+        $table = $this->table(['starts_at' => now()->subMinute()]);
+
+        $this->assertRefused($table, 'table_started', message: 'La partida ya ha comenzado');
+        $this->registerGuest($table)
+            ->assertStatus(422)
+            ->assertJsonPath('errors.registration.0', 'La partida ya ha comenzado');
+
+        $this->assertSame(0, $this->registrations($table));
+    }
+
+    public function test_a_closing_date_after_the_start_does_not_keep_the_table_open(): void
+    {
+        $this->assertRefused(
+            $this->table(['starts_at' => now()->subMinute(), 'registration_closes_at' => now()->addDay()]),
+            'table_started',
+            message: 'La partida ya ha comenzado',
+        );
+    }
+
+    // The time opens the session, not the director pressing «Iniciar»: the table is still scheduled
+    public function test_a_table_admitting_registrations_in_play_admits_users_and_guests_during_the_session(): void
+    {
+        $table = $this->table(['starts_at' => now()->subHour(), 'accepts_registrations_in_progress' => true]);
+
+        $this->register($table)->assertRedirect();
+        $this->registerGuest($table)->assertRedirect();
+
+        $this->assertSame(2, $this->registrations($table));
+    }
+
+    public function test_a_table_admitting_registrations_in_play_refuses_them_once_it_has_ended(): void
+    {
+        $table = $this->table(['starts_at' => now()->subHours(5), 'accepts_registrations_in_progress' => true]);
+
+        $this->assertRefused($table, 'table_ended', message: 'La partida ya ha terminado');
+        $this->registerGuest($table)
+            ->assertStatus(422)
+            ->assertJsonPath('errors.registration.0', 'La partida ya ha terminado');
+    }
+
+    public function test_during_the_session_a_full_table_offers_no_waiting_list(): void
+    {
+        config()->set('modules.settings.game-tables.registration.waiting_list_enabled', true);
+        $table = $this->table(['starts_at' => now()->subHour(), 'accepts_registrations_in_progress' => true, 'max_players' => 1]);
+        $this->confirmed($table, 'player', 1);
+
+        $this->assertRefused($table, 'table_full');
+        $this->registerGuest($table)
+            ->assertStatus(422)
+            ->assertJsonPath('errors.registration.0', __('game-tables::messages.errors.table_full'));
+
+        $this->assertSame(1, $this->registrations($table));
+    }
+
+    public function test_the_time_messages_exist_in_both_languages(): void
+    {
+        $texts = [
+            'table_started' => ['es' => 'La partida ya ha comenzado', 'en' => 'The session has already started'],
+            'table_ended' => ['es' => 'La partida ya ha terminado', 'en' => 'The session has already ended'],
+        ];
+
+        foreach ($texts as $key => $byLocale) {
+            foreach ($byLocale as $locale => $text) {
+                $this->assertSame($text, trans('game-tables::messages.errors.'.$key, [], $locale));
+            }
+        }
+    }
+
+    private function assertRefused(GameTableModel $table, string $reason, string $role = 'player', ?string $message = null): void
     {
         $before = $this->registrations($table);
 
         $this->register($table, $role, json: true)
             ->assertStatus(422)
-            ->assertJsonPath('errors.registration.0', __('game-tables::messages.errors.'.$reason));
-
+            ->assertJsonPath('errors.registration.0', $message ?? __('game-tables::messages.errors.'.$reason));
         $this->assertSame($before, $this->registrations($table));
     }
 

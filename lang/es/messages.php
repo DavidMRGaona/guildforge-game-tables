@@ -622,6 +622,8 @@ return [
         'unauthenticated' => 'Debes iniciar sesión para realizar esta acción',
         'registration_closed' => 'Las inscripciones están cerradas',
         'registration_not_open' => 'Las inscripciones aún no están abiertas',
+        'table_started' => 'La partida ya ha comenzado',
+        'table_ended' => 'La partida ya ha terminado',
         'table_full' => 'La mesa está completa',
         'spectators_full' => 'No quedan plazas de espectador disponibles',
         'already_registered' => 'Ya estás inscrito en esta mesa',

@@ -40,6 +40,22 @@ final class RegistrationClosedException extends DomainException
         );
     }
 
+    public static function tableStarted(string $tableId): self
+    {
+        return new self(
+            "Game table '{$tableId}' has started: registration is closed.",
+            'table_started'
+        );
+    }
+
+    public static function tableEnded(string $tableId): self
+    {
+        return new self(
+            "Game table '{$tableId}' has ended: registration is closed.",
+            'table_ended'
+        );
+    }
+
     public static function invitationOnly(string $tableId): self
     {
         return new self(
