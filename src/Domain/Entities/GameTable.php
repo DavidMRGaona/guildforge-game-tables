@@ -223,6 +223,38 @@ final class GameTable
         return $now >= $memberAccessStart && $now < $this->registrationOpensAt;
     }
 
+    /**
+     * The moment registrations really close: the configured closing date or the limit of the
+     * table (its start, or its end when it admits registrations in play), whichever comes first.
+     */
+    public function effectiveRegistrationClosesAt(): DateTimeImmutable
+    {
+        return self::effectiveClosingFor(
+            $this->timeSlot->startsAt,
+            $this->timeSlot->durationMinutes,
+            $this->acceptsRegistrationsInProgress,
+            $this->registrationClosesAt,
+        );
+    }
+
+    public static function effectiveClosingFor(
+        \DateTimeInterface $startsAt,
+        int $durationMinutes,
+        bool $acceptsRegistrationsInProgress,
+        ?\DateTimeInterface $configuredClosesAt,
+    ): DateTimeImmutable {
+        $slot = new TimeSlot(DateTimeImmutable::createFromInterface($startsAt), $durationMinutes);
+        $limit = $acceptsRegistrationsInProgress ? $slot->endsAt() : $slot->startsAt;
+
+        if ($configuredClosesAt === null) {
+            return $limit;
+        }
+
+        $configured = DateTimeImmutable::createFromInterface($configuredClosesAt);
+
+        return $configured < $limit ? $configured : $limit;
+    }
+
     public function isPublicRegistrationOpen(DateTimeImmutable $now): bool
     {
         if ($this->isPastRegistrationDeadline($now)) {

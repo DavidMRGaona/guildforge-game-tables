@@ -313,6 +313,42 @@ final class GameTableTest extends TestCase
         $this->assertFalse($table->isPublicRegistrationOpen(new DateTimeImmutable('2026-02-01 22:00:00')));
     }
 
+    public function test_the_effective_closing_date_is_the_start_without_a_configured_date(): void
+    {
+        $table = $this->publishedTable();
+
+        $this->assertEquals(new DateTimeImmutable('2026-02-01 18:00:00'), $table->effectiveRegistrationClosesAt());
+    }
+
+    public function test_the_effective_closing_date_is_the_configured_one_when_it_is_before_the_start(): void
+    {
+        $table = $this->publishedTable();
+        $table->registrationClosesAt = new DateTimeImmutable('2026-01-31 20:00:00');
+
+        $this->assertEquals(new DateTimeImmutable('2026-01-31 20:00:00'), $table->effectiveRegistrationClosesAt());
+    }
+
+    public function test_the_effective_closing_date_is_the_start_when_the_configured_one_is_after_it(): void
+    {
+        $table = $this->publishedTable();
+        $table->registrationClosesAt = new DateTimeImmutable('2026-02-02 10:00:00');
+
+        $this->assertEquals(new DateTimeImmutable('2026-02-01 18:00:00'), $table->effectiveRegistrationClosesAt());
+    }
+
+    public function test_in_play_the_effective_closing_date_is_the_end_or_an_earlier_configured_date(): void
+    {
+        $table = $this->publishedTable(inPlay: true);
+
+        $this->assertEquals(new DateTimeImmutable('2026-02-01 22:00:00'), $table->effectiveRegistrationClosesAt());
+
+        $table->registrationClosesAt = new DateTimeImmutable('2026-02-03 10:00:00');
+        $this->assertEquals(new DateTimeImmutable('2026-02-01 22:00:00'), $table->effectiveRegistrationClosesAt());
+
+        $table->registrationClosesAt = new DateTimeImmutable('2026-02-01 20:00:00');
+        $this->assertEquals(new DateTimeImmutable('2026-02-01 20:00:00'), $table->effectiveRegistrationClosesAt());
+    }
+
     /**
      * @return array<string, array{TableStatus, bool}>
      */

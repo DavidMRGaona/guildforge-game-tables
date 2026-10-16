@@ -10,6 +10,7 @@ use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
 use Modules\GameTables\Application\DTOs\ParticipantResponseDTO;
 use Modules\GameTables\Application\Services\EventWithTablesQueryInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
+use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\GameMasterRole;
 use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\SafetyTool;
@@ -233,6 +234,12 @@ final class GameTableQueryService implements GameTableQueryServiceInterface
             membersEarlyAccessDays: $table->members_early_access_days,
             registrationOpensAt: $table->registration_opens_at,
             registrationClosesAt: $table->registration_closes_at,
+            effectiveRegistrationClosesAt: GameTable::effectiveClosingFor(
+                $table->starts_at,
+                $table->duration_minutes,
+                $table->accepts_registrations_in_progress ?? false,
+                $table->registration_closes_at,
+            ),
             autoConfirm: $table->auto_confirm,
             acceptsRegistrationsInProgress: $table->accepts_registrations_in_progress ?? false,
             isPublished: $table->is_published,
