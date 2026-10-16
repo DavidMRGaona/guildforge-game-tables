@@ -15,6 +15,8 @@ export interface EligibilityResponse extends RoleEligibility {
     waitingList: boolean;
     /** Spectators only need a free spectator seat; they have no waiting list. */
     spectator: RoleEligibility;
+    /** The user's registration can still be cancelled by them (active, table not started). */
+    canCancel: boolean;
 }
 
 /** What the table page offers a visitor without an account (the email is checked on submit). */

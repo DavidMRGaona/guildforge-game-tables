@@ -151,6 +151,7 @@ export default {
             spectatorsFull: 'No spectator spots available',
             confirmedAt: 'Confirmed on',
             registeredAt: 'Registered on',
+            withdrawalClosed: 'The session has already started: you can no longer cancel your registration',
         },
         status: {
             draft: 'Draft',
@@ -482,5 +483,6 @@ export default {
         alreadyCancelled: 'This registration has already been cancelled or cannot be modified.',
         viewTable: 'View table',
         guest: 'Guest',
+        tableStarted: 'The session has already started: you can no longer cancel your registration.',
     },
 };

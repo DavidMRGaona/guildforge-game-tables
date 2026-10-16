@@ -162,6 +162,7 @@ export default {
             spectatorsFull: 'Sin plazas de espectador',
             confirmedAt: 'Confirmado el',
             registeredAt: 'Inscrito el',
+            withdrawalClosed: 'La partida ya ha comenzado: ya no puedes cancelar la inscripción',
         },
         status: {
             draft: 'Borrador',
@@ -581,5 +582,6 @@ export default {
         alreadyCancelled: 'Esta inscripción ya ha sido cancelada o no puede ser modificada.',
         viewTable: 'Ver mesa',
         guest: 'Invitado',
+        tableStarted: 'La partida ya ha comenzado: ya no puedes cancelar la inscripción.',
     },
 };

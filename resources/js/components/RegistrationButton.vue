@@ -201,9 +201,13 @@ const canRegister = computed(() => {
     return true;
 });
 
+// An active registration decides the button: closed reasons only affect who is not registered
+const hasActiveRegistration = computed(() => !!registration.value && !isFinalStatus(registration.value.status));
+
+// The server decides: an active registration on a table that has not started
 const canCancel = computed(() => {
-    if (!registration.value) return false;
-    return !isFinalStatus(registration.value.status);
+    if (!hasActiveRegistration.value) return false;
+    return eligibility.value?.canCancel === true;
 });
 
 const isTableFull = computed(() => spotsAvailable.value <= 0);
@@ -240,9 +244,13 @@ const waitingListHelp = computed(() => {
         : t('gameTables.registration.waitingListHelp');
 });
 
+// Reasons that close the registrations for everyone, whatever the seats
+const CLOSED_REASONS: readonly string[] = ['registration_closed', 'table_started', 'table_ended', 'invitation_only'];
+
 const isRegistrationClosed = computed(() => {
     if (!eligibility.value) return true;
-    return !eligibility.value.eligible && eligibility.value.reason === 'registration_closed';
+    const reason = eligibility.value.reason;
+    return !eligibility.value.eligible && reason !== null && CLOSED_REASONS.includes(reason);
 });
 
 const registrationOpensAt = computed(() => {
@@ -276,12 +284,17 @@ const buttonText = computed(() => {
         return t('gameTables.registration.loginRequired');
     }
 
-    if (registration.value && !isFinalStatus(registration.value.status)) {
-        return t('gameTables.registration.cancelRegistration');
+    if (hasActiveRegistration.value) {
+        return canCancel.value
+            ? t('gameTables.registration.cancelRegistration')
+            : t('gameTables.registration.withdrawalClosed');
     }
 
     if (isRegistrationClosed.value) {
-        return t('gameTables.registration.closed');
+        // Say why: the time of the table or the invitation
+        return eligibility.value?.reason === 'registration_closed'
+            ? t('gameTables.registration.closed')
+            : (eligibility.value?.message ?? t('gameTables.registration.closed'));
     }
 
     if (registrationOpensAt.value) {
@@ -310,8 +323,8 @@ const buttonText = computed(() => {
 // the gate does not apply or the button is disabled for its own reasons anyway
 const verificationBlockedAction = computed<VerificationGateAction | null>(() => {
     if (!gate.blocked.value || !isAuthenticated.value) return null;
+    if (hasActiveRegistration.value) return canCancel.value ? 'cancelRegistration' : null;
     if (isRegistrationClosed.value || registrationOpensAt.value) return null;
-    if (registration.value && canCancel.value) return 'cancelRegistration';
     return canRegister.value ? 'register' : null;
 });
 const verificationBlocked = computed(() => verificationBlockedAction.value !== null);
@@ -332,6 +345,7 @@ const buttonDisabled = computed(() => {
         return false; // Login redirect still works
     }
     if (verificationBlocked.value) return true;
+    if (hasActiveRegistration.value) return !canCancel.value;
     if (isRegistrationClosed.value) return true;
     if (registrationOpensAt.value) return true;
     if (!canRegister.value && !canCancel.value) return true;
