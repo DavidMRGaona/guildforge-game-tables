@@ -159,6 +159,15 @@ final class RegistrationSlotPropsTest extends ModuleTestCase
         }
     }
 
+    public function test_the_in_play_help_text_is_translated_in_both_languages(): void
+    {
+        foreach (['es' => 'Admite inscripciones desde el inicio hasta el final de la partida, aunque no se haya pulsado «Iniciar», solo con plazas libres: sin lista de espera ni bajas', 'en' => 'Admits registrations from the start to the end of the session, even if «Start» was not pressed, only with free seats: no waiting list and no cancellations'] as $locale => $text) {
+            $this->assertSame($text, trans('game-tables::messages.fields.accepts_registrations_in_progress_help', [], $locale));
+        }
+
+        $this->assertSame('Allow registrations during the session', trans('game-tables::messages.fields.accepts_registrations_in_progress', [], 'en'));
+    }
+
     private function assertSlotProps(Assert $page): Assert
     {
         $page->component('GameTables/Show', shouldExist: false);

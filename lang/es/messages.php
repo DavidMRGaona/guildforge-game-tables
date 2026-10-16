@@ -150,9 +150,10 @@ return [
         'members_early_access_days' => 'Días de acceso anticipado para socios',
         'registration_opens_at' => 'Apertura de inscripciones',
         'registration_closes_at' => 'Cierre de inscripciones',
+        'registration_closes_at_help' => 'Como muy tarde, el inicio de la mesa (o su final, si admite inscripciones durante la partida). Las bajas de los participantes se cierran siempre al inicio.',
         'auto_confirm' => 'Confirmar automáticamente',
         'accepts_registrations_in_progress' => 'Permitir inscripciones durante la partida',
-        'accepts_registrations_in_progress_help' => 'Permite que usuarios se inscriban aunque la mesa esté en progreso',
+        'accepts_registrations_in_progress_help' => 'Admite inscripciones desde el inicio hasta el final de la partida, aunque no se haya pulsado «Iniciar», solo con plazas libres: sin lista de espera ni bajas',
         'notification_email' => 'Email de notificaciones',
         'notification_email_help' => 'Dirección de correo donde se enviarán las notificaciones de inscripciones y bajas',
         'is_published' => 'Publicado',
@@ -685,6 +686,8 @@ return [
         'language_required' => 'El idioma es obligatorio',
         'experience_level_required' => 'El nivel de experiencia es obligatorio',
         'character_creation_required' => 'El tipo de creación de personajes es obligatorio',
+        'registration_closes_after_start' => 'El cierre de inscripciones no puede ser posterior al inicio de la mesa (:date)',
+        'registration_closes_after_end' => 'El cierre de inscripciones no puede ser posterior al final de la partida (:date)',
     ],
 
     /*

@@ -127,6 +127,9 @@ return [
         'members_early_access_days' => 'Member early access days',
         'registration_opens_at' => 'Registration opens',
         'registration_closes_at' => 'Registration closes',
+        'registration_closes_at_help' => 'At the latest, the start of the table (or its end, if it admits registrations in play). Participants can always cancel only until the start.',
+        'accepts_registrations_in_progress' => 'Allow registrations during the session',
+        'accepts_registrations_in_progress_help' => 'Admits registrations from the start to the end of the session, even if «Start» was not pressed, only with free seats: no waiting list and no cancellations',
         'auto_confirm' => 'Auto confirm',
         'is_published' => 'Published',
         'is_published_help' => 'Controls the public visibility of the table. Registrations open automatically based on configured dates.',
@@ -596,6 +599,8 @@ return [
         'language_required' => 'Language is required',
         'experience_level_required' => 'Experience level is required',
         'character_creation_required' => 'Character creation type is required',
+        'registration_closes_after_start' => 'Registrations cannot close after the table starts (:date)',
+        'registration_closes_after_end' => 'Registrations cannot close after the session ends (:date)',
     ],
 
     /*
