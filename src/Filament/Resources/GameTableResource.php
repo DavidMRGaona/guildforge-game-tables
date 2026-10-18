@@ -32,6 +32,7 @@ use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Filament\Notifications\Notification;
@@ -55,6 +56,7 @@ use Modules\GameTables\Domain\Enums\TableType;
 use Modules\GameTables\Domain\Enums\Tone;
 use Modules\GameTables\Filament\Resources\GameTableResource\Pages;
 use Modules\GameTables\Filament\Resources\GameTableResource\RelationManagers\ParticipantsRelationManager;
+use Modules\GameTables\Filament\Support\PublicationLock;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ContentWarningModel;
@@ -412,7 +414,9 @@ final class GameTableResource extends BaseResource
                                 Toggle::make('is_published')
                                     ->label(__('game-tables::messages.fields.is_published'))
                                     ->default(false)
-                                    ->helperText(__('game-tables::messages.fields.is_published_help')),
+                                    // A web-created table is published by approving it, never from here
+                                    ->disabled(fn (?Model $record): bool => PublicationLock::isLocked($record))
+                                    ->helperText(fn (?Model $record): string => PublicationLock::hint($record) ?? __('game-tables::messages.fields.is_published_help')),
 
                                 Select::make('status')
                                     ->label(__('game-tables::messages.fields.table_status'))
@@ -566,9 +570,8 @@ final class GameTableResource extends BaseResource
                             $approvedCount = 0;
 
                             foreach ($records as $record) {
-                                if ($record->frontend_creation_status !== null
-                                    && $record->frontend_creation_status !== FrontendCreationStatus::Approved
-                                ) {
+                                // Only what the author sent to review: never a draft or an approved table
+                                if ($record->frontend_creation_status === FrontendCreationStatus::PendingReview) {
                                     $service->approveFrontendCreation($record->id);
                                     $approvedCount++;
                                 }
@@ -596,9 +599,7 @@ final class GameTableResource extends BaseResource
                             $rejectedCount = 0;
 
                             foreach ($records as $record) {
-                                if ($record->frontend_creation_status !== null
-                                    && $record->frontend_creation_status !== FrontendCreationStatus::Rejected
-                                ) {
+                                if ($record->frontend_creation_status === FrontendCreationStatus::PendingReview) {
                                     $service->rejectFrontendCreation($record->id, $data['reason']);
                                     $rejectedCount++;
                                 }

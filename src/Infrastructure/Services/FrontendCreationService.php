@@ -317,20 +317,23 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             throw NotEditableException::forStatus('not_owner');
         }
 
-        // Only unpublished drafts and rejected tables go to review: a repeated request sends nothing
+        // Only unpublished drafts (and legacy rejected tables) go to review: a repeated request sends nothing
         if (! $table->canBeChangedByAuthor()) {
             throw $this->notChangeableByAuthor($table->isPublished, $table->frontendCreationStatus);
         }
 
-        // For now, submitting for review means publishing the table
-        // if the publication mode is 'auto' or user has auto-publish privileges
+        // Sent to review: clears the reason of an earlier rejection
+        $table->submitForModeration();
+
+        // In 'auto' mode, or for a user who may publish without review, it is approved and
+        // published at once, as a campaign is
         $mode = $this->settingsReader->getPublicationMode();
 
         if ($mode === 'auto' || $this->checkAutoPublishEligibility($userId)) {
+            $table->approveFrontendCreation();
+            $this->gameTableRepository->save($table);
             $this->gameTableService->publish($tableId);
         } else {
-            // Set status to pending review and dispatch event
-            $table->setFrontendCreationStatus(FrontendCreationStatus::PendingReview);
             $this->gameTableRepository->save($table);
 
             GameTableSubmittedForReview::dispatch(
@@ -353,7 +356,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             throw NotEditableException::forStatus('not_owner');
         }
 
-        // Only unpublished drafts and rejected tables are edited by their author
+        // Only unpublished drafts (and legacy rejected tables) are edited by their author
         if (! $table->canBeChangedByAuthor()) {
             throw $this->notChangeableByAuthor($table->isPublished, $table->frontendCreationStatus);
         }
@@ -426,7 +429,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             throw NotEditableException::forStatus('not_owner');
         }
 
-        // Only unpublished drafts and rejected tables are deleted by their author
+        // Only unpublished drafts (and legacy rejected tables) are deleted by their author
         if (! $table->canBeChangedByAuthor()) {
             throw $this->notChangeableByAuthor($table->isPublished, $table->frontendCreationStatus);
         }
@@ -441,6 +444,9 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         if ($table === null) {
             throw GameTableNotFoundException::withId($tableId);
         }
+
+        // Only what the author sent to review is approved (and so published)
+        $this->assertInReview($table->frontendCreationStatus);
 
         $table->approveFrontendCreation($notes);
         $this->gameTableRepository->save($table);
@@ -465,6 +471,9 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             throw GameTableNotFoundException::withId($tableId);
         }
 
+        $this->assertInReview($table->frontendCreationStatus);
+
+        // Back to the author as a draft that keeps the reason
         $table->rejectFrontendCreation($reason);
         $this->gameTableRepository->save($table);
 
@@ -513,7 +522,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             throw NotEditableException::forStatus('not_owner');
         }
 
-        // Only unpublished drafts and rejected campaigns are edited by their author
+        // Only unpublished drafts (and legacy rejected campaigns) are edited by their author
         if (! $campaign->canBeChangedByAuthor()) {
             throw $this->notChangeableByAuthor($campaign->isPublished, $campaign->frontendCreationStatus);
         }
@@ -525,7 +534,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         $campaign->frequency = $dto->frequency;
         $campaign->maxPlayers = $dto->maxPlayers;
 
-        // If rejected, reset to draft on edit
+        // A campaign rejected before 2.10.0 (legacy status) becomes a draft on edit, keeping the reason
         if ($campaign->frontendCreationStatus === FrontendCreationStatus::Rejected) {
             $campaign->setFrontendCreationStatus(FrontendCreationStatus::Draft);
         }
@@ -549,7 +558,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             throw NotEditableException::forStatus('not_owner');
         }
 
-        // Only unpublished drafts and rejected campaigns go to review: a repeated request sends nothing
+        // Only unpublished drafts (and legacy rejected campaigns) go to review: a repeated request sends nothing
         if (! $campaign->canBeChangedByAuthor()) {
             throw $this->notChangeableByAuthor($campaign->isPublished, $campaign->frontendCreationStatus);
         }
@@ -586,9 +595,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             throw CampaignNotFoundException::withId($campaignId);
         }
 
-        if ($campaign->frontendCreationStatus !== FrontendCreationStatus::PendingReview) {
-            throw NotEditableException::forStatus($campaign->frontendCreationStatus->value ?? 'not_frontend');
-        }
+        $this->assertInReview($campaign->frontendCreationStatus);
 
         $campaign->approveFrontendCreation($notes);
         $campaign->publish();
@@ -603,10 +610,9 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             throw CampaignNotFoundException::withId($campaignId);
         }
 
-        if ($campaign->frontendCreationStatus !== FrontendCreationStatus::PendingReview) {
-            throw NotEditableException::forStatus($campaign->frontendCreationStatus->value ?? 'not_frontend');
-        }
+        $this->assertInReview($campaign->frontendCreationStatus);
 
+        // Back to the author as a draft that keeps the reason
         $campaign->rejectFrontendCreation($reason);
         $this->campaignRepository->save($campaign);
     }
@@ -623,7 +629,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             throw NotEditableException::forStatus('not_owner');
         }
 
-        // Only unpublished drafts and rejected campaigns are deleted by their author
+        // Only unpublished drafts (and legacy rejected campaigns) are deleted by their author
         if (! $campaign->canBeChangedByAuthor()) {
             throw $this->notChangeableByAuthor($campaign->isPublished, $campaign->frontendCreationStatus);
         }
@@ -632,7 +638,17 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
     }
 
     /**
-     * Refusal for an author changing a table or campaign outside an unpublished draft or rejected item.
+     * Approving or rejecting is only for an item its author sent to review.
+     */
+    private function assertInReview(?FrontendCreationStatus $status): void
+    {
+        if ($status !== FrontendCreationStatus::PendingReview) {
+            throw NotEditableException::forStatus($status->value ?? 'not_frontend');
+        }
+    }
+
+    /**
+     * Refusal for an author changing a table or campaign outside an unpublished draft (or legacy rejected item).
      */
     private function notChangeableByAuthor(bool $isPublished, ?FrontendCreationStatus $status): NotEditableException
     {

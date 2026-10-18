@@ -10,6 +10,7 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
 use Modules\GameTables\Application\Services\GameMasterServiceInterface;
 use Modules\GameTables\Filament\Resources\CampaignResource;
+use Modules\GameTables\Filament\Support\PublicationLock;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 
 final class EditCampaign extends EditRecord
@@ -52,6 +53,16 @@ final class EditCampaign extends EditRecord
         $data['gameMasters'] = $gameMastersData;
 
         return $data;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        // A web-created campaign is published by approving it, even against a forged payload
+        return PublicationLock::guardFormData($this->getRecord(), $data);
     }
 
     /**

@@ -142,15 +142,26 @@ final class Campaign
         }
     }
 
+    /**
+     * Back to the author as an unpublished draft that keeps the reason until it is sent again.
+     */
     public function rejectFrontendCreation(string $reason): void
     {
-        $this->frontendCreationStatus = FrontendCreationStatus::Rejected;
+        if ($this->isPublished) {
+            $this->unpublish();
+        }
+
+        $this->frontendCreationStatus = FrontendCreationStatus::Draft;
         $this->moderationNotes = $reason;
     }
 
+    /**
+     * Sent to review: the reason of an earlier rejection no longer applies.
+     */
     public function submitForModeration(): void
     {
         $this->frontendCreationStatus = FrontendCreationStatus::PendingReview;
+        $this->moderationNotes = null;
     }
 
     public function isCreatedFromFrontend(): bool
@@ -169,5 +180,18 @@ final class Campaign
     public function canBeChangedByAuthor(): bool
     {
         return FrontendCreationStatus::allowsAuthorChanges($this->frontendCreationStatus, $this->isPublished);
+    }
+
+    /**
+     * Why the campaign was rejected, while it is back in the author's hands; null otherwise. Only a
+     * rejection leaves notes on a draft (submitting clears them, approval notes go with Approved).
+     */
+    public function rejectionReason(): ?string
+    {
+        if (! $this->canBeChangedByAuthor() || $this->moderationNotes === null || trim($this->moderationNotes) === '') {
+            return null;
+        }
+
+        return $this->moderationNotes;
     }
 }

@@ -25,6 +25,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Filament\Tables\Columns\IconColumn;
@@ -36,6 +37,7 @@ use Modules\GameTables\Domain\Enums\CampaignFrequency;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
 use Modules\GameTables\Filament\Forms\Components\GameMasterRepeater;
 use Modules\GameTables\Filament\Resources\CampaignResource\Pages;
+use Modules\GameTables\Filament\Support\PublicationLock;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 
@@ -173,7 +175,9 @@ final class CampaignResource extends BaseResource
 
                                 Toggle::make('is_published')
                                     ->label(__('game-tables::messages.fields.is_published'))
-                                    ->helperText(__('game-tables::messages.fields.is_published_campaign_help'))
+                                    // A web-created campaign is published by approving it, never from here
+                                    ->disabled(fn (?Model $record): bool => PublicationLock::isLocked($record))
+                                    ->helperText(fn (?Model $record): string => PublicationLock::hint($record) ?? __('game-tables::messages.fields.is_published_campaign_help'))
                                     ->default(false),
                             ])
                             ->columns(2),
