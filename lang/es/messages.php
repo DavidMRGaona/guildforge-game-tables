@@ -666,6 +666,7 @@ return [
         'table_rejected' => 'Mesa rechazada correctamente',
         'campaign_approved' => 'Campaña aprobada correctamente',
         'campaign_rejected' => 'Campaña rechazada correctamente',
+        'status_already_changed' => 'La mesa ya no está en un estado que permita este cambio',
     ],
 
     /*
