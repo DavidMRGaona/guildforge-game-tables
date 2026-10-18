@@ -133,6 +133,36 @@ final class GameTableStatusUpdaterTest extends ModuleTestCase
         $this->assertSame(TableStatus::Cancelled, $cancelled->refresh()->status);
     }
 
+    // Someone cancelled the table by hand after it was read again: the save refuses the transition
+    public function test_a_table_changed_by_hand_between_the_read_and_the_save_is_skipped_without_an_error(): void
+    {
+        Log::spy();
+        $table = $this->table(TableStatus::Scheduled, '2030-03-10 18:00:00');
+
+        $counts = $this->updateWithFind(function (GameTable $read) use ($table): void {
+            GameTableModel::query()->whereKey($table->id)->update(['status' => TableStatus::Cancelled->value]);
+        });
+
+        $this->assertSame($this->counts(skipped: 1), $counts);
+        $this->assertSame(TableStatus::Cancelled, $table->refresh()->status);
+        Log::shouldNotHaveReceived('error');
+    }
+
+    // Someone deleted the table after it was read again: nothing left to move, so it is skipped
+    public function test_a_table_deleted_between_the_read_and_the_save_is_skipped_without_an_error(): void
+    {
+        Log::spy();
+        $table = $this->table(TableStatus::Scheduled, '2030-03-10 18:00:00');
+
+        $counts = $this->updateWithFind(function (GameTable $read) use ($table): void {
+            GameTableModel::query()->whereKey($table->id)->delete();
+        });
+
+        $this->assertSame($this->counts(skipped: 1), $counts);
+        $this->assertFalse(GameTableModel::query()->whereKey($table->id)->exists());
+        Log::shouldNotHaveReceived('error');
+    }
+
     public function test_a_failing_table_is_logged_and_the_rest_still_change(): void
     {
         Log::spy();
@@ -181,6 +211,35 @@ final class GameTableStatusUpdaterTest extends ModuleTestCase
     private function update(string $now): array
     {
         return app(GameTableStatusUpdater::class)->update(new DateTimeImmutable($now));
+    }
+
+    /**
+     * Runs the start step for the scheduled tables at 18:05 with the real service, but runs
+     * $afterRead right after the updater reads each table again (before the service saves it).
+     *
+     * @param  callable(GameTable): void  $afterRead
+     * @return array{started: int, completed: int, skipped: int, failed: int}
+     */
+    private function updateWithFind(callable $afterRead): array
+    {
+        $real = app(GameTableRepositoryInterface::class);
+        $repository = $this->createStub(GameTableRepositoryInterface::class);
+        $repository->method('idsStartedInStatuses')->willReturnCallback(
+            fn (array $statuses, DateTimeImmutable $now): array => $statuses === [TableStatus::Scheduled, TableStatus::Full]
+                ? $real->idsStartedInStatuses($statuses, $now)
+                : [],
+        );
+        $repository->method('find')->willReturnCallback(function (GameTableId $id) use ($real, $afterRead): ?GameTable {
+            $table = $real->find($id);
+            if ($table !== null) {
+                $afterRead($table);
+            }
+
+            return $table;
+        });
+
+        return (new GameTableStatusUpdater($repository, app(GameTableServiceInterface::class)))
+            ->update(new DateTimeImmutable('2030-03-10 18:05:00'));
     }
 
     /**
