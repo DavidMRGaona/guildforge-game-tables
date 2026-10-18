@@ -691,6 +691,7 @@ return [
         'experience_level_required' => 'El nivel de experiencia es obligatorio',
         'character_creation_required' => 'El tipo de creación de personajes es obligatorio',
         'campaign_not_owned' => 'Solo puedes vincular la mesa a una campaña creada por ti',
+        'event_not_open' => 'Solo puedes vincular la mesa a un evento abierto a nuevas mesas',
         'registration_closes_after_start' => 'El cierre de inscripciones no puede ser posterior al inicio de la mesa (:date)',
         'registration_closes_after_end' => 'El cierre de inscripciones no puede ser posterior al final de la partida (:date)',
     ],

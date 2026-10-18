@@ -604,6 +604,7 @@ return [
         'experience_level_required' => 'Experience level is required',
         'character_creation_required' => 'Character creation type is required',
         'campaign_not_owned' => 'You can only link the table to a campaign you created',
+        'event_not_open' => 'You can only link the table to an event open to new tables',
         'registration_closes_after_start' => 'Registrations cannot close after the table starts (:date)',
         'registration_closes_after_end' => 'Registrations cannot close after the session ends (:date)',
     ],
