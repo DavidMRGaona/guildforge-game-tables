@@ -1013,7 +1013,7 @@ final class RegistrationServiceTest extends TestCase
     {
         return [
             'started table' => ['-1 hour', RegistrationType::Everyone, 'registration_closed'],
-            'invite only table' => ['+1 week', RegistrationType::Invite, 'guests_not_allowed'],
+            'invite only table' => ['+1 week', RegistrationType::Invite, 'invitation_only'],
         ];
     }
 

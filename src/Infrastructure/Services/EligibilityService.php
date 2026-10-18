@@ -318,8 +318,14 @@ final readonly class EligibilityService implements EligibilityServiceInterface
             return $this->guestRefusal('not_found');
         }
 
-        // Only allow guest registration for "everyone" tables
-        if ($gameTable->registrationType->requiresMembership() || $gameTable->registrationType->requiresInvitation()) {
+        // Invite tables are filled by the organisation from the panel: the visitor is told so, as a
+        // signed-in user is, instead of being sent to log in
+        if ($gameTable->requiresInvitation()) {
+            return $this->guestRefusal('invitation_only');
+        }
+
+        // Members-only tables admit no guests
+        if ($gameTable->requiresMembership()) {
             return $this->guestRefusal('guests_not_allowed');
         }
 

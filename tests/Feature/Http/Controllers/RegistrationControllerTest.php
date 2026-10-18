@@ -197,7 +197,8 @@ final class RegistrationControllerTest extends ModuleTestCase
         ]);
 
         $response->assertRedirect();
-        $response->assertSessionHasErrors('registration');
+        $response->assertSessionHasErrors(['registration' => 'Esta mesa es solo por invitación: la organización inscribe a los jugadores']);
+        $this->assertNull($this->participantRepository->findByTableAndEmail($gameTable->id, 'john@example.com'));
     }
 
     public function test_a_signed_in_user_cannot_register_for_invite_only_table(): void

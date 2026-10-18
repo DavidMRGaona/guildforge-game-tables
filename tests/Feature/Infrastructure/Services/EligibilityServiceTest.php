@@ -207,12 +207,12 @@ final class EligibilityServiceTest extends TestCase
         $this->assertEquals('registration_closed', $result['reason']);
     }
 
-    public function test_can_guest_register_returns_false_for_invite_only_table(): void
+    // The visitor is told why, as a signed-in user is: signing in would not open the table
+    public function test_a_guest_is_told_an_invite_table_is_by_invitation_only(): void
     {
         $this->participantRepository->expects($this->never())->method($this->anything());
 
         $gameTableId = GameTableId::generate()->value;
-        $email = 'guest@example.com';
 
         $gameTable = $this->createGameTable(
             id: $gameTableId,
@@ -221,14 +221,18 @@ final class EligibilityServiceTest extends TestCase
         );
 
         $this->gameTableRepository
-            ->expects($this->once())
+            ->expects($this->exactly(2))
             ->method('find')
             ->willReturn($gameTable);
 
-        $result = $this->service->canGuestRegister($gameTableId, $email);
+        $player = $this->service->canGuestRegister($gameTableId, 'guest@example.com');
+        $spectator = $this->service->canGuestRegister($gameTableId, null, ParticipantRole::Spectator);
 
-        $this->assertFalse($result['eligible']);
-        $this->assertEquals('guests_not_allowed', $result['reason']);
+        $this->assertFalse($player['eligible']);
+        $this->assertSame('invitation_only', $player['reason']);
+        $this->assertFalse($player['waitingList']);
+        $this->assertFalse($spectator['eligible']);
+        $this->assertSame('invitation_only', $spectator['reason']);
     }
 
     public function test_can_guest_register_returns_false_when_registration_not_yet_open(): void

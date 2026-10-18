@@ -145,6 +145,35 @@ final class RegistrationSlotPropsTest extends ModuleTestCase
                 ->where('eligibility.spectator.reason', 'invitation_only'));
     }
 
+    // The button shows the server's message disabled instead of "Inicia sesión para inscribirte"
+    public function test_an_invite_table_tells_a_visitor_it_is_by_invitation_only(): void
+    {
+        $this->table->update(['registration_type' => 'invite']);
+
+        $this->get(route('gametables.show', $this->table->slug))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('eligibility', null)
+                ->where('guestEligibility.eligible', false)
+                ->where('guestEligibility.reason', 'invitation_only')
+                ->where('guestEligibility.message', 'Esta mesa es solo por invitación: la organización inscribe a los jugadores')
+                ->where('guestEligibility.spectator.eligible', false)
+                ->where('guestEligibility.spectator.reason', 'invitation_only'));
+    }
+
+    // Members-only tables keep their own reason: a member can still sign in and register
+    public function test_a_members_only_table_still_tells_a_visitor_guests_are_not_allowed(): void
+    {
+        $this->table->update(['registration_type' => 'members_only']);
+
+        $this->get(route('gametables.show', $this->table->slug))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('guestEligibility.eligible', false)
+                ->where('guestEligibility.reason', 'guests_not_allowed')
+                ->where('guestEligibility.message', 'Esta mesa no permite inscripciones de invitados'));
+    }
+
     public function test_the_invitation_only_message_is_translated_in_both_languages(): void
     {
         foreach (['es' => 'Esta mesa es solo por invitación: la organización inscribe a los jugadores', 'en' => 'This table is by invitation only: the organisation registers the players'] as $locale => $text) {
