@@ -384,6 +384,7 @@ return [
         'sections' => [
             'membership' => 'Early access for association members',
             'registration' => 'Registrations',
+            'guest_registrations' => 'Guest registrations',
             'automation' => 'Automation',
             'defaults' => 'Default values',
             'notifications' => 'Notifications',
@@ -411,6 +412,22 @@ return [
             'max_players_limit' => 'Maximum players limit',
             'max_spectators_limit' => 'Maximum spectators limit',
             'max_duration' => 'Maximum duration (minutes)',
+            'guest_confirmation_mode' => 'Seat while not confirmed',
+            'guest_hold_hours' => 'Confirmation deadline (hours)',
+            'guest_max_unconfirmed_held' => 'Maximum unconfirmed seats per table',
+            'guest_max_unconfirmed_held_help' => 'Unconfirmed guest registrations beyond this number wait without taking a seat.',
+            'guest_accounts_mode' => 'Email with a registered account',
+            'guest_rate_per_minute' => 'Guest registrations per minute and connection',
+            'guest_rate_per_hour' => 'Guest registrations per hour and connection',
+            'duplicate_window_hours' => '"Possible duplicate" window (hours)',
+        ],
+        'guest_confirmation_mode' => [
+            'hold' => 'Holds the seat with a deadline',
+            'wait' => 'Takes no seat until confirmed',
+        ],
+        'guest_accounts_mode' => [
+            'require_login' => 'Ask them to sign in',
+            'allow_guest' => 'Allow as a guest unless that account is already registered',
         ],
         'validation' => [
             'above_players_limit' => 'It cannot exceed the maximum players limit (:limit)',

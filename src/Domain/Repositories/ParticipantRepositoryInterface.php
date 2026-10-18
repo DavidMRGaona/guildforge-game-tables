@@ -70,6 +70,12 @@ interface ParticipantRepositoryInterface
      */
     public function countWaiting(GameTableId $gameTableId, ParticipantRole $role): int;
 
+    /**
+     * Guests whose email is not confirmed yet and who hold a seat (hold mode, pending or confirmed).
+     * Waiting-list rows do not count.
+     */
+    public function countUnconfirmedHoldingSeats(GameTableId $gameTableId): int;
+
     public function getNextWaitingListPosition(GameTableId $gameTableId): int;
 
     /**
