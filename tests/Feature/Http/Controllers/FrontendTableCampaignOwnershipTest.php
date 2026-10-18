@@ -132,6 +132,44 @@ final class FrontendTableCampaignOwnershipTest extends ModuleTestCase
         $this->assertSame('Mesa corregida', $draft->title);
     }
 
+    public function test_editing_someone_elses_table_is_forbidden_and_saves_nothing(): void
+    {
+        $owner = UserModel::factory()->create();
+        $draft = $this->tableDraft(null, $owner);
+
+        $this->actingAs($this->author)
+            ->put(route('gametables.update', $draft), $this->tableData('Mesa ajena', null))
+            ->assertForbidden();
+
+        $draft->refresh();
+        $this->assertSame('Mesa en borrador', $draft->title);
+        $this->assertNull($draft->campaign_id);
+    }
+
+    /**
+     * The stored-campaign exception only applies to someone who may edit the table, so a PUT to
+     * another user's draft cannot tell whether that draft is linked to a given campaign: its own
+     * campaign is refused exactly like any other foreign one.
+     */
+    public function test_someone_elses_table_campaign_is_refused_like_any_foreign_one(): void
+    {
+        $owner = UserModel::factory()->create();
+        $ownersCampaign = $this->campaign($owner, 'campana-del-dueno');
+        $unrelated = $this->campaign(UserModel::factory()->create(), 'campana-sin-relacion');
+        $draft = $this->tableDraft($ownersCampaign->id, $owner);
+
+        $this->actingAs($this->author)
+            ->put(route('gametables.update', $draft), $this->tableData('Mesa ajena', $ownersCampaign->id))
+            ->assertSessionHasErrors(['campaign_id' => self::REFUSED]);
+        $this->actingAs($this->author)
+            ->put(route('gametables.update', $draft), $this->tableData('Mesa ajena', $unrelated->id))
+            ->assertSessionHasErrors(['campaign_id' => self::REFUSED]);
+
+        $draft->refresh();
+        $this->assertSame('Mesa en borrador', $draft->title);
+        $this->assertSame($ownersCampaign->id, $draft->campaign_id);
+    }
+
     public function test_the_refusal_is_translated_in_both_languages(): void
     {
         $this->assertSame(self::REFUSED, trans('game-tables::messages.validation.campaign_not_owned', [], 'es'));
@@ -174,13 +212,13 @@ final class FrontendTableCampaignOwnershipTest extends ModuleTestCase
         ]);
     }
 
-    private function tableDraft(?string $campaignId = null): GameTableModel
+    private function tableDraft(?string $campaignId = null, ?UserModel $creator = null): GameTableModel
     {
         return GameTableModel::create([
             'id' => (string) Str::uuid(),
             'game_system_id' => $this->gameSystem->id,
             'campaign_id' => $campaignId,
-            'created_by' => $this->author->id,
+            'created_by' => ($creator ?? $this->author)->id,
             'title' => 'Mesa en borrador',
             'slug' => 'mesa-en-borrador',
             'starts_at' => now()->addWeek(),
