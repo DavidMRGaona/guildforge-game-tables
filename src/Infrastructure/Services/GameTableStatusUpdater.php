@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use Illuminate\Support\Facades\Log;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
 use Modules\GameTables\Domain\Enums\TableStatus;
+use Modules\GameTables\Domain\Exceptions\GameTableNotFoundException;
 use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
@@ -16,8 +17,8 @@ use Throwable;
 /**
  * Moves tables along with the clock, as the panel's «Iniciar» and «Completar» do: scheduled or
  * full tables start at their start time and tables in progress complete at their end (start plus
- * duration). Each table is read again and handled on its own: one changed by hand meanwhile is
- * skipped, and one that fails is logged without stopping the rest.
+ * duration). Each table is read again and handled on its own: one changed or deleted by hand
+ * meanwhile is skipped, and one that fails is logged without stopping the rest.
  */
 final readonly class GameTableStatusUpdater
 {
@@ -93,8 +94,8 @@ final readonly class GameTableStatusUpdater
             }
 
             return self::CHANGED;
-        } catch (InvalidStatusTransitionException) {
-            // Changed by hand between the read and the save
+        } catch (InvalidStatusTransitionException|GameTableNotFoundException) {
+            // Changed or deleted by hand between the read and the save
             return self::SKIPPED;
         } catch (Throwable $e) {
             Log::error('game-tables: automatic status update failed', [
