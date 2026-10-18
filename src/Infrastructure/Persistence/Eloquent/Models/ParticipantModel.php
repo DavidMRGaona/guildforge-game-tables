@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Models;
 
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -91,6 +92,33 @@ final class ParticipantModel extends Model
             'confirmation_sent_at' => 'datetime',
             'confirmation_mode' => GuestConfirmationMode::class,
         ];
+    }
+
+    /**
+     * Leaves out the guests whose email is not confirmed and who were not given a seat (mode
+     * wait): they take no seat until they confirm. Null-safe on purpose: a row without a mode, or
+     * with an account, is always kept.
+     *
+     * @param  Builder<ParticipantModel>  $query
+     * @return Builder<ParticipantModel>
+     */
+    public function scopeHoldingOrConfirmed(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $keep): Builder => $keep
+            ->whereNotNull('user_id')
+            ->orWhereNotNull('email_confirmed_at')
+            ->orWhereNull('confirmation_mode')
+            ->orWhere('confirmation_mode', '<>', GuestConfirmationMode::Wait->value));
+    }
+
+    /**
+     * The same rule as scopeHoldingOrConfirmed(), for loaded rows: an unconfirmed guest without a seat.
+     */
+    public function isUnconfirmedWaiting(): bool
+    {
+        return $this->user_id === null
+            && $this->email_confirmed_at === null
+            && $this->confirmation_mode === GuestConfirmationMode::Wait;
     }
 
     /**
