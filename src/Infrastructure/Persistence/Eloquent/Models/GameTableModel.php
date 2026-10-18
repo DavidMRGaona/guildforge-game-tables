@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
@@ -318,5 +319,20 @@ final class GameTableModel extends Model
     public function getRouteKeyName(): string
     {
         return 'slug';
+    }
+
+    /**
+     * Resolve a web route key: the slug first, then the id when the key is a UUID. The edit
+     * request and the controller both resolve the table here, so they always read the same row.
+     */
+    public static function findBySlugOrId(string $key): ?self
+    {
+        $table = self::query()->where('slug', $key)->first();
+
+        if ($table === null && Str::isUuid($key)) {
+            $table = self::query()->find($key);
+        }
+
+        return $table;
     }
 }

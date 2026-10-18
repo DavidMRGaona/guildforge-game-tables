@@ -25,6 +25,12 @@ return [
         'waiting_list_enabled' => false,
     ],
 
+    'automation' => [
+        // Tables start at their start time and complete at their end
+        // (game-tables:update-statuses, scheduled every five minutes)
+        'auto_status_enabled' => true,
+    ],
+
     'defaults' => [
         'members_early_access_days' => 0,
         'duration_minutes' => 240,

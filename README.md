@@ -55,6 +55,7 @@ Se configura en el panel: **Mesas de rol** → **Configuración** (permiso `game
 | Sección | Qué controla |
 |---------|--------------|
 | **Inscripciones** | **Lista de espera**: si las mesas con las plazas de jugador completas ofrecen la lista de espera (desactivada: la mesa completa rechaza a los jugadores). Ver [Lista de espera](#lista-de-espera) |
+| **Automatización** | **Actualizar el estado de las mesas automáticamente** (clave `automation.auto_status_enabled`, activado por defecto): cada cinco minutos las mesas programadas o completas pasan a «En progreso» a su hora de inicio y las mesas en progreso pasan a «Completada» al terminar. Ver [Cambio de estado automático](#cambio-de-estado-automático) |
 | **Acceso anticipado para socios** | **Acceso anticipado para socios** (clave `membership_integration.enabled`): si quienes tienen el rol de socio del core pueden inscribirse antes de la apertura según los días de acceso anticipado de cada mesa (desactivado, se inscriben con la apertura general); no depende del módulo de gestión de socios. **Días de acceso anticipado**: con cuántos empieza cada mesa nueva del panel |
 | **Valores por defecto** | Duración y número de jugadores y espectadores con los que empiezan los formularios de mesa del panel y de la web; confirmación automática y tipo de inscripción de las mesas nuevas del panel y de las creadas desde la web. Al guardar, cada valor por defecto se comprueba contra los **Límites** del mismo envío (no contra los guardados antes) y el mínimo de jugadores no puede superar el máximo; si no, el campo muestra el error y no se guarda nada. Los topes fijos siguen por encima: 20 jugadores, 50 espectadores, 720 minutos y 30 días de acceso anticipado |
 | **Notificaciones** | Correos de inscripción y de cancelación a los directores y al email de la mesa, y correos de promoción desde la lista de espera (al participante y a los directores) |
@@ -105,7 +106,18 @@ La página de la mesa y el servidor usan el mismo cálculo: el servidor cuenta l
 - **Editar** cambia las notas y el contacto del invitado (el email en minúsculas, y no el de otro invitado activo de la misma mesa: «Ya existe una inscripción con este email»), no el estado. El rol, el tipo de participante y el usuario no se editan: un cambio de rol o de persona es otra plaza, así que se cancela la inscripción y se añade de nuevo, que pasa por el bloqueo y las reglas de aforo.
 - **Borrar** (en una fila o en bloque) solo es para inscripciones canceladas o rechazadas, que ya no ocupan ni esperan plaza; para dar de baja a alguien se usa **Cancelar inscripción**, que libera la plaza y avisa a la lista de espera. En bloque se borran solo las seleccionadas que estén canceladas o rechazadas, las demás se quedan, y el aviso dice cuántas se han borrado y cuántas hay que cancelar antes. El estado se comprueba al borrar: una inscripción que se reactiva mientras tanto (la persona vuelve a inscribirse) no se borra. Lo ve quien puede editar la mesa, igual que las acciones de estado.
 
-En el panel, la cabecera de la mesa tiene las acciones **Publicar**, **Despublicar**, **Iniciar**, **Completar** y **Cancelar mesa**.
+En el panel, la cabecera de la mesa tiene las acciones **Publicar**, **Despublicar**, **Iniciar**, **Completar** y **Cancelar mesa**. **Iniciar** (mesas programadas o completas) y **Completar** (mesas en progreso) pasan por el mismo servicio que el cambio automático: **Completar** emite `GameTableCompleted`, y si la mesa ya ha cambiado de estado entretanto avisan («La mesa ya no está en un estado que permita este cambio») sin cambiar nada. Ninguna mesa en borrador, cancelada o completada se puede iniciar ni completar.
+
+### Cambio de estado automático
+
+Con **Automatización** → **Actualizar el estado de las mesas automáticamente** activado (por defecto), el comando `game-tables:update-statuses`, que el módulo programa cada cinco minutos sin ejecuciones solapadas, hace lo mismo que **Iniciar** y **Completar**:
+
+- Las mesas **Programada** o **Completa** cuya hora de inicio ha llegado pasan a **En progreso**.
+- Las mesas **En progreso** cuyo final (inicio más duración) ha llegado pasan a **Completada** y se emite `GameTableCompleted`. Una mesa programada que ya terminó pasa por los dos estados en la misma ejecución.
+- Los borradores y las mesas canceladas o completadas no cambian. Cada mesa se vuelve a leer antes de cambiarla: si alguien la ha cambiado a mano entretanto, se salta; si una falla, se anota en el log y se sigue con las demás. El comando imprime cuántas ha iniciado, completado, saltado y cuántas han fallado.
+- No se envían correos. Las horas se comparan en la zona horaria de la aplicación (`APP_TIMEZONE`), la misma en la que se guardan.
+
+Las inscripciones no cambian: ya se cierran a la hora de inicio, y las mesas que admiten inscripciones durante la partida las siguen admitiendo en **En progreso** hasta el final. Basta con que el planificador de Laravel esté en marcha (`php artisan schedule:work`, o `php artisan schedule:run` cada minuto); `php artisan schedule:list` muestra la tarea. Con el ajuste desactivado, el estado solo cambia con las acciones del panel.
 
 ### Lista de espera
 
@@ -141,10 +153,12 @@ Los emails de los invitados se guardan en minúsculas y se comparan sin distingu
 
 | Estado | Valor | Descripción |
 |--------|-------|-------------|
-| Borrador | `draft` | El autor puede editarla |
+| Borrador | `draft` | El autor la prepara y la puede editar; si viene de un rechazo, guarda el motivo |
 | Pendiente de revisión | `pending_review` | Enviada a revisión |
 | Aprobada | `approved` | Aprobada y publicada |
-| Rechazada | `rejected` | Rechazada con motivo; el autor puede editarla y volver a enviarla |
+| Rechazada | `rejected` | Solo en filas rechazadas antes de la versión 2.10.0; se trata como un borrador hasta que se convierte |
+
+Las mesas y campañas creadas desde el panel no tienen estado de moderación.
 
 ## Creación desde la web
 
@@ -152,11 +166,13 @@ Con **Creación desde web** activada, los usuarios con sesión iniciada que cump
 
 1. Crear una mesa en `/mesas/crear` (o desde el botón de la página de un evento, que la asocia al evento) o una campaña en `/campanas/crear`. Si no cumplen los requisitos, ven una página que explica el motivo.
 2. Editar sus borradores desde **Mis mesas** (`/mesas/mis-mesas`) o **Mis campañas** (`/campanas/mis-campanas`).
-3. Enviarlos a revisión, solo si están en borrador o rechazados.
+3. Enviarlos a revisión, solo si están en borrador.
+
+El autor solo edita, envía a revisión o borra una mesa o campaña que no esté publicada y esté en borrador (o rechazada antes de la versión 2.10.0), lo mismo que ofrecen **Mis mesas** y **Mis campañas**; el servidor responde 403 a cualquier otra petición. Una mesa o campaña publicada desde el panel cuando aún estaba en borrador queda fuera de su alcance, igual que las creadas desde el panel. Los permisos de edición y borrado del panel (`gametables.update`/`.delete`, `campaigns.update`/`.delete`) siguen dando acceso completo.
 
 Según el modo de publicación:
 
-- `auto`: la mesa se publica al crearla o al enviarla.
+- `auto`: la mesa o campaña queda aprobada y publicada al crearla o al enviarla.
 - `approval`: queda pendiente de revisión.
 - `role_based`: se publica directamente para los roles o permisos de autopublicación (`frontend_creation.publication.auto_publish_roles` y `auto_publish_permissions`, sin campo en el panel y vacíos por defecto); el resto queda pendiente.
 
@@ -164,9 +180,24 @@ Las mesas y campañas enviadas a revisión se avisan por correo a los usuarios c
 
 Aprobar o rechazar requiere el permiso de edición (`gametables.update` para mesas, `campaigns.update` para campañas); verlas o ser su autor no basta.
 
-**Mesas**: en **Mesas de rol** → **Mesas** se aprueban (la mesa se publica) o se rechazan con motivo, una a una o en bloque; el autor recibe un correo en ambos casos.
+### Flujo de revisión
 
-**Campañas**: en **Mesas de rol** → **Campañas** se aprueban (la campaña se publica) o se rechazan con motivo, una a una; el autor ve el motivo del rechazo en **Mis campañas**, sin correo.
+1. **Borrador**: el autor prepara la mesa o campaña.
+2. El autor la **envía a revisión** → **Pendiente de revisión**.
+3. Un administrador la **aprueba** → **Aprobada** y publicada.
+4. O la **rechaza** con un motivo obligatorio → vuelve a **Borrador**, sin publicar y con el motivo, que el autor ve en **Mis mesas** / **Mis campañas** (y al editar la campaña) hasta que la envía de nuevo; enviarla borra el motivo y el ciclo vuelve a empezar.
+
+Aprobar y rechazar (una a una o, en mesas, en bloque) solo actúan sobre lo que está pendiente de revisión: el servidor rechaza aprobar o rechazar un borrador o una mesa ya aprobada, y las acciones en bloque se saltan lo que no está pendiente.
+
+El panel nunca publica una mesa o campaña creada desde la web que el autor no haya enviado, ni una pendiente de revisión: el interruptor **Publicado** está bloqueado, con el aviso «El autor aún no la ha enviado a revisión.» en borrador o el de usar **Aprobar** o **Rechazar** si está pendiente, y en las mesas no aparece la acción **Publicar**. El servidor lo vuelve a comprobar al guardar, así que un formulario manipulado tampoco la publica. Aprobar es la única forma de publicarlas. Las creadas desde el panel se publican con el interruptor como siempre, y las aprobadas se pueden despublicar y volver a publicar sin que cambie su estado de moderación.
+
+**Mesas**: en **Mesas de rol** → **Mesas** (en la lista o en la página de edición) se aprueban o se rechazan; el autor recibe un correo en ambos casos.
+
+**Campañas**: en **Mesas de rol** → **Campañas** se aprueban o se rechazan, una a una desde la lista, sin correo al autor.
+
+Una mesa creada o editada desde la web solo se puede vincular a una campaña creada por quien la crea (las que ofrece el formulario); el servidor rechaza cualquier otra con «Solo puedes vincular la mesa a una campaña creada por ti». Desde el panel se puede vincular cualquier campaña. Al editar una mesa desde la web se puede conservar la campaña que ya tenga, aunque la haya vinculado un administrador desde el panel.
+
+Del mismo modo, una mesa creada o editada desde la web solo se puede vincular a un evento que ofrezca el formulario: publicado, sin terminar y con las mesas activadas. El servidor rechaza cualquier otro con «Solo puedes vincular la mesa a un evento abierto a nuevas mesas». El panel ofrece cualquier evento publicado que no haya empezado, tenga o no las mesas activadas. Al editar una mesa desde la web se puede conservar el evento que ya tenga, aunque haya terminado o lo haya vinculado un administrador desde el panel.
 
 ## Verificación de email
 
@@ -305,7 +336,7 @@ El módulo registra sus permisos con el prefijo `gametables:` (por ejemplo `game
 | `contentwarnings.view_any`, `contentwarnings.manage` | — | Ver y gestionar avisos de contenido |
 | `gametables.settings` | — | Abrir y guardar la página de configuración del módulo |
 
-La columna de rol indica el rol al que el módulo propone el permiso; habilitar el módulo no lo asigna, se concede en **Roles**. Los administradores tienen acceso completo. Los autores gestionan sus propias mesas y campañas desde «Mis mesas» y «Mis campañas»; una mesa solo se puede editar en borrador o rechazada.
+La columna de rol indica el rol al que el módulo propone el permiso; habilitar el módulo no lo asigna, se concede en **Roles**. Los administradores tienen acceso completo. Los autores gestionan sus propias mesas y campañas desde «Mis mesas» y «Mis campañas»; solo pueden editarlas, enviarlas a revisión o borrarlas mientras no estén publicadas y estén en borrador o rechazadas.
 
 ## Comandos
 
@@ -313,12 +344,13 @@ La columna de rol indica el rol al que el módulo propone el permiso; habilitar 
 php artisan gametables:generate-slugs            # genera slugs de mesas y campañas que no lo tienen
 php artisan gametables:generate-slugs --dry-run  # muestra qué haría sin cambiar nada
 php artisan gametables:generate-slugs --force    # regenera también los existentes
+php artisan game-tables:update-statuses          # inicia y completa las mesas según su hora (programado cada cinco minutos)
 ```
 
 ## Limitaciones actuales
 
 - Las rutas de creación desde la web exigen sesión iniciada, también con el nivel de acceso «Cualquier persona».
-- «Solo por invitación» no tiene sistema de invitaciones: rechaza a los invitados sin cuenta, pero los usuarios con sesión iniciada pueden inscribirse como en una mesa abierta.
+- «Solo por invitación» no tiene sistema de invitaciones: nadie se inscribe desde la web (ni invitados ni usuarios con sesión, que ven «Esta mesa es solo por invitación: la organización inscribe a los jugadores») y la organización añade a los participantes desde el panel.
 
 ## Arquitectura
 
@@ -345,7 +377,7 @@ src/modules/game-tables/
 │   └── web.php
 ├── src/
 │   ├── Application/           # DTOs e interfaces de servicios
-│   ├── Console/Commands/      # gametables:generate-slugs
+│   ├── Console/Commands/      # gametables:generate-slugs, game-tables:update-statuses
 │   ├── Domain/                # Entidades, enums, eventos, excepciones, repositorios, VOs
 │   ├── Filament/              # Resources, RelationManagers, Pages, Widgets, Forms
 │   ├── Http/                  # Controladores, requests y resources

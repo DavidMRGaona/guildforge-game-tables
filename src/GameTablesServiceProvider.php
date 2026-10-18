@@ -52,7 +52,9 @@ use Modules\GameTables\Application\Services\NotificationRecipientResolverInterfa
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
 use Modules\GameTables\Application\Services\RegistrationLockInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
+use Illuminate\Console\Scheduling\Schedule;
 use Modules\GameTables\Console\Commands\GenerateSlugsCommand;
+use Modules\GameTables\Console\Commands\UpdateTableStatusesCommand;
 use Modules\GameTables\Domain\Events\CampaignSubmittedForReview;
 use Modules\GameTables\Domain\Events\GameTableCancelled;
 use Modules\GameTables\Domain\Events\GameTableModerationApproved;
@@ -162,6 +164,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         $this->registerModelObservers();
         $this->registerEventListeners();
         $this->registerCommands();
+        $this->registerSchedule();
         $this->shareGameTableCount();
         $this->shareProfileGameTables();
         $this->shareProfileCreatedTables();
@@ -338,8 +341,22 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 GenerateSlugsCommand::class,
+                UpdateTableStatusesCommand::class,
             ]);
         }
+    }
+
+    /**
+     * Tables start and complete with the clock (off with automation.auto_status_enabled).
+     */
+    private function registerSchedule(): void
+    {
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            $schedule->command('game-tables:update-statuses')
+                ->everyFiveMinutes()
+                // A run takes seconds; a killed one must not block the updates for a day
+                ->withoutOverlapping(10);
+        });
     }
 
     /**

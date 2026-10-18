@@ -32,6 +32,7 @@ use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Filament\Notifications\Notification;
@@ -53,8 +54,10 @@ use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Enums\TableType;
 use Modules\GameTables\Domain\Enums\Tone;
+use Modules\GameTables\Domain\Exceptions\NotEditableException;
 use Modules\GameTables\Filament\Resources\GameTableResource\Pages;
 use Modules\GameTables\Filament\Resources\GameTableResource\RelationManagers\ParticipantsRelationManager;
+use Modules\GameTables\Filament\Support\PublicationLock;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ContentWarningModel;
@@ -412,13 +415,17 @@ final class GameTableResource extends BaseResource
                                 Toggle::make('is_published')
                                     ->label(__('game-tables::messages.fields.is_published'))
                                     ->default(false)
-                                    ->helperText(__('game-tables::messages.fields.is_published_help')),
+                                    // A web-created table is published by approving it, never from here
+                                    ->disabled(fn (?Model $record): bool => PublicationLock::isLocked($record))
+                                    ->helperText(fn (?Model $record): string => PublicationLock::hint($record) ?? __('game-tables::messages.fields.is_published_help')),
 
                                 Select::make('status')
                                     ->label(__('game-tables::messages.fields.table_status'))
+                                    // «Borrador» only for a table that already is one (a web table not yet published)
                                     ->options(
-                                        collect(TableStatus::cases())
-                                            ->reject(fn (TableStatus $status): bool => $status === TableStatus::Draft)
+                                        fn (?Model $record): array => collect(TableStatus::cases())
+                                            ->reject(fn (TableStatus $status): bool => $status === TableStatus::Draft
+                                                && $record?->getAttribute('status') !== TableStatus::Draft)
                                             ->mapWithKeys(fn (TableStatus $status): array => [$status->value => $status->label()])
                                             ->toArray()
                                     )
@@ -519,7 +526,13 @@ final class GameTableResource extends BaseResource
                     ->visible(fn (GameTableModel $record): bool => $record->frontend_creation_status === FrontendCreationStatus::PendingReview)
                     ->action(function (GameTableModel $record): void {
                         $service = app(FrontendCreationServiceInterface::class);
-                        $service->approveFrontendCreation($record->id);
+                        try {
+                            $service->approveFrontendCreation($record->id);
+                        } catch (NotEditableException) {
+                            self::warnStatusAlreadyChanged();
+
+                            return;
+                        }
 
                         Notification::make()
                             ->title(__('game-tables::messages.notifications.table_approved'))
@@ -543,7 +556,13 @@ final class GameTableResource extends BaseResource
                     ->visible(fn (GameTableModel $record): bool => $record->frontend_creation_status === FrontendCreationStatus::PendingReview)
                     ->action(function (GameTableModel $record, array $data): void {
                         $service = app(FrontendCreationServiceInterface::class);
-                        $service->rejectFrontendCreation($record->id, $data['reason']);
+                        try {
+                            $service->rejectFrontendCreation($record->id, $data['reason']);
+                        } catch (NotEditableException) {
+                            self::warnStatusAlreadyChanged();
+
+                            return;
+                        }
 
                         Notification::make()
                             ->title(__('game-tables::messages.notifications.table_rejected'))
@@ -564,13 +583,17 @@ final class GameTableResource extends BaseResource
                         ->action(function (Collection $records): void {
                             $service = app(FrontendCreationServiceInterface::class);
                             $approvedCount = 0;
+                            $skipped = false;
 
                             foreach ($records as $record) {
-                                if ($record->frontend_creation_status !== null
-                                    && $record->frontend_creation_status !== FrontendCreationStatus::Approved
-                                ) {
-                                    $service->approveFrontendCreation($record->id);
-                                    $approvedCount++;
+                                // Only what the author sent to review: never a draft or an approved table
+                                if ($record->frontend_creation_status === FrontendCreationStatus::PendingReview) {
+                                    try {
+                                        $service->approveFrontendCreation($record->id);
+                                        $approvedCount++;
+                                    } catch (NotEditableException) {
+                                        $skipped = true;
+                                    }
                                 }
                             }
 
@@ -578,6 +601,10 @@ final class GameTableResource extends BaseResource
                                 ->title(__('game-tables::messages.bulk_actions.approved_count', ['count' => $approvedCount]))
                                 ->success()
                                 ->send();
+
+                            if ($skipped) {
+                                self::warnStatusAlreadyChanged();
+                            }
                         })
                         ->deselectRecordsAfterCompletion(),
                     BulkAction::make('reject')
@@ -594,13 +621,16 @@ final class GameTableResource extends BaseResource
                         ->action(function (Collection $records, array $data): void {
                             $service = app(FrontendCreationServiceInterface::class);
                             $rejectedCount = 0;
+                            $skipped = false;
 
                             foreach ($records as $record) {
-                                if ($record->frontend_creation_status !== null
-                                    && $record->frontend_creation_status !== FrontendCreationStatus::Rejected
-                                ) {
-                                    $service->rejectFrontendCreation($record->id, $data['reason']);
-                                    $rejectedCount++;
+                                if ($record->frontend_creation_status === FrontendCreationStatus::PendingReview) {
+                                    try {
+                                        $service->rejectFrontendCreation($record->id, $data['reason']);
+                                        $rejectedCount++;
+                                    } catch (NotEditableException) {
+                                        $skipped = true;
+                                    }
                                 }
                             }
 
@@ -608,11 +638,23 @@ final class GameTableResource extends BaseResource
                                 ->title(__('game-tables::messages.bulk_actions.rejected_count', ['count' => $rejectedCount]))
                                 ->success()
                                 ->send();
+
+                            if ($skipped) {
+                                self::warnStatusAlreadyChanged();
+                            }
                         })
                         ->deselectRecordsAfterCompletion(),
                 ]),
             ])
             ->defaultSort('starts_at', 'desc');
+    }
+
+    private static function warnStatusAlreadyChanged(): void
+    {
+        Notification::make()
+            ->title(__('game-tables::messages.notifications.status_already_changed'))
+            ->warning()
+            ->send();
     }
 
     public static function getRelations(): array

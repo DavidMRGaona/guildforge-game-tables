@@ -25,6 +25,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Filament\Tables\Columns\IconColumn;
@@ -34,8 +35,10 @@ use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Modules\GameTables\Domain\Enums\CampaignFrequency;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
+use Modules\GameTables\Domain\Exceptions\NotEditableException;
 use Modules\GameTables\Filament\Forms\Components\GameMasterRepeater;
 use Modules\GameTables\Filament\Resources\CampaignResource\Pages;
+use Modules\GameTables\Filament\Support\PublicationLock;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 
@@ -173,7 +176,9 @@ final class CampaignResource extends BaseResource
 
                                 Toggle::make('is_published')
                                     ->label(__('game-tables::messages.fields.is_published'))
-                                    ->helperText(__('game-tables::messages.fields.is_published_campaign_help'))
+                                    // A web-created campaign is published by approving it, never from here
+                                    ->disabled(fn (?Model $record): bool => PublicationLock::isLocked($record))
+                                    ->helperText(fn (?Model $record): string => PublicationLock::hint($record) ?? __('game-tables::messages.fields.is_published_campaign_help'))
                                     ->default(false),
                             ])
                             ->columns(2),
@@ -245,7 +250,13 @@ final class CampaignResource extends BaseResource
                     ->modalDescription(__('game-tables::messages.moderation.campaign_approve_description'))
                     ->visible(fn (CampaignModel $record): bool => $record->frontend_creation_status === FrontendCreationStatus::PendingReview)
                     ->action(function (CampaignModel $record): void {
-                        app(FrontendCreationServiceInterface::class)->approveCampaign($record->id);
+                        try {
+                            app(FrontendCreationServiceInterface::class)->approveCampaign($record->id);
+                        } catch (NotEditableException) {
+                            self::warnStatusAlreadyChanged();
+
+                            return;
+                        }
 
                         Notification::make()
                             ->title(__('game-tables::messages.notifications.campaign_approved'))
@@ -267,7 +278,13 @@ final class CampaignResource extends BaseResource
                     ])
                     ->visible(fn (CampaignModel $record): bool => $record->frontend_creation_status === FrontendCreationStatus::PendingReview)
                     ->action(function (CampaignModel $record, array $data): void {
-                        app(FrontendCreationServiceInterface::class)->rejectCampaign($record->id, (string) $data['reason']);
+                        try {
+                            app(FrontendCreationServiceInterface::class)->rejectCampaign($record->id, (string) $data['reason']);
+                        } catch (NotEditableException) {
+                            self::warnStatusAlreadyChanged();
+
+                            return;
+                        }
 
                         Notification::make()
                             ->title(__('game-tables::messages.notifications.campaign_rejected'))
@@ -282,6 +299,14 @@ final class CampaignResource extends BaseResource
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
+    }
+
+    private static function warnStatusAlreadyChanged(): void
+    {
+        Notification::make()
+            ->title(__('game-tables::messages.notifications.campaign_status_already_changed'))
+            ->warning()
+            ->send();
     }
 
     public static function getPages(): array

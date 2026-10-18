@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
+use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\RegistrationType;
 use Modules\GameTables\Domain\Enums\SafetyTool;
@@ -15,6 +16,7 @@ use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Enums\TableType;
 use Modules\GameTables\Domain\Enums\Tone;
+use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
 use Modules\GameTables\Domain\ValueObjects\GameSystemId;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Domain\ValueObjects\TimeSlot;
@@ -152,6 +154,74 @@ final class GameTableTest extends TestCase
         $gameTable->complete();
 
         $this->assertEquals(TableStatus::Completed, $gameTable->status);
+    }
+
+    public function test_a_full_table_can_start(): void
+    {
+        $gameTable = $this->createGameTable(status: TableStatus::Full);
+
+        $gameTable->start();
+
+        $this->assertSame(TableStatus::InProgress, $gameTable->status);
+    }
+
+    /**
+     * @return array<string, array{TableStatus}>
+     */
+    public static function statusesThatCannotStart(): array
+    {
+        return [
+            'draft' => [TableStatus::Draft],
+            'in progress' => [TableStatus::InProgress],
+            'completed' => [TableStatus::Completed],
+            'cancelled' => [TableStatus::Cancelled],
+        ];
+    }
+
+    #[DataProvider('statusesThatCannotStart')]
+    public function test_only_a_scheduled_or_full_table_starts(TableStatus $status): void
+    {
+        $gameTable = $this->createGameTable(status: $status);
+
+        try {
+            $gameTable->start();
+            $this->fail("A {$status->value} table started");
+        } catch (InvalidStatusTransitionException $e) {
+            $this->assertSame($status->value, $e->from);
+            $this->assertSame('in_progress', $e->to);
+        }
+
+        $this->assertSame($status, $gameTable->status);
+    }
+
+    /**
+     * @return array<string, array{TableStatus}>
+     */
+    public static function statusesThatCannotComplete(): array
+    {
+        return [
+            'draft' => [TableStatus::Draft],
+            'scheduled' => [TableStatus::Scheduled],
+            'full' => [TableStatus::Full],
+            'completed' => [TableStatus::Completed],
+            'cancelled' => [TableStatus::Cancelled],
+        ];
+    }
+
+    #[DataProvider('statusesThatCannotComplete')]
+    public function test_only_a_table_in_progress_completes(TableStatus $status): void
+    {
+        $gameTable = $this->createGameTable(status: $status);
+
+        try {
+            $gameTable->complete();
+            $this->fail("A {$status->value} table completed");
+        } catch (InvalidStatusTransitionException $e) {
+            $this->assertSame($status->value, $e->from);
+            $this->assertSame('completed', $e->to);
+        }
+
+        $this->assertSame($status, $gameTable->status);
     }
 
     public function test_it_can_cancel(): void
@@ -418,6 +488,78 @@ final class GameTableTest extends TestCase
         $table->acceptsRegistrationsInProgress = $inPlay;
 
         return $table;
+    }
+
+    public function test_the_author_may_change_it_only_while_it_is_an_unpublished_draft_or_rejected(): void
+    {
+        $table = $this->createGameTable();
+        $table->frontendCreationStatus = FrontendCreationStatus::Draft;
+        $this->assertTrue($table->canBeChangedByAuthor());
+
+        $table->frontendCreationStatus = FrontendCreationStatus::Rejected;
+        $this->assertTrue($table->canBeChangedByAuthor());
+
+        $table->frontendCreationStatus = FrontendCreationStatus::PendingReview;
+        $this->assertFalse($table->canBeChangedByAuthor());
+
+        $table->frontendCreationStatus = null;
+        $this->assertFalse($table->canBeChangedByAuthor());
+
+        // Published from the panel while still a draft: the author no longer changes it
+        $table->frontendCreationStatus = FrontendCreationStatus::Draft;
+        $table->isPublished = true;
+        $this->assertFalse($table->canBeChangedByAuthor());
+    }
+
+    // Rejecting sends it back to the author as a draft that keeps the reason, not to a separate status
+    public function test_rejecting_returns_it_to_an_unpublished_draft_with_the_reason(): void
+    {
+        $table = $this->createGameTable();
+        $table->frontendCreationStatus = FrontendCreationStatus::PendingReview;
+        $table->isPublished = true;
+
+        $table->rejectFrontendCreation('Falta la sinopsis');
+
+        $this->assertSame(FrontendCreationStatus::Draft, $table->frontendCreationStatus);
+        $this->assertSame('Falta la sinopsis', $table->moderationNotes);
+        $this->assertFalse($table->isPublished);
+        $this->assertSame('Falta la sinopsis', $table->rejectionReason());
+        $this->assertTrue($table->canBeChangedByAuthor());
+    }
+
+    // The reason shows until the author sends it again: submitting clears it
+    public function test_submitting_for_review_clears_the_rejection_reason(): void
+    {
+        $table = $this->createGameTable();
+        $table->frontendCreationStatus = FrontendCreationStatus::PendingReview;
+        $table->rejectFrontendCreation('Falta la sinopsis');
+
+        $table->submitForModeration();
+
+        $this->assertSame(FrontendCreationStatus::PendingReview, $table->frontendCreationStatus);
+        $this->assertNull($table->moderationNotes);
+        $this->assertNull($table->rejectionReason());
+    }
+
+    public function test_only_a_draft_the_author_may_change_has_a_rejection_reason(): void
+    {
+        $table = $this->createGameTable();
+        $table->moderationNotes = 'Falta la sinopsis';
+
+        $table->frontendCreationStatus = FrontendCreationStatus::Draft;
+        $this->assertSame('Falta la sinopsis', $table->rejectionReason());
+
+        // Rows rejected before 2.10.0, until the deploy converts them
+        $table->frontendCreationStatus = FrontendCreationStatus::Rejected;
+        $this->assertSame('Falta la sinopsis', $table->rejectionReason());
+
+        // Approval notes are not a rejection
+        $table->frontendCreationStatus = FrontendCreationStatus::Approved;
+        $this->assertNull($table->rejectionReason());
+
+        $table->frontendCreationStatus = FrontendCreationStatus::Draft;
+        $table->moderationNotes = null;
+        $this->assertNull($table->rejectionReason());
     }
 
     private function createGameTable(

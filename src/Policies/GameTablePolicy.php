@@ -6,6 +6,7 @@ namespace Modules\GameTables\Policies;
 
 use App\Infrastructure\Authorization\Policies\AuthorizesWithPermissions;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
 final class GameTablePolicy
@@ -35,23 +36,18 @@ final class GameTablePolicy
             return true;
         }
 
-        // Owner can update only if the frontend creation status allows it
-        return $gameTable->created_by === $user->id
-            && ($gameTable->frontend_creation_status === null
-                || $gameTable->frontend_creation_status->canEdit());
+        return $this->authorMayChange($user, $gameTable);
     }
 
     public function submitForReview(UserModel $user, GameTableModel $gameTable): bool
     {
-        return $gameTable->created_by === $user->id
-            && $gameTable->frontend_creation_status !== null
-            && $gameTable->frontend_creation_status->canSubmitForReview();
+        return $this->authorMayChange($user, $gameTable);
     }
 
     public function delete(UserModel $user, GameTableModel $gameTable): bool
     {
         return $this->authorize($user, 'gametables:gametables.delete')
-            || $gameTable->created_by === $user->id;
+            || $this->authorMayChange($user, $gameTable);
     }
 
     public function deleteAny(UserModel $user): bool
@@ -67,5 +63,14 @@ final class GameTablePolicy
     public function forceDelete(UserModel $user, GameTableModel $gameTable): bool
     {
         return $this->authorize($user, 'gametables:gametables.delete');
+    }
+
+    /**
+     * The author changes the table only while it is an unpublished draft or rejected table.
+     */
+    private function authorMayChange(UserModel $user, GameTableModel $gameTable): bool
+    {
+        return $gameTable->created_by === $user->id
+            && FrontendCreationStatus::allowsAuthorChanges($gameTable->frontend_creation_status, (bool) $gameTable->is_published);
     }
 }

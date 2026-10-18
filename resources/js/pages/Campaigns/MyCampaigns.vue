@@ -25,6 +25,8 @@ interface CampaignResponseDTO {
     is_published: boolean;
     is_recruiting: boolean;
     moderation_notes: string | null;
+    // Why it was rejected, while the author may still change it
+    rejection_reason: string | null;
     can_edit: boolean;
     created_at: string | null;
 }
@@ -53,6 +55,7 @@ function canEdit(campaign: CampaignResponseDTO): boolean {
     return campaign.can_edit && !campaign.is_published;
 }
 
+// 'rejected' only on rows rejected before 2.10.0: rejecting now returns the campaign to a draft
 function canSubmitForReview(campaign: CampaignResponseDTO): boolean {
     const status = campaign.frontend_creation_status;
     return !campaign.is_published && (status === 'draft' || status === 'rejected');
@@ -268,14 +271,14 @@ function getCampaignLink(campaign: CampaignResponseDTO): string {
                                     </span>
                                 </div>
 
-                                <!-- Moderation notes (for rejected campaigns) -->
-                                <div
-                                    v-if="campaign.moderation_notes && campaign.frontend_creation_status === 'rejected'"
-                                    class="mt-3 rounded-md bg-danger-bg p-3"
-                                >
+                                <!-- Rejected in review: back to a draft until it is sent again -->
+                                <div v-if="campaign.rejection_reason" class="mt-3 rounded-md bg-danger-bg p-3">
                                     <p class="text-sm text-danger">
                                         <strong>{{ t('campaigns.myCampaigns.rejectionReason') }}:</strong>
-                                        {{ campaign.moderation_notes }}
+                                        {{ campaign.rejection_reason }}
+                                    </p>
+                                    <p class="mt-1 text-sm text-danger">
+                                        {{ t('campaigns.myCampaigns.rejectionHint') }}
                                     </p>
                                 </div>
                             </div>

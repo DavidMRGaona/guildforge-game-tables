@@ -14,6 +14,7 @@ use Inertia\Response;
 use Modules\GameTables\Domain\Exceptions\NotEditableException;
 use Modules\GameTables\Domain\Exceptions\CampaignNotFoundException;
 use Modules\GameTables\Application\DTOs\FrontendCreateCampaignDTO;
+use Modules\GameTables\Application\DTOs\CampaignResponseDTO;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Http\Requests\FrontendCreateCampaignRequest;
@@ -92,7 +93,11 @@ final class FrontendCampaignController extends Controller
         $eligibility = $this->eligibilityService->canCreateCampaign((string) $user->id);
 
         return Inertia::render('Campaigns/MyCampaigns', [
-            'campaigns' => $campaigns,
+            // As arrays: the page reads the snake_case keys of toArray(), not the DTO properties
+            'campaigns' => array_map(
+                static fn (CampaignResponseDTO $dto): array => $dto->toArray(),
+                $campaigns,
+            ),
             'canCreate' => $eligibility->eligible,
             'seo' => $this->seo->forPage(new SeoPageDTO(
                 title: (string) __('game-tables::messages.seo.my_campaigns_title'),
@@ -150,7 +155,14 @@ final class FrontendCampaignController extends Controller
             'created_by' => (string) $user->id,
         ]);
 
-        $this->creationService->updateCampaignDraft($id, $dto);
+        try {
+            $this->creationService->updateCampaignDraft($id, $dto);
+        } catch (CampaignNotFoundException) {
+            abort(404);
+        } catch (NotEditableException) {
+            // Not the author's, or not an unpublished draft or rejected campaign (as the table policy answers)
+            abort(403);
+        }
 
         return redirect()
             ->route('campaigns.my-campaigns')
@@ -170,7 +182,7 @@ final class FrontendCampaignController extends Controller
         } catch (CampaignNotFoundException) {
             abort(404);
         } catch (NotEditableException) {
-            // Not the author's, or not a draft or rejected campaign (as the table policy answers)
+            // Not the author's, or not an unpublished draft or rejected campaign (as the table policy answers)
             abort(403);
         }
 
@@ -187,7 +199,14 @@ final class FrontendCampaignController extends Controller
         /** @var UserModel $user */
         $user = auth()->user();
 
-        $this->creationService->deleteCampaignDraft($id, (string) $user->id);
+        try {
+            $this->creationService->deleteCampaignDraft($id, (string) $user->id);
+        } catch (CampaignNotFoundException) {
+            abort(404);
+        } catch (NotEditableException) {
+            // Not the author's, or not an unpublished draft or rejected campaign (as the table policy answers)
+            abort(403);
+        }
 
         return redirect()
             ->route('campaigns.my-campaigns')

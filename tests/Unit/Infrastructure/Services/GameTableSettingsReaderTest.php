@@ -156,4 +156,17 @@ final class GameTableSettingsReaderTest extends TestCase
 
         $this->assertSame(RegistrationType::Everyone, $this->reader->defaultRegistrationType());
     }
+
+    public function test_automatic_status_updates_are_on_by_default(): void
+    {
+        $this->assertTrue($this->shippedDefaults()['automation']['auto_status_enabled']);
+        $this->assertTrue($this->reader->isAutoStatusEnabled());
+    }
+
+    public function test_the_panel_turns_automatic_status_updates_off(): void
+    {
+        config()->set('modules.settings.game-tables', ['automation' => ['auto_status_enabled' => false]]);
+
+        $this->assertFalse($this->reader->isAutoStatusEnabled());
+    }
 }
