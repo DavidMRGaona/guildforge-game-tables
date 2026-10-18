@@ -6,6 +6,7 @@ namespace Modules\GameTables\Tests\Feature\Http\Controllers;
 
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use DateTimeImmutable;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
 use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
@@ -17,6 +18,7 @@ use Modules\GameTables\Domain\Enums\RegistrationType;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Enums\TableType;
+use Modules\GameTables\Domain\Events\GuestConfirmationRequested;
 use Modules\GameTables\Domain\ValueObjects\GameSystemId;
 use Modules\GameTables\Domain\ValueObjects\TimeSlot;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
@@ -24,6 +26,7 @@ use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Domain\ValueObjects\ParticipantId;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Tests\Support\Modules\ModuleTestCase;
 
 final class RegistrationControllerTest extends ModuleTestCase
@@ -39,6 +42,9 @@ final class RegistrationControllerTest extends ModuleTestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // The guest confirmation email has its own tests
+        Event::fake([GuestConfirmationRequested::class]);
 
         // Make the module routes, added after boot, resolvable by name
         app('router')->getRoutes()->refreshNameLookups();
@@ -172,6 +178,8 @@ final class RegistrationControllerTest extends ModuleTestCase
             'email' => $email,
             'gdpr_consent' => true,
         ]);
+        // Confirmed: an unconfirmed guest sending the form again is sent the confirmation email again
+        ParticipantModel::query()->where('email', $email)->update(['email_confirmed_at' => now()]);
 
         // Second registration with same email
         $response = $this->post(route('gametables.register-guest', $gameTable->slug), [

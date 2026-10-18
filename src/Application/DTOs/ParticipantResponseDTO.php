@@ -6,6 +6,7 @@ namespace Modules\GameTables\Application\DTOs;
 
 use DateTimeInterface;
 use Modules\GameTables\Domain\Entities\Participant;
+use Modules\GameTables\Domain\Enums\GuestConfirmationMode;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
 
@@ -27,10 +28,23 @@ final readonly class ParticipantResponseDTO
         public ?string $email = null,
         // The place among those waiting for the same role (1-based); the stored position may have gaps
         public ?int $waitingListRank = null,
+        // A guest whose email is not confirmed yet: hold (a seat until the deadline) or wait (none)
+        public bool $awaitingEmailConfirmation = false,
+        public ?GuestConfirmationMode $confirmationMode = null,
+        public ?DateTimeInterface $confirmationExpiresAt = null,
+        // The guest sent the form again while unconfirmed: the registration is the one they already had
+        public bool $confirmationResent = false,
+        // A signed-in user took over a guest registration made with their email
+        public bool $linkedFromGuest = false,
     ) {}
 
-    public static function fromEntity(Participant $participant, string $userName = '', ?int $waitingListRank = null): self
-    {
+    public static function fromEntity(
+        Participant $participant,
+        string $userName = '',
+        ?int $waitingListRank = null,
+        bool $confirmationResent = false,
+        bool $linkedFromGuest = false,
+    ): self {
         $displayName = $userName;
         if ($participant->isGuest()) {
             $displayName = $participant->getDisplayName();
@@ -51,6 +65,11 @@ final readonly class ParticipantResponseDTO
             firstName: $participant->firstName,
             email: $participant->email,
             waitingListRank: $waitingListRank,
+            awaitingEmailConfirmation: $participant->isAwaitingEmailConfirmation(),
+            confirmationMode: $participant->confirmationMode,
+            confirmationExpiresAt: $participant->confirmationExpiresAt,
+            confirmationResent: $confirmationResent,
+            linkedFromGuest: $linkedFromGuest,
         );
     }
 
@@ -78,6 +97,8 @@ final readonly class ParticipantResponseDTO
             'is_guest' => $this->isGuest,
             'first_name' => $this->firstName,
             'email' => $this->email,
+            'awaiting_email_confirmation' => $this->awaitingEmailConfirmation,
+            'confirmation_expires_at' => $this->confirmationExpiresAt?->format('c'),
         ];
     }
 }

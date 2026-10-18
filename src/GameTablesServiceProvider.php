@@ -61,6 +61,7 @@ use Modules\GameTables\Domain\Events\GameTableCancelled;
 use Modules\GameTables\Domain\Events\GameTableModerationApproved;
 use Modules\GameTables\Domain\Events\GameTableModerationRejected;
 use Modules\GameTables\Domain\Events\GameTableSubmittedForReview;
+use Modules\GameTables\Domain\Events\GuestConfirmationRequested;
 use Modules\GameTables\Domain\Events\GuestRegistered;
 use Modules\GameTables\Domain\Events\ParticipantCancelled;
 use Modules\GameTables\Domain\Events\ParticipantConfirmed;
@@ -111,6 +112,7 @@ use Modules\GameTables\Listeners\NotifyUserOnModerationApproved;
 use Modules\GameTables\Listeners\NotifyUserOnModerationRejected;
 use Modules\GameTables\Listeners\SendCancellationConfirmation;
 use Modules\GameTables\Listeners\SendConfirmationNotification;
+use Modules\GameTables\Listeners\SendGuestEmailConfirmationRequest;
 use Modules\GameTables\Listeners\SendGuestRegistrationConfirmation;
 use Modules\GameTables\Listeners\SendRegistrationConfirmation;
 use Modules\GameTables\Listeners\SendRejectionNotification;
@@ -377,6 +379,11 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
      */
     private function registerEventListeners(): void
     {
+        Event::listen(
+            GuestConfirmationRequested::class,
+            [SendGuestEmailConfirmationRequest::class, 'handle']
+        );
+
         Event::listen(
             GuestRegistered::class,
             [SendGuestRegistrationConfirmation::class, 'handle']

@@ -335,7 +335,8 @@ final readonly class EligibilityService implements EligibilityServiceInterface
             return $this->guestRefusal('registration_closed');
         }
 
-        $now = new DateTimeImmutable();
+        // The clock RegistrationService sets the guest's confirmation deadline with
+        $now = CarbonImmutable::now()->toDateTimeImmutable();
 
         // The time of the table closes registrations whatever its dates
         try {

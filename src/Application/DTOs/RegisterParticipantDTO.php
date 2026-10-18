@@ -17,6 +17,8 @@ final readonly class RegisterParticipantDTO
         public ?string $lastName = null,
         public ?string $email = null,
         public ?string $phone = null,
+        // Keyed hash of the guest's IP and browser, for the possible-duplicate signal
+        public ?string $fingerprint = null,
     ) {}
 
     /**

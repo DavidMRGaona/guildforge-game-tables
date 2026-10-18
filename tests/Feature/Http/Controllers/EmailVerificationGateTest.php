@@ -8,11 +8,13 @@ use App\Application\Services\SettingsServiceInterface;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\GameTables\Domain\Entities\EventGameTableConfig;
 use Modules\GameTables\Domain\Enums\LocationMode;
 use Modules\GameTables\Domain\Enums\SchedulingMode;
+use Modules\GameTables\Domain\Events\GuestConfirmationRequested;
 use Modules\GameTables\Domain\Repositories\EventGameTableConfigRepositoryInterface;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
@@ -41,6 +43,9 @@ final class EmailVerificationGateTest extends ModuleTestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // The guest confirmation email has its own tests
+        Event::fake([GuestConfirmationRequested::class]);
 
         app('router')->getRoutes()->refreshNameLookups();
         app(SettingsServiceInterface::class)->set('email_verification_enforced_since', self::CUTOFF);

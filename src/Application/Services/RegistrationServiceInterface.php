@@ -64,7 +64,8 @@ interface RegistrationServiceInterface
     public function registerByAdmin(RegisterParticipantDTO $dto): ParticipantResponseDTO;
 
     /**
-     * Register a guest participant by admin (bypasses eligibility checks).
+     * Register a guest participant by admin (bypasses eligibility checks). The organisation vouches
+     * for the email: it needs no confirmation and the usual emails go out at once.
      */
     public function registerGuestByAdmin(RegisterParticipantDTO $dto): ParticipantResponseDTO;
 
@@ -95,7 +96,14 @@ interface RegistrationServiceInterface
     public function findByTableAndUser(string $gameTableId, string $userId): ?ParticipantResponseDTO;
 
     /**
-     * Register a guest participant.
+     * A guest registration from the public form, left unconfirmed until the guest follows the
+     * emailed link: only the confirmation email goes out. Sending the form again while unconfirmed
+     * returns the same registration (confirmationResent) and sends the email again at most once
+     * every few minutes.
+     *
+     * @throws \Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException when the table does not admit the guest
+     * @throws \Modules\GameTables\Domain\Exceptions\AccountEmailRequiresLoginException when the email belongs to an account that should sign in
+     * @throws \Modules\GameTables\Domain\Exceptions\AlreadyRegisteredException when the email already has a confirmed registration at the table, or its account is registered
      */
     public function registerGuest(RegisterParticipantDTO $dto): ParticipantResponseDTO;
 
