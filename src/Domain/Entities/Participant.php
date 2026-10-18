@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Domain\Entities;
 
+use Carbon\CarbonImmutable;
 use DateTimeImmutable;
 use Modules\GameTables\Domain\Enums\GuestConfirmationMode;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
@@ -44,13 +45,13 @@ final class Participant
     public function confirm(): void
     {
         $this->status = ParticipantStatus::Confirmed;
-        $this->confirmedAt = new DateTimeImmutable();
+        $this->confirmedAt = CarbonImmutable::now()->toDateTimeImmutable();
     }
 
     public function cancel(): void
     {
         $this->status = ParticipantStatus::Cancelled;
-        $this->cancelledAt = new DateTimeImmutable();
+        $this->cancelledAt = CarbonImmutable::now()->toDateTimeImmutable();
         $this->confirmationExpiresAt = null;
         $this->confirmationToken = null;
     }
@@ -89,7 +90,7 @@ final class Participant
 
         if ($confirm) {
             $this->status = ParticipantStatus::Confirmed;
-            $this->confirmedAt = new DateTimeImmutable();
+            $this->confirmedAt = CarbonImmutable::now()->toDateTimeImmutable();
 
             return;
         }

@@ -7,6 +7,7 @@ namespace Modules\GameTables\Tests\Integration\Infrastructure\Services;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Modules\GameTables\Application\DTOs\ParticipantResponseDTO;
 use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
@@ -16,6 +17,7 @@ use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Events\GuestConfirmationRequested;
 use Modules\GameTables\Domain\Events\GuestRegistered;
 use Modules\GameTables\Domain\Events\ParticipantConfirmed;
+use Modules\GameTables\Domain\Events\ParticipantPromotedFromWaitingList;
 use Modules\GameTables\Domain\Exceptions\AccountEmailRequiresLoginException;
 use Modules\GameTables\Domain\Exceptions\AlreadyRegisteredException;
 use Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException;
@@ -343,6 +345,136 @@ final class GuestSubmissionTest extends ModuleTestCase
 
         $this->assertTrue($result->isGuest);
         $this->assertSame(2, ParticipantModel::query()->count());
+    }
+
+    // Seats are the last rule: on a full table the duplicate and the account answers still come first
+    public function test_on_a_full_table_a_confirmed_guest_still_gets_the_duplicate(): void
+    {
+        $this->table->update(['max_players' => 1]);
+        $this->submit('invitada@example.test');
+        ParticipantModel::query()->update(['email_confirmed_at' => now()]);
+
+        try {
+            $this->submit('invitada@example.test');
+            $this->fail('A confirmed guest on a full table was not told about the duplicate');
+        } catch (AlreadyRegisteredException $e) {
+            $this->assertSame('guest_already_registered', $e->reason);
+        }
+    }
+
+    public function test_on_a_full_table_an_account_email_is_asked_to_log_in(): void
+    {
+        $this->table->update(['max_players' => 1]);
+        $this->submit('primera@example.test');
+        UserModel::factory()->create(['email' => 'cuenta@example.test']);
+
+        $this->expectException(AccountEmailRequiresLoginException::class);
+
+        $this->submit('cuenta@example.test');
+    }
+
+    public function test_on_a_full_table_allow_guest_mode_refuses_a_registered_account_as_a_duplicate(): void
+    {
+        config()->set('modules.settings.game-tables.guest_accounts.mode', 'allow_guest');
+        $this->table->update(['max_players' => 1]);
+        $account = UserModel::factory()->create(['email' => 'cuenta@example.test']);
+        ParticipantModel::create([
+            'id' => (string) Str::uuid(),
+            'game_table_id' => $this->table->id,
+            'user_id' => $account->id,
+            'role' => 'player',
+            'status' => 'confirmed',
+        ]);
+
+        try {
+            $this->submit('cuenta@example.test');
+            $this->fail('A registered account on a full table was not told about the duplicate');
+        } catch (AlreadyRegisteredException $e) {
+            $this->assertSame('guest_already_registered', $e->reason);
+        }
+    }
+
+    public function test_on_a_full_table_a_new_guest_is_told_it_is_full(): void
+    {
+        $this->table->update(['max_players' => 1]);
+        $this->submit('primera@example.test');
+
+        try {
+            $this->submit('segunda@example.test');
+            $this->fail('A new guest was placed on a full table');
+        } catch (RegistrationNotAllowedException $e) {
+            $this->assertSame('table_full', $e->reason);
+        }
+
+        $this->assertSame(1, ParticipantModel::query()->count());
+    }
+
+    // Past the deadline, before the expiry command runs: never an email with a deadline already gone
+    public function test_resubmitting_past_the_deadline_expires_the_row_and_registers_again(): void
+    {
+        $first = $this->submit('invitada@example.test', name: 'Invitada');
+        $old = ParticipantModel::query()->findOrFail($first->id);
+
+        $this->travelTo(CarbonImmutable::parse('2026-11-02 12:01:00'));
+        $again = $this->submit('invitada@example.test', name: 'Nueva');
+
+        $row = ParticipantModel::query()->findOrFail($first->id);
+        $this->assertSame($first->id, $again->id);
+        $this->assertFalse($again->confirmationResent);
+        $this->assertSame('confirmed', $row->status->value);
+        $this->assertSame('Nueva', $row->first_name);
+        $this->assertSame('2026-11-02 14:01:00', $row->confirmation_expires_at?->format('Y-m-d H:i:s'));
+        $this->assertNotSame($old->confirmation_token, $row->confirmation_token);
+        $this->assertNotSame($old->cancellation_token, $row->cancellation_token);
+        Event::assertDispatchedTimes(GuestConfirmationRequested::class, 2);
+        Event::assertDispatched(GuestConfirmationRequested::class, fn (GuestConfirmationRequested $event): bool => $event->deadline === '02/11/2026 14:01'
+            && $event->confirmationToken === $row->confirmation_token);
+        // Only the first email gave the deadline already gone
+        $this->assertCount(1, Event::dispatched(GuestConfirmationRequested::class, fn (GuestConfirmationRequested $event): bool => $event->deadline === '02/11/2026 12:00'));
+    }
+
+    public function test_the_seat_freed_by_an_overdue_row_goes_to_the_waiting_list_first(): void
+    {
+        Notification::fake();
+        Event::fake([GuestConfirmationRequested::class, GuestRegistered::class, ParticipantConfirmed::class, ParticipantPromotedFromWaitingList::class]);
+        config()->set('modules.settings.game-tables.registration.waiting_list_enabled', true);
+        $this->table->update(['max_players' => 1]);
+        $guest = $this->submit('invitada@example.test');
+        $waiting = app(RegistrationServiceInterface::class)->registerByAdmin(new RegisterParticipantDTO(
+            gameTableId: $this->table->id,
+            userId: UserModel::factory()->create()->id,
+            role: ParticipantRole::Player,
+        ));
+        $this->assertSame('waiting_list', ParticipantModel::query()->findOrFail($waiting->id)->status->value);
+
+        $this->travelTo(CarbonImmutable::parse('2026-11-02 12:01:00'));
+        $again = $this->submit('invitada@example.test');
+
+        $this->assertSame('confirmed', ParticipantModel::query()->findOrFail($waiting->id)->status->value);
+        Event::assertDispatched(ParticipantPromotedFromWaitingList::class, fn (ParticipantPromotedFromWaitingList $event): bool => $event->participantId === $waiting->id);
+        $row = ParticipantModel::query()->findOrFail($guest->id);
+        $this->assertSame($guest->id, $again->id);
+        $this->assertSame('waiting_list', $row->status->value);
+        $this->assertSame('2026-11-02 14:01:00', $row->confirmation_expires_at?->format('Y-m-d H:i:s'));
+    }
+
+    public function test_an_expired_guest_is_reactivated_unconfirmed(): void
+    {
+        $first = $this->submit('invitada@example.test');
+        ParticipantModel::query()->update(['status' => 'expired', 'confirmation_token' => null, 'confirmation_expires_at' => null, 'cancelled_at' => now()]);
+
+        $this->travelTo(CarbonImmutable::parse('2026-11-02 11:00:00'));
+        $again = $this->submit('invitada@example.test', name: 'Nueva');
+
+        $row = ParticipantModel::query()->findOrFail($first->id);
+        $this->assertSame($first->id, $again->id);
+        $this->assertSame('confirmed', $row->status->value);
+        $this->assertNull($row->email_confirmed_at);
+        $this->assertNull($row->cancelled_at);
+        $this->assertSame('Nueva', $row->first_name);
+        $this->assertSame('2026-11-02 13:00:00', $row->confirmation_expires_at?->format('Y-m-d H:i:s'));
+        $this->assertSame(64, strlen((string) $row->confirmation_token));
+        Event::assertDispatchedTimes(GuestConfirmationRequested::class, 2);
     }
 
     public function test_an_admin_guest_needs_no_confirmation(): void
