@@ -61,6 +61,11 @@ interface ParticipantRepositoryInterface
 
     public function countConfirmedSpectators(GameTableId $gameTableId): int;
 
+    public function findByConfirmationToken(string $token): ?Participant;
+
+    /**
+     * Pending players holding a seat: guests with an unconfirmed email and no seat (mode wait) are left out.
+     */
     public function countPendingPlayers(GameTableId $gameTableId): int;
 
     public function countPendingSpectators(GameTableId $gameTableId): int;
@@ -80,6 +85,7 @@ interface ParticipantRepositoryInterface
 
     /**
      * First in the waiting list, optionally only among the participants with the given role.
+     * Guests whose email is not confirmed are skipped (they keep their place).
      * The waiting list order is the stored position, then the registration date.
      */
     public function getFirstInWaitingList(GameTableId $gameTableId, ?ParticipantRole $role = null): ?Participant;

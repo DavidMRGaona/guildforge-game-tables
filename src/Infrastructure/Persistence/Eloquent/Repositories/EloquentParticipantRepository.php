@@ -215,6 +215,7 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
             ->where('game_table_id', $gameTableId->value)
             ->where('status', ParticipantStatus::Pending->value)
             ->where('role', ParticipantRole::Player->value)
+            ->holdingOrConfirmed()
             ->count();
     }
 
@@ -224,6 +225,7 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
             ->where('game_table_id', $gameTableId->value)
             ->where('status', ParticipantStatus::Pending->value)
             ->where('role', ParticipantRole::Spectator->value)
+            ->holdingOrConfirmed()
             ->count();
     }
 
@@ -255,7 +257,8 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
 
     public function getFirstInWaitingList(GameTableId $gameTableId, ?ParticipantRole $role = null): ?Participant
     {
-        $model = $this->waitingList($gameTableId, $role)->first();
+        // Guests who have not confirmed their email keep their place but are not promoted by themselves
+        $model = $this->waitingList($gameTableId, $role)->holdingOrConfirmed()->first();
 
         if ($model === null) {
             return null;
@@ -413,6 +416,19 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
             ->whereRaw('lower(email) = ?', [mb_strtolower(trim($email))])
             ->whereNull('user_id')
             ->tap($this->activeFirst(...))
+            ->first();
+
+        if ($model === null) {
+            return null;
+        }
+
+        return $this->toEntity($model);
+    }
+
+    public function findByConfirmationToken(string $token): ?Participant
+    {
+        $model = ParticipantModel::query()
+            ->where('confirmation_token', $token)
             ->first();
 
         if ($model === null) {
