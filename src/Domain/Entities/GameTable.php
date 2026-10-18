@@ -15,6 +15,7 @@ use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Enums\TableType;
 use Modules\GameTables\Domain\Enums\Tone;
+use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\GameSystemId;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
@@ -91,14 +92,35 @@ final class GameTable
         $this->status = TableStatus::Full;
     }
 
+    /**
+     * @throws InvalidStatusTransitionException unless the table is scheduled or full
+     */
     public function start(): void
     {
-        $this->status = TableStatus::InProgress;
+        $this->transitionTo(TableStatus::InProgress);
     }
 
+    /**
+     * @throws InvalidStatusTransitionException unless the table is in progress
+     */
     public function complete(): void
     {
-        $this->status = TableStatus::Completed;
+        $this->transitionTo(TableStatus::Completed);
+    }
+
+    /**
+     * Drafts, cancelled and completed tables never start nor complete, whoever asks (the panel or
+     * the automatic update).
+     *
+     * @throws InvalidStatusTransitionException
+     */
+    private function transitionTo(TableStatus $status): void
+    {
+        if (! $this->status->canTransitionTo($status)) {
+            throw InvalidStatusTransitionException::fromTo($this->status->value, $status->value);
+        }
+
+        $this->status = $status;
     }
 
     public function cancel(): void

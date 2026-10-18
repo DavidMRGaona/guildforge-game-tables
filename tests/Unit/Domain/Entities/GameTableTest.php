@@ -15,6 +15,7 @@ use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Enums\TableType;
 use Modules\GameTables\Domain\Enums\Tone;
+use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
 use Modules\GameTables\Domain\ValueObjects\GameSystemId;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Domain\ValueObjects\TimeSlot;
@@ -152,6 +153,74 @@ final class GameTableTest extends TestCase
         $gameTable->complete();
 
         $this->assertEquals(TableStatus::Completed, $gameTable->status);
+    }
+
+    public function test_a_full_table_can_start(): void
+    {
+        $gameTable = $this->createGameTable(status: TableStatus::Full);
+
+        $gameTable->start();
+
+        $this->assertSame(TableStatus::InProgress, $gameTable->status);
+    }
+
+    /**
+     * @return array<string, array{TableStatus}>
+     */
+    public static function statusesThatCannotStart(): array
+    {
+        return [
+            'draft' => [TableStatus::Draft],
+            'in progress' => [TableStatus::InProgress],
+            'completed' => [TableStatus::Completed],
+            'cancelled' => [TableStatus::Cancelled],
+        ];
+    }
+
+    #[DataProvider('statusesThatCannotStart')]
+    public function test_only_a_scheduled_or_full_table_starts(TableStatus $status): void
+    {
+        $gameTable = $this->createGameTable(status: $status);
+
+        try {
+            $gameTable->start();
+            $this->fail("A {$status->value} table started");
+        } catch (InvalidStatusTransitionException $e) {
+            $this->assertSame($status->value, $e->from);
+            $this->assertSame('in_progress', $e->to);
+        }
+
+        $this->assertSame($status, $gameTable->status);
+    }
+
+    /**
+     * @return array<string, array{TableStatus}>
+     */
+    public static function statusesThatCannotComplete(): array
+    {
+        return [
+            'draft' => [TableStatus::Draft],
+            'scheduled' => [TableStatus::Scheduled],
+            'full' => [TableStatus::Full],
+            'completed' => [TableStatus::Completed],
+            'cancelled' => [TableStatus::Cancelled],
+        ];
+    }
+
+    #[DataProvider('statusesThatCannotComplete')]
+    public function test_only_a_table_in_progress_completes(TableStatus $status): void
+    {
+        $gameTable = $this->createGameTable(status: $status);
+
+        try {
+            $gameTable->complete();
+            $this->fail("A {$status->value} table completed");
+        } catch (InvalidStatusTransitionException $e) {
+            $this->assertSame($status->value, $e->from);
+            $this->assertSame('completed', $e->to);
+        }
+
+        $this->assertSame($status, $gameTable->status);
     }
 
     public function test_it_can_cancel(): void
