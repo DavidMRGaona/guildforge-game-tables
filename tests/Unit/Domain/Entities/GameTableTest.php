@@ -511,6 +511,57 @@ final class GameTableTest extends TestCase
         $this->assertFalse($table->canBeChangedByAuthor());
     }
 
+    // Rejecting sends it back to the author as a draft that keeps the reason, not to a separate status
+    public function test_rejecting_returns_it_to_an_unpublished_draft_with_the_reason(): void
+    {
+        $table = $this->createGameTable();
+        $table->frontendCreationStatus = FrontendCreationStatus::PendingReview;
+        $table->isPublished = true;
+
+        $table->rejectFrontendCreation('Falta la sinopsis');
+
+        $this->assertSame(FrontendCreationStatus::Draft, $table->frontendCreationStatus);
+        $this->assertSame('Falta la sinopsis', $table->moderationNotes);
+        $this->assertFalse($table->isPublished);
+        $this->assertSame('Falta la sinopsis', $table->rejectionReason());
+        $this->assertTrue($table->canBeChangedByAuthor());
+    }
+
+    // The reason shows until the author sends it again: submitting clears it
+    public function test_submitting_for_review_clears_the_rejection_reason(): void
+    {
+        $table = $this->createGameTable();
+        $table->frontendCreationStatus = FrontendCreationStatus::PendingReview;
+        $table->rejectFrontendCreation('Falta la sinopsis');
+
+        $table->submitForModeration();
+
+        $this->assertSame(FrontendCreationStatus::PendingReview, $table->frontendCreationStatus);
+        $this->assertNull($table->moderationNotes);
+        $this->assertNull($table->rejectionReason());
+    }
+
+    public function test_only_a_draft_the_author_may_change_has_a_rejection_reason(): void
+    {
+        $table = $this->createGameTable();
+        $table->moderationNotes = 'Falta la sinopsis';
+
+        $table->frontendCreationStatus = FrontendCreationStatus::Draft;
+        $this->assertSame('Falta la sinopsis', $table->rejectionReason());
+
+        // Rows rejected before 2.10.0, until the deploy converts them
+        $table->frontendCreationStatus = FrontendCreationStatus::Rejected;
+        $this->assertSame('Falta la sinopsis', $table->rejectionReason());
+
+        // Approval notes are not a rejection
+        $table->frontendCreationStatus = FrontendCreationStatus::Approved;
+        $this->assertNull($table->rejectionReason());
+
+        $table->frontendCreationStatus = FrontendCreationStatus::Draft;
+        $table->moderationNotes = null;
+        $this->assertNull($table->rejectionReason());
+    }
+
     private function createGameTable(
         TableStatus $status = TableStatus::Draft,
         RegistrationType $registrationType = RegistrationType::Everyone,

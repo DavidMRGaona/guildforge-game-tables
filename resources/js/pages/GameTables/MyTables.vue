@@ -27,6 +27,8 @@ interface GameTableResponseDTO {
     frontend_creation_status_label: string | null;
     frontend_creation_status_color: string | null;
     is_published: boolean;
+    // Why it was rejected, while the author may still change it
+    rejection_reason: string | null;
     created_at: string | null;
 }
 
@@ -76,6 +78,7 @@ function formatDuration(minutes: number): string {
     }
 }
 
+// 'rejected' only on rows rejected before 2.10.0: rejecting now returns the table to a draft
 function canEdit(table: GameTableResponseDTO): boolean {
     const status = table.frontend_creation_status;
     return !table.is_published && (status === 'draft' || status === 'rejected');
@@ -261,6 +264,17 @@ function getTableLink(table: GameTableResponseDTO): string {
                                         :label="table.table_format_label"
                                         :color="table.table_format_color"
                                     />
+                                </div>
+
+                                <!-- Rejected in review: back to a draft until it is sent again -->
+                                <div v-if="table.rejection_reason" class="mt-3 rounded-md bg-danger-bg p-3">
+                                    <p class="text-sm text-danger">
+                                        <strong>{{ t('gameTables.myTables.rejectionReason') }}:</strong>
+                                        {{ table.rejection_reason }}
+                                    </p>
+                                    <p class="mt-1 text-sm text-danger">
+                                        {{ t('gameTables.myTables.rejectionHint') }}
+                                    </p>
                                 </div>
                             </div>
 

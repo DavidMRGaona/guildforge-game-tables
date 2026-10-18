@@ -254,6 +254,8 @@ export default {
             submitForReviewTitle: 'Submit table for review',
             viewPublic: 'View public table',
             pendingReviewMessage: 'Under review',
+            rejectionReason: 'Rejection reason',
+            rejectionHint: 'Fix it and send it to review again.',
             confirmSubmit: 'Once submitted, the table will be reviewed by a moderator before publishing. Do you want to continue?',
             deleteTitle: 'Delete table',
             confirmDelete: 'Are you sure you want to delete "{title}"? This action cannot be undone.',

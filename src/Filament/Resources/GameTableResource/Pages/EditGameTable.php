@@ -20,6 +20,7 @@ use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Events\GameTableCancelled;
 use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
 use Modules\GameTables\Filament\Resources\GameTableResource;
+use Modules\GameTables\Filament\Support\PublicationLock;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
@@ -95,6 +96,16 @@ final class EditGameTable extends EditRecord
         return $data;
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        // A web-created table is published by approving it, even against a forged payload
+        return PublicationLock::guardFormData($this->getRecord(), $data);
+    }
+
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
         // Extract game masters data before saving
@@ -134,6 +145,8 @@ final class EditGameTable extends EditRecord
                         ->success()
                         ->send();
 
+                    // The service saved through its own model instance
+                    $this->getRecord()->refresh();
                     $this->refreshFormData(['frontend_creation_status', 'is_published', 'status', 'published_at']);
                 }),
 
@@ -162,14 +175,17 @@ final class EditGameTable extends EditRecord
                         ->success()
                         ->send();
 
-                    $this->refreshFormData(['frontend_creation_status']);
+                    // The service saved through its own model instance
+                    $this->getRecord()->refresh();
+                    $this->refreshFormData(['frontend_creation_status', 'is_published', 'status', 'published_at']);
                 }),
 
             Action::make('publish')
                 ->label(__('game-tables::messages.actions.publish'))
                 ->icon('heroicon-o-eye')
                 ->color('success')
-                ->visible(fn (): bool => ! $this->record->is_published)
+                // A web-created table the author has not sent, or one awaiting review, is published by approving it
+                ->visible(fn (): bool => ! $this->record->is_published && ! PublicationLock::isLocked($this->getRecord()))
                 ->action(function (): void {
                     $this->record->update([
                         'is_published' => true,

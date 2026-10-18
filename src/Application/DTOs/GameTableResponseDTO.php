@@ -76,6 +76,8 @@ final readonly class GameTableResponseDTO
         public array $gameMasters,
         public ?DateTimeInterface $createdAt,
         public ?DateTimeInterface $updatedAt,
+        // Why it was rejected, while the author may still change it (see GameTable::rejectionReason())
+        public ?string $rejectionReason = null,
     ) {}
 
     /**
@@ -139,6 +141,7 @@ final readonly class GameTableResponseDTO
             gameMasters: $gameMasters,
             createdAt: $gameTable->createdAt,
             updatedAt: $gameTable->updatedAt,
+            rejectionReason: $gameTable->rejectionReason(),
         );
     }
 
@@ -201,6 +204,7 @@ final readonly class GameTableResponseDTO
             'frontend_creation_status_label' => $this->frontendCreationStatus?->label(),
             'frontend_creation_status_color' => $this->frontendCreationStatus?->color(),
             'can_edit' => FrontendCreationStatus::allowsAuthorChanges($this->frontendCreationStatus, $this->isPublished),
+            'rejection_reason' => $this->rejectionReason,
             'notes' => $this->notes,
             'image_public_id' => $this->imagePublicId,
             'participants' => array_map(fn (ParticipantResponseDTO $p) => $p->toArray(), $this->participants),

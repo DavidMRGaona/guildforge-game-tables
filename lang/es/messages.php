@@ -159,6 +159,9 @@ return [
         'is_published' => 'Publicado',
         'is_published_help' => 'Controla la visibilidad pública de la mesa. Las inscripciones se abren automáticamente según las fechas configuradas.',
         'is_published_campaign_help' => 'Controla la visibilidad pública de la campaña.',
+        'is_published_not_submitted' => 'El autor aún no la ha enviado a revisión.',
+        'is_published_pending_review' => 'Está pendiente de revisión: apruébala o recházala con «Aprobar» o «Rechazar».',
+        'is_published_campaign_pending_review' => 'Está pendiente de revisión: apruébala o recházala desde la lista de campañas.',
         'published_at' => 'Fecha de publicación',
         'notes' => 'Notas',
 

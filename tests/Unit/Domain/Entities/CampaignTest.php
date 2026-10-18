@@ -237,6 +237,57 @@ final class CampaignTest extends TestCase
         $this->assertFalse($campaign->canBeChangedByAuthor());
     }
 
+    // Rejecting sends it back to the author as a draft that keeps the reason, not to a separate status
+    public function test_rejecting_returns_it_to_an_unpublished_draft_with_the_reason(): void
+    {
+        $campaign = $this->createCampaign();
+        $campaign->frontendCreationStatus = FrontendCreationStatus::PendingReview;
+        $campaign->isPublished = true;
+
+        $campaign->rejectFrontendCreation('Falta la sinopsis');
+
+        $this->assertSame(FrontendCreationStatus::Draft, $campaign->frontendCreationStatus);
+        $this->assertSame('Falta la sinopsis', $campaign->moderationNotes);
+        $this->assertFalse($campaign->isPublished);
+        $this->assertSame('Falta la sinopsis', $campaign->rejectionReason());
+        $this->assertTrue($campaign->canBeChangedByAuthor());
+    }
+
+    // The reason shows until the author sends it again: submitting clears it
+    public function test_submitting_for_review_clears_the_rejection_reason(): void
+    {
+        $campaign = $this->createCampaign();
+        $campaign->frontendCreationStatus = FrontendCreationStatus::PendingReview;
+        $campaign->rejectFrontendCreation('Falta la sinopsis');
+
+        $campaign->submitForModeration();
+
+        $this->assertSame(FrontendCreationStatus::PendingReview, $campaign->frontendCreationStatus);
+        $this->assertNull($campaign->moderationNotes);
+        $this->assertNull($campaign->rejectionReason());
+    }
+
+    public function test_only_a_draft_the_author_may_change_has_a_rejection_reason(): void
+    {
+        $campaign = $this->createCampaign();
+        $campaign->moderationNotes = 'Falta la sinopsis';
+
+        $campaign->frontendCreationStatus = FrontendCreationStatus::Draft;
+        $this->assertSame('Falta la sinopsis', $campaign->rejectionReason());
+
+        // Rows rejected before 2.10.0, until the deploy converts them
+        $campaign->frontendCreationStatus = FrontendCreationStatus::Rejected;
+        $this->assertSame('Falta la sinopsis', $campaign->rejectionReason());
+
+        // Approval notes are not a rejection
+        $campaign->frontendCreationStatus = FrontendCreationStatus::Approved;
+        $this->assertNull($campaign->rejectionReason());
+
+        $campaign->frontendCreationStatus = FrontendCreationStatus::Draft;
+        $campaign->moderationNotes = null;
+        $this->assertNull($campaign->rejectionReason());
+    }
+
     private function createCampaign(
         CampaignStatus $status = CampaignStatus::Recruiting,
         bool $acceptsNewPlayers = true,

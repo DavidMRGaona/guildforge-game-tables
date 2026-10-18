@@ -139,7 +139,7 @@ final class CampaignModerationTest extends ModuleTestCase
         $this->assertFalse(PendingModerationWidget::canView());
     }
 
-    public function test_rejecting_a_campaign_keeps_it_unpublished_with_the_reason(): void
+    public function test_rejecting_a_campaign_returns_it_to_an_unpublished_draft_with_the_reason(): void
     {
         $campaign = $this->campaign('pending_review');
 
@@ -148,7 +148,7 @@ final class CampaignModerationTest extends ModuleTestCase
             ->assertHasNoTableActionErrors();
 
         $campaign->refresh();
-        $this->assertSame('rejected', $campaign->frontend_creation_status?->value);
+        $this->assertSame('draft', $campaign->frontend_creation_status?->value);
         $this->assertSame('Falta la sinopsis', $campaign->moderation_notes);
         $this->assertFalse($campaign->is_published);
     }

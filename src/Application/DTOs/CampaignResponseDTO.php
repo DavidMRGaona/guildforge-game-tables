@@ -43,6 +43,8 @@ final readonly class CampaignResponseDTO
         public ?string $moderationNotes = null,
         public ?DateTimeInterface $createdAt = null,
         public ?DateTimeInterface $updatedAt = null,
+        // Why it was rejected, while the author may still change it (see Campaign::rejectionReason())
+        public ?string $rejectionReason = null,
     ) {}
 
     /**
@@ -84,6 +86,7 @@ final readonly class CampaignResponseDTO
             moderationNotes: $campaign->moderationNotes,
             createdAt: $campaign->createdAt,
             updatedAt: $campaign->updatedAt,
+            rejectionReason: $campaign->rejectionReason(),
         );
     }
 
@@ -121,6 +124,7 @@ final readonly class CampaignResponseDTO
             'frontend_creation_status' => $this->frontendCreationStatus?->value,
             'frontend_creation_status_label' => $this->frontendCreationStatus?->label(),
             'moderation_notes' => $this->moderationNotes,
+            'rejection_reason' => $this->rejectionReason,
             'can_edit' => FrontendCreationStatus::allowsAuthorChanges($this->frontendCreationStatus, $this->isPublished),
             'created_at' => $this->createdAt?->format('c'),
             'updated_at' => $this->updatedAt?->format('c'),

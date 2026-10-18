@@ -121,4 +121,15 @@ final class FrontendCreationStatusTest extends TestCase
             $this->assertFalse(FrontendCreationStatus::allowsAuthorChanges($status, isPublished: true));
         }
     }
+
+    // Approving is the only way to publish a web-created item: the panel publishes freely only
+    // items created there (no status) and approved ones (which it may also unpublish and republish)
+    public function test_the_panel_publishes_freely_only_panel_created_and_approved_items(): void
+    {
+        $this->assertTrue(FrontendCreationStatus::allowsPanelPublishing(null));
+        $this->assertTrue(FrontendCreationStatus::allowsPanelPublishing(FrontendCreationStatus::Approved));
+        $this->assertFalse(FrontendCreationStatus::allowsPanelPublishing(FrontendCreationStatus::Draft));
+        $this->assertFalse(FrontendCreationStatus::allowsPanelPublishing(FrontendCreationStatus::PendingReview));
+        $this->assertFalse(FrontendCreationStatus::allowsPanelPublishing(FrontendCreationStatus::Rejected));
+    }
 }
