@@ -14,9 +14,11 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Application\Services\GameMasterServiceInterface;
+use Modules\GameTables\Application\Services\GameTableServiceInterface;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Events\GameTableCancelled;
+use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
 use Modules\GameTables\Filament\Resources\GameTableResource;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
@@ -198,8 +200,7 @@ final class EditGameTable extends EditRecord
                 ->color('primary')
                 ->visible(fn (): bool => in_array($this->record->status, [TableStatus::Scheduled, TableStatus::Full], true))
                 ->action(function (): void {
-                    $this->record->update(['status' => TableStatus::InProgress->value]);
-                    $this->refreshFormData(['status']);
+                    $this->moveTable(TableStatus::InProgress);
                 }),
 
             Action::make('complete')
@@ -208,8 +209,7 @@ final class EditGameTable extends EditRecord
                 ->color('success')
                 ->visible(fn (): bool => $this->record->status === TableStatus::InProgress)
                 ->action(function (): void {
-                    $this->record->update(['status' => TableStatus::Completed->value]);
-                    $this->refreshFormData(['status']);
+                    $this->moveTable(TableStatus::Completed);
                 }),
 
             Action::make('cancelTable')
@@ -240,5 +240,35 @@ final class EditGameTable extends EditRecord
 
             DeleteAction::make(),
         ];
+    }
+
+    /**
+     * Starts or completes the table through the service, as the automatic update does, so both
+     * give the same result (completing announces GameTableCompleted).
+     */
+    private function moveTable(TableStatus $to): void
+    {
+        /** @var GameTableServiceInterface $service */
+        $service = app(GameTableServiceInterface::class);
+        $record = $this->getRecord();
+        $id = (string) $record->getKey();
+
+        try {
+            if ($to === TableStatus::InProgress) {
+                $service->start($id);
+            } else {
+                $service->complete($id);
+            }
+        } catch (InvalidStatusTransitionException) {
+            // The automatic update or another user changed it first
+            Notification::make()
+                ->title(__('game-tables::messages.notifications.status_already_changed'))
+                ->warning()
+                ->send();
+        }
+
+        // The service saved through its own model instance
+        $record->refresh();
+        $this->refreshFormData(['status']);
     }
 }
