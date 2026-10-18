@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Carbon;
 use Modules\GameTables\Domain\Entities\Participant;
+use Modules\GameTables\Domain\Enums\GuestConfirmationMode;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
 use Modules\GameTables\Domain\Exceptions\AlreadyRegisteredException;
@@ -229,6 +230,17 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
     public function countWaiting(GameTableId $gameTableId, ParticipantRole $role): int
     {
         return $this->waitingList($gameTableId, $role)->count();
+    }
+
+    public function countUnconfirmedHoldingSeats(GameTableId $gameTableId): int
+    {
+        return ParticipantModel::query()
+            ->where('game_table_id', $gameTableId->value)
+            ->whereNull('user_id')
+            ->whereNull('email_confirmed_at')
+            ->where('confirmation_mode', GuestConfirmationMode::Hold->value)
+            ->whereIn('status', [ParticipantStatus::Pending->value, ParticipantStatus::Confirmed->value])
+            ->count();
     }
 
     public function getNextWaitingListPosition(GameTableId $gameTableId): int

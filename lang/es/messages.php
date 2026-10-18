@@ -437,6 +437,7 @@ return [
         'sections' => [
             'membership' => 'Acceso anticipado para socios',
             'registration' => 'Inscripciones',
+            'guest_registrations' => 'Inscripciones de invitados',
             'automation' => 'Automatización',
             'defaults' => 'Valores por defecto',
             'notifications' => 'Notificaciones',
@@ -466,6 +467,14 @@ return [
             'max_players_limit' => 'Límite máximo de jugadores',
             'max_spectators_limit' => 'Límite máximo de espectadores',
             'max_duration' => 'Duración máxima (minutos)',
+            'guest_confirmation_mode' => 'Plaza mientras no confirma',
+            'guest_hold_hours' => 'Plazo de confirmación (horas)',
+            'guest_max_unconfirmed_held' => 'Máximo de plazas sin confirmar por mesa',
+            'guest_max_unconfirmed_held_help' => 'Las inscripciones de invitado sin confirmar que superen este número esperan sin ocupar plaza.',
+            'guest_accounts_mode' => 'Email con cuenta registrada',
+            'guest_rate_per_minute' => 'Inscripciones de invitado por minuto y conexión',
+            'guest_rate_per_hour' => 'Inscripciones de invitado por hora y conexión',
+            'duplicate_window_hours' => 'Ventana de «Posible duplicado» (horas)',
             // Frontend creation fields
             'frontend_creation_enabled' => 'Habilitar creación desde web',
             'frontend_creation_enabled_help' => 'Permite que los usuarios creen mesas desde el frontend público',
@@ -484,6 +493,14 @@ return [
             'above_spectators_limit' => 'No puede superar el límite máximo de espectadores (:limit)',
             'above_duration_limit' => 'No puede superar la duración máxima (:limit minutos)',
             'min_above_max_players' => 'No puede superar el máximo de jugadores por defecto (:limit)',
+        ],
+        'guest_confirmation_mode' => [
+            'hold' => 'Reserva la plaza con plazo',
+            'wait' => 'No ocupa plaza hasta confirmar',
+        ],
+        'guest_accounts_mode' => [
+            'require_login' => 'Pedir que inicie sesión',
+            'allow_guest' => 'Permitir como invitado salvo que esa cuenta ya esté inscrita',
         ],
         'allowed_content' => [
             'tables' => 'Solo mesas',

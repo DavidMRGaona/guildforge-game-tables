@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Modules\GameTables\Infrastructure\Services;
 
 use Modules\GameTables\Domain\Enums\CreationAccessLevel;
+use Modules\GameTables\Domain\Enums\GuestAccountsMode;
+use Modules\GameTables\Domain\Enums\GuestConfirmationMode;
 use Modules\GameTables\Domain\Enums\RegistrationType;
 
 /**
@@ -73,6 +75,45 @@ final class GameTableSettingsReader
     public function isAutoStatusEnabled(): bool
     {
         return $this->bool('automation.auto_status_enabled', true);
+    }
+
+    public function guestConfirmationMode(): GuestConfirmationMode
+    {
+        $value = $this->get('guest_confirmation.mode');
+
+        return (is_string($value) ? GuestConfirmationMode::tryFrom($value) : null) ?? GuestConfirmationMode::Hold;
+    }
+
+    public function guestConfirmationHoldHours(): int
+    {
+        return max(1, $this->int('guest_confirmation.hold_hours', 2));
+    }
+
+    public function maxUnconfirmedHeldSeats(): int
+    {
+        return max(0, $this->int('guest_confirmation.max_unconfirmed_held', 2));
+    }
+
+    public function guestAccountsMode(): GuestAccountsMode
+    {
+        $value = $this->get('guest_accounts.mode');
+
+        return (is_string($value) ? GuestAccountsMode::tryFrom($value) : null) ?? GuestAccountsMode::RequireLogin;
+    }
+
+    public function guestRateLimitPerMinute(): int
+    {
+        return max(1, $this->int('guest_rate_limit.per_minute', 5));
+    }
+
+    public function guestRateLimitPerHour(): int
+    {
+        return max(1, $this->int('guest_rate_limit.per_hour', 20));
+    }
+
+    public function duplicateSignalWindowHours(): int
+    {
+        return max(1, $this->int('duplicate_signal.window_hours', 24));
     }
 
     public function defaultDurationMinutes(): int
