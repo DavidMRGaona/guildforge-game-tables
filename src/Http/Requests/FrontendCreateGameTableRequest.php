@@ -6,7 +6,6 @@ namespace Modules\GameTables\Http\Requests;
 
 use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
@@ -110,8 +109,9 @@ final class FrontendCreateGameTableRequest extends FormRequest
     }
 
     /**
-     * Campaign stored on the table being edited (null on create). The route key is the slug or
-     * the id, resolved in the same order as the controller.
+     * Campaign stored on the table being edited (null on create), resolved like the controller
+     * does. Only for someone who may edit that table, so validation never reveals the campaign
+     * of another user's draft.
      */
     private function storedCampaignId(): ?string
     {
@@ -121,12 +121,12 @@ final class FrontendCreateGameTableRequest extends FormRequest
             return null;
         }
 
-        $table = GameTableModel::query()->where('slug', $key)->first();
+        $table = GameTableModel::findBySlugOrId($key);
 
-        if ($table === null && Str::isUuid($key)) {
-            $table = GameTableModel::query()->find($key);
+        if ($table === null || $this->user()?->can('update', $table) !== true) {
+            return null;
         }
 
-        return $table?->campaign_id;
+        return $table->campaign_id;
     }
 }

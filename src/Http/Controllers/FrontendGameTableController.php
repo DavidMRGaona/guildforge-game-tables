@@ -14,7 +14,6 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\GameTables\Application\DTOs\FrontendCreateGameTableDTO;
@@ -252,11 +251,7 @@ final class FrontendGameTableController extends Controller
      */
     private function findAuthorTable(string $key): GameTableModel
     {
-        $table = GameTableModel::query()->where('slug', $key)->first();
-
-        if ($table === null && Str::isUuid($key)) {
-            $table = GameTableModel::query()->find($key);
-        }
+        $table = GameTableModel::findBySlugOrId($key);
 
         if ($table === null) {
             throw (new ModelNotFoundException)->setModel(GameTableModel::class, [$key]);
