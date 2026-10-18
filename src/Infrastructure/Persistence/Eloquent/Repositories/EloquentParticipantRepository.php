@@ -6,6 +6,7 @@ namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories;
 
 use DateTimeImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Modules\GameTables\Domain\Entities\Participant;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
@@ -322,7 +323,18 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
             email: $model->email,
             phone: $model->phone,
             cancellationToken: $model->cancellation_token,
+            emailConfirmedAt: $this->immutable($model->email_confirmed_at),
+            confirmationExpiresAt: $this->immutable($model->confirmation_expires_at),
+            confirmationToken: $model->confirmation_token,
+            confirmationSentAt: $this->immutable($model->confirmation_sent_at),
+            confirmationMode: $model->confirmation_mode,
+            fingerprint: $model->fingerprint,
         );
+    }
+
+    private function immutable(?Carbon $value): ?DateTimeImmutable
+    {
+        return $value !== null ? new DateTimeImmutable($value->toDateTimeString()) : null;
     }
 
     /**
@@ -345,6 +357,12 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
             'notes' => $participant->notes,
             'confirmed_at' => $participant->confirmedAt,
             'cancelled_at' => $participant->cancelledAt,
+            'email_confirmed_at' => $participant->emailConfirmedAt,
+            'confirmation_expires_at' => $participant->confirmationExpiresAt,
+            'confirmation_token' => $participant->confirmationToken,
+            'confirmation_sent_at' => $participant->confirmationSentAt,
+            'confirmation_mode' => $participant->confirmationMode?->value,
+            'fingerprint' => $participant->fingerprint,
         ];
     }
 
@@ -390,6 +408,7 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
                 ParticipantStatus::Cancelled->value,
                 ParticipantStatus::Rejected->value,
                 ParticipantStatus::NoShow->value,
+                ParticipantStatus::Expired->value,
             ])
             ->get();
 

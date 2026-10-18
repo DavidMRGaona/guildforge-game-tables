@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Modules\GameTables\Domain\Enums\GuestConfirmationMode;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
 
@@ -27,6 +28,12 @@ use Modules\GameTables\Domain\Enums\ParticipantStatus;
  * @property string|null $notes
  * @property Carbon|null $confirmed_at
  * @property Carbon|null $cancelled_at
+ * @property Carbon|null $email_confirmed_at
+ * @property Carbon|null $confirmation_expires_at
+ * @property string|null $confirmation_token
+ * @property Carbon|null $confirmation_sent_at
+ * @property GuestConfirmationMode|null $confirmation_mode
+ * @property string|null $fingerprint
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property-read UserModel|null $user
@@ -60,6 +67,12 @@ final class ParticipantModel extends Model
         'notes',
         'confirmed_at',
         'cancelled_at',
+        'email_confirmed_at',
+        'confirmation_expires_at',
+        'confirmation_token',
+        'confirmation_sent_at',
+        'confirmation_mode',
+        'fingerprint',
     ];
 
     /**
@@ -73,6 +86,10 @@ final class ParticipantModel extends Model
             'waiting_list_position' => 'integer',
             'confirmed_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            'email_confirmed_at' => 'datetime',
+            'confirmation_expires_at' => 'datetime',
+            'confirmation_sent_at' => 'datetime',
+            'confirmation_mode' => GuestConfirmationMode::class,
         ];
     }
 

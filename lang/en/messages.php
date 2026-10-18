@@ -301,6 +301,7 @@ return [
             'cancelled' => 'Cancelled',
             'rejected' => 'Rejected',
             'no_show' => 'No show',
+            'expired' => 'Expired',
         ],
         'campaign_status' => [
             'recruiting' => 'Recruiting',
