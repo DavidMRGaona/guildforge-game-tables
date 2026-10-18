@@ -342,6 +342,7 @@ return [
             'cancelled' => 'Cancelado',
             'rejected' => 'Rechazado',
             'no_show' => 'No presentado',
+            'expired' => 'Caducada',
         ],
         'campaign_status' => [
             'recruiting' => 'Reclutando',

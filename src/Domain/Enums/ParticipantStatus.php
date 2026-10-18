@@ -12,6 +12,7 @@ enum ParticipantStatus: string
     case Cancelled = 'cancelled';
     case Rejected = 'rejected';
     case NoShow = 'no_show';
+    case Expired = 'expired';
 
     public function label(): string
     {
@@ -22,6 +23,7 @@ enum ParticipantStatus: string
             self::Cancelled => __('game-tables::messages.enums.participant_status.cancelled'),
             self::Rejected => __('game-tables::messages.enums.participant_status.rejected'),
             self::NoShow => __('game-tables::messages.enums.participant_status.no_show'),
+            self::Expired => __('game-tables::messages.enums.participant_status.expired'),
         };
     }
 
@@ -34,6 +36,7 @@ enum ParticipantStatus: string
             self::Cancelled => 'heroicon-o-x-circle',
             self::Rejected => 'heroicon-o-no-symbol',
             self::NoShow => 'heroicon-o-user-minus',
+            self::Expired => 'heroicon-o-archive-box-x-mark',
         };
     }
 
@@ -43,7 +46,7 @@ enum ParticipantStatus: string
             self::Pending => 'warning',
             self::Confirmed => 'success',
             self::WaitingList => 'info',
-            self::Cancelled => 'gray',
+            self::Cancelled, self::Expired => 'gray',
             self::Rejected => 'danger',
             self::NoShow => 'danger',
         };
@@ -66,7 +69,7 @@ enum ParticipantStatus: string
 
     public function isFinal(): bool
     {
-        return in_array($this, [self::Cancelled, self::Rejected, self::NoShow], true);
+        return in_array($this, [self::Cancelled, self::Rejected, self::NoShow, self::Expired], true);
     }
 
     public function canBeCancelled(): bool
@@ -80,7 +83,7 @@ enum ParticipantStatus: string
      */
     public function canBeDeleted(): bool
     {
-        return in_array($this, [self::Cancelled, self::Rejected], true);
+        return in_array($this, [self::Cancelled, self::Rejected, self::Expired], true);
     }
 
     /**
