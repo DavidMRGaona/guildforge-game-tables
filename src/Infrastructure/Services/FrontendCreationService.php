@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Modules\GameTables\Infrastructure\Services;
 
 use App\Application\Authorization\Services\AuthorizationServiceInterface;
+use App\Domain\Entities\Event;
 use App\Domain\Repositories\EventRepositoryInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Illuminate\Support\Collection;
 use Modules\GameTables\Application\DTOs\CampaignResponseDTO;
 use Modules\GameTables\Application\DTOs\FrontendCreateCampaignDTO;
 use Modules\GameTables\Application\DTOs\FrontendCreateGameTableDTO;
@@ -192,13 +194,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         // Get content warnings
         $contentWarnings = $this->contentWarningRepository->getActive();
 
-        // Get current or future published events that have tables enabled
-        $now = new \DateTimeImmutable;
-        $enabledEventIds = $this->configRepository->getEnabledEventIds();
-        $events = $this->eventRepository->findPublished()
-            ->filter(static fn ($event): bool => $event->endDate() >= $now)
-            ->filter(static fn ($event): bool => in_array($event->id()->value, $enabledEventIds, true))
-            ->sortBy(static fn ($event): \DateTimeImmutable => $event->startDate());
+        $events = $this->selectableEvents();
 
         // Get campaigns created by the current user
         $userId = auth()->id();
@@ -252,6 +248,34 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
                 'max_duration_minutes' => $this->settingsReader->maxDurationMinutes(),
             ],
         ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function selectableEventIds(): array
+    {
+        return $this->selectableEvents()
+            ->map(static fn (Event $event): string => $event->id()->value)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Current or future published events that have tables enabled, by start date: the events the
+     * creation form offers and the only ones the server accepts for a new link.
+     *
+     * @return Collection<int, Event>
+     */
+    private function selectableEvents(): Collection
+    {
+        $now = new \DateTimeImmutable;
+        $enabledEventIds = $this->configRepository->getEnabledEventIds();
+
+        return $this->eventRepository->findPublished()
+            ->filter(static fn (Event $event): bool => $event->endDate() >= $now)
+            ->filter(static fn (Event $event): bool => in_array($event->id()->value, $enabledEventIds, true))
+            ->sortBy(static fn (Event $event): \DateTimeImmutable => $event->startDate());
     }
 
     /**
