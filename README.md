@@ -153,10 +153,12 @@ Los emails de los invitados se guardan en minúsculas y se comparan sin distingu
 
 | Estado | Valor | Descripción |
 |--------|-------|-------------|
-| Borrador | `draft` | El autor puede editarla |
+| Borrador | `draft` | El autor la prepara y la puede editar; si viene de un rechazo, guarda el motivo |
 | Pendiente de revisión | `pending_review` | Enviada a revisión |
 | Aprobada | `approved` | Aprobada y publicada |
-| Rechazada | `rejected` | Rechazada con motivo; el autor puede editarla y volver a enviarla |
+| Rechazada | `rejected` | Solo en filas rechazadas antes de la versión 2.10.0; se trata como un borrador hasta que se convierte |
+
+Las mesas y campañas creadas desde el panel no tienen estado de moderación.
 
 ## Creación desde la web
 
@@ -164,13 +166,13 @@ Con **Creación desde web** activada, los usuarios con sesión iniciada que cump
 
 1. Crear una mesa en `/mesas/crear` (o desde el botón de la página de un evento, que la asocia al evento) o una campaña en `/campanas/crear`. Si no cumplen los requisitos, ven una página que explica el motivo.
 2. Editar sus borradores desde **Mis mesas** (`/mesas/mis-mesas`) o **Mis campañas** (`/campanas/mis-campanas`).
-3. Enviarlos a revisión, solo si están en borrador o rechazados.
+3. Enviarlos a revisión, solo si están en borrador.
 
-El autor solo edita, envía a revisión o borra una mesa o campaña que no esté publicada y esté en borrador o rechazada, lo mismo que ofrecen **Mis mesas** y **Mis campañas**; el servidor responde 403 a cualquier otra petición. Una mesa o campaña publicada desde el panel cuando aún estaba en borrador queda fuera de su alcance, igual que las creadas desde el panel. Los permisos de edición y borrado del panel (`gametables.update`/`.delete`, `campaigns.update`/`.delete`) siguen dando acceso completo.
+El autor solo edita, envía a revisión o borra una mesa o campaña que no esté publicada y esté en borrador (o rechazada antes de la versión 2.10.0), lo mismo que ofrecen **Mis mesas** y **Mis campañas**; el servidor responde 403 a cualquier otra petición. Una mesa o campaña publicada desde el panel cuando aún estaba en borrador queda fuera de su alcance, igual que las creadas desde el panel. Los permisos de edición y borrado del panel (`gametables.update`/`.delete`, `campaigns.update`/`.delete`) siguen dando acceso completo.
 
 Según el modo de publicación:
 
-- `auto`: la mesa se publica al crearla o al enviarla.
+- `auto`: la mesa o campaña queda aprobada y publicada al crearla o al enviarla.
 - `approval`: queda pendiente de revisión.
 - `role_based`: se publica directamente para los roles o permisos de autopublicación (`frontend_creation.publication.auto_publish_roles` y `auto_publish_permissions`, sin campo en el panel y vacíos por defecto); el resto queda pendiente.
 
@@ -178,9 +180,20 @@ Las mesas y campañas enviadas a revisión se avisan por correo a los usuarios c
 
 Aprobar o rechazar requiere el permiso de edición (`gametables.update` para mesas, `campaigns.update` para campañas); verlas o ser su autor no basta.
 
-**Mesas**: en **Mesas de rol** → **Mesas** se aprueban (la mesa se publica) o se rechazan con motivo, una a una o en bloque; el autor recibe un correo en ambos casos.
+### Flujo de revisión
 
-**Campañas**: en **Mesas de rol** → **Campañas** se aprueban (la campaña se publica) o se rechazan con motivo, una a una; el autor ve el motivo del rechazo en **Mis campañas**, sin correo.
+1. **Borrador**: el autor prepara la mesa o campaña.
+2. El autor la **envía a revisión** → **Pendiente de revisión**.
+3. Un administrador la **aprueba** → **Aprobada** y publicada.
+4. O la **rechaza** con un motivo obligatorio → vuelve a **Borrador**, sin publicar y con el motivo, que el autor ve en **Mis mesas** / **Mis campañas** (y al editar la campaña) hasta que la envía de nuevo; enviarla borra el motivo y el ciclo vuelve a empezar.
+
+Aprobar y rechazar (una a una o, en mesas, en bloque) solo actúan sobre lo que está pendiente de revisión: el servidor rechaza aprobar o rechazar un borrador o una mesa ya aprobada, y las acciones en bloque se saltan lo que no está pendiente.
+
+El panel nunca publica una mesa o campaña creada desde la web que el autor no haya enviado, ni una pendiente de revisión: el interruptor **Publicado** está bloqueado, con el aviso «El autor aún no la ha enviado a revisión.» en borrador o el de usar **Aprobar** o **Rechazar** si está pendiente, y en las mesas no aparece la acción **Publicar**. El servidor lo vuelve a comprobar al guardar, así que un formulario manipulado tampoco la publica. Aprobar es la única forma de publicarlas. Las creadas desde el panel se publican con el interruptor como siempre, y las aprobadas se pueden despublicar y volver a publicar sin que cambie su estado de moderación.
+
+**Mesas**: en **Mesas de rol** → **Mesas** (en la lista o en la página de edición) se aprueban o se rechazan; el autor recibe un correo en ambos casos.
+
+**Campañas**: en **Mesas de rol** → **Campañas** se aprueban o se rechazan, una a una desde la lista, sin correo al autor.
 
 Una mesa creada o editada desde la web solo se puede vincular a una campaña creada por quien la crea (las que ofrece el formulario); el servidor rechaza cualquier otra con «Solo puedes vincular la mesa a una campaña creada por ti». Desde el panel se puede vincular cualquier campaña. Al editar una mesa desde la web se puede conservar la campaña que ya tenga, aunque la haya vinculado un administrador desde el panel.
 
