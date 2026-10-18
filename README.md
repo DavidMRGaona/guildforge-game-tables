@@ -55,6 +55,7 @@ Se configura en el panel: **Mesas de rol** → **Configuración** (permiso `game
 | Sección | Qué controla |
 |---------|--------------|
 | **Inscripciones** | **Lista de espera**: si las mesas con las plazas de jugador completas ofrecen la lista de espera (desactivada: la mesa completa rechaza a los jugadores). Ver [Lista de espera](#lista-de-espera) |
+| **Automatización** | **Actualizar el estado de las mesas automáticamente** (clave `automation.auto_status_enabled`, activado por defecto): cada cinco minutos las mesas programadas o completas pasan a «En progreso» a su hora de inicio y las mesas en progreso pasan a «Completada» al terminar. Ver [Cambio de estado automático](#cambio-de-estado-automático) |
 | **Acceso anticipado para socios** | **Acceso anticipado para socios** (clave `membership_integration.enabled`): si quienes tienen el rol de socio del core pueden inscribirse antes de la apertura según los días de acceso anticipado de cada mesa (desactivado, se inscriben con la apertura general); no depende del módulo de gestión de socios. **Días de acceso anticipado**: con cuántos empieza cada mesa nueva del panel |
 | **Valores por defecto** | Duración y número de jugadores y espectadores con los que empiezan los formularios de mesa del panel y de la web; confirmación automática y tipo de inscripción de las mesas nuevas del panel y de las creadas desde la web. Al guardar, cada valor por defecto se comprueba contra los **Límites** del mismo envío (no contra los guardados antes) y el mínimo de jugadores no puede superar el máximo; si no, el campo muestra el error y no se guarda nada. Los topes fijos siguen por encima: 20 jugadores, 50 espectadores, 720 minutos y 30 días de acceso anticipado |
 | **Notificaciones** | Correos de inscripción y de cancelación a los directores y al email de la mesa, y correos de promoción desde la lista de espera (al participante y a los directores) |
@@ -105,7 +106,18 @@ La página de la mesa y el servidor usan el mismo cálculo: el servidor cuenta l
 - **Editar** cambia las notas y el contacto del invitado (el email en minúsculas, y no el de otro invitado activo de la misma mesa: «Ya existe una inscripción con este email»), no el estado. El rol, el tipo de participante y el usuario no se editan: un cambio de rol o de persona es otra plaza, así que se cancela la inscripción y se añade de nuevo, que pasa por el bloqueo y las reglas de aforo.
 - **Borrar** (en una fila o en bloque) solo es para inscripciones canceladas o rechazadas, que ya no ocupan ni esperan plaza; para dar de baja a alguien se usa **Cancelar inscripción**, que libera la plaza y avisa a la lista de espera. En bloque se borran solo las seleccionadas que estén canceladas o rechazadas, las demás se quedan, y el aviso dice cuántas se han borrado y cuántas hay que cancelar antes. El estado se comprueba al borrar: una inscripción que se reactiva mientras tanto (la persona vuelve a inscribirse) no se borra. Lo ve quien puede editar la mesa, igual que las acciones de estado.
 
-En el panel, la cabecera de la mesa tiene las acciones **Publicar**, **Despublicar**, **Iniciar**, **Completar** y **Cancelar mesa**.
+En el panel, la cabecera de la mesa tiene las acciones **Publicar**, **Despublicar**, **Iniciar**, **Completar** y **Cancelar mesa**. **Iniciar** (mesas programadas o completas) y **Completar** (mesas en progreso) pasan por el mismo servicio que el cambio automático: **Completar** emite `GameTableCompleted`, y si la mesa ya ha cambiado de estado entretanto avisan («La mesa ya no está en un estado que permita este cambio») sin cambiar nada. Ninguna mesa en borrador, cancelada o completada se puede iniciar ni completar.
+
+### Cambio de estado automático
+
+Con **Automatización** → **Actualizar el estado de las mesas automáticamente** activado (por defecto), el comando `game-tables:update-statuses`, que el módulo programa cada cinco minutos sin ejecuciones solapadas, hace lo mismo que **Iniciar** y **Completar**:
+
+- Las mesas **Programada** o **Completa** cuya hora de inicio ha llegado pasan a **En progreso**.
+- Las mesas **En progreso** cuyo final (inicio más duración) ha llegado pasan a **Completada** y se emite `GameTableCompleted`. Una mesa programada que ya terminó pasa por los dos estados en la misma ejecución.
+- Los borradores y las mesas canceladas o completadas no cambian. Cada mesa se vuelve a leer antes de cambiarla: si alguien la ha cambiado a mano entretanto, se salta; si una falla, se anota en el log y se sigue con las demás. El comando imprime cuántas ha iniciado, completado, saltado y cuántas han fallado.
+- No se envían correos. Las horas se comparan en la zona horaria de la aplicación (`APP_TIMEZONE`), la misma en la que se guardan.
+
+Las inscripciones no cambian: ya se cierran a la hora de inicio, y las mesas que admiten inscripciones durante la partida las siguen admitiendo en **En progreso** hasta el final. Basta con que el planificador de Laravel esté en marcha (`php artisan schedule:work`, o `php artisan schedule:run` cada minuto); `php artisan schedule:list` muestra la tarea. Con el ajuste desactivado, el estado solo cambia con las acciones del panel.
 
 ### Lista de espera
 
@@ -313,12 +325,13 @@ La columna de rol indica el rol al que el módulo propone el permiso; habilitar 
 php artisan gametables:generate-slugs            # genera slugs de mesas y campañas que no lo tienen
 php artisan gametables:generate-slugs --dry-run  # muestra qué haría sin cambiar nada
 php artisan gametables:generate-slugs --force    # regenera también los existentes
+php artisan game-tables:update-statuses          # inicia y completa las mesas según su hora (programado cada cinco minutos)
 ```
 
 ## Limitaciones actuales
 
 - Las rutas de creación desde la web exigen sesión iniciada, también con el nivel de acceso «Cualquier persona».
-- «Solo por invitación» no tiene sistema de invitaciones: rechaza a los invitados sin cuenta, pero los usuarios con sesión iniciada pueden inscribirse como en una mesa abierta.
+- «Solo por invitación» no tiene sistema de invitaciones: nadie se inscribe desde la web (ni invitados ni usuarios con sesión, que ven «Esta mesa es solo por invitación: la organización inscribe a los jugadores») y la organización añade a los participantes desde el panel.
 
 ## Arquitectura
 
@@ -345,7 +358,7 @@ src/modules/game-tables/
 │   └── web.php
 ├── src/
 │   ├── Application/           # DTOs e interfaces de servicios
-│   ├── Console/Commands/      # gametables:generate-slugs
+│   ├── Console/Commands/      # gametables:generate-slugs, game-tables:update-statuses
 │   ├── Domain/                # Entidades, enums, eventos, excepciones, repositorios, VOs
 │   ├── Filament/              # Resources, RelationManagers, Pages, Widgets, Forms
 │   ├── Http/                  # Controladores, requests y resources
