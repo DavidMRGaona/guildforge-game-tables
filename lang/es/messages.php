@@ -159,6 +159,9 @@ return [
         'is_published' => 'Publicado',
         'is_published_help' => 'Controla la visibilidad pública de la mesa. Las inscripciones se abren automáticamente según las fechas configuradas.',
         'is_published_campaign_help' => 'Controla la visibilidad pública de la campaña.',
+        'is_published_not_submitted' => 'El autor aún no la ha enviado a revisión.',
+        'is_published_pending_review' => 'Está pendiente de revisión: apruébala o recházala con «Aprobar» o «Rechazar».',
+        'is_published_campaign_pending_review' => 'Está pendiente de revisión: apruébala o recházala desde la lista de campañas.',
         'published_at' => 'Fecha de publicación',
         'notes' => 'Notas',
 
@@ -433,6 +436,7 @@ return [
         'sections' => [
             'membership' => 'Acceso anticipado para socios',
             'registration' => 'Inscripciones',
+            'automation' => 'Automatización',
             'defaults' => 'Valores por defecto',
             'notifications' => 'Notificaciones',
             'limits' => 'Límites',
@@ -444,6 +448,8 @@ return [
             'membership_enabled_help' => 'Quienes tienen el rol de socio elegido en la configuración del sitio pueden inscribirse antes de la apertura, según los días de acceso anticipado de cada mesa. No depende del módulo de gestión de socios',
             'waiting_list_enabled' => 'Lista de espera',
             'waiting_list_enabled_help' => 'Con las plazas de jugador completas, los jugadores pueden apuntarse a la lista de espera. Cada plaza liberada pasa automáticamente al primero de la lista hasta el inicio de la partida (o hasta el cierre de inscripciones, si es anterior); después, la promoción automática se detiene y el director puede promover a mano. En las mesas con confirmación manual los pendientes ocupan plaza y el promovido queda pendiente de que el director lo confirme. Los espectadores no tienen lista de espera',
+            'auto_status_enabled' => 'Actualizar el estado de las mesas automáticamente',
+            'auto_status_enabled_help' => 'Cada cinco minutos, las mesas programadas o completas pasan a «En progreso» a su hora de inicio y las mesas en progreso pasan a «Completada» al terminar (inicio más duración). No se envían correos. Los borradores y las mesas canceladas no cambian. Desactivado, el estado solo cambia con las acciones Iniciar y Completar del panel',
             'early_access_days' => 'Días de acceso anticipado',
             'early_access_days_help' => 'Valor inicial de los días de ventaja de los socios en cada mesa nueva',
             'default_duration' => 'Duración por defecto (minutos)',
@@ -663,6 +669,8 @@ return [
         'table_rejected' => 'Mesa rechazada correctamente',
         'campaign_approved' => 'Campaña aprobada correctamente',
         'campaign_rejected' => 'Campaña rechazada correctamente',
+        'status_already_changed' => 'La mesa ya no está en un estado que permita este cambio',
+        'campaign_status_already_changed' => 'La campaña ya no está en un estado que permita este cambio',
     ],
 
     /*
@@ -686,6 +694,8 @@ return [
         'language_required' => 'El idioma es obligatorio',
         'experience_level_required' => 'El nivel de experiencia es obligatorio',
         'character_creation_required' => 'El tipo de creación de personajes es obligatorio',
+        'campaign_not_owned' => 'Solo puedes vincular la mesa a una campaña creada por ti',
+        'event_not_open' => 'Solo puedes vincular la mesa a un evento abierto a nuevas mesas',
         'registration_closes_after_start' => 'El cierre de inscripciones no puede ser posterior al inicio de la mesa (:date)',
         'registration_closes_after_end' => 'El cierre de inscripciones no puede ser posterior al final de la partida (:date)',
     ],

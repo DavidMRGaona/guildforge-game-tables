@@ -6,6 +6,7 @@ namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use DateTimeZone;
 use Illuminate\Support\Collection;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
@@ -160,6 +161,27 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
             ->get()
             ->map(fn (GameTableModel $model): GameTable => $this->toEntity($model))
             ->all();
+    }
+
+    /**
+     * @param  list<TableStatus>  $statuses
+     * @return list<string>
+     */
+    public function idsStartedInStatuses(array $statuses, DateTimeImmutable $now): array
+    {
+        // starts_at holds the wall-clock time of the application timezone, which Laravel sets as
+        // PHP's default one
+        $localNow = $now->setTimezone(new DateTimeZone(date_default_timezone_get()));
+
+        /** @var array<int, string> $ids */
+        $ids = GameTableModel::query()
+            ->whereIn('status', array_map(static fn (TableStatus $status): string => $status->value, $statuses))
+            ->where('starts_at', '<=', $localNow->format('Y-m-d H:i:s'))
+            ->orderBy('starts_at')
+            ->pluck('id')
+            ->all();
+
+        return array_values($ids);
     }
 
     /**

@@ -44,6 +44,14 @@ interface FrontendCreationServiceInterface
     public function getCreateFormData(): array;
 
     /**
+     * Ids of the events a table created or edited from the web may be linked to: the ones the
+     * creation form offers (published, not ended, with tables enabled).
+     *
+     * @return list<string>
+     */
+    public function selectableEventIds(): array;
+
+    /**
      * Get all drafts created by a user.
      *
      * @return array<GameTableResponseDTO>

@@ -52,6 +52,8 @@ interface CampaignData {
     frontend_creation_status: string | null;
     frontend_creation_status_label: string | null;
     moderation_notes: string | null;
+    // Why it was rejected, while the author may still change it
+    rejection_reason: string | null;
     can_edit: boolean;
 }
 
@@ -305,8 +307,8 @@ function submit(): void {
                 </div>
             </div>
 
-            <!-- Moderation notes -->
-            <div v-if="props.campaign.moderation_notes" class="mb-6 rounded-lg border border-info/30 bg-info-bg p-4">
+            <!-- Rejection reason, until the campaign is sent to review again -->
+            <div v-if="props.campaign.rejection_reason" class="mb-6 rounded-lg border border-info/30 bg-info-bg p-4">
                 <div class="flex">
                     <div class="flex-shrink-0">
                         <svg class="h-5 w-5 text-info" fill="currentColor" viewBox="0 0 20 20">
@@ -315,10 +317,10 @@ function submit(): void {
                     </div>
                     <div class="ml-3">
                         <h3 class="text-sm font-medium text-info">
-                            {{ t('campaigns.edit.moderationNotes') }}
+                            {{ t('campaigns.edit.rejectionReason') }}
                         </h3>
                         <p class="mt-1 text-sm text-info/80">
-                            {{ props.campaign.moderation_notes }}
+                            {{ props.campaign.rejection_reason }}
                         </p>
                     </div>
                 </div>

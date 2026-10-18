@@ -254,6 +254,8 @@ export default {
             submitForReviewTitle: 'Enviar mesa a revisión',
             viewPublic: 'Ver mesa pública',
             pendingReviewMessage: 'En revisión',
+            rejectionReason: 'Motivo del rechazo',
+            rejectionHint: 'Corrígela y vuelve a enviarla a revisión.',
             confirmSubmit: 'Una vez enviada, la mesa será revisada por un moderador antes de publicarse. ¿Deseas continuar?',
             deleteTitle: 'Eliminar mesa',
             confirmDelete: '¿Estás seguro de que quieres eliminar "{title}"? Esta acción no se puede deshacer.',
@@ -473,6 +475,7 @@ export default {
             players: 'jugadores',
             recruiting: 'Reclutando',
             rejectionReason: 'Motivo del rechazo',
+            rejectionHint: 'Corrígela y vuelve a enviarla a revisión.',
         },
         create: {
             title: 'Crear campaña',
@@ -529,7 +532,7 @@ export default {
             submit: 'Guardar cambios',
             notEditable: 'Esta campaña no se puede editar en este momento',
             currentStatus: 'Estado actual: {status}',
-            moderationNotes: 'Notas del moderador',
+            rejectionReason: 'Motivo del rechazo',
         },
         createNotEligible: {
             title: 'No puedes crear campañas',

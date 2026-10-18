@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Enums\CampaignFrequency;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
+use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\GameSystemId;
 use PHPUnit\Framework\TestCase;
@@ -213,6 +214,78 @@ final class CampaignTest extends TestCase
         $campaign = $this->createCampaign();
 
         $this->assertNull($campaign->progressPercentage());
+    }
+
+    public function test_the_author_may_change_it_only_while_it_is_an_unpublished_draft_or_rejected(): void
+    {
+        $campaign = $this->createCampaign();
+        $campaign->frontendCreationStatus = FrontendCreationStatus::Draft;
+        $this->assertTrue($campaign->canBeChangedByAuthor());
+
+        $campaign->frontendCreationStatus = FrontendCreationStatus::Rejected;
+        $this->assertTrue($campaign->canBeChangedByAuthor());
+
+        $campaign->frontendCreationStatus = FrontendCreationStatus::PendingReview;
+        $this->assertFalse($campaign->canBeChangedByAuthor());
+
+        $campaign->frontendCreationStatus = null;
+        $this->assertFalse($campaign->canBeChangedByAuthor());
+
+        // Published from the panel while still a draft: the author no longer changes it
+        $campaign->frontendCreationStatus = FrontendCreationStatus::Draft;
+        $campaign->isPublished = true;
+        $this->assertFalse($campaign->canBeChangedByAuthor());
+    }
+
+    // Rejecting sends it back to the author as a draft that keeps the reason, not to a separate status
+    public function test_rejecting_returns_it_to_an_unpublished_draft_with_the_reason(): void
+    {
+        $campaign = $this->createCampaign();
+        $campaign->frontendCreationStatus = FrontendCreationStatus::PendingReview;
+        $campaign->isPublished = true;
+
+        $campaign->rejectFrontendCreation('Falta la sinopsis');
+
+        $this->assertSame(FrontendCreationStatus::Draft, $campaign->frontendCreationStatus);
+        $this->assertSame('Falta la sinopsis', $campaign->moderationNotes);
+        $this->assertFalse($campaign->isPublished);
+        $this->assertSame('Falta la sinopsis', $campaign->rejectionReason());
+        $this->assertTrue($campaign->canBeChangedByAuthor());
+    }
+
+    // The reason shows until the author sends it again: submitting clears it
+    public function test_submitting_for_review_clears_the_rejection_reason(): void
+    {
+        $campaign = $this->createCampaign();
+        $campaign->frontendCreationStatus = FrontendCreationStatus::PendingReview;
+        $campaign->rejectFrontendCreation('Falta la sinopsis');
+
+        $campaign->submitForModeration();
+
+        $this->assertSame(FrontendCreationStatus::PendingReview, $campaign->frontendCreationStatus);
+        $this->assertNull($campaign->moderationNotes);
+        $this->assertNull($campaign->rejectionReason());
+    }
+
+    public function test_only_a_draft_the_author_may_change_has_a_rejection_reason(): void
+    {
+        $campaign = $this->createCampaign();
+        $campaign->moderationNotes = 'Falta la sinopsis';
+
+        $campaign->frontendCreationStatus = FrontendCreationStatus::Draft;
+        $this->assertSame('Falta la sinopsis', $campaign->rejectionReason());
+
+        // Rows rejected before 2.10.0, until the deploy converts them
+        $campaign->frontendCreationStatus = FrontendCreationStatus::Rejected;
+        $this->assertSame('Falta la sinopsis', $campaign->rejectionReason());
+
+        // Approval notes are not a rejection
+        $campaign->frontendCreationStatus = FrontendCreationStatus::Approved;
+        $this->assertNull($campaign->rejectionReason());
+
+        $campaign->frontendCreationStatus = FrontendCreationStatus::Draft;
+        $campaign->moderationNotes = null;
+        $this->assertNull($campaign->rejectionReason());
     }
 
     private function createCampaign(

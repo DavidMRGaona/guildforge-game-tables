@@ -15,6 +15,7 @@ use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Enums\TableType;
 use Modules\GameTables\Domain\Enums\Tone;
+use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\GameSystemId;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
@@ -91,14 +92,35 @@ final class GameTable
         $this->status = TableStatus::Full;
     }
 
+    /**
+     * @throws InvalidStatusTransitionException unless the table is scheduled or full
+     */
     public function start(): void
     {
-        $this->status = TableStatus::InProgress;
+        $this->transitionTo(TableStatus::InProgress);
     }
 
+    /**
+     * @throws InvalidStatusTransitionException unless the table is in progress
+     */
     public function complete(): void
     {
-        $this->status = TableStatus::Completed;
+        $this->transitionTo(TableStatus::Completed);
+    }
+
+    /**
+     * Drafts, cancelled and completed tables never start nor complete, whoever asks (the panel or
+     * the automatic update).
+     *
+     * @throws InvalidStatusTransitionException
+     */
+    private function transitionTo(TableStatus $status): void
+    {
+        if (! $this->status->canTransitionTo($status)) {
+            throw InvalidStatusTransitionException::fromTo($this->status->value, $status->value);
+        }
+
+        $this->status = $status;
     }
 
     public function cancel(): void
@@ -422,15 +444,26 @@ final class GameTable
         }
     }
 
+    /**
+     * Back to the author as an unpublished draft that keeps the reason until it is sent again.
+     */
     public function rejectFrontendCreation(string $reason): void
     {
-        $this->frontendCreationStatus = FrontendCreationStatus::Rejected;
+        if ($this->isPublished) {
+            $this->unpublish();
+        }
+
+        $this->frontendCreationStatus = FrontendCreationStatus::Draft;
         $this->moderationNotes = $reason;
     }
 
+    /**
+     * Sent to review: the reason of an earlier rejection no longer applies.
+     */
     public function submitForModeration(): void
     {
         $this->frontendCreationStatus = FrontendCreationStatus::PendingReview;
+        $this->moderationNotes = null;
     }
 
     public function isCreatedFromFrontend(): bool
@@ -443,9 +476,24 @@ final class GameTable
         return $this->frontendCreationStatus !== null && $this->frontendCreationStatus->isPending();
     }
 
-    public function canEditAsDraft(): bool
+    /**
+     * Whether its author may edit it, submit it for review or delete it from the web.
+     */
+    public function canBeChangedByAuthor(): bool
     {
-        return $this->frontendCreationStatus === null
-            || $this->frontendCreationStatus->canEdit();
+        return FrontendCreationStatus::allowsAuthorChanges($this->frontendCreationStatus, $this->isPublished);
+    }
+
+    /**
+     * Why the table was rejected, while it is back in the author's hands; null otherwise. Only a
+     * rejection leaves notes on a draft (submitting clears them, approval notes go with Approved).
+     */
+    public function rejectionReason(): ?string
+    {
+        if (! $this->canBeChangedByAuthor() || $this->moderationNotes === null || trim($this->moderationNotes) === '') {
+            return null;
+        }
+
+        return $this->moderationNotes;
     }
 }

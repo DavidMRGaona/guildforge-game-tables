@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Domain\Repositories;
 
+use DateTimeImmutable;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
@@ -54,6 +55,15 @@ interface GameTableRepositoryInterface
      * @return array<GameTable>
      */
     public function getUpcoming(int $limit = 10): array;
+
+    /**
+     * Ids of the tables in one of the given statuses whose start time is at or before $now,
+     * earliest first.
+     *
+     * @param  list<TableStatus>  $statuses
+     * @return list<string>
+     */
+    public function idsStartedInStatuses(array $statuses, DateTimeImmutable $now): array;
 
     /**
      * @return array<GameTable>
