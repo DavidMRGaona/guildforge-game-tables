@@ -6,10 +6,12 @@ namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories;
 
 use DateTimeImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Carbon;
 use Modules\GameTables\Domain\Entities\Participant;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
+use Modules\GameTables\Domain\Exceptions\AlreadyRegisteredException;
 use Modules\GameTables\Domain\Exceptions\ParticipantNotFoundException;
 use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
@@ -18,12 +20,37 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantMod
 
 final readonly class EloquentParticipantRepository implements ParticipantRepositoryInterface
 {
+    private const string ACTIVE_GUEST_EMAIL_INDEX = 'gametables_participants_active_guest_email_unique';
+
+    /**
+     * @throws AlreadyRegisteredException when another active guest already uses the email at the table
+     */
     public function save(Participant $participant): void
     {
-        ParticipantModel::query()->updateOrCreate(
-            ['id' => $participant->id->value],
-            $this->toArray($participant),
-        );
+        try {
+            ParticipantModel::query()->updateOrCreate(
+                ['id' => $participant->id->value],
+                $this->toArray($participant),
+            );
+        } catch (UniqueConstraintViolationException $exception) {
+            if ($this->isActiveGuestEmailViolation($exception) && $participant->email !== null) {
+                throw AlreadyRegisteredException::forGuestEmail($participant->email, $participant->gameTableId->value);
+            }
+
+            throw $exception;
+        }
+    }
+
+    /**
+     * PostgreSQL names the index; SQLite names the index too when it is an expression index, and
+     * the columns otherwise. The token and primary key columns never include game_table_id.
+     */
+    private function isActiveGuestEmailViolation(UniqueConstraintViolationException $exception): bool
+    {
+        $message = $exception->getMessage();
+
+        return str_contains($message, self::ACTIVE_GUEST_EMAIL_INDEX)
+            || str_contains($message, 'gametables_participants.game_table_id');
     }
 
     public function find(ParticipantId $id): ?Participant
