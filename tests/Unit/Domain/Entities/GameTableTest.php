@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
+use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\RegistrationType;
 use Modules\GameTables\Domain\Enums\SafetyTool;
@@ -487,6 +488,27 @@ final class GameTableTest extends TestCase
         $table->acceptsRegistrationsInProgress = $inPlay;
 
         return $table;
+    }
+
+    public function test_the_author_may_change_it_only_while_it_is_an_unpublished_draft_or_rejected(): void
+    {
+        $table = $this->createGameTable();
+        $table->frontendCreationStatus = FrontendCreationStatus::Draft;
+        $this->assertTrue($table->canBeChangedByAuthor());
+
+        $table->frontendCreationStatus = FrontendCreationStatus::Rejected;
+        $this->assertTrue($table->canBeChangedByAuthor());
+
+        $table->frontendCreationStatus = FrontendCreationStatus::PendingReview;
+        $this->assertFalse($table->canBeChangedByAuthor());
+
+        $table->frontendCreationStatus = null;
+        $this->assertFalse($table->canBeChangedByAuthor());
+
+        // Published from the panel while still a draft: the author no longer changes it
+        $table->frontendCreationStatus = FrontendCreationStatus::Draft;
+        $table->isPublished = true;
+        $this->assertFalse($table->canBeChangedByAuthor());
     }
 
     private function createGameTable(

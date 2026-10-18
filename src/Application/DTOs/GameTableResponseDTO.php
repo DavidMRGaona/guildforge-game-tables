@@ -200,7 +200,7 @@ final readonly class GameTableResponseDTO
             'frontend_creation_status' => $this->frontendCreationStatus?->value,
             'frontend_creation_status_label' => $this->frontendCreationStatus?->label(),
             'frontend_creation_status_color' => $this->frontendCreationStatus?->color(),
-            'can_edit' => $this->frontendCreationStatus === null || $this->frontendCreationStatus->canEdit(),
+            'can_edit' => FrontendCreationStatus::allowsAuthorChanges($this->frontendCreationStatus, $this->isPublished),
             'notes' => $this->notes,
             'image_public_id' => $this->imagePublicId,
             'participants' => array_map(fn (ParticipantResponseDTO $p) => $p->toArray(), $this->participants),

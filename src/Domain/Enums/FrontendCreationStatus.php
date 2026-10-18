@@ -62,6 +62,18 @@ enum FrontendCreationStatus: string
     }
 
     /**
+     * Whether the author, without the admin permission, may edit, submit for review or delete
+     * a table or campaign: only an unpublished draft or rejected item, as "Mis mesas" and
+     * "Mis campañas" offer. A published item (even one published from the panel while still a
+     * draft) and an item not created from the web (no status) are out of the author's hands.
+     * The single rule behind the entities, the policies and the response DTOs.
+     */
+    public static function allowsAuthorChanges(?self $status, bool $isPublished): bool
+    {
+        return ! $isPublished && $status !== null && $status->canEdit();
+    }
+
+    /**
      * @return array<string, string>
      */
     public static function options(): array

@@ -150,7 +150,14 @@ final class FrontendCampaignController extends Controller
             'created_by' => (string) $user->id,
         ]);
 
-        $this->creationService->updateCampaignDraft($id, $dto);
+        try {
+            $this->creationService->updateCampaignDraft($id, $dto);
+        } catch (CampaignNotFoundException) {
+            abort(404);
+        } catch (NotEditableException) {
+            // Not the author's, or not an unpublished draft or rejected campaign (as the table policy answers)
+            abort(403);
+        }
 
         return redirect()
             ->route('campaigns.my-campaigns')
@@ -170,7 +177,7 @@ final class FrontendCampaignController extends Controller
         } catch (CampaignNotFoundException) {
             abort(404);
         } catch (NotEditableException) {
-            // Not the author's, or not a draft or rejected campaign (as the table policy answers)
+            // Not the author's, or not an unpublished draft or rejected campaign (as the table policy answers)
             abort(403);
         }
 
@@ -187,7 +194,14 @@ final class FrontendCampaignController extends Controller
         /** @var UserModel $user */
         $user = auth()->user();
 
-        $this->creationService->deleteCampaignDraft($id, (string) $user->id);
+        try {
+            $this->creationService->deleteCampaignDraft($id, (string) $user->id);
+        } catch (CampaignNotFoundException) {
+            abort(404);
+        } catch (NotEditableException) {
+            // Not the author's, or not an unpublished draft or rejected campaign (as the table policy answers)
+            abort(403);
+        }
 
         return redirect()
             ->route('campaigns.my-campaigns')

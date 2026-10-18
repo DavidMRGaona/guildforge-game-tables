@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Enums\CampaignFrequency;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
+use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\GameSystemId;
 use PHPUnit\Framework\TestCase;
@@ -213,6 +214,27 @@ final class CampaignTest extends TestCase
         $campaign = $this->createCampaign();
 
         $this->assertNull($campaign->progressPercentage());
+    }
+
+    public function test_the_author_may_change_it_only_while_it_is_an_unpublished_draft_or_rejected(): void
+    {
+        $campaign = $this->createCampaign();
+        $campaign->frontendCreationStatus = FrontendCreationStatus::Draft;
+        $this->assertTrue($campaign->canBeChangedByAuthor());
+
+        $campaign->frontendCreationStatus = FrontendCreationStatus::Rejected;
+        $this->assertTrue($campaign->canBeChangedByAuthor());
+
+        $campaign->frontendCreationStatus = FrontendCreationStatus::PendingReview;
+        $this->assertFalse($campaign->canBeChangedByAuthor());
+
+        $campaign->frontendCreationStatus = null;
+        $this->assertFalse($campaign->canBeChangedByAuthor());
+
+        // Published from the panel while still a draft: the author no longer changes it
+        $campaign->frontendCreationStatus = FrontendCreationStatus::Draft;
+        $campaign->isPublished = true;
+        $this->assertFalse($campaign->canBeChangedByAuthor());
     }
 
     private function createCampaign(

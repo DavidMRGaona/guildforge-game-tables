@@ -317,9 +317,9 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             throw NotEditableException::forStatus('not_owner');
         }
 
-        // Only drafts and rejected tables go to review: a repeated request sends nothing
-        if ($table->frontendCreationStatus?->canSubmitForReview() !== true) {
-            throw NotEditableException::forStatus($table->frontendCreationStatus->value ?? 'not_frontend');
+        // Only unpublished drafts and rejected tables go to review: a repeated request sends nothing
+        if (! $table->canBeChangedByAuthor()) {
+            throw $this->notChangeableByAuthor($table->isPublished, $table->frontendCreationStatus);
         }
 
         // For now, submitting for review means publishing the table
@@ -353,14 +353,9 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             throw NotEditableException::forStatus('not_owner');
         }
 
-        // Only allow editing unpublished tables
-        if ($table->isPublished) {
-            throw NotEditableException::forStatus('published');
-        }
-
-        // Validate frontend creation status allows editing
-        if (! $table->canEditAsDraft()) {
-            throw NotEditableException::forStatus('pending_review');
+        // Only unpublished drafts and rejected tables are edited by their author
+        if (! $table->canBeChangedByAuthor()) {
+            throw $this->notChangeableByAuthor($table->isPublished, $table->frontendCreationStatus);
         }
 
         // Default registration closes at to event start date if event is set and no existing value
@@ -431,9 +426,9 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             throw NotEditableException::forStatus('not_owner');
         }
 
-        // Only allow deleting unpublished tables
-        if ($table->isPublished) {
-            throw NotEditableException::forStatus('published');
+        // Only unpublished drafts and rejected tables are deleted by their author
+        if (! $table->canBeChangedByAuthor()) {
+            throw $this->notChangeableByAuthor($table->isPublished, $table->frontendCreationStatus);
         }
 
         $this->gameTableService->delete($tableId);
@@ -518,9 +513,9 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             throw NotEditableException::forStatus('not_owner');
         }
 
-        // Only allow editing drafts
-        if (! $campaign->canEditAsDraft()) {
-            throw NotEditableException::forStatus('not_draft');
+        // Only unpublished drafts and rejected campaigns are edited by their author
+        if (! $campaign->canBeChangedByAuthor()) {
+            throw $this->notChangeableByAuthor($campaign->isPublished, $campaign->frontendCreationStatus);
         }
 
         // Update the campaign
@@ -554,9 +549,9 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             throw NotEditableException::forStatus('not_owner');
         }
 
-        // Only drafts and rejected campaigns go to review: a repeated request sends nothing
-        if ($campaign->frontendCreationStatus?->canSubmitForReview() !== true) {
-            throw NotEditableException::forStatus($campaign->frontendCreationStatus->value ?? 'not_frontend');
+        // Only unpublished drafts and rejected campaigns go to review: a repeated request sends nothing
+        if (! $campaign->canBeChangedByAuthor()) {
+            throw $this->notChangeableByAuthor($campaign->isPublished, $campaign->frontendCreationStatus);
         }
 
         // Submit for moderation
@@ -628,12 +623,20 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             throw NotEditableException::forStatus('not_owner');
         }
 
-        // Only allow deleting drafts
-        if ($campaign->isPublished) {
-            throw NotEditableException::forStatus('published');
+        // Only unpublished drafts and rejected campaigns are deleted by their author
+        if (! $campaign->canBeChangedByAuthor()) {
+            throw $this->notChangeableByAuthor($campaign->isPublished, $campaign->frontendCreationStatus);
         }
 
         $this->campaignRepository->delete($campaign->id);
+    }
+
+    /**
+     * Refusal for an author changing a table or campaign outside an unpublished draft or rejected item.
+     */
+    private function notChangeableByAuthor(bool $isPublished, ?FrontendCreationStatus $status): NotEditableException
+    {
+        return NotEditableException::forStatus($isPublished ? 'published' : ($status->value ?? 'not_frontend'));
     }
 
     private function determineInitialStatus(string $userId): FrontendCreationStatus

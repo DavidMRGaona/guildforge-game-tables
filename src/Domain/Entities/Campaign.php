@@ -163,9 +163,11 @@ final class Campaign
         return $this->frontendCreationStatus !== null && $this->frontendCreationStatus->isPending();
     }
 
-    public function canEditAsDraft(): bool
+    /**
+     * Whether its author may edit it, submit it for review or delete it from the web.
+     */
+    public function canBeChangedByAuthor(): bool
     {
-        return $this->frontendCreationStatus === null
-            || $this->frontendCreationStatus->canEdit();
+        return FrontendCreationStatus::allowsAuthorChanges($this->frontendCreationStatus, $this->isPublished);
     }
 }

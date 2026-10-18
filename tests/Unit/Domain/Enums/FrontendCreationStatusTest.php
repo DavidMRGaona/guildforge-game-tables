@@ -107,4 +107,18 @@ final class FrontendCreationStatusTest extends TestCase
         $this->assertFalse(FrontendCreationStatus::Approved->canSubmitForReview());
         $this->assertTrue(FrontendCreationStatus::Rejected->canSubmitForReview());
     }
+
+    // What "Mis mesas" and "Mis campañas" offer the author: edit, submit and delete only an unpublished draft or rejected item
+    public function test_the_author_may_change_only_an_unpublished_draft_or_rejected_item(): void
+    {
+        $this->assertTrue(FrontendCreationStatus::allowsAuthorChanges(FrontendCreationStatus::Draft, isPublished: false));
+        $this->assertTrue(FrontendCreationStatus::allowsAuthorChanges(FrontendCreationStatus::Rejected, isPublished: false));
+        $this->assertFalse(FrontendCreationStatus::allowsAuthorChanges(FrontendCreationStatus::PendingReview, isPublished: false));
+        $this->assertFalse(FrontendCreationStatus::allowsAuthorChanges(FrontendCreationStatus::Approved, isPublished: false));
+        $this->assertFalse(FrontendCreationStatus::allowsAuthorChanges(null, isPublished: false));
+
+        foreach ([...FrontendCreationStatus::cases(), null] as $status) {
+            $this->assertFalse(FrontendCreationStatus::allowsAuthorChanges($status, isPublished: true));
+        }
+    }
 }

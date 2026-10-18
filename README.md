@@ -166,6 +166,8 @@ Con **Creación desde web** activada, los usuarios con sesión iniciada que cump
 2. Editar sus borradores desde **Mis mesas** (`/mesas/mis-mesas`) o **Mis campañas** (`/campanas/mis-campanas`).
 3. Enviarlos a revisión, solo si están en borrador o rechazados.
 
+El autor solo edita, envía a revisión o borra una mesa o campaña que no esté publicada y esté en borrador o rechazada, lo mismo que ofrecen **Mis mesas** y **Mis campañas**; el servidor responde 403 a cualquier otra petición. Una mesa o campaña publicada desde el panel cuando aún estaba en borrador queda fuera de su alcance, igual que las creadas desde el panel. Los permisos de edición y borrado del panel (`gametables.update`/`.delete`, `campaigns.update`/`.delete`) siguen dando acceso completo.
+
 Según el modo de publicación:
 
 - `auto`: la mesa se publica al crearla o al enviarla.
@@ -321,7 +323,7 @@ El módulo registra sus permisos con el prefijo `gametables:` (por ejemplo `game
 | `contentwarnings.view_any`, `contentwarnings.manage` | — | Ver y gestionar avisos de contenido |
 | `gametables.settings` | — | Abrir y guardar la página de configuración del módulo |
 
-La columna de rol indica el rol al que el módulo propone el permiso; habilitar el módulo no lo asigna, se concede en **Roles**. Los administradores tienen acceso completo. Los autores gestionan sus propias mesas y campañas desde «Mis mesas» y «Mis campañas»; una mesa solo se puede editar en borrador o rechazada.
+La columna de rol indica el rol al que el módulo propone el permiso; habilitar el módulo no lo asigna, se concede en **Roles**. Los administradores tienen acceso completo. Los autores gestionan sus propias mesas y campañas desde «Mis mesas» y «Mis campañas»; solo pueden editarlas, enviarlas a revisión o borrarlas mientras no estén publicadas y estén en borrador o rechazadas.
 
 ## Comandos
 
