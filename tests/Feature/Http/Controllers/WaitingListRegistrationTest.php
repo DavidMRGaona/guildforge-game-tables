@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Modules\GameTables\Tests\Feature\Http\Controllers;
 
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
+use Modules\GameTables\Domain\Events\GuestConfirmationRequested;
 use Modules\GameTables\Domain\Exceptions\TableFullException;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
@@ -32,6 +34,9 @@ final class WaitingListRegistrationTest extends ModuleTestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // The guest confirmation email has its own tests
+        Event::fake([GuestConfirmationRequested::class]);
 
         app('router')->getRoutes()->refreshNameLookups();
         config()->set('modules.settings.game-tables', []);
@@ -229,6 +234,8 @@ final class WaitingListRegistrationTest extends ModuleTestCase
         $table = $this->fullTable();
 
         $this->registerGuest($table, 'invitada@example.test')->assertRedirect();
+        // Confirmed: an unconfirmed guest sending the form again is sent the confirmation email again
+        $this->confirmGuestEmails($table);
         $this->registerGuest($table, 'invitada@example.test')
             ->assertStatus(422)
             ->assertJsonPath('errors.registration.0', __('game-tables::messages.errors.guest_already_registered'));
@@ -310,6 +317,7 @@ final class WaitingListRegistrationTest extends ModuleTestCase
         $table = $this->fullTable();
 
         $this->registerGuest($table, 'Invitada@Example.TEST')->assertRedirect();
+        $this->confirmGuestEmails($table);
         $this->registerGuest($table, 'invitada@example.test')
             ->assertStatus(422)
             ->assertJsonPath('errors.registration.0', __('game-tables::messages.errors.guest_already_registered'));
@@ -329,6 +337,8 @@ final class WaitingListRegistrationTest extends ModuleTestCase
             'role' => 'player',
             'status' => 'confirmed',
             'confirmed_at' => now(),
+            // Rows from before the email confirmation were filled in as confirmed
+            'email_confirmed_at' => now(),
         ]);
 
         $this->registerGuest($table, 'antigua@example.test')
@@ -415,6 +425,11 @@ final class WaitingListRegistrationTest extends ModuleTestCase
     /**
      * @return TestResponse<\Symfony\Component\HttpFoundation\Response>
      */
+    private function confirmGuestEmails(GameTableModel $table): void
+    {
+        ParticipantModel::query()->where('game_table_id', $table->id)->whereNull('user_id')->update(['email_confirmed_at' => now()]);
+    }
+
     private function registerGuest(GameTableModel $table, string $email, string $role = 'player'): TestResponse
     {
         $this->app['auth']->forgetGuards();
