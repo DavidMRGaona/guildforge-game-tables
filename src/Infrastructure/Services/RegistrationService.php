@@ -459,7 +459,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         $gameTable = $this->gameTableRepository->find($gameTableId);
 
         // Closed with the registrations: the director promotes by hand from the panel
-        if ($gameTable === null || ! $gameTable->isWaitingListOpen(new DateTimeImmutable())) {
+        if ($gameTable === null || ! $gameTable->isWaitingListOpen(CarbonImmutable::now()->toDateTimeImmutable())) {
             return null;
         }
 
@@ -703,20 +703,28 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     /**
      * Under the table lock, in this order: the usual rules, the account check, the guest already
      * registered with the email (confirmed: a duplicate; unconfirmed: the confirmation email again,
-     * at most once every few minutes, and nothing else changes), then the new registration. Only
-     * the confirmation email is sent: the organisation and the usual registration email wait for
-     * the guest to confirm.
+     * at most once every few minutes, and nothing else changes), then the new registration, which
+     * alone can be refused for want of a seat. Only the confirmation email is sent: the
+     * organisation and the usual registration email wait for the guest to confirm.
      */
     public function registerGuest(RegisterParticipantDTO $dto): ParticipantResponseDTO
     {
         $now = CarbonImmutable::now()->toDateTimeImmutable();
 
-        [$participant, $rank, $resent, $send] = $this->lock->forTable($dto->gameTableId, function () use ($dto, $now): array {
+        [$participant, $rank, $resent, $send, $promoted] = $this->lock->forTable($dto->gameTableId, function () use ($dto, $now): array {
             $existing = $this->findGuest($dto);
-            $unconfirmed = $existing !== null && $existing->isAwaitingEmailConfirmation() ? $existing : null;
 
-            $this->ensureGuestAdmitted($dto, $unconfirmed);
-            $this->ensureAccountEmailAdmitted($dto, $now);
+            // Past its deadline the row has lapsed, even if the expiry command has not run yet: the
+            // submission is a new registration, never an email with a deadline already gone
+            $promoted = $existing !== null && $existing->isConfirmationOverdue($now)
+                ? $this->expireOverdue($existing, $now)
+                : null;
+
+            $unconfirmed = $existing !== null && $existing->isAwaitingEmailConfirmation() ? $existing : null;
+            $role = $unconfirmed->role ?? $dto->role;
+
+            $seatRefusal = $this->ensureGuestAdmitted($dto->gameTableId, $role);
+            $this->ensureAccountEmailAdmitted($dto, $role, $now);
 
             if ($unconfirmed !== null) {
                 $send = $unconfirmed->canResendConfirmation($now);
@@ -727,11 +735,21 @@ final readonly class RegistrationService implements RegistrationServiceInterface
                     $this->participantRepository->save($unconfirmed);
                 }
 
-                return [...$this->withRank($unconfirmed), true, $send];
+                return [...$this->withRank($unconfirmed), true, $send, $promoted];
             }
 
-            return [...$this->withRank($this->placeGuest($dto, $existing, requireConfirmation: true, now: $now)), false, true];
+            // An unconfirmed guest already holds their place (or waits for one): only a new
+            // registration needs a free seat. A confirmed duplicate is refused in placeGuest().
+            if ($seatRefusal !== null && ($existing === null || ! $existing->isActive())) {
+                throw $seatRefusal;
+            }
+
+            return [...$this->withRank($this->placeGuest($dto, $existing, requireConfirmation: true, now: $now)), false, true, $promoted];
         });
+
+        if ($promoted !== null) {
+            $this->announcePromotion($promoted);
+        }
 
         if ($send) {
             $this->requestGuestConfirmation($participant);
@@ -741,21 +759,44 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     }
 
     /**
-     * The rules the table page applies to guests (also without email). The duplicate rule is left
-     * to registerGuest(): an unconfirmed guest sending the form again gets their email again. Such
-     * a guest already holds their place (or waits for one), so a full table does not refuse them.
+     * What the expiry command does to an overdue row, without its email (the guest is registering
+     * again): it lapses and its seat goes to the waiting list as on a cancellation. Runs under the
+     * table lock.
      *
-     * @throws RegistrationNotAllowedException
+     * @return Participant|null the one promoted into the freed seat
      */
-    private function ensureGuestAdmitted(RegisterParticipantDTO $dto, ?Participant $unconfirmed): void
+    private function expireOverdue(Participant $participant, DateTimeImmutable $now): ?Participant
+    {
+        $heldSeat = $participant->isPlayer() && ($participant->isConfirmed() || $participant->isPending());
+        $wasConfirmed = $participant->isConfirmed();
+
+        $participant->expire($now);
+        $this->participantRepository->save($participant);
+
+        return $heldSeat ? $this->promoteNext($participant->gameTableId, freedByPending: ! $wasConfirmed) : null;
+    }
+
+    /**
+     * The rules the table page applies to guests (also without email). The duplicate rule is left
+     * to registerGuest(): an unconfirmed guest sending the form again gets their email again. A
+     * seat refusal is returned, not thrown: seats are the last rule, after the account and the
+     * duplicate checks.
+     *
+     * @throws RegistrationNotAllowedException for any other refusal
+     */
+    private function ensureGuestAdmitted(string $gameTableId, ParticipantRole $role): ?RegistrationNotAllowedException
     {
         try {
-            $this->eligibilityService->ensureGuestCanRegister($dto->gameTableId, null, $unconfirmed->role ?? $dto->role);
+            $this->eligibilityService->ensureGuestCanRegister($gameTableId, null, $role);
         } catch (RegistrationNotAllowedException $e) {
-            if ($unconfirmed === null || ! in_array($e->reason, ['table_full', 'spectators_full'], true)) {
+            if (! in_array($e->reason, ['table_full', 'spectators_full'], true)) {
                 throw $e;
             }
+
+            return $e;
         }
+
+        return null;
     }
 
     /**
@@ -767,7 +808,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
      * @throws AlreadyRegisteredException
      * @throws AccountEmailRequiresLoginException
      */
-    private function ensureAccountEmailAdmitted(RegisterParticipantDTO $dto, DateTimeImmutable $now): void
+    private function ensureAccountEmailAdmitted(RegisterParticipantDTO $dto, ParticipantRole $role, DateTimeImmutable $now): void
     {
         $email = $this->normalisedEmail($dto);
         $account = $email !== null ? $this->accounts?->findByEmail($email) : null;
@@ -776,7 +817,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             return;
         }
 
-        $reason = $this->eligibilityService->userRulesRefusal($dto->gameTableId, $account->userId, $dto->role, $now);
+        $reason = $this->eligibilityService->userRulesRefusal($dto->gameTableId, $account->userId, $role, $now);
 
         if ($reason === 'already_registered') {
             throw AlreadyRegisteredException::forGuestEmail((string) $email, $dto->gameTableId);
