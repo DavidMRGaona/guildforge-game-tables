@@ -35,6 +35,7 @@ use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Modules\GameTables\Domain\Enums\CampaignFrequency;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
+use Modules\GameTables\Domain\Exceptions\NotEditableException;
 use Modules\GameTables\Filament\Forms\Components\GameMasterRepeater;
 use Modules\GameTables\Filament\Resources\CampaignResource\Pages;
 use Modules\GameTables\Filament\Support\PublicationLock;
@@ -249,7 +250,13 @@ final class CampaignResource extends BaseResource
                     ->modalDescription(__('game-tables::messages.moderation.campaign_approve_description'))
                     ->visible(fn (CampaignModel $record): bool => $record->frontend_creation_status === FrontendCreationStatus::PendingReview)
                     ->action(function (CampaignModel $record): void {
-                        app(FrontendCreationServiceInterface::class)->approveCampaign($record->id);
+                        try {
+                            app(FrontendCreationServiceInterface::class)->approveCampaign($record->id);
+                        } catch (NotEditableException) {
+                            self::warnStatusAlreadyChanged();
+
+                            return;
+                        }
 
                         Notification::make()
                             ->title(__('game-tables::messages.notifications.campaign_approved'))
@@ -271,7 +278,13 @@ final class CampaignResource extends BaseResource
                     ])
                     ->visible(fn (CampaignModel $record): bool => $record->frontend_creation_status === FrontendCreationStatus::PendingReview)
                     ->action(function (CampaignModel $record, array $data): void {
-                        app(FrontendCreationServiceInterface::class)->rejectCampaign($record->id, (string) $data['reason']);
+                        try {
+                            app(FrontendCreationServiceInterface::class)->rejectCampaign($record->id, (string) $data['reason']);
+                        } catch (NotEditableException) {
+                            self::warnStatusAlreadyChanged();
+
+                            return;
+                        }
 
                         Notification::make()
                             ->title(__('game-tables::messages.notifications.campaign_rejected'))
@@ -286,6 +299,14 @@ final class CampaignResource extends BaseResource
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
+    }
+
+    private static function warnStatusAlreadyChanged(): void
+    {
+        Notification::make()
+            ->title(__('game-tables::messages.notifications.campaign_status_already_changed'))
+            ->warning()
+            ->send();
     }
 
     public static function getPages(): array

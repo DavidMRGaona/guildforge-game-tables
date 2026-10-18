@@ -670,6 +670,7 @@ return [
         'campaign_approved' => 'Campaña aprobada correctamente',
         'campaign_rejected' => 'Campaña rechazada correctamente',
         'status_already_changed' => 'La mesa ya no está en un estado que permita este cambio',
+        'campaign_status_already_changed' => 'La campaña ya no está en un estado que permita este cambio',
     ],
 
     /*

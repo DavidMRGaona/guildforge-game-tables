@@ -384,6 +384,81 @@ final class ReviewWorkflowTest extends ModuleTestCase
         $this->assertTrue(PublicationLock::guardFormData($this->table('draft', published: true, slug: 'publicada'), $data)['is_published']);
     }
 
+    public function test_approving_or_rejecting_a_table_that_is_no_longer_in_review_warns_instead_of_failing(): void
+    {
+        $this->actingAsPanelAdmin();
+        $table = $this->table('pending_review');
+        $this->serviceThatRefuses();
+
+        Livewire::test(EditGameTable::class, ['record' => $table->getRouteKey()])
+            ->callAction('approveModeration')
+            ->assertNotified('La mesa ya no está en un estado que permita este cambio')
+            ->callAction('rejectModeration', ['reason' => 'Motivo'])
+            ->assertNotified('La mesa ya no está en un estado que permita este cambio');
+
+        Livewire::test(ListGameTables::class)
+            ->callTableAction('approve', $table)
+            ->assertNotified('La mesa ya no está en un estado que permita este cambio')
+            ->callTableAction('reject', $table, ['reason' => 'Motivo'])
+            ->assertNotified('La mesa ya no está en un estado que permita este cambio');
+
+        Livewire::test(ListGameTables::class)
+            ->callTableBulkAction('approve', [$table])
+            ->assertNotified('La mesa ya no está en un estado que permita este cambio')
+            ->callTableBulkAction('reject', [$table], ['reason' => 'Motivo'])
+            ->assertNotified('La mesa ya no está en un estado que permita este cambio');
+    }
+
+    public function test_approving_or_rejecting_a_campaign_that_is_no_longer_in_review_warns_instead_of_failing(): void
+    {
+        $this->actingAsPanelAdmin();
+        $campaign = $this->campaign('pending_review');
+        $this->serviceThatRefuses();
+
+        Livewire::test(ListCampaigns::class)
+            ->callTableAction('approve', $campaign)
+            ->assertNotified('La campaña ya no está en un estado que permita este cambio')
+            ->callTableAction('reject', $campaign, ['reason' => 'Motivo'])
+            ->assertNotified('La campaña ya no está en un estado que permita este cambio');
+    }
+
+    public function test_an_admin_saves_the_content_of_a_web_draft_table_without_changing_its_status(): void
+    {
+        $this->actingAsPanelAdmin();
+        $table = $this->table('draft');
+
+        Livewire::test(EditGameTable::class, ['record' => $table->getRouteKey()])
+            ->assertFormSet(['status' => 'draft'])
+            ->set('data.title', 'Mesa retocada en el panel')
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $table->refresh();
+        $this->assertSame('Mesa retocada en el panel', $table->title);
+        $this->assertSame('draft', $table->status->value);
+        $this->assertFalse($table->is_published);
+        $this->assertSame('draft', $table->frontend_creation_status?->value);
+    }
+
+    public function test_the_draft_table_status_is_only_offered_to_a_table_that_is_in_draft(): void
+    {
+        $this->actingAsPanelAdmin();
+        $scheduled = $this->table(null);
+
+        Livewire::test(EditGameTable::class, ['record' => $scheduled->getRouteKey()])
+            ->set('data.status', 'draft')
+            ->call('save')
+            ->assertHasFormErrors(['status']);
+    }
+
+    private function serviceThatRefuses(): void
+    {
+        $service = \Mockery::mock(FrontendCreationServiceInterface::class);
+        $service->shouldReceive('approveFrontendCreation', 'rejectFrontendCreation', 'approveCampaign', 'rejectCampaign')
+            ->andThrow(NotEditableException::forStatus('approved'));
+        $this->app->instance(FrontendCreationServiceInterface::class, $service);
+    }
+
     /**
      * @return array<string, mixed>
      */

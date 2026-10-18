@@ -23,6 +23,7 @@ use Modules\GameTables\Application\Services\EventCreationEligibilityServiceInter
 use Modules\GameTables\Application\Services\EventGameTableConfigServiceInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
+use Modules\GameTables\Domain\Exceptions\NotEditableException;
 use Modules\GameTables\Http\Requests\FrontendCreateGameTableRequest;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
@@ -201,7 +202,12 @@ final class FrontendGameTableController extends Controller
             'created_by' => (string) $user->id,
         ]);
 
-        $this->creationService->updateDraft($gameTable->id, $dto);
+        try {
+            $this->creationService->updateDraft($gameTable->id, $dto);
+        } catch (NotEditableException) {
+            // The policy let an admin permission through, but the service only edits the author's own draft
+            abort(403);
+        }
 
         return redirect()
             ->route('gametables.my-tables')
@@ -237,7 +243,11 @@ final class FrontendGameTableController extends Controller
         /** @var UserModel $user */
         $user = auth()->user();
 
-        $this->creationService->deleteDraft($gameTable->id, (string) $user->id);
+        try {
+            $this->creationService->deleteDraft($gameTable->id, (string) $user->id);
+        } catch (NotEditableException) {
+            abort(403);
+        }
 
         return redirect()
             ->route('gametables.my-tables')
