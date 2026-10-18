@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Http\Requests;
 
+use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
@@ -14,6 +16,7 @@ use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableType;
 use Modules\GameTables\Domain\Enums\Tone;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 
 final class FrontendCreateGameTableRequest extends FormRequest
@@ -42,7 +45,22 @@ final class FrontendCreateGameTableRequest extends FormRequest
             'max_players' => ['required', 'integer', 'min:1', 'max:'.$maxPlayers, 'gte:min_players'],
             'max_spectators' => ['sometimes', 'integer', 'min:0', 'max:'.$settings->maxSpectatorsLimit()],
             'event_id' => ['nullable', 'uuid', 'exists:events,id'],
-            'campaign_id' => ['nullable', 'uuid', 'exists:gametables_campaigns,id'],
+            // Only the author's own campaigns, the ones the form offers (create and edit both
+            // validate here; the panel has its own form and may link any campaign). On edit, the
+            // campaign already stored on the table is kept even if someone else created it: an
+            // admin may have linked it from the panel.
+            'campaign_id' => [
+                'nullable',
+                'uuid',
+                Rule::exists('gametables_campaigns', 'id')->where(function (Builder $query): void {
+                    $query->where('created_by', (string) $this->user()?->getAuthIdentifier());
+
+                    $storedCampaignId = $this->storedCampaignId();
+                    if ($storedCampaignId !== null) {
+                        $query->orWhere('id', $storedCampaignId);
+                    }
+                }),
+            ],
             'synopsis' => ['nullable', 'string', 'max:5000'],
             'location' => ['nullable', 'string', 'max:500'],
             'online_url' => ['nullable', 'url', 'max:500'],
@@ -87,6 +105,28 @@ final class FrontendCreateGameTableRequest extends FormRequest
             'language.required' => __('game-tables::messages.validation.language_required'),
             'experience_level.required' => __('game-tables::messages.validation.experience_level_required'),
             'character_creation.required' => __('game-tables::messages.validation.character_creation_required'),
+            'campaign_id.exists' => __('game-tables::messages.validation.campaign_not_owned'),
         ];
+    }
+
+    /**
+     * Campaign stored on the table being edited (null on create). The route key is the slug or
+     * the id, resolved in the same order as the controller.
+     */
+    private function storedCampaignId(): ?string
+    {
+        $key = $this->route('gameTable');
+
+        if (! is_string($key) || $key === '') {
+            return null;
+        }
+
+        $table = GameTableModel::query()->where('slug', $key)->first();
+
+        if ($table === null && Str::isUuid($key)) {
+            $table = GameTableModel::query()->find($key);
+        }
+
+        return $table?->campaign_id;
     }
 }
