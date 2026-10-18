@@ -39,6 +39,7 @@ use Illuminate\Support\Facades\Event;
 use Inertia\Inertia;
 use Livewire\Livewire;
 use Modules\GameTables\Application\Services\CampaignQueryServiceInterface;
+use Modules\GameTables\Application\Services\AccountLookupInterface;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
 use Modules\GameTables\Application\Services\EligibilityServiceInterface;
 use Modules\GameTables\Application\Services\EventCreationEligibilityServiceInterface;
@@ -89,6 +90,7 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\Eloquent
 use Modules\GameTables\Infrastructure\Services\CampaignQueryService;
 use Modules\GameTables\Infrastructure\Services\CreationEligibilityService;
 use Modules\GameTables\Infrastructure\Services\EligibilityService;
+use Modules\GameTables\Infrastructure\Services\UserModelAccountLookup;
 use Modules\GameTables\Infrastructure\Services\EventCreationEligibilityService;
 use Modules\GameTables\Infrastructure\Services\EventGameTableConfigService;
 use Modules\GameTables\Infrastructure\Services\EventWithTablesQuery;
@@ -138,6 +140,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         // Service bindings
         $this->app->bind(GameTableServiceInterface::class, GameTableService::class);
         $this->app->bind(EligibilityServiceInterface::class, EligibilityService::class);
+        $this->app->bind(AccountLookupInterface::class, UserModelAccountLookup::class);
         $this->app->bind(MembershipCheckerInterface::class, AssociationRoleMembershipChecker::class);
         $this->app->bind(CreationEligibilityServiceInterface::class, CreationEligibilityService::class);
         $this->app->bind(FrontendCreationServiceInterface::class, FrontendCreationService::class);

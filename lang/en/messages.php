@@ -578,6 +578,8 @@ return [
         'table_not_found' => 'Table not found',
         'campaign_not_found' => 'Campaign not found',
         'guest_already_registered' => 'This email is already registered for this table',
+        'email_registered_as_guest' => 'There is already a registration with your email.',
+        'email_has_account' => 'This email belongs to an account. Sign in to register.',
         'guests_not_allowed' => 'This table does not allow guest registrations',
         'invalid_token' => 'The cancellation link is invalid or has expired',
     ],
