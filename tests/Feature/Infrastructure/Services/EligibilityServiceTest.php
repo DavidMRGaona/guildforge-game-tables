@@ -355,7 +355,7 @@ final class EligibilityServiceTest extends TestCase
             startsAt: new DateTimeImmutable($startsAt),
             acceptsRegistrationsInProgress: $inPlay,
         );
-        $this->gameTableRepository->method('find')->willReturn($table);
+        $this->gameTableRepository->expects($this->atLeastOnce())->method('find')->willReturn($table);
 
         $result = $this->service->canRegisterById($id, 'user-1');
 
@@ -428,6 +428,63 @@ final class EligibilityServiceTest extends TestCase
 
         $this->assertTrue($result['eligible']);
         $this->assertTrue($result['waitingList']);
+    }
+
+    public function test_user_rules_refusal_is_null_for_an_eligible_user(): void
+    {
+        $table = $this->tableForUserRules();
+        $this->participantRepository->expects($this->atLeastOnce())->method('findByTableAndUser')->willReturn(null);
+        $this->participantRepository->expects($this->atLeastOnce())->method('countConfirmedPlayers')->willReturn(1);
+
+        $this->assertNull($this->service->userRulesRefusal($table->id->value, 'user-1'));
+    }
+
+    public function test_user_rules_refusal_is_null_when_the_table_is_full(): void
+    {
+        $table = $this->tableForUserRules(maxPlayers: 2);
+        $this->participantRepository->expects($this->atLeastOnce())->method('findByTableAndUser')->willReturn(null);
+        $this->participantRepository->expects($this->atLeastOnce())->method('countConfirmedPlayers')->willReturn(2);
+
+        $this->assertNull($this->service->userRulesRefusal($table->id->value, 'user-1'));
+    }
+
+    public function test_user_rules_refusal_is_null_when_the_spectator_seats_are_full(): void
+    {
+        $table = $this->tableForUserRules();
+        $this->participantRepository->expects($this->atLeastOnce())->method('findByTableAndUser')->willReturn(null);
+        $this->participantRepository->expects($this->atLeastOnce())->method('countConfirmedSpectators')->willReturn(99);
+
+        $this->assertNull($this->service->userRulesRefusal($table->id->value, 'user-1', ParticipantRole::Spectator));
+    }
+
+    public function test_user_rules_refusal_is_already_registered_for_an_active_user(): void
+    {
+        $table = $this->tableForUserRules();
+        $this->participantRepository->expects($this->atLeastOnce())->method('findByTableAndUser')->willReturn(new Participant(
+            id: ParticipantId::generate(),
+            gameTableId: $table->id,
+            userId: 'user-1',
+            role: ParticipantRole::Player,
+            status: ParticipantStatus::Confirmed,
+        ));
+
+        $this->assertSame('already_registered', $this->service->userRulesRefusal($table->id->value, 'user-1'));
+    }
+
+    public function test_user_rules_refusal_is_registration_closed_for_a_closed_table(): void
+    {
+        $table = $this->tableForUserRules(status: TableStatus::Cancelled);
+        $this->participantRepository->expects($this->never())->method($this->anything());
+
+        $this->assertSame('registration_closed', $this->service->userRulesRefusal($table->id->value, 'user-1'));
+    }
+
+    private function tableForUserRules(int $maxPlayers = 6, TableStatus $status = TableStatus::Scheduled): GameTable
+    {
+        $table = $this->createGameTable(id: GameTableId::generate()->value, status: $status, maxPlayers: $maxPlayers);
+        $this->gameTableRepository->expects($this->atLeastOnce())->method('find')->willReturn($table);
+
+        return $table;
     }
 
     private function tableInMembersEarlyAccess(): GameTable

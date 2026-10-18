@@ -89,4 +89,11 @@ interface EligibilityServiceInterface
      * @throws \Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException
      */
     public function ensureGuestCanRegister(string $gameTableId, ?string $email, ParticipantRole $role = ParticipantRole::Player): void;
+
+    /**
+     * The reason checkEligibility() would refuse this user with for this role, or null when the
+     * user is eligible or the only obstacle is that the seats are taken (table_full,
+     * spectators_full): the account rules without the seat rules. The caller gives "now".
+     */
+    public function userRulesRefusal(string $gameTableId, string $userId, ParticipantRole $role = ParticipantRole::Player, ?DateTimeImmutable $now = null): ?string;
 }

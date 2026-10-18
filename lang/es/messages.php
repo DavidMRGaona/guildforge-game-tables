@@ -653,6 +653,8 @@ return [
         'spectators_full' => 'No quedan plazas de espectador disponibles',
         'already_registered' => 'Ya estás inscrito en esta mesa',
         'guest_already_registered' => 'Ya existe una inscripción con este email',
+        'email_registered_as_guest' => 'Ya hay una inscripción con tu email.',
+        'email_has_account' => 'Este email pertenece a una cuenta. Inicia sesión para inscribirte.',
         'members_only' => 'Esta mesa es solo para socios',
         'invitation_only' => 'Esta mesa es solo por invitación: la organización inscribe a los jugadores',
         'guests_not_allowed' => 'Esta mesa no permite inscripciones de invitados',
