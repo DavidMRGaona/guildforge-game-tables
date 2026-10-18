@@ -501,6 +501,7 @@ return [
         'campaign_approved' => 'Campaign approved successfully',
         'campaign_rejected' => 'Campaign rejected successfully',
         'status_already_changed' => 'The table is no longer in a status that allows this change',
+        'campaign_status_already_changed' => 'The campaign is no longer in a status that allows this change',
     ],
 
     /*

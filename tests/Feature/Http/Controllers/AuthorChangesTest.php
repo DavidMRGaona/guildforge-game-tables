@@ -181,6 +181,23 @@ final class AuthorChangesTest extends ModuleTestCase
         $this->assertTrue($admin->can('delete', $campaign));
     }
 
+    public function test_a_user_with_the_permission_who_cannot_change_the_table_gets_forbidden_and_nothing_changes(): void
+    {
+        $editor = $this->userWith(['gametables:gametables.update', 'gametables:gametables.delete']);
+        $table = $this->table(published: false, status: 'draft');
+        $title = $table->title;
+
+        $this->actingAs($editor)
+            ->put("/mesas/mis-mesas/{$table->slug}", $this->tableData('Mesa ajena'))
+            ->assertForbidden();
+        $this->actingAs($editor)
+            ->delete("/mesas/mis-mesas/{$table->slug}")
+            ->assertForbidden();
+
+        $this->assertSame($title, $table->refresh()->title);
+        $this->assertNotNull(GameTableModel::query()->find($table->id));
+    }
+
     /**
      * @return array<string, mixed>
      */

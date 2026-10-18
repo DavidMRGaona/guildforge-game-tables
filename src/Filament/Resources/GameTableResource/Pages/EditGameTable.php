@@ -19,6 +19,7 @@ use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Events\GameTableCancelled;
 use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
+use Modules\GameTables\Domain\Exceptions\NotEditableException;
 use Modules\GameTables\Filament\Resources\GameTableResource;
 use Modules\GameTables\Filament\Support\PublicationLock;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
@@ -138,7 +139,15 @@ final class EditGameTable extends EditRecord
                 ->action(function (): void {
                     /** @var FrontendCreationServiceInterface $service */
                     $service = app(FrontendCreationServiceInterface::class);
-                    $service->approveFrontendCreation($this->record->id);
+
+                    try {
+                        $service->approveFrontendCreation($this->record->id);
+                    } catch (NotEditableException) {
+                        // Another admin got there first
+                        $this->warnStatusAlreadyChanged();
+
+                        return;
+                    }
 
                     Notification::make()
                         ->title(__('game-tables::messages.notifications.table_approved'))
@@ -168,7 +177,14 @@ final class EditGameTable extends EditRecord
                 ->action(function (array $data): void {
                     /** @var FrontendCreationServiceInterface $service */
                     $service = app(FrontendCreationServiceInterface::class);
-                    $service->rejectFrontendCreation($this->record->id, $data['reason']);
+
+                    try {
+                        $service->rejectFrontendCreation($this->record->id, $data['reason']);
+                    } catch (NotEditableException) {
+                        $this->warnStatusAlreadyChanged();
+
+                        return;
+                    }
 
                     Notification::make()
                         ->title(__('game-tables::messages.notifications.table_rejected'))
@@ -256,6 +272,18 @@ final class EditGameTable extends EditRecord
 
             DeleteAction::make(),
         ];
+    }
+
+    private function warnStatusAlreadyChanged(): void
+    {
+        Notification::make()
+            ->title(__('game-tables::messages.notifications.status_already_changed'))
+            ->warning()
+            ->send();
+
+        // Show what the table is now, so the moderation buttons follow it
+        $this->getRecord()->refresh();
+        $this->refreshFormData(['frontend_creation_status', 'is_published', 'status', 'published_at']);
     }
 
     /**
