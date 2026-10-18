@@ -99,6 +99,13 @@ final class GameTablesSettings extends Page implements HasForms
                         ->helperText(__('game-tables::messages.settings.fields.waiting_list_enabled_help')),
                 ]),
 
+            Section::make(__('game-tables::messages.settings.sections.automation'))
+                ->schema([
+                    Toggle::make('automation.auto_status_enabled')
+                        ->label(__('game-tables::messages.settings.fields.auto_status_enabled'))
+                        ->helperText(__('game-tables::messages.settings.fields.auto_status_enabled_help')),
+                ]),
+
             Section::make(__('game-tables::messages.settings.sections.defaults'))
                 ->schema([
                     // The fixed bounds stay as outer bounds; each default also stays within the

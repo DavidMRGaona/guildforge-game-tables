@@ -380,6 +380,7 @@ return [
         'sections' => [
             'membership' => 'Early access for association members',
             'registration' => 'Registrations',
+            'automation' => 'Automation',
             'defaults' => 'Default values',
             'notifications' => 'Notifications',
             'limits' => 'Limits',
@@ -389,6 +390,8 @@ return [
             'membership_enabled_help' => 'Holders of the association member role chosen in the site settings can register before opening, by the early access days of each table. It does not depend on the memberships module',
             'waiting_list_enabled' => 'Waiting list',
             'waiting_list_enabled_help' => 'When the player seats are taken, players can join the waiting list. Each freed seat goes automatically to the first in the list until the table starts (or until registrations close, if that comes first); after that, automatic promotion stops and the game master can promote by hand. On tables with manual confirmation pending players hold seats and the promoted player waits for the game master to confirm them. Spectators have no waiting list',
+            'auto_status_enabled' => 'Update the status of tables automatically',
+            'auto_status_enabled_help' => 'Every five minutes, scheduled or full tables move to «In progress» at their start time and tables in progress move to «Completed» when they end (start plus duration). No emails are sent. Drafts and cancelled tables never change. When off, the status only changes with the Start and Complete actions of the panel',
             'early_access_days' => 'Early access days',
             'early_access_days_help' => 'Initial member early access days of each new table',
             'default_duration' => 'Default duration (minutes)',

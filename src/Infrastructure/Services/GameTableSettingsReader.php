@@ -70,6 +70,11 @@ final class GameTableSettingsReader
         return $this->bool('registration.waiting_list_enabled', false);
     }
 
+    public function isAutoStatusEnabled(): bool
+    {
+        return $this->bool('automation.auto_status_enabled', true);
+    }
+
     public function defaultDurationMinutes(): int
     {
         return $this->int('defaults.duration_minutes', 240);

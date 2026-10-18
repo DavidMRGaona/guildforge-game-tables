@@ -433,6 +433,7 @@ return [
         'sections' => [
             'membership' => 'Acceso anticipado para socios',
             'registration' => 'Inscripciones',
+            'automation' => 'Automatización',
             'defaults' => 'Valores por defecto',
             'notifications' => 'Notificaciones',
             'limits' => 'Límites',
@@ -444,6 +445,8 @@ return [
             'membership_enabled_help' => 'Quienes tienen el rol de socio elegido en la configuración del sitio pueden inscribirse antes de la apertura, según los días de acceso anticipado de cada mesa. No depende del módulo de gestión de socios',
             'waiting_list_enabled' => 'Lista de espera',
             'waiting_list_enabled_help' => 'Con las plazas de jugador completas, los jugadores pueden apuntarse a la lista de espera. Cada plaza liberada pasa automáticamente al primero de la lista hasta el inicio de la partida (o hasta el cierre de inscripciones, si es anterior); después, la promoción automática se detiene y el director puede promover a mano. En las mesas con confirmación manual los pendientes ocupan plaza y el promovido queda pendiente de que el director lo confirme. Los espectadores no tienen lista de espera',
+            'auto_status_enabled' => 'Actualizar el estado de las mesas automáticamente',
+            'auto_status_enabled_help' => 'Cada cinco minutos, las mesas programadas o completas pasan a «En progreso» a su hora de inicio y las mesas en progreso pasan a «Completada» al terminar (inicio más duración). No se envían correos. Los borradores y las mesas canceladas no cambian. Desactivado, el estado solo cambia con las acciones Iniciar y Completar del panel',
             'early_access_days' => 'Días de acceso anticipado',
             'early_access_days_help' => 'Valor inicial de los días de ventaja de los socios en cada mesa nueva',
             'default_duration' => 'Duración por defecto (minutos)',

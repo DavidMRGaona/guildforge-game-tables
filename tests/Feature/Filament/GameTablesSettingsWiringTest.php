@@ -136,4 +136,31 @@ final class GameTablesSettingsWiringTest extends ModuleTestCase
             ->call('create')
             ->assertHasFormErrors(['max_players' => 'max', 'max_spectators' => 'max', 'duration_minutes' => 'max']);
     }
+
+    public function test_the_settings_page_turns_the_automatic_status_updates_off(): void
+    {
+        Livewire::test(GameTablesSettings::class)
+            ->assertFormSet(['automation.auto_status_enabled' => true])
+            ->assertSee('Actualizar el estado de las mesas automáticamente')
+            ->fillForm(['automation.auto_status_enabled' => false])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertFalse((new \Modules\GameTables\Infrastructure\Services\GameTableSettingsReader())->isAutoStatusEnabled());
+    }
+
+    // A tenant saved its settings before 2.10.0: the new key is missing from the stored JSON. The page
+    // fills from GameTableSettingsReader::all() (stored values merged over config/settings.php), so
+    // the toggle shows the shipped default and the next save keeps it on
+    public function test_settings_saved_before_the_key_existed_keep_the_automatic_update_on(): void
+    {
+        config()->set('modules.settings.game-tables', ['registration' => ['waiting_list_enabled' => true]]);
+
+        Livewire::test(GameTablesSettings::class)
+            ->assertFormSet(['automation.auto_status_enabled' => true, 'registration.waiting_list_enabled' => true])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertTrue((new \Modules\GameTables\Infrastructure\Services\GameTableSettingsReader())->isAutoStatusEnabled());
+    }
 }
