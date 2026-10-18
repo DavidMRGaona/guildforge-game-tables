@@ -180,6 +180,8 @@ Aprobar o rechazar requiere el permiso de edición (`gametables.update` para mes
 
 **Campañas**: en **Mesas de rol** → **Campañas** se aprueban (la campaña se publica) o se rechazan con motivo, una a una; el autor ve el motivo del rechazo en **Mis campañas**, sin correo.
 
+Una mesa creada o editada desde la web solo se puede vincular a una campaña creada por quien la crea (las que ofrece el formulario); el servidor rechaza cualquier otra con «Solo puedes vincular la mesa a una campaña creada por ti». Desde el panel se puede vincular cualquier campaña. Al editar una mesa desde la web se puede conservar la campaña que ya tenga, aunque la haya vinculado un administrador desde el panel.
+
 ## Verificación de email
 
 Con **Requerir verificación de email** activado en el core, el servidor cierra a las cuentas que deben verificar su email (sin verificar y creadas desde la fecha de corte del core) todas las rutas con sesión del módulo: inscribirse y cancelar la inscripción, y crear, editar, enviar a revisión o borrar mesas y campañas desde la web. Las visitas van a la página de aviso de verificación y las peticiones JSON reciben un 403. El módulo no cambia esas reglas; la interfaz las anticipa con `useVerificationGate()` del core (`auth.user.mustVerifyEmail`):
