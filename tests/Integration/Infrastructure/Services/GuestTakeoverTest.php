@@ -96,6 +96,10 @@ final class GuestTakeoverTest extends ModuleTestCase
         $this->assertNull($row->email);
         $this->assertNull($row->cancellation_token);
         $this->assertNull($row->confirmation_token);
+        // The account holds the person's data now: anonymizing it must leave nothing behind
+        $this->assertNull($row->first_name);
+        $this->assertNull($row->last_name);
+        $this->assertNull($row->phone);
         $this->assertSame('player', $row->role->value);
         $this->assertSame('confirmed', $row->status->value);
         $this->assertSame(1, ParticipantModel::query()->where('game_table_id', $this->table->id)->count());
@@ -124,6 +128,10 @@ final class GuestTakeoverTest extends ModuleTestCase
         $this->assertNull($row->confirmation_expires_at);
         $this->assertNull($row->confirmation_token);
         $this->assertNull($row->email);
+        $this->assertNull($row->first_name);
+        $this->assertNull($row->phone);
+        // Kept until the table is over, as for any web registration
+        $this->assertSame(str_repeat('a', 64), $row->fingerprint);
         // Never told before: the organisation hears of it now, once
         Event::assertDispatchedTimes(ParticipantRegistered::class, 1);
         Event::assertDispatched(ParticipantRegistered::class, fn (ParticipantRegistered $event): bool => $event->participantId === $guest->id
@@ -291,6 +299,83 @@ final class GuestTakeoverTest extends ModuleTestCase
         $this->assertSame('cuenta@example.test', $row->email);
     }
 
+    public function test_the_users_own_rejected_row_gives_way_to_the_taken_over_one(): void
+    {
+        $user = UserModel::factory()->create(['email' => 'cuenta@example.test']);
+        $own = $this->register($user);
+        $this->service()->reject($own->id);
+        $guest = $this->guestByAdmin('cuenta@example.test');
+
+        $result = $this->register($user);
+
+        $this->assertSame($guest->id, $result->id);
+        $this->assertTrue($result->linkedFromGuest);
+        $this->assertNull(ParticipantModel::query()->find($own->id));
+        $this->assertSame(1, ParticipantModel::query()->where('game_table_id', $this->table->id)->where('user_id', $user->id)->count());
+    }
+
+    public function test_an_unconfirmed_guest_waiting_on_the_list_takes_the_free_seat(): void
+    {
+        config()->set('modules.settings.game-tables.registration.waiting_list_enabled', true);
+        $this->table->update(['max_players' => 1]);
+        $other = $this->registerOther();
+        $guest = $this->submit('cuenta@example.test');
+        $this->assertSame('waiting_list', ParticipantModel::query()->findOrFail($guest->id)->status->value);
+        // The freed seat skips the unconfirmed guest: it stays on the list, the seat stays free
+        $this->service()->cancel($other->id);
+        $this->assertSame('waiting_list', ParticipantModel::query()->findOrFail($guest->id)->status->value);
+        $user = UserModel::factory()->create(['email' => 'cuenta@example.test']);
+        Event::fake(self::EVENTS);
+
+        $result = $this->register($user);
+
+        $this->assertSame($guest->id, $result->id);
+        $this->assertSame(ParticipantStatus::Confirmed, $result->status);
+        $this->assertNull($result->waitingListRank);
+        $row = ParticipantModel::query()->findOrFail($guest->id);
+        $this->assertSame($user->id, $row->user_id);
+        $this->assertNull($row->waiting_list_position);
+        Event::assertDispatched(ParticipantRegistered::class, fn (ParticipantRegistered $event): bool => $event->participantId === $guest->id
+            && $event->status === ParticipantStatus::Confirmed);
+        // Its own move to the seat is the registration itself, not a promotion of someone else
+        Event::assertNotDispatched(ParticipantPromotedFromWaitingList::class);
+    }
+
+    public function test_a_spectator_guest_stays_a_spectator(): void
+    {
+        $this->table->update(['max_spectators' => 2]);
+        $guest = $this->guestByAdmin('cuenta@example.test', ParticipantRole::Spectator);
+        $user = UserModel::factory()->create(['email' => 'cuenta@example.test']);
+
+        $result = $this->register($user, ParticipantRole::Player);
+
+        $this->assertSame($guest->id, $result->id);
+        $this->assertSame(ParticipantRole::Spectator, $result->role);
+        $this->assertSame('spectator', ParticipantModel::query()->findOrFail($guest->id)->role->value);
+    }
+
+    public function test_a_wait_spectator_without_a_spectator_seat_is_refused(): void
+    {
+        config()->set('modules.settings.game-tables.guest_confirmation.mode', 'wait');
+        $this->table->update(['max_spectators' => 1]);
+        $guest = $this->submit('cuenta@example.test', ParticipantRole::Spectator);
+        $this->service()->registerByAdmin(new RegisterParticipantDTO(
+            gameTableId: $this->table->id,
+            userId: UserModel::factory()->create()->id,
+            role: ParticipantRole::Spectator,
+        ));
+        $user = UserModel::factory()->create(['email' => 'cuenta@example.test']);
+
+        try {
+            $this->register($user, ParticipantRole::Spectator);
+            $this->fail('No spectator seat: the takeover must be refused');
+        } catch (TableFullException $e) {
+            $this->assertSame('spectators_full', $e->reason);
+        }
+
+        $this->assertNull(ParticipantModel::query()->findOrFail($guest->id)->user_id);
+    }
+
     private function service(): RegistrationServiceInterface
     {
         return app(RegistrationServiceInterface::class);
@@ -305,25 +390,30 @@ final class GuestTakeoverTest extends ModuleTestCase
         ));
     }
 
-    private function submit(string $email): ParticipantResponseDTO
+    private function submit(string $email, ParticipantRole $role = ParticipantRole::Player): ParticipantResponseDTO
     {
         return $this->service()->registerGuest(new RegisterParticipantDTO(
             gameTableId: $this->table->id,
             userId: null,
-            role: ParticipantRole::Player,
+            role: $role,
             firstName: 'Invitada',
+            lastName: 'Pérez',
             email: $email,
+            phone: '600000000',
+            fingerprint: str_repeat('a', 64),
         ));
     }
 
-    private function guestByAdmin(string $email): ParticipantResponseDTO
+    private function guestByAdmin(string $email, ParticipantRole $role = ParticipantRole::Player): ParticipantResponseDTO
     {
         return $this->service()->registerGuestByAdmin(new RegisterParticipantDTO(
             gameTableId: $this->table->id,
             userId: null,
-            role: ParticipantRole::Player,
+            role: $role,
             firstName: 'Invitada',
+            lastName: 'Pérez',
             email: $email,
+            phone: '600000000',
         ));
     }
 

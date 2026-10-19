@@ -599,6 +599,7 @@ return [
         'guest_email_confirmed' => 'Your registration is confirmed. We have sent you an email with the details.',
         'guest_email_already_confirmed' => 'Your registration was already confirmed.',
         'registration_linked' => 'You already had a guest registration; it is now on your account.',
+        'registration_linked_waiting_list' => 'You already had a guest registration; it is now on your account. You are on the waiting list (position :position).',
     ],
 
     /*

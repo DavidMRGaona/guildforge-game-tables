@@ -406,6 +406,29 @@ final class RegistrationControllerTest extends ModuleTestCase
         $this->assertNull($this->participantRepository->findByTableAndUser($gameTable->id, $user->id));
     }
 
+    public function test_a_takeover_onto_the_waiting_list_says_so_with_the_position(): void
+    {
+        config()->set('modules.settings.game-tables.guest_confirmation.mode', 'wait');
+        config()->set('modules.settings.game-tables.registration.waiting_list_enabled', true);
+        $gameTable = $this->createGameTable(maxPlayers: 1);
+        $this->post(route('gametables.register-guest', $gameTable->slug), [
+            'first_name' => 'Socia',
+            'email' => 'socia@example.com',
+            'gdpr_consent' => true,
+        ]);
+        app(RegistrationServiceInterface::class)->registerByAdmin(new RegisterParticipantDTO(
+            gameTableId: $gameTable->id->value,
+            userId: $this->testUser->id,
+            role: ParticipantRole::Player,
+        ));
+        $user = UserModel::factory()->create(['email' => 'socia@example.com']);
+
+        $this->actingAs($user)
+            ->post(route('gametables.register', $gameTable->slug), ['role' => 'player'])
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Ya tenías una inscripción como invitado; ahora está en tu cuenta. Estás en la lista de espera (posición 1).');
+    }
+
     private function guestByAdmin(GameTable $gameTable, string $email): ParticipantResponseDTO
     {
         return app(RegistrationServiceInterface::class)->registerGuestByAdmin(new RegisterParticipantDTO(
