@@ -115,6 +115,35 @@ final class ParticipantsGuestConfirmationTest extends ModuleTestCase
         Notification::assertNothingSent();
     }
 
+    public function test_confirm_on_an_awaiting_guest_confirms_the_email_and_sends_the_registration_email(): void
+    {
+        $table = $this->table(['auto_confirm' => false]);
+        $awaiting = $this->awaitingGuest($table, ['status' => 'pending', 'confirmed_at' => null]);
+
+        $this->participants($table)->callTableAction('confirm', $awaiting)->assertHasNoTableActionErrors();
+
+        $awaiting->refresh();
+        $this->assertSame('confirmed', $awaiting->status->value);
+        $this->assertSame('2026-11-02 10:00:00', $awaiting->email_confirmed_at?->format('Y-m-d H:i:s'));
+        Notification::assertSentOnDemandTimes(GuestRegistrationConfirmation::class, 1);
+    }
+
+    public function test_confirm_on_a_wait_guest_without_a_seat_warns_and_changes_nothing(): void
+    {
+        $table = $this->table(['auto_confirm' => false, 'max_players' => 1]);
+        $this->participant($table, ['user_id' => UserModel::factory()->create()->id, 'status' => 'confirmed', 'confirmed_at' => now()]);
+        $awaiting = $this->awaitingGuest($table, ['status' => 'pending', 'confirmed_at' => null, 'confirmation_mode' => 'wait', 'confirmation_expires_at' => null]);
+
+        $this->participants($table)
+            ->callTableAction('confirm', $awaiting)
+            ->assertNotified('La mesa está completa');
+
+        $awaiting->refresh();
+        $this->assertSame('pending', $awaiting->status->value);
+        $this->assertNull($awaiting->email_confirmed_at);
+        Notification::assertNothingSent();
+    }
+
     // Hiding the button is not enough: the server must refuse the call as well
     public function test_an_editor_without_the_update_permission_cannot_confirm_the_email(): void
     {
@@ -180,7 +209,7 @@ final class ParticipantsGuestConfirmationTest extends ModuleTestCase
         $other = $this->guest($table, ['email_confirmed_at' => now(), 'fingerprint' => str_repeat('b', 64)]);
 
         $component = $this->participants($table);
-        $duplicate = ['Posible duplicado', 'danger', 'Otra inscripción de esta mesa se hizo desde la misma conexión y navegador en menos de 24 h'];
+        $duplicate = ['Posible duplicado', 'danger', 'Otra inscripción de esta mesa se hizo desde la misma conexión y navegador en 24 h o menos'];
 
         $this->assertSame([$duplicate], $this->badges($component, $first));
         $this->assertSame([['Email sin confirmar', 'warning', 'Caduca el 02/11/2026 13:00'], $duplicate], $this->badges($component, $second));

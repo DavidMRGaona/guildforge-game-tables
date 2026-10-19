@@ -176,6 +176,57 @@ final class OrganisationConfirmsGuestTest extends ModuleTestCase
         Notification::assertSentOnDemandTimes(GuestRegistrationConfirmation::class, 0);
     }
 
+    // With the list off, approving a user never checks the seats; a guest without one is never let over them
+    public function test_approving_a_wait_guest_with_the_list_off_on_a_full_table_changes_nothing(): void
+    {
+        config()->set('modules.settings.game-tables.guest_confirmation.mode', 'wait');
+        $this->table->update(['auto_confirm' => false, 'max_players' => 1]);
+        $guest = $this->submit('invitada@example.test');
+        $seated = $this->registerUser();
+        $this->service()->confirm($seated->id);
+        $this->guestRegistered = [];
+        $this->participantConfirmed = [];
+
+        try {
+            $this->service()->confirm($guest->id);
+            $this->fail('A wait guest was approved over the seats.');
+        } catch (TableFullException $exception) {
+            $this->assertSame('table_full', $exception->reason);
+        }
+
+        $row = $this->row($guest);
+        $this->assertSame('pending', $row->status->value);
+        $this->assertNull($row->confirmed_at);
+        $this->assertNull($row->waiting_list_position);
+        $this->assertNull($row->email_confirmed_at);
+        $this->assertSame(1, ParticipantModel::query()->where('game_table_id', $this->table->id)->where('status', 'confirmed')->count());
+        $this->assertSame([], $this->guestRegistered);
+        $this->assertSame([], $this->participantConfirmed);
+        Notification::assertSentOnDemandTimes(GuestRegistrationConfirmation::class, 0);
+    }
+
+    // On a table that confirms by itself the placement already confirms: approved once, one email
+    public function test_approving_a_wait_guest_on_an_auto_confirm_table(): void
+    {
+        config()->set('modules.settings.game-tables.guest_confirmation.mode', 'wait');
+        $guest = $this->submit('invitada@example.test');
+        $this->assertSame('pending', $this->row($guest)->status->value);
+
+        $this->service()->confirm($guest->id);
+
+        $row = $this->row($guest);
+        $this->assertSame('confirmed', $row->status->value);
+        $this->assertNotNull($row->confirmed_at);
+        $this->assertNotNull($row->email_confirmed_at);
+        $this->assertCount(1, $this->guestRegistered);
+        $this->assertSame(ParticipantStatus::Confirmed, $this->guestRegistered[0]->status);
+        $this->assertCount(1, $this->participantConfirmed);
+        $this->assertTrue($this->participantConfirmed[0]->automatic);
+        $this->assertGuestEmailedOnce('invitada@example.test', GuestRegistrationConfirmation::class);
+        Notification::assertSentOnDemandTimes(ParticipantConfirmedNotification::class, 0);
+        Notification::assertSentOnDemandTimes(ParticipantRegisteredNotification::class, 0);
+    }
+
     public function test_promoting_an_awaiting_waiting_guest_confirms_the_email_with_one_email(): void
     {
         config()->set('modules.settings.game-tables.registration.waiting_list_enabled', true);

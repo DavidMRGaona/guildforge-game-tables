@@ -663,7 +663,7 @@ return [
                 'email_unconfirmed' => 'Email not confirmed',
                 'expires_at' => 'Expires on :date',
                 'possible_duplicate' => 'Possible duplicate',
-                'possible_duplicate_tooltip' => 'Another registration at this table was made from the same connection and browser less than :hours h apart',
+                'possible_duplicate_tooltip' => 'Another registration at this table was made from the same connection and browser :hours h apart or less',
             ],
             'delete_not_allowed' => 'Not deleted: the registration is no longer cancelled, rejected or expired',
             'bulk_delete' => [
