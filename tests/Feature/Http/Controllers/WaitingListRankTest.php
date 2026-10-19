@@ -12,7 +12,6 @@ use Inertia\Testing\AssertableInertia as Assert;
 use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
-use Modules\GameTables\Domain\Events\GuestConfirmationRequested;
 use Modules\GameTables\Domain\Events\GuestRegistered;
 use Modules\GameTables\Domain\Events\ParticipantRegistered;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
@@ -37,9 +36,6 @@ final class WaitingListRankTest extends ModuleTestCase
     protected function setUp(): void
     {
         parent::setUp();
-
-        // The guest confirmation email has its own tests
-        Event::fake([GuestConfirmationRequested::class]);
 
         app('router')->getRoutes()->refreshNameLookups();
         config()->set('modules.settings.game-tables', []);
@@ -166,7 +162,7 @@ final class WaitingListRankTest extends ModuleTestCase
     public function test_the_message_after_a_guest_joins_and_the_email_of_an_admin_guest_give_the_place_among_those_waiting(): void
     {
         $this->setWaitingList(true);
-        Event::fake([GuestRegistered::class, GuestConfirmationRequested::class]);
+        Event::fake([GuestRegistered::class]);
         $table = $this->fullTable();
         [$first] = $this->queueByAdmin($table, 2);
         $this->service()->cancel($first->id);

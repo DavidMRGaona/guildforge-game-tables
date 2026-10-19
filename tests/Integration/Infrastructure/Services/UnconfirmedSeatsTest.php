@@ -119,6 +119,18 @@ final class UnconfirmedSeatsTest extends ModuleTestCase
         $this->assertSame($second->id, $next->id->value);
     }
 
+    // A guest who held their place when the table was full waits on the list in hold mode
+    public function test_promotion_skips_an_unconfirmed_hold_guest_on_the_list(): void
+    {
+        $this->guest('waiting_list', 'hold', 'first@example.test', position: 1);
+        $second = $this->guest('waiting_list', 'hold', 'second@example.test', position: 2, confirmedEmail: true);
+
+        $next = app(ParticipantRepositoryInterface::class)->getFirstInWaitingList(new GameTableId($this->table->id), ParticipantRole::Player);
+
+        $this->assertNotNull($next);
+        $this->assertSame($second->id, $next->id->value);
+    }
+
     public function test_the_unconfirmed_waiting_guest_keeps_its_place(): void
     {
         $first = $this->guest('waiting_list', 'wait', 'first@example.test', position: 1);

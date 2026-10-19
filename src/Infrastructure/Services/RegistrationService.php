@@ -7,6 +7,7 @@ namespace Modules\GameTables\Infrastructure\Services;
 use Carbon\CarbonImmutable;
 use DateTimeImmutable;
 use InvalidArgumentException;
+use Modules\GameTables\Application\DTOs\GuestConfirmationResultDTO;
 use Modules\GameTables\Application\DTOs\ParticipantResponseDTO;
 use Modules\GameTables\Application\DTOs\ProfileParticipationDTO;
 use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
@@ -18,6 +19,7 @@ use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Entities\Participant;
 use Modules\GameTables\Domain\Enums\GuestAccountsMode;
 use Modules\GameTables\Domain\Enums\GuestConfirmationMode;
+use Modules\GameTables\Domain\Enums\GuestConfirmationOutcome;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
 use Modules\GameTables\Domain\Events\GuestConfirmationRequested;
@@ -717,7 +719,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             // Past its deadline the row has lapsed, even if the expiry command has not run yet: the
             // submission is a new registration, never an email with a deadline already gone
             $promoted = $existing !== null && $existing->isConfirmationOverdue($now)
-                ? $this->expireOverdue($existing, $now)
+                ? $this->expireLocked($existing, $now)
                 : null;
 
             $unconfirmed = $existing !== null && $existing->isAwaitingEmailConfirmation() ? $existing : null;
@@ -759,21 +761,29 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     }
 
     /**
-     * What the expiry command does to an overdue row, without its email (the guest is registering
-     * again): it lapses and its seat goes to the waiting list as on a cancellation. Runs under the
-     * table lock.
+     * The unconfirmed registration lapses (an overdue row, or a link that can no longer confirm)
+     * and its seat goes to the waiting list as on a cancellation: a confirmed player frees one, a
+     * pending one where pending players hold seats. A guest who held nothing (wait mode) frees
+     * nothing. No email here: the caller decides. Runs under the table lock.
      *
      * @return Participant|null the one promoted into the freed seat
      */
-    private function expireOverdue(Participant $participant, DateTimeImmutable $now): ?Participant
+    private function expireLocked(Participant $participant, DateTimeImmutable $now): ?Participant
     {
-        $heldSeat = $participant->isPlayer() && ($participant->isConfirmed() || $participant->isPending());
         $wasConfirmed = $participant->isConfirmed();
+        $heldSeat = $participant->isPlayer()
+            && ($wasConfirmed || $participant->isPending())
+            && ! $this->waitsWithoutSeat($participant);
 
         $participant->expire($now);
         $this->participantRepository->save($participant);
 
         return $heldSeat ? $this->promoteNext($participant->gameTableId, freedByPending: ! $wasConfirmed) : null;
+    }
+
+    private function waitsWithoutSeat(Participant $participant): bool
+    {
+        return $participant->isAwaitingEmailConfirmation() && ! $participant->holdsPlaceWhileUnconfirmed();
     }
 
     /**
@@ -826,6 +836,140 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         if ($reason === null && $this->settings->guestAccountsMode() === GuestAccountsMode::RequireLogin) {
             throw AccountEmailRequiresLoginException::forEmail();
         }
+    }
+
+    public function confirmGuestEmail(string $token): GuestConfirmationResultDTO
+    {
+        // Unknown, or cleared on cancelling, expiring or a takeover: nothing to lock
+        $found = $this->participantRepository->findByConfirmationToken($token);
+
+        if ($found === null) {
+            return new GuestConfirmationResultDTO(GuestConfirmationOutcome::Invalid);
+        }
+
+        $now = CarbonImmutable::now()->toDateTimeImmutable();
+
+        [$outcome, $participant, $rank, $promoted] = $this->lock->forParticipant(
+            $found->id->value,
+            function () use ($token, $now): array {
+                // Read under the lock: a link followed twice at once confirms once
+                $participant = $this->participantRepository->findByConfirmationToken($token);
+
+                if ($participant === null || ! $participant->isActive()) {
+                    return [GuestConfirmationOutcome::Invalid, $participant, null, null];
+                }
+
+                if ($participant->emailConfirmedAt !== null) {
+                    return [GuestConfirmationOutcome::AlreadyConfirmed, $participant, $this->rankOf($participant), null];
+                }
+
+                $gameTable = $this->gameTableRepository->findOrFail($participant->gameTableId);
+
+                if ($now >= $gameTable->effectiveRegistrationClosesAt() || $gameTable->isPastRegistrationDeadline($now)) {
+                    return [GuestConfirmationOutcome::Closed, $participant, null, $this->expireLocked($participant, $now)];
+                }
+
+                // Past the deadline, even if the expiry command has not run yet
+                if ($participant->isConfirmationOverdue($now)) {
+                    return [GuestConfirmationOutcome::Invalid, $participant, null, $this->expireLocked($participant, $now)];
+                }
+
+                $placed = $this->confirmGuestEmailLocked($participant, $gameTable, $now);
+
+                if ($placed === null) {
+                    return [GuestConfirmationOutcome::FilledUp, $participant, null, $this->expireLocked($participant, $now)];
+                }
+
+                [$participant, $promoted] = $placed;
+
+                return [GuestConfirmationOutcome::Confirmed, $participant, $this->rankOf($participant), $promoted];
+            },
+        );
+
+        // An expired registration gets no email here: the guest reads the outcome on the page
+        if ($promoted !== null) {
+            $this->announcePromotion($promoted);
+        }
+
+        if ($outcome === GuestConfirmationOutcome::Confirmed) {
+            $this->announceGuestRegistration($participant, $rank);
+        }
+
+        return new GuestConfirmationResultDTO(
+            outcome: $outcome,
+            participant: $participant !== null ? ParticipantResponseDTO::fromEntity($participant, waitingListRank: $rank) : null,
+            gameTableId: $found->gameTableId->value,
+        );
+    }
+
+    /**
+     * Confirms the email of an unconfirmed guest and places the registration as its mode says.
+     * Shared by the emailed link and the panel, which only differ in what they do when there is no
+     * room. Runs under the table lock.
+     *
+     * - hold: it keeps what it held (seat, pending approval or waiting list position); from the
+     *   waiting list it takes a free seat when no confirmed player is ahead of it.
+     * - wait: it is placed now: a seat (confirmed or pending, as the table confirms), else the end
+     *   of the waiting list when it is on and open. Spectators only get a seat.
+     *
+     * @return array{Participant, Participant|null}|null the participant and anyone promoted into a
+     *                                                   seat other than them; null, with nothing
+     *                                                   changed, when a wait row finds no room
+     */
+    private function confirmGuestEmailLocked(Participant $participant, GameTable $gameTable, DateTimeImmutable $now): ?array
+    {
+        if ($this->waitsWithoutSeat($participant)) {
+            // Counted while the row is still unconfirmed: once confirmed, a pending row counts its own seat
+            if (! $this->hasRoomForGuest($participant, $gameTable, $now)) {
+                return null;
+            }
+
+            $this->seat($participant, $gameTable);
+            $participant->confirmEmail($now);
+            $this->participantRepository->save($participant);
+
+            return [$participant, null];
+        }
+
+        $participant->confirmEmail($now);
+        $this->participantRepository->save($participant);
+
+        if (! $participant->isOnWaitingList()) {
+            return [$participant, null];
+        }
+
+        // The first confirmed player waiting takes a free seat: maybe this one
+        $promoted = $this->promoteNext($participant->gameTableId);
+
+        if ($promoted !== null && $promoted->id->equals($participant->id)) {
+            return [$promoted, null];
+        }
+
+        return [$participant, $promoted];
+    }
+
+    /**
+     * A seat, or a place at the end of an open waiting list for a player; the same counts as seat().
+     */
+    private function hasRoomForGuest(Participant $participant, GameTable $gameTable, DateTimeImmutable $now): bool
+    {
+        if ($participant->isPlayer()) {
+            return $gameTable->hasCapacity($this->seats->takenPlayerSeats($gameTable))
+                || ($this->settings->isWaitingListEnabled() && $gameTable->isWaitingListOpen($now));
+        }
+
+        if ($participant->isSpectator()) {
+            return $gameTable->availableSpectatorSlots($this->seats->takenSpectatorSeats($gameTable)) > 0;
+        }
+
+        return true;
+    }
+
+    public function findByConfirmationToken(string $token): ?ParticipantResponseDTO
+    {
+        $participant = $this->participantRepository->findByConfirmationToken($token);
+
+        return $participant !== null ? $this->toResponse($participant) : null;
     }
 
     public function cancelByToken(string $token): ParticipantResponseDTO

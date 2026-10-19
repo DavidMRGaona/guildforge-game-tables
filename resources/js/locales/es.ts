@@ -587,4 +587,16 @@ export default {
         guest: 'Invitado',
         tableStarted: 'La partida ya ha comenzado: ya no puedes cancelar la inscripción.',
     },
+    confirmRegistration: {
+        title: 'Confirmar inscripción',
+        intro: 'Confirma tu inscripción en «{tableTitle}».',
+        button: 'Confirmar inscripción',
+        already: 'Tu inscripción ya estaba confirmada.',
+        viewTable: 'Ver mesa',
+        participant: 'Participante',
+        table: 'Mesa',
+        date: 'Fecha',
+        role: 'Rol',
+        status: 'Estado',
+    },
 };

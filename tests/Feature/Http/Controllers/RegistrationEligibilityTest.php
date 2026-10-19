@@ -9,11 +9,9 @@ use App\Application\Authorization\Services\AuthorizationServiceInterface;
 use App\Application\Services\SettingsServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\RoleModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Modules\GameTables\Application\Services\MembershipCheckerInterface;
-use Modules\GameTables\Domain\Events\GuestConfirmationRequested;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
@@ -35,9 +33,6 @@ final class RegistrationEligibilityTest extends ModuleTestCase
     protected function setUp(): void
     {
         parent::setUp();
-
-        // The guest confirmation email has its own tests
-        Event::fake([GuestConfirmationRequested::class]);
 
         app('router')->getRoutes()->refreshNameLookups();
         config()->set('modules.settings.game-tables', []);

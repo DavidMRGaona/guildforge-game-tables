@@ -112,6 +112,20 @@ final class ParticipantModel extends Model
     }
 
     /**
+     * Users, and guests whose email is confirmed: leaves out every unconfirmed guest, whatever
+     * their mode (an unconfirmed guest on the waiting list holds its place in hold mode).
+     *
+     * @param  Builder<ParticipantModel>  $query
+     * @return Builder<ParticipantModel>
+     */
+    public function scopeWithConfirmedEmail(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $keep): Builder => $keep
+            ->whereNotNull('user_id')
+            ->orWhereNotNull('email_confirmed_at'));
+    }
+
+    /**
      * The same rule as scopeHoldingOrConfirmed(), for loaded rows: an unconfirmed guest without a seat.
      */
     public function isUnconfirmedWaiting(): bool

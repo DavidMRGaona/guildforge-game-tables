@@ -582,6 +582,10 @@ return [
         'email_has_account' => 'This email belongs to an account. Sign in to register.',
         'guests_not_allowed' => 'This table does not allow guest registrations',
         'invalid_token' => 'The cancellation link is invalid or has expired',
+        'invalid_confirmation' => 'This link is no longer valid. If there are seats left, you can register again.',
+        'confirmation_closed' => 'Registrations have already closed.',
+        'confirmation_filled_up' => 'The table filled up while you were confirming.',
+        'too_many_confirmation_attempts' => 'Too many attempts with this link. Wait a moment and try again.',
     ],
 
     'success' => [
@@ -592,6 +596,8 @@ return [
         'waiting_list_manual' => 'You have joined the waiting list (position :position). If a seat is freed before the table starts (or before registrations close, if that comes first), you will take it pending confirmation by the game master and we will let you know by email.',
         'guest_waiting_list' => 'You have joined the waiting list (position :position). You will receive a confirmation email and another one if a seat is freed before the table starts (or before registrations close, if that comes first).',
         'guest_spectator_registered' => 'You have registered as a spectator. You will receive a confirmation email.',
+        'guest_email_confirmed' => 'Your registration is confirmed. We have sent you an email with the details.',
+        'guest_email_already_confirmed' => 'Your registration was already confirmed.',
     ],
 
     /*
@@ -743,6 +749,7 @@ return [
         'edit_table_title' => 'Edit table',
         'my_tables_title' => 'My game tables',
         'cancel_registration_title' => 'Cancel registration',
+        'confirm_registration_title' => 'Confirm registration',
         'create_campaign_title' => 'Create campaign',
         'edit_campaign_title' => 'Edit campaign',
         'my_campaigns_title' => 'My campaigns',

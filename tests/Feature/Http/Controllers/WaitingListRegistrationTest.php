@@ -5,12 +5,10 @@ declare(strict_types=1);
 namespace Modules\GameTables\Tests\Feature\Http\Controllers;
 
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
-use Modules\GameTables\Domain\Events\GuestConfirmationRequested;
 use Modules\GameTables\Domain\Exceptions\TableFullException;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
@@ -34,9 +32,6 @@ final class WaitingListRegistrationTest extends ModuleTestCase
     protected function setUp(): void
     {
         parent::setUp();
-
-        // The guest confirmation email has its own tests
-        Event::fake([GuestConfirmationRequested::class]);
 
         app('router')->getRoutes()->refreshNameLookups();
         config()->set('modules.settings.game-tables', []);
