@@ -16,6 +16,7 @@ use Modules\GameTables\Domain\Enums\GuestConfirmationMode;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Events\GuestConfirmationRequested;
 use Modules\GameTables\Domain\Events\GuestRegistered;
+use Modules\GameTables\Domain\Events\GuestRegistrationExpired;
 use Modules\GameTables\Domain\Events\ParticipantConfirmed;
 use Modules\GameTables\Domain\Events\ParticipantPromotedFromWaitingList;
 use Modules\GameTables\Domain\Exceptions\AccountEmailRequiresLoginException;
@@ -46,7 +47,7 @@ final class GuestSubmissionTest extends ModuleTestCase
     {
         parent::setUp();
 
-        Event::fake([GuestConfirmationRequested::class, GuestRegistered::class, ParticipantConfirmed::class]);
+        Event::fake([GuestConfirmationRequested::class, GuestRegistered::class, GuestRegistrationExpired::class, ParticipantConfirmed::class]);
         config()->set('modules.settings.game-tables', []);
         $this->travelTo(CarbonImmutable::parse('2026-11-02 10:00:00'));
 
@@ -431,6 +432,8 @@ final class GuestSubmissionTest extends ModuleTestCase
             && $event->confirmationToken === $row->confirmation_token);
         // Only the first email gave the deadline already gone
         $this->assertCount(1, Event::dispatched(GuestConfirmationRequested::class, fn (GuestConfirmationRequested $event): bool => $event->deadline === '02/11/2026 12:00'));
+        // Registering again, not told the old registration lapsed
+        Event::assertNotDispatched(GuestRegistrationExpired::class);
     }
 
     public function test_the_seat_freed_by_an_overdue_row_goes_to_the_waiting_list_first(): void

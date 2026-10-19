@@ -136,8 +136,20 @@ interface RegistrationServiceInterface
      * the email is confirmed: a held place is kept (from the waiting list it takes a free seat), a
      * guest without one is placed now, or expires when no room is left (FilledUp). Only a
      * Confirmed registration is announced: the guest's registration email and the organisation.
+     * An expired registration is announced as the expiry command does (the guest is emailed only
+     * when it held a place).
      */
     public function confirmGuestEmail(string $token): GuestConfirmationResultDTO;
+
+    /**
+     * Expires a guest registration that is still unconfirmed and due: past its deadline, or with
+     * the registrations of its table closed. Under the table lock, as a cancellation: the seat is
+     * freed for the waiting list (with its notices). The organisation is never told.
+     *
+     * @param  bool  $notifyGuest  whether the guest gets the expiry email
+     * @return bool false when the row is no longer unconfirmed (confirmed, cancelled, deleted) or not due
+     */
+    public function expireGuestRegistration(string $participantId, bool $notifyGuest = true, ?DateTimeImmutable $now = null): bool;
 
     /**
      * Find a participant by guest confirmation token.

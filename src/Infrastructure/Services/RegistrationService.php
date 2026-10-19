@@ -24,6 +24,7 @@ use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
 use Modules\GameTables\Domain\Events\GuestConfirmationRequested;
 use Modules\GameTables\Domain\Events\GuestRegistered;
+use Modules\GameTables\Domain\Events\GuestRegistrationExpired;
 use Modules\GameTables\Domain\Events\ParticipantCancelled;
 use Modules\GameTables\Domain\Events\ParticipantConfirmed;
 use Modules\GameTables\Domain\Events\ParticipantPromotedFromWaitingList;
@@ -781,6 +782,67 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         return $heldSeat ? $this->promoteNext($participant->gameTableId, freedByPending: ! $wasConfirmed) : null;
     }
 
+    public function expireGuestRegistration(string $participantId, bool $notifyGuest = true, ?DateTimeImmutable $now = null): bool
+    {
+        $now ??= CarbonImmutable::now()->toDateTimeImmutable();
+
+        [$participant, $promoted] = $this->lock->forParticipant($participantId, function () use ($participantId, $now): array {
+            // Read under the lock: confirmed, cancelled or sent again as a new registration meanwhile
+            $participant = $this->participantRepository->find(new ParticipantId($participantId));
+
+            if ($participant === null || ! $participant->isAwaitingEmailConfirmation() || ! $this->lapsesNow($participant, $now)) {
+                return [null, null];
+            }
+
+            return [$participant, $this->expireLocked($participant, $now)];
+        });
+
+        if ($participant === null) {
+            return false;
+        }
+
+        $this->announceExpiry($participant, $notifyGuest);
+
+        if ($promoted !== null) {
+            $this->announcePromotion($promoted);
+        }
+
+        return true;
+    }
+
+    /**
+     * Past its deadline, or with the registrations of its table closed.
+     */
+    private function lapsesNow(Participant $participant, DateTimeImmutable $now): bool
+    {
+        if ($participant->isConfirmationOverdue($now)) {
+            return true;
+        }
+
+        $gameTable = $this->gameTableRepository->find($participant->gameTableId);
+
+        return $gameTable !== null && $now >= $gameTable->effectiveRegistrationClosesAt();
+    }
+
+    /**
+     * Whether the (now expired) registration had held its place until a deadline, as hold mode does.
+     */
+    private function heldPlace(Participant $participant): bool
+    {
+        return $participant->confirmationMode === GuestConfirmationMode::Hold;
+    }
+
+    private function announceExpiry(Participant $participant, bool $notifyGuest): void
+    {
+        GuestRegistrationExpired::dispatch(
+            $participant->id->value,
+            $participant->gameTableId->value,
+            $participant->email ?? '',
+            $participant->firstName ?? '',
+            $notifyGuest,
+        );
+    }
+
     private function waitsWithoutSeat(Participant $participant): bool
     {
         return $participant->isAwaitingEmailConfirmation() && ! $participant->holdsPlaceWhileUnconfirmed();
@@ -849,44 +911,48 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
         $now = CarbonImmutable::now()->toDateTimeImmutable();
 
-        [$outcome, $participant, $rank, $promoted] = $this->lock->forParticipant(
+        [$outcome, $participant, $rank, $promoted, $expired] = $this->lock->forParticipant(
             $found->id->value,
             function () use ($token, $now): array {
                 // Read under the lock: a link followed twice at once confirms once
                 $participant = $this->participantRepository->findByConfirmationToken($token);
 
                 if ($participant === null || ! $participant->isActive()) {
-                    return [GuestConfirmationOutcome::Invalid, $participant, null, null];
+                    return [GuestConfirmationOutcome::Invalid, $participant, null, null, false];
                 }
 
                 if ($participant->emailConfirmedAt !== null) {
-                    return [GuestConfirmationOutcome::AlreadyConfirmed, $participant, $this->rankOf($participant), null];
+                    return [GuestConfirmationOutcome::AlreadyConfirmed, $participant, $this->rankOf($participant), null, false];
                 }
 
                 $gameTable = $this->gameTableRepository->findOrFail($participant->gameTableId);
 
                 if ($now >= $gameTable->effectiveRegistrationClosesAt() || $gameTable->isPastRegistrationDeadline($now)) {
-                    return [GuestConfirmationOutcome::Closed, $participant, null, $this->expireLocked($participant, $now)];
+                    return [GuestConfirmationOutcome::Closed, $participant, null, $this->expireLocked($participant, $now), true];
                 }
 
                 // Past the deadline, even if the expiry command has not run yet
                 if ($participant->isConfirmationOverdue($now)) {
-                    return [GuestConfirmationOutcome::Invalid, $participant, null, $this->expireLocked($participant, $now)];
+                    return [GuestConfirmationOutcome::Invalid, $participant, null, $this->expireLocked($participant, $now), true];
                 }
 
                 $placed = $this->confirmGuestEmailLocked($participant, $gameTable, $now);
 
                 if ($placed === null) {
-                    return [GuestConfirmationOutcome::FilledUp, $participant, null, $this->expireLocked($participant, $now)];
+                    return [GuestConfirmationOutcome::FilledUp, $participant, null, $this->expireLocked($participant, $now), true];
                 }
 
                 [$participant, $promoted] = $placed;
 
-                return [GuestConfirmationOutcome::Confirmed, $participant, $this->rankOf($participant), $promoted];
+                return [GuestConfirmationOutcome::Confirmed, $participant, $this->rankOf($participant), $promoted, false];
             },
         );
 
-        // An expired registration gets no email here: the guest reads the outcome on the page
+        // Expired on the spot: announced as the expiry command does, besides what the page says
+        if ($expired && $participant !== null) {
+            $this->announceExpiry($participant, notifyGuest: $this->heldPlace($participant));
+        }
+
         if ($promoted !== null) {
             $this->announcePromotion($promoted);
         }

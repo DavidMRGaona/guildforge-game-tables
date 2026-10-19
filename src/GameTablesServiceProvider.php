@@ -58,6 +58,7 @@ use Modules\GameTables\Application\Services\GameTableServiceInterface;
 use Modules\GameTables\Application\Services\RegistrationLockInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Illuminate\Console\Scheduling\Schedule;
+use Modules\GameTables\Console\Commands\ExpireGuestRegistrationsCommand;
 use Modules\GameTables\Console\Commands\GenerateSlugsCommand;
 use Modules\GameTables\Console\Commands\UpdateTableStatusesCommand;
 use Modules\GameTables\Domain\Events\CampaignSubmittedForReview;
@@ -67,6 +68,7 @@ use Modules\GameTables\Domain\Events\GameTableModerationRejected;
 use Modules\GameTables\Domain\Events\GameTableSubmittedForReview;
 use Modules\GameTables\Domain\Events\GuestConfirmationRequested;
 use Modules\GameTables\Domain\Events\GuestRegistered;
+use Modules\GameTables\Domain\Events\GuestRegistrationExpired;
 use Modules\GameTables\Domain\Events\ParticipantCancelled;
 use Modules\GameTables\Domain\Events\ParticipantConfirmed;
 use Modules\GameTables\Domain\Events\ParticipantPromotedFromWaitingList;
@@ -118,6 +120,7 @@ use Modules\GameTables\Listeners\SendCancellationConfirmation;
 use Modules\GameTables\Listeners\SendConfirmationNotification;
 use Modules\GameTables\Listeners\SendGuestEmailConfirmationRequest;
 use Modules\GameTables\Listeners\SendGuestRegistrationConfirmation;
+use Modules\GameTables\Listeners\SendGuestRegistrationExpiredNotification;
 use Modules\GameTables\Listeners\SendRegistrationConfirmation;
 use Modules\GameTables\Listeners\SendRejectionNotification;
 
@@ -350,6 +353,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->commands([
+                ExpireGuestRegistrationsCommand::class,
                 GenerateSlugsCommand::class,
                 UpdateTableStatusesCommand::class,
             ]);
@@ -358,6 +362,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
 
     /**
      * Tables start and complete with the clock (off with automation.auto_status_enabled).
+     * Unconfirmed guest registrations expire with the clock whatever that setting says.
      */
     private function registerSchedule(): void
     {
@@ -365,6 +370,10 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
             $schedule->command('game-tables:update-statuses')
                 ->everyFiveMinutes()
                 // A run takes seconds; a killed one must not block the updates for a day
+                ->withoutOverlapping(10);
+
+            $schedule->command('game-tables:expire-guest-registrations')
+                ->everyFiveMinutes()
                 ->withoutOverlapping(10);
         });
     }
@@ -416,6 +425,11 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         Event::listen(
             GuestRegistered::class,
             [SendGuestRegistrationConfirmation::class, 'handle']
+        );
+
+        Event::listen(
+            GuestRegistrationExpired::class,
+            [SendGuestRegistrationExpiredNotification::class, 'handle']
         );
 
         Event::listen(

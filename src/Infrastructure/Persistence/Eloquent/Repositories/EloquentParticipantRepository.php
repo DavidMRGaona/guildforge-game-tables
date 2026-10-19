@@ -23,6 +23,12 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
 {
     private const string ACTIVE_GUEST_EMAIL_INDEX = 'gametables_participants_active_guest_email_unique';
 
+    private const array ACTIVE_STATUSES = [
+        ParticipantStatus::Pending->value,
+        ParticipantStatus::Confirmed->value,
+        ParticipantStatus::WaitingList->value,
+    ];
+
     /**
      * @throws AlreadyRegisteredException when another active guest already uses the email at the table
      */
@@ -243,6 +249,62 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
             ->where('confirmation_mode', GuestConfirmationMode::Hold->value)
             ->whereIn('status', [ParticipantStatus::Pending->value, ParticipantStatus::Confirmed->value])
             ->count();
+    }
+
+    public function idsOfOverdueHolds(DateTimeImmutable $now): array
+    {
+        /** @var list<string> */
+        return ParticipantModel::query()
+            ->whereNull('user_id')
+            ->whereNull('email_confirmed_at')
+            ->where('confirmation_mode', GuestConfirmationMode::Hold->value)
+            ->whereIn('status', self::ACTIVE_STATUSES)
+            ->whereNotNull('confirmation_expires_at')
+            ->where('confirmation_expires_at', '<=', $now)
+            ->orderBy('confirmation_expires_at')
+            ->pluck('id')
+            ->all();
+    }
+
+    public function unconfirmedWaitingByTable(): array
+    {
+        $byTable = [];
+
+        $rows = ParticipantModel::query()
+            ->whereNull('user_id')
+            ->whereNull('email_confirmed_at')
+            ->where('confirmation_mode', GuestConfirmationMode::Wait->value)
+            ->whereIn('status', self::ACTIVE_STATUSES)
+            ->orderBy('created_at')
+            ->get(['id', 'game_table_id']);
+
+        foreach ($rows as $row) {
+            $byTable[$row->game_table_id][] = $row->id;
+        }
+
+        return $byTable;
+    }
+
+    public function gameTableIdsWithFingerprints(): array
+    {
+        /** @var list<string> */
+        return ParticipantModel::query()
+            ->whereNotNull('fingerprint')
+            ->distinct()
+            ->pluck('game_table_id')
+            ->all();
+    }
+
+    public function clearFingerprints(array $gameTableIds): int
+    {
+        if ($gameTableIds === []) {
+            return 0;
+        }
+
+        return ParticipantModel::query()
+            ->whereIn('game_table_id', array_values($gameTableIds))
+            ->whereNotNull('fingerprint')
+            ->update(['fingerprint' => null]);
     }
 
     public function getNextWaitingListPosition(GameTableId $gameTableId): int

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Domain\Repositories;
 
+use DateTimeImmutable;
 use Modules\GameTables\Domain\Entities\Participant;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
@@ -80,6 +81,34 @@ interface ParticipantRepositoryInterface
      * Waiting-list rows do not count.
      */
     public function countUnconfirmedHoldingSeats(GameTableId $gameTableId): int;
+
+    /**
+     * Unconfirmed guests holding their place (hold mode, seated or on the waiting list) whose
+     * deadline has come.
+     *
+     * @return list<string> participant ids
+     */
+    public function idsOfOverdueHolds(DateTimeImmutable $now): array;
+
+    /**
+     * Unconfirmed guests waiting without a place (wait mode), by table.
+     *
+     * @return array<string, list<string>> game table id => participant ids
+     */
+    public function unconfirmedWaitingByTable(): array;
+
+    /**
+     * Tables with at least one participant fingerprint stored.
+     *
+     * @return list<string>
+     */
+    public function gameTableIdsWithFingerprints(): array;
+
+    /**
+     * @param  array<string>  $gameTableIds
+     * @return int the participants whose fingerprint was cleared
+     */
+    public function clearFingerprints(array $gameTableIds): int;
 
     public function getNextWaitingListPosition(GameTableId $gameTableId): int;
 
