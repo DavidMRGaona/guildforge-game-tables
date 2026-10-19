@@ -599,11 +599,8 @@ return [
     'success' => [
         'registered' => 'You have successfully registered',
         'cancelled' => 'Registration cancelled successfully',
-        'guest_registered' => 'You have been registered successfully. You will receive a confirmation email.',
         'waiting_list' => 'You have joined the waiting list (position :position). If a seat is freed before the table starts (or before registrations close, if that comes first), you will take it automatically and we will let you know by email.',
         'waiting_list_manual' => 'You have joined the waiting list (position :position). If a seat is freed before the table starts (or before registrations close, if that comes first), you will take it pending confirmation by the game master and we will let you know by email.',
-        'guest_waiting_list' => 'You have joined the waiting list (position :position). You will receive a confirmation email and another one if a seat is freed before the table starts (or before registrations close, if that comes first).',
-        'guest_spectator_registered' => 'You have registered as a spectator. You will receive a confirmation email.',
         'guest_email_confirmed' => 'Your registration is confirmed. We have sent you an email with the details.',
         'guest_email_already_confirmed' => 'Your registration was already confirmed.',
         'registration_linked' => 'You already had a guest registration; it is now on your account.',
