@@ -69,7 +69,7 @@ final class SendTableRemindersCommandTest extends ModuleTestCase
         $table = $this->table($this->now->addHours(10));
         $user = UserModel::factory()->create(['email' => 'cuenta@example.com']);
         $this->participant($table, ['user_id' => $user->id]);
-        $this->participant($table, ['email' => 'invitada@example.com', 'first_name' => 'Ana', 'email_confirmed_at' => $this->now]);
+        $this->participant($table, ['email' => 'invitada@example.com', 'first_name' => 'John', 'email_confirmed_at' => $this->now]);
         $this->participant($table, ['email' => 'pendiente@example.com', 'email_confirmed_at' => null]);
         $this->participant($table, ['email' => 'espera@example.com', 'email_confirmed_at' => $this->now, 'status' => 'waiting_list', 'waiting_list_position' => 1]);
 
@@ -85,7 +85,7 @@ final class SendTableRemindersCommandTest extends ModuleTestCase
 
                 return $notifiable->routes['mail'] === 'invitada@example.com'
                     && $message->subject === 'Recordatorio: La cripta olvidada, 02/11/2026 20:00'
-                    && $message->greeting === '¡Hola, Ana!'
+                    && $message->greeting === '¡Hola, John!'
                     && $message->actionUrl === route('gametables.show', 'la-cripta-olvidada');
             },
         );
