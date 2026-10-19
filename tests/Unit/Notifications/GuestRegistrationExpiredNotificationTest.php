@@ -27,7 +27,7 @@ final class GuestRegistrationExpiredNotificationTest extends TestCase
         $mail = $this->notification()->toMail(new AnonymousNotifiable());
 
         $this->assertSame('Inscripción caducada: Mesa', $mail->subject);
-        $this->assertSame('Hola Invitada,', $mail->greeting);
+        $this->assertSame('¡Hola, Invitada!', $mail->greeting);
         $this->assertContains('No confirmaste a tiempo tu inscripción en la mesa «Mesa» y la plaza se ha liberado.', $mail->introLines);
         $this->assertContains('Si siguen quedando plazas, puedes volver a apuntarte.', $mail->introLines);
         $this->assertSame('Ver mesa', $mail->actionText);

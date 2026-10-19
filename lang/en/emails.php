@@ -13,7 +13,7 @@ return [
         'view_table' => 'View table',
         'cancel_intro' => 'If you need to cancel your registration before the table starts, use the following link:',
         'cancel_button' => 'Cancel registration',
-        'gdpr_notice' => 'Your data will be automatically deleted after the session date, in accordance with our privacy policy.',
+        'gdpr_notice' => 'Your data is processed according to our privacy policy.',
         'role_player' => 'player',
         'role_spectator' => 'spectator',
     ],
@@ -86,7 +86,7 @@ return [
         'table_location' => 'Location',
         'view_table' => 'View table',
         'outro' => 'We hope to see you at future sessions.',
-        'guest_gdpr_notice' => 'Your data will be automatically deleted in accordance with our privacy policy.',
+        'guest_gdpr_notice' => 'Your data is processed according to our privacy policy.',
     ],
 
     'organization_cancellation' => [
@@ -99,7 +99,7 @@ return [
         'table_location' => 'Location',
         'view_table' => 'View table',
         'outro' => 'If you think this is a mistake, please contact the organizers.',
-        'guest_gdpr_notice' => 'Your data will be automatically deleted in accordance with our privacy policy.',
+        'guest_gdpr_notice' => 'Your data is processed according to our privacy policy.',
     ],
 
     'waiting_list_promotion' => [
@@ -186,5 +186,16 @@ return [
         'reason_label' => 'Reason',
         'edit_campaign' => 'Edit campaign',
         'outro' => 'You can edit your campaign and send it for review again.',
+    ],
+
+    'table_reminder' => [
+        'subject' => 'Reminder: :tableTitle, :date',
+        'greeting' => 'Hello, :name!',
+        'greeting_anonymous' => 'Hello!',
+        'intro' => 'This is a reminder of your registration at the table ":tableTitle", which starts on :date.',
+        'location' => 'Location',
+        'view_table' => 'View table',
+        'cancel' => 'If you can no longer come, cancel your registration from the table page to free the seat.',
+        'cancel_guest' => 'If you can no longer come, cancel your registration to free the seat: :url',
     ],
 ];

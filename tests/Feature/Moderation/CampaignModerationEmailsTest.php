@@ -50,7 +50,7 @@ final class CampaignModerationEmailsTest extends ModuleTestCase
         ]);
 
         $this->registerOnAdminPanel([CampaignResource::class]);
-        $this->author = UserModel::factory()->create(['name' => 'Ana', 'email' => 'autora@example.test']);
+        $this->author = UserModel::factory()->create(['name' => 'John', 'email' => 'autora@example.test']);
         $gameSystem = GameSystemModel::create([
             'id' => (string) Str::uuid(),
             'name' => 'Sistema de prueba',

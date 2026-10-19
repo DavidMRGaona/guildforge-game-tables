@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 return [
     'guest_confirmation' => [
-        'greeting' => 'Hola :name,',
+        'greeting' => '¡Hola, :name!',
         'intro' => 'Tu inscripción como :role ha sido registrada correctamente.',
         'details' => 'Detalles de la partida:',
         'table_title' => 'Mesa',
@@ -13,14 +13,14 @@ return [
         'view_table' => 'Ver mesa',
         'cancel_intro' => 'Si necesitas cancelar tu inscripción antes del inicio de la partida, usa el siguiente enlace:',
         'cancel_button' => 'Cancelar inscripción',
-        'gdpr_notice' => 'Tus datos serán eliminados automáticamente después de la fecha de la partida, de acuerdo con nuestra política de privacidad.',
+        'gdpr_notice' => 'Tus datos se tratan conforme a nuestra política de privacidad.',
         'role_player' => 'jugador',
         'role_spectator' => 'espectador',
     ],
 
     'guest_email_confirmation' => [
         'subject' => 'Confirma tu inscripción: :tableTitle',
-        'greeting' => 'Hola :name,',
+        'greeting' => '¡Hola, :name!',
         'intro' => 'Hemos recibido tu inscripción en la mesa «:tableTitle». Confírmala con el botón de abajo.',
         'deadline' => 'Si no la confirmas antes del :deadline, la plaza se liberará.',
         'unguaranteed' => 'Tu plaza no está garantizada hasta que la confirmes.',
@@ -30,7 +30,7 @@ return [
 
     'guest_registration_expired' => [
         'subject' => 'Inscripción caducada: :tableTitle',
-        'greeting' => 'Hola :name,',
+        'greeting' => '¡Hola, :name!',
         'intro' => 'No confirmaste a tiempo tu inscripción en la mesa «:tableTitle» y la plaza se ha liberado.',
         'retry' => 'Si siguen quedando plazas, puedes volver a apuntarte.',
         'button' => 'Ver mesa',
@@ -46,7 +46,7 @@ return [
     ],
 
     'user_confirmation' => [
-        'greeting' => 'Hola :name,',
+        'greeting' => '¡Hola, :name!',
         'intro' => 'Tu inscripción como :role ha sido registrada correctamente.',
         'details' => 'Detalles de la partida:',
         'table_title' => 'Mesa',
@@ -58,8 +58,8 @@ return [
 
     'registration' => [
         'subject' => 'Nueva inscripción en mesa: :tableTitle',
-        'greeting' => 'Hola,',
-        'intro' => ':name se ha inscrito como :role en la mesa :tableTitle.',
+        'greeting' => '¡Hola!',
+        'intro' => ':name se ha inscrito como :role en la mesa «:tableTitle».',
         'table_title' => 'Mesa',
         'table_date' => 'Fecha',
         'table_location' => 'Ubicación',
@@ -68,8 +68,8 @@ return [
 
     'cancellation' => [
         'subject' => 'Baja en mesa: :tableTitle',
-        'greeting' => 'Hola,',
-        'intro' => ':name ha cancelado su inscripción en la mesa :tableTitle.',
+        'greeting' => '¡Hola!',
+        'intro' => ':name ha cancelado su inscripción en la mesa «:tableTitle».',
         'table_title' => 'Mesa',
         'table_date' => 'Fecha',
         'table_location' => 'Ubicación',
@@ -78,7 +78,7 @@ return [
 
     'cancellation_confirmation' => [
         'subject' => 'Cancelación confirmada: :tableTitle',
-        'greeting' => 'Hola :name,',
+        'greeting' => '¡Hola, :name!',
         'intro' => 'Tu inscripción ha sido cancelada correctamente.',
         'details' => 'Detalles de la mesa:',
         'table_title' => 'Mesa',
@@ -86,26 +86,26 @@ return [
         'table_location' => 'Ubicación',
         'view_table' => 'Ver mesa',
         'outro' => 'Esperamos verte en futuras partidas.',
-        'guest_gdpr_notice' => 'Tus datos serán eliminados automáticamente de acuerdo con nuestra política de privacidad.',
+        'guest_gdpr_notice' => 'Tus datos se tratan conforme a nuestra política de privacidad.',
     ],
 
     'organization_cancellation' => [
         'subject' => 'La organización ha cancelado tu inscripción en :tableTitle',
-        'greeting' => 'Hola :name,',
-        'intro' => 'La organización ha cancelado tu inscripción en la mesa :tableTitle.',
+        'greeting' => '¡Hola, :name!',
+        'intro' => 'La organización ha cancelado tu inscripción en la mesa «:tableTitle».',
         'details' => 'Detalles de la mesa:',
         'table_title' => 'Mesa',
         'table_date' => 'Fecha',
         'table_location' => 'Ubicación',
         'view_table' => 'Ver mesa',
         'outro' => 'Si crees que se trata de un error, ponte en contacto con la organización.',
-        'guest_gdpr_notice' => 'Tus datos serán eliminados automáticamente de acuerdo con nuestra política de privacidad.',
+        'guest_gdpr_notice' => 'Tus datos se tratan conforme a nuestra política de privacidad.',
     ],
 
     'waiting_list_promotion' => [
         'subject' => 'Plaza disponible en mesa: :tableTitle',
-        'greeting' => 'Hola :name,',
-        'intro' => 'Se ha liberado una plaza en la mesa :tableTitle y has sido promovido/a desde la lista de espera.',
+        'greeting' => '¡Hola, :name!',
+        'intro' => 'Se ha liberado una plaza en la mesa «:tableTitle» y has sido promovido/a desde la lista de espera.',
         'table_title' => 'Mesa',
         'table_date' => 'Fecha',
         'table_location' => 'Ubicación',
@@ -116,8 +116,8 @@ return [
 
     'waiting_list_promotion_gm' => [
         'subject' => 'Promoción de lista de espera en mesa: :tableTitle',
-        'greeting' => 'Hola,',
-        'intro' => ':name ha sido promovido/a desde la lista de espera en la mesa :tableTitle.',
+        'greeting' => '¡Hola!',
+        'intro' => ':name ha sido promovido/a desde la lista de espera en la mesa «:tableTitle».',
         'pending' => 'La mesa tiene confirmación manual: la inscripción queda pendiente hasta que la confirmes o la rechaces en el panel.',
         'table_title' => 'Mesa',
         'table_date' => 'Fecha',
@@ -127,8 +127,8 @@ return [
 
     'table_cancelled' => [
         'subject' => 'Mesa cancelada: :tableTitle',
-        'greeting' => 'Hola :name,',
-        'intro' => 'Lamentamos informarte de que la mesa ":tableTitle" ha sido cancelada.',
+        'greeting' => '¡Hola, :name!',
+        'intro' => 'Lamentamos informarte de que la mesa «:tableTitle» ha sido cancelada.',
         'details' => 'Detalles de la mesa cancelada:',
         'table_title' => 'Mesa',
         'table_date' => 'Fecha prevista',
@@ -138,8 +138,8 @@ return [
 
     'confirmation' => [
         'subject' => 'Inscripción confirmada: :tableTitle',
-        'greeting' => 'Hola :name,',
-        'intro' => 'Tu inscripción en la mesa :tableTitle ha sido confirmada.',
+        'greeting' => '¡Hola, :name!',
+        'intro' => 'Tu inscripción en la mesa «:tableTitle» ha sido confirmada.',
         'table_title' => 'Mesa',
         'table_date' => 'Fecha',
         'table_location' => 'Ubicación',
@@ -149,8 +149,8 @@ return [
 
     'rejection' => [
         'subject' => 'Inscripción rechazada: :tableTitle',
-        'greeting' => 'Hola :name,',
-        'intro' => 'Lamentamos informarte de que tu inscripción en la mesa :tableTitle ha sido rechazada.',
+        'greeting' => '¡Hola, :name!',
+        'intro' => 'Lamentamos informarte de que tu inscripción en la mesa «:tableTitle» ha sido rechazada.',
         'table_title' => 'Mesa',
         'table_date' => 'Fecha',
         'table_location' => 'Ubicación',
@@ -164,7 +164,7 @@ return [
     */
     'moderation_submitted' => [
         'subject' => 'Nueva mesa pendiente de moderación: :tableTitle',
-        'greeting' => 'Hola,',
+        'greeting' => '¡Hola!',
         'intro' => 'Se ha enviado una nueva mesa para revisión.',
         'table_title' => 'Mesa',
         'created_by' => 'Creada por',
@@ -174,7 +174,7 @@ return [
 
     'campaign_moderation_submitted' => [
         'subject' => 'Nueva campaña pendiente de moderación: :campaignTitle',
-        'greeting' => 'Hola,',
+        'greeting' => '¡Hola!',
         'intro' => 'Se ha enviado una nueva campaña para revisión.',
         'campaign_title' => 'Campaña',
         'created_by' => 'Creada por',
@@ -184,8 +184,8 @@ return [
 
     'moderation_approved' => [
         'subject' => 'Tu mesa ha sido aprobada: :tableTitle',
-        'greeting' => 'Hola :name,',
-        'intro' => 'Tu mesa :tableTitle ha sido aprobada y ya está publicada.',
+        'greeting' => '¡Hola, :name!',
+        'intro' => 'Tu mesa «:tableTitle» ha sido aprobada y ya está publicada.',
         'table_title' => 'Mesa',
         'notes_label' => 'Notas del moderador',
         'view_table' => 'Ver mesa',
@@ -194,8 +194,8 @@ return [
 
     'moderation_rejected' => [
         'subject' => 'Tu mesa no ha sido aprobada: :tableTitle',
-        'greeting' => 'Hola :name,',
-        'intro' => 'Lamentamos informarte de que tu mesa :tableTitle no ha sido aprobada.',
+        'greeting' => '¡Hola, :name!',
+        'intro' => 'Lamentamos informarte de que tu mesa «:tableTitle» no ha sido aprobada.',
         'table_title' => 'Mesa',
         'reason_label' => 'Motivo',
         'edit_table' => 'Editar mesa',
@@ -204,8 +204,8 @@ return [
 
     'campaign_moderation_approved' => [
         'subject' => 'Tu campaña ha sido aprobada: :campaignTitle',
-        'greeting' => 'Hola :name,',
-        'intro' => 'Tu campaña :campaignTitle ha sido aprobada y ya está publicada.',
+        'greeting' => '¡Hola, :name!',
+        'intro' => 'Tu campaña «:campaignTitle» ha sido aprobada y ya está publicada.',
         'notes_label' => 'Notas del moderador',
         'view_campaign' => 'Ver campaña',
         'outro' => '¡Gracias por contribuir a la comunidad!',
@@ -213,10 +213,21 @@ return [
 
     'campaign_moderation_rejected' => [
         'subject' => 'Tu campaña no ha sido aprobada: :campaignTitle',
-        'greeting' => 'Hola :name,',
-        'intro' => 'Lamentamos informarte de que tu campaña :campaignTitle no ha sido aprobada.',
+        'greeting' => '¡Hola, :name!',
+        'intro' => 'Lamentamos informarte de que tu campaña «:campaignTitle» no ha sido aprobada.',
         'reason_label' => 'Motivo',
         'edit_campaign' => 'Editar campaña',
         'outro' => 'Puedes modificar tu campaña y volver a enviarla para revisión.',
+    ],
+
+    'table_reminder' => [
+        'subject' => 'Recordatorio: :tableTitle, :date',
+        'greeting' => '¡Hola, :name!',
+        'greeting_anonymous' => '¡Hola!',
+        'intro' => 'Te recordamos tu inscripción en la mesa «:tableTitle», que empieza el :date.',
+        'location' => 'Ubicación',
+        'view_table' => 'Ver mesa',
+        'cancel' => 'Si al final no puedes venir, cancela tu inscripción desde la página de la mesa para dejar la plaza libre.',
+        'cancel_guest' => 'Si al final no puedes venir, cancela tu inscripción para dejar la plaza libre: :url',
     ],
 ];

@@ -74,6 +74,7 @@ final class ParticipantModel extends Model
         'confirmation_sent_at',
         'confirmation_mode',
         'fingerprint',
+        'reminder_sent_at',
     ];
 
     /**
@@ -91,6 +92,7 @@ final class ParticipantModel extends Model
             'confirmation_expires_at' => 'datetime',
             'confirmation_sent_at' => 'datetime',
             'confirmation_mode' => GuestConfirmationMode::class,
+            'reminder_sent_at' => 'datetime',
         ];
     }
 

@@ -131,9 +131,9 @@ final class GameTablesPanelTest extends ModuleTestCase
         $campaign = $this->campaign();
         $gameMaster = GameMasterModel::create([
             'id' => (string) Str::uuid(),
-            'first_name' => 'Marta',
+            'first_name' => 'Jane',
             'last_name' => 'Directora',
-            'email' => 'marta@example.test',
+            'email' => 'jane@example.test',
             'role' => 'main',
             'notify_by_email' => false,
             'is_name_public' => true,
@@ -257,7 +257,7 @@ final class GameTablesPanelTest extends ModuleTestCase
     {
         $table = $this->gameTable();
 
-        $url = (new ModerationSubmittedNotification($table->id, $table->title, 'Ana'))->toMail(new AnonymousNotifiable())->actionUrl;
+        $url = (new ModerationSubmittedNotification($table->id, $table->title, 'John'))->toMail(new AnonymousNotifiable())->actionUrl;
 
         // The panel finds game tables by slug (GameTableModel::getRouteKeyName())
         $this->assertSame(GameTableResource::getUrl('edit', ['record' => $table]), $url);
@@ -265,7 +265,7 @@ final class GameTablesPanelTest extends ModuleTestCase
 
     public function test_the_moderation_email_of_a_missing_table_links_to_the_list(): void
     {
-        $url = (new ModerationSubmittedNotification((string) Str::uuid(), 'Mesa borrada', 'Ana'))->toMail(new AnonymousNotifiable())->actionUrl;
+        $url = (new ModerationSubmittedNotification((string) Str::uuid(), 'Mesa borrada', 'John'))->toMail(new AnonymousNotifiable())->actionUrl;
 
         $this->assertSame(GameTableResource::getUrl('index'), $url);
     }
