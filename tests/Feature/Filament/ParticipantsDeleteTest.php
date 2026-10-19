@@ -23,7 +23,7 @@ use Tests\Support\Modules\InteractsWithModulePanel;
 use Tests\Support\Modules\ModuleTestCase;
 
 /**
- * The panel's «Borrar» (row and bulk) on a table's participants: only cancelled or rejected
+ * The panel's «Borrar» (row and bulk) on a table's participants: only cancelled, rejected or expired
  * registrations can be deleted; the others have to be cancelled first, which frees the seat
  * under the table lock and moves the waiting list.
  */
@@ -57,7 +57,7 @@ final class ParticipantsDeleteTest extends ModuleTestCase
      */
     public static function deletableStatuses(): array
     {
-        return self::byWaitingList(['cancelled', 'rejected']);
+        return self::byWaitingList(['cancelled', 'rejected', 'expired']);
     }
 
     /**
@@ -148,7 +148,7 @@ final class ParticipantsDeleteTest extends ModuleTestCase
                 Notification::make()
                     ->warning()
                     ->title('Se ha borrado 1 inscripción')
-                    ->body('4 inscripciones no se han borrado: solo se pueden borrar las canceladas o rechazadas; antes hay que cancelarlas con «Cancelar inscripción».'),
+                    ->body('4 inscripciones no se han borrado: solo se pueden borrar las canceladas, rechazadas o caducadas; antes hay que cancelarlas con «Cancelar inscripción».'),
             );
 
         $this->assertModelMissing($cancelled);
@@ -170,7 +170,7 @@ final class ParticipantsDeleteTest extends ModuleTestCase
                 Notification::make()
                     ->danger()
                     ->title('No se ha borrado ninguna inscripción')
-                    ->body('1 inscripción no se ha borrado: solo se pueden borrar las canceladas o rechazadas; antes hay que cancelarla con «Cancelar inscripción».'),
+                    ->body('1 inscripción no se ha borrado: solo se pueden borrar las canceladas, rechazadas o caducadas; antes hay que cancelarla con «Cancelar inscripción».'),
             );
 
         $this->assertModelExists($confirmed);
@@ -187,7 +187,7 @@ final class ParticipantsDeleteTest extends ModuleTestCase
         $this->reactivateWhenRead($row);
 
         $component->callMountedAction()
-            ->assertNotified('No se ha borrado: la inscripción ya no está cancelada ni rechazada');
+            ->assertNotified('No se ha borrado: la inscripción ya no está cancelada, rechazada ni caducada');
 
         $this->assertModelExists($row);
         $this->assertSame('confirmed', $row->refresh()->status->value);
@@ -205,7 +205,7 @@ final class ParticipantsDeleteTest extends ModuleTestCase
                 Notification::make()
                     ->danger()
                     ->title('No se ha borrado ninguna inscripción')
-                    ->body('1 inscripción no se ha borrado: solo se pueden borrar las canceladas o rechazadas; antes hay que cancelarla con «Cancelar inscripción».'),
+                    ->body('1 inscripción no se ha borrado: solo se pueden borrar las canceladas, rechazadas o caducadas; antes hay que cancelarla con «Cancelar inscripción».'),
             );
 
         $this->assertModelExists($row);

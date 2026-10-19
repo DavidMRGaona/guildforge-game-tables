@@ -19,6 +19,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Closure;
 use Throwable;
@@ -38,6 +39,7 @@ use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
+use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 
 final class ParticipantsRelationManager extends RelationManager
 {
@@ -50,6 +52,17 @@ final class ParticipantsRelationManager extends RelationManager
      */
     private ?array $waitingListPlaces = null;
 
+    /**
+     * The rows marked «Posible duplicado», computed once per request for the whole table.
+     *
+     * @var array<string, true>|null
+     */
+    private ?array $possibleDuplicates = null;
+
+    private const string FLAG_EMAIL_UNCONFIRMED = 'email_unconfirmed';
+
+    private const string FLAG_POSSIBLE_DUPLICATE = 'possible_duplicate';
+
     public static function getTitle(Model $ownerRecord, string $pageClass): string
     {
         return __('game-tables::messages.relation_managers.participants.title');
@@ -61,6 +74,7 @@ final class ParticipantsRelationManager extends RelationManager
     public function rendering(): void
     {
         $this->waitingListPlaces = null;
+        $this->possibleDuplicates = null;
     }
 
     /**
@@ -73,6 +87,68 @@ final class ParticipantsRelationManager extends RelationManager
 
         return $this->waitingListPlaces ??= app(ParticipantRepositoryInterface::class)
             ->getWaitingListRanks([new GameTableId($ownerRecord->id)]);
+    }
+
+    /**
+     * @return array<string, true>
+     */
+    private function possibleDuplicates(): array
+    {
+        /** @var GameTableModel $ownerRecord */
+        $ownerRecord = $this->getOwnerRecord();
+
+        return $this->possibleDuplicates ??= array_fill_keys(
+            app(ParticipantRepositoryInterface::class)->possibleDuplicateIds(
+                new GameTableId($ownerRecord->id),
+                app(GameTableSettingsReader::class)->duplicateSignalWindowHours(),
+            ),
+            true,
+        );
+    }
+
+    /**
+     * A guest of the public form who has not followed the emailed link yet (users never confirm an
+     * email here, whatever the column holds).
+     */
+    private static function isAwaitingEmailConfirmation(ParticipantModel $record): bool
+    {
+        return $record->user_id === null
+            && $record->email_confirmed_at === null
+            && $record->status->isActive();
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function guestFlags(ParticipantModel $record): array
+    {
+        $flags = [];
+
+        if (self::isAwaitingEmailConfirmation($record)) {
+            $flags[] = self::FLAG_EMAIL_UNCONFIRMED;
+        }
+
+        if (isset($this->possibleDuplicates()[$record->id])) {
+            $flags[] = self::FLAG_POSSIBLE_DUPLICATE;
+        }
+
+        return $flags;
+    }
+
+    private function guestFlagTooltip(string $flag, ParticipantModel $record): ?string
+    {
+        $key = 'game-tables::messages.relation_managers.participants.flags.';
+
+        if ($flag === self::FLAG_POSSIBLE_DUPLICATE) {
+            return __($key.'possible_duplicate_tooltip', [
+                'hours' => app(GameTableSettingsReader::class)->duplicateSignalWindowHours(),
+            ]);
+        }
+
+        // Only hold mode has a deadline
+        return $record->confirmation_expires_at !== null
+            ? __($key.'expires_at', ['date' => $record->confirmation_expires_at->format('d/m/Y H:i')])
+            : null;
     }
 
     public function form(Schema $schema): Schema
@@ -204,7 +280,7 @@ final class ParticipantsRelationManager extends RelationManager
     }
 
     /**
-     * Deletes the row only if it is still cancelled or rejected when the DELETE runs: a
+     * Deletes the row only if it is still cancelled, rejected or expired when the DELETE runs: a
      * re-registration (placeUser/placeGuest) reactivates the same row, and it may land after the
      * row was read. Participants have no model events, so a query delete loses nothing.
      */
@@ -222,7 +298,7 @@ final class ParticipantsRelationManager extends RelationManager
     }
 
     /**
-     * Bulk «Borrar»: deletes the selected rows that are still cancelled or rejected, leaves the
+     * Bulk «Borrar»: deletes the selected rows that are still cancelled, rejected or expired, leaves the
      * others and says how many went each way. A row that fails is reported and counted apart, and
      * the loop goes on, so the notice always counts the rows already deleted.
      *
@@ -316,6 +392,15 @@ final class ParticipantsRelationManager extends RelationManager
                     ->formatStateUsing(fn (ParticipantStatus $state): string => $state->label())
                     ->sortable(),
 
+                // Informative only: neither badge blocks or changes anything
+                TextColumn::make('guest_flags')
+                    ->label(__('game-tables::messages.relation_managers.participants.flags.label'))
+                    ->badge()
+                    ->state(fn (ParticipantModel $record): array => $this->guestFlags($record))
+                    ->formatStateUsing(fn (string $state): string => __('game-tables::messages.relation_managers.participants.flags.'.$state))
+                    ->color(fn (string $state): string => $state === self::FLAG_POSSIBLE_DUPLICATE ? 'danger' : 'warning')
+                    ->tooltip(fn (ParticipantModel $record, ?string $state): ?string => $state !== null ? $this->guestFlagTooltip($state, $record) : null),
+
                 TextColumn::make('waiting_list_position')
                     ->label(__('game-tables::messages.fields.waiting_list_position'))
                     // The place among those waiting for the same role: stored positions keep gaps
@@ -342,6 +427,16 @@ final class ParticipantsRelationManager extends RelationManager
                 SelectFilter::make('status')
                     ->label(__('game-tables::messages.fields.participant_status'))
                     ->options(ParticipantStatus::options()),
+                // The rows with the «Email sin confirmar» badge
+                Filter::make('email_unconfirmed')
+                    ->label(__('game-tables::messages.relation_managers.participants.flags.email_unconfirmed'))
+                    ->query(fn (Builder $query): Builder => $query
+                        ->whereNull('user_id')
+                        ->whereNull('email_confirmed_at')
+                        ->whereIn('status', array_map(
+                            fn (ParticipantStatus $status): string => $status->value,
+                            array_values(array_filter(ParticipantStatus::cases(), fn (ParticipantStatus $status): bool => $status->isActive())),
+                        ))),
             ])
             ->headerActions([
                 CreateAction::make()
@@ -394,6 +489,24 @@ final class ParticipantsRelationManager extends RelationManager
                             $registrationService->confirm($record->id);
                         } catch (TableFullException $exception) {
                             // With the waiting list on, a confirmation never exceeds the player or spectator seats
+                            self::notifySeatsFull($exception);
+                        }
+                    }),
+
+                // The same as the emailed link: the guest gets the registration email
+                Action::make('confirmEmail')
+                    ->label(__('game-tables::messages.relation_managers.participants.confirm_email'))
+                    ->icon('heroicon-o-envelope-open')
+                    ->color('success')
+                    ->visible(fn (ParticipantModel $record): bool => self::isAwaitingEmailConfirmation($record))
+                    ->authorize(fn (): bool => $this->canManageParticipants())
+                    ->requiresConfirmation()
+                    ->modalDescription(__('game-tables::messages.relation_managers.participants.confirm_email_description'))
+                    ->action(function (ParticipantModel $record): void {
+                        try {
+                            app(RegistrationServiceInterface::class)->confirmGuestEmailByAdmin($record->id);
+                        } catch (TableFullException $exception) {
+                            // A guest without a place finds no room: it stays unconfirmed
                             self::notifySeatsFull($exception);
                         }
                     }),

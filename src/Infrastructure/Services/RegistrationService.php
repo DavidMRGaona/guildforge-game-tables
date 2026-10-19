@@ -293,8 +293,9 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
     /**
      * @param  int|null  $waitingListRank  the place among those waiting, for the confirmation email
+     * @param  bool  $notifyOrganization  false when the organisation itself acted from the panel
      */
-    private function announceGuestRegistration(Participant $participant, ?int $waitingListRank): void
+    private function announceGuestRegistration(Participant $participant, ?int $waitingListRank, bool $notifyOrganization = true): void
     {
         GuestRegistered::dispatch(
             $participant->id->value,
@@ -305,6 +306,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             $participant->cancellationToken ?? '',
             $participant->status,
             $waitingListRank,
+            $notifyOrganization,
         );
 
         if ($participant->isConfirmed()) {
@@ -509,16 +511,35 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
     public function confirm(string $participantId): ParticipantResponseDTO
     {
-        $participant = $this->lock->forParticipant($participantId, function () use ($participantId): Participant {
+        $now = CarbonImmutable::now()->toDateTimeImmutable();
+
+        [$participant, $vouched] = $this->lock->forParticipant($participantId, function () use ($participantId, $now): array {
             $participant = $this->participantRepository->findOrFail(new ParticipantId($participantId));
+            $vouched = $participant->isAwaitingEmailConfirmation();
+
+            if ($vouched) {
+                $this->vouchForGuestBeforeApproval($participant, $now);
+            }
 
             $this->ensureSeatToConfirm($participant);
 
-            $participant->confirm();
+            // A guest just placed on a table that confirms by itself is confirmed already
+            if (! $participant->isConfirmed()) {
+                $participant->confirm();
+            }
+
             $this->participantRepository->save($participant);
 
-            return $participant;
+            return [$participant, $vouched];
         });
+
+        if ($vouched) {
+            // The guest's registration email, which was waiting for the confirmation, stands for
+            // the approval one (automatic); the organisation approved it, so it is not told
+            $this->announceGuestRegistration($participant, null, notifyOrganization: false);
+
+            return $this->toResponse($participant);
+        }
 
         ParticipantConfirmed::dispatch(
             $participant->id->value,
@@ -527,6 +548,35 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         );
 
         return $this->toResponse($participant);
+    }
+
+    /**
+     * Approving an unconfirmed guest vouches for the email. A guest without a seat yet (wait mode)
+     * is placed first as the link places it, but only into a seat: approving never sends it to the
+     * waiting list nor goes over the seats. Runs under the table lock.
+     *
+     * @throws TableFullException with nothing changed, when no seat is free
+     */
+    private function vouchForGuestBeforeApproval(Participant $participant, DateTimeImmutable $now): void
+    {
+        if (! $this->waitsWithoutSeat($participant)) {
+            $participant->confirmEmail($now);
+
+            return;
+        }
+
+        $gameTable = $this->gameTableRepository->findOrFail($participant->gameTableId);
+
+        if ($this->confirmGuestEmailLocked($participant, $gameTable, $now, seatOnly: true) === null) {
+            throw $this->tableFull($participant);
+        }
+    }
+
+    private function tableFull(Participant $participant): TableFullException
+    {
+        return $participant->isSpectator()
+            ? TableFullException::forSpectators($participant->gameTableId->value)
+            : TableFullException::forTable($participant->gameTableId->value);
     }
 
     /**
@@ -615,18 +665,25 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
     /**
      * A confirmed participant who did not come, once the table has started. No emails and no
-     * promotion: the session is already under way.
+     * promotion: the session is already under way. An unconfirmed guest's email counts as
+     * confirmed (the organisation vouches for it), without the registration email.
      *
      * @throws InvalidStatusTransitionException before the start or without a confirmed seat
      */
     public function markAsNoShow(string $participantId): ParticipantResponseDTO
     {
-        $participant = $this->lock->forParticipant($participantId, function () use ($participantId): Participant {
+        $now = CarbonImmutable::now()->toDateTimeImmutable();
+
+        $participant = $this->lock->forParticipant($participantId, function () use ($participantId, $now): Participant {
             $participant = $this->participantRepository->findOrFail(new ParticipantId($participantId));
             $gameTable = $this->gameTableRepository->findOrFail($participant->gameTableId);
 
-            if (! $gameTable->timeSlot->hasStarted(new DateTimeImmutable())) {
+            if (! $gameTable->timeSlot->hasStarted($now)) {
                 throw InvalidStatusTransitionException::fromTo($participant->status->value, ParticipantStatus::NoShow->value);
+            }
+
+            if ($participant->isAwaitingEmailConfirmation()) {
+                $participant->confirmEmail($now);
             }
 
             $participant->markAsNoShow();
@@ -978,15 +1035,17 @@ final readonly class RegistrationService implements RegistrationServiceInterface
      * - wait: it is placed now: a seat (confirmed or pending, as the table confirms), else the end
      *   of the waiting list when it is on and open. Spectators only get a seat.
      *
+     * @param  bool  $seatOnly  a wait row is placed only into a seat, never into the waiting list
+     *                          (the panel's approval)
      * @return array{Participant, Participant|null}|null the participant and anyone promoted into a
      *                                                   seat other than them; null, with nothing
      *                                                   changed, when a wait row finds no room
      */
-    private function confirmGuestEmailLocked(Participant $participant, GameTable $gameTable, DateTimeImmutable $now): ?array
+    private function confirmGuestEmailLocked(Participant $participant, GameTable $gameTable, DateTimeImmutable $now, bool $seatOnly = false): ?array
     {
         if ($this->waitsWithoutSeat($participant)) {
             // Counted while the row is still unconfirmed: once confirmed, a pending row counts its own seat
-            if (! $this->hasRoomForGuest($participant, $gameTable, $now)) {
+            if (! $this->hasRoomForGuest($participant, $gameTable, $now, $seatOnly)) {
                 return null;
             }
 
@@ -1015,13 +1074,14 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     }
 
     /**
-     * A seat, or a place at the end of an open waiting list for a player; the same counts as seat().
+     * A seat, or (unless $seatOnly) a place at the end of an open waiting list for a player; the
+     * same counts as seat().
      */
-    private function hasRoomForGuest(Participant $participant, GameTable $gameTable, DateTimeImmutable $now): bool
+    private function hasRoomForGuest(Participant $participant, GameTable $gameTable, DateTimeImmutable $now, bool $seatOnly = false): bool
     {
         if ($participant->isPlayer()) {
             return $gameTable->hasCapacity($this->seats->takenPlayerSeats($gameTable))
-                || ($this->settings->isWaitingListEnabled() && $gameTable->isWaitingListOpen($now));
+                || (! $seatOnly && $this->settings->isWaitingListEnabled() && $gameTable->isWaitingListOpen($now));
         }
 
         if ($participant->isSpectator()) {
@@ -1029,6 +1089,46 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         }
 
         return true;
+    }
+
+    public function confirmGuestEmailByAdmin(string $participantId): ParticipantResponseDTO
+    {
+        $now = CarbonImmutable::now()->toDateTimeImmutable();
+
+        [$participant, $rank, $promoted, $confirmed] = $this->lock->forParticipant(
+            $participantId,
+            function () use ($participantId, $now): array {
+                // Read under the lock: confirmed by the link (or cancelled) meanwhile
+                $participant = $this->participantRepository->findOrFail(new ParticipantId($participantId));
+
+                if (! $participant->isAwaitingEmailConfirmation()) {
+                    return [$participant, $this->rankOf($participant), null, false];
+                }
+
+                $gameTable = $this->gameTableRepository->findOrFail($participant->gameTableId);
+                $placed = $this->confirmGuestEmailLocked($participant, $gameTable, $now);
+
+                // Unlike the link, the registration is not expired: it stays unconfirmed
+                if ($placed === null) {
+                    throw $this->tableFull($participant);
+                }
+
+                [$participant, $promoted] = $placed;
+
+                return [$participant, $this->rankOf($participant), $promoted, true];
+            },
+        );
+
+        if ($promoted !== null) {
+            $this->announcePromotion($promoted);
+        }
+
+        // As the link announces it, but the organisation, which vouched for it, is not told
+        if ($confirmed) {
+            $this->announceGuestRegistration($participant, $rank, notifyOrganization: false);
+        }
+
+        return ParticipantResponseDTO::fromEntity($participant, waitingListRank: $rank);
     }
 
     public function findByConfirmationToken(string $token): ?ParticipantResponseDTO
@@ -1115,15 +1215,25 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     /**
      * The director's choice from the panel: confirmed, whatever the dates. With the waiting list on
      * it never exceeds the player or spectator seats (TableFullException); off, it works as before.
+     * The director may pick a guest whose email is not confirmed (the automatic promotion skips
+     * them): the promotion vouches for the email.
      */
     public function promoteParticipant(string $participantId): ParticipantResponseDTO
     {
-        [$participant, $promoted] = $this->lock->forParticipant($participantId, function () use ($participantId): array {
+        $now = CarbonImmutable::now()->toDateTimeImmutable();
+
+        [$participant, $promoted, $vouched] = $this->lock->forParticipant($participantId, function () use ($participantId, $now): array {
             $participant = $this->participantRepository->findOrFail(new ParticipantId($participantId));
 
             // Promoted, cancelled or confirmed meanwhile: nothing to do
             if (! $participant->isOnWaitingList()) {
-                return [$participant, false];
+                return [$participant, false, false];
+            }
+
+            $vouched = $participant->isAwaitingEmailConfirmation();
+
+            if ($vouched) {
+                $participant->confirmEmail($now);
             }
 
             // With the waiting list on, not even the director goes over the seats
@@ -1132,10 +1242,14 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             $participant->promoteFromWaitingList();
             $this->participantRepository->save($participant);
 
-            return [$participant, true];
+            return [$participant, true, $vouched];
         });
 
-        if ($promoted) {
+        if ($promoted && $vouched) {
+            // One email to the guest: the registration email, which carries the cancellation link
+            // (the promotion one does not); the directors promoted them, so they are not told
+            $this->announceGuestRegistration($participant, null, notifyOrganization: false);
+        } elseif ($promoted) {
             $this->announcePromotion($participant);
         }
 

@@ -110,6 +110,16 @@ interface ParticipantRepositoryInterface
      */
     public function clearFingerprints(array $gameTableIds): int;
 
+    /**
+     * Active participants of the table that may be one person registered twice: two rows pair
+     * when they share a fingerprint, at least one of them is a guest, and they were made at most
+     * $windowHours apart (the last confirmation email sent, else the registration date). Both ids
+     * of every pair are returned.
+     *
+     * @return list<string> participant ids
+     */
+    public function possibleDuplicateIds(GameTableId $gameTableId, int $windowHours): array;
+
     public function getNextWaitingListPosition(GameTableId $gameTableId): int;
 
     /**

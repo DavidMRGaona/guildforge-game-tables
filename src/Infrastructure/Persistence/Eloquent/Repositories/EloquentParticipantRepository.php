@@ -307,6 +307,43 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
             ->update(['fingerprint' => null]);
     }
 
+    public function possibleDuplicateIds(GameTableId $gameTableId, int $windowHours): array
+    {
+        $rows = ParticipantModel::query()
+            ->where('game_table_id', $gameTableId->value)
+            ->whereIn('status', self::ACTIVE_STATUSES)
+            ->whereNotNull('fingerprint')
+            ->get(['id', 'user_id', 'fingerprint', 'confirmation_sent_at', 'created_at']);
+
+        $window = $windowHours * 3600;
+        $marked = [];
+
+        // Paired in PHP, so the time arithmetic is the same on every database
+        foreach ($rows->groupBy('fingerprint') as $sameFingerprint) {
+            $group = $sameFingerprint->values()->all();
+
+            foreach ($group as $i => $first) {
+                foreach (array_slice($group, $i + 1) as $second) {
+                    if ($first->user_id !== null && $second->user_id !== null) {
+                        continue;
+                    }
+
+                    $firstAt = ($first->confirmation_sent_at ?? $first->created_at)?->getTimestamp();
+                    $secondAt = ($second->confirmation_sent_at ?? $second->created_at)?->getTimestamp();
+
+                    if ($firstAt === null || $secondAt === null || abs($firstAt - $secondAt) > $window) {
+                        continue;
+                    }
+
+                    $marked[$first->id] = true;
+                    $marked[$second->id] = true;
+                }
+            }
+        }
+
+        return array_map('strval', array_keys($marked));
+    }
+
     public function getNextWaitingListPosition(GameTableId $gameTableId): int
     {
         $maxPosition = ParticipantModel::query()
