@@ -464,6 +464,7 @@ return [
             'notify_on_registration' => 'Notificar al inscribirse',
             'notify_on_cancellation' => 'Notificar al cancelar',
             'notify_waiting_list' => 'Notificar promoción de lista de espera',
+            'notify_waiting_list_help' => 'Avisa a los directores y al email de la mesa. La persona que pasa de la lista de espera recibe siempre su correo.',
             'max_players_limit' => 'Límite máximo de jugadores',
             'max_spectators_limit' => 'Límite máximo de espectadores',
             'max_duration' => 'Duración máxima (minutos)',
