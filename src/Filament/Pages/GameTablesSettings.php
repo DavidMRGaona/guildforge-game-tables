@@ -232,6 +232,17 @@ final class GameTablesSettings extends Page implements HasForms
                     Toggle::make('notifications.notify_waiting_list_promotion')
                         ->label(__('game-tables::messages.settings.fields.notify_waiting_list'))
                         ->helperText(__('game-tables::messages.settings.fields.notify_waiting_list_help')),
+
+                    Toggle::make('notifications.send_reminder')
+                        ->label(__('game-tables::messages.settings.fields.send_reminder'))
+                        ->helperText(__('game-tables::messages.settings.fields.send_reminder_help')),
+
+                    TextInput::make('notifications.reminder_hours_before')
+                        ->label(__('game-tables::messages.settings.fields.reminder_hours_before'))
+                        ->numeric()
+                        ->integer()
+                        ->minValue(1)
+                        ->maxValue(168),
                 ])
                 ->columns(3),
 

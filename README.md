@@ -327,6 +327,7 @@ Widget del dashboard: `PendingModerationWidget` (mesas y campañas pendientes de
 | Cancelación de la inscripción por la organización (panel) | Participante, con su propio correo; los directores y el email de la mesa no reciben el aviso de cancelación (sí el de promoción si alguien sale de la lista de espera) |
 | Promoción desde la lista de espera | Participante siempre; directores y email de la mesa si **Notificaciones** lo permite; en las mesas con confirmación manual indican que la inscripción queda pendiente |
 | Cancelación de la mesa | Participantes |
+| Recordatorio antes de la mesa | Participantes confirmados (con cuenta o con el email confirmado), una vez, las horas configuradas antes del inicio; desactivado por defecto (`game-tables:send-reminders`, cada hora) |
 | Mesa o campaña enviada a revisión | Usuarios con rol `admin` o `editor` |
 | Mesa o campaña aprobada o rechazada | Autor (el rechazo incluye el motivo y el enlace para editarla) |
 

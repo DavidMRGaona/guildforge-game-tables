@@ -71,6 +71,8 @@ return [
         'notify_on_registration' => true,
         'notify_on_cancellation' => true,
         'notify_waiting_list_promotion' => true,
+        'send_reminder' => false,
+        'reminder_hours_before' => 24,
     ],
 
     'limits' => [

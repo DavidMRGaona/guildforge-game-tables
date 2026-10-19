@@ -62,6 +62,21 @@ final class GameTableSettingsReader
         return $this->bool('notifications.notify_waiting_list_promotion', true);
     }
 
+    /**
+     * The reminder before a table: off until an admin enables it.
+     */
+    public function isReminderEnabled(): bool
+    {
+        return $this->bool('notifications.send_reminder', false);
+    }
+
+    public function reminderHoursBefore(): int
+    {
+        $hours = $this->int('notifications.reminder_hours_before', 24);
+
+        return $hours >= 1 ? min($hours, 168) : 24;
+    }
+
     public function isMembershipIntegrationEnabled(): bool
     {
         return $this->bool('membership_integration.enabled', true);

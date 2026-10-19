@@ -187,4 +187,14 @@ return [
         'edit_campaign' => 'Edit campaign',
         'outro' => 'You can edit your campaign and send it for review again.',
     ],
+
+    'table_reminder' => [
+        'subject' => 'Reminder: :tableTitle, :date',
+        'greeting' => 'Hello, :name!',
+        'intro' => 'This is a reminder of your registration at the table ":tableTitle", which starts on :date.',
+        'location' => 'Location',
+        'view_table' => 'View table',
+        'cancel' => 'If you can no longer come, cancel your registration from the table page to free the seat.',
+        'cancel_guest' => 'If you can no longer come, cancel your registration to free the seat: :url',
+    ],
 ];

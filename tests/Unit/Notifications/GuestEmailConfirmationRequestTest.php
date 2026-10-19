@@ -28,7 +28,7 @@ final class GuestEmailConfirmationRequestTest extends TestCase
         $mail = $this->mail(holdsPlace: true, deadline: '02/11/2026 12:00');
 
         $this->assertSame('Confirma tu inscripción: Mesa', $mail->subject);
-        $this->assertSame('Hola Invitada,', $mail->greeting);
+        $this->assertSame('¡Hola, Invitada!', $mail->greeting);
         $this->assertContains('Hemos recibido tu inscripción en la mesa «Mesa». Confírmala con el botón de abajo.', $mail->introLines);
         $this->assertContains('Si no la confirmas antes del 02/11/2026 12:00, la plaza se liberará.', $mail->introLines);
         $this->assertNotContains('Tu plaza no está garantizada hasta que la confirmes.', $mail->introLines);
