@@ -214,9 +214,8 @@ final class GuestConfirmationControllerTest extends ModuleTestCase
     {
         $message = 'Este enlace ya no es válido. Si quedan plazas, puedes volver a apuntarte.';
 
-        $this->get(route('gametables.confirm-guest', str_repeat('a', 64)))
-            ->assertRedirect(route('gametables.index'))
-            ->assertSessionHas('error', $message);
+        // The page itself says so (the list of tables shows no flash message)
+        $this->assertMessagePage($this->get(route('gametables.confirm-guest', str_repeat('a', 64))), 200, $message);
 
         // The button of a page left open: the answer stays on that page
         $this->post(route('gametables.confirm-guest.store', str_repeat('a', 64)))
@@ -240,8 +239,25 @@ final class GuestConfirmationControllerTest extends ModuleTestCase
 
         $this->assertResult($response, 'error', 'Este enlace ya no es válido. Si quedan plazas, puedes volver a apuntarte.', 'Caducada');
         $this->assertSame('expired', $row->refresh()->status->value);
-        $this->get(route('gametables.confirm-guest', $token))
-            ->assertRedirect(route('gametables.index'));
+
+        // A refresh: the link no longer leads to the registration, and the page says so
+        $this->assertMessagePage(
+            $this->get(route('gametables.confirm-guest', $token)),
+            200,
+            'Este enlace ya no es válido. Si quedan plazas, puedes volver a apuntarte.',
+        );
+    }
+
+    public function test_the_page_of_a_link_whose_table_is_no_longer_published_says_it_is_invalid(): void
+    {
+        $row = $this->submitGuest();
+        $this->table->update(['is_published' => false]);
+
+        $this->assertMessagePage(
+            $this->get(route('gametables.confirm-guest', $row->confirmation_token)),
+            200,
+            'Este enlace ya no es válido. Si quedan plazas, puedes volver a apuntarte.',
+        );
     }
 
     public function test_the_button_of_an_unpublished_table_confirms_nothing(): void
@@ -292,13 +308,14 @@ final class GuestConfirmationControllerTest extends ModuleTestCase
     public function test_the_link_is_rate_limited(): void
     {
         for ($i = 0; $i < 20; $i++) {
-            $this->get(route('gametables.confirm-guest', str_repeat('b', 64)))->assertRedirect();
+            $this->get(route('gametables.confirm-guest', str_repeat('b', 64)))->assertOk();
         }
 
-        $response = $this->get(route('gametables.confirm-guest', str_repeat('b', 64)));
-
-        $response->assertStatus(429);
-        $this->assertStringContainsString('Demasiados intentos con este enlace. Espera un momento y vuelve a intentarlo.', (string) $response->getContent());
+        $this->assertMessagePage(
+            $this->get(route('gametables.confirm-guest', str_repeat('b', 64))),
+            429,
+            'Demasiados intentos con este enlace. Espera un momento y vuelve a intentarlo.',
+        );
     }
 
     public function test_the_button_shares_the_limit_of_the_page(): void
@@ -312,19 +329,26 @@ final class GuestConfirmationControllerTest extends ModuleTestCase
             ->assertJson(['message' => 'Demasiados intentos con este enlace. Espera un momento y vuelve a intentarlo.']);
     }
 
-    // Inertia shows a plain-text 429 in its raw error modal: the button gets a flash message instead,
-    // on a page outside the limit (the confirmation page itself would answer 429 again)
-    public function test_the_button_over_the_limit_redirects_with_the_message(): void
+    // Inertia shows a plain-text 429 in its raw error modal: the button gets the confirmation page
+    // with the message instead, still with the 429 status
+    public function test_the_button_over_the_limit_answers_with_the_message_on_the_page(): void
     {
         for ($i = 0; $i < 20; $i++) {
             $this->get(route('gametables.confirm-guest', str_repeat('b', 64)));
         }
 
-        $this->from(route('gametables.confirm-guest', str_repeat('b', 64)))
+        $response = $this->from(route('gametables.confirm-guest', str_repeat('b', 64)))
             ->withHeaders(['X-Inertia' => 'true'])
-            ->post(route('gametables.confirm-guest.store', str_repeat('b', 64)))
-            ->assertRedirect(route('gametables.index'))
-            ->assertSessionHas('error', 'Demasiados intentos con este enlace. Espera un momento y vuelve a intentarlo.');
+            ->post(route('gametables.confirm-guest.store', str_repeat('b', 64)));
+
+        // An Inertia page (JSON), which Inertia shows even with an error status
+        $response->assertStatus(429);
+        $response->assertHeader('X-Inertia', 'true');
+        $response->assertJsonPath('component', 'GameTables/ConfirmRegistration');
+        $response->assertJsonPath('props.result.tone', 'error');
+        $response->assertJsonPath('props.result.message', 'Demasiados intentos con este enlace. Espera un momento y vuelve a intentarlo.');
+        $response->assertJsonPath('props.participant', null);
+        $response->assertJsonPath('props.gameTable', null);
     }
 
     /**
@@ -376,6 +400,20 @@ final class GuestConfirmationControllerTest extends ModuleTestCase
             ->where('result.message', $message)
             ->where('participant.status_label', $statusLabel)
             ->where('gameTable.title', 'La cripta'));
+    }
+
+    /**
+     * The confirmation page with only a message: no registration, no table, a link to the list.
+     */
+    private function assertMessagePage(TestResponse $response, int $status, string $message): void
+    {
+        $response->assertStatus($status);
+        $response->assertInertia(fn ($page) => $page
+            ->component('GameTables/ConfirmRegistration', shouldExist: false)
+            ->where('result.tone', 'error')
+            ->where('result.message', $message)
+            ->where('participant', null)
+            ->where('gameTable', null));
     }
 
     private function registerUser(): ParticipantResponseDTO

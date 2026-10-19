@@ -7,7 +7,6 @@ namespace Modules\GameTables\Http\Controllers;
 use App\Application\Seo\DTOs\SeoPageDTO;
 use App\Application\Seo\Services\SeoMetadataFactoryInterface;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
@@ -30,15 +29,17 @@ final class GuestConfirmationController extends Controller
         private readonly SeoMetadataFactoryInterface $seo,
     ) {}
 
-    public function show(string $token): Response|RedirectResponse
+    public function show(string $token): Response
     {
         $participant = $this->registrationService->findByConfirmationToken($token);
         $gameTable = $participant !== null && $participant->status->isActive()
             ? $this->gameTableQueryService->findPublished($participant->gameTableId)
             : null;
 
+        // Expired, cancelled, unknown or taken off the web: the page says so (also on a refresh
+        // after the button expired it, since expiring clears the token)
         if ($participant === null || $gameTable === null) {
-            return $this->invalid();
+            return $this->messagePage($token, (string) __('game-tables::messages.errors.invalid_confirmation'));
         }
 
         return $this->page($token, $participant, $gameTable, result: null);
@@ -53,7 +54,7 @@ final class GuestConfirmationController extends Controller
         $found = $this->registrationService->findByConfirmationToken($token);
 
         if ($found !== null && $this->gameTableQueryService->findPublished($found->gameTableId) === null) {
-            return $this->page($token, null, null, $this->resultOf(GuestConfirmationOutcome::Invalid, null));
+            return $this->messagePage($token, (string) __('game-tables::messages.errors.invalid_confirmation'));
         }
 
         $result = $this->registrationService->confirmGuestEmail($token);
@@ -67,6 +68,15 @@ final class GuestConfirmationController extends Controller
             $gameTable,
             $this->resultOf($result->outcome, $result->participant),
         );
+    }
+
+    /**
+     * The page with only an error message: no registration, no table, a link to the list of tables.
+     * Also the answer over the link's rate limit.
+     */
+    public function messagePage(string $token, string $message): Response
+    {
+        return $this->page($token, null, null, ['tone' => 'error', 'message' => $message]);
     }
 
     /**
@@ -132,11 +142,5 @@ final class GuestConfirmationController extends Controller
             GuestConfirmationOutcome::FilledUp => ['tone' => 'error', 'message' => (string) __('game-tables::messages.errors.confirmation_filled_up')],
             GuestConfirmationOutcome::Invalid => ['tone' => 'error', 'message' => (string) __('game-tables::messages.errors.invalid_confirmation')],
         };
-    }
-
-    private function invalid(): RedirectResponse
-    {
-        return redirect()->route('gametables.index')
-            ->with('error', __('game-tables::messages.errors.invalid_confirmation'));
     }
 }

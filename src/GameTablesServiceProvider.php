@@ -63,6 +63,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use Modules\GameTables\Console\Commands\ExpireGuestRegistrationsCommand;
 use Modules\GameTables\Console\Commands\GenerateSlugsCommand;
 use Modules\GameTables\Console\Commands\UpdateTableStatusesCommand;
+use Modules\GameTables\Http\Controllers\GuestConfirmationController;
 use Modules\GameTables\Domain\Events\CampaignSubmittedForReview;
 use Modules\GameTables\Domain\Events\GameTableCancelled;
 use Modules\GameTables\Domain\Events\GameTableModerationApproved;
@@ -419,14 +420,17 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                     return response()->json(['message' => $message], 429, $headers);
                 }
 
-                // The link opened from the email gets the message as the page. The button (or an
-                // Inertia visit) would show a plain 429 in Inertia's raw error modal: it goes to the
-                // list with the message instead, as the confirmation page answers 429 again
-                if ($request->isMethod('GET') && ! $request->header('X-Inertia')) {
-                    return response($message, 429, $headers);
-                }
+                // The confirmation page with the message, still 429: a plain 429 would land in
+                // Inertia's raw error modal, and the list of tables shows no flash message
+                $token = $request->route('token');
 
-                return redirect()->route('gametables.index')->with('error', $message);
+                $response = app(GuestConfirmationController::class)
+                    ->messagePage(is_string($token) ? $token : '', $message)
+                    ->toResponse($request);
+                $response->setStatusCode(429);
+                $response->headers->add($headers);
+
+                return $response;
             };
 
             // Distinct keys: limits sharing a key would share one counter
