@@ -427,6 +427,9 @@ final class ParticipantTest extends TestCase
         $now = new DateTimeImmutable('2030-01-01 11:00:00');
         $guest = $this->createGuest();
         $guest->setCancellationToken('cancel-token');
+        $guest->lastName = 'Pérez';
+        $guest->phone = '600000000';
+        $guest->recordFingerprint('abc');
         $guest->requireEmailConfirmation(GuestConfirmationMode::Hold, 'token-1', $now->modify('+1 hour'), $now);
 
         $guest->attachToAccount('user-9', $now);
@@ -434,6 +437,11 @@ final class ParticipantTest extends TestCase
         $this->assertSame('user-9', $guest->userId);
         $this->assertFalse($guest->isGuest());
         $this->assertNull($guest->email);
+        // The account holds the person's data now
+        $this->assertNull($guest->firstName);
+        $this->assertNull($guest->lastName);
+        $this->assertNull($guest->phone);
+        $this->assertSame('abc', $guest->fingerprint);
         $this->assertNull($guest->cancellationToken);
         $this->assertNull($guest->confirmationToken);
         $this->assertEquals($now, $guest->emailConfirmedAt);

@@ -263,7 +263,9 @@ final class Participant
     }
 
     /**
-     * A signed-in user takes over the guest row: it is theirs now, and the email is proven by the account.
+     * A signed-in user takes over the guest row: it is theirs now, and the email is proven by the
+     * account. The guest's personal data goes: the account holds it, and anonymizing the account
+     * would not reach it here. The fingerprint stays, cleared once the table is over.
      */
     public function attachToAccount(string $userId, DateTimeImmutable $now): void
     {
@@ -271,6 +273,9 @@ final class Participant
 
         $this->userId = $userId;
         $this->email = null;
+        $this->firstName = null;
+        $this->lastName = null;
+        $this->phone = null;
         $this->cancellationToken = null;
         $this->confirmationToken = null;
 

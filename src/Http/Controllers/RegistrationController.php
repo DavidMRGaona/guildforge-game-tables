@@ -70,7 +70,10 @@ final class RegistrationController extends Controller
         }
 
         if ($registration->linkedFromGuest) {
-            return back()->with('success', __('game-tables::messages.success.registration_linked'));
+            // The place among those waiting, not the stored position (which may have gaps)
+            return back()->with('success', $registration->status === ParticipantStatus::WaitingList
+                ? __('game-tables::messages.success.registration_linked_waiting_list', ['position' => $registration->waitingListRank])
+                : __('game-tables::messages.success.registration_linked'));
         }
 
         if ($registration->status === ParticipantStatus::WaitingList) {

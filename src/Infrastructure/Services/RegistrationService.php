@@ -171,6 +171,8 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         $own = $this->participantRepository->findByTableAndUser($guest->gameTableId, $account->userId);
 
         if ($own !== null) {
+            // Never reached in the normal flow: ensureUserRulesAdmit() refuses an active row as
+            // already_registered. It stays so a change to the rules can never leave two active rows
             if ($own->isActive()) {
                 throw AlreadyRegisteredException::forTable($account->userId, $gameTableId);
             }
