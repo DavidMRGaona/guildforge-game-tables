@@ -166,7 +166,9 @@ final class WaitingListRegistrationTest extends ModuleTestCase
 
         $this->registerGuest($table, 'invitada@example.test', 'spectator')->assertRedirect();
 
-        $this->assertSame('confirmed', $this->guestRowOf($table, 'invitada@example.test')->status->value);
+        $row = $this->guestRowOf($table, 'invitada@example.test');
+        $this->assertSame('confirmed', $row->status->value);
+        $this->assertSame('spectator', $row->role->value);
     }
 
     public function test_spectators_have_no_waiting_list(): void

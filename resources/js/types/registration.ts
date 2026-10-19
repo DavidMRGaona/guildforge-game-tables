@@ -20,9 +20,17 @@ export interface EligibilityResponse extends RoleEligibility {
 }
 
 /** What the table page offers a visitor without an account (the email is checked on submit). */
+/** What the guest form says before it is sent: a place held until the deadline, or not guaranteed. */
+export interface GuestConfirmationNotice {
+    mode: 'hold' | 'wait';
+    /** ISO 8601, only when the place is held */
+    deadline: string | null;
+}
+
 export interface GuestEligibility extends RoleEligibility {
     waitingList: boolean;
     spectator: RoleEligibility;
+    confirmation?: GuestConfirmationNotice | null;
 }
 
 export interface ParticipantData {

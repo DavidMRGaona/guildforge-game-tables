@@ -527,6 +527,13 @@ return [
     | Messages
     |--------------------------------------------------------------------------
     */
+    'cookies' => [
+        'guest_registrations' => [
+            'purpose' => 'Remembers which tables you signed up to as a guest from this browser, to warn you if you try to sign up again.',
+            'duration' => '90 days',
+        ],
+    ],
+
     'messages' => [
         'registration' => [
             'success' => 'Registration successful',

@@ -52,6 +52,8 @@ use Modules\GameTables\Application\Services\EventWithTablesQueryInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Application\Services\GameMasterServiceInterface;
 use Modules\GameTables\Application\Services\MembershipCheckerInterface;
+use Modules\CookieConsent\Application\DTOs\DeclaredCookieDTO;
+use Modules\CookieConsent\Application\Services\CookieDeclarationRegistryInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
@@ -179,6 +181,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         $this->registerCommands();
         $this->registerSchedule();
         $this->registerRateLimiters();
+        $this->registerCookieDeclaration();
         $this->shareGameTableCount();
         $this->shareProfileGameTables();
         $this->shareProfileCreatedTables();
@@ -376,6 +379,27 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
             $schedule->command('game-tables:expire-guest-registrations')
                 ->everyFiveMinutes()
                 ->withoutOverlapping(10);
+        });
+    }
+
+    /**
+     * The browser hint cookie of the guest form, declared to cookie-consent when that module is
+     * installed (this module does not require it).
+     */
+    private function registerCookieDeclaration(): void
+    {
+        if (! interface_exists(CookieDeclarationRegistryInterface::class)) {
+            return;
+        }
+
+        $this->callAfterResolving(CookieDeclarationRegistryInterface::class, function (CookieDeclarationRegistryInterface $registry): void {
+            $registry->declare(new DeclaredCookieDTO(
+                name: 'gt_guest_registrations',
+                categorySlug: 'preferences',
+                provider: (string) config('app.name'),
+                purpose: (string) __('game-tables::messages.cookies.guest_registrations.purpose'),
+                duration: (string) __('game-tables::messages.cookies.guest_registrations.duration'),
+            ));
         });
     }
 

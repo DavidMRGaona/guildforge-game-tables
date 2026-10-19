@@ -603,6 +603,13 @@ return [
     | Messages
     |--------------------------------------------------------------------------
     */
+    'cookies' => [
+        'guest_registrations' => [
+            'purpose' => 'Recuerda en qué mesas te has inscrito como invitado desde este navegador, para avisarte si intentas inscribirte otra vez.',
+            'duration' => '90 días',
+        ],
+    ],
+
     'messages' => [
         'registration' => [
             'success' => 'Inscripción realizada correctamente',
