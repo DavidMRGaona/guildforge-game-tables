@@ -27,7 +27,9 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
@@ -596,6 +598,23 @@ final class ParticipantsRelationManager extends RelationManager
                         }
 
                         return $data;
+                    })
+                    ->using(function (Model $record, array $data, EditAction $action): void {
+                        $record->fill($data);
+
+                        try {
+                            $record->save();
+                        } catch (UniqueConstraintViolationException $exception) {
+                            if (! $record->isDirty('email')) {
+                                throw $exception;
+                            }
+
+                            // Another guest took the email after the form's check (the unique index
+                            // refuses it): a form error, never a 500 whose SQL carries the email
+                            throw ValidationException::withMessages([
+                                "mountedActions.{$action->getNestingIndex()}.data.email" => __('game-tables::messages.errors.guest_already_registered'),
+                            ]);
+                        }
                     }),
                 // Only rows that hold no seat: the others are cancelled first (lock, freed seat, promotion)
                 DeleteAction::make()
