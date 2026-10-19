@@ -666,6 +666,10 @@ return [
         'table_not_found' => 'No se encontró la mesa',
         'campaign_not_found' => 'No se encontró la campaña',
         'invalid_token' => 'El enlace de cancelación no es válido o ha expirado',
+        'invalid_confirmation' => 'Este enlace ya no es válido. Si quedan plazas, puedes volver a apuntarte.',
+        'confirmation_closed' => 'Las inscripciones ya se han cerrado.',
+        'confirmation_filled_up' => 'Se ha llenado mientras confirmabas.',
+        'too_many_confirmation_attempts' => 'Demasiados intentos con este enlace. Espera un momento y vuelve a intentarlo.',
     ],
 
     'success' => [
@@ -676,6 +680,8 @@ return [
         'guest_waiting_list' => 'Te has apuntado a la lista de espera (posición :position). Recibirás un email de confirmación y otro si se libera una plaza antes del inicio de la partida (o del cierre de inscripciones, si es anterior).',
         'guest_spectator_registered' => 'Te has inscrito como espectador. Recibirás un email de confirmación.',
         'cancelled' => 'Inscripción cancelada correctamente',
+        'guest_email_confirmed' => 'Tu inscripción está confirmada. Te hemos enviado un email con los detalles.',
+        'guest_email_already_confirmed' => 'Tu inscripción ya estaba confirmada.',
     ],
 
     /*
@@ -830,6 +836,7 @@ return [
         'edit_table_title' => 'Editar mesa',
         'my_tables_title' => 'Mis mesas de juego',
         'cancel_registration_title' => 'Cancelar inscripción',
+        'confirm_registration_title' => 'Confirmar inscripción',
         'create_campaign_title' => 'Crear campaña',
         'edit_campaign_title' => 'Editar campaña',
         'my_campaigns_title' => 'Mis campañas',

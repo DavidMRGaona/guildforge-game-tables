@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Application\Services;
 
 use DateTimeImmutable;
+use Modules\GameTables\Application\DTOs\GuestConfirmationResultDTO;
 use Modules\GameTables\Application\DTOs\ParticipantResponseDTO;
 use Modules\GameTables\Application\DTOs\ProfileParticipationDTO;
 use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
@@ -127,6 +128,21 @@ interface RegistrationServiceInterface
      * Find a participant by cancellation token.
      */
     public function findByToken(string $token): ?ParticipantResponseDTO;
+
+    /**
+     * The guest follows the link of the confirmation email. Under the table lock: an unknown,
+     * cleared or inactive token is Invalid; a confirmed email AlreadyConfirmed; once registrations
+     * have closed the registration expires (Closed), and past its deadline too (Invalid). Otherwise
+     * the email is confirmed: a held place is kept (from the waiting list it takes a free seat), a
+     * guest without one is placed now, or expires when no room is left (FilledUp). Only a
+     * Confirmed registration is announced: the guest's registration email and the organisation.
+     */
+    public function confirmGuestEmail(string $token): GuestConfirmationResultDTO;
+
+    /**
+     * Find a participant by guest confirmation token.
+     */
+    public function findByConfirmationToken(string $token): ?ParticipantResponseDTO;
 
     /**
      * Get user participations for profile page.

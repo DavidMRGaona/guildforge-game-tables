@@ -125,6 +125,28 @@ final class NotifyOnGuestRegistrationTest extends TestCase
         Notification::assertNothingSent();
     }
 
+    // The organisation acted itself (a panel action on an unconfirmed guest): only the guest is told
+    public function test_no_organisation_email_when_not_asked(): void
+    {
+        config()->set('modules.settings.game-tables.notifications.notify_on_registration', true);
+
+        $this->gameTableRepository->expects($this->never())->method('find');
+        $this->recipientResolver->expects($this->never())->method($this->anything());
+
+        $this->listener->handle(new GuestRegistered(
+            participantId: 'participant-uuid',
+            gameTableId: GameTableId::generate()->value,
+            email: 'guest@example.com',
+            firstName: 'Juan',
+            role: 'player',
+            cancellationToken: 'token-123',
+            status: ParticipantStatus::Confirmed,
+            notifyOrganization: false,
+        ));
+
+        Notification::assertNothingSent();
+    }
+
     public function test_does_not_send_when_game_table_not_found(): void
     {
         config()->set('modules.settings.game-tables.notifications.notify_on_registration', true);

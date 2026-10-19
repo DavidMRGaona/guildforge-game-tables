@@ -258,7 +258,7 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
     public function getFirstInWaitingList(GameTableId $gameTableId, ?ParticipantRole $role = null): ?Participant
     {
         // Guests who have not confirmed their email keep their place but are not promoted by themselves
-        $model = $this->waitingList($gameTableId, $role)->holdingOrConfirmed()->first();
+        $model = $this->waitingList($gameTableId, $role)->withConfirmedEmail()->first();
 
         if ($model === null) {
             return null;

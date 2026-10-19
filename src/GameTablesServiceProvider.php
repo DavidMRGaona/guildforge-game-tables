@@ -35,7 +35,11 @@ use App\Application\Services\EventQueryServiceInterface;
 use App\Filament\Resources\EventResource;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Modules\ModuleServiceProvider;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use Inertia\Inertia;
 use Livewire\Livewire;
 use Modules\GameTables\Application\Services\CampaignQueryServiceInterface;
@@ -170,6 +174,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         $this->registerEventListeners();
         $this->registerCommands();
         $this->registerSchedule();
+        $this->registerRateLimiters();
         $this->shareGameTableCount();
         $this->shareProfileGameTables();
         $this->shareProfileCreatedTables();
@@ -361,6 +366,30 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                 ->everyFiveMinutes()
                 // A run takes seconds; a killed one must not block the updates for a day
                 ->withoutOverlapping(10);
+        });
+    }
+
+    /**
+     * The guest confirmation link (page and button) per IP: wide enough for a person, tight
+     * enough to stop guessing tokens. Over the limit: a translated message, never an error page.
+     */
+    private function registerRateLimiters(): void
+    {
+        RateLimiter::for('game-tables-guest-confirmation', static function (Request $request): array {
+            $ip = $request->ip() ?? 'unknown';
+            $tooMany = static function (Request $request, array $headers): HttpResponse {
+                $message = (string) __('game-tables::messages.errors.too_many_confirmation_attempts');
+
+                return $request->expectsJson()
+                    ? response()->json(['message' => $message], 429, $headers)
+                    : response($message, 429, $headers);
+            };
+
+            // Distinct keys: limits sharing a key would share one counter
+            return [
+                Limit::perMinute(20)->by('gt-confirm:'.$ip)->response($tooMany),
+                Limit::perHour(100)->by('gt-confirm-h:'.$ip)->response($tooMany),
+            ];
         });
     }
 

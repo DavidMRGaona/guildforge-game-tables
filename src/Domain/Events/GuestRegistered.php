@@ -24,5 +24,7 @@ final class GuestRegistered
         // The place among those waiting for the same role (1, 2…), not the stored position, which
         // may have gaps; the name stays so queued events keep working across the update
         public readonly ?int $waitingListPosition = null,
+        // False when the organisation itself acted from the panel: only the guest is told
+        public readonly bool $notifyOrganization = true,
     ) {}
 }

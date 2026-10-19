@@ -487,4 +487,16 @@ export default {
         guest: 'Guest',
         tableStarted: 'The session has already started: you can no longer cancel your registration.',
     },
+    confirmRegistration: {
+        title: 'Confirm registration',
+        intro: 'Confirm your registration for “{tableTitle}”.',
+        button: 'Confirm registration',
+        already: 'Your registration was already confirmed.',
+        viewTable: 'View table',
+        participant: 'Participant',
+        table: 'Table',
+        date: 'Date',
+        role: 'Role',
+        status: 'Status',
+    },
 };
