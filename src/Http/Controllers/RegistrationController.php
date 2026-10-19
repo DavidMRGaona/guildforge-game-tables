@@ -21,6 +21,7 @@ use Modules\GameTables\Domain\Exceptions\AlreadyRegisteredException;
 use Modules\GameTables\Domain\Exceptions\CannotCancelException;
 use Modules\GameTables\Domain\Exceptions\ParticipantNotFoundException;
 use Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException;
+use Modules\GameTables\Domain\Exceptions\TableFullException;
 use Modules\GameTables\Http\Requests\GuestRegisterRequest;
 use Modules\GameTables\Http\Requests\RegisterRequest;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
@@ -58,8 +59,18 @@ final class RegistrationController extends Controller
             ));
         } catch (RegistrationNotAllowedException $e) {
             throw $this->refusal($e->getMessage());
-        } catch (AlreadyRegisteredException) {
-            throw $this->refusal(__('game-tables::messages.errors.already_registered'));
+        } catch (AlreadyRegisteredException $e) {
+            // A guest registration with the account's email, which an unverified account cannot claim
+            throw $this->refusal($e->reason === 'email_registered_as_guest'
+                ? $e->getMessage()
+                : __('game-tables::messages.errors.already_registered'));
+        } catch (TableFullException $e) {
+            // A guest registration taken over that still needed a place, and found none
+            throw $this->refusal(__('game-tables::messages.errors.'.$e->reason));
+        }
+
+        if ($registration->linkedFromGuest) {
+            return back()->with('success', __('game-tables::messages.success.registration_linked'));
         }
 
         if ($registration->status === ParticipantStatus::WaitingList) {
