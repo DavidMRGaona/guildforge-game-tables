@@ -497,6 +497,7 @@ export default {
         button: 'Confirm registration',
         already: 'Your registration was already confirmed.',
         viewTable: 'View table',
+        viewTables: 'View tables',
         participant: 'Participant',
         table: 'Table',
         date: 'Date',

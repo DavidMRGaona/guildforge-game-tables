@@ -597,6 +597,7 @@ export default {
         button: 'Confirmar inscripción',
         already: 'Tu inscripción ya estaba confirmada.',
         viewTable: 'Ver mesa',
+        viewTables: 'Ver mesas',
         participant: 'Participante',
         table: 'Mesa',
         date: 'Fecha',
