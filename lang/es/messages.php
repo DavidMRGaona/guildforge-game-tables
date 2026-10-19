@@ -750,7 +750,7 @@ return [
                 'email_unconfirmed' => 'Email sin confirmar',
                 'expires_at' => 'Caduca el :date',
                 'possible_duplicate' => 'Posible duplicado',
-                'possible_duplicate_tooltip' => 'Otra inscripción de esta mesa se hizo desde la misma conexión y navegador en menos de :hours h',
+                'possible_duplicate_tooltip' => 'Otra inscripción de esta mesa se hizo desde la misma conexión y navegador en :hours h o menos',
             ],
             'delete_not_allowed' => 'No se ha borrado: la inscripción ya no está cancelada, rechazada ni caducada',
             'bulk_delete' => [
