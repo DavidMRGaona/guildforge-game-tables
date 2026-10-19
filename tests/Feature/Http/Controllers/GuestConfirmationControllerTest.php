@@ -80,7 +80,7 @@ final class GuestConfirmationControllerTest extends ModuleTestCase
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
             ->component('GameTables/ConfirmRegistration', shouldExist: false)
-            ->where('participant.first_name', 'Ana')
+            ->where('participant.first_name', 'John')
             ->where('participant.role_label', 'Jugador')
             // The email is what is pending, whatever the seat it holds meanwhile
             ->where('participant.status_label', 'Pendiente de confirmar')
@@ -115,7 +115,7 @@ final class GuestConfirmationControllerTest extends ModuleTestCase
         $response->assertOk();
         $this->assertResult($response, 'success', 'Tu inscripción está confirmada. Te hemos enviado un email con los detalles.', 'Confirmado');
         $response->assertInertia(fn ($page) => $page
-            ->where('participant.first_name', 'Ana')
+            ->where('participant.first_name', 'John')
             ->where('gameTable.title', 'La cripta')
             ->where('gameTable.slug', 'la-cripta')
             ->where('alreadyConfirmed', true)
@@ -123,7 +123,7 @@ final class GuestConfirmationControllerTest extends ModuleTestCase
         $this->assertNotNull($row->refresh()->email_confirmed_at);
         Notification::assertSentOnDemand(
             GuestRegistrationConfirmation::class,
-            fn (GuestRegistrationConfirmation $notification, array $channels, AnonymousNotifiable $notifiable): bool => $notifiable->routes['mail'] === 'ana@example.test',
+            fn (GuestRegistrationConfirmation $notification, array $channels, AnonymousNotifiable $notifiable): bool => $notifiable->routes['mail'] === 'john@example.test',
         );
     }
 
@@ -359,19 +359,19 @@ final class GuestConfirmationControllerTest extends ModuleTestCase
         $this->table->update(['notification_email' => 'mesa@example.test']);
 
         $this->post(route('gametables.register-guest', 'la-cripta'), [
-            'first_name' => 'Ana',
-            'email' => 'ana@example.test',
+            'first_name' => 'John',
+            'email' => 'john@example.test',
             'gdpr_consent' => true,
         ])->assertSessionHasNoErrors();
 
-        $row = ParticipantModel::query()->where('email', 'ana@example.test')->firstOrFail();
+        $row = ParticipantModel::query()->where('email', 'john@example.test')->firstOrFail();
         $url = null;
         Notification::assertSentOnDemand(
             GuestEmailConfirmationRequest::class,
             function (GuestEmailConfirmationRequest $notification, array $channels, AnonymousNotifiable $notifiable) use (&$url): bool {
                 $url = $notification->toMail($notifiable)->actionUrl;
 
-                return $notifiable->routes['mail'] === 'ana@example.test';
+                return $notifiable->routes['mail'] === 'john@example.test';
             },
         );
         $this->assertSame(route('gametables.confirm-guest', $row->confirmation_token), $url);
@@ -428,11 +428,11 @@ final class GuestConfirmationControllerTest extends ModuleTestCase
     private function submitGuest(): ParticipantModel
     {
         $this->post(route('gametables.register-guest', 'la-cripta'), [
-            'first_name' => 'Ana',
-            'email' => 'ana@example.test',
+            'first_name' => 'John',
+            'email' => 'john@example.test',
             'gdpr_consent' => true,
         ])->assertSessionHasNoErrors();
 
-        return ParticipantModel::query()->where('email', 'ana@example.test')->firstOrFail();
+        return ParticipantModel::query()->where('email', 'john@example.test')->firstOrFail();
     }
 }

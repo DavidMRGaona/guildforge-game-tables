@@ -63,7 +63,7 @@ final class GuestRegistrationAnswersTest extends ModuleTestCase
 
     public function test_a_held_place_tells_the_deadline(): void
     {
-        $this->submit('ana@example.test')->assertSessionHasNoErrors()->assertSessionHas(
+        $this->submit('john@example.test')->assertSessionHasNoErrors()->assertSessionHas(
             'success',
             'Te hemos enviado un email para confirmar la inscripción. Confírmala antes del 02/11/2026 12:00 o la plaza se liberará.',
         );
@@ -75,7 +75,7 @@ final class GuestRegistrationAnswersTest extends ModuleTestCase
         $this->table->update(['max_players' => 1]);
         $this->confirmedGuest('primero@example.test');
 
-        $this->submit('ana@example.test')->assertSessionHasNoErrors()->assertSessionHas(
+        $this->submit('john@example.test')->assertSessionHasNoErrors()->assertSessionHas(
             'success',
             'Te hemos enviado un email para confirmar la inscripción. Confírmala antes del 02/11/2026 12:00 para conservar tu puesto 1 en la lista de espera.',
         );
@@ -83,10 +83,10 @@ final class GuestRegistrationAnswersTest extends ModuleTestCase
 
     public function test_the_third_unconfirmed_guest_is_told_the_place_is_not_guaranteed(): void
     {
-        $this->submit('ana@example.test')->assertSessionHasNoErrors();
+        $this->submit('john@example.test')->assertSessionHasNoErrors();
         $this->submit('bea@example.test')->assertSessionHasNoErrors();
 
-        $this->submit('carla@example.test')->assertSessionHasNoErrors()->assertSessionHas(
+        $this->submit('mary@example.test')->assertSessionHasNoErrors()->assertSessionHas(
             'success',
             'Te hemos enviado un email para confirmar la inscripción. Tu plaza no está garantizada hasta que la confirmes.',
         );
@@ -96,7 +96,7 @@ final class GuestRegistrationAnswersTest extends ModuleTestCase
     {
         config()->set('modules.settings.game-tables.guest_confirmation.mode', 'wait');
 
-        $this->submit('ana@example.test')->assertSessionHasNoErrors()->assertSessionHas(
+        $this->submit('john@example.test')->assertSessionHasNoErrors()->assertSessionHas(
             'success',
             'Te hemos enviado un email para confirmar la inscripción. Tu plaza no está garantizada hasta que la confirmes.',
         );
@@ -104,20 +104,20 @@ final class GuestRegistrationAnswersTest extends ModuleTestCase
 
     public function test_sending_the_form_again_while_unconfirmed_points_to_the_inbox(): void
     {
-        $this->submit('ana@example.test')->assertSessionHasNoErrors();
+        $this->submit('john@example.test')->assertSessionHasNoErrors();
 
-        $this->submit('ANA@example.test')->assertSessionHasNoErrors()->assertSessionHas(
+        $this->submit('JOHN@example.test')->assertSessionHasNoErrors()->assertSessionHas(
             'success',
             'Ya tienes una inscripción pendiente: revisa tu correo.',
         );
-        $this->assertSame(1, ParticipantModel::query()->where('email', 'ana@example.test')->count());
+        $this->assertSame(1, ParticipantModel::query()->where('email', 'john@example.test')->count());
     }
 
     public function test_a_confirmed_guest_email_is_refused_as_a_duplicate(): void
     {
-        $this->confirmedGuest('ana@example.test');
+        $this->confirmedGuest('john@example.test');
 
-        $this->submit('ana@example.test')
+        $this->submit('john@example.test')
             ->assertSessionHasErrors(['registration' => 'Ya existe una inscripción con este email']);
     }
 
@@ -126,7 +126,7 @@ final class GuestRegistrationAnswersTest extends ModuleTestCase
         $this->table->update(['max_players' => 1]);
         $this->confirmedGuest('primero@example.test');
 
-        $this->submit('ana@example.test')
+        $this->submit('john@example.test')
             ->assertSessionHasErrors(['registration' => 'La mesa está completa']);
     }
 
@@ -152,11 +152,11 @@ final class GuestRegistrationAnswersTest extends ModuleTestCase
 
     public function test_a_guest_submission_stores_the_fingerprint_of_the_connection(): void
     {
-        $this->submit('ana@example.test')->assertSessionHasNoErrors();
+        $this->submit('john@example.test')->assertSessionHasNoErrors();
 
         $this->assertSame(
             hash_hmac('sha256', '127.0.0.1|Symfony', (string) config('app.key')),
-            ParticipantModel::query()->where('email', 'ana@example.test')->value('fingerprint'),
+            ParticipantModel::query()->where('email', 'john@example.test')->value('fingerprint'),
         );
     }
 
@@ -198,7 +198,7 @@ final class GuestRegistrationAnswersTest extends ModuleTestCase
      */
     private function form(string $email): array
     {
-        return ['first_name' => 'Ana', 'email' => $email, 'gdpr_consent' => true];
+        return ['first_name' => 'John', 'email' => $email, 'gdpr_consent' => true];
     }
 
     private function confirmedGuest(string $email): void

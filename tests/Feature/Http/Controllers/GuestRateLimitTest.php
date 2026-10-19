@@ -146,6 +146,6 @@ final class GuestRateLimitTest extends ModuleTestCase
      */
     private function form(string $email): array
     {
-        return ['first_name' => 'Ana', 'email' => $email, 'gdpr_consent' => true];
+        return ['first_name' => 'John', 'email' => $email, 'gdpr_consent' => true];
     }
 }

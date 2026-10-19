@@ -44,7 +44,7 @@ final class CampaignModerationTest extends ModuleTestCase
 
         $this->registerOnAdminPanel([CampaignResource::class, GameTableResource::class]);
         $this->admin = $this->actingAsPanelAdmin();
-        $this->creator = UserModel::factory()->create(['name' => 'Ana Creadora']);
+        $this->creator = UserModel::factory()->create(['name' => 'John Doe']);
         $this->gameSystem = GameSystemModel::create([
             'id' => (string) Str::uuid(),
             'name' => 'Sistema de prueba',
@@ -91,12 +91,12 @@ final class CampaignModerationTest extends ModuleTestCase
     {
         $campaign = $this->campaign('pending_review');
 
-        $mail = (new CampaignModerationSubmittedNotification($campaign->id, $campaign->title, 'Ana Creadora'))
+        $mail = (new CampaignModerationSubmittedNotification($campaign->id, $campaign->title, 'John Doe'))
             ->toMail(new AnonymousNotifiable());
 
         $this->assertSame(CampaignResource::getUrl('edit', ['record' => $campaign]), $mail->actionUrl);
         $this->assertStringContainsString('La llamada', (string) $mail->subject);
-        $this->assertContains('**'.__('game-tables::emails.campaign_moderation_submitted.created_by').':** Ana Creadora', $mail->introLines);
+        $this->assertContains('**'.__('game-tables::emails.campaign_moderation_submitted.created_by').':** John Doe', $mail->introLines);
     }
 
     public function test_the_moderation_widget_lists_campaigns_and_tables_awaiting_review(): void

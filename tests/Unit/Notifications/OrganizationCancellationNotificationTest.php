@@ -31,7 +31,7 @@ final class OrganizationCancellationNotificationTest extends TestCase
         $mail = $this->notification(guest: false)->toMail(new AnonymousNotifiable);
 
         $this->assertSame('La organización ha cancelado tu inscripción en La tumba', $mail->subject);
-        $this->assertSame('¡Hola, Ana!', $mail->greeting);
+        $this->assertSame('¡Hola, John!', $mail->greeting);
         $this->assertContains('La organización ha cancelado tu inscripción en la mesa «La tumba».', $mail->introLines);
         $text = implode("\n", [...$mail->introLines, ...$mail->outroLines]);
         $this->assertStringContainsString('15/02/2026 18:00', $text);
@@ -60,7 +60,7 @@ final class OrganizationCancellationNotificationTest extends TestCase
     private function notification(bool $guest): OrganizationCancellationNotification
     {
         return new OrganizationCancellationNotification(
-            participantName: 'Ana',
+            participantName: 'John',
             tableId: 'table-uuid-123',
             tableTitle: 'La tumba',
             tableDate: '15/02/2026 18:00',

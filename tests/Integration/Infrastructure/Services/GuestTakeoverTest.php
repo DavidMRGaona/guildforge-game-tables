@@ -397,7 +397,7 @@ final class GuestTakeoverTest extends ModuleTestCase
             userId: null,
             role: $role,
             firstName: 'Invitada',
-            lastName: 'Pérez',
+            lastName: 'Doe',
             email: $email,
             phone: '600000000',
             fingerprint: str_repeat('a', 64),
@@ -411,7 +411,7 @@ final class GuestTakeoverTest extends ModuleTestCase
             userId: null,
             role: $role,
             firstName: 'Invitada',
-            lastName: 'Pérez',
+            lastName: 'Doe',
             email: $email,
             phone: '600000000',
         ));
