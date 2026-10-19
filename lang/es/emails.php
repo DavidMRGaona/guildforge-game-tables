@@ -201,4 +201,22 @@ return [
         'edit_table' => 'Editar mesa',
         'outro' => 'Puedes modificar tu mesa y volver a enviarla para revisión.',
     ],
+
+    'campaign_moderation_approved' => [
+        'subject' => 'Tu campaña ha sido aprobada: :campaignTitle',
+        'greeting' => 'Hola :name,',
+        'intro' => 'Tu campaña :campaignTitle ha sido aprobada y ya está publicada.',
+        'notes_label' => 'Notas del moderador',
+        'view_campaign' => 'Ver campaña',
+        'outro' => '¡Gracias por contribuir a la comunidad!',
+    ],
+
+    'campaign_moderation_rejected' => [
+        'subject' => 'Tu campaña no ha sido aprobada: :campaignTitle',
+        'greeting' => 'Hola :name,',
+        'intro' => 'Lamentamos informarte que tu campaña :campaignTitle no ha sido aprobada.',
+        'reason_label' => 'Motivo',
+        'edit_campaign' => 'Editar campaña',
+        'outro' => 'Puedes modificar tu campaña y volver a enviarla para revisión.',
+    ],
 ];

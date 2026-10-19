@@ -203,6 +203,20 @@ final class WaitingListPromotionTest extends ModuleTestCase
         );
     }
 
+    public function test_with_the_promotion_setting_off_only_the_directors_mail_is_skipped(): void
+    {
+        config()->set('modules.settings.game-tables.notifications.notify_waiting_list_promotion', false);
+        $this->table->update(['notification_email' => 'mesa@example.test']);
+        $leaving = $this->participant('player', 'confirmed');
+        $this->participant('player', 'confirmed');
+        $this->participant('player', 'waiting_list', 1, email: 'espera@example.test');
+
+        app(RegistrationServiceInterface::class)->cancel($leaving->id);
+
+        Notification::assertSentOnDemand(WaitingListPromotionNotification::class);
+        Notification::assertSentOnDemandTimes(WaitingListPromotionGmNotification::class, 0);
+    }
+
     public function test_after_the_registrations_close_a_cancellation_promotes_nobody(): void
     {
         $this->table->update(['registration_closes_at' => now()->subHour()]);

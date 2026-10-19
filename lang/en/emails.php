@@ -169,4 +169,22 @@ return [
         'edit_table' => 'Edit table',
         'outro' => 'You can modify your table and submit it again for review.',
     ],
+
+    'campaign_moderation_approved' => [
+        'subject' => 'Your campaign has been approved: :campaignTitle',
+        'greeting' => 'Hello :name,',
+        'intro' => 'Your campaign :campaignTitle has been approved and is now published.',
+        'notes_label' => 'Moderator notes',
+        'view_campaign' => 'View campaign',
+        'outro' => 'Thank you for contributing to the community!',
+    ],
+
+    'campaign_moderation_rejected' => [
+        'subject' => 'Your campaign has not been approved: :campaignTitle',
+        'greeting' => 'Hello :name,',
+        'intro' => 'We are sorry to let you know that your campaign :campaignTitle has not been approved.',
+        'reason_label' => 'Reason',
+        'edit_campaign' => 'Edit campaign',
+        'outro' => 'You can edit your campaign and send it for review again.',
+    ],
 ];

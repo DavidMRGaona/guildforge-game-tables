@@ -166,27 +166,33 @@ final class NotifyOnWaitingListPromotionTest extends TestCase
         );
     }
 
-    public function test_does_not_send_when_setting_disabled(): void
+    public function test_with_the_setting_disabled_only_the_promoted_participant_is_told(): void
     {
-        $this->recipientResolver->expects($this->never())->method($this->anything());
-
         config()->set('modules.settings.game-tables.notifications.notify_waiting_list_promotion', false);
 
         $gameTableId = GameTableId::generate();
 
         $this->gameTableRepository
-            ->expects($this->never())
-            ->method('find');
+            ->expects($this->once())
+            ->method('find')
+            ->willReturn($this->createGameTable($gameTableId));
 
-        $event = new ParticipantPromotedFromWaitingList(
+        $this->recipientResolver->expects($this->once())->method('getParticipantDisplayName')->willReturn('John Doe');
+        $this->recipientResolver->expects($this->once())->method('getParticipantEmail')->willReturn('participant@example.com');
+        $this->recipientResolver->expects($this->never())->method('getGameMasterEmails');
+        $this->recipientResolver->expects($this->never())->method('getTableNotificationEmail');
+
+        $this->listener->handle(new ParticipantPromotedFromWaitingList(
             participantId: 'participant-uuid',
             gameTableId: $gameTableId->value,
             userId: 'user-uuid',
+        ));
+
+        Notification::assertSentOnDemand(
+            WaitingListPromotionNotification::class,
+            fn ($notification, $channels, $notifiable): bool => $notifiable->routes['mail'] === 'participant@example.com',
         );
-
-        $this->listener->handle($event);
-
-        Notification::assertNothingSent();
+        Notification::assertSentOnDemandTimes(WaitingListPromotionGmNotification::class, 0);
     }
 
     private function createGameTable(GameTableId $gameTableId): GameTable
