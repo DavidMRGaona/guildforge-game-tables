@@ -21,6 +21,7 @@ use Modules\GameTables\Domain\Enums\RegistrationType;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Enums\TableType;
+use Modules\GameTables\Domain\Events\GuestConfirmationRequested;
 use Modules\GameTables\Domain\Events\GuestRegistered;
 use Modules\GameTables\Domain\Events\ParticipantCancelled;
 use Modules\GameTables\Domain\Events\ParticipantConfirmed;
@@ -173,8 +174,9 @@ final class RegistrationServiceTest extends TestCase
         $this->assertGreaterThan(30, strlen($savedParticipant->cancellationToken));
     }
 
+    // The registration is announced once the guest confirms the email
     #[AllowMockObjectsWithoutExpectations]
-    public function test_register_guest_dispatches_guest_registered_event(): void
+    public function test_register_guest_asks_for_the_email_confirmation_instead_of_announcing_it(): void
     {
         $gameTableId = GameTableId::generate()->value;
         $gameTable = $this->createGameTable($gameTableId);
@@ -203,11 +205,13 @@ final class RegistrationServiceTest extends TestCase
 
         $this->service->registerGuest($dto);
 
-        Event::assertDispatched(GuestRegistered::class);
+        Event::assertDispatched(GuestConfirmationRequested::class, fn (GuestConfirmationRequested $event): bool => $event->email === 'alice@example.com');
+        Event::assertNotDispatched(GuestRegistered::class);
     }
 
+    // Confirmed on an automatic table, but nobody hears of it before the guest confirms the email
     #[AllowMockObjectsWithoutExpectations]
-    public function test_register_guest_dispatches_confirmed_event_when_auto_confirm(): void
+    public function test_register_guest_on_an_auto_confirm_table_takes_the_seat_without_announcing_it(): void
     {
         $gameTableId = GameTableId::generate()->value;
         $gameTable = $this->createGameTable($gameTableId, autoConfirm: true);
@@ -236,9 +240,10 @@ final class RegistrationServiceTest extends TestCase
 
         $result = $this->service->registerGuest($dto);
 
-        Event::assertDispatched(GuestRegistered::class);
-        Event::assertDispatched(ParticipantConfirmed::class);
+        Event::assertNotDispatched(GuestRegistered::class);
+        Event::assertNotDispatched(ParticipantConfirmed::class);
         $this->assertEquals(ParticipantStatus::Confirmed->value, $result->status->value);
+        $this->assertTrue($result->awaitingEmailConfirmation);
     }
 
     public function test_register_guest_throws_when_email_already_registered(): void
@@ -256,6 +261,8 @@ final class RegistrationServiceTest extends TestCase
             status: ParticipantStatus::Confirmed,
             email: $email,
             firstName: 'Existing',
+            // An unconfirmed guest sending the form again is sent the confirmation email again
+            emailConfirmedAt: new DateTimeImmutable('-1 day'),
         );
 
         $this->participantRepository
@@ -686,8 +693,9 @@ final class RegistrationServiceTest extends TestCase
         );
     }
 
+    // From the panel the email needs no confirmation: the registration is announced at once
     #[AllowMockObjectsWithoutExpectations]
-    public function test_register_guest_with_auto_confirm_dispatches_automatic_confirmation(): void
+    public function test_register_guest_by_admin_with_auto_confirm_dispatches_automatic_confirmation(): void
     {
         $gameTableId = GameTableId::generate()->value;
 
@@ -695,7 +703,7 @@ final class RegistrationServiceTest extends TestCase
             ->method('findOrFail')
             ->willReturn($this->createGameTable($gameTableId, autoConfirm: true));
 
-        $this->service->registerGuest(new RegisterParticipantDTO(
+        $this->service->registerGuestByAdmin(new RegisterParticipantDTO(
             gameTableId: $gameTableId,
             userId: null,
             firstName: 'Bob',

@@ -6,9 +6,13 @@ namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories;
 
 use DateTimeImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Carbon;
 use Modules\GameTables\Domain\Entities\Participant;
+use Modules\GameTables\Domain\Enums\GuestConfirmationMode;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
+use Modules\GameTables\Domain\Exceptions\AlreadyRegisteredException;
 use Modules\GameTables\Domain\Exceptions\ParticipantNotFoundException;
 use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
@@ -17,12 +21,43 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantMod
 
 final readonly class EloquentParticipantRepository implements ParticipantRepositoryInterface
 {
+    private const string ACTIVE_GUEST_EMAIL_INDEX = 'gametables_participants_active_guest_email_unique';
+
+    private const array ACTIVE_STATUSES = [
+        ParticipantStatus::Pending->value,
+        ParticipantStatus::Confirmed->value,
+        ParticipantStatus::WaitingList->value,
+    ];
+
+    /**
+     * @throws AlreadyRegisteredException when another active guest already uses the email at the table
+     */
     public function save(Participant $participant): void
     {
-        ParticipantModel::query()->updateOrCreate(
-            ['id' => $participant->id->value],
-            $this->toArray($participant),
-        );
+        try {
+            ParticipantModel::query()->updateOrCreate(
+                ['id' => $participant->id->value],
+                $this->toArray($participant),
+            );
+        } catch (UniqueConstraintViolationException $exception) {
+            if ($this->isActiveGuestEmailViolation($exception) && $participant->email !== null) {
+                throw AlreadyRegisteredException::forGuestEmail($participant->email, $participant->gameTableId->value);
+            }
+
+            throw $exception;
+        }
+    }
+
+    /**
+     * PostgreSQL names the index; SQLite names the index too when it is an expression index, and
+     * the columns otherwise. The token and primary key columns never include game_table_id.
+     */
+    private function isActiveGuestEmailViolation(UniqueConstraintViolationException $exception): bool
+    {
+        $message = $exception->getMessage();
+
+        return str_contains($message, self::ACTIVE_GUEST_EMAIL_INDEX)
+            || str_contains($message, 'gametables_participants.game_table_id');
     }
 
     public function find(ParticipantId $id): ?Participant
@@ -186,6 +221,7 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
             ->where('game_table_id', $gameTableId->value)
             ->where('status', ParticipantStatus::Pending->value)
             ->where('role', ParticipantRole::Player->value)
+            ->holdingOrConfirmed()
             ->count();
     }
 
@@ -195,12 +231,117 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
             ->where('game_table_id', $gameTableId->value)
             ->where('status', ParticipantStatus::Pending->value)
             ->where('role', ParticipantRole::Spectator->value)
+            ->holdingOrConfirmed()
             ->count();
     }
 
     public function countWaiting(GameTableId $gameTableId, ParticipantRole $role): int
     {
         return $this->waitingList($gameTableId, $role)->count();
+    }
+
+    public function countUnconfirmedHoldingSeats(GameTableId $gameTableId): int
+    {
+        return ParticipantModel::query()
+            ->where('game_table_id', $gameTableId->value)
+            ->whereNull('user_id')
+            ->whereNull('email_confirmed_at')
+            ->where('confirmation_mode', GuestConfirmationMode::Hold->value)
+            ->whereIn('status', [ParticipantStatus::Pending->value, ParticipantStatus::Confirmed->value])
+            ->count();
+    }
+
+    public function idsOfOverdueHolds(DateTimeImmutable $now): array
+    {
+        /** @var list<string> */
+        return ParticipantModel::query()
+            ->whereNull('user_id')
+            ->whereNull('email_confirmed_at')
+            ->where('confirmation_mode', GuestConfirmationMode::Hold->value)
+            ->whereIn('status', self::ACTIVE_STATUSES)
+            ->whereNotNull('confirmation_expires_at')
+            ->where('confirmation_expires_at', '<=', $now)
+            ->orderBy('confirmation_expires_at')
+            ->pluck('id')
+            ->all();
+    }
+
+    public function unconfirmedWaitingByTable(): array
+    {
+        $byTable = [];
+
+        $rows = ParticipantModel::query()
+            ->whereNull('user_id')
+            ->whereNull('email_confirmed_at')
+            ->where('confirmation_mode', GuestConfirmationMode::Wait->value)
+            ->whereIn('status', self::ACTIVE_STATUSES)
+            ->orderBy('created_at')
+            ->get(['id', 'game_table_id']);
+
+        foreach ($rows as $row) {
+            $byTable[$row->game_table_id][] = $row->id;
+        }
+
+        return $byTable;
+    }
+
+    public function gameTableIdsWithFingerprints(): array
+    {
+        /** @var list<string> */
+        return ParticipantModel::query()
+            ->whereNotNull('fingerprint')
+            ->distinct()
+            ->pluck('game_table_id')
+            ->all();
+    }
+
+    public function clearFingerprints(array $gameTableIds): int
+    {
+        if ($gameTableIds === []) {
+            return 0;
+        }
+
+        return ParticipantModel::query()
+            ->whereIn('game_table_id', array_values($gameTableIds))
+            ->whereNotNull('fingerprint')
+            ->update(['fingerprint' => null]);
+    }
+
+    public function possibleDuplicateIds(GameTableId $gameTableId, int $windowHours): array
+    {
+        $rows = ParticipantModel::query()
+            ->where('game_table_id', $gameTableId->value)
+            ->whereIn('status', self::ACTIVE_STATUSES)
+            ->whereNotNull('fingerprint')
+            ->get(['id', 'user_id', 'fingerprint', 'confirmation_sent_at', 'created_at']);
+
+        $window = $windowHours * 3600;
+        $marked = [];
+
+        // Paired in PHP, so the time arithmetic is the same on every database
+        foreach ($rows->groupBy('fingerprint') as $sameFingerprint) {
+            $group = $sameFingerprint->values()->all();
+
+            foreach ($group as $i => $first) {
+                foreach (array_slice($group, $i + 1) as $second) {
+                    if ($first->user_id !== null && $second->user_id !== null) {
+                        continue;
+                    }
+
+                    $firstAt = ($first->confirmation_sent_at ?? $first->created_at)?->getTimestamp();
+                    $secondAt = ($second->confirmation_sent_at ?? $second->created_at)?->getTimestamp();
+
+                    if ($firstAt === null || $secondAt === null || abs($firstAt - $secondAt) > $window) {
+                        continue;
+                    }
+
+                    $marked[$first->id] = true;
+                    $marked[$second->id] = true;
+                }
+            }
+        }
+
+        return array_map('strval', array_keys($marked));
     }
 
     public function getNextWaitingListPosition(GameTableId $gameTableId): int
@@ -215,7 +356,8 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
 
     public function getFirstInWaitingList(GameTableId $gameTableId, ?ParticipantRole $role = null): ?Participant
     {
-        $model = $this->waitingList($gameTableId, $role)->first();
+        // Guests who have not confirmed their email keep their place but are not promoted by themselves
+        $model = $this->waitingList($gameTableId, $role)->withConfirmedEmail()->first();
 
         if ($model === null) {
             return null;
@@ -322,7 +464,18 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
             email: $model->email,
             phone: $model->phone,
             cancellationToken: $model->cancellation_token,
+            emailConfirmedAt: $this->immutable($model->email_confirmed_at),
+            confirmationExpiresAt: $this->immutable($model->confirmation_expires_at),
+            confirmationToken: $model->confirmation_token,
+            confirmationSentAt: $this->immutable($model->confirmation_sent_at),
+            confirmationMode: $model->confirmation_mode,
+            fingerprint: $model->fingerprint,
         );
+    }
+
+    private function immutable(?Carbon $value): ?DateTimeImmutable
+    {
+        return $value !== null ? new DateTimeImmutable($value->toDateTimeString()) : null;
     }
 
     /**
@@ -345,6 +498,12 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
             'notes' => $participant->notes,
             'confirmed_at' => $participant->confirmedAt,
             'cancelled_at' => $participant->cancelledAt,
+            'email_confirmed_at' => $participant->emailConfirmedAt,
+            'confirmation_expires_at' => $participant->confirmationExpiresAt,
+            'confirmation_token' => $participant->confirmationToken,
+            'confirmation_sent_at' => $participant->confirmationSentAt,
+            'confirmation_mode' => $participant->confirmationMode?->value,
+            'fingerprint' => $participant->fingerprint,
         ];
     }
 
@@ -356,6 +515,19 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
             ->whereRaw('lower(email) = ?', [mb_strtolower(trim($email))])
             ->whereNull('user_id')
             ->tap($this->activeFirst(...))
+            ->first();
+
+        if ($model === null) {
+            return null;
+        }
+
+        return $this->toEntity($model);
+    }
+
+    public function findByConfirmationToken(string $token): ?Participant
+    {
+        $model = ParticipantModel::query()
+            ->where('confirmation_token', $token)
             ->first();
 
         if ($model === null) {
@@ -390,6 +562,7 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
                 ParticipantStatus::Cancelled->value,
                 ParticipantStatus::Rejected->value,
                 ParticipantStatus::NoShow->value,
+                ParticipantStatus::Expired->value,
             ])
             ->get();
 

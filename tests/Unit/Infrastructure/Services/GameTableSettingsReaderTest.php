@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Tests\Unit\Infrastructure\Services;
 
+use Modules\GameTables\Domain\Enums\GuestAccountsMode;
+use Modules\GameTables\Domain\Enums\GuestConfirmationMode;
 use Modules\GameTables\Domain\Enums\RegistrationType;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 use Tests\TestCase;
@@ -168,5 +170,60 @@ final class GameTableSettingsReaderTest extends TestCase
         config()->set('modules.settings.game-tables', ['automation' => ['auto_status_enabled' => false]]);
 
         $this->assertFalse($this->reader->isAutoStatusEnabled());
+    }
+
+    public function test_the_guest_settings_default_to_the_shipped_values(): void
+    {
+        $this->assertSame(GuestConfirmationMode::Hold, $this->reader->guestConfirmationMode());
+        $this->assertSame(2, $this->reader->guestConfirmationHoldHours());
+        $this->assertSame(2, $this->reader->maxUnconfirmedHeldSeats());
+        $this->assertSame(GuestAccountsMode::RequireLogin, $this->reader->guestAccountsMode());
+        $this->assertSame(5, $this->reader->guestRateLimitPerMinute());
+        $this->assertSame(20, $this->reader->guestRateLimitPerHour());
+        $this->assertSame(24, $this->reader->duplicateSignalWindowHours());
+    }
+
+    public function test_stored_guest_settings_override_the_defaults(): void
+    {
+        config()->set('modules.settings.game-tables', [
+            'guest_confirmation' => ['mode' => 'wait', 'hold_hours' => 6, 'max_unconfirmed_held' => 0],
+            'guest_accounts' => ['mode' => 'allow_guest'],
+            'guest_rate_limit' => ['per_minute' => 9, 'per_hour' => 50],
+            'duplicate_signal' => ['window_hours' => 48],
+        ]);
+
+        $this->assertSame(GuestConfirmationMode::Wait, $this->reader->guestConfirmationMode());
+        $this->assertSame(6, $this->reader->guestConfirmationHoldHours());
+        $this->assertSame(0, $this->reader->maxUnconfirmedHeldSeats());
+        $this->assertSame(GuestAccountsMode::AllowGuest, $this->reader->guestAccountsMode());
+        $this->assertSame(9, $this->reader->guestRateLimitPerMinute());
+        $this->assertSame(50, $this->reader->guestRateLimitPerHour());
+        $this->assertSame(48, $this->reader->duplicateSignalWindowHours());
+    }
+
+    public function test_unknown_modes_fall_back_to_the_safe_values(): void
+    {
+        config()->set('modules.settings.game-tables', [
+            'guest_confirmation' => ['mode' => 'banana'],
+            'guest_accounts' => ['mode' => 'banana'],
+        ]);
+
+        $this->assertSame(GuestConfirmationMode::Hold, $this->reader->guestConfirmationMode());
+        $this->assertSame(GuestAccountsMode::RequireLogin, $this->reader->guestAccountsMode());
+    }
+
+    public function test_guest_numbers_are_clamped_to_their_minimum(): void
+    {
+        config()->set('modules.settings.game-tables', [
+            'guest_confirmation' => ['hold_hours' => 0, 'max_unconfirmed_held' => -3],
+            'guest_rate_limit' => ['per_minute' => 0, 'per_hour' => -1],
+            'duplicate_signal' => ['window_hours' => 0],
+        ]);
+
+        $this->assertSame(1, $this->reader->guestConfirmationHoldHours());
+        $this->assertSame(0, $this->reader->maxUnconfirmedHeldSeats());
+        $this->assertSame(1, $this->reader->guestRateLimitPerMinute());
+        $this->assertSame(1, $this->reader->guestRateLimitPerHour());
+        $this->assertSame(1, $this->reader->duplicateSignalWindowHours());
     }
 }

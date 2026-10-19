@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Domain\Entities;
 
+use Carbon\CarbonImmutable;
 use DateTimeImmutable;
+use Modules\GameTables\Domain\Enums\GuestConfirmationMode;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
 use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
@@ -13,10 +15,13 @@ use Modules\GameTables\Domain\ValueObjects\ParticipantId;
 
 final class Participant
 {
+    /** Minutes that must pass before the confirmation email is sent again. */
+    public const int RESEND_MARGIN_MINUTES = 5;
+
     public function __construct(
         public readonly ParticipantId $id,
         public readonly GameTableId $gameTableId,
-        public readonly ?string $userId,
+        public private(set) ?string $userId,
         public ParticipantRole $role,
         public ParticipantStatus $status,
         public ?int $waitingListPosition = null,
@@ -29,18 +34,26 @@ final class Participant
         public ?string $email = null,
         public ?string $phone = null,
         public ?string $cancellationToken = null,
+        public ?DateTimeImmutable $emailConfirmedAt = null,
+        public ?DateTimeImmutable $confirmationExpiresAt = null,
+        public ?string $confirmationToken = null,
+        public ?DateTimeImmutable $confirmationSentAt = null,
+        public ?GuestConfirmationMode $confirmationMode = null,
+        public ?string $fingerprint = null,
     ) {}
 
     public function confirm(): void
     {
         $this->status = ParticipantStatus::Confirmed;
-        $this->confirmedAt = new DateTimeImmutable();
+        $this->confirmedAt = CarbonImmutable::now()->toDateTimeImmutable();
     }
 
     public function cancel(): void
     {
         $this->status = ParticipantStatus::Cancelled;
-        $this->cancelledAt = new DateTimeImmutable();
+        $this->cancelledAt = CarbonImmutable::now()->toDateTimeImmutable();
+        $this->confirmationExpiresAt = null;
+        $this->confirmationToken = null;
     }
 
     public function reactivate(): void
@@ -49,6 +62,12 @@ final class Participant
         $this->cancelledAt = null;
         $this->confirmedAt = null;
         $this->waitingListPosition = null;
+        $this->emailConfirmedAt = null;
+        $this->confirmationExpiresAt = null;
+        $this->confirmationToken = null;
+        $this->confirmationSentAt = null;
+        $this->confirmationMode = null;
+        $this->fingerprint = null;
     }
 
     public function reject(): void
@@ -71,7 +90,7 @@ final class Participant
 
         if ($confirm) {
             $this->status = ParticipantStatus::Confirmed;
-            $this->confirmedAt = new DateTimeImmutable();
+            $this->confirmedAt = CarbonImmutable::now()->toDateTimeImmutable();
 
             return;
         }
@@ -176,5 +195,97 @@ final class Participant
     public function setCancellationToken(string $token): void
     {
         $this->cancellationToken = $token;
+    }
+
+    /**
+     * Leaves the guest's email unconfirmed until they follow the link sent to it.
+     */
+    public function requireEmailConfirmation(
+        GuestConfirmationMode $mode,
+        string $token,
+        ?DateTimeImmutable $expiresAt,
+        DateTimeImmutable $now,
+    ): void {
+        $this->emailConfirmedAt = null;
+        $this->confirmationMode = $mode;
+        $this->confirmationToken = $token;
+        $this->confirmationExpiresAt = $expiresAt;
+        $this->confirmationSentAt = $now;
+    }
+
+    /**
+     * The token stays, so following the link again finds a confirmed registration.
+     */
+    public function confirmEmail(DateTimeImmutable $now): void
+    {
+        $this->emailConfirmedAt = $now;
+        $this->confirmationExpiresAt = null;
+    }
+
+    public function isAwaitingEmailConfirmation(): bool
+    {
+        return $this->isGuest() && $this->emailConfirmedAt === null && $this->isActive();
+    }
+
+    public function holdsPlaceWhileUnconfirmed(): bool
+    {
+        return $this->isAwaitingEmailConfirmation() && $this->confirmationMode === GuestConfirmationMode::Hold;
+    }
+
+    public function isConfirmationOverdue(DateTimeImmutable $now): bool
+    {
+        return $this->holdsPlaceWhileUnconfirmed()
+            && $this->confirmationExpiresAt !== null
+            && $this->confirmationExpiresAt <= $now;
+    }
+
+    public function canResendConfirmation(DateTimeImmutable $now): bool
+    {
+        return $this->confirmationSentAt === null
+            || $this->confirmationSentAt <= $now->modify('-'.self::RESEND_MARGIN_MINUTES.' minutes');
+    }
+
+    public function markConfirmationSent(DateTimeImmutable $now): void
+    {
+        $this->confirmationSentAt = $now;
+    }
+
+    /**
+     * The unconfirmed registration lapses: it holds nothing and leaves the waiting list.
+     */
+    public function expire(DateTimeImmutable $now): void
+    {
+        $this->status = ParticipantStatus::Expired;
+        $this->waitingListPosition = null;
+        $this->cancelledAt = $now;
+        $this->confirmationExpiresAt = null;
+        $this->confirmationToken = null;
+    }
+
+    /**
+     * A signed-in user takes over the guest row: it is theirs now, and the email is proven by the
+     * account. The guest's personal data goes: the account holds it, and anonymizing the account
+     * would not reach it here. The fingerprint stays, cleared once the table is over.
+     */
+    public function attachToAccount(string $userId, DateTimeImmutable $now): void
+    {
+        $awaiting = $this->isAwaitingEmailConfirmation();
+
+        $this->userId = $userId;
+        $this->email = null;
+        $this->firstName = null;
+        $this->lastName = null;
+        $this->phone = null;
+        $this->cancellationToken = null;
+        $this->confirmationToken = null;
+
+        if ($awaiting) {
+            $this->confirmEmail($now);
+        }
+    }
+
+    public function recordFingerprint(?string $fingerprint): void
+    {
+        $this->fingerprint = $fingerprint;
     }
 }

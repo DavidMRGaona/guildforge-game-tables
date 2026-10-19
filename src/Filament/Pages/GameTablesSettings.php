@@ -99,6 +99,71 @@ final class GameTablesSettings extends Page implements HasForms
                         ->helperText(__('game-tables::messages.settings.fields.waiting_list_enabled_help')),
                 ]),
 
+            Section::make(__('game-tables::messages.settings.sections.guest_registrations'))
+                ->schema([
+                    Select::make('guest_confirmation.mode')
+                        ->label(__('game-tables::messages.settings.fields.guest_confirmation_mode'))
+                        ->options([
+                            'hold' => __('game-tables::messages.settings.guest_confirmation_mode.hold'),
+                            'wait' => __('game-tables::messages.settings.guest_confirmation_mode.wait'),
+                        ])
+                        ->in(['hold', 'wait'])
+                        ->native(false)
+                        ->required(),
+
+                    TextInput::make('guest_confirmation.hold_hours')
+                        ->label(__('game-tables::messages.settings.fields.guest_hold_hours'))
+                        ->numeric()
+                        ->integer()
+                        ->minValue(1)
+                        ->maxValue(168)
+                        ->required(),
+
+                    TextInput::make('guest_confirmation.max_unconfirmed_held')
+                        ->label(__('game-tables::messages.settings.fields.guest_max_unconfirmed_held'))
+                        ->helperText(__('game-tables::messages.settings.fields.guest_max_unconfirmed_held_help'))
+                        ->numeric()
+                        ->integer()
+                        ->minValue(0)
+                        ->maxValue(50)
+                        ->required(),
+
+                    Select::make('guest_accounts.mode')
+                        ->label(__('game-tables::messages.settings.fields.guest_accounts_mode'))
+                        ->options([
+                            'require_login' => __('game-tables::messages.settings.guest_accounts_mode.require_login'),
+                            'allow_guest' => __('game-tables::messages.settings.guest_accounts_mode.allow_guest'),
+                        ])
+                        ->in(['require_login', 'allow_guest'])
+                        ->native(false)
+                        ->required(),
+
+                    TextInput::make('guest_rate_limit.per_minute')
+                        ->label(__('game-tables::messages.settings.fields.guest_rate_per_minute'))
+                        ->numeric()
+                        ->integer()
+                        ->minValue(1)
+                        ->maxValue(100)
+                        ->required(),
+
+                    TextInput::make('guest_rate_limit.per_hour')
+                        ->label(__('game-tables::messages.settings.fields.guest_rate_per_hour'))
+                        ->numeric()
+                        ->integer()
+                        ->minValue(1)
+                        ->maxValue(1000)
+                        ->required(),
+
+                    TextInput::make('duplicate_signal.window_hours')
+                        ->label(__('game-tables::messages.settings.fields.duplicate_window_hours'))
+                        ->numeric()
+                        ->integer()
+                        ->minValue(1)
+                        ->maxValue(720)
+                        ->required(),
+                ])
+                ->columns(2),
+
             Section::make(__('game-tables::messages.settings.sections.automation'))
                 ->schema([
                     Toggle::make('automation.auto_status_enabled')

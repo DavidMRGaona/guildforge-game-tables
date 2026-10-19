@@ -342,6 +342,7 @@ return [
             'cancelled' => 'Cancelado',
             'rejected' => 'Rechazado',
             'no_show' => 'No presentado',
+            'expired' => 'Caducada',
         ],
         'campaign_status' => [
             'recruiting' => 'Reclutando',
@@ -436,6 +437,7 @@ return [
         'sections' => [
             'membership' => 'Acceso anticipado para socios',
             'registration' => 'Inscripciones',
+            'guest_registrations' => 'Inscripciones de invitados',
             'automation' => 'Automatización',
             'defaults' => 'Valores por defecto',
             'notifications' => 'Notificaciones',
@@ -465,6 +467,14 @@ return [
             'max_players_limit' => 'Límite máximo de jugadores',
             'max_spectators_limit' => 'Límite máximo de espectadores',
             'max_duration' => 'Duración máxima (minutos)',
+            'guest_confirmation_mode' => 'Plaza mientras no confirma',
+            'guest_hold_hours' => 'Plazo de confirmación (horas)',
+            'guest_max_unconfirmed_held' => 'Máximo de plazas sin confirmar por mesa',
+            'guest_max_unconfirmed_held_help' => 'Las inscripciones de invitado sin confirmar que superen este número esperan sin ocupar plaza.',
+            'guest_accounts_mode' => 'Email con cuenta registrada',
+            'guest_rate_per_minute' => 'Inscripciones de invitado por minuto y conexión',
+            'guest_rate_per_hour' => 'Inscripciones de invitado por hora y conexión',
+            'duplicate_window_hours' => 'Ventana de «Posible duplicado» (horas)',
             // Frontend creation fields
             'frontend_creation_enabled' => 'Habilitar creación desde web',
             'frontend_creation_enabled_help' => 'Permite que los usuarios creen mesas desde el frontend público',
@@ -483,6 +493,14 @@ return [
             'above_spectators_limit' => 'No puede superar el límite máximo de espectadores (:limit)',
             'above_duration_limit' => 'No puede superar la duración máxima (:limit minutos)',
             'min_above_max_players' => 'No puede superar el máximo de jugadores por defecto (:limit)',
+        ],
+        'guest_confirmation_mode' => [
+            'hold' => 'Reserva la plaza con plazo',
+            'wait' => 'No ocupa plaza hasta confirmar',
+        ],
+        'guest_accounts_mode' => [
+            'require_login' => 'Pedir que inicie sesión',
+            'allow_guest' => 'Permitir como invitado salvo que esa cuenta ya esté inscrita',
         ],
         'allowed_content' => [
             'tables' => 'Solo mesas',
@@ -585,6 +603,13 @@ return [
     | Messages
     |--------------------------------------------------------------------------
     */
+    'cookies' => [
+        'guest_registrations' => [
+            'purpose' => 'Recuerda en qué mesas te has inscrito como invitado desde este navegador, para avisarte si intentas inscribirte otra vez.',
+            'duration' => '90 días',
+        ],
+    ],
+
     'messages' => [
         'registration' => [
             'success' => 'Inscripción realizada correctamente',
@@ -635,6 +660,8 @@ return [
         'spectators_full' => 'No quedan plazas de espectador disponibles',
         'already_registered' => 'Ya estás inscrito en esta mesa',
         'guest_already_registered' => 'Ya existe una inscripción con este email',
+        'email_registered_as_guest' => 'Ya hay una inscripción con tu email.',
+        'email_has_account' => 'Este email pertenece a una cuenta. Inicia sesión para inscribirte.',
         'members_only' => 'Esta mesa es solo para socios',
         'invitation_only' => 'Esta mesa es solo por invitación: la organización inscribe a los jugadores',
         'guests_not_allowed' => 'Esta mesa no permite inscripciones de invitados',
@@ -646,16 +673,28 @@ return [
         'table_not_found' => 'No se encontró la mesa',
         'campaign_not_found' => 'No se encontró la campaña',
         'invalid_token' => 'El enlace de cancelación no es válido o ha expirado',
+        'invalid_confirmation' => 'Este enlace ya no es válido. Si quedan plazas, puedes volver a apuntarte.',
+        'confirmation_closed' => 'Las inscripciones ya se han cerrado.',
+        'confirmation_filled_up' => 'Se ha llenado mientras confirmabas.',
+        'too_many_confirmation_attempts' => 'Demasiados intentos con este enlace. Espera un momento y vuelve a intentarlo.',
+        'guest_rate_limited' => 'Has hecho demasiadas inscripciones seguidas. Espera unos minutos y vuelve a intentarlo.',
     ],
 
     'success' => [
         'registered' => 'Te has inscrito correctamente',
-        'guest_registered' => 'Te has inscrito correctamente. Recibirás un email de confirmación.',
         'waiting_list' => 'Te has apuntado a la lista de espera (posición :position). Si se libera una plaza antes del inicio de la partida (o del cierre de inscripciones, si es anterior), pasarás a la mesa automáticamente y te avisaremos por correo.',
         'waiting_list_manual' => 'Te has apuntado a la lista de espera (posición :position). Si se libera una plaza antes del inicio de la partida (o del cierre de inscripciones, si es anterior), pasarás a la mesa pendiente de que el director te confirme y te avisaremos por correo.',
-        'guest_waiting_list' => 'Te has apuntado a la lista de espera (posición :position). Recibirás un email de confirmación y otro si se libera una plaza antes del inicio de la partida (o del cierre de inscripciones, si es anterior).',
-        'guest_spectator_registered' => 'Te has inscrito como espectador. Recibirás un email de confirmación.',
         'cancelled' => 'Inscripción cancelada correctamente',
+        'guest_email_confirmed' => 'Tu inscripción está confirmada. Te hemos enviado un email con los detalles.',
+        'guest_email_already_confirmed' => 'Tu inscripción ya estaba confirmada.',
+        'guest_email_confirmed_pending' => 'Has confirmado tu email. Tu inscripción está pendiente de aprobación por la organización: te avisaremos por correo.',
+        'guest_email_confirmed_waiting_list' => 'Has confirmado tu email. Estás en la lista de espera (puesto :position): si se libera una plaza, te avisaremos por correo.',
+        'registration_linked' => 'Ya tenías una inscripción como invitado; ahora está en tu cuenta.',
+        'registration_linked_waiting_list' => 'Ya tenías una inscripción como invitado; ahora está en tu cuenta. Estás en la lista de espera (posición :position).',
+        'guest_confirmation_pending' => 'Ya tienes una inscripción pendiente: revisa tu correo.',
+        'guest_confirmation_sent' => 'Te hemos enviado un email para confirmar la inscripción. Confírmala antes del :deadline o la plaza se liberará.',
+        'guest_confirmation_sent_waiting_list' => 'Te hemos enviado un email para confirmar la inscripción. Confírmala antes del :deadline para conservar tu puesto :position en la lista de espera.',
+        'guest_confirmation_sent_unguaranteed' => 'Te hemos enviado un email para confirmar la inscripción. Tu plaza no está garantizada hasta que la confirmes.',
     ],
 
     /*
@@ -717,11 +756,20 @@ return [
             'no_show' => 'No presentado',
             'no_show_description' => 'Queda marcado como no presentado. No se envía ningún email ni se promueve a nadie de la lista de espera.',
             'move_to_waiting' => 'Mover a lista de espera',
-            'delete_not_allowed' => 'No se ha borrado: la inscripción ya no está cancelada ni rechazada',
+            'confirm_email' => 'Marcar email como confirmado',
+            'confirm_email_description' => 'Se dará por confirmado el email del invitado, como si hubiera pulsado el enlace, y recibirá el email de inscripción.',
+            'flags' => [
+                'label' => 'Avisos',
+                'email_unconfirmed' => 'Email sin confirmar',
+                'expires_at' => 'Caduca el :date',
+                'possible_duplicate' => 'Posible duplicado',
+                'possible_duplicate_tooltip' => 'Otra inscripción de esta mesa se hizo desde la misma conexión y navegador en :hours h o menos',
+            ],
+            'delete_not_allowed' => 'No se ha borrado: la inscripción ya no está cancelada, rechazada ni caducada',
             'bulk_delete' => [
                 'deleted' => '{1} Se ha borrado 1 inscripción|[2,*] Se han borrado :count inscripciones',
                 'none_deleted' => 'No se ha borrado ninguna inscripción',
-                'skipped' => '{1} 1 inscripción no se ha borrado: solo se pueden borrar las canceladas o rechazadas; antes hay que cancelarla con «Cancelar inscripción».|[2,*] :count inscripciones no se han borrado: solo se pueden borrar las canceladas o rechazadas; antes hay que cancelarlas con «Cancelar inscripción».',
+                'skipped' => '{1} 1 inscripción no se ha borrado: solo se pueden borrar las canceladas, rechazadas o caducadas; antes hay que cancelarla con «Cancelar inscripción».|[2,*] :count inscripciones no se han borrado: solo se pueden borrar las canceladas, rechazadas o caducadas; antes hay que cancelarlas con «Cancelar inscripción».',
                 'failed' => '{1} 1 inscripción no se ha podido borrar por un error.|[2,*] :count inscripciones no se han podido borrar por un error.',
             ],
         ],
@@ -799,6 +847,16 @@ return [
         'saved' => 'Configuración guardada',
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Guest confirmation page
+    |--------------------------------------------------------------------------
+    */
+    'confirm_registration' => [
+        // The state shown until the guest follows the emailed link
+        'awaiting_email' => 'Pendiente de confirmar',
+    ],
+
     // Server-rendered page metadata (link previews and search engines)
     'seo' => [
         'tables_title' => 'Mesas de rol',
@@ -810,6 +868,7 @@ return [
         'edit_table_title' => 'Editar mesa',
         'my_tables_title' => 'Mis mesas de juego',
         'cancel_registration_title' => 'Cancelar inscripción',
+        'confirm_registration_title' => 'Confirmar inscripción',
         'create_campaign_title' => 'Crear campaña',
         'edit_campaign_title' => 'Editar campaña',
         'my_campaigns_title' => 'Mis campañas',

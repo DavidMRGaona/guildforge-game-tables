@@ -1,4 +1,4 @@
-export type ParticipantStatus = 'pending' | 'confirmed' | 'waiting_list' | 'cancelled' | 'rejected' | 'no_show';
+export type ParticipantStatus = 'pending' | 'confirmed' | 'waiting_list' | 'cancelled' | 'rejected' | 'no_show' | 'expired';
 export type ParticipantRole = 'player' | 'spectator';
 
 /** Whether one role can register, and why not. */
@@ -19,10 +19,18 @@ export interface EligibilityResponse extends RoleEligibility {
     canCancel: boolean;
 }
 
+/** What the guest form says before it is sent: a place held until the deadline, or not guaranteed. */
+export interface GuestConfirmationNotice {
+    mode: 'hold' | 'wait';
+    /** ISO 8601, only when the place is held */
+    deadline: string | null;
+}
+
 /** What the table page offers a visitor without an account (the email is checked on submit). */
 export interface GuestEligibility extends RoleEligibility {
     waitingList: boolean;
     spectator: RoleEligibility;
+    confirmation?: GuestConfirmationNotice | null;
 }
 
 export interface ParticipantData {
@@ -88,8 +96,8 @@ export function isWaitingStatus(status: ParticipantStatus): boolean {
 }
 
 /**
- * Check if a status is final (cancelled, rejected, no_show).
+ * Check if a status is final (cancelled, rejected, no_show, expired).
  */
 export function isFinalStatus(status: ParticipantStatus): boolean {
-    return status === 'cancelled' || status === 'rejected' || status === 'no_show';
+    return status === 'cancelled' || status === 'rejected' || status === 'no_show' || status === 'expired';
 }

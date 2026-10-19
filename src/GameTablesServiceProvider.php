@@ -35,10 +35,15 @@ use App\Application\Services\EventQueryServiceInterface;
 use App\Filament\Resources\EventResource;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Modules\ModuleServiceProvider;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use Inertia\Inertia;
 use Livewire\Livewire;
 use Modules\GameTables\Application\Services\CampaignQueryServiceInterface;
+use Modules\GameTables\Application\Services\AccountLookupInterface;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
 use Modules\GameTables\Application\Services\EligibilityServiceInterface;
 use Modules\GameTables\Application\Services\EventCreationEligibilityServiceInterface;
@@ -47,20 +52,26 @@ use Modules\GameTables\Application\Services\EventWithTablesQueryInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Application\Services\GameMasterServiceInterface;
 use Modules\GameTables\Application\Services\MembershipCheckerInterface;
+use Modules\CookieConsent\Application\DTOs\DeclaredCookieDTO;
+use Modules\CookieConsent\Application\Services\CookieDeclarationRegistryInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
 use Modules\GameTables\Application\Services\RegistrationLockInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Illuminate\Console\Scheduling\Schedule;
+use Modules\GameTables\Console\Commands\ExpireGuestRegistrationsCommand;
 use Modules\GameTables\Console\Commands\GenerateSlugsCommand;
 use Modules\GameTables\Console\Commands\UpdateTableStatusesCommand;
+use Modules\GameTables\Http\Controllers\GuestConfirmationController;
 use Modules\GameTables\Domain\Events\CampaignSubmittedForReview;
 use Modules\GameTables\Domain\Events\GameTableCancelled;
 use Modules\GameTables\Domain\Events\GameTableModerationApproved;
 use Modules\GameTables\Domain\Events\GameTableModerationRejected;
 use Modules\GameTables\Domain\Events\GameTableSubmittedForReview;
+use Modules\GameTables\Domain\Events\GuestConfirmationRequested;
 use Modules\GameTables\Domain\Events\GuestRegistered;
+use Modules\GameTables\Domain\Events\GuestRegistrationExpired;
 use Modules\GameTables\Domain\Events\ParticipantCancelled;
 use Modules\GameTables\Domain\Events\ParticipantConfirmed;
 use Modules\GameTables\Domain\Events\ParticipantPromotedFromWaitingList;
@@ -89,12 +100,14 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\Eloquent
 use Modules\GameTables\Infrastructure\Services\CampaignQueryService;
 use Modules\GameTables\Infrastructure\Services\CreationEligibilityService;
 use Modules\GameTables\Infrastructure\Services\EligibilityService;
+use Modules\GameTables\Infrastructure\Services\UserModelAccountLookup;
 use Modules\GameTables\Infrastructure\Services\EventCreationEligibilityService;
 use Modules\GameTables\Infrastructure\Services\EventGameTableConfigService;
 use Modules\GameTables\Infrastructure\Services\EventWithTablesQuery;
 use Modules\GameTables\Infrastructure\Services\FrontendCreationService;
 use Modules\GameTables\Infrastructure\Services\GameMasterService;
 use Modules\GameTables\Infrastructure\Services\GameTableQueryService;
+use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
 use Modules\GameTables\Infrastructure\Services\GameTableService;
 use Modules\GameTables\Infrastructure\Services\AssociationRoleMembershipChecker;
@@ -109,7 +122,9 @@ use Modules\GameTables\Listeners\NotifyUserOnModerationApproved;
 use Modules\GameTables\Listeners\NotifyUserOnModerationRejected;
 use Modules\GameTables\Listeners\SendCancellationConfirmation;
 use Modules\GameTables\Listeners\SendConfirmationNotification;
+use Modules\GameTables\Listeners\SendGuestEmailConfirmationRequest;
 use Modules\GameTables\Listeners\SendGuestRegistrationConfirmation;
+use Modules\GameTables\Listeners\SendGuestRegistrationExpiredNotification;
 use Modules\GameTables\Listeners\SendRegistrationConfirmation;
 use Modules\GameTables\Listeners\SendRejectionNotification;
 
@@ -138,6 +153,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         // Service bindings
         $this->app->bind(GameTableServiceInterface::class, GameTableService::class);
         $this->app->bind(EligibilityServiceInterface::class, EligibilityService::class);
+        $this->app->bind(AccountLookupInterface::class, UserModelAccountLookup::class);
         $this->app->bind(MembershipCheckerInterface::class, AssociationRoleMembershipChecker::class);
         $this->app->bind(CreationEligibilityServiceInterface::class, CreationEligibilityService::class);
         $this->app->bind(FrontendCreationServiceInterface::class, FrontendCreationService::class);
@@ -165,6 +181,8 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         $this->registerEventListeners();
         $this->registerCommands();
         $this->registerSchedule();
+        $this->registerRateLimiters();
+        $this->registerCookieDeclaration();
         $this->shareGameTableCount();
         $this->shareProfileGameTables();
         $this->shareProfileCreatedTables();
@@ -340,6 +358,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->commands([
+                ExpireGuestRegistrationsCommand::class,
                 GenerateSlugsCommand::class,
                 UpdateTableStatusesCommand::class,
             ]);
@@ -348,6 +367,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
 
     /**
      * Tables start and complete with the clock (off with automation.auto_status_enabled).
+     * Unconfirmed guest registrations expire with the clock whatever that setting says.
      */
     private function registerSchedule(): void
     {
@@ -356,6 +376,86 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                 ->everyFiveMinutes()
                 // A run takes seconds; a killed one must not block the updates for a day
                 ->withoutOverlapping(10);
+
+            $schedule->command('game-tables:expire-guest-registrations')
+                ->everyFiveMinutes()
+                ->withoutOverlapping(10);
+        });
+    }
+
+    /**
+     * The browser hint cookie of the guest form, declared to cookie-consent when that module is
+     * installed (this module does not require it).
+     */
+    private function registerCookieDeclaration(): void
+    {
+        if (! interface_exists(CookieDeclarationRegistryInterface::class)) {
+            return;
+        }
+
+        $this->callAfterResolving(CookieDeclarationRegistryInterface::class, function (CookieDeclarationRegistryInterface $registry): void {
+            $registry->declare(new DeclaredCookieDTO(
+                name: 'gt_guest_registrations',
+                categorySlug: 'preferences',
+                provider: (string) config('app.name'),
+                purpose: (string) __('game-tables::messages.cookies.guest_registrations.purpose'),
+                duration: (string) __('game-tables::messages.cookies.guest_registrations.duration'),
+            ));
+        });
+    }
+
+    /**
+     * Per IP, over the limit a translated message, never an error page. The guest confirmation
+     * link (page and button): wide enough for a person, tight enough to stop guessing tokens. The
+     * guest registration form: the limits of the settings, as a form error on the table page.
+     */
+    private function registerRateLimiters(): void
+    {
+        RateLimiter::for('game-tables-guest-confirmation', static function (Request $request): array {
+            $ip = $request->ip() ?? 'unknown';
+            $tooMany = static function (Request $request, array $headers): HttpResponse {
+                $message = (string) __('game-tables::messages.errors.too_many_confirmation_attempts');
+
+                if ($request->expectsJson()) {
+                    return response()->json(['message' => $message], 429, $headers);
+                }
+
+                // The confirmation page with the message, still 429: a plain 429 would land in
+                // Inertia's raw error modal, and the list of tables shows no flash message
+                $token = $request->route('token');
+
+                $response = app(GuestConfirmationController::class)
+                    ->messagePage(is_string($token) ? $token : '', $message)
+                    ->toResponse($request);
+                $response->setStatusCode(429);
+                $response->headers->add($headers);
+
+                return $response;
+            };
+
+            // Distinct keys: limits sharing a key would share one counter
+            return [
+                Limit::perMinute(20)->by('gt-confirm:'.$ip)->response($tooMany),
+                Limit::perHour(100)->by('gt-confirm-h:'.$ip)->response($tooMany),
+            ];
+        });
+
+        RateLimiter::for('game-tables-guest-registration', static function (Request $request): array {
+            $ip = $request->ip() ?? 'unknown';
+            $settings = app(GameTableSettingsReader::class);
+            $tooMany = static function (Request $request, array $headers): HttpResponse {
+                $message = (string) __('game-tables::messages.errors.guest_rate_limited');
+
+                // Inertia cannot show a 429 inside the form: the error goes where the refusals go
+                return $request->expectsJson()
+                    ? response()->json(['message' => $message], 429, $headers)
+                    : back()->withErrors(['registration' => $message])->withInput();
+            };
+
+            return [
+                Limit::perMinute($settings->guestRateLimitPerMinute())->by('gt-guest:'.$ip)->response($tooMany),
+                Limit::perHour($settings->guestRateLimitPerHour())->by('gt-guest-h:'.$ip)->response($tooMany),
+            ];
         });
     }
 
@@ -375,8 +475,18 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     private function registerEventListeners(): void
     {
         Event::listen(
+            GuestConfirmationRequested::class,
+            [SendGuestEmailConfirmationRequest::class, 'handle']
+        );
+
+        Event::listen(
             GuestRegistered::class,
             [SendGuestRegistrationConfirmation::class, 'handle']
+        );
+
+        Event::listen(
+            GuestRegistrationExpired::class,
+            [SendGuestRegistrationExpiredNotification::class, 'handle']
         );
 
         Event::listen(

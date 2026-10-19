@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Modules\GameTables\Tests\Feature\Filament;
 
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
@@ -323,6 +325,63 @@ final class ParticipantsRelationManagerTest extends ModuleTestCase
         $guest->refresh();
         $this->assertSame('nueva.invitada@example.test', $guest->email);
         $this->assertSame('confirmed', $guest->status->value);
+    }
+
+    // An unconfirmed guest's email is stored as registration stores it
+    public function test_editing_an_unconfirmed_guest_stores_the_email_in_lowercase(): void
+    {
+        $table = $this->table();
+        $guest = $this->unconfirmedGuest($table);
+
+        $this->participants($table)
+            ->callTableAction('edit', $guest, data: ['email' => 'Nueva.Bea@Example.TEST'])
+            ->assertHasNoTableActionErrors();
+
+        $this->assertSame('nueva.bea@example.test', $guest->refresh()->email);
+    }
+
+    // Another guest takes the email between the check and the save: a form error, never a 500 (whose
+    // SQL would carry the email into the log)
+    public function test_an_email_taken_while_editing_an_unconfirmed_guest_is_a_form_error(): void
+    {
+        Exceptions::fake();
+        $table = $this->table();
+        $guest = $this->unconfirmedGuest($table);
+        ParticipantModel::updating(function (ParticipantModel $model) use ($table): void {
+            if ($model->isDirty('email')) {
+                DB::table('gametables_participants')->insert([
+                    'id' => (string) Str::uuid(),
+                    'game_table_id' => $table->id,
+                    'role' => 'player',
+                    'status' => 'confirmed',
+                    'first_name' => 'Ana',
+                    'email' => 'ana@example.test',
+                    'email_confirmed_at' => now(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        });
+
+        $this->participants($table)
+            ->callTableAction('edit', $guest, data: ['email' => 'Ana@Example.TEST'])
+            ->assertHasTableActionErrors(['email' => 'Ya existe una inscripción con este email']);
+
+        $this->assertSame('bea@example.test', $guest->refresh()->email);
+        Exceptions::assertNothingReported();
+    }
+
+    private function unconfirmedGuest(GameTableModel $table): ParticipantModel
+    {
+        return $this->participant($table, 'confirmed', [
+            'user_id' => null,
+            'first_name' => 'Bea',
+            'email' => 'bea@example.test',
+            'email_confirmed_at' => null,
+            'confirmation_mode' => 'hold',
+            'confirmation_expires_at' => now()->addHour(),
+            'confirmation_token' => str_repeat('c', 64),
+        ]);
     }
 
     /**

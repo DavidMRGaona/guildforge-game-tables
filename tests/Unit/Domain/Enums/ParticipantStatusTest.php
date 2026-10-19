@@ -22,6 +22,7 @@ final class ParticipantStatusTest extends TestCase
             'cancelled' => [ParticipantStatus::Cancelled, true],
             'rejected' => [ParticipantStatus::Rejected, true],
             'no-show' => [ParticipantStatus::NoShow, false],
+            'expired' => [ParticipantStatus::Expired, true],
         ];
     }
 
@@ -30,5 +31,18 @@ final class ParticipantStatusTest extends TestCase
     public function test_only_cancelled_and_rejected_registrations_can_be_deleted(ParticipantStatus $status, bool $deletable): void
     {
         $this->assertSame($deletable, $status->canBeDeleted());
+    }
+
+    public function test_expired_is_final_inactive_and_deletable(): void
+    {
+        $status = ParticipantStatus::Expired;
+
+        $this->assertSame('expired', $status->value);
+        $this->assertTrue($status->isFinal());
+        $this->assertFalse($status->isActive());
+        $this->assertFalse($status->canBeCancelled());
+        $this->assertTrue($status->canBeDeleted());
+        $this->assertSame('gray', $status->color());
+        $this->assertSame('heroicon-o-archive-box-x-mark', $status->icon());
     }
 }

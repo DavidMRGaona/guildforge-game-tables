@@ -166,7 +166,9 @@ final class WaitingListRegistrationTest extends ModuleTestCase
 
         $this->registerGuest($table, 'invitada@example.test', 'spectator')->assertRedirect();
 
-        $this->assertSame('confirmed', $this->guestRowOf($table, 'invitada@example.test')->status->value);
+        $row = $this->guestRowOf($table, 'invitada@example.test');
+        $this->assertSame('confirmed', $row->status->value);
+        $this->assertSame('spectator', $row->role->value);
     }
 
     public function test_spectators_have_no_waiting_list(): void
@@ -229,6 +231,8 @@ final class WaitingListRegistrationTest extends ModuleTestCase
         $table = $this->fullTable();
 
         $this->registerGuest($table, 'invitada@example.test')->assertRedirect();
+        // Confirmed: an unconfirmed guest sending the form again is sent the confirmation email again
+        $this->confirmGuestEmails($table);
         $this->registerGuest($table, 'invitada@example.test')
             ->assertStatus(422)
             ->assertJsonPath('errors.registration.0', __('game-tables::messages.errors.guest_already_registered'));
@@ -310,6 +314,7 @@ final class WaitingListRegistrationTest extends ModuleTestCase
         $table = $this->fullTable();
 
         $this->registerGuest($table, 'Invitada@Example.TEST')->assertRedirect();
+        $this->confirmGuestEmails($table);
         $this->registerGuest($table, 'invitada@example.test')
             ->assertStatus(422)
             ->assertJsonPath('errors.registration.0', __('game-tables::messages.errors.guest_already_registered'));
@@ -329,6 +334,8 @@ final class WaitingListRegistrationTest extends ModuleTestCase
             'role' => 'player',
             'status' => 'confirmed',
             'confirmed_at' => now(),
+            // Rows from before the email confirmation were filled in as confirmed
+            'email_confirmed_at' => now(),
         ]);
 
         $this->registerGuest($table, 'antigua@example.test')
@@ -338,6 +345,7 @@ final class WaitingListRegistrationTest extends ModuleTestCase
 
     public function test_a_guest_who_can_only_be_a_spectator_is_told_so(): void
     {
+        $this->freezeTime();
         $table = $this->fullTable(['max_spectators' => 2]);
 
         $this->get(route('gametables.show', $table->slug))
@@ -351,7 +359,10 @@ final class WaitingListRegistrationTest extends ModuleTestCase
             'email' => 'invitada@example.test',
             'role' => 'spectator',
             'gdpr_consent' => true,
-        ])->assertSessionHas('success', __('game-tables::messages.success.guest_spectator_registered'));
+        ])->assertSessionHas(
+            'success',
+            'Te hemos enviado un email para confirmar la inscripción. Confírmala antes del '.now()->addHours(2)->format('d/m/Y H:i').' o la plaza se liberará.',
+        );
     }
 
     // Turning the list on over a manual table already past its seats (confirmed + pending)
@@ -415,6 +426,11 @@ final class WaitingListRegistrationTest extends ModuleTestCase
     /**
      * @return TestResponse<\Symfony\Component\HttpFoundation\Response>
      */
+    private function confirmGuestEmails(GameTableModel $table): void
+    {
+        ParticipantModel::query()->where('game_table_id', $table->id)->whereNull('user_id')->update(['email_confirmed_at' => now()]);
+    }
+
     private function registerGuest(GameTableModel $table, string $email, string $role = 'player'): TestResponse
     {
         $this->app['auth']->forgetGuards();
