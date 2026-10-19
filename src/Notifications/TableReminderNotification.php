@@ -37,7 +37,9 @@ final class TableReminderNotification extends Notification implements ShouldQueu
                 'tableTitle' => $this->tableTitle,
                 'date' => $this->tableDate,
             ]))
-            ->greeting(__('game-tables::emails.table_reminder.greeting', ['name' => $this->participantName]))
+            ->greeting(trim($this->participantName) !== ''
+                ? __('game-tables::emails.table_reminder.greeting', ['name' => $this->participantName])
+                : __('game-tables::emails.table_reminder.greeting_anonymous'))
             ->line(__('game-tables::emails.table_reminder.intro', [
                 'tableTitle' => $this->tableTitle,
                 'date' => $this->tableDate,

@@ -466,7 +466,7 @@ return [
             'notify_waiting_list' => 'Notificar promoción de lista de espera',
             'notify_waiting_list_help' => 'Avisa a los directores y al email de la mesa. La persona que pasa de la lista de espera recibe siempre su correo.',
             'send_reminder' => 'Enviar recordatorio antes de la mesa',
-            'send_reminder_help' => 'Un correo a cada participante confirmado (con cuenta o con el email confirmado) las horas indicadas antes del inicio. Desactivado por defecto.',
+            'send_reminder_help' => 'Un correo a cada inscripción confirmada (con cuenta o con el email confirmado) las horas indicadas antes del inicio. Desactivado por defecto.',
             'reminder_hours_before' => 'Antelación del recordatorio (horas)',
             'max_players_limit' => 'Límite máximo de jugadores',
             'max_spectators_limit' => 'Límite máximo de espectadores',

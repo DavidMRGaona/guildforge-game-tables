@@ -108,6 +108,23 @@ final class SendTableRemindersCommandTest extends ModuleTestCase
         Notification::assertNothingSent();
     }
 
+    public function test_anonymised_accounts_and_nameless_guests_are_handled(): void
+    {
+        $this->enable();
+        $table = $this->table($this->now->addHours(10));
+        $anonymised = UserModel::factory()->create(['anonymized_at' => $this->now->subDay()]);
+        $this->participant($table, ['user_id' => $anonymised->id]);
+        $this->participant($table, ['email' => 'sin.nombre@example.com', 'first_name' => null, 'email_confirmed_at' => $this->now]);
+
+        $this->artisan('game-tables:send-reminders')->assertSuccessful();
+
+        Notification::assertNotSentTo($anonymised, TableReminderNotification::class);
+        Notification::assertSentOnDemand(
+            TableReminderNotification::class,
+            fn (TableReminderNotification $n, array $channels, AnonymousNotifiable $notifiable): bool => $n->toMail($notifiable)->greeting === '¡Hola!',
+        );
+    }
+
     public function test_the_lead_time_is_configurable(): void
     {
         $this->enable(hours: 48);

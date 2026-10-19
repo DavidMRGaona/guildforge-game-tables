@@ -13,7 +13,7 @@ return [
         'view_table' => 'Ver mesa',
         'cancel_intro' => 'Si necesitas cancelar tu inscripción antes del inicio de la partida, usa el siguiente enlace:',
         'cancel_button' => 'Cancelar inscripción',
-        'gdpr_notice' => 'Tus datos serán eliminados automáticamente después de la fecha de la partida, de acuerdo con nuestra política de privacidad.',
+        'gdpr_notice' => 'Tus datos se tratan conforme a nuestra política de privacidad.',
         'role_player' => 'jugador',
         'role_spectator' => 'espectador',
     ],
@@ -86,7 +86,7 @@ return [
         'table_location' => 'Ubicación',
         'view_table' => 'Ver mesa',
         'outro' => 'Esperamos verte en futuras partidas.',
-        'guest_gdpr_notice' => 'Tus datos serán eliminados automáticamente de acuerdo con nuestra política de privacidad.',
+        'guest_gdpr_notice' => 'Tus datos se tratan conforme a nuestra política de privacidad.',
     ],
 
     'organization_cancellation' => [
@@ -99,7 +99,7 @@ return [
         'table_location' => 'Ubicación',
         'view_table' => 'Ver mesa',
         'outro' => 'Si crees que se trata de un error, ponte en contacto con la organización.',
-        'guest_gdpr_notice' => 'Tus datos serán eliminados automáticamente de acuerdo con nuestra política de privacidad.',
+        'guest_gdpr_notice' => 'Tus datos se tratan conforme a nuestra política de privacidad.',
     ],
 
     'waiting_list_promotion' => [
@@ -223,8 +223,9 @@ return [
     'table_reminder' => [
         'subject' => 'Recordatorio: :tableTitle, :date',
         'greeting' => '¡Hola, :name!',
+        'greeting_anonymous' => '¡Hola!',
         'intro' => 'Te recordamos tu inscripción en la mesa «:tableTitle», que empieza el :date.',
-        'location' => 'Lugar',
+        'location' => 'Ubicación',
         'view_table' => 'Ver mesa',
         'cancel' => 'Si al final no puedes venir, cancela tu inscripción desde la página de la mesa para dejar la plaza libre.',
         'cancel_guest' => 'Si al final no puedes venir, cancela tu inscripción para dejar la plaza libre: :url',

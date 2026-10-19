@@ -39,7 +39,10 @@ final class SendTableRemindersCommand extends Command
         $participants = ParticipantModel::query()
             ->where('status', ParticipantStatus::Confirmed->value)
             ->whereNull('reminder_sent_at')
-            ->where(fn ($who) => $who->whereNotNull('user_id')->orWhereNotNull('email_confirmed_at'))
+            // Accounts still in use, or guests whose email is confirmed
+            ->where(fn ($who) => $who
+                ->whereHas('user', fn ($user) => $user->whereNull('anonymized_at'))
+                ->orWhere(fn ($guest) => $guest->whereNull('user_id')->whereNotNull('email_confirmed_at')))
             ->whereHas('gameTable', fn ($table) => $table
                 ->where('is_published', true)
                 ->whereIn('status', [TableStatus::Scheduled->value, TableStatus::Full->value])
@@ -53,6 +56,16 @@ final class SendTableRemindersCommand extends Command
             $email = $participant->user_id !== null ? $participant->user?->email : $participant->email;
 
             if ($table === null || $email === null || $email === '') {
+                continue;
+            }
+
+            // Claimed before sending, so a run started by hand next to the scheduled one never doubles it
+            $claimed = ParticipantModel::query()
+                ->whereKey($participant->id)
+                ->whereNull('reminder_sent_at')
+                ->update(['reminder_sent_at' => $now]) === 1;
+
+            if (! $claimed) {
                 continue;
             }
 
@@ -71,7 +84,6 @@ final class SendTableRemindersCommand extends Command
                 Notification::route('mail', $email)->notify($notification);
             }
 
-            $participant->forceFill(['reminder_sent_at' => $now])->save();
             $sent++;
         }
 
