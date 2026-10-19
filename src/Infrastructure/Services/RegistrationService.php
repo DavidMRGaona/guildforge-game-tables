@@ -87,7 +87,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             // The same rules the table page applies, checked under the lock
             $this->eligibilityService->ensureUserCanRegister($dto->gameTableId, $userId, $dto->role);
 
-            return [...$this->withRank($this->placeUser($dto, $userId, $now)), true, $promoted, false];
+            return [...$this->withRank($this->placeUser($dto, $userId, $now, recordFingerprint: true)), true, $promoted, false];
         });
 
         if ($promoted !== null) {
@@ -238,8 +238,11 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
     /**
      * One row per user and table: a cancelled registration is reactivated, an active one refused.
+     *
+     * @param  bool  $recordFingerprint  the user's own web registration stores the fingerprint
+     *                                   (to pair it with an earlier guest row); the panel's never
      */
-    private function placeUser(RegisterParticipantDTO $dto, string $userId, DateTimeImmutable $now): Participant
+    private function placeUser(RegisterParticipantDTO $dto, string $userId, DateTimeImmutable $now, bool $recordFingerprint = false): Participant
     {
         $gameTableId = new GameTableId($dto->gameTableId);
 
@@ -265,6 +268,10 @@ final readonly class RegistrationService implements RegistrationServiceInterface
                 notes: $dto->notes,
                 createdAt: $now,
             );
+        }
+
+        if ($recordFingerprint) {
+            $participant->recordFingerprint($dto->fingerprint);
         }
 
         $this->seat($participant, $gameTable);
@@ -1385,7 +1392,8 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
         $now = CarbonImmutable::now()->toDateTimeImmutable();
 
-        // Admins skip the eligibility rules: a full table puts the participant in the waiting list
+        // Admins skip the eligibility rules: a full table puts the participant in the waiting list.
+        // No fingerprint: the connection is the organisation's, not the participant's
         [$participant, $rank] = $this->lock->forTable($dto->gameTableId, fn (): array => $this->withRank($this->placeUser($dto, $userId, $now)));
 
         $this->announceUserRegistration($participant, $rank);

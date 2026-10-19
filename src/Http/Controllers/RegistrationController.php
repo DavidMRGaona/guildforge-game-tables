@@ -12,11 +12,14 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\GameTables\Application\DTOs\ParticipantResponseDTO;
 use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
+use Modules\GameTables\Domain\Enums\GuestConfirmationMode;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
+use Modules\GameTables\Domain\Exceptions\AccountEmailRequiresLoginException;
 use Modules\GameTables\Domain\Exceptions\AlreadyRegisteredException;
 use Modules\GameTables\Domain\Exceptions\CannotCancelException;
 use Modules\GameTables\Domain\Exceptions\ParticipantNotFoundException;
@@ -24,6 +27,7 @@ use Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException;
 use Modules\GameTables\Domain\Exceptions\TableFullException;
 use Modules\GameTables\Http\Requests\GuestRegisterRequest;
 use Modules\GameTables\Http\Requests\RegisterRequest;
+use Modules\GameTables\Http\Support\GuestFingerprint;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
 final class RegistrationController extends Controller
@@ -56,6 +60,7 @@ final class RegistrationController extends Controller
                 userId: (string) $user->id,
                 role: $role,
                 notes: $request->validated('notes'),
+                fingerprint: GuestFingerprint::of($request),
             ));
         } catch (RegistrationNotAllowedException $e) {
             throw $this->refusal($e->getMessage());
@@ -110,9 +115,11 @@ final class RegistrationController extends Controller
     }
 
     /**
-     * Register as a guest (no authentication required).
+     * Register as a guest (no authentication required). The registration waits for the guest to
+     * confirm the email: the answer says what happens to the place meanwhile.
      *
-     * @throws ValidationException when the table does not admit the registration
+     * @throws ValidationException when the table does not admit the registration, or the email
+     *                             belongs to an account that should sign in (error `account`)
      */
     public function registerGuest(GuestRegisterRequest $request, GameTableModel $gameTable): RedirectResponse
     {
@@ -130,18 +137,62 @@ final class RegistrationController extends Controller
                 lastName: null,
                 email: $validated['email'],
                 phone: $validated['phone'] ?? null,
+                fingerprint: GuestFingerprint::of($request),
             ));
         } catch (RegistrationNotAllowedException $e) {
             throw $this->refusal($e->getMessage());
         } catch (AlreadyRegisteredException) {
             throw $this->refusal(__('game-tables::messages.errors.guest_already_registered'));
+        } catch (AccountEmailRequiresLoginException $e) {
+            throw $this->signInRequired($request, $e->getMessage());
         }
 
-        return back()->with('success', match (true) {
-            $registration->status === ParticipantStatus::WaitingList => __('game-tables::messages.success.guest_waiting_list', ['position' => $registration->waitingListRank]),
-            $registration->role === ParticipantRole::Spectator => __('game-tables::messages.success.guest_spectator_registered'),
-            default => __('game-tables::messages.success.guest_registered'),
-        });
+        return back()->with('success', $this->guestAnswer($registration));
+    }
+
+    /**
+     * What a web guest is told once the form is accepted: the email was already sent (the
+     * registration is the one they had), or it was sent now and the place is held until the
+     * deadline (on the waiting list, the position) or not guaranteed until they confirm.
+     */
+    private function guestAnswer(ParticipantResponseDTO $registration): string
+    {
+        if ($registration->confirmationResent) {
+            return (string) __('game-tables::messages.success.guest_confirmation_pending');
+        }
+
+        $deadline = $registration->confirmationExpiresAt;
+
+        if ($registration->confirmationMode !== GuestConfirmationMode::Hold || $deadline === null) {
+            return (string) __('game-tables::messages.success.guest_confirmation_sent_unguaranteed');
+        }
+
+        return (string) ($registration->status === ParticipantStatus::WaitingList
+            ? __('game-tables::messages.success.guest_confirmation_sent_waiting_list', [
+                'deadline' => $deadline->format('d/m/Y H:i'),
+                // The place among those waiting, not the stored position (which may have gaps)
+                'position' => $registration->waitingListRank,
+            ])
+            : __('game-tables::messages.success.guest_confirmation_sent', ['deadline' => $deadline->format('d/m/Y H:i')]));
+    }
+
+    /**
+     * The email belongs to an account: a form error under `account` (the form links to the log
+     * in page), and for JSON clients the same 422 with the log in URL.
+     */
+    private function signInRequired(Request $request, string $message): ValidationException
+    {
+        $exception = ValidationException::withMessages(['account' => $message]);
+
+        if ($request->expectsJson()) {
+            $exception->response = response()->json([
+                'message' => $message,
+                'errors' => ['account' => [$message]],
+                'login_url' => route('login'),
+            ], 422);
+        }
+
+        return $exception;
     }
 
     /**

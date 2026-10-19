@@ -46,8 +46,9 @@ Route::prefix('mesas')->name('gametables.')->group(function (): void {
         Route::delete('/mis-mesas/{gameTable}', [FrontendGameTableController::class, 'destroy'])->name('destroy');
     });
 
-    // Guest registration (no auth required)
+    // Guest registration (no auth required), limited per IP
     Route::post('/{gameTable}/inscripcion-invitado', [RegistrationController::class, 'registerGuest'])
+        ->middleware('throttle:game-tables-guest-registration')
         ->name('register-guest');
 
     // Registration routes (authenticated)

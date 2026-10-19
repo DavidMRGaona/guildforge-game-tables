@@ -6,6 +6,7 @@ namespace Modules\GameTables\Tests\Feature\Http\Controllers;
 
 use App\Application\Modules\DTOs\SlotRegistrationDTO;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Carbon\CarbonImmutable;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -69,6 +70,44 @@ final class RegistrationSlotPropsTest extends ModuleTestCase
                 ->where('eligibility', null)
                 ->where('guestEligibility.eligible', true)
                 ->where('userRegistration', null));
+    }
+
+    // The guest form says before sending it how long the place is held, as the server will apply it
+    public function test_a_visitor_is_told_the_confirmation_deadline_of_a_held_place(): void
+    {
+        $now = CarbonImmutable::now();
+        $this->travelTo($now);
+
+        $this->get(route('gametables.show', $this->table->slug))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('guestEligibility.confirmation.mode', 'hold')
+                ->where('guestEligibility.confirmation.deadline', $now->addHours(2)->format('c')));
+    }
+
+    public function test_a_visitor_is_told_the_place_is_not_guaranteed_once_the_cap_is_reached(): void
+    {
+        foreach (['ana@example.test', 'bea@example.test'] as $email) {
+            ParticipantModel::create([
+                'id' => (string) Str::uuid(),
+                'game_table_id' => $this->table->id,
+                'first_name' => 'Invitada',
+                'email' => $email,
+                'role' => 'player',
+                'status' => 'confirmed',
+                'confirmed_at' => now(),
+                'confirmation_mode' => 'hold',
+                'confirmation_token' => bin2hex(random_bytes(32)),
+                'confirmation_expires_at' => now()->addHours(2),
+                'confirmation_sent_at' => now(),
+            ]);
+        }
+
+        $this->get(route('gametables.show', $this->table->slug))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('guestEligibility.confirmation.mode', 'wait')
+                ->where('guestEligibility.confirmation.deadline', null));
     }
 
     public function test_a_signed_in_user_gets_every_prop_of_the_registration_slot(): void
