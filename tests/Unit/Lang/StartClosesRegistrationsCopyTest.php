@@ -36,10 +36,6 @@ final class StartClosesRegistrationsCopyTest extends TestCase
             'Te has apuntado a la lista de espera (posición :position). Si se libera una plaza '.$when.', pasarás a la mesa pendiente de que el director te confirme y te avisaremos por correo.',
             $messages['success.waiting_list_manual']
         );
-        $this->assertSame(
-            'Te has apuntado a la lista de espera (posición :position). Recibirás un email de confirmación y otro si se libera una plaza '.$when.'.',
-            $messages['success.guest_waiting_list']
-        );
         $this->assertStringContainsString(
             'pasa automáticamente al primero de la lista hasta el inicio de la partida (o hasta el cierre de inscripciones, si es anterior); después, la promoción automática se detiene',
             $messages['settings.fields.waiting_list_enabled_help']
@@ -58,10 +54,6 @@ final class StartClosesRegistrationsCopyTest extends TestCase
         $this->assertSame(
             'You have joined the waiting list (position :position). If a seat is freed '.$when.', you will take it pending confirmation by the game master and we will let you know by email.',
             $messages['success.waiting_list_manual']
-        );
-        $this->assertSame(
-            'You have joined the waiting list (position :position). You will receive a confirmation email and another one if a seat is freed '.$when.'.',
-            $messages['success.guest_waiting_list']
         );
         $this->assertStringContainsString(
             'goes automatically to the first in the list until the table starts (or until registrations close, if that comes first); after that, automatic promotion stops',

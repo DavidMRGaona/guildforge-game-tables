@@ -175,7 +175,7 @@ function submitRegistration(role: ParticipantRole): void {
             },
             onError: (errors) => {
                 accountError.value = typeof errors.account === 'string' && errors.account !== '';
-                error.value = Object.values(errors)[0] as string || t('guestRegistration.error');
+                error.value = (accountError.value ? errors.account : Object.values(errors)[0] as string) || t('guestRegistration.error');
                 step.value = 'form';
             },
             onFinish: () => {

@@ -682,11 +682,8 @@ return [
 
     'success' => [
         'registered' => 'Te has inscrito correctamente',
-        'guest_registered' => 'Te has inscrito correctamente. Recibirás un email de confirmación.',
         'waiting_list' => 'Te has apuntado a la lista de espera (posición :position). Si se libera una plaza antes del inicio de la partida (o del cierre de inscripciones, si es anterior), pasarás a la mesa automáticamente y te avisaremos por correo.',
         'waiting_list_manual' => 'Te has apuntado a la lista de espera (posición :position). Si se libera una plaza antes del inicio de la partida (o del cierre de inscripciones, si es anterior), pasarás a la mesa pendiente de que el director te confirme y te avisaremos por correo.',
-        'guest_waiting_list' => 'Te has apuntado a la lista de espera (posición :position). Recibirás un email de confirmación y otro si se libera una plaza antes del inicio de la partida (o del cierre de inscripciones, si es anterior).',
-        'guest_spectator_registered' => 'Te has inscrito como espectador. Recibirás un email de confirmación.',
         'cancelled' => 'Inscripción cancelada correctamente',
         'guest_email_confirmed' => 'Tu inscripción está confirmada. Te hemos enviado un email con los detalles.',
         'guest_email_already_confirmed' => 'Tu inscripción ya estaba confirmada.',
