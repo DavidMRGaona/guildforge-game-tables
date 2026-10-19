@@ -36,6 +36,8 @@ El core rechaza el módulo si no se cumplen (`module.json` → `requires`).
 
 Las versiones nuevas se aplican desde **Actualizaciones de módulos** (también con el modo mantenimiento activo) o con `php artisan module:update game-tables`.
 
+La migración `2026_10_19_000002` crea un índice único (un invitado activo por email y mesa) y falla si ya hay inscripciones de invitado activas con el mismo email en la misma mesa: compruébalas y corrígelas antes de actualizar.
+
 ### En desarrollo
 
 Con el repositorio clonado en `src/modules/game-tables`:
@@ -55,6 +57,7 @@ Se configura en el panel: **Mesas de rol** → **Configuración** (permiso `game
 | Sección | Qué controla |
 |---------|--------------|
 | **Inscripciones** | **Lista de espera**: si las mesas con las plazas de jugador completas ofrecen la lista de espera (desactivada: la mesa completa rechaza a los jugadores). Ver [Lista de espera](#lista-de-espera) |
+| **Inscripciones de invitados** | **Plaza mientras no confirma** (`guest_confirmation.mode`: `hold` reserva la plaza con plazo, `wait` no ocupa plaza hasta confirmar; por defecto `hold`), **Plazo de confirmación** en horas (`guest_confirmation.hold_hours`, 2), **Máximo de plazas sin confirmar por mesa** (`guest_confirmation.max_unconfirmed_held`, 2), **Email con cuenta registrada** (`guest_accounts.mode`: `require_login` o `allow_guest`; por defecto `require_login`), inscripciones de invitado por minuto y por hora y conexión (`guest_rate_limit.per_minute` 5, `guest_rate_limit.per_hour` 20) y la ventana de «Posible duplicado» en horas (`duplicate_signal.window_hours`, 24). Ver [Inscripciones de invitados](#inscripciones-de-invitados) |
 | **Automatización** | **Actualizar el estado de las mesas automáticamente** (clave `automation.auto_status_enabled`, activado por defecto): cada cinco minutos las mesas programadas o completas pasan a «En progreso» a su hora de inicio y las mesas en progreso pasan a «Completada» al terminar. Ver [Cambio de estado automático](#cambio-de-estado-automático) |
 | **Acceso anticipado para socios** | **Acceso anticipado para socios** (clave `membership_integration.enabled`): si quienes tienen el rol de socio del core pueden inscribirse antes de la apertura según los días de acceso anticipado de cada mesa (desactivado, se inscriben con la apertura general); no depende del módulo de gestión de socios. **Días de acceso anticipado**: con cuántos empieza cada mesa nueva del panel |
 | **Valores por defecto** | Duración y número de jugadores y espectadores con los que empiezan los formularios de mesa del panel y de la web; confirmación automática y tipo de inscripción de las mesas nuevas del panel y de las creadas desde la web. Al guardar, cada valor por defecto se comprueba contra los **Límites** del mismo envío (no contra los guardados antes) y el mínimo de jugadores no puede superar el máximo; si no, el campo muestra el error y no se guarda nada. Los topes fijos siguen por encima: 20 jugadores, 50 espectadores, 720 minutos y 30 días de acceso anticipado |
@@ -94,7 +97,7 @@ La publicación es un indicador aparte (`is_published`). **Publicar** deja la me
 - Sin plazas de jugador libres no se admiten jugadores nuevos, salvo en la lista de espera si está activada.
 - Los espectadores solo necesitan una plaza de espectador libre, aunque las de jugador estén completas; no tienen lista de espera.
 - Ocupan plaza las inscripciones confirmadas y, con la lista de espera activada y en mesas con confirmación manual, también las pendientes, de jugador y de espectador. En los demás casos una inscripción pendiente no ocupa plaza.
-- Nadie puede tener dos inscripciones activas en la misma mesa, contando la lista de espera (los invitados se distinguen por su email).
+- Nadie puede tener dos inscripciones activas en la misma mesa, contando la lista de espera (los invitados se distinguen por su email, ya normalizado). Las inscripciones de invitado sin confirmar el email también cuentan como activas.
 - Las mesas «Por invitación» no admiten inscripciones desde la web, ni de invitados ni de usuarios con sesión, sean socios o no y sean cuales sean sus fechas: la página dice «Esta mesa es solo por invitación: la organización inscribe a los jugadores» y la organización añade a los participantes desde el panel.
 - Los participantes (usuarios desde la página de la mesa e invitados con el enlace de su correo) solo pueden cancelar su inscripción, también la de la lista de espera, antes de la hora de inicio, incluso en las mesas que admiten inscripciones durante la partida; después, el botón y la página del enlace explican que la partida ya ha comenzado. Desde el panel, **Cancelar inscripción** no tiene ese límite, pero tras el inicio no pasa a nadie de la lista de espera.
 - Desde la web solo se inscribe como jugador o espectador; los directores se asignan en el panel.
@@ -104,7 +107,7 @@ La página de la mesa y el servidor usan el mismo cálculo: el servidor cuenta l
 - **Cancelar inscripción** (pide confirmación; para inscripciones pendientes, confirmadas o en la lista de espera, las que se pueden cancelar) hace lo mismo que la cancelación del propio participante: libera la plaza y pasa al primero de la lista de espera cuando corresponde, que recibe su aviso de promoción de siempre. El participante, usuario o invitado, recibe un correo propio («La organización ha cancelado tu inscripción en…»); los directores no reciben el aviso de cancelación (sí el de promoción, si alguien pasa de la lista).
 - **No presentado** (pide confirmación; solo para participantes confirmados, una vez empezada la mesa) no envía correos ni promueve a nadie.
 - **Editar** cambia las notas y el contacto del invitado (el email en minúsculas, y no el de otro invitado activo de la misma mesa: «Ya existe una inscripción con este email»), no el estado. El rol, el tipo de participante y el usuario no se editan: un cambio de rol o de persona es otra plaza, así que se cancela la inscripción y se añade de nuevo, que pasa por el bloqueo y las reglas de aforo.
-- **Borrar** (en una fila o en bloque) solo es para inscripciones canceladas o rechazadas, que ya no ocupan ni esperan plaza; para dar de baja a alguien se usa **Cancelar inscripción**, que libera la plaza y avisa a la lista de espera. En bloque se borran solo las seleccionadas que estén canceladas o rechazadas, las demás se quedan, y el aviso dice cuántas se han borrado y cuántas hay que cancelar antes. El estado se comprueba al borrar: una inscripción que se reactiva mientras tanto (la persona vuelve a inscribirse) no se borra. Lo ve quien puede editar la mesa, igual que las acciones de estado.
+- **Borrar** (en una fila o en bloque) solo es para inscripciones canceladas, rechazadas o caducadas, que ya no ocupan ni esperan plaza; para dar de baja a alguien se usa **Cancelar inscripción**, que libera la plaza y avisa a la lista de espera. En bloque se borran solo las seleccionadas que estén canceladas, rechazadas o caducadas, las demás se quedan, y el aviso dice cuántas se han borrado y cuántas hay que cancelar antes. El estado se comprueba al borrar: una inscripción que se reactiva mientras tanto (la persona vuelve a inscribirse) no se borra. Lo ve quien puede editar la mesa, igual que las acciones de estado.
 
 En el panel, la cabecera de la mesa tiene las acciones **Publicar**, **Despublicar**, **Iniciar**, **Completar** y **Cancelar mesa**. **Iniciar** (mesas programadas o completas) y **Completar** (mesas en progreso) pasan por el mismo servicio que el cambio automático: **Completar** emite `GameTableCompleted`, y si la mesa ya ha cambiado de estado entretanto avisan («La mesa ya no está en un estado que permita este cambio») sin cambiar nada. Ninguna mesa en borrador, cancelada o completada se puede iniciar ni completar.
 
@@ -138,6 +141,29 @@ Con la lista desactivada todo sigue como en la versión 2.5.0 salvo esto: los es
 
 Los emails de los invitados se guardan en minúsculas y se comparan sin distinguir mayúsculas. Quien solo puede entrar como espectador (plazas de jugador completas y sin lista) ve **Inscribirse como espectador**, tenga sesión o no; el invitado ve además un aviso de que las plazas de jugador están completas.
 
+### Inscripciones de invitados
+
+Un invitado se inscribe con nombre, email y consentimiento, y su inscripción queda **sin confirmar** hasta que pulsa el enlace del correo que recibe. Qué pasa mientras tanto lo decide **Plaza mientras no confirma**:
+
+- **`hold`** (por defecto): la inscripción reserva su plaza hasta un plazo de `guest_confirmation.hold_hours` horas (2 por defecto) desde el envío, y el plazo nunca pasa del cierre de inscripciones de la mesa. Si la mesa tiene lista de espera y estaba llena, el invitado conserva su puesto en ella con el mismo plazo.
+- **`wait`**: no ocupa plaza hasta que confirma; el correo avisa de que la plaza no está garantizada. Sin plaza, la inscripción espera hasta que se cierran las inscripciones de la mesa.
+- **Tope**: como mucho `guest_confirmation.max_unconfirmed_held` (2 por defecto) invitados sin confirmar retienen plaza a la vez en una mesa; los siguientes esperan sin plaza, como en `wait`.
+- **Reenvío**: quien vuelve a enviar el formulario con un email pendiente ve «Ya tienes una inscripción pendiente: revisa tu correo». El correo solo se reenvía si el último envío tiene cinco minutos o más; el plazo no se mueve.
+
+**Cuentas.** Solo cuentan las cuentas con el email verificado: una cuenta sin verificar no impide inscribirse como invitado con ese email. Con **Email con cuenta registrada** en `require_login`, ese email se rechaza con «Este email pertenece a una cuenta. Inicia sesión para inscribirte.» y un enlace para iniciar sesión; con `allow_guest` se admite como invitado salvo que esa cuenta ya esté inscrita («Ya hay una inscripción con tu email.»). Si un usuario con sesión se inscribe en una mesa donde ya tenía una inscripción de invitado con su email verificado, la inscripción pasa a su cuenta (se borran los datos personales de invitado: nombre, apellidos, email y teléfono, y el enlace de cancelación) y, si estaba sin confirmar, su email queda confirmado por la cuenta; no se crea otra.
+
+**Enlace de confirmación.** `GET /mesas/confirmar/{token}` solo muestra los datos de la inscripción; la confirmación se hace con el botón (`POST` a la misma ruta), para que un escáner de correo no confirme por el invitado. Al confirmar, la inscripción sin plaza se coloca bajo el bloqueo de la mesa: si ya no hay plaza o las inscripciones se han cerrado, la inscripción pasa a **Caducada**. La misma página muestra el resultado: plaza confirmada, pendiente de aprobación por la organización, en la lista de espera con su puesto, ya confirmada, llena mientras confirmaba, inscripciones cerradas o enlace no válido (caducado, cancelado, desconocido o de una mesa no publicada); este último también al abrir el enlace. Antes de confirmar, la página muestra el estado «Pendiente de confirmar». Está limitado a 20 peticiones por minuto y 100 por hora y conexión; pasado el límite, la página lo explica (estado 429).
+
+**Límite de inscripciones.** El formulario de invitado (solo invitados) admite `guest_rate_limit.per_minute` (5) y `guest_rate_limit.per_hour` (20) envíos por conexión; pasado el límite se muestra un error en el formulario.
+
+**Caducidad.** El comando `game-tables:expire-guest-registrations`, programado cada cinco minutos sin ejecuciones solapadas, pasa a **Caducada** las inscripciones sin confirmar cuyo plazo ha vencido y las que esperaban sin plaza cuando se cierran las inscripciones de su mesa. Solo se envía correo («Inscripción caducada») si la fila retenía plaza; la que esperaba sin plaza caduca en silencio. Al liberarse una plaza se promueve a la lista de espera como en una cancelación. Es independiente de **Actualizar el estado de las mesas automáticamente**: funciona aunque ese ajuste esté desactivado.
+
+**Posible duplicado.** Cada inscripción hecha desde la web guarda una huella de la conexión y el navegador. En el panel, la columna **Avisos** marca **Posible duplicado** en dos inscripciones activas de la misma mesa con la misma huella (al menos una de invitado) hechas con `duplicate_signal.window_hours` horas de diferencia o menos, ventana inclusive. Es solo un aviso; no bloquea nada. La huella se borra cuando termina la mesa. Las columnas de avisos muestran también **Email sin confirmar** y la fecha en que **Caduca**.
+
+**Acciones de la organización.** Las inscripciones que añade la organización desde el panel no pasan por la confirmación del invitado: **Marcar email como confirmado** (como si hubiera pulsado el enlace; si no tenía plaza, la coloca antes bajo el mismo bloqueo y, sin plaza libre, avisa de que la mesa está llena y no cambia nada), **Confirmar** y **Promover** confirman también el email. Confirmar el email de un invitado sin confirmar de cualquiera de estas tres formas no envía a la organización el aviso de inscripción de invitado (es su propia acción) y el invitado recibe un solo correo. Añadir a un invitado desde el panel sigue avisando como siempre.
+
+**Cookie.** El formulario guarda un indicio en el navegador, la cookie `gt_guest_registrations` (categoría preferencias, 90 días), con las mesas en las que se ha inscrito como invitado para avisar si lo intenta otra vez. No se lee ni escribe sin consentimiento. Si el módulo cookie-consent está instalado, el módulo la declara ahí; sin cookie-consent no hay forma de dar ese consentimiento, así que la cookie nunca se escribe.
+
 ### Inscripción
 
 | Estado | Valor | Descripción |
@@ -148,6 +174,7 @@ Los emails de los invitados se guardan en minúsculas y se comparan sin distingu
 | Cancelado | `cancelled` | Cancelada por el participante, por la organización desde el panel o al cancelarse la mesa |
 | Rechazado | `rejected` | Rechazada por un administrador |
 | No presentado | `no_show` | No asistió; lo marca la organización desde el panel, una vez empezada la mesa |
+| Caducada | `expired` | Inscripción de invitado que no confirmó su email a tiempo (o antes del cierre de inscripciones, si esperaba sin plaza); no ocupa ni espera plaza y se puede borrar |
 
 ### Moderación (creación desde la web)
 
@@ -235,6 +262,8 @@ Widget del dashboard: `PendingModerationWidget` (mesas y campañas pendientes de
 | `POST` | `/mesas/{gameTable}/inscripcion` | `gametables.register` | Usuarios autenticados |
 | `DELETE` | `/mesas/{gameTable}/inscripcion` | `gametables.cancel` | Usuarios autenticados |
 | `POST` | `/mesas/{gameTable}/inscripcion-invitado` | `gametables.register-guest` | Público |
+| `GET` | `/mesas/confirmar/{token}` | `gametables.confirm-guest` | Invitados con enlace |
+| `POST` | `/mesas/confirmar/{token}` | `gametables.confirm-guest.store` | Invitados con enlace |
 | `GET` | `/mesas/cancelar/{token}` | `gametables.cancel-confirmation` | Invitados con enlace |
 | `DELETE` | `/mesas/cancelar/{token}` | `gametables.cancel-by-token` | Invitados con enlace |
 | `GET` / `POST` | `/mesas/crear` | `gametables.create` / `gametables.store` | Usuarios autenticados |
@@ -291,6 +320,8 @@ Widget del dashboard: `PendingModerationWidget` (mesas y campañas pendientes de
 | Momento | Destinatarios |
 |---------|---------------|
 | Inscripción (usuario o invitado) | Participante; directores y email de la mesa si **Notificaciones** lo permite |
+| Inscripción de invitado sin confirmar | Invitado, con el enlace para confirmar el email (y el plazo, si reserva plaza); los avisos de inscripción a la organización salen al confirmar el invitado, no al inscribirse |
+| Inscripción de invitado caducada | Invitado, solo si la inscripción retenía plaza |
 | Confirmación o rechazo de la inscripción | Participante |
 | Cancelación de la inscripción por el participante | Participante; directores y email de la mesa si **Notificaciones** lo permite |
 | Cancelación de la inscripción por la organización (panel) | Participante, con su propio correo; los directores y el email de la mesa no reciben el aviso de cancelación (sí el de promoción si alguien sale de la lista de espera) |
@@ -345,6 +376,7 @@ php artisan gametables:generate-slugs            # genera slugs de mesas y campa
 php artisan gametables:generate-slugs --dry-run  # muestra qué haría sin cambiar nada
 php artisan gametables:generate-slugs --force    # regenera también los existentes
 php artisan game-tables:update-statuses          # inicia y completa las mesas según su hora (programado cada cinco minutos)
+php artisan game-tables:expire-guest-registrations  # caduca invitados sin confirmar y borra huellas de mesas terminadas (programado cada cinco minutos)
 ```
 
 ## Limitaciones actuales

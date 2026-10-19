@@ -18,6 +18,24 @@ return [
         'role_spectator' => 'espectador',
     ],
 
+    'guest_email_confirmation' => [
+        'subject' => 'Confirma tu inscripción: :tableTitle',
+        'greeting' => 'Hola :name,',
+        'intro' => 'Hemos recibido tu inscripción en la mesa «:tableTitle». Confírmala con el botón de abajo.',
+        'deadline' => 'Si no la confirmas antes del :deadline, la plaza se liberará.',
+        'unguaranteed' => 'Tu plaza no está garantizada hasta que la confirmes.',
+        'button' => 'Confirmar inscripción',
+        'ignore' => 'Si no te has inscrito tú, ignora este email: la inscripción no seguirá adelante.',
+    ],
+
+    'guest_registration_expired' => [
+        'subject' => 'Inscripción caducada: :tableTitle',
+        'greeting' => 'Hola :name,',
+        'intro' => 'No confirmaste a tiempo tu inscripción en la mesa «:tableTitle» y la plaza se ha liberado.',
+        'retry' => 'Si siguen quedando plazas, puedes volver a apuntarte.',
+        'button' => 'Ver mesa',
+    ],
+
     'registration_status' => [
         'subject_confirmed' => 'Inscripción confirmada: :tableTitle',
         'subject_pending' => 'Inscripción recibida: :tableTitle',

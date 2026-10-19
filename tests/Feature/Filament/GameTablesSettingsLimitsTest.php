@@ -6,6 +6,8 @@ namespace Modules\GameTables\Tests\Feature\Filament;
 
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
+use Modules\GameTables\Domain\Enums\GuestAccountsMode;
+use Modules\GameTables\Domain\Enums\GuestConfirmationMode;
 use Modules\GameTables\Filament\Pages\GameTablesSettings;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -221,6 +223,65 @@ final class GameTablesSettingsLimitsTest extends ModuleTestCase
                 __('game-tables::messages.settings.validation.'.$key, ['limit' => 1], 'en'),
             );
         }
+    }
+
+    // Guest registration settings are validated on the server
+
+    public function test_valid_guest_settings_are_saved(): void
+    {
+        $this->save([
+            'guest_confirmation.mode' => 'wait',
+            'guest_confirmation.hold_hours' => 168,
+            'guest_confirmation.max_unconfirmed_held' => 0,
+            'guest_accounts.mode' => 'allow_guest',
+            'guest_rate_limit.per_minute' => 100,
+            'guest_rate_limit.per_hour' => 1000,
+            'duplicate_signal.window_hours' => 720,
+        ])->assertHasNoFormErrors();
+
+        $settings = new GameTableSettingsReader();
+        $this->assertSame(GuestConfirmationMode::Wait, $settings->guestConfirmationMode());
+        $this->assertSame(168, $settings->guestConfirmationHoldHours());
+        $this->assertSame(0, $settings->maxUnconfirmedHeldSeats());
+        $this->assertSame(GuestAccountsMode::AllowGuest, $settings->guestAccountsMode());
+        $this->assertSame(100, $settings->guestRateLimitPerMinute());
+        $this->assertSame(1000, $settings->guestRateLimitPerHour());
+        $this->assertSame(720, $settings->duplicateSignalWindowHours());
+    }
+
+    /**
+     * @return array<string, array{string, mixed, string}>
+     */
+    public static function invalidGuestSettings(): array
+    {
+        return [
+            'hold hours zero' => ['guest_confirmation.hold_hours', 0, 'min'],
+            'hold hours above a week' => ['guest_confirmation.hold_hours', 169, 'max'],
+            'hold hours not a number' => ['guest_confirmation.hold_hours', 'abc', 'numeric'],
+            'hold hours empty' => ['guest_confirmation.hold_hours', null, 'required'],
+            'cap negative' => ['guest_confirmation.max_unconfirmed_held', -1, 'min'],
+            'cap above 50' => ['guest_confirmation.max_unconfirmed_held', 51, 'max'],
+            'per minute zero' => ['guest_rate_limit.per_minute', 0, 'min'],
+            'per minute above 100' => ['guest_rate_limit.per_minute', 101, 'max'],
+            'per hour zero' => ['guest_rate_limit.per_hour', 0, 'min'],
+            'per hour above 1000' => ['guest_rate_limit.per_hour', 1001, 'max'],
+            'window zero' => ['duplicate_signal.window_hours', 0, 'min'],
+            'window above 720' => ['duplicate_signal.window_hours', 721, 'max'],
+            'confirmation mode unknown' => ['guest_confirmation.mode', 'banana', 'in'],
+            'confirmation mode empty' => ['guest_confirmation.mode', null, 'required'],
+            'accounts mode unknown' => ['guest_accounts.mode', 'banana', 'in'],
+            'accounts mode empty' => ['guest_accounts.mode', null, 'required'],
+        ];
+    }
+
+    #[DataProvider('invalidGuestSettings')]
+    public function test_invalid_guest_settings_are_refused_and_nothing_is_saved(string $field, mixed $value, string $rule): void
+    {
+        $this->save([$field => $value, 'defaults.max_players' => 6])
+            ->assertHasFormErrors([$field => $rule]);
+
+        // The same submission saved nothing else
+        $this->assertSame(5, (new GameTableSettingsReader())->defaultMaxPlayers());
     }
 
     /**

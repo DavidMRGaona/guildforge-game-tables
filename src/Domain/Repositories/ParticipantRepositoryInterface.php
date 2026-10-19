@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Domain\Repositories;
 
+use DateTimeImmutable;
 use Modules\GameTables\Domain\Entities\Participant;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
@@ -61,6 +62,11 @@ interface ParticipantRepositoryInterface
 
     public function countConfirmedSpectators(GameTableId $gameTableId): int;
 
+    public function findByConfirmationToken(string $token): ?Participant;
+
+    /**
+     * Pending players holding a seat: guests with an unconfirmed email and no seat (mode wait) are left out.
+     */
     public function countPendingPlayers(GameTableId $gameTableId): int;
 
     public function countPendingSpectators(GameTableId $gameTableId): int;
@@ -70,10 +76,55 @@ interface ParticipantRepositoryInterface
      */
     public function countWaiting(GameTableId $gameTableId, ParticipantRole $role): int;
 
+    /**
+     * Guests whose email is not confirmed yet and who hold a seat (hold mode, pending or confirmed).
+     * Waiting-list rows do not count.
+     */
+    public function countUnconfirmedHoldingSeats(GameTableId $gameTableId): int;
+
+    /**
+     * Unconfirmed guests holding their place (hold mode, seated or on the waiting list) whose
+     * deadline has come.
+     *
+     * @return list<string> participant ids
+     */
+    public function idsOfOverdueHolds(DateTimeImmutable $now): array;
+
+    /**
+     * Unconfirmed guests waiting without a place (wait mode), by table.
+     *
+     * @return array<string, list<string>> game table id => participant ids
+     */
+    public function unconfirmedWaitingByTable(): array;
+
+    /**
+     * Tables with at least one participant fingerprint stored.
+     *
+     * @return list<string>
+     */
+    public function gameTableIdsWithFingerprints(): array;
+
+    /**
+     * @param  array<string>  $gameTableIds
+     * @return int the participants whose fingerprint was cleared
+     */
+    public function clearFingerprints(array $gameTableIds): int;
+
+    /**
+     * Active participants of the table that may be one person registered twice: two rows pair
+     * when they share a fingerprint, at least one of them is a guest, and they were made at most
+     * $windowHours apart (the last confirmation email sent, else the registration date). Both ids
+     * of every pair are returned.
+     *
+     * @return list<string> participant ids
+     */
+    public function possibleDuplicateIds(GameTableId $gameTableId, int $windowHours): array;
+
     public function getNextWaitingListPosition(GameTableId $gameTableId): int;
 
     /**
      * First in the waiting list, optionally only among the participants with the given role.
+     * Guests whose email is not confirmed are skipped (they keep their place).
      * The waiting list order is the stored position, then the registration date.
      */
     public function getFirstInWaitingList(GameTableId $gameTableId, ?ParticipantRole $role = null): ?Participant;

@@ -31,4 +31,16 @@ final class AlreadyRegisteredException extends DomainException
             'guest_already_registered'
         );
     }
+
+    /**
+     * A guest registration whose email already has a registration at the table, made by a
+     * signed-in user (or the other way round); the message is the one shown to the person.
+     */
+    public static function emailRegisteredAsGuest(string $gameTableId): self
+    {
+        return new self(
+            __('game-tables::messages.errors.email_registered_as_guest'),
+            'email_registered_as_guest'
+        );
+    }
 }

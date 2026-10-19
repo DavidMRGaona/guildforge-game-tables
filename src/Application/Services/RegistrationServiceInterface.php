@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Application\Services;
 
 use DateTimeImmutable;
+use Modules\GameTables\Application\DTOs\GuestConfirmationResultDTO;
 use Modules\GameTables\Application\DTOs\ParticipantResponseDTO;
 use Modules\GameTables\Application\DTOs\ProfileParticipationDTO;
 use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
@@ -38,7 +39,11 @@ interface RegistrationServiceInterface
     public function cancelByAdmin(string $participantId): ParticipantResponseDTO;
 
     /**
-     * @throws \Modules\GameTables\Domain\Exceptions\TableFullException with the waiting list on, when no player or spectator seat is free
+     * The organisation approves a pending registration. For a guest whose email is not confirmed
+     * it also vouches for the email: a guest without a seat yet (wait mode) is first placed into a
+     * seat, and the guest gets the usual registration email instead of the approval one.
+     *
+     * @throws \Modules\GameTables\Domain\Exceptions\TableFullException with the waiting list on, when no player or spectator seat is free; for a guest without a seat yet, whenever none is free (nothing changes)
      */
     public function confirm(string $participantId): ParticipantResponseDTO;
 
@@ -52,7 +57,10 @@ interface RegistrationServiceInterface
 
     /**
      * Promote a specific participant from waiting list (confirmed; unchanged if no longer waiting).
-     * For admin use when promoting a specific person instead of the first in queue.
+     * For admin use when promoting a specific person instead of the first in queue; a guest whose
+     * email is not confirmed may be chosen too, and the promotion vouches for the email: the guest
+     * gets the usual registration email (it carries the cancellation link) instead of the
+     * promotion one, and the directors nothing.
      *
      * @throws \Modules\GameTables\Domain\Exceptions\TableFullException with the waiting list on, when no player or spectator seat is free
      */
@@ -64,12 +72,14 @@ interface RegistrationServiceInterface
     public function registerByAdmin(RegisterParticipantDTO $dto): ParticipantResponseDTO;
 
     /**
-     * Register a guest participant by admin (bypasses eligibility checks).
+     * Register a guest participant by admin (bypasses eligibility checks). The organisation vouches
+     * for the email: it needs no confirmation and the usual emails go out at once.
      */
     public function registerGuestByAdmin(RegisterParticipantDTO $dto): ParticipantResponseDTO;
 
     /**
-     * A confirmed participant who did not come, once the table has started (no emails, no promotion).
+     * A confirmed participant who did not come, once the table has started (no emails, no
+     * promotion). An unconfirmed guest's email counts as confirmed, silently.
      *
      * @throws \Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException before the start or without a confirmed seat
      */
@@ -95,7 +105,14 @@ interface RegistrationServiceInterface
     public function findByTableAndUser(string $gameTableId, string $userId): ?ParticipantResponseDTO;
 
     /**
-     * Register a guest participant.
+     * A guest registration from the public form, left unconfirmed until the guest follows the
+     * emailed link: only the confirmation email goes out. Sending the form again while unconfirmed
+     * returns the same registration (confirmationResent) and sends the email again at most once
+     * every few minutes.
+     *
+     * @throws \Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException when the table does not admit the guest
+     * @throws \Modules\GameTables\Domain\Exceptions\AccountEmailRequiresLoginException when the email belongs to an account that should sign in
+     * @throws \Modules\GameTables\Domain\Exceptions\AlreadyRegisteredException when the email already has a confirmed registration at the table, or its account is registered
      */
     public function registerGuest(RegisterParticipantDTO $dto): ParticipantResponseDTO;
 
@@ -119,6 +136,44 @@ interface RegistrationServiceInterface
      * Find a participant by cancellation token.
      */
     public function findByToken(string $token): ?ParticipantResponseDTO;
+
+    /**
+     * The guest follows the link of the confirmation email. Under the table lock: an unknown,
+     * cleared or inactive token is Invalid; a confirmed email AlreadyConfirmed; once registrations
+     * have closed the registration expires (Closed), and past its deadline too (Invalid). Otherwise
+     * the email is confirmed: a held place is kept (from the waiting list it takes a free seat), a
+     * guest without one is placed now, or expires when no room is left (FilledUp). Only a
+     * Confirmed registration is announced: the guest's registration email and the organisation.
+     * An expired registration is announced as the expiry command does (the guest is emailed only
+     * when it held a place).
+     */
+    public function confirmGuestEmail(string $token): GuestConfirmationResultDTO;
+
+    /**
+     * «Marcar email como confirmado» from the panel: the same as the emailed link, under the table
+     * lock, whatever the dates (the organisation vouches for the email). A held place is kept (from
+     * the waiting list it takes a free seat); a guest without one is placed now. The guest gets the
+     * usual registration email; the organisation nothing. A registration that is not awaiting
+     * confirmation is returned unchanged.
+     *
+     * @throws \Modules\GameTables\Domain\Exceptions\TableFullException when a guest without a place finds no room (nothing changes)
+     */
+    public function confirmGuestEmailByAdmin(string $participantId): ParticipantResponseDTO;
+
+    /**
+     * Expires a guest registration that is still unconfirmed and due: past its deadline, or with
+     * the registrations of its table closed. Under the table lock, as a cancellation: the seat is
+     * freed for the waiting list (with its notices). The organisation is never told.
+     *
+     * @param  bool  $notifyGuest  whether the guest gets the expiry email
+     * @return bool false when the row is no longer unconfirmed (confirmed, cancelled, deleted) or not due
+     */
+    public function expireGuestRegistration(string $participantId, bool $notifyGuest = true, ?DateTimeImmutable $now = null): bool;
+
+    /**
+     * Find a participant by guest confirmation token.
+     */
+    public function findByConfirmationToken(string $token): ?ParticipantResponseDTO;
 
     /**
      * Get user participations for profile page.

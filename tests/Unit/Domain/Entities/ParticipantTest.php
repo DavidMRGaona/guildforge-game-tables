@@ -6,6 +6,7 @@ namespace Modules\GameTables\Tests\Unit\Domain\Entities;
 
 use DateTimeImmutable;
 use Modules\GameTables\Domain\Entities\Participant;
+use Modules\GameTables\Domain\Enums\GuestConfirmationMode;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
 use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
@@ -309,6 +310,185 @@ final class ParticipantTest extends TestCase
         $participant->setCancellationToken($token);
 
         $this->assertEquals($token, $participant->cancellationToken);
+    }
+
+    public function test_require_email_confirmation_leaves_the_email_unconfirmed(): void
+    {
+        $now = new DateTimeImmutable('2030-01-01 10:00:00');
+        $deadline = new DateTimeImmutable('2030-01-01 12:00:00');
+        $guest = $this->createGuest();
+
+        $guest->requireEmailConfirmation(GuestConfirmationMode::Hold, 'token-1', $deadline, $now);
+
+        $this->assertTrue($guest->isAwaitingEmailConfirmation());
+        $this->assertNull($guest->emailConfirmedAt);
+        $this->assertSame('token-1', $guest->confirmationToken);
+        $this->assertSame(GuestConfirmationMode::Hold, $guest->confirmationMode);
+        $this->assertEquals($deadline, $guest->confirmationExpiresAt);
+        $this->assertEquals($now, $guest->confirmationSentAt);
+        $this->assertTrue($guest->holdsPlaceWhileUnconfirmed());
+    }
+
+    // The token survives so that following the link again finds a confirmed registration
+    public function test_confirm_email_clears_the_expiry_and_keeps_the_token(): void
+    {
+        $now = new DateTimeImmutable('2030-01-01 10:30:00');
+        $guest = $this->createGuest();
+        $guest->requireEmailConfirmation(
+            GuestConfirmationMode::Hold,
+            'token-1',
+            new DateTimeImmutable('2030-01-01 12:00:00'),
+            new DateTimeImmutable('2030-01-01 10:00:00'),
+        );
+
+        $guest->confirmEmail($now);
+
+        $this->assertEquals($now, $guest->emailConfirmedAt);
+        $this->assertNull($guest->confirmationExpiresAt);
+        $this->assertSame('token-1', $guest->confirmationToken);
+        $this->assertFalse($guest->isAwaitingEmailConfirmation());
+    }
+
+    public function test_a_user_row_is_never_awaiting(): void
+    {
+        $participant = $this->createParticipant();
+        $participant->requireEmailConfirmation(
+            GuestConfirmationMode::Hold,
+            'token-1',
+            new DateTimeImmutable('2030-01-01 12:00:00'),
+            new DateTimeImmutable('2030-01-01 10:00:00'),
+        );
+
+        $this->assertFalse($participant->isAwaitingEmailConfirmation());
+        $this->assertFalse($participant->holdsPlaceWhileUnconfirmed());
+        $this->assertFalse($participant->isConfirmationOverdue(new DateTimeImmutable('2031-01-01')));
+    }
+
+    public function test_a_cancelled_guest_is_not_awaiting(): void
+    {
+        $guest = $this->createGuest();
+        $guest->requireEmailConfirmation(GuestConfirmationMode::Hold, 'token-1', null, new DateTimeImmutable());
+        $guest->cancel();
+
+        $this->assertFalse($guest->isAwaitingEmailConfirmation());
+        $this->assertNull($guest->confirmationToken);
+    }
+
+    public function test_resend_waits_five_minutes(): void
+    {
+        $sentAt = new DateTimeImmutable('2030-01-01 10:00:00');
+        $guest = $this->createGuest();
+
+        $this->assertTrue($guest->canResendConfirmation($sentAt));
+
+        $guest->requireEmailConfirmation(GuestConfirmationMode::Hold, 'token-1', null, $sentAt);
+
+        $this->assertFalse($guest->canResendConfirmation(new DateTimeImmutable('2030-01-01 10:04:59')));
+        $this->assertTrue($guest->canResendConfirmation(new DateTimeImmutable('2030-01-01 10:05:00')));
+
+        $guest->markConfirmationSent(new DateTimeImmutable('2030-01-01 10:06:00'));
+
+        $this->assertFalse($guest->canResendConfirmation(new DateTimeImmutable('2030-01-01 10:10:59')));
+        $this->assertTrue($guest->canResendConfirmation(new DateTimeImmutable('2030-01-01 10:11:00')));
+    }
+
+    public function test_overdue_only_in_hold_mode_at_or_after_the_deadline(): void
+    {
+        $deadline = new DateTimeImmutable('2030-01-01 12:00:00');
+        $hold = $this->createGuest();
+        $hold->requireEmailConfirmation(GuestConfirmationMode::Hold, 'token-1', $deadline, $deadline->modify('-2 hours'));
+        $wait = $this->createGuest();
+        $wait->requireEmailConfirmation(GuestConfirmationMode::Wait, 'token-2', $deadline, $deadline->modify('-2 hours'));
+
+        $this->assertFalse($hold->isConfirmationOverdue($deadline->modify('-1 second')));
+        $this->assertTrue($hold->isConfirmationOverdue($deadline));
+        $this->assertFalse($wait->isConfirmationOverdue($deadline));
+        $this->assertFalse($wait->holdsPlaceWhileUnconfirmed());
+    }
+
+    public function test_expire_frees_the_list_position(): void
+    {
+        $now = new DateTimeImmutable('2030-01-01 12:00:00');
+        $guest = $this->createGuest(ParticipantStatus::WaitingList);
+        $guest->addToWaitingList(3);
+        $guest->requireEmailConfirmation(GuestConfirmationMode::Wait, 'token-1', $now, $now->modify('-2 hours'));
+
+        $guest->expire($now);
+
+        $this->assertSame(ParticipantStatus::Expired, $guest->status);
+        $this->assertNull($guest->waitingListPosition);
+        $this->assertEquals($now, $guest->cancelledAt);
+        $this->assertNull($guest->confirmationExpiresAt);
+        $this->assertNull($guest->confirmationToken);
+    }
+
+    public function test_attach_to_account_moves_the_row_to_the_user(): void
+    {
+        $now = new DateTimeImmutable('2030-01-01 11:00:00');
+        $guest = $this->createGuest();
+        $guest->setCancellationToken('cancel-token');
+        $guest->lastName = 'Pérez';
+        $guest->phone = '600000000';
+        $guest->recordFingerprint('abc');
+        $guest->requireEmailConfirmation(GuestConfirmationMode::Hold, 'token-1', $now->modify('+1 hour'), $now);
+
+        $guest->attachToAccount('user-9', $now);
+
+        $this->assertSame('user-9', $guest->userId);
+        $this->assertFalse($guest->isGuest());
+        $this->assertNull($guest->email);
+        // The account holds the person's data now
+        $this->assertNull($guest->firstName);
+        $this->assertNull($guest->lastName);
+        $this->assertNull($guest->phone);
+        $this->assertSame('abc', $guest->fingerprint);
+        $this->assertNull($guest->cancellationToken);
+        $this->assertNull($guest->confirmationToken);
+        $this->assertEquals($now, $guest->emailConfirmedAt);
+        $this->assertNull($guest->confirmationExpiresAt);
+    }
+
+    public function test_attach_to_account_keeps_an_earlier_email_confirmation_date(): void
+    {
+        $confirmedAt = new DateTimeImmutable('2030-01-01 09:00:00');
+        $guest = $this->createGuest();
+        $guest->confirmEmail($confirmedAt);
+
+        $guest->attachToAccount('user-9', new DateTimeImmutable('2030-01-01 11:00:00'));
+
+        $this->assertEquals($confirmedAt, $guest->emailConfirmedAt);
+    }
+
+    public function test_reactivate_clears_the_confirmation_fields(): void
+    {
+        $now = new DateTimeImmutable('2030-01-01 10:00:00');
+        $guest = $this->createGuest();
+        $guest->requireEmailConfirmation(GuestConfirmationMode::Hold, 'token-1', $now->modify('+2 hours'), $now);
+        $guest->confirmEmail($now);
+        $guest->recordFingerprint('abc');
+        $guest->cancel();
+
+        $guest->reactivate();
+
+        $this->assertNull($guest->emailConfirmedAt);
+        $this->assertNull($guest->confirmationExpiresAt);
+        $this->assertNull($guest->confirmationToken);
+        $this->assertNull($guest->confirmationSentAt);
+        $this->assertNull($guest->confirmationMode);
+        $this->assertNull($guest->fingerprint);
+    }
+
+    private function createGuest(ParticipantStatus $status = ParticipantStatus::Pending): Participant
+    {
+        return new Participant(
+            id: ParticipantId::generate(),
+            gameTableId: GameTableId::generate(),
+            userId: null,
+            role: ParticipantRole::Player,
+            status: $status,
+            firstName: 'Ana',
+            email: 'ana@example.com',
+        );
     }
 
     private function createParticipant(

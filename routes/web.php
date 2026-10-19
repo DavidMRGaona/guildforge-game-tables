@@ -7,6 +7,7 @@ use Modules\GameTables\Http\Controllers\CampaignController;
 use Modules\GameTables\Http\Controllers\FrontendCampaignController;
 use Modules\GameTables\Http\Controllers\FrontendGameTableController;
 use Modules\GameTables\Http\Controllers\GameTableController;
+use Modules\GameTables\Http\Controllers\GuestConfirmationController;
 use Modules\GameTables\Http\Controllers\RegistrationController;
 
 /*
@@ -26,6 +27,14 @@ Route::prefix('mesas')->name('gametables.')->group(function (): void {
     Route::delete('/cancelar/{token}', [RegistrationController::class, 'cancelByToken'])
         ->name('cancel-by-token');
 
+    // Guest email confirmation (public): the page only shows, its button confirms
+    Route::get('/confirmar/{token}', [GuestConfirmationController::class, 'show'])
+        ->middleware('throttle:game-tables-guest-confirmation')
+        ->name('confirm-guest');
+    Route::post('/confirmar/{token}', [GuestConfirmationController::class, 'store'])
+        ->middleware('throttle:game-tables-guest-confirmation')
+        ->name('confirm-guest.store');
+
     // Frontend creation routes (authenticated) - MUST be before {slug} route
     Route::middleware('auth')->group(function (): void {
         Route::get('/crear', [FrontendGameTableController::class, 'create'])->name('create');
@@ -37,8 +46,9 @@ Route::prefix('mesas')->name('gametables.')->group(function (): void {
         Route::delete('/mis-mesas/{gameTable}', [FrontendGameTableController::class, 'destroy'])->name('destroy');
     });
 
-    // Guest registration (no auth required)
+    // Guest registration (no auth required), limited per IP
     Route::post('/{gameTable}/inscripcion-invitado', [RegistrationController::class, 'registerGuest'])
+        ->middleware('throttle:game-tables-guest-registration')
         ->name('register-guest');
 
     // Registration routes (authenticated)

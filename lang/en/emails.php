@@ -18,6 +18,24 @@ return [
         'role_spectator' => 'spectator',
     ],
 
+    'guest_email_confirmation' => [
+        'subject' => 'Confirm your registration: :tableTitle',
+        'greeting' => 'Hello :name,',
+        'intro' => 'We have received your registration for the table “:tableTitle”. Confirm it with the button below.',
+        'deadline' => 'If you do not confirm it before :deadline, the place will be released.',
+        'unguaranteed' => 'Your place is not guaranteed until you confirm it.',
+        'button' => 'Confirm registration',
+        'ignore' => 'If you did not register, ignore this email: the registration will not go ahead.',
+    ],
+
+    'guest_registration_expired' => [
+        'subject' => 'Registration expired: :tableTitle',
+        'greeting' => 'Hello :name,',
+        'intro' => 'You did not confirm your registration for the table “:tableTitle” in time and the place has been released.',
+        'retry' => 'If there are still places left, you can register again.',
+        'button' => 'View table',
+    ],
+
     'registration_status' => [
         'subject_confirmed' => 'Registration confirmed: :tableTitle',
         'subject_pending' => 'Registration received: :tableTitle',

@@ -80,7 +80,8 @@ final readonly class SeatCounter
                 ->where('status', ParticipantStatus::Confirmed->value),
             'participants as '.self::PENDING_PLAYERS => fn (Builder $participants): Builder => $participants
                 ->where('role', ParticipantRole::Player->value)
-                ->where('status', ParticipantStatus::Pending->value),
+                ->where('status', ParticipantStatus::Pending->value)
+                ->holdingOrConfirmed(),
         ]);
     }
 
@@ -102,7 +103,7 @@ final readonly class SeatCounter
             return $this->taken(
                 $table->auto_confirm,
                 $players->filter(fn (ParticipantModel $participant): bool => $participant->status === ParticipantStatus::Confirmed)->count(),
-                $players->filter(fn (ParticipantModel $participant): bool => $participant->status === ParticipantStatus::Pending)->count(),
+                $players->filter(fn (ParticipantModel $participant): bool => $participant->status === ParticipantStatus::Pending && ! $participant->isUnconfirmedWaiting())->count(),
             );
         }
 

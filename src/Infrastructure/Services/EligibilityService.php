@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Infrastructure\Services;
 
 use DateMalformedStringException;
+use Carbon\CarbonImmutable;
 use DateTimeImmutable;
 use Modules\GameTables\Application\Services\EligibilityServiceInterface;
 use Modules\GameTables\Application\Services\MembershipCheckerInterface;
@@ -334,7 +335,8 @@ final readonly class EligibilityService implements EligibilityServiceInterface
             return $this->guestRefusal('registration_closed');
         }
 
-        $now = new DateTimeImmutable();
+        // The clock RegistrationService sets the guest's confirmation deadline with
+        $now = CarbonImmutable::now()->toDateTimeImmutable();
 
         // The time of the table closes registrations whatever its dates
         try {
@@ -391,7 +393,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
         }
 
         // The same check that decides what the table page offers
-        $result = $this->canRegister($gameTable, $userId, $this->checkMembership($userId), null, new DateTimeImmutable(), $role);
+        $result = $this->canRegister($gameTable, $userId, $this->checkMembership($userId), null, CarbonImmutable::now()->toDateTimeImmutable(), $role);
 
         if (! $result['eligible']) {
             $reason = $result['reason'] ?? 'registration_closed';
@@ -409,5 +411,22 @@ final readonly class EligibilityService implements EligibilityServiceInterface
 
             throw RegistrationNotAllowedException::because($reason, $result['message'] ?? $this->translateReason($reason));
         }
+    }
+
+    public function userRulesRefusal(string $gameTableId, string $userId, ParticipantRole $role = ParticipantRole::Player, ?DateTimeImmutable $now = null): ?string
+    {
+        $gameTable = $this->gameTableRepository->find(new GameTableId($gameTableId));
+
+        if ($gameTable === null) {
+            return 'not_found';
+        }
+
+        $result = $this->canRegister($gameTable, $userId, $this->checkMembership($userId), null, $now ?? CarbonImmutable::now()->toDateTimeImmutable(), $role);
+
+        if ($result['eligible'] || in_array($result['reason'], ['table_full', 'spectators_full'], true)) {
+            return null;
+        }
+
+        return $result['reason'];
     }
 }

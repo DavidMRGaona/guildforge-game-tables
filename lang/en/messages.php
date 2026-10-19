@@ -301,6 +301,7 @@ return [
             'cancelled' => 'Cancelled',
             'rejected' => 'Rejected',
             'no_show' => 'No show',
+            'expired' => 'Expired',
         ],
         'campaign_status' => [
             'recruiting' => 'Recruiting',
@@ -383,6 +384,7 @@ return [
         'sections' => [
             'membership' => 'Early access for association members',
             'registration' => 'Registrations',
+            'guest_registrations' => 'Guest registrations',
             'automation' => 'Automation',
             'defaults' => 'Default values',
             'notifications' => 'Notifications',
@@ -410,6 +412,22 @@ return [
             'max_players_limit' => 'Maximum players limit',
             'max_spectators_limit' => 'Maximum spectators limit',
             'max_duration' => 'Maximum duration (minutes)',
+            'guest_confirmation_mode' => 'Seat while not confirmed',
+            'guest_hold_hours' => 'Confirmation deadline (hours)',
+            'guest_max_unconfirmed_held' => 'Maximum unconfirmed seats per table',
+            'guest_max_unconfirmed_held_help' => 'Unconfirmed guest registrations beyond this number wait without taking a seat.',
+            'guest_accounts_mode' => 'Email with a registered account',
+            'guest_rate_per_minute' => 'Guest registrations per minute and connection',
+            'guest_rate_per_hour' => 'Guest registrations per hour and connection',
+            'duplicate_window_hours' => '"Possible duplicate" window (hours)',
+        ],
+        'guest_confirmation_mode' => [
+            'hold' => 'Holds the seat with a deadline',
+            'wait' => 'Takes no seat until confirmed',
+        ],
+        'guest_accounts_mode' => [
+            'require_login' => 'Ask them to sign in',
+            'allow_guest' => 'Allow as a guest unless that account is already registered',
         ],
         'validation' => [
             'above_players_limit' => 'It cannot exceed the maximum players limit (:limit)',
@@ -509,6 +527,13 @@ return [
     | Messages
     |--------------------------------------------------------------------------
     */
+    'cookies' => [
+        'guest_registrations' => [
+            'purpose' => 'Remembers which tables you signed up to as a guest from this browser, to warn you if you try to sign up again.',
+            'duration' => '90 days',
+        ],
+    ],
+
     'messages' => [
         'registration' => [
             'success' => 'Registration successful',
@@ -560,18 +585,32 @@ return [
         'table_not_found' => 'Table not found',
         'campaign_not_found' => 'Campaign not found',
         'guest_already_registered' => 'This email is already registered for this table',
+        'email_registered_as_guest' => 'There is already a registration with your email.',
+        'email_has_account' => 'This email belongs to an account. Sign in to register.',
         'guests_not_allowed' => 'This table does not allow guest registrations',
         'invalid_token' => 'The cancellation link is invalid or has expired',
+        'invalid_confirmation' => 'This link is no longer valid. If there are seats left, you can register again.',
+        'confirmation_closed' => 'Registrations have already closed.',
+        'confirmation_filled_up' => 'The table filled up while you were confirming.',
+        'too_many_confirmation_attempts' => 'Too many attempts with this link. Wait a moment and try again.',
+        'guest_rate_limited' => 'You have made too many registrations in a row. Wait a few minutes and try again.',
     ],
 
     'success' => [
         'registered' => 'You have successfully registered',
         'cancelled' => 'Registration cancelled successfully',
-        'guest_registered' => 'You have been registered successfully. You will receive a confirmation email.',
         'waiting_list' => 'You have joined the waiting list (position :position). If a seat is freed before the table starts (or before registrations close, if that comes first), you will take it automatically and we will let you know by email.',
         'waiting_list_manual' => 'You have joined the waiting list (position :position). If a seat is freed before the table starts (or before registrations close, if that comes first), you will take it pending confirmation by the game master and we will let you know by email.',
-        'guest_waiting_list' => 'You have joined the waiting list (position :position). You will receive a confirmation email and another one if a seat is freed before the table starts (or before registrations close, if that comes first).',
-        'guest_spectator_registered' => 'You have registered as a spectator. You will receive a confirmation email.',
+        'guest_email_confirmed' => 'Your registration is confirmed. We have sent you an email with the details.',
+        'guest_email_already_confirmed' => 'Your registration was already confirmed.',
+        'guest_email_confirmed_pending' => 'You have confirmed your email. Your registration is pending approval by the organisation: we will let you know by email.',
+        'guest_email_confirmed_waiting_list' => 'You have confirmed your email. You are on the waiting list (position :position): if a seat is freed, we will let you know by email.',
+        'registration_linked' => 'You already had a guest registration; it is now on your account.',
+        'registration_linked_waiting_list' => 'You already had a guest registration; it is now on your account. You are on the waiting list (position :position).',
+        'guest_confirmation_pending' => 'You already have a pending registration: check your email.',
+        'guest_confirmation_sent' => 'We have sent you an email to confirm the registration. Confirm it before :deadline or the seat will be released.',
+        'guest_confirmation_sent_waiting_list' => 'We have sent you an email to confirm the registration. Confirm it before :deadline to keep your place :position on the waiting list.',
+        'guest_confirmation_sent_unguaranteed' => 'We have sent you an email to confirm the registration. Your seat is not guaranteed until you confirm it.',
     ],
 
     /*
@@ -630,11 +669,20 @@ return [
             'no_show' => 'No-show',
             'no_show_description' => 'They are marked as a no-show. No email is sent and nobody is promoted from the waiting list.',
             'move_to_waiting' => 'Move to waiting list',
-            'delete_not_allowed' => 'Not deleted: the registration is no longer cancelled or rejected',
+            'confirm_email' => 'Mark email as confirmed',
+            'confirm_email_description' => 'The guest\'s email will be taken as confirmed, as if they had followed the link, and they will get the registration email.',
+            'flags' => [
+                'label' => 'Flags',
+                'email_unconfirmed' => 'Email not confirmed',
+                'expires_at' => 'Expires on :date',
+                'possible_duplicate' => 'Possible duplicate',
+                'possible_duplicate_tooltip' => 'Another registration at this table was made from the same connection and browser :hours h apart or less',
+            ],
+            'delete_not_allowed' => 'Not deleted: the registration is no longer cancelled, rejected or expired',
             'bulk_delete' => [
                 'deleted' => '{1} 1 registration deleted|[2,*] :count registrations deleted',
                 'none_deleted' => 'No registration deleted',
-                'skipped' => '{1} 1 registration was not deleted: only cancelled or rejected ones can be deleted; cancel it first with “Cancel registration”.|[2,*] :count registrations were not deleted: only cancelled or rejected ones can be deleted; cancel them first with “Cancel registration”.',
+                'skipped' => '{1} 1 registration was not deleted: only cancelled, rejected or expired ones can be deleted; cancel it first with “Cancel registration”.|[2,*] :count registrations were not deleted: only cancelled, rejected or expired ones can be deleted; cancel them first with “Cancel registration”.',
                 'failed' => '{1} 1 registration could not be deleted because of an error.|[2,*] :count registrations could not be deleted because of an error.',
             ],
         ],
@@ -712,6 +760,16 @@ return [
         'saved' => 'Configuration saved',
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Guest confirmation page
+    |--------------------------------------------------------------------------
+    */
+    'confirm_registration' => [
+        // The state shown until the guest follows the emailed link
+        'awaiting_email' => 'Awaiting confirmation',
+    ],
+
     // Server-rendered page metadata (link previews and search engines)
     'seo' => [
         'tables_title' => 'Game tables',
@@ -723,6 +781,7 @@ return [
         'edit_table_title' => 'Edit table',
         'my_tables_title' => 'My game tables',
         'cancel_registration_title' => 'Cancel registration',
+        'confirm_registration_title' => 'Confirm registration',
         'create_campaign_title' => 'Create campaign',
         'edit_campaign_title' => 'Edit campaign',
         'my_campaigns_title' => 'My campaigns',
