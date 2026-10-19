@@ -39,7 +39,11 @@ interface RegistrationServiceInterface
     public function cancelByAdmin(string $participantId): ParticipantResponseDTO;
 
     /**
-     * @throws \Modules\GameTables\Domain\Exceptions\TableFullException with the waiting list on, when no player or spectator seat is free
+     * The organisation approves a pending registration. For a guest whose email is not confirmed
+     * it also vouches for the email: a guest without a seat yet (wait mode) is first placed into a
+     * seat, and the guest gets the usual registration email instead of the approval one.
+     *
+     * @throws \Modules\GameTables\Domain\Exceptions\TableFullException with the waiting list on, when no player or spectator seat is free; for a guest without a seat yet, whenever none is free (nothing changes)
      */
     public function confirm(string $participantId): ParticipantResponseDTO;
 
@@ -53,7 +57,10 @@ interface RegistrationServiceInterface
 
     /**
      * Promote a specific participant from waiting list (confirmed; unchanged if no longer waiting).
-     * For admin use when promoting a specific person instead of the first in queue.
+     * For admin use when promoting a specific person instead of the first in queue; a guest whose
+     * email is not confirmed may be chosen too, and the promotion vouches for the email: the guest
+     * gets the usual registration email (it carries the cancellation link) instead of the
+     * promotion one, and the directors nothing.
      *
      * @throws \Modules\GameTables\Domain\Exceptions\TableFullException with the waiting list on, when no player or spectator seat is free
      */
@@ -71,7 +78,8 @@ interface RegistrationServiceInterface
     public function registerGuestByAdmin(RegisterParticipantDTO $dto): ParticipantResponseDTO;
 
     /**
-     * A confirmed participant who did not come, once the table has started (no emails, no promotion).
+     * A confirmed participant who did not come, once the table has started (no emails, no
+     * promotion). An unconfirmed guest's email counts as confirmed, silently.
      *
      * @throws \Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException before the start or without a confirmed seat
      */
@@ -140,6 +148,17 @@ interface RegistrationServiceInterface
      * when it held a place).
      */
     public function confirmGuestEmail(string $token): GuestConfirmationResultDTO;
+
+    /**
+     * «Marcar email como confirmado» from the panel: the same as the emailed link, under the table
+     * lock, whatever the dates (the organisation vouches for the email). A held place is kept (from
+     * the waiting list it takes a free seat); a guest without one is placed now. The guest gets the
+     * usual registration email; the organisation nothing. A registration that is not awaiting
+     * confirmation is returned unchanged.
+     *
+     * @throws \Modules\GameTables\Domain\Exceptions\TableFullException when a guest without a place finds no room (nothing changes)
+     */
+    public function confirmGuestEmailByAdmin(string $participantId): ParticipantResponseDTO;
 
     /**
      * Expires a guest registration that is still unconfirmed and due: past its deadline, or with
