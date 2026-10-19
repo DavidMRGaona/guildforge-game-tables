@@ -7,6 +7,7 @@ namespace Modules\GameTables\Tests\Feature\Http\Controllers;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use DateTimeImmutable;
 use Illuminate\Support\Str;
+use Modules\GameTables\Application\DTOs\ParticipantResponseDTO;
 use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Modules\GameTables\Domain\Entities\GameTable;
@@ -353,10 +354,74 @@ final class RegistrationControllerTest extends ModuleTestCase
         $this->assertEquals(ParticipantRole::Spectator, $participant->role);
     }
 
+    public function test_a_signed_in_user_takes_over_their_guest_registration(): void
+    {
+        $gameTable = $this->createGameTable();
+        $guest = $this->guestByAdmin($gameTable, 'socia@example.com');
+        $user = UserModel::factory()->create(['email' => 'socia@example.com']);
+
+        $this->actingAs($user)
+            ->post(route('gametables.register', $gameTable->slug), ['role' => 'player'])
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Ya tenías una inscripción como invitado; ahora está en tu cuenta.');
+
+        $this->assertSame($guest->id, $this->participantRepository->findByTableAndUser($gameTable->id, $user->id)?->id->value);
+    }
+
+    public function test_an_unverified_account_with_a_guest_registration_is_refused(): void
+    {
+        $gameTable = $this->createGameTable();
+        $this->guestByAdmin($gameTable, 'socia@example.com');
+        $user = UserModel::factory()->unverified()->create(['email' => 'socia@example.com']);
+
+        $this->actingAs($user)
+            ->post(route('gametables.register', $gameTable->slug), ['role' => 'player'])
+            ->assertRedirect()
+            ->assertSessionHasErrors(['registration' => 'Ya hay una inscripción con tu email.']);
+
+        $this->assertNull($this->participantRepository->findByTableAndUser($gameTable->id, $user->id));
+    }
+
+    public function test_a_takeover_without_room_is_refused_as_a_full_table(): void
+    {
+        config()->set('modules.settings.game-tables.guest_confirmation.mode', 'wait');
+        $gameTable = $this->createGameTable(maxPlayers: 1);
+        $this->post(route('gametables.register-guest', $gameTable->slug), [
+            'first_name' => 'Socia',
+            'email' => 'socia@example.com',
+            'gdpr_consent' => true,
+        ]);
+        app(RegistrationServiceInterface::class)->registerByAdmin(new RegisterParticipantDTO(
+            gameTableId: $gameTable->id->value,
+            userId: $this->testUser->id,
+            role: ParticipantRole::Player,
+        ));
+        $user = UserModel::factory()->create(['email' => 'socia@example.com']);
+
+        $this->actingAs($user)
+            ->post(route('gametables.register', $gameTable->slug), ['role' => 'player'])
+            ->assertRedirect()
+            ->assertSessionHasErrors(['registration' => 'La mesa está completa']);
+
+        $this->assertNull($this->participantRepository->findByTableAndUser($gameTable->id, $user->id));
+    }
+
+    private function guestByAdmin(GameTable $gameTable, string $email): ParticipantResponseDTO
+    {
+        return app(RegistrationServiceInterface::class)->registerGuestByAdmin(new RegisterParticipantDTO(
+            gameTableId: $gameTable->id->value,
+            userId: null,
+            role: ParticipantRole::Player,
+            firstName: 'Socia',
+            email: $email,
+        ));
+    }
+
     private function createGameTable(
         ?GameTableId $id = null,
         RegistrationType $registrationType = RegistrationType::Everyone,
         int $maxSpectators = 0,
+        int $maxPlayers = 6,
     ): GameTable {
         $startsAt = new DateTimeImmutable('+1 week');
         $timeSlot = new TimeSlot($startsAt, 240);
@@ -372,7 +437,7 @@ final class RegistrationControllerTest extends ModuleTestCase
             tableFormat: TableFormat::InPerson,
             status: TableStatus::Scheduled,
             minPlayers: 2,
-            maxPlayers: 6,
+            maxPlayers: $maxPlayers,
             maxSpectators: $maxSpectators,
             registrationType: $registrationType,
             autoConfirm: true,

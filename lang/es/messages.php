@@ -682,6 +682,7 @@ return [
         'cancelled' => 'Inscripción cancelada correctamente',
         'guest_email_confirmed' => 'Tu inscripción está confirmada. Te hemos enviado un email con los detalles.',
         'guest_email_already_confirmed' => 'Tu inscripción ya estaba confirmada.',
+        'registration_linked' => 'Ya tenías una inscripción como invitado; ahora está en tu cuenta.',
     ],
 
     /*

@@ -7,6 +7,7 @@ namespace Modules\GameTables\Infrastructure\Services;
 use Carbon\CarbonImmutable;
 use DateTimeImmutable;
 use InvalidArgumentException;
+use Modules\GameTables\Application\DTOs\AccountDTO;
 use Modules\GameTables\Application\DTOs\GuestConfirmationResultDTO;
 use Modules\GameTables\Application\DTOs\ParticipantResponseDTO;
 use Modules\GameTables\Application\DTOs\ProfileParticipationDTO;
@@ -65,20 +66,140 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         $this->confirmationPolicy = new GuestConfirmationPolicy($participantRepository, $settings);
     }
 
+    /**
+     * Under the table lock. An active guest registration made with the account's email is taken
+     * over (takeOverGuest()) instead of adding a second row; otherwise the usual registration.
+     */
     public function register(RegisterParticipantDTO $dto): ParticipantResponseDTO
     {
         $userId = $this->requireUserId($dto);
+        $now = CarbonImmutable::now()->toDateTimeImmutable();
 
-        [$participant, $rank] = $this->lock->forTable($dto->gameTableId, function () use ($dto, $userId): array {
+        [$participant, $rank, $announce, $promoted, $linked] = $this->lock->forTable($dto->gameTableId, function () use ($dto, $userId, $now): array {
+            [$guest, $account, $promoted] = $this->guestOfAccount($dto->gameTableId, $userId, $now);
+
+            if ($guest !== null && $account !== null) {
+                [$participant, $wasAwaiting, $promoted] = $this->takeOverGuest($guest, $account, $now);
+
+                return [...$this->withRank($participant), $wasAwaiting, $promoted, true];
+            }
+
             // The same rules the table page applies, checked under the lock
             $this->eligibilityService->ensureUserCanRegister($dto->gameTableId, $userId, $dto->role);
 
-            return $this->withRank($this->placeUser($dto, $userId));
+            return [...$this->withRank($this->placeUser($dto, $userId, $now)), true, $promoted, false];
         });
 
-        $this->announceUserRegistration($participant, $rank);
+        if ($promoted !== null) {
+            $this->announcePromotion($promoted);
+        }
 
-        return ParticipantResponseDTO::fromEntity($participant, waitingListRank: $rank);
+        // A guest row the organisation already heard of (email confirmed) is not announced again
+        if ($announce) {
+            $this->announceUserRegistration($participant, $rank);
+        }
+
+        return ParticipantResponseDTO::fromEntity($participant, waitingListRank: $rank, linkedFromGuest: $linked);
+    }
+
+    /**
+     * The active guest registration at the table made with the user's account email. One past its
+     * deadline lapses here instead, even if the expiry command has not run yet (as when the guest
+     * sends the form again): the user then registers as anyone else. Runs under the table lock.
+     *
+     * @return array{Participant|null, AccountDTO|null, Participant|null} the guest row, the account
+     *                                                                     and the one promoted into
+     *                                                                     the seat a lapsed row freed
+     */
+    private function guestOfAccount(string $gameTableId, string $userId, DateTimeImmutable $now): array
+    {
+        $account = $this->accounts?->findById($userId);
+        $guest = $account !== null
+            ? $this->participantRepository->findByTableAndEmail(new GameTableId($gameTableId), $account->email)
+            : null;
+
+        if ($guest === null || ! $guest->isActive()) {
+            return [null, $account, null];
+        }
+
+        if ($guest->isConfirmationOverdue($now)) {
+            return [null, $account, $this->expireLocked($guest, $now)];
+        }
+
+        return [$guest, $account, null];
+    }
+
+    /**
+     * In this order: the rules of a user registration (seats aside), then the account's email,
+     * which only proves the guest registration is the user's once verified. The row keeps its
+     * place and role, becomes the user's and loses the guest's email and tokens; an unconfirmed
+     * email counts as confirmed, and a row that held nothing yet (wait mode) is placed as the link
+     * would place it. Refused, the guest row stays as it was. Runs under the table lock.
+     *
+     * @return array{Participant, bool, Participant|null} the participant, whether its email was
+     *                                                     unconfirmed (the organisation never heard
+     *                                                     of it) and anyone promoted into a seat
+     *
+     * @throws RegistrationNotAllowedException when the user could not register with their account
+     * @throws AlreadyRegisteredException when the account's email is not verified
+     * @throws TableFullException with nothing changed, when an unplaced row finds no room
+     */
+    private function takeOverGuest(Participant $guest, AccountDTO $account, DateTimeImmutable $now): array
+    {
+        $gameTableId = $guest->gameTableId->value;
+        $this->ensureUserRulesAdmit($gameTableId, $account->userId, $guest->role);
+
+        if (! $account->emailVerified) {
+            throw AlreadyRegisteredException::emailRegisteredAsGuest($gameTableId);
+        }
+
+        $wasAwaiting = $guest->isAwaitingEmailConfirmation();
+        $promoted = null;
+
+        if ($wasAwaiting) {
+            $placed = $this->confirmGuestEmailLocked($guest, $this->gameTableRepository->findOrFail($guest->gameTableId), $now);
+
+            if ($placed === null) {
+                throw $this->tableFull($guest);
+            }
+
+            [$guest, $promoted] = $placed;
+        }
+
+        // One row per user and table: a registration of their own that no longer holds anything
+        // (an active one was refused above) gives way to the one taken over
+        $own = $this->participantRepository->findByTableAndUser($guest->gameTableId, $account->userId);
+
+        if ($own !== null) {
+            if ($own->isActive()) {
+                throw AlreadyRegisteredException::forTable($account->userId, $gameTableId);
+            }
+
+            $this->participantRepository->delete($own->id);
+        }
+
+        $guest->attachToAccount($account->userId, $now);
+        $this->participantRepository->save($guest);
+
+        return [$guest, $wasAwaiting, $promoted];
+    }
+
+    /**
+     * The rules of a user registration with their usual refusal, except the seats (as
+     * userRulesRefusal()): the guest row taken over already holds its place or is placed by the
+     * caller.
+     *
+     * @throws RegistrationNotAllowedException
+     */
+    private function ensureUserRulesAdmit(string $gameTableId, string $userId, ParticipantRole $role): void
+    {
+        try {
+            $this->eligibilityService->ensureUserCanRegister($gameTableId, $userId, $role);
+        } catch (RegistrationNotAllowedException $e) {
+            if (! in_array($e->reason, ['table_full', 'spectators_full'], true)) {
+                throw $e;
+            }
+        }
     }
 
     /**
@@ -116,7 +237,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     /**
      * One row per user and table: a cancelled registration is reactivated, an active one refused.
      */
-    private function placeUser(RegisterParticipantDTO $dto, string $userId): Participant
+    private function placeUser(RegisterParticipantDTO $dto, string $userId, DateTimeImmutable $now): Participant
     {
         $gameTableId = new GameTableId($dto->gameTableId);
 
@@ -140,7 +261,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
                 role: $dto->role,
                 status: ParticipantStatus::Pending,
                 notes: $dto->notes,
-                createdAt: new DateTimeImmutable,
+                createdAt: $now,
             );
         }
 
@@ -1260,8 +1381,10 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     {
         $userId = $this->requireUserId($dto);
 
+        $now = CarbonImmutable::now()->toDateTimeImmutable();
+
         // Admins skip the eligibility rules: a full table puts the participant in the waiting list
-        [$participant, $rank] = $this->lock->forTable($dto->gameTableId, fn (): array => $this->withRank($this->placeUser($dto, $userId)));
+        [$participant, $rank] = $this->lock->forTable($dto->gameTableId, fn (): array => $this->withRank($this->placeUser($dto, $userId, $now)));
 
         $this->announceUserRegistration($participant, $rank);
 

@@ -393,7 +393,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
         }
 
         // The same check that decides what the table page offers
-        $result = $this->canRegister($gameTable, $userId, $this->checkMembership($userId), null, new DateTimeImmutable(), $role);
+        $result = $this->canRegister($gameTable, $userId, $this->checkMembership($userId), null, CarbonImmutable::now()->toDateTimeImmutable(), $role);
 
         if (! $result['eligible']) {
             $reason = $result['reason'] ?? 'registration_closed';
