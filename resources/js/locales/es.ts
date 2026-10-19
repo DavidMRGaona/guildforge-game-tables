@@ -570,6 +570,10 @@ export default {
         success: 'Te has inscrito correctamente. Recibirás un email de confirmación.',
         emailSent: 'Hemos enviado un email a {email} con los detalles de tu inscripción.',
         error: 'Ha ocurrido un error al procesar tu inscripción.',
+        confirmationNoticeHold: 'Te enviaremos un email para confirmar la inscripción. Si no la confirmas antes del {deadline}, la plaza se liberará.',
+        confirmationNoticeWait: 'Te enviaremos un email para confirmar la inscripción. Tu plaza no está garantizada hasta que la confirmes.',
+        alreadyFromBrowser: 'Ya hay una inscripción desde este navegador para esta mesa.',
+        logIn: 'Iniciar sesión',
     },
     cancelRegistration: {
         title: 'Cancelar inscripción',

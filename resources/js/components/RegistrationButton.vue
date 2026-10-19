@@ -850,6 +850,8 @@ function cancelRoleSelect(): void {
             :player-available="guestEligibility?.eligible === true"
             :waiting-list="guestJoinsWaitingList"
             :waiting-list-help="waitingListHelp"
+            :confirmation="guestEligibility?.confirmation ?? null"
+            :table-starts-at="tableData.startsAt"
             @close="closeGuestModal"
             @success="onGuestSuccess"
         />

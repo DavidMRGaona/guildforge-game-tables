@@ -470,6 +470,10 @@ export default {
         success: 'You have been registered successfully. You will receive a confirmation email.',
         emailSent: 'We have sent an email to {email} with your registration details.',
         error: 'An error occurred while processing your registration.',
+        confirmationNoticeHold: 'We will email you to confirm the registration. If you do not confirm it before {deadline}, the place will be released.',
+        confirmationNoticeWait: 'We will email you to confirm the registration. Your place is not guaranteed until you confirm it.',
+        alreadyFromBrowser: 'There is already a registration from this browser for this table.',
+        logIn: 'Log in',
     },
     cancelRegistration: {
         title: 'Cancel registration',

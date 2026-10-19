@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { router } from '@inertiajs/vue3';
-import type { ParticipantRole } from '../types/registration';
+import { useRoutes } from '@/composables/useRoutes';
+import { VENUE_TIMEZONE } from '@/utils/datetime';
+import type { GuestConfirmationNotice, ParticipantRole } from '../types/registration';
+import { hasGuestRegistration, rememberGuestRegistration } from '../utils/guestRegistrationCookie';
 
 interface Props {
     isOpen: boolean;
@@ -15,6 +18,10 @@ interface Props {
     waitingList?: boolean;
     /** How the waiting list works on this table */
     waitingListHelp?: string;
+    /** What the server tells the guest about the email confirmation (null when it has nothing to say) */
+    confirmation?: GuestConfirmationNotice | null;
+    /** ISO 8601 start of the table, for the browser hint */
+    tableStartsAt: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -22,6 +29,7 @@ const props = withDefaults(defineProps<Props>(), {
     playerAvailable: true,
     waitingList: false,
     waitingListHelp: '',
+    confirmation: null,
 });
 
 const emit = defineEmits<{
@@ -29,7 +37,46 @@ const emit = defineEmits<{
     (e: 'success'): void;
 }>();
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
+const routes = useRoutes();
+
+const confirmationNotice = computed(() => {
+    const confirmation = props.confirmation;
+    if (!confirmation) return null;
+
+    if (confirmation.mode === 'hold' && confirmation.deadline) {
+        const deadline = new Date(confirmation.deadline);
+        if (!Number.isNaN(deadline.getTime())) {
+            return t('guestRegistration.confirmationNoticeHold', {
+                deadline: deadline.toLocaleString(locale.value, {
+                    timeZone: VENUE_TIMEZONE,
+                    day: 'numeric',
+                    month: 'long',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                }),
+            });
+        }
+    }
+
+    return t('guestRegistration.confirmationNoticeWait');
+});
+
+// A sign-up from this browser was remembered (needs the preferences cookie): a hint, not a block
+const alreadyFromBrowser = ref(false);
+
+function checkBrowserHint(): void {
+    alreadyFromBrowser.value = props.isOpen && hasGuestRegistration(props.tableSlug);
+}
+
+onMounted(() => {
+    checkBrowserHint();
+    window.addEventListener('guildforge:cookie-consent-changed', checkBrowserHint);
+});
+
+onBeforeUnmount(() => {
+    window.removeEventListener('guildforge:cookie-consent-changed', checkBrowserHint);
+});
 
 // The role step is only needed when both roles are admitted
 const choosesRole = computed(() => props.hasSpectatorSlots && props.playerAvailable);
@@ -46,6 +93,8 @@ const submitText = computed(() => {
 
 const loading = ref(false);
 const error = ref<string | null>(null);
+// The email belongs to an account: the refusal comes with a link to log in
+const accountError = ref(false);
 const step = ref<'form' | 'role'>('form');
 const selectedRole = ref<ParticipantRole>('player');
 
@@ -72,6 +121,8 @@ watch(
             step.value = 'form';
             selectedRole.value = 'player';
             error.value = null;
+            accountError.value = false;
+            checkBrowserHint();
         }
     }
 );
@@ -103,6 +154,7 @@ function selectRole(role: ParticipantRole): void {
 function submitRegistration(role: ParticipantRole): void {
     loading.value = true;
     error.value = null;
+    accountError.value = false;
 
     router.post(
         `/mesas/${props.tableSlug}/inscripcion-invitado`,
@@ -117,10 +169,12 @@ function submitRegistration(role: ParticipantRole): void {
         {
             preserveScroll: true,
             onSuccess: () => {
+                rememberGuestRegistration(props.tableSlug, props.tableStartsAt);
                 emit('success');
                 emit('close');
             },
             onError: (errors) => {
+                accountError.value = typeof errors.account === 'string' && errors.account !== '';
                 error.value = Object.values(errors)[0] as string || t('guestRegistration.error');
                 step.value = 'form';
             },
@@ -180,7 +234,22 @@ function goBack(): void {
                             class="mb-4 rounded-lg bg-red-50 p-3 text-sm text-error dark:bg-red-900/20"
                         >
                             {{ error }}
+                            <a
+                                v-if="accountError"
+                                :href="routes.auth.login"
+                                class="ml-1 font-medium underline"
+                            >
+                                {{ t('guestRegistration.logIn') }}
+                            </a>
                         </div>
+
+                        <!-- Browser hint: a sign-up from this browser already exists -->
+                        <p
+                            v-if="step === 'form' && alreadyFromBrowser"
+                            class="mb-4 rounded-lg bg-blue-50 p-3 text-sm text-blue-800 dark:bg-blue-900/20 dark:text-blue-300"
+                        >
+                            {{ t('guestRegistration.alreadyFromBrowser') }}
+                        </p>
 
                         <!-- Spectator notice (when it is the only option) -->
                         <p
@@ -293,6 +362,14 @@ function goBack(): void {
                                     </a>
                                 </label>
                             </div>
+
+                            <!-- What happens after sending -->
+                            <p
+                                v-if="confirmationNotice"
+                                class="rounded-lg bg-muted p-3 text-sm text-base-secondary"
+                            >
+                                {{ confirmationNotice }}
+                            </p>
 
                             <!-- Buttons -->
                             <div class="flex gap-3 pt-2">
