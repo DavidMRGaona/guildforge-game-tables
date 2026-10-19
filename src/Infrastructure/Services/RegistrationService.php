@@ -42,6 +42,7 @@ use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Domain\ValueObjects\ParticipantId;
+use Throwable;
 
 /**
  * Registrations, cancellations and promotions run under the lock of their table
@@ -988,11 +989,12 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             return false;
         }
 
-        $this->announceExpiry($participant, $notifyGuest);
-
+        // The promotion first: an expiry email that fails never costs the promoted player theirs
         if ($promoted !== null) {
             $this->announcePromotion($promoted);
         }
+
+        $this->announceExpiry($participant, $notifyGuest);
 
         return true;
     }
@@ -1019,15 +1021,23 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         return $participant->confirmationMode === GuestConfirmationMode::Hold;
     }
 
+    /**
+     * The expiry is already committed: a listener that fails (the guest's email) is reported and
+     * never turns the confirmation page or the expiry command into an error.
+     */
     private function announceExpiry(Participant $participant, bool $notifyGuest): void
     {
-        GuestRegistrationExpired::dispatch(
-            $participant->id->value,
-            $participant->gameTableId->value,
-            $participant->email ?? '',
-            $participant->firstName ?? '',
-            $notifyGuest,
-        );
+        try {
+            GuestRegistrationExpired::dispatch(
+                $participant->id->value,
+                $participant->gameTableId->value,
+                $participant->email ?? '',
+                $participant->firstName ?? '',
+                $notifyGuest,
+            );
+        } catch (Throwable $exception) {
+            report($exception);
+        }
     }
 
     private function waitsWithoutSeat(Participant $participant): bool
@@ -1135,13 +1145,14 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             },
         );
 
+        // The promotion first: an expiry email that fails never costs the promoted player theirs
+        if ($promoted !== null) {
+            $this->announcePromotion($promoted);
+        }
+
         // Expired on the spot: announced as the expiry command does, besides what the page says
         if ($expired && $participant !== null) {
             $this->announceExpiry($participant, notifyGuest: $this->heldPlace($participant));
-        }
-
-        if ($promoted !== null) {
-            $this->announcePromotion($promoted);
         }
 
         if ($outcome === GuestConfirmationOutcome::Confirmed) {

@@ -8,6 +8,7 @@ use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Carbon\CarbonImmutable;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
@@ -87,6 +88,28 @@ final class GuestRegistrationExpirerTest extends ModuleTestCase
             && $event->notifyGuest === true);
         // The director hears of the promoted user only, never of the expired guest
         Notification::assertSentOnDemandTimes(WaitingListPromotionGmNotification::class, 1);
+    }
+
+    // The expiry is committed: its failing email is reported, the promotion is still announced
+    public function test_a_failing_expiry_email_never_costs_the_promoted_player_the_notice(): void
+    {
+        Exceptions::fake();
+        config()->set('modules.settings.game-tables.registration.waiting_list_enabled', true);
+        $this->table->update(['max_players' => 1, 'notification_email' => 'mesa@example.test']);
+        $seated = $this->submit('sentada@example.test');
+        $user = $this->registerUser();
+        Event::listen(GuestRegistrationExpired::class, static function (): void {
+            throw new RuntimeException('Mail transport down');
+        });
+
+        $this->travelTo(CarbonImmutable::parse('2026-11-02 12:00:00'));
+        $counts = $this->expirer()->run(CarbonImmutable::now()->toDateTimeImmutable());
+
+        $this->assertSame(['expired' => 1, 'closed' => 0, 'fingerprintsCleared' => 0, 'failed' => 0], $counts);
+        $this->assertSame('expired', ParticipantModel::query()->findOrFail($seated->id)->status->value);
+        $this->assertSame('confirmed', ParticipantModel::query()->findOrFail($user->id)->status->value);
+        Notification::assertSentOnDemandTimes(WaitingListPromotionGmNotification::class, 1);
+        Exceptions::assertReported(RuntimeException::class);
     }
 
     public function test_the_expired_guest_is_emailed_and_the_organisation_is_not(): void
