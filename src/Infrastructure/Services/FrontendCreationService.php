@@ -33,6 +33,8 @@ use Modules\GameTables\Domain\Enums\TableType;
 use Modules\GameTables\Domain\Enums\Tone;
 use Modules\GameTables\Domain\Events\GameTableModerationApproved;
 use Modules\GameTables\Domain\Events\GameTableModerationRejected;
+use Modules\GameTables\Domain\Events\CampaignModerationApproved;
+use Modules\GameTables\Domain\Events\CampaignModerationRejected;
 use Modules\GameTables\Domain\Events\CampaignSubmittedForReview;
 use Modules\GameTables\Domain\Events\GameTableSubmittedForReview;
 use Modules\GameTables\Domain\Exceptions\CampaignNotFoundException;
@@ -600,6 +602,15 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         $campaign->approveFrontendCreation($notes);
         $campaign->publish();
         $this->campaignRepository->save($campaign);
+
+        // Dispatch event to notify the creator
+        CampaignModerationApproved::dispatch(
+            $campaign->id->value,
+            $campaign->title,
+            $campaign->createdBy,
+            $campaign->slug,
+            $notes,
+        );
     }
 
     public function rejectCampaign(string $campaignId, string $reason): void
@@ -615,6 +626,14 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         // Back to the author as a draft that keeps the reason
         $campaign->rejectFrontendCreation($reason);
         $this->campaignRepository->save($campaign);
+
+        // Dispatch event to notify the creator
+        CampaignModerationRejected::dispatch(
+            $campaign->id->value,
+            $campaign->title,
+            $campaign->createdBy,
+            $reason,
+        );
     }
 
     public function deleteCampaignDraft(string $campaignId, string $userId): void

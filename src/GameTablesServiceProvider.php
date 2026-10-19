@@ -64,6 +64,8 @@ use Modules\GameTables\Console\Commands\ExpireGuestRegistrationsCommand;
 use Modules\GameTables\Console\Commands\GenerateSlugsCommand;
 use Modules\GameTables\Console\Commands\UpdateTableStatusesCommand;
 use Modules\GameTables\Http\Controllers\GuestConfirmationController;
+use Modules\GameTables\Domain\Events\CampaignModerationApproved;
+use Modules\GameTables\Domain\Events\CampaignModerationRejected;
 use Modules\GameTables\Domain\Events\CampaignSubmittedForReview;
 use Modules\GameTables\Domain\Events\GameTableCancelled;
 use Modules\GameTables\Domain\Events\GameTableModerationApproved;
@@ -118,6 +120,8 @@ use Modules\GameTables\Infrastructure\Services\DatabaseRegistrationLock;
 use Modules\GameTables\Infrastructure\Services\RegistrationService;
 use Modules\GameTables\Listeners\NotifyAdminsOnCampaignModerationSubmission;
 use Modules\GameTables\Listeners\NotifyAdminsOnModerationSubmission;
+use Modules\GameTables\Listeners\NotifyUserOnCampaignModerationApproved;
+use Modules\GameTables\Listeners\NotifyUserOnCampaignModerationRejected;
 use Modules\GameTables\Listeners\NotifyUserOnModerationApproved;
 use Modules\GameTables\Listeners\NotifyUserOnModerationRejected;
 use Modules\GameTables\Listeners\SendCancellationConfirmation;
@@ -553,6 +557,16 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         Event::listen(
             GameTableModerationRejected::class,
             [NotifyUserOnModerationRejected::class, 'handle']
+        );
+
+        Event::listen(
+            CampaignModerationApproved::class,
+            [NotifyUserOnCampaignModerationApproved::class, 'handle']
+        );
+
+        Event::listen(
+            CampaignModerationRejected::class,
+            [NotifyUserOnCampaignModerationRejected::class, 'handle']
         );
     }
 

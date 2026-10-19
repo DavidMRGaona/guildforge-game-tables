@@ -409,6 +409,7 @@ return [
             'notify_on_registration' => 'Notify on registration',
             'notify_on_cancellation' => 'Notify on cancellation',
             'notify_waiting_list' => 'Notify waiting list promotion',
+            'notify_waiting_list_help' => 'Tells the directors and the table email. The person moved up from the waiting list always gets their own email.',
             'max_players_limit' => 'Maximum players limit',
             'max_spectators_limit' => 'Maximum spectators limit',
             'max_duration' => 'Maximum duration (minutes)',

@@ -128,7 +128,7 @@ return [
     'table_cancelled' => [
         'subject' => 'Mesa cancelada: :tableTitle',
         'greeting' => 'Hola :name,',
-        'intro' => 'Lamentamos informarte que la mesa ":tableTitle" ha sido cancelada.',
+        'intro' => 'Lamentamos informarte de que la mesa ":tableTitle" ha sido cancelada.',
         'details' => 'Detalles de la mesa cancelada:',
         'table_title' => 'Mesa',
         'table_date' => 'Fecha prevista',
@@ -150,7 +150,7 @@ return [
     'rejection' => [
         'subject' => 'Inscripción rechazada: :tableTitle',
         'greeting' => 'Hola :name,',
-        'intro' => 'Lamentamos informarte que tu inscripción en la mesa :tableTitle ha sido rechazada.',
+        'intro' => 'Lamentamos informarte de que tu inscripción en la mesa :tableTitle ha sido rechazada.',
         'table_title' => 'Mesa',
         'table_date' => 'Fecha',
         'table_location' => 'Ubicación',
@@ -195,10 +195,28 @@ return [
     'moderation_rejected' => [
         'subject' => 'Tu mesa no ha sido aprobada: :tableTitle',
         'greeting' => 'Hola :name,',
-        'intro' => 'Lamentamos informarte que tu mesa :tableTitle no ha sido aprobada.',
+        'intro' => 'Lamentamos informarte de que tu mesa :tableTitle no ha sido aprobada.',
         'table_title' => 'Mesa',
         'reason_label' => 'Motivo',
         'edit_table' => 'Editar mesa',
         'outro' => 'Puedes modificar tu mesa y volver a enviarla para revisión.',
+    ],
+
+    'campaign_moderation_approved' => [
+        'subject' => 'Tu campaña ha sido aprobada: :campaignTitle',
+        'greeting' => 'Hola :name,',
+        'intro' => 'Tu campaña :campaignTitle ha sido aprobada y ya está publicada.',
+        'notes_label' => 'Notas del moderador',
+        'view_campaign' => 'Ver campaña',
+        'outro' => '¡Gracias por contribuir a la comunidad!',
+    ],
+
+    'campaign_moderation_rejected' => [
+        'subject' => 'Tu campaña no ha sido aprobada: :campaignTitle',
+        'greeting' => 'Hola :name,',
+        'intro' => 'Lamentamos informarte de que tu campaña :campaignTitle no ha sido aprobada.',
+        'reason_label' => 'Motivo',
+        'edit_campaign' => 'Editar campaña',
+        'outro' => 'Puedes modificar tu campaña y volver a enviarla para revisión.',
     ],
 ];

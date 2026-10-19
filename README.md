@@ -325,10 +325,10 @@ Widget del dashboard: `PendingModerationWidget` (mesas y campañas pendientes de
 | Confirmación o rechazo de la inscripción | Participante |
 | Cancelación de la inscripción por el participante | Participante; directores y email de la mesa si **Notificaciones** lo permite |
 | Cancelación de la inscripción por la organización (panel) | Participante, con su propio correo; los directores y el email de la mesa no reciben el aviso de cancelación (sí el de promoción si alguien sale de la lista de espera) |
-| Promoción desde la lista de espera | Participante y directores, si **Notificaciones** lo permite; en las mesas con confirmación manual indican que la inscripción queda pendiente |
+| Promoción desde la lista de espera | Participante siempre; directores y email de la mesa si **Notificaciones** lo permite; en las mesas con confirmación manual indican que la inscripción queda pendiente |
 | Cancelación de la mesa | Participantes |
 | Mesa o campaña enviada a revisión | Usuarios con rol `admin` o `editor` |
-| Mesa aprobada o rechazada | Autor |
+| Mesa o campaña aprobada o rechazada | Autor (el rechazo incluye el motivo y el enlace para editarla) |
 
 ## Eventos de dominio
 
@@ -342,6 +342,8 @@ Widget del dashboard: `PendingModerationWidget` (mesas y campañas pendientes de
 | `GameTableModerationApproved` | Se aprueba una mesa en moderación |
 | `GameTableModerationRejected` | Se rechaza una mesa en moderación |
 | `CampaignSubmittedForReview` | Una campaña creada desde la web se envía a revisión |
+| `CampaignModerationApproved` | Se aprueba una campaña en moderación |
+| `CampaignModerationRejected` | Se rechaza una campaña en moderación |
 | `ParticipantRegistered` | Un usuario se inscribe |
 | `GuestRegistered` | Un invitado se inscribe |
 | `ParticipantConfirmed` | Se confirma una inscripción |

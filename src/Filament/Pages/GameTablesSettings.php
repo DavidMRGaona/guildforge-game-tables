@@ -230,7 +230,8 @@ final class GameTablesSettings extends Page implements HasForms
                         ->label(__('game-tables::messages.settings.fields.notify_on_cancellation')),
 
                     Toggle::make('notifications.notify_waiting_list_promotion')
-                        ->label(__('game-tables::messages.settings.fields.notify_waiting_list')),
+                        ->label(__('game-tables::messages.settings.fields.notify_waiting_list'))
+                        ->helperText(__('game-tables::messages.settings.fields.notify_waiting_list_help')),
                 ])
                 ->columns(3),
 

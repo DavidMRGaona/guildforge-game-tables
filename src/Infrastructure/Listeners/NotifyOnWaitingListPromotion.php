@@ -23,10 +23,6 @@ final readonly class NotifyOnWaitingListPromotion
 
     public function handle(ParticipantPromotedFromWaitingList $event): void
     {
-        if (! $this->settingsReader->isNotifyWaitingListPromotionEnabled()) {
-            return;
-        }
-
         $gameTable = $this->gameTableRepository->find(new GameTableId($event->gameTableId));
 
         if ($gameTable === null) {
@@ -49,6 +45,11 @@ final readonly class NotifyOnWaitingListPromotion
                     tableLocation: $tableLocation,
                     confirmed: $event->confirmed,
                 ));
+        }
+
+        // The setting only covers the directors' copy, like the registration and cancellation ones
+        if (! $this->settingsReader->isNotifyWaitingListPromotionEnabled()) {
+            return;
         }
 
         // Notify GMs and table notification email
