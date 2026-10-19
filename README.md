@@ -36,6 +36,8 @@ El core rechaza el módulo si no se cumplen (`module.json` → `requires`).
 
 Las versiones nuevas se aplican desde **Actualizaciones de módulos** (también con el modo mantenimiento activo) o con `php artisan module:update game-tables`.
 
+La migración `2026_10_19_000002` crea un índice único (un invitado activo por email y mesa) y falla si ya hay inscripciones de invitado activas con el mismo email en la misma mesa: compruébalas y corrígelas antes de actualizar.
+
 ### En desarrollo
 
 Con el repositorio clonado en `src/modules/game-tables`:
@@ -150,7 +152,7 @@ Un invitado se inscribe con nombre, email y consentimiento, y su inscripción qu
 
 **Cuentas.** Solo cuentan las cuentas con el email verificado: una cuenta sin verificar no impide inscribirse como invitado con ese email. Con **Email con cuenta registrada** en `require_login`, ese email se rechaza con «Este email pertenece a una cuenta. Inicia sesión para inscribirte.» y un enlace para iniciar sesión; con `allow_guest` se admite como invitado salvo que esa cuenta ya esté inscrita («Ya hay una inscripción con tu email.»). Si un usuario con sesión se inscribe en una mesa donde ya tenía una inscripción de invitado con su email verificado, la inscripción pasa a su cuenta (se borran los datos personales de invitado: nombre, apellidos, email y teléfono, y el enlace de cancelación) y, si estaba sin confirmar, su email queda confirmado por la cuenta; no se crea otra.
 
-**Enlace de confirmación.** `GET /mesas/confirmar/{token}` solo muestra los datos de la inscripción; la confirmación se hace con el botón (`POST` a la misma ruta), para que un escáner de correo no confirme por el invitado. Al confirmar, la inscripción sin plaza se coloca bajo el bloqueo de la mesa: si ya no hay plaza o las inscripciones se han cerrado, se avisa y no se cambia nada. Un enlace usado antes dice «Tu inscripción ya estaba confirmada»; uno caducado, cancelado o desconocido, que ya no es válido. Está limitado a 20 peticiones por minuto y 100 por hora y conexión.
+**Enlace de confirmación.** `GET /mesas/confirmar/{token}` solo muestra los datos de la inscripción; la confirmación se hace con el botón (`POST` a la misma ruta), para que un escáner de correo no confirme por el invitado. Al confirmar, la inscripción sin plaza se coloca bajo el bloqueo de la mesa: si ya no hay plaza o las inscripciones se han cerrado, la inscripción pasa a **Caducada**. La misma página muestra el resultado: plaza confirmada, pendiente de aprobación por la organización, en la lista de espera con su puesto, ya confirmada, llena mientras confirmaba, inscripciones cerradas o enlace no válido (caducado, cancelado, desconocido o de una mesa no publicada). Antes de confirmar, la página muestra el estado «Pendiente de confirmar». Está limitado a 20 peticiones por minuto y 100 por hora y conexión.
 
 **Límite de inscripciones.** El formulario de invitado (solo invitados) admite `guest_rate_limit.per_minute` (5) y `guest_rate_limit.per_hour` (20) envíos por conexión; pasado el límite se muestra un error en el formulario.
 
@@ -160,7 +162,7 @@ Un invitado se inscribe con nombre, email y consentimiento, y su inscripción qu
 
 **Acciones de la organización.** Las inscripciones que añade la organización desde el panel no pasan por la confirmación del invitado: **Marcar email como confirmado** (como si hubiera pulsado el enlace; si no tenía plaza, la coloca antes bajo el mismo bloqueo y, sin plaza libre, avisa de que la mesa está llena y no cambia nada), **Confirmar** y **Promover** confirman también el email. Confirmar el email de un invitado sin confirmar de cualquiera de estas tres formas no envía a la organización el aviso de inscripción de invitado (es su propia acción) y el invitado recibe un solo correo. Añadir a un invitado desde el panel sigue avisando como siempre.
 
-**Cookie.** El formulario guarda un indicio en el navegador, la cookie `gt_guest_registrations` (categoría preferencias, 90 días), con las mesas en las que se ha inscrito como invitado para avisar si lo intenta otra vez. No se lee ni escribe sin consentimiento. Si el módulo cookie-consent está instalado, el módulo la declara ahí; si no, no hace falta.
+**Cookie.** El formulario guarda un indicio en el navegador, la cookie `gt_guest_registrations` (categoría preferencias, 90 días), con las mesas en las que se ha inscrito como invitado para avisar si lo intenta otra vez. No se lee ni escribe sin consentimiento. Si el módulo cookie-consent está instalado, el módulo la declara ahí; sin cookie-consent no hay forma de dar ese consentimiento, así que la cookie nunca se escribe.
 
 ### Inscripción
 
