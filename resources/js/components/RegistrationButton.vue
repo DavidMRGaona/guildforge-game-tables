@@ -23,6 +23,7 @@ import RegistrationStatus from './RegistrationStatus.vue';
 import GuestRegistrationModal from './GuestRegistrationModal.vue';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 import { useVerificationGate, type VerificationGateAction } from '@/composables/useVerificationGate';
+import { useFlashMessages } from '@/composables/useFlashMessages';
 
 // The table page always sends these props (slot game-table-registration); the module has no API to fetch them
 interface Props {
@@ -40,6 +41,9 @@ const page = usePage();
 const { t, locale } = useI18n();
 // Registering and cancelling are closed to accounts that must verify their email (guests are not)
 const gate = useVerificationGate();
+// The server's answer to a submission comes back as a flash message (the guest form's «revisa tu
+// correo», a takeover, the waiting list position...); the table page shows none, so this does
+const { success: flashSuccess, error: flashError } = useFlashMessages();
 const verificationReasonId = useId();
 
 const resolvedTableId = computed(() => props.table.id);
@@ -454,7 +458,7 @@ function closeGuestModal(): void {
 }
 
 function onGuestSuccess(): void {
-    // The page will reload with flash message via Inertia
+    // The server's answer is the flash message shown above the button
 }
 
 function selectRole(role: ParticipantRole): void {
@@ -481,6 +485,22 @@ function cancelRoleSelect(): void {
             :registration="registration"
             class="mb-4"
         />
+
+        <!-- The server's answer to the last submission -->
+        <div
+            v-if="flashSuccess"
+            role="status"
+            class="mb-4 rounded-lg bg-success-light p-4 text-sm text-success"
+        >
+            {{ flashSuccess }}
+        </div>
+        <div
+            v-if="flashError && !error"
+            role="alert"
+            class="mb-4 rounded-lg bg-red-50 p-4 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400"
+        >
+            {{ flashError }}
+        </div>
 
         <!-- Error message -->
         <div
