@@ -586,6 +586,7 @@ return [
         'confirmation_closed' => 'Registrations have already closed.',
         'confirmation_filled_up' => 'The table filled up while you were confirming.',
         'too_many_confirmation_attempts' => 'Too many attempts with this link. Wait a moment and try again.',
+        'guest_rate_limited' => 'You have made too many registrations in a row. Wait a few minutes and try again.',
     ],
 
     'success' => [
@@ -600,6 +601,10 @@ return [
         'guest_email_already_confirmed' => 'Your registration was already confirmed.',
         'registration_linked' => 'You already had a guest registration; it is now on your account.',
         'registration_linked_waiting_list' => 'You already had a guest registration; it is now on your account. You are on the waiting list (position :position).',
+        'guest_confirmation_pending' => 'You already have a pending registration: check your email.',
+        'guest_confirmation_sent' => 'We have sent you an email to confirm the registration. Confirm it before :deadline or the seat will be released.',
+        'guest_confirmation_sent_waiting_list' => 'We have sent you an email to confirm the registration. Confirm it before :deadline to keep your place :position on the waiting list.',
+        'guest_confirmation_sent_unguaranteed' => 'We have sent you an email to confirm the registration. Your seat is not guaranteed until you confirm it.',
     ],
 
     /*

@@ -10,6 +10,7 @@ use App\Application\Seo\Services\SeoMetadataFactoryInterface;
 use App\Http\Concerns\BuildsPaginatedResponse;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use DateTimeImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,10 +22,13 @@ use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
 use Modules\GameTables\Application\Services\EligibilityServiceInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
+use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
+use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use App\Application\Services\SlugRedirectServiceInterface;
 use Modules\GameTables\Http\Concerns\ReadsListFilters;
 use Modules\GameTables\Http\Resources\GameTableListResource;
 use Modules\GameTables\Http\Resources\GameTableResource;
+use Modules\GameTables\Infrastructure\Services\GuestConfirmationPolicy;
 use Modules\GameTables\Infrastructure\Services\SeatCounter;
 
 final class GameTableController extends Controller
@@ -41,6 +45,8 @@ final class GameTableController extends Controller
         private readonly SlugRedirectServiceInterface $slugRedirectService,
         private readonly SeoMetadataFactoryInterface $seo,
         private readonly SeatCounter $seatCounter,
+        private readonly GameTableRepositoryInterface $gameTableRepository,
+        private readonly GuestConfirmationPolicy $guestConfirmationPolicy,
     ) {}
 
     public function index(Request $request): Response
@@ -191,13 +197,18 @@ final class GameTableController extends Controller
     private function renderShow(GameTableResponseDTO $table): Response
     {
         $user = auth()->user();
+        $now = CarbonImmutable::now()->toDateTimeImmutable();
         $eligibility = null;
         $guestEligibility = null;
         $userRegistration = null;
 
         if ($user === null) {
             // What a visitor without an account can do: the same rules the guest registration applies
-            $guestEligibility = $this->eligibilityService->guestEligibility($table->id);
+            $guestEligibility = [
+                ...$this->eligibilityService->guestEligibility($table->id),
+                // What the form says before it is sent: the place held until a deadline, or not guaranteed
+                'confirmation' => $this->guestConfirmationNotice($table->id, $now),
+            ];
         } else {
             // Get current user's registration
             $registration = $this->registrationService->findByTableAndUser($table->id, (string) $user->id);
@@ -206,7 +217,7 @@ final class GameTableController extends Controller
             $eligibility = [
                 ...$this->eligibilityService->canRegisterById($table->id, (string) $user->id),
                 // Whether the button may offer the cancellation: the rule the server applies on submit
-                'canCancel' => $registration !== null && $this->registrationService->withdrawalRefusal($registration->id) === null,
+                'canCancel' => $registration !== null && $this->registrationService->withdrawalRefusal($registration->id, $now) === null,
             ];
         }
 
@@ -218,6 +229,18 @@ final class GameTableController extends Controller
             'userRegistration' => $userRegistration,
             'seo' => $this->tableSeo($table),
         ]);
+    }
+
+    /**
+     * The terms a guest registration would get now, as the policy applies them on submit.
+     *
+     * @return array{mode: 'hold'|'wait', deadline: string|null}|null
+     */
+    private function guestConfirmationNotice(string $gameTableId, DateTimeImmutable $now): ?array
+    {
+        $gameTable = $this->gameTableRepository->find(new GameTableId($gameTableId));
+
+        return $gameTable !== null ? $this->guestConfirmationPolicy->noticeFor($gameTable, $now) : null;
     }
 
     /**

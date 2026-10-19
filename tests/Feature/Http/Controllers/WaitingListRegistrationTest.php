@@ -343,6 +343,7 @@ final class WaitingListRegistrationTest extends ModuleTestCase
 
     public function test_a_guest_who_can_only_be_a_spectator_is_told_so(): void
     {
+        $this->freezeTime();
         $table = $this->fullTable(['max_spectators' => 2]);
 
         $this->get(route('gametables.show', $table->slug))
@@ -356,7 +357,10 @@ final class WaitingListRegistrationTest extends ModuleTestCase
             'email' => 'invitada@example.test',
             'role' => 'spectator',
             'gdpr_consent' => true,
-        ])->assertSessionHas('success', __('game-tables::messages.success.guest_spectator_registered'));
+        ])->assertSessionHas(
+            'success',
+            'Te hemos enviado un email para confirmar la inscripción. Confírmala antes del '.now()->addHours(2)->format('d/m/Y H:i').' o la plaza se liberará.',
+        );
     }
 
     // Turning the list on over a manual table already past its seats (confirmed + pending)

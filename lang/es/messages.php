@@ -670,6 +670,7 @@ return [
         'confirmation_closed' => 'Las inscripciones ya se han cerrado.',
         'confirmation_filled_up' => 'Se ha llenado mientras confirmabas.',
         'too_many_confirmation_attempts' => 'Demasiados intentos con este enlace. Espera un momento y vuelve a intentarlo.',
+        'guest_rate_limited' => 'Has hecho demasiadas inscripciones seguidas. Espera unos minutos y vuelve a intentarlo.',
     ],
 
     'success' => [
@@ -684,6 +685,10 @@ return [
         'guest_email_already_confirmed' => 'Tu inscripción ya estaba confirmada.',
         'registration_linked' => 'Ya tenías una inscripción como invitado; ahora está en tu cuenta.',
         'registration_linked_waiting_list' => 'Ya tenías una inscripción como invitado; ahora está en tu cuenta. Estás en la lista de espera (posición :position).',
+        'guest_confirmation_pending' => 'Ya tienes una inscripción pendiente: revisa tu correo.',
+        'guest_confirmation_sent' => 'Te hemos enviado un email para confirmar la inscripción. Confírmala antes del :deadline o la plaza se liberará.',
+        'guest_confirmation_sent_waiting_list' => 'Te hemos enviado un email para confirmar la inscripción. Confírmala antes del :deadline para conservar tu puesto :position en la lista de espera.',
+        'guest_confirmation_sent_unguaranteed' => 'Te hemos enviado un email para confirmar la inscripción. Tu plaza no está garantizada hasta que la confirmes.',
     ],
 
     /*

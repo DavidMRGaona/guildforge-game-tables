@@ -198,6 +198,21 @@ final class GuestConfirmationControllerTest extends ModuleTestCase
             ->assertJson(['message' => 'Demasiados intentos con este enlace. Espera un momento y vuelve a intentarlo.']);
     }
 
+    // Inertia shows a plain-text 429 in its raw error modal: the button gets a flash message instead,
+    // on a page outside the limit (the confirmation page itself would answer 429 again)
+    public function test_the_button_over_the_limit_redirects_with_the_message(): void
+    {
+        for ($i = 0; $i < 20; $i++) {
+            $this->get(route('gametables.confirm-guest', str_repeat('b', 64)));
+        }
+
+        $this->from(route('gametables.confirm-guest', str_repeat('b', 64)))
+            ->withHeaders(['X-Inertia' => 'true'])
+            ->post(route('gametables.confirm-guest.store', str_repeat('b', 64)))
+            ->assertRedirect(route('gametables.index'))
+            ->assertSessionHas('error', 'Demasiados intentos con este enlace. Espera un momento y vuelve a intentarlo.');
+    }
+
     /**
      * The whole public flow without fakes but the mail: the form sends the link, the link confirms.
      */

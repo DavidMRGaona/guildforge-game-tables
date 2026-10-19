@@ -104,6 +104,7 @@ use Modules\GameTables\Infrastructure\Services\EventWithTablesQuery;
 use Modules\GameTables\Infrastructure\Services\FrontendCreationService;
 use Modules\GameTables\Infrastructure\Services\GameMasterService;
 use Modules\GameTables\Infrastructure\Services\GameTableQueryService;
+use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
 use Modules\GameTables\Infrastructure\Services\GameTableService;
 use Modules\GameTables\Infrastructure\Services\AssociationRoleMembershipChecker;
@@ -379,8 +380,9 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     }
 
     /**
-     * The guest confirmation link (page and button) per IP: wide enough for a person, tight
-     * enough to stop guessing tokens. Over the limit: a translated message, never an error page.
+     * Per IP, over the limit a translated message, never an error page. The guest confirmation
+     * link (page and button): wide enough for a person, tight enough to stop guessing tokens. The
+     * guest registration form: the limits of the settings, as a form error on the table page.
      */
     private function registerRateLimiters(): void
     {
@@ -389,15 +391,42 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
             $tooMany = static function (Request $request, array $headers): HttpResponse {
                 $message = (string) __('game-tables::messages.errors.too_many_confirmation_attempts');
 
-                return $request->expectsJson()
-                    ? response()->json(['message' => $message], 429, $headers)
-                    : response($message, 429, $headers);
+                if ($request->expectsJson()) {
+                    return response()->json(['message' => $message], 429, $headers);
+                }
+
+                // The link opened from the email gets the message as the page. The button (or an
+                // Inertia visit) would show a plain 429 in Inertia's raw error modal: it goes to the
+                // list with the message instead, as the confirmation page answers 429 again
+                if ($request->isMethod('GET') && ! $request->header('X-Inertia')) {
+                    return response($message, 429, $headers);
+                }
+
+                return redirect()->route('gametables.index')->with('error', $message);
             };
 
             // Distinct keys: limits sharing a key would share one counter
             return [
                 Limit::perMinute(20)->by('gt-confirm:'.$ip)->response($tooMany),
                 Limit::perHour(100)->by('gt-confirm-h:'.$ip)->response($tooMany),
+            ];
+        });
+
+        RateLimiter::for('game-tables-guest-registration', static function (Request $request): array {
+            $ip = $request->ip() ?? 'unknown';
+            $settings = app(GameTableSettingsReader::class);
+            $tooMany = static function (Request $request, array $headers): HttpResponse {
+                $message = (string) __('game-tables::messages.errors.guest_rate_limited');
+
+                // Inertia cannot show a 429 inside the form: the error goes where the refusals go
+                return $request->expectsJson()
+                    ? response()->json(['message' => $message], 429, $headers)
+                    : back()->withErrors(['registration' => $message])->withInput();
+            };
+
+            return [
+                Limit::perMinute($settings->guestRateLimitPerMinute())->by('gt-guest:'.$ip)->response($tooMany),
+                Limit::perHour($settings->guestRateLimitPerHour())->by('gt-guest-h:'.$ip)->response($tooMany),
             ];
         });
     }
