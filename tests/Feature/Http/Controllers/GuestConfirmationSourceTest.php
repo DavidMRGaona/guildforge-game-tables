@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * The module has no Vue test harness: these tests read the sources to pin that the visitor sees
- * the server's answer after the registration forms.
+ * the server's answer after the guest form and after the confirmation button.
  */
 final class GuestConfirmationSourceTest extends TestCase
 {
@@ -38,5 +38,25 @@ final class GuestConfirmationSourceTest extends TestCase
         $this->assertStringContainsString('{{ flashSuccess }}', $template);
         $this->assertMatchesRegularExpression('/v-if="flashError && !error"\s+role="alert"/', $template);
         $this->assertStringContainsString('{{ flashError }}', $template);
+    }
+
+    public function test_the_confirmation_page_shows_the_result_of_the_button(): void
+    {
+        $source = $this->source('pages/GameTables/ConfirmRegistration.vue');
+
+        $this->assertStringContainsString('result: ConfirmationResult | null;', $source);
+        $this->assertStringContainsString("tone: 'success' | 'info' | 'error';", $source);
+
+        $template = $this->template($source);
+        $this->assertStringContainsString('<template v-if="result">', $template);
+        $this->assertStringContainsString('{{ result.message }}', $template);
+        $this->assertStringContainsString('{{ participant.status_label }}', $template);
+    }
+
+    public function test_the_confirmation_page_nests_no_button_in_a_link(): void
+    {
+        $template = $this->template($this->source('pages/GameTables/ConfirmRegistration.vue'));
+
+        $this->assertDoesNotMatchRegularExpression('/<Link\b[^>]*>\s*<BaseButton\b/', $template);
     }
 }

@@ -603,6 +603,8 @@ return [
         'waiting_list_manual' => 'You have joined the waiting list (position :position). If a seat is freed before the table starts (or before registrations close, if that comes first), you will take it pending confirmation by the game master and we will let you know by email.',
         'guest_email_confirmed' => 'Your registration is confirmed. We have sent you an email with the details.',
         'guest_email_already_confirmed' => 'Your registration was already confirmed.',
+        'guest_email_confirmed_pending' => 'You have confirmed your email. Your registration is pending approval by the organisation: we will let you know by email.',
+        'guest_email_confirmed_waiting_list' => 'You have confirmed your email. You are on the waiting list (position :position): if a seat is freed, we will let you know by email.',
         'registration_linked' => 'You already had a guest registration; it is now on your account.',
         'registration_linked_waiting_list' => 'You already had a guest registration; it is now on your account. You are on the waiting list (position :position).',
         'guest_confirmation_pending' => 'You already have a pending registration: check your email.',
@@ -756,6 +758,16 @@ return [
         // Actions
         'save' => 'Save configuration',
         'saved' => 'Configuration saved',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Guest confirmation page
+    |--------------------------------------------------------------------------
+    */
+    'confirm_registration' => [
+        // The state shown until the guest follows the emailed link
+        'awaiting_email' => 'Awaiting confirmation',
     ],
 
     // Server-rendered page metadata (link previews and search engines)

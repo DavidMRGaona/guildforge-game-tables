@@ -6,20 +6,29 @@ import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 
+/** What confirming did, shown on this page after the button (POST) */
+interface ConfirmationResult {
+    tone: 'success' | 'info' | 'error';
+    message: string;
+}
+
 interface Props {
+    /** Null when the link no longer leads to a registration */
     participant: {
         first_name: string | null;
         role_label: string;
+        /** «Pendiente de confirmar» until the link is followed, then the registration's state */
         status_label: string;
-    };
+    } | null;
     gameTable: {
         title: string;
         startsAt: string | null;
         slug: string;
-    };
+    } | null;
     token: string;
     /** The link was already followed: nothing left to confirm */
     alreadyConfirmed: boolean;
+    result: ConfirmationResult | null;
 }
 
 const props = defineProps<Props>();
@@ -27,7 +36,7 @@ const props = defineProps<Props>();
 const { t, locale } = useI18n();
 
 const formattedDate = computed(() => {
-    if (props.gameTable.startsAt === null) {
+    if (!props.gameTable?.startsAt) {
         return '';
     }
 
@@ -43,6 +52,21 @@ const formattedDate = computed(() => {
 });
 
 const isLoading = ref(false);
+
+const resultClasses: Record<ConfirmationResult['tone'], string> = {
+    success: 'bg-success-light text-success',
+    info: 'bg-info-light text-info',
+    error: 'bg-error-light text-error',
+};
+
+// The table, or the list of tables when the link no longer leads to one
+const backHref = computed(() => (props.gameTable ? `/mesas/${props.gameTable.slug}` : '/mesas'));
+const backLabel = computed(() => (props.gameTable ? t('confirmRegistration.viewTable') : t('confirmRegistration.viewTables')));
+
+// A link styled as a button (a button inside a link is invalid interactive nesting)
+const linkButtonBase = 'inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-md px-4 py-2 text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2';
+const primaryLinkClass = `${linkButtonBase} bg-primary text-white hover:bg-primary-700 focus:ring-primary-500`;
+const secondaryLinkClass = `${linkButtonBase} bg-muted text-base-primary hover:bg-neutral-200 dark:hover:bg-neutral-700 focus:ring-neutral-400`;
 
 // Only the button confirms: opening the link (as mail scanners do) changes nothing
 function handleConfirm(): void {
@@ -86,7 +110,10 @@ function handleConfirm(): void {
                 </div>
 
                 <!-- Registration info -->
-                <div class="mb-6 rounded-lg bg-muted p-4">
+                <div
+                    v-if="participant && gameTable"
+                    class="mb-6 rounded-lg bg-muted p-4"
+                >
                     <dl class="space-y-2">
                         <div
                             v-if="participant.first_name"
@@ -137,41 +164,54 @@ function handleConfirm(): void {
                     </dl>
                 </div>
 
+                <!-- What confirming did -->
+                <template v-if="result">
+                    <div
+                        class="mb-6 rounded-lg p-4 text-center"
+                        :class="resultClasses[result.tone]"
+                        :role="result.tone === 'error' ? 'alert' : 'status'"
+                    >
+                        <p class="text-sm">
+                            {{ result.message }}
+                        </p>
+                    </div>
+
+                    <Link
+                        :href="backHref"
+                        :class="primaryLinkClass"
+                    >
+                        {{ backLabel }}
+                    </Link>
+                </template>
+
                 <!-- Already confirmed -->
-                <template v-if="alreadyConfirmed">
+                <template v-else-if="alreadyConfirmed">
                     <div class="mb-6 rounded-lg bg-success-light p-4 text-center">
                         <p class="text-sm text-success">
                             {{ t('confirmRegistration.already') }}
                         </p>
                     </div>
 
-                    <Link :href="`/mesas/${gameTable.slug}`">
-                        <BaseButton
-                            variant="primary"
-                            class="w-full"
-                        >
-                            {{ t('confirmRegistration.viewTable') }}
-                        </BaseButton>
+                    <Link
+                        :href="backHref"
+                        :class="primaryLinkClass"
+                    >
+                        {{ backLabel }}
                     </Link>
                 </template>
 
                 <!-- To confirm -->
-                <template v-else>
+                <template v-else-if="gameTable">
                     <p class="mb-6 text-center text-base-secondary">
                         {{ t('confirmRegistration.intro', { tableTitle: gameTable.title }) }}
                     </p>
 
                     <div class="flex gap-4">
                         <Link
-                            :href="`/mesas/${gameTable.slug}`"
-                            class="flex-1"
+                            :href="backHref"
+                            :class="[secondaryLinkClass, 'flex-1']"
                         >
-                            <BaseButton
-                                variant="secondary"
-                                class="w-full"
-                            >
-                                {{ t('confirmRegistration.viewTable') }}
-                            </BaseButton>
+                            {{ backLabel }}
                         </Link>
                         <BaseButton
                             variant="primary"

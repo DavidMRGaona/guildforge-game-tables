@@ -687,6 +687,8 @@ return [
         'cancelled' => 'Inscripción cancelada correctamente',
         'guest_email_confirmed' => 'Tu inscripción está confirmada. Te hemos enviado un email con los detalles.',
         'guest_email_already_confirmed' => 'Tu inscripción ya estaba confirmada.',
+        'guest_email_confirmed_pending' => 'Has confirmado tu email. Tu inscripción está pendiente de aprobación por la organización: te avisaremos por correo.',
+        'guest_email_confirmed_waiting_list' => 'Has confirmado tu email. Estás en la lista de espera (puesto :position): si se libera una plaza, te avisaremos por correo.',
         'registration_linked' => 'Ya tenías una inscripción como invitado; ahora está en tu cuenta.',
         'registration_linked_waiting_list' => 'Ya tenías una inscripción como invitado; ahora está en tu cuenta. Estás en la lista de espera (posición :position).',
         'guest_confirmation_pending' => 'Ya tienes una inscripción pendiente: revisa tu correo.',
@@ -843,6 +845,16 @@ return [
         // Actions
         'save' => 'Guardar configuración',
         'saved' => 'Configuración guardada',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Guest confirmation page
+    |--------------------------------------------------------------------------
+    */
+    'confirm_registration' => [
+        // The state shown until the guest follows the emailed link
+        'awaiting_email' => 'Pendiente de confirmar',
     ],
 
     // Server-rendered page metadata (link previews and search engines)
