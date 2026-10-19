@@ -17,6 +17,7 @@ use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
 use Modules\GameTables\Domain\Events\GuestConfirmationRequested;
 use Modules\GameTables\Domain\Events\GuestRegistered;
+use Modules\GameTables\Domain\Events\GuestRegistrationExpired;
 use Modules\GameTables\Domain\Events\ParticipantConfirmed;
 use Modules\GameTables\Domain\Events\ParticipantPromotedFromWaitingList;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
@@ -41,7 +42,7 @@ final class GuestConfirmationTest extends ModuleTestCase
         parent::setUp();
 
         Notification::fake();
-        Event::fake([GuestConfirmationRequested::class, GuestRegistered::class, ParticipantConfirmed::class, ParticipantPromotedFromWaitingList::class]);
+        Event::fake([GuestConfirmationRequested::class, GuestRegistered::class, GuestRegistrationExpired::class, ParticipantConfirmed::class, ParticipantPromotedFromWaitingList::class]);
         config()->set('modules.settings.game-tables', []);
         $this->travelTo(CarbonImmutable::parse('2026-11-02 10:00:00'));
 
@@ -85,6 +86,7 @@ final class GuestConfirmationTest extends ModuleTestCase
         $this->assertNull($row->confirmation_expires_at);
         // Kept, so a second click finds the confirmed registration
         $this->assertSame($token, $row->confirmation_token);
+        Event::assertNotDispatched(GuestRegistrationExpired::class);
 
         Event::assertDispatchedTimes(GuestRegistered::class, 1);
         Event::assertDispatched(
@@ -125,6 +127,11 @@ final class GuestConfirmationTest extends ModuleTestCase
         $this->assertNull($row->confirmation_token);
         Event::assertNotDispatched(GuestRegistered::class);
         Event::assertNotDispatched(ParticipantConfirmed::class);
+        // As the expiry command would: the guest held a place and is told it was released
+        Event::assertDispatchedTimes(GuestRegistrationExpired::class, 1);
+        Event::assertDispatched(GuestRegistrationExpired::class, fn (GuestRegistrationExpired $event): bool => $event->participantId === $guest->id
+            && $event->email === 'invitada@example.test'
+            && $event->notifyGuest === true);
     }
 
     public function test_an_overdue_link_gives_the_seat_to_the_waiting_list(): void
@@ -157,6 +164,9 @@ final class GuestConfirmationTest extends ModuleTestCase
         $this->assertSame('expired', $row->status->value);
         $this->assertNull($row->email_confirmed_at);
         Event::assertNotDispatched(GuestRegistered::class);
+        // The place was held: told as the expiry command would
+        Event::assertDispatched(GuestRegistrationExpired::class, fn (GuestRegistrationExpired $event): bool => $event->participantId === $guest->id
+            && $event->notifyGuest === true);
     }
 
     public function test_an_unknown_or_cleared_token_is_invalid(): void
@@ -225,6 +235,9 @@ final class GuestConfirmationTest extends ModuleTestCase
         $this->assertNull($row->email_confirmed_at);
         $this->assertNull($row->confirmation_token);
         Event::assertNotDispatched(GuestRegistered::class);
+        // No place was ever held (wait mode): no expiry email, the page says it
+        Event::assertDispatched(GuestRegistrationExpired::class, fn (GuestRegistrationExpired $event): bool => $event->participantId === $guest->id
+            && $event->notifyGuest === false);
     }
 
     public function test_hold_confirmation_from_the_list_takes_a_free_seat(): void

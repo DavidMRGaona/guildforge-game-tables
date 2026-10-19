@@ -28,6 +28,14 @@ return [
         'ignore' => 'Si no te has inscrito tú, ignora este email: la inscripción no seguirá adelante.',
     ],
 
+    'guest_registration_expired' => [
+        'subject' => 'Inscripción caducada: :tableTitle',
+        'greeting' => 'Hola :name,',
+        'intro' => 'No confirmaste a tiempo tu inscripción en la mesa «:tableTitle» y la plaza se ha liberado.',
+        'retry' => 'Si siguen quedando plazas, puedes volver a apuntarte.',
+        'button' => 'Ver mesa',
+    ],
+
     'registration_status' => [
         'subject_confirmed' => 'Inscripción confirmada: :tableTitle',
         'subject_pending' => 'Inscripción recibida: :tableTitle',
