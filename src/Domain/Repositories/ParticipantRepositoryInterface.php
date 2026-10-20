@@ -125,7 +125,7 @@ interface ParticipantRepositoryInterface
     /**
      * First in the waiting list, optionally only among the participants with the given role.
      * Guests whose email is not confirmed are skipped (they keep their place).
-     * The waiting list order is the stored position, then the registration date.
+     * The waiting list order is roster registrations first, then the stored position, then the registration date.
      */
     public function getFirstInWaitingList(GameTableId $gameTableId, ?ParticipantRole $role = null): ?Participant;
 

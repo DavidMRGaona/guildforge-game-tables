@@ -401,7 +401,7 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
     }
 
     /**
-     * The waiting list in its order: stored position, then registration date (the id only makes
+     * The waiting list in its order: roster registrations first, then stored position, then registration date (the id only makes
      * ties deterministic). Promotions and the places shown both read it.
      *
      * @return Builder<ParticipantModel>
@@ -421,6 +421,7 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
     private function inWaitingListOrder(Builder $query): Builder
     {
         return $query
+            ->orderByDesc('from_roster')
             ->orderBy('waiting_list_position', 'asc')
             ->orderBy('created_at', 'asc')
             ->orderBy('id', 'asc');
@@ -470,6 +471,8 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
             confirmationSentAt: $this->immutable($model->confirmation_sent_at),
             confirmationMode: $model->confirmation_mode,
             fingerprint: $model->fingerprint,
+            fromRoster: $model->from_roster,
+            cancellationReason: $model->cancellation_reason,
         );
     }
 
@@ -504,6 +507,8 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
             'confirmation_sent_at' => $participant->confirmationSentAt,
             'confirmation_mode' => $participant->confirmationMode?->value,
             'fingerprint' => $participant->fingerprint,
+            'from_roster' => $participant->fromRoster,
+            'cancellation_reason' => $participant->cancellationReason?->value,
         ];
     }
 

@@ -36,6 +36,8 @@ final readonly class ParticipantResponseDTO
         public bool $confirmationResent = false,
         // A signed-in user took over a guest registration made with their email
         public bool $linkedFromGuest = false,
+        // The campaign roster enrolled this registration
+        public bool $fromRoster = false,
     ) {}
 
     public static function fromEntity(
@@ -70,6 +72,7 @@ final readonly class ParticipantResponseDTO
             confirmationExpiresAt: $participant->confirmationExpiresAt,
             confirmationResent: $confirmationResent,
             linkedFromGuest: $linkedFromGuest,
+            fromRoster: $participant->fromRoster,
         );
     }
 
@@ -99,6 +102,7 @@ final readonly class ParticipantResponseDTO
             'email' => $this->email,
             'awaiting_email_confirmation' => $this->awaitingEmailConfirmation,
             'confirmation_expires_at' => $this->confirmationExpiresAt?->format('c'),
+            'from_roster' => $this->fromRoster,
         ];
     }
 }

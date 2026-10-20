@@ -21,6 +21,7 @@ use Modules\GameTables\Domain\Entities\Participant;
 use Modules\GameTables\Domain\Enums\GuestAccountsMode;
 use Modules\GameTables\Domain\Enums\GuestConfirmationMode;
 use Modules\GameTables\Domain\Enums\GuestConfirmationOutcome;
+use Modules\GameTables\Domain\Enums\ParticipantCancellationReason;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
 use Modules\GameTables\Domain\Events\GuestConfirmationRequested;
@@ -543,7 +544,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     /**
      * @return array{Participant, bool, Participant|null} the cancelled participant, whether it was confirmed, the promoted one
      */
-    private function cancelLocked(Participant $participant): array
+    private function cancelLocked(Participant $participant, ?ParticipantCancellationReason $reason = null): array
     {
         if (! $participant->canBeCancelled()) {
             throw CannotCancelException::notAllowed($participant->id->value);
@@ -552,7 +553,10 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         $wasConfirmed = $participant->isConfirmed();
         $wasPending = $participant->isPending();
 
-        $participant->cancel();
+        // A roster row cancelled without a stated reason is the member missing this session
+        $reason ??= $participant->fromRoster ? ParticipantCancellationReason::SessionAbsence : null;
+
+        $participant->cancel($reason);
         $this->participantRepository->save($participant);
 
         // The only automatic promotion: one waiting player per freed player seat (a pending
@@ -607,8 +611,9 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             return null;
         }
 
-        // A table with manual confirmation keeps the director's say: the promoted player waits as pending
-        $participant->promoteFromWaitingList($gameTable->autoConfirm);
+        // A table with manual confirmation keeps the director's say: the promoted player waits as
+        // pending, except a roster member, who is always confirmed
+        $participant->promoteFromWaitingList($participant->fromRoster || $gameTable->autoConfirm);
         $this->participantRepository->save($participant);
 
         return $participant;

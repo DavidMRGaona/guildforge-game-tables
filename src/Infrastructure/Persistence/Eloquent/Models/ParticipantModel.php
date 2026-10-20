@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 use Modules\GameTables\Domain\Enums\GuestConfirmationMode;
+use Modules\GameTables\Domain\Enums\ParticipantCancellationReason;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
 
@@ -35,6 +36,8 @@ use Modules\GameTables\Domain\Enums\ParticipantStatus;
  * @property Carbon|null $confirmation_sent_at
  * @property GuestConfirmationMode|null $confirmation_mode
  * @property string|null $fingerprint
+ * @property bool $from_roster
+ * @property ParticipantCancellationReason|null $cancellation_reason
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property-read UserModel|null $user
@@ -75,6 +78,8 @@ final class ParticipantModel extends Model
         'confirmation_mode',
         'fingerprint',
         'reminder_sent_at',
+        'from_roster',
+        'cancellation_reason',
     ];
 
     /**
@@ -93,6 +98,8 @@ final class ParticipantModel extends Model
             'confirmation_sent_at' => 'datetime',
             'confirmation_mode' => GuestConfirmationMode::class,
             'reminder_sent_at' => 'datetime',
+            'from_roster' => 'boolean',
+            'cancellation_reason' => ParticipantCancellationReason::class,
         ];
     }
 
