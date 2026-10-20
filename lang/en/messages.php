@@ -841,6 +841,7 @@ return [
             'nothing_to_change' => 'There is nothing to change in that session.',
             'not_member_self' => 'You are not part of the roster of this campaign.',
             'too_many_requests' => 'You have sent too many requests in a row. Wait a few minutes and try again.',
+            'too_many_additions' => 'You have added too many players in a row. Wait a minute and try again.',
         ],
         'success' => [
             'requested' => 'Request sent. The direction will let you know by email.',

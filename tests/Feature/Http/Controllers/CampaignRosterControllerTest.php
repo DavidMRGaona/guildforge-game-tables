@@ -285,6 +285,26 @@ final class CampaignRosterControllerTest extends ModuleTestCase
             ->assertSessionHas('error', 'No se ha podido añadir a esa cuenta. Comprueba el email.');
     }
 
+    public function test_the_twenty_first_addition_in_a_minute_is_rate_limited(): void
+    {
+        for ($i = 0; $i < 20; $i++) {
+            $this->asDirector()
+                ->post($this->rosterUrl().'/jugadores', ['email' => "nobody{$i}@example.com"])
+                ->assertSessionHas('error', 'No se ha podido añadir a esa cuenta. Comprueba el email.');
+        }
+
+        $this->asDirector()
+            ->post($this->rosterUrl().'/jugadores', ['email' => 'richard@example.com'])
+            ->assertRedirect($this->rosterUrl())
+            ->assertSessionHas('error', 'Has añadido demasiados jugadores seguidos. Espera un minuto y vuelve a intentarlo.');
+        $this->actingAs($this->mary)
+            ->postJson($this->rosterUrl().'/jugadores', ['email' => 'richard@example.com'])
+            ->assertStatus(429)
+            ->assertJson(['message' => 'Has añadido demasiados jugadores seguidos. Espera un minuto y vuelve a intentarlo.']);
+
+        $this->assertFalse($this->roster()->contains(new CampaignId($this->campaign->id), $this->richard->id));
+    }
+
     public function test_adding_requires_a_valid_email(): void
     {
         $this->asDirector()

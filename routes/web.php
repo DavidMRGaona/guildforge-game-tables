@@ -82,7 +82,9 @@ Route::prefix('campanas')->name('campaigns.')->group(function (): void {
         // Roster page of the direction (the emails link to it)
         Route::get('/mis-campanas/{id}/plantilla', [CampaignRosterController::class, 'show'])->name('roster');
         Route::put('/mis-campanas/{id}/plantilla/ajustes', [CampaignRosterController::class, 'updateSettings'])->name('roster.settings');
-        Route::post('/mis-campanas/{id}/plantilla/jugadores', [CampaignRosterController::class, 'add'])->name('roster.add');
+        Route::post('/mis-campanas/{id}/plantilla/jugadores', [CampaignRosterController::class, 'add'])
+            ->middleware('throttle:game-tables-campaign-roster-add')
+            ->name('roster.add');
         Route::delete('/mis-campanas/{id}/plantilla/jugadores/{userId}', [CampaignRosterController::class, 'remove'])->name('roster.remove');
         Route::post('/mis-campanas/{id}/plantilla/solicitudes/{requestId}/aceptar', [CampaignRosterController::class, 'accept'])->name('roster.accept');
         Route::post('/mis-campanas/{id}/plantilla/solicitudes/{requestId}/rechazar', [CampaignRosterController::class, 'reject'])->name('roster.reject');

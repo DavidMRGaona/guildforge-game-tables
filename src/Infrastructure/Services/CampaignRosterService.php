@@ -152,6 +152,13 @@ final readonly class CampaignRosterService implements CampaignRosterServiceInter
 
     public function addByEmail(string $campaignId, string $email, string $actorUserId): void
     {
+        // The campaign's own refusals first: answered after the lookup, a real account would get
+        // «completa» or «terminada» where an unknown email gets the generic message. addUser()
+        // checks them again under the lock
+        $campaign = $this->campaigns->findOrFail(new CampaignId($campaignId));
+        $this->ensureRosterCanChange($campaign);
+        $this->ensureRoomIn($campaign);
+
         // Unknown, anonymized or deleted: the same answer, so nobody can probe for accounts
         $account = $this->accounts->findByEmail($email)
             ?? throw RosterActionRefusedException::because('account_not_found');

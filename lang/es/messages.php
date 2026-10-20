@@ -928,6 +928,7 @@ return [
             'nothing_to_change' => 'No hay nada que cambiar en esa sesión.',
             'not_member_self' => 'No formas parte de la plantilla de esta campaña.',
             'too_many_requests' => 'Has enviado demasiadas solicitudes seguidas. Espera unos minutos y vuelve a intentarlo.',
+            'too_many_additions' => 'Has añadido demasiados jugadores seguidos. Espera un minuto y vuelve a intentarlo.',
         ],
         'success' => [
             'requested' => 'Solicitud enviada. La dirección te avisará por correo.',

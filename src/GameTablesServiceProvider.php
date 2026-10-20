@@ -451,7 +451,8 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
      * Per IP, over the limit a translated message, never an error page. The guest confirmation
      * link (page and button): wide enough for a person, tight enough to stop guessing tokens. The
      * guest registration form: the limits of the settings, as a form error on the table page. The
-     * requests to join a campaign are limited per user instead, as a flash on the campaign page.
+     * requests to join a campaign and the players added from the roster page are limited per user
+     * instead, as a flash on the page.
      */
     private function registerRateLimiters(): void
     {
@@ -518,6 +519,21 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                 Limit::perMinute(5)->by('gt-join:'.$userId)->response($tooMany),
                 Limit::perHour(20)->by('gt-join-h:'.$userId)->response($tooMany),
             ];
+        });
+
+        // Players added by email from the roster page, per user: enough for a direction filling
+        // its roster, too few to try addresses one after another
+        RateLimiter::for('game-tables-campaign-roster-add', static function (Request $request): Limit {
+            $userId = (string) ($request->user()?->getAuthIdentifier() ?? $request->ip() ?? 'unknown');
+
+            return Limit::perMinute(20)->by('gt-roster-add:'.$userId)->response(static function (Request $request, array $headers): HttpResponse {
+                $message = (string) __('game-tables::messages.roster.errors.too_many_additions');
+
+                // As the refusals of the roster page: a flash, not Inertia's raw 429
+                return $request->expectsJson()
+                    ? response()->json(['message' => $message], 429, $headers)
+                    : back()->with('error', $message);
+            });
         });
     }
 

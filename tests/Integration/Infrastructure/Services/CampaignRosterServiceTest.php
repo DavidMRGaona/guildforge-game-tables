@@ -459,6 +459,30 @@ final class CampaignRosterServiceTest extends ModuleTestCase
         Event::assertNotDispatched(CampaignRosterMemberAdded::class);
     }
 
+    /**
+     * The campaign's own refusals come before the email is looked up: otherwise a real account
+     * would get «completa» or «terminada» where an unknown email gets the generic message.
+     */
+    public function test_a_campaign_refusal_gives_every_email_the_same_answer(): void
+    {
+        $cases = [
+            'roster_full' => [['max_players' => 2], 'La plantilla está completa.'],
+            'finished' => [['status' => 'completed'], 'La campaña ha terminado: su plantilla ya no cambia.'],
+            'unavailable' => [['frontend_creation_status' => 'draft'], 'Esta campaña no está publicada.'],
+        ];
+        $this->addToRoster($this->jane, $this->richard);
+
+        foreach ($cases as $reason => [$attributes, $message]) {
+            $this->campaign->update(['max_players' => 3, 'status' => 'recruiting', 'frontend_creation_status' => 'approved', ...$attributes]);
+
+            foreach (['nobody@example.com', 'john@example.com'] as $email) {
+                $this->assertRefused($reason, $message, fn () => $this->service()->addByEmail($this->campaign->id, $email, $this->mary->id));
+            }
+        }
+        $this->assertFalse($this->roster()->contains($this->campaignId, $this->john->id));
+        Event::assertNotDispatched(CampaignRosterMemberAdded::class);
+    }
+
     public function test_adding_an_anonymized_or_unknown_account_is_refused(): void
     {
         $this->richard->forceFill(['anonymized_at' => CarbonImmutable::now()])->save();
