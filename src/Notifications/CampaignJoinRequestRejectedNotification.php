@@ -8,9 +8,11 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Modules\GameTables\Notifications\Concerns\EscapesUserText;
 
 final class CampaignJoinRequestRejectedNotification extends Notification implements ShouldQueue
 {
+    use EscapesUserText;
     use Queueable;
 
     public function __construct(
@@ -36,7 +38,7 @@ final class CampaignJoinRequestRejectedNotification extends Notification impleme
             ->line(__('game-tables::emails.campaign_join_request_rejected.intro', ['campaignTitle' => $this->campaignTitle]));
 
         if ($this->reason !== null && $this->reason !== '') {
-            $mail->line(__('game-tables::emails.campaign_join_request_rejected.reason', ['reason' => $this->reason]));
+            $mail->line($this->plainLine(__('game-tables::emails.campaign_join_request_rejected.reason', ['reason' => $this->reason])));
         }
 
         return $mail->action(

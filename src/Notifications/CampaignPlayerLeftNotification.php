@@ -8,9 +8,11 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Modules\GameTables\Notifications\Concerns\EscapesUserText;
 
 final class CampaignPlayerLeftNotification extends Notification implements ShouldQueue
 {
+    use EscapesUserText;
     use Queueable;
 
     public function __construct(
@@ -33,7 +35,7 @@ final class CampaignPlayerLeftNotification extends Notification implements Shoul
         return (new MailMessage)
             ->subject(__('game-tables::emails.campaign_player_left.subject', ['player' => $this->playerName, 'campaignTitle' => $this->campaignTitle]))
             ->greeting(__('game-tables::emails.campaign_player_left.greeting', ['name' => $this->userName]))
-            ->line(__('game-tables::emails.campaign_player_left.intro', ['player' => $this->playerName, 'campaignTitle' => $this->campaignTitle]))
+            ->line($this->plainLine(__('game-tables::emails.campaign_player_left.intro', ['player' => $this->playerName, 'campaignTitle' => $this->campaignTitle])))
             ->action(__('game-tables::emails.campaign_player_left.view_roster'), url("/campanas/mis-campanas/{$this->campaignId}/plantilla"));
     }
 }

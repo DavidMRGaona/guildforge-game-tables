@@ -8,9 +8,11 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Modules\GameTables\Notifications\Concerns\EscapesUserText;
 
 final class CampaignJoinRequestReceivedNotification extends Notification implements ShouldQueue
 {
+    use EscapesUserText;
     use Queueable;
 
     public function __construct(
@@ -34,10 +36,10 @@ final class CampaignJoinRequestReceivedNotification extends Notification impleme
         $mail = (new MailMessage)
             ->subject(__('game-tables::emails.campaign_join_request_received.subject', ['campaignTitle' => $this->campaignTitle]))
             ->greeting(__('game-tables::emails.campaign_join_request_received.greeting', ['name' => $this->userName]))
-            ->line(__('game-tables::emails.campaign_join_request_received.intro', ['player' => $this->playerName, 'campaignTitle' => $this->campaignTitle]));
+            ->line($this->plainLine(__('game-tables::emails.campaign_join_request_received.intro', ['player' => $this->playerName, 'campaignTitle' => $this->campaignTitle])));
 
         if ($this->message !== null && $this->message !== '') {
-            $mail->line(__('game-tables::emails.campaign_join_request_received.message', ['message' => $this->message]));
+            $mail->line($this->plainLine(__('game-tables::emails.campaign_join_request_received.message', ['message' => $this->message])));
         }
 
         return $mail->action(

@@ -6,6 +6,7 @@ namespace Modules\GameTables\Tests\Unit\Notifications;
 
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\HtmlString;
 use Modules\GameTables\Notifications\CampaignJoinRequestAcceptedNotification;
 use Modules\GameTables\Notifications\CampaignJoinRequestReceivedNotification;
 use Modules\GameTables\Notifications\CampaignJoinRequestRejectedNotification;
@@ -40,7 +41,7 @@ final class CampaignRosterNotificationsTest extends ModuleTestCase
      */
     private function lines(MailMessage $mail): array
     {
-        return array_map(static fn (mixed $line): string => (string) $line, [...$mail->introLines, ...$mail->outroLines]);
+        return array_map(static fn (mixed $line): string => $line instanceof HtmlString ? html_entity_decode(strip_tags((string) $line)) : (string) $line, [...$mail->introLines, ...$mail->outroLines]);
     }
 
     private function scheduled(bool $waiting = false): CampaignSessionScheduledNotification
@@ -199,5 +200,30 @@ final class CampaignRosterNotificationsTest extends ModuleTestCase
             $en = require dirname(__DIR__, 3).'/lang/en/emails.php';
             $this->assertSame(array_keys($es[$block]), array_keys($en[$block]), $block);
         }
+    }
+
+    public function test_user_text_is_shown_literally_and_never_as_markdown(): void
+    {
+        $evil = '[Pulsa aquí](https://evil.example) **URGENTE**';
+        $name = '<b>Mary</b> Major';
+
+        $mails = [
+            $this->mail(new CampaignJoinRequestReceivedNotification('Jane Doe', 'camp-1', 'Campaña de prueba', $name, $evil)),
+            $this->mail(new CampaignJoinRequestRejectedNotification('John Doe', 'Campaña de prueba', 'campana-de-prueba', $evil)),
+            $this->mail(new CampaignPlayerLeftNotification('Jane Doe', 'camp-1', 'Campaña de prueba', $name)),
+        ];
+
+        foreach ($mails as $mail) {
+            $html = (string) $mail->render();
+
+            $this->assertStringNotContainsString('<a href="https://evil.example"', $html);
+            $this->assertStringNotContainsString('<strong>URGENTE', $html);
+            $this->assertStringNotContainsString('<b>Mary</b>', $html);
+        }
+
+        $this->assertStringContainsString('[Pulsa aquí](https://evil.example) **URGENTE**', (string) $mails[0]->render());
+        $this->assertStringContainsString('&lt;b&gt;Mary&lt;/b&gt; Major quiere unirse', (string) $mails[0]->render());
+        $this->assertStringContainsString('Motivo: [Pulsa aquí](https://evil.example) **URGENTE**', (string) $mails[1]->render());
+        $this->assertStringContainsString('&lt;b&gt;Mary&lt;/b&gt; Major ha salido', (string) $mails[2]->render());
     }
 }

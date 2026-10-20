@@ -168,14 +168,27 @@ final class CampaignRosterListenersTest extends ModuleTestCase
     }
 
     #[DataProvider('emails')]
-    public function test_no_email_to_an_anonymized_account(string $key, string $email, string $class): void
+    public function test_no_email_about_an_anonymized_player(string $key, string $email, string $class): void
     {
         $this->mary->forceFill(['anonymized_at' => now()])->save();
-        $this->john->forceFill(['anonymized_at' => now()])->save();
 
         $this->fire($key);
 
         Notification::assertNothingSent();
+    }
+
+    #[DataProvider('emails')]
+    public function test_no_email_to_an_anonymized_account(string $key, string $email, string $class): void
+    {
+        $this->john->forceFill(['anonymized_at' => now()])->save();
+
+        $this->fire($key);
+
+        if ($email === 'john@example.com') {
+            Notification::assertNothingSent();
+        } else {
+            Notification::assertSentOnDemandTimes($class, 1);
+        }
     }
 
     public function test_the_accepted_email_carries_titles_dates_and_waiting(): void
@@ -198,8 +211,8 @@ final class CampaignRosterListenersTest extends ModuleTestCase
             $mail = $notification->toMail(new AnonymousNotifiable);
 
             return $mail->subject === 'Solicitud para unirse a Campaña de prueba'
-                && in_array('Mary Major quiere unirse a la campaña «Campaña de prueba».', $mail->introLines, true)
-                && in_array('Mensaje: «Me encantaría jugar»', $mail->introLines, true);
+                && in_array('<p>Mary Major quiere unirse a la campaña «Campaña de prueba».</p>', array_map('strval', $mail->introLines), true)
+                && in_array('<p>Mensaje: «Me encantaría jugar»</p>', array_map('strval', $mail->introLines), true);
         });
     }
 
