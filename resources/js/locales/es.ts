@@ -169,6 +169,7 @@ export default {
             enrolled: 'Inscrito por la campaña',
             sessionOf: 'Sesión de',
             waiting: 'En lista de espera (puesto {position}). Tienes prioridad por ser de la plantilla.',
+            waitingNoPosition: 'En lista de espera. Tienes prioridad por ser de la plantilla.',
             cannotGo: 'No puedo ir a esta sesión',
             cannotGoTitle: '¿No puedes ir a esta sesión?',
             cannotGoMessage: 'Seguirás en la campaña y en las demás sesiones.',
@@ -180,6 +181,8 @@ export default {
             viewCampaign: 'Ver campaña',
             wholeCampaign: '¿Quieres jugar toda la campaña?',
             requestToJoin: 'Solicita unirte',
+            // The registration type of a session while the campaign is closed to outsiders
+            rosterOnly: 'Solo para la plantilla de la campaña',
         },
         status: {
             draft: 'Borrador',
@@ -305,7 +308,9 @@ export default {
                 notice: 'Al publicarse, la plantilla ({count} jugador) quedará inscrita y recibirá un correo. Se han rellenado el sistema de juego y el máximo de jugadores ({max}). | Al publicarse, la plantilla ({count} jugadores) quedará inscrita y recibirá un correo. Se han rellenado el sistema de juego y el máximo de jugadores ({max}).',
                 empty: 'No diriges ninguna campaña publicada.',
                 createLink: 'Crea una campaña',
-                emptyAlternative: '(se abre en otra pestaña) o elige otro tipo de mesa.',
+                // Part of the link's text, so its accessible name warns about the new tab
+                newTab: '(se abre en otra pestaña)',
+                emptyAlternative: 'o elige otro tipo de mesa.',
                 sessionOnly: 'Solo puedes crear sesiones de las campañas que diriges.',
             },
             contentWarnings: {
@@ -552,14 +557,8 @@ export default {
                 absent: '{date} ✗ no va',
                 waiting: '{date} · en espera',
                 none: '{date} —',
-                // Read by screen readers: player, full date and state
-                accessibleName: '{name}, {date}: {state}',
-                states: {
-                    going: 'va',
-                    absent: 'no va',
-                    waiting: 'en espera',
-                    none: 'sin plaza',
-                },
+                // Read by screen readers: the visible text first, then the player and the full date
+                accessibleName: '{label} — {name}, {date}',
             },
             footnote: 'Pulsar una sesión cambia entre «va» y «no va» para ese jugador; el jugador recibe un correo. Sigue en la plantilla.',
         },

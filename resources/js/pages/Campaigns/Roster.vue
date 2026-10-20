@@ -152,7 +152,11 @@ const addErrorId = useId();
 function addPlayer(): void {
     addForm.post(`${baseUrl.value}/jugadores`, {
         preserveScroll: true,
-        onSuccess: () => addForm.reset('email'),
+        // A refusal (unknown email, full roster...) also comes back as a success with an error
+        // flash: keep what was typed so it can be corrected
+        onSuccess: () => {
+            if (!flashError.value) addForm.reset('email');
+        },
     });
 }
 
@@ -185,12 +189,13 @@ function chipTitle(cell: RosterPlayerSession): string {
     return sessionsById.value.get(cell.game_table_id)?.date ?? '';
 }
 
-// «Jane Doe, 08/11/2026 18:00: va»: the visible text has neither the player nor the time
+// «08/11 ✓ va — Jane Doe, 08/11/2026 18:00»: starts with the visible text (so voice control
+// finds the chip by what it shows), then the player and the full date it leaves out
 function chipAccessibleName(player: RosterPlayer, cell: RosterPlayerSession): string {
     return t('campaigns.roster.chips.accessibleName', {
+        label: chipLabel(cell),
         name: player.name,
         date: chipTitle(cell),
-        state: t(`campaigns.roster.chips.states.${cell.state}`),
     });
 }
 

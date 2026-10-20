@@ -158,6 +158,7 @@ export default {
             enrolled: 'Registered through the campaign',
             sessionOf: 'Session of',
             waiting: 'On the waiting list (position {position}). You have priority as a roster member.',
+            waitingNoPosition: 'On the waiting list. You have priority as a roster member.',
             cannotGo: 'I cannot make this session',
             cannotGoTitle: 'Cannot make this session?',
             cannotGoMessage: 'You will stay in the campaign and in the other sessions.',
@@ -169,6 +170,8 @@ export default {
             viewCampaign: 'View campaign',
             wholeCampaign: 'Want to play the whole campaign?',
             requestToJoin: 'Ask to join',
+            // The registration type of a session while the campaign is closed to outsiders
+            rosterOnly: 'Only for the campaign roster',
         },
         status: {
             draft: 'Draft',
@@ -305,7 +308,9 @@ export default {
                 notice: 'Once published, the roster ({count} player) will be registered and receive an email. The game system and the maximum number of players ({max}) have been filled in. | Once published, the roster ({count} players) will be registered and receive an email. The game system and the maximum number of players ({max}) have been filled in.',
                 empty: 'You do not direct any published campaign.',
                 createLink: 'Create a campaign',
-                emptyAlternative: '(opens in a new tab) or choose another table type.',
+                // Part of the link's text, so its accessible name warns about the new tab
+                newTab: '(opens in a new tab)',
+                emptyAlternative: 'or choose another table type.',
                 sessionOnly: 'You can only create sessions of the campaigns you direct.',
             },
             contentWarnings: {
@@ -520,14 +525,8 @@ export default {
                 absent: '{date} ✗ not going',
                 waiting: '{date} · waiting',
                 none: '{date} —',
-                // Read by screen readers: player, full date and state
-                accessibleName: '{name}, {date}: {state}',
-                states: {
-                    going: 'going',
-                    absent: 'not going',
-                    waiting: 'waiting',
-                    none: 'no seat',
-                },
+                // Read by screen readers: the visible text first, then the player and the full date
+                accessibleName: '{label} — {name}, {date}',
             },
             footnote: 'Pressing a session switches that player between «going» and «not going»; the player receives an email. They stay in the roster.',
         },

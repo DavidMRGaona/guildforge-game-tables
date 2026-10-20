@@ -200,11 +200,18 @@ final class FrontendGameTableController extends Controller
             'email' => $user->email,
         ];
 
+        // As on the create form: someone the general rules refuse only keeps sessions of the
+        // campaigns they direct (saving applies the same rule)
+        $sessionOnly = $gameTable->event_id === null
+            && ! $this->eligibilityService->canCreateTable((string) $user->id)->eligible
+            && $this->sessionGate->canCreateSessionsOnly((string) $user->id);
+
         return Inertia::render('GameTables/Edit', [
             'table' => $table->toArray(),
             'formData' => $formData,
             'eventContext' => $eventContext?->toArray(),
             'currentUser' => $currentUser,
+            'sessionOnly' => $sessionOnly,
             'seo' => $this->seo->forPage(new SeoPageDTO(
                 title: (string) __('game-tables::messages.seo.edit_table_title'),
                 noindex: true,

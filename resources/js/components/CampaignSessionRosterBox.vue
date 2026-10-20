@@ -50,6 +50,11 @@ const campaignUrl = computed(() =>
 const waitingPosition = computed(
     () => props.campaignSession.waiting_list_position ?? props.registration?.waitingListPosition ?? null
 );
+// The seat can be taken back now, or the server says why not. A rejected or no-show row gets
+// neither: nothing to offer, so no dead button and no «vuelve a apuntarte»
+const rejoinOffered = computed(
+    () => props.campaignSession.can_rejoin || props.campaignSession.rejoin_refusal !== null
+);
 
 const buttonClass = 'inline-flex min-h-[44px] items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 disabled:cursor-not-allowed disabled:opacity-50';
 const primaryButtonClass = `${buttonClass} bg-primary text-white hover:bg-primary-700 focus:ring-primary-500`;
@@ -156,7 +161,9 @@ function rejoin(): void {
                     {{ t('gameTables.campaignSession.enrolled') }}
                 </span>
                 <span v-else class="font-semibold text-base-primary">
-                    {{ t('gameTables.campaignSession.waiting', { position: waitingPosition ?? '' }) }}
+                    {{ waitingPosition !== null
+                        ? t('gameTables.campaignSession.waiting', { position: waitingPosition })
+                        : t('gameTables.campaignSession.waitingNoPosition') }}
                 </span>
             </p>
             <p v-if="state === 'enrolled'" class="mt-2 text-base-secondary">
@@ -203,11 +210,11 @@ function rejoin(): void {
                     {{ t('gameTables.campaignSession.absent') }}
                 </span>
             </p>
-            <p class="mt-2 text-base-secondary">
+            <p v-if="rejoinOffered" class="mt-2 text-base-secondary">
                 {{ t('gameTables.campaignSession.absentHint') }}
             </p>
 
-            <div class="mt-3">
+            <div v-if="rejoinOffered" class="mt-3">
                 <VerificationBlockedButton
                     v-if="gate.blocked.value"
                     :reason="gate.reason('register')"

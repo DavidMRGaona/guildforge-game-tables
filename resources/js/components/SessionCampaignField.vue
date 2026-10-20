@@ -2,7 +2,7 @@
 // The campaign of a «Sesión de campaña», shown right under the type of the table form. Choosing
 // one fills the game system and the maximum of players (emitted as `fill`); without campaigns it
 // explains why and links to the campaign form in another tab, so the table form is not lost.
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, useId, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { FormSelect } from '@/components/form';
 import type { SessionCampaignOption } from '../types/gametables';
@@ -34,6 +34,26 @@ const selected = computed(() => props.campaigns.find((campaign) => campaign.id =
 
 // The maximum this field filled in; the notice only shows once it filled the form
 const filledMax = ref<number | null>(null);
+
+// FormSelect (core) leaves extra attributes on its wrapper, not on the button that takes the
+// focus: the button is told it is required and which message describes its error
+const errorId = useId();
+const selectWrapper = ref<HTMLElement | null>(null);
+
+watchEffect(
+    () => {
+        const button = selectWrapper.value?.querySelector<HTMLElement>('#campaign_id') ?? null;
+        if (button === null) return;
+
+        button.setAttribute('aria-required', 'true');
+        if (props.error) {
+            button.setAttribute('aria-describedby', errorId);
+        } else {
+            button.removeAttribute('aria-describedby');
+        }
+    },
+    { flush: 'post' },
+);
 
 function fill(campaign: SessionCampaignOption): void {
     // Never below the roster: every member gets a seat when the session is published
@@ -70,17 +90,19 @@ onMounted(() => {
                 {{ t('gameTables.create.fields.campaign') }}
                 <span class="text-error">*</span>
             </label>
-            <FormSelect
-                id="campaign_id"
-                name="campaign_id"
-                :model-value="campaignId"
-                :options="options"
-                :placeholder="t('gameTables.create.campaign.placeholder')"
-                :error="error"
-                class="mt-1"
-                @update:model-value="choose"
-            />
-            <p v-if="error" class="mt-1 text-sm text-error">
+            <div ref="selectWrapper">
+                <FormSelect
+                    id="campaign_id"
+                    name="campaign_id"
+                    :model-value="campaignId"
+                    :options="options"
+                    :placeholder="t('gameTables.create.campaign.placeholder')"
+                    :error="error"
+                    class="mt-1"
+                    @update:model-value="choose"
+                />
+            </div>
+            <p v-if="error" :id="errorId" class="mt-1 text-sm text-error">
                 {{ error }}
             </p>
             <p v-if="selected !== null && filledMax !== null" class="mt-2 text-sm text-base-secondary">
@@ -97,7 +119,7 @@ onMounted(() => {
                     target="_blank"
                     rel="noopener"
                     class="font-medium text-primary underline underline-offset-2 hover:no-underline focus:outline-none focus:ring-2 focus:ring-primary-500"
-                >{{ t('gameTables.create.campaign.createLink') }}</a>
+                >{{ t('gameTables.create.campaign.createLink') }} {{ t('gameTables.create.campaign.newTab') }}</a>
                 {{ t('gameTables.create.campaign.emptyAlternative') }}
             </p>
             <p v-if="error" class="mt-1 text-sm text-error">

@@ -254,6 +254,26 @@ final class CampaignSessionCreationTest extends ModuleTestCase
                 ->where('reason', 'permission_denied'));
     }
 
+    public function test_the_edit_form_tells_a_session_only_director_so(): void
+    {
+        $campaign = $this->campaignDirectedAsGm('Campaña de Jane');
+        $draft = $this->sessionDraft($campaign);
+
+        $this->actingAs($this->jane)
+            ->get(route('gametables.edit', $draft->slug))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('GameTables/Edit', false)
+                ->where('sessionOnly', true));
+
+        // Allowed by the general rules: the type stays free
+        $this->configure('registered');
+        $this->actingAs($this->jane)
+            ->get(route('gametables.edit', $draft->slug))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('GameTables/Edit', false)
+                ->where('sessionOnly', false));
+    }
+
     public function test_the_edit_form_keeps_the_stored_campaign(): void
     {
         $this->configure('registered');

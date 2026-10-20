@@ -88,6 +88,8 @@ interface Props {
     formData: FormData;
     eventContext?: EventContext | null;
     currentUser: CurrentUser;
+    /** The author may only create sessions of the campaigns they direct (as on the create form) */
+    sessionOnly?: boolean;
 }
 
 const props = defineProps<Props>();
@@ -613,8 +615,12 @@ function cancel(): void {
                                         id="table_type"
                                         v-model="form.table_type"
                                         :options="objectToOptions(props.formData.table_types)"
+                                        :disabled="props.sessionOnly"
                                         class="mt-1"
                                     />
+                                    <p v-if="props.sessionOnly" class="mt-1 text-xs text-base-muted">
+                                        {{ t('gameTables.create.campaign.sessionOnly') }}
+                                    </p>
                                     <p v-if="form.errors.table_type" class="mt-1 text-sm text-error">
                                         {{ form.errors.table_type }}
                                     </p>

@@ -161,6 +161,24 @@ final class CampaignSessionBoxTest extends ModuleTestCase
                 ->where('campaignSession.rejoin_refusal', 'Las inscripciones están cerradas'));
     }
 
+    /**
+     * The organisation's decision stands: no seat to take back and no reason to show, so the box
+     * offers neither the button nor the «vuelve a apuntarte» hint.
+     */
+    public function test_a_rejected_or_no_show_member_gets_nothing_to_take_back(): void
+    {
+        foreach (['rejected', 'no_show'] as $status) {
+            ParticipantModel::query()->where('user_id', $this->jane->id)->update(['status' => $status, 'cancellation_reason' => null]);
+
+            $this->actingAs($this->jane)
+                ->get('/mesas/'.$this->session->slug)
+                ->assertInertia(fn (Assert $page) => $page
+                    ->where('campaignSession.roster_state', 'none')
+                    ->where('campaignSession.can_rejoin', false)
+                    ->where('campaignSession.rejoin_refusal', null));
+        }
+    }
+
     public function test_an_outsider_in_a_closed_campaign(): void
     {
         $this->campaign->forceFill(['accepts_new_players' => false])->save();

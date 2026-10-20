@@ -90,7 +90,10 @@ final class RegistrationButtonSourceTest extends TestCase
             "requestToJoin: 'Solicita unirte',",
             "empty: 'No diriges ninguna campaña publicada.',",
             "createLink: 'Crea una campaña',",
-            "emptyAlternative: '(se abre en otra pestaña) o elige otro tipo de mesa.',",
+            "newTab: '(se abre en otra pestaña)',",
+            "emptyAlternative: 'o elige otro tipo de mesa.',",
+            "waitingNoPosition: 'En lista de espera. Tienes prioridad por ser de la plantilla.',",
+            "rosterOnly: 'Solo para la plantilla de la campaña',",
             "sessionOnly: 'Solo puedes crear sesiones de las campañas que diriges.',",
         ] as $line) {
             $this->assertStringContainsString($line, $es);
@@ -100,9 +103,62 @@ final class RegistrationButtonSourceTest extends TestCase
             $es
         );
 
-        foreach (['campaignSession: {', 'cannotGoConfirm:', 'rejoin:', 'requestToJoin:', 'emptyAlternative:', 'sessionOnly:', 'notice:'] as $key) {
+        foreach (['campaignSession: {', 'cannotGoConfirm:', 'rejoin:', 'requestToJoin:', 'newTab:', 'emptyAlternative:', 'waitingNoPosition:', 'rosterOnly:', 'sessionOnly:', 'notice:'] as $key) {
             $this->assertStringContainsString($key, $en);
         }
+    }
+
+    /**
+     * A rejected or no-show row cannot be taken back and the server gives no reason
+     * (can_rejoin false, rejoin_refusal null): no dead button and no «vuelve a apuntarte».
+     */
+    public function test_the_campaign_box_offers_nothing_it_cannot_do(): void
+    {
+        $source = $this->source('components/CampaignSessionRosterBox.vue');
+
+        $this->assertStringContainsString('() => props.campaignSession.can_rejoin || props.campaignSession.rejoin_refusal !== null', $source);
+        $this->assertStringContainsString('<p v-if="rejoinOffered" class="mt-2 text-base-secondary">'."\n                {{ t('gameTables.campaignSession.absentHint') }}", $source);
+        $this->assertStringContainsString('<div v-if="rejoinOffered" class="mt-3">', $source);
+    }
+
+    public function test_the_waiting_line_has_a_variant_without_a_position(): void
+    {
+        $source = $this->source('components/CampaignSessionRosterBox.vue');
+
+        $this->assertStringContainsString("waitingPosition !== null\n                        ? t('gameTables.campaignSession.waiting', { position: waitingPosition })\n                        : t('gameTables.campaignSession.waitingNoPosition')", $source);
+        $this->assertStringNotContainsString("position: waitingPosition ?? ''", $source);
+    }
+
+    public function test_the_edit_form_locks_the_type_for_session_only_authors(): void
+    {
+        foreach (['pages/GameTables/Create.vue', 'pages/GameTables/Edit.vue'] as $page) {
+            $source = $this->source($page);
+
+            $this->assertStringContainsString('sessionOnly?: boolean;', $source, $page);
+            $this->assertStringContainsString(":options=\"objectToOptions(props.formData.table_types)\"\n                                        :disabled=\"props.sessionOnly\"", $source, $page);
+            $this->assertStringContainsString("<p v-if=\"props.sessionOnly\" class=\"mt-1 text-xs text-base-muted\">\n                                        {{ t('gameTables.create.campaign.sessionOnly') }}", $source, $page);
+        }
+    }
+
+    public function test_the_campaign_field_names_the_new_tab_and_describes_its_error(): void
+    {
+        $source = $this->source('components/SessionCampaignField.vue');
+
+        // The new-tab warning is part of the link's text, hence of its accessible name
+        $this->assertStringContainsString(">{{ t('gameTables.create.campaign.createLink') }} {{ t('gameTables.create.campaign.newTab') }}</a>", $source);
+        // The focusable button of the select is the one told it is required and described by the error
+        $this->assertStringContainsString("button.setAttribute('aria-required', 'true');", $source);
+        $this->assertStringContainsString("button.setAttribute('aria-describedby', errorId);", $source);
+        $this->assertStringContainsString('<p v-if="error" :id="errorId" class="mt-1 text-sm text-error">', $source);
+    }
+
+    public function test_a_closed_campaign_session_shows_the_roster_only_type(): void
+    {
+        $source = $this->source('pages/GameTables/Show.vue');
+
+        $this->assertStringContainsString("props.campaignSession?.closed === true\n        ? t('gameTables.campaignSession.rosterOnly')\n        : props.table.registrationTypeLabel", $source);
+        $this->assertStringContainsString('{{ registrationTypeText }}', $source);
+        $this->assertStringNotContainsString('{{ table.registrationTypeLabel }}', $source);
     }
 
     public function test_the_form_offers_no_campaign_context_any_more(): void

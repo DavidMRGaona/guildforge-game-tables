@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import type { GameTable, GameMaster } from '../../types/gametables';
+import type { CampaignSessionInfo } from '../../types/registration';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import FormatBadge from '../../components/FormatBadge.vue';
@@ -15,11 +16,20 @@ import { VENUE_TIMEZONE } from '@/utils/datetime';
 
 interface Props {
     table: GameTable;
+    /** Set on a campaign session: whether the campaign is closed to people outside its roster */
+    campaignSession?: CampaignSessionInfo | null;
 }
 
 const props = defineProps<Props>();
 
 const { t, locale } = useI18n();
+
+// A closed campaign admits its roster only, whatever the table's own registration type says
+const registrationTypeText = computed(() =>
+    props.campaignSession?.closed === true
+        ? t('gameTables.campaignSession.rosterOnly')
+        : props.table.registrationTypeLabel
+);
 
 const formattedDate = computed(() => {
     const date = new Date(props.table.startsAt);
@@ -521,7 +531,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                         <div class="space-y-2 text-sm text-info">
                             <p>
                                 <span class="font-medium">{{ t('gameTables.registrationTypeLabel') || 'Tipo' }}:</span>
-                                {{ table.registrationTypeLabel }}
+                                {{ registrationTypeText }}
                             </p>
 
                             <p v-if="table.registrationOpensAt">
