@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Application\Services;
 
+use Modules\GameTables\Domain\Enums\RosterAccess;
 use Modules\GameTables\Domain\Exceptions\CampaignNotFoundException;
 use Modules\GameTables\Domain\Exceptions\RosterActionRefusedException;
 
 /**
- * Who plays a campaign: requests to join, their decision and the direction adding players. Every
- * change runs under the campaign lock; a new member is then placed in the open sessions and the
- * events go out once the lock is released.
+ * Who plays a campaign: requests to join, their decision, the direction adding or removing players,
+ * players leaving and the roster settings of a published campaign. Every change runs under the
+ * campaign lock; a member joining or leaving is then placed in, or withdrawn from, the sessions and
+ * the events go out once the lock is released.
  */
 interface CampaignRosterServiceInterface
 {
@@ -60,4 +62,32 @@ interface CampaignRosterServiceInterface
      *                                      or roster_full
      */
     public function addUser(string $campaignId, string $userId, string $actorUserId): void;
+
+    /**
+     * The direction removes a player, also once the campaign has finished. Their roster rows in
+     * the sessions not started yet are cancelled (left_roster), and the removal is announced with
+     * CampaignRosterMemberRemoved so the player can be told.
+     *
+     * @throws CampaignNotFoundException
+     * @throws RosterActionRefusedException not_member
+     */
+    public function removeMember(string $campaignId, string $userId, string $actorUserId): void;
+
+    /**
+     * The player leaves the roster: the same as a removal, announced with CampaignRosterMemberLeft;
+     * nothing is sent to the player.
+     *
+     * @throws CampaignNotFoundException
+     * @throws RosterActionRefusedException not_member
+     */
+    public function leave(string $campaignId, string $userId): void;
+
+    /**
+     * The three roster settings the direction may change on a published campaign. Publication and
+     * moderation stay as they are: the campaign does not go back to review.
+     *
+     * @throws CampaignNotFoundException
+     * @throws RosterActionRefusedException unavailable, finished or max_below_roster
+     */
+    public function updateSettings(string $campaignId, bool $acceptsNewPlayers, RosterAccess $access, ?int $maxPlayers): void;
 }

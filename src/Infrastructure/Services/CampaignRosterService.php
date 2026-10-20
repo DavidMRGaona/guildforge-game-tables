@@ -21,6 +21,8 @@ use Modules\GameTables\Domain\Events\CampaignJoinRequestAccepted;
 use Modules\GameTables\Domain\Events\CampaignJoinRequested;
 use Modules\GameTables\Domain\Events\CampaignJoinRequestRejected;
 use Modules\GameTables\Domain\Events\CampaignRosterMemberAdded;
+use Modules\GameTables\Domain\Events\CampaignRosterMemberLeft;
+use Modules\GameTables\Domain\Events\CampaignRosterMemberRemoved;
 use Modules\GameTables\Domain\Exceptions\RosterActionRefusedException;
 use Modules\GameTables\Domain\Repositories\CampaignJoinRequestRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
@@ -190,6 +192,57 @@ final readonly class CampaignRosterService implements CampaignRosterServiceInter
         });
 
         CampaignRosterMemberAdded::dispatch($campaignId, $userId, $this->enrolInSessions($campaignId, $userId));
+    }
+
+    public function removeMember(string $campaignId, string $userId, string $actorUserId): void
+    {
+        $this->removeFromRoster($campaignId, $userId);
+
+        CampaignRosterMemberRemoved::dispatch($campaignId, $userId);
+    }
+
+    public function leave(string $campaignId, string $userId): void
+    {
+        $this->removeFromRoster($campaignId, $userId);
+
+        CampaignRosterMemberLeft::dispatch($campaignId, $userId);
+    }
+
+    public function updateSettings(string $campaignId, bool $acceptsNewPlayers, RosterAccess $access, ?int $maxPlayers): void
+    {
+        $this->lock->forCampaign($campaignId, function () use ($campaignId, $acceptsNewPlayers, $access, $maxPlayers): void {
+            $campaign = $this->campaigns->findOrFail(new CampaignId($campaignId));
+
+            $this->ensureRosterCanChange($campaign);
+
+            // Counted under the lock, so a join meanwhile never leaves the roster above the maximum
+            $campaign->changeRosterSettings($acceptsNewPlayers, $access, $maxPlayers, $this->roster->count($campaign->id));
+            $this->campaigns->save($campaign);
+        });
+    }
+
+    /**
+     * Allowed whatever the campaign's state, finished included. The sessions are released once the
+     * campaign lock is: the member is already out of the roster, so a failure there is reported
+     * instead of failing an action that succeeded.
+     */
+    private function removeFromRoster(string $campaignId, string $userId): void
+    {
+        $this->lock->forCampaign($campaignId, function () use ($campaignId, $userId): void {
+            $campaign = $this->campaigns->findOrFail(new CampaignId($campaignId));
+
+            if (! $this->roster->contains($campaign->id, $userId)) {
+                throw RosterActionRefusedException::because('not_member');
+            }
+
+            $this->roster->remove($campaign->id, $userId);
+        });
+
+        try {
+            $this->sessions->onMemberLeft($campaignId, $userId);
+        } catch (Throwable $e) {
+            report($e);
+        }
     }
 
     /**
