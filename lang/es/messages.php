@@ -351,6 +351,16 @@ return [
             'completed' => 'Completada',
             'cancelled' => 'Cancelada',
         ],
+        'roster_access' => [
+            'anyone' => 'Cualquier cuenta',
+            'members_only' => 'Solo socios',
+        ],
+        'join_request_status' => [
+            'pending' => 'Pendiente',
+            'accepted' => 'Aceptada',
+            'rejected' => 'Rechazada',
+            'withdrawn' => 'Retirada',
+        ],
         'campaign_frequency' => [
             'weekly' => 'Semanal',
             'biweekly' => 'Quincenal',
@@ -859,6 +869,27 @@ return [
     'confirm_registration' => [
         // The state shown until the guest follows the emailed link
         'awaiting_email' => 'Pendiente de confirmar',
+    ],
+
+    'roster' => [
+        'errors' => [
+            'unavailable' => 'Esta campaña no está publicada.',
+            'finished' => 'La campaña ha terminado: su plantilla ya no cambia.',
+            'not_accepting' => 'Esta campaña no acepta jugadores nuevos.',
+            'roster_full' => 'La plantilla está completa.',
+            'members_only' => 'Esta campaña solo admite solicitudes de socios.',
+            'already_member' => 'Ya formas parte de la plantilla.',
+            'account_already_member' => 'Esa cuenta ya forma parte de la plantilla.',
+            'request_pending' => 'Ya tienes una solicitud pendiente.',
+            'is_director' => 'Quien dirige la campaña no puede entrar en la plantilla como jugador.',
+            'account_not_found' => 'No se ha podido añadir a esa cuenta. Comprueba el email.',
+            'not_pending' => 'Esta solicitud ya no está pendiente.',
+            'not_member' => 'Esa persona no forma parte de la plantilla.',
+            'max_below_roster' => 'El máximo de jugadores no puede ser menor que la plantilla actual (:count).',
+            'session_not_in_campaign' => 'Esa sesión no es de esta campaña.',
+            'session_started' => 'La sesión ya ha empezado.',
+            'nothing_to_change' => 'No hay nada que cambiar en esa sesión.',
+        ],
     ],
 
     // Server-rendered page metadata (link previews and search engines)

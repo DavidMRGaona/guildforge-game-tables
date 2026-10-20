@@ -70,6 +70,11 @@ final class RegistrationServiceTest extends TestCase
                     return $callback();
                 }
 
+                public function forCampaign(string $campaignId, Closure $callback): mixed
+                {
+                    return $callback();
+                }
+
                 public function forParticipant(string $participantId, Closure $callback): mixed
                 {
                     return $callback();
@@ -899,6 +904,11 @@ final class RegistrationServiceTest extends TestCase
                     throw new LogicException('The lock must not be taken');
                 }
 
+                public function forCampaign(string $campaignId, Closure $callback): mixed
+                {
+                    throw new LogicException('The lock must not be taken');
+                }
+
                 public function forParticipant(string $participantId, Closure $callback): mixed
                 {
                     throw new LogicException('The lock must not be taken');
@@ -984,6 +994,11 @@ final class RegistrationServiceTest extends TestCase
             new class implements RegistrationLockInterface
             {
                 public function forTable(string $gameTableId, Closure $callback): mixed
+                {
+                    return $callback();
+                }
+
+                public function forCampaign(string $campaignId, Closure $callback): mixed
                 {
                     return $callback();
                 }

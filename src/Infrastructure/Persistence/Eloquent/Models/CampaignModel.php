@@ -14,6 +14,7 @@ use Illuminate\Support\Carbon;
 use Modules\GameTables\Domain\Enums\CampaignFrequency;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
+use Modules\GameTables\Domain\Enums\RosterAccess;
 use App\Infrastructure\Persistence\Eloquent\Concerns\HasSlug;
 
 /**
@@ -33,6 +34,7 @@ use App\Infrastructure\Persistence\Eloquent\Concerns\HasSlug;
  * @property bool $is_published
  * @property FrontendCreationStatus|null $frontend_creation_status
  * @property string|null $moderation_notes
+ * @property RosterAccess $roster_access
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
@@ -73,6 +75,7 @@ final class CampaignModel extends Model
         'is_published',
         'frontend_creation_status',
         'moderation_notes',
+        'roster_access',
     ];
 
     /**
@@ -89,6 +92,7 @@ final class CampaignModel extends Model
             'max_players' => 'integer',
             'is_published' => 'boolean',
             'frontend_creation_status' => FrontendCreationStatus::class,
+            'roster_access' => RosterAccess::class,
         ];
     }
 
@@ -130,6 +134,14 @@ final class CampaignModel extends Model
             'campaign_id',
             'user_id',
         )->withTimestamps();
+    }
+
+    /**
+     * @return HasMany<CampaignJoinRequestModel, $this>
+     */
+    public function joinRequests(): HasMany
+    {
+        return $this->hasMany(CampaignJoinRequestModel::class, 'campaign_id');
     }
 
     /**

@@ -310,6 +310,16 @@ return [
             'completed' => 'Completed',
             'cancelled' => 'Cancelled',
         ],
+        'roster_access' => [
+            'anyone' => 'Any account',
+            'members_only' => 'Members only',
+        ],
+        'join_request_status' => [
+            'pending' => 'Pending',
+            'accepted' => 'Accepted',
+            'rejected' => 'Rejected',
+            'withdrawn' => 'Withdrawn',
+        ],
         'campaign_frequency' => [
             'weekly' => 'Weekly',
             'biweekly' => 'Biweekly',
@@ -772,6 +782,27 @@ return [
     'confirm_registration' => [
         // The state shown until the guest follows the emailed link
         'awaiting_email' => 'Awaiting confirmation',
+    ],
+
+    'roster' => [
+        'errors' => [
+            'unavailable' => 'This campaign is not published.',
+            'finished' => 'The campaign has ended: its roster no longer changes.',
+            'not_accepting' => 'This campaign is not accepting new players.',
+            'roster_full' => 'The roster is full.',
+            'members_only' => 'This campaign only accepts requests from members.',
+            'already_member' => 'You are already part of the roster.',
+            'account_already_member' => 'That account is already part of the roster.',
+            'request_pending' => 'You already have a pending request.',
+            'is_director' => 'Whoever runs the campaign cannot join the roster as a player.',
+            'account_not_found' => 'That account could not be added. Check the email.',
+            'not_pending' => 'This request is no longer pending.',
+            'not_member' => 'That person is not part of the roster.',
+            'max_below_roster' => 'The maximum number of players cannot be lower than the current roster (:count).',
+            'session_not_in_campaign' => 'That session does not belong to this campaign.',
+            'session_started' => 'The session has already started.',
+            'nothing_to_change' => 'There is nothing to change in that session.',
+        ],
     ],
 
     // Server-rendered page metadata (link previews and search engines)

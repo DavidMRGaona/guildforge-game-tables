@@ -52,7 +52,7 @@ enum CampaignStatus: string
 
     public function acceptsNewPlayers(): bool
     {
-        return $this === self::Recruiting;
+        return in_array($this, [self::Recruiting, self::Active], true);
     }
 
     public function isFinal(): bool

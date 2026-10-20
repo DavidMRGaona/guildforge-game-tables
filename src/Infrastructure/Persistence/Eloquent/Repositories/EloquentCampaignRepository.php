@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
+use Modules\GameTables\Domain\Enums\RosterAccess;
 use Modules\GameTables\Domain\Exceptions\CampaignNotFoundException;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
@@ -170,6 +171,7 @@ final readonly class EloquentCampaignRepository implements CampaignRepositoryInt
             isPublished: $model->is_published,
             frontendCreationStatus: $model->frontend_creation_status,
             moderationNotes: $model->moderation_notes,
+            rosterAccess: $model->roster_access ?? RosterAccess::Anyone,
             createdAt: $model->created_at !== null
                 ? new DateTimeImmutable($model->created_at->toDateTimeString())
                 : null,
@@ -201,6 +203,7 @@ final readonly class EloquentCampaignRepository implements CampaignRepositoryInt
             'is_published' => $campaign->isPublished,
             'frontend_creation_status' => $campaign->frontendCreationStatus?->value,
             'moderation_notes' => $campaign->moderationNotes,
+            'roster_access' => $campaign->rosterAccess->value,
         ];
     }
 }

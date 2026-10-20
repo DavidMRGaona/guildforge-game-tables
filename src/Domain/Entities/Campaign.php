@@ -8,6 +8,8 @@ use DateTimeImmutable;
 use Modules\GameTables\Domain\Enums\CampaignFrequency;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
+use Modules\GameTables\Domain\Enums\RosterAccess;
+use Modules\GameTables\Domain\Exceptions\RosterActionRefusedException;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\GameSystemId;
 
@@ -32,6 +34,7 @@ final class Campaign
         public ?string $moderationNotes = null,
         public ?DateTimeImmutable $createdAt = null,
         public ?DateTimeImmutable $updatedAt = null,
+        public RosterAccess $rosterAccess = RosterAccess::Anyone,
     ) {
     }
 
@@ -105,6 +108,45 @@ final class Campaign
     public function canAcceptNewPlayers(): bool
     {
         return $this->acceptsNewPlayers && $this->status->acceptsNewPlayers();
+    }
+
+    public function isFinished(): bool
+    {
+        return $this->status->isFinal();
+    }
+
+    public function isApprovedOrPublished(): bool
+    {
+        return $this->isPublished || $this->frontendCreationStatus === FrontendCreationStatus::Approved;
+    }
+
+    public function isAvailableForSessions(): bool
+    {
+        return $this->isApprovedOrPublished() && ! $this->isFinished();
+    }
+
+    public function hasRoomFor(int $rosterSize): bool
+    {
+        return $this->maxPlayers === null || $rosterSize < $this->maxPlayers;
+    }
+
+    public function isDirectedFromWebBy(string $userId): bool
+    {
+        return $this->createdBy === $userId && $this->frontendCreationStatus !== null;
+    }
+
+    /**
+     * @throws RosterActionRefusedException when the maximum is below the current roster
+     */
+    public function changeRosterSettings(bool $acceptsNewPlayers, RosterAccess $access, ?int $maxPlayers, int $rosterSize): void
+    {
+        if ($maxPlayers !== null && $maxPlayers < $rosterSize) {
+            throw RosterActionRefusedException::because('max_below_roster', ['count' => $rosterSize]);
+        }
+
+        $this->acceptsNewPlayers = $acceptsNewPlayers;
+        $this->rosterAccess = $access;
+        $this->maxPlayers = $maxPlayers;
     }
 
     public function publish(): void
