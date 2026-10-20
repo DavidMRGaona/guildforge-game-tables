@@ -18,6 +18,7 @@ use Modules\GameTables\Domain\Events\ParticipantCancelled;
 use Modules\GameTables\Domain\Events\ParticipantConfirmed;
 use Modules\GameTables\Domain\Events\ParticipantPromotedFromWaitingList;
 use Modules\GameTables\Domain\Events\ParticipantRegistered;
+use Modules\GameTables\Domain\Exceptions\AlreadyRegisteredException;
 use Modules\GameTables\Domain\Exceptions\ParticipantNotFoundException;
 use Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException;
 use Modules\GameTables\Domain\Exceptions\TableFullException;
@@ -55,6 +56,8 @@ final class RosterEnrollmentTest extends ModuleTestCase
     private UserModel $jane;
 
     private UserModel $richard;
+
+    private CampaignId $campaignId;
 
     protected function setUp(): void
     {
@@ -99,9 +102,10 @@ final class RosterEnrollmentTest extends ModuleTestCase
         $this->jane = UserModel::factory()->create(['name' => 'Jane Doe', 'email' => 'jane@example.com']);
         $this->richard = UserModel::factory()->create(['name' => 'Richard Roe', 'email' => 'richard@example.com']);
 
+        $this->campaignId = new CampaignId($campaign->id);
         $roster = app(CampaignRosterRepositoryInterface::class);
         foreach ([$this->john, $this->jane, $this->richard] as $member) {
-            $roster->add(new CampaignId($campaign->id), $member->id, CarbonImmutable::now()->toDateTimeImmutable());
+            $roster->add($this->campaignId, $member->id, CarbonImmutable::now()->toDateTimeImmutable());
         }
     }
 
@@ -166,6 +170,36 @@ final class RosterEnrollmentTest extends ModuleTestCase
         $row = $left->refresh();
         $this->assertSame('confirmed', $row->status->value);
         $this->assertNull($row->getRawOriginal('cancellation_reason'));
+    }
+
+    public function test_a_members_guest_registration_is_taken_over_without_a_new_row(): void
+    {
+        $guest = ParticipantModel::create([
+            'id' => (string) Str::uuid(),
+            'game_table_id' => $this->table->id,
+            'user_id' => null,
+            'role' => 'player',
+            'status' => 'confirmed',
+            'first_name' => 'John',
+            'last_name' => 'Doe',
+            'email' => 'john@example.com',
+            'cancellation_token' => 'token-de-prueba',
+            'email_confirmed_at' => now(),
+            'confirmed_at' => now(),
+        ]);
+
+        $enrolled = $this->service()->enrollRoster($this->table->id);
+
+        $this->assertEqualsCanonicalizing(
+            [$this->jane->id, $this->richard->id],
+            array_map(fn (ParticipantResponseDTO $p): ?string => $p->userId, $enrolled),
+        );
+        $this->assertSame(3, ParticipantModel::query()->where('game_table_id', $this->table->id)->count());
+        $row = $guest->refresh();
+        $this->assertSame($this->john->id, $row->user_id);
+        $this->assertNull($row->email);
+        $this->assertSame('confirmed', $row->status->value);
+        $this->assertTrue($row->from_roster);
     }
 
     public function test_a_late_member_on_a_full_session_waits_ahead_of_outsiders(): void
@@ -255,10 +289,11 @@ final class RosterEnrollmentTest extends ModuleTestCase
         $this->assertSame('session_absence', $row->getRawOriginal('cancellation_reason'));
     }
 
+    // Members-only: the usual rules would answer members_only, the roster path registration_closed
     public function test_rejoining_after_the_closing_is_refused(): void
     {
         $this->row($this->jane, 'cancelled', fromRoster: true, reason: 'session_absence');
-        $this->table->update(['registration_closes_at' => now()->subHour()]);
+        $this->table->update(['registration_closes_at' => now()->subHour(), 'registration_type' => 'members_only']);
 
         try {
             $this->register($this->jane, ParticipantRole::Player);
@@ -270,6 +305,25 @@ final class RosterEnrollmentTest extends ModuleTestCase
 
         $this->assertSame('cancelled', $this->rowOf($this->jane)->status->value);
         Event::assertNotDispatched(ParticipantRegistered::class);
+    }
+
+    public function test_a_member_already_registered_is_refused(): void
+    {
+        $this->service()->enrollRoster($this->table->id);
+
+        $this->expectException(AlreadyRegisteredException::class);
+
+        $this->register($this->jane, ParticipantRole::Player);
+    }
+
+    public function test_a_rejected_member_follows_the_table_rules(): void
+    {
+        $this->assertOrganisationDecisionStands('rejected');
+    }
+
+    public function test_a_no_show_member_follows_the_table_rules(): void
+    {
+        $this->assertOrganisationDecisionStands('no_show');
     }
 
     public function test_a_spectator_request_from_a_member_follows_the_table_rules(): void
@@ -308,6 +362,42 @@ final class RosterEnrollmentTest extends ModuleTestCase
         $this->expectException(ParticipantNotFoundException::class);
 
         $this->service()->restoreAbsence($this->table->id, $this->jane->id);
+    }
+
+    public function test_an_ex_member_cannot_restore_an_absence(): void
+    {
+        $absence = $this->row($this->jane, 'cancelled', fromRoster: true, reason: 'session_absence');
+        app(CampaignRosterRepositoryInterface::class)->remove($this->campaignId, $this->jane->id);
+
+        try {
+            $this->service()->restoreAbsence($this->table->id, $this->jane->id);
+            $this->fail('Only a roster member may have an absence restored');
+        } catch (ParticipantNotFoundException) {
+            // Expected
+        }
+
+        $this->assertSame('cancelled', $absence->refresh()->status->value);
+        Event::assertNotDispatched(ParticipantRegistered::class);
+    }
+
+    /**
+     * A rejected or no-show row is the organisation's say: the roster path never reactivates it,
+     * the table rules answer (here, members only).
+     */
+    private function assertOrganisationDecisionStands(string $status): void
+    {
+        $this->table->update(['registration_type' => 'members_only']);
+        $row = $this->row($this->jane, $status, fromRoster: true);
+
+        try {
+            $this->register($this->jane, ParticipantRole::Player);
+            $this->fail('The table rules must refuse a member whose row the organisation closed');
+        } catch (RegistrationNotAllowedException $e) {
+            $this->assertSame('members_only', $e->reason);
+        }
+
+        $this->assertSame($status, $row->refresh()->status->value);
+        Event::assertNotDispatched(ParticipantRegistered::class);
     }
 
     private function service(): RegistrationServiceInterface
