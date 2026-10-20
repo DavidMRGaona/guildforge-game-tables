@@ -8,9 +8,11 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Modules\GameTables\Notifications\Concerns\EscapesUserText;
 
 final class CampaignSessionScheduledNotification extends Notification implements ShouldQueue
 {
+    use EscapesUserText;
     use Queueable;
 
     public function __construct(
@@ -39,11 +41,12 @@ final class CampaignSessionScheduledNotification extends Notification implements
             ->line(__($this->waiting
                 ? 'game-tables::emails.campaign_session_scheduled.intro_waiting'
                 : 'game-tables::emails.campaign_session_scheduled.intro', ['campaignTitle' => $this->campaignTitle]))
-            ->line('**'.__('game-tables::emails.campaign_session_scheduled.table_title').':** '.$this->tableTitle)
+            // The title and the location are the directors' text: shown literally
+            ->line($this->plainLabelledLine(__('game-tables::emails.campaign_session_scheduled.table_title'), $this->tableTitle))
             ->line('**'.__('game-tables::emails.campaign_session_scheduled.table_date').':** '.$this->tableDate);
 
         if ($this->tableLocation !== null) {
-            $mail->line('**'.__('game-tables::emails.campaign_session_scheduled.table_location').':** '.$this->tableLocation);
+            $mail->line($this->plainLabelledLine(__('game-tables::emails.campaign_session_scheduled.table_location'), $this->tableLocation));
         }
 
         return $mail

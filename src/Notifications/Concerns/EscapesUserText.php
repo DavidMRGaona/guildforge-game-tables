@@ -14,6 +14,20 @@ trait EscapesUserText
      */
     protected function plainLine(string $line): HtmlString
     {
-        return new HtmlString('<p>'.str_replace(["\r\n", "\r", "\n"], ' ', e($line)).'</p>');
+        return new HtmlString('<p>'.$this->escapedOneLine($line).'</p>');
+    }
+
+    /**
+     * «Label: value» with the label in bold, where the value is typed by a user: escaped the same
+     * way as plainLine().
+     */
+    protected function plainLabelledLine(string $label, string $value): HtmlString
+    {
+        return new HtmlString('<p><strong>'.$this->escapedOneLine($label).':</strong> '.$this->escapedOneLine($value).'</p>');
+    }
+
+    private function escapedOneLine(string $text): string
+    {
+        return str_replace(["\r\n", "\r", "\n"], ' ', e($text));
     }
 }

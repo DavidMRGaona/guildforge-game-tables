@@ -65,9 +65,9 @@ final class CampaignRosterNotificationsTest extends ModuleTestCase
         $this->assertSame('¡Hola, John Doe!', $mail->greeting);
         $lines = $this->lines($mail);
         $this->assertContains('Se ha programado una nueva sesión de la campaña «Campaña de prueba» y ya tienes tu plaza.', $lines);
-        $this->assertContains('**Mesa:** Sesión 2', $lines);
+        $this->assertContains('Mesa: Sesión 2', $lines);
         $this->assertContains('**Fecha:** 08/11/2026 18:00', $lines);
-        $this->assertContains('**Ubicación:** Sala de juegos', $lines);
+        $this->assertContains('Ubicación: Sala de juegos', $lines);
         $this->assertContains('Si no puedes ir a una sesión, date de baja desde su ficha: seguirás en la campaña.', $lines);
         $this->assertSame('Ver sesión', $mail->actionText);
         $this->assertSame(url('/mesas/table-1'), $mail->actionUrl);
@@ -86,7 +86,7 @@ final class CampaignRosterNotificationsTest extends ModuleTestCase
     {
         $mail = $this->mail(new CampaignSessionScheduledNotification('John Doe', 'Campaña de prueba', 'table-1', 'Sesión 2', '08/11/2026 18:00', null, false));
 
-        $this->assertNotContains('**Ubicación:** Sala de juegos', $this->lines($mail));
+        $this->assertNotContains('Ubicación: Sala de juegos', $this->lines($mail));
         foreach ($this->lines($mail) as $line) {
             $this->assertStringNotContainsString('Ubicación', $line);
         }
@@ -225,5 +225,22 @@ final class CampaignRosterNotificationsTest extends ModuleTestCase
         $this->assertStringContainsString('&lt;b&gt;Mary&lt;/b&gt; Major quiere unirse', (string) $mails[0]->render());
         $this->assertStringContainsString('Motivo: [Pulsa aquí](https://evil.example) **URGENTE**', (string) $mails[1]->render());
         $this->assertStringContainsString('&lt;b&gt;Mary&lt;/b&gt; Major ha salido', (string) $mails[2]->render());
+    }
+
+    /**
+     * Directors write the session title and its location: shown literally, with the label in bold.
+     */
+    public function test_the_session_title_and_location_are_shown_literally(): void
+    {
+        $evil = '[Pulsa aquí](https://evil.example) **URGENTE** <b>Sala</b>';
+        $mail = $this->mail(new CampaignSessionScheduledNotification('John Doe', 'Campaña de prueba', 'table-1', $evil, '08/11/2026 18:00', $evil, false));
+        $html = (string) $mail->render();
+
+        $this->assertStringNotContainsString('<a href="https://evil.example"', $html);
+        $this->assertStringNotContainsString('<strong>URGENTE', $html);
+        $this->assertStringNotContainsString('<b>Sala</b>', $html);
+        // The label stays bold (the mail theme inlines a style into <strong>)
+        $this->assertStringContainsString('Mesa:</strong> [Pulsa aquí](https://evil.example) **URGENTE** &lt;b&gt;Sala&lt;/b&gt;', $html);
+        $this->assertStringContainsString('Ubicación:</strong> [Pulsa aquí](https://evil.example) **URGENTE** &lt;b&gt;Sala&lt;/b&gt;', $html);
     }
 }
