@@ -14,8 +14,12 @@ interface FrontendCreationServiceInterface
     /**
      * Create a new game table from the frontend.
      * The table will be created in Draft or PendingReview status depending on config.
+     * A campaign session outside an event is also created for someone who directs its campaign
+     * when the general creation rules refuse them.
      *
      * @throws \Modules\GameTables\Domain\Exceptions\NotEligibleToCreateException
+     * @throws \Modules\GameTables\Domain\Exceptions\SessionBelowRosterException when it would be published at once
+     *         with fewer seats than its campaign roster (nothing is saved)
      */
     public function createGameTable(FrontendCreateGameTableDTO $dto): GameTableResponseDTO;
 
@@ -27,7 +31,9 @@ interface FrontendCreationServiceInterface
     public function createCampaign(FrontendCreateCampaignDTO $dto): CampaignResponseDTO;
 
     /**
-     * Get data needed to render the creation form (game systems, formats, etc.).
+     * Get data needed to render the creation form (game systems, formats, etc.). The campaigns are
+     * the ones the current user may create sessions of, plus $keepCampaignId (the campaign stored on
+     * a table being edited) when it is not among them.
      *
      * @return array{
      *     game_systems: array,
@@ -38,10 +44,11 @@ interface FrontendCreationServiceInterface
      *     character_creation: array,
      *     safety_tools: array,
      *     content_warnings: array,
-     *     genres: array
+     *     genres: array,
+     *     campaigns: list<array{id: string, name: string, game_system_id: string, max_players: int|null, roster_count: int}>
      * }
      */
-    public function getCreateFormData(): array;
+    public function getCreateFormData(?string $keepCampaignId = null): array;
 
     /**
      * Ids of the events a table created or edited from the web may be linked to: the ones the

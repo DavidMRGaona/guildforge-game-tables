@@ -56,6 +56,8 @@ use Modules\GameTables\Domain\Enums\TableType;
 use Modules\GameTables\Domain\Enums\Tone;
 use Modules\GameTables\Domain\Exceptions\NotEditableException;
 use Modules\GameTables\Domain\Exceptions\SessionBelowRosterException;
+use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
+use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Filament\Resources\GameTableResource\Pages;
 use Modules\GameTables\Filament\Resources\GameTableResource\RelationManagers\ParticipantsRelationManager;
 use Modules\GameTables\Filament\Support\PublicationLock;
@@ -139,6 +141,12 @@ final class GameTableResource extends BaseResource
 
                                         // Copy game system from campaign
                                         $set('game_system_id', $campaign->game_system_id);
+
+                                        // A maximum the whole roster fits in
+                                        $set('max_players', $campaign->max_players ?? max(
+                                            app(GameTableSettingsReader::class)->defaultMaxPlayers(),
+                                            self::rosterSize($campaign->id),
+                                        ));
 
                                         // Do not overwrite game masters if there are already real ones
                                         /** @var array<int, array<string, mixed>> $currentGameMasters */
@@ -284,7 +292,8 @@ final class GameTableResource extends BaseResource
                                     ->minValue(1)
                                     ->maxValue($settings->maxPlayersLimit())
                                     ->default($settings->defaultMaxPlayers())
-                                    ->required(),
+                                    ->required()
+                                    ->rule(self::fitsTheCampaignRoster()),
 
                                 TextInput::make('max_spectators')
                                     ->label(__('game-tables::messages.fields.max_spectators'))
@@ -727,6 +736,31 @@ final class GameTableResource extends BaseResource
                 'date' => $limit->format('d/m/Y H:i'),
             ]));
         };
+    }
+
+    /**
+     * A session never has fewer seats than the roster of its campaign.
+     */
+    private static function fitsTheCampaignRoster(): Closure
+    {
+        return fn (Get $get): Closure => function (string $attribute, mixed $value, Closure $fail) use ($get): void {
+            $campaignId = $get('campaign_id');
+
+            if (! is_numeric($value) || ! is_string($campaignId) || $campaignId === '') {
+                return;
+            }
+
+            $rosterSize = self::rosterSize($campaignId);
+
+            if ((int) $value < $rosterSize) {
+                $fail(__('game-tables::messages.validation.max_players_below_roster', ['count' => $rosterSize]));
+            }
+        };
+    }
+
+    private static function rosterSize(string $campaignId): int
+    {
+        return app(CampaignRosterRepositoryInterface::class)->count(new CampaignId($campaignId));
     }
 
     private static function toDate(mixed $value): ?CarbonImmutable

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\GameTables\Http\Requests;
 
 use Closure;
-use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
@@ -17,7 +16,10 @@ use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableType;
 use Modules\GameTables\Domain\Enums\Tone;
+use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
+use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
+use Modules\GameTables\Infrastructure\Services\CampaignSessionCreationGate;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 
 final class FrontendCreateGameTableRequest extends FormRequest
@@ -26,9 +28,22 @@ final class FrontendCreateGameTableRequest extends FormRequest
 
     private bool $editableTableResolved = false;
 
+    /** @var list<string>|null */
+    private ?array $allowedCampaignIds = null;
+
     public function authorize(): bool
     {
         return $this->user() !== null;
+    }
+
+    /**
+     * Only a campaign session belongs to a campaign: any other type drops it.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->input('table_type') !== TableType::CampaignSession->value) {
+            $this->merge(['campaign_id' => null]);
+        }
     }
 
     /**
@@ -47,7 +62,27 @@ final class FrontendCreateGameTableRequest extends FormRequest
             'table_type' => ['required', 'string', Rule::in(TableType::values())],
             'table_format' => ['required', 'string', Rule::in(TableFormat::values())],
             'min_players' => ['required', 'integer', 'min:1', 'max:'.$maxPlayers],
-            'max_players' => ['required', 'integer', 'min:1', 'max:'.$maxPlayers, 'gte:min_players'],
+            'max_players' => [
+                'required',
+                'integer',
+                'min:1',
+                'max:'.$maxPlayers,
+                'gte:min_players',
+                // The whole roster of the campaign always fits in its session
+                function (string $attribute, mixed $value, Closure $fail): void {
+                    $campaignId = $this->input('campaign_id');
+
+                    if (! is_numeric($value) || ! is_string($campaignId) || ! in_array($campaignId, $this->allowedCampaignIds(), true)) {
+                        return;
+                    }
+
+                    $rosterSize = app(CampaignRosterRepositoryInterface::class)->count(new CampaignId($campaignId));
+
+                    if ((int) $value < $rosterSize) {
+                        $fail(__('game-tables::messages.validation.max_players_below_roster', ['count' => $rosterSize]));
+                    }
+                },
+            ],
             'max_spectators' => ['sometimes', 'integer', 'min:0', 'max:'.$settings->maxSpectatorsLimit()],
             // Only the events the form offers (published, not ended, tables enabled). On edit, the
             // event already stored on the table is kept even if it is no longer offered: an admin
@@ -61,21 +96,19 @@ final class FrontendCreateGameTableRequest extends FormRequest
                     }
                 },
             ],
-            // Only the author's own campaigns, the ones the form offers (create and edit both
-            // validate here; the panel has its own form and may link any campaign). On edit, the
-            // campaign already stored on the table is kept even if someone else created it: an
-            // admin may have linked it from the panel.
+            // A session needs its campaign, one the author directs and may create sessions of: the
+            // ones the form offers (create and edit both validate here; the panel has its own form
+            // and may link any campaign). On edit, the campaign already stored on the table is kept
+            // even if the author does not direct it: an admin may have linked it from the panel.
             'campaign_id' => [
                 'nullable',
+                'required_if:table_type,'.TableType::CampaignSession->value,
                 'uuid',
-                Rule::exists('gametables_campaigns', 'id')->where(function (Builder $query): void {
-                    $query->where('created_by', (string) $this->user()?->getAuthIdentifier());
-
-                    $storedCampaignId = $this->storedCampaignId();
-                    if ($storedCampaignId !== null) {
-                        $query->orWhere('id', $storedCampaignId);
+                function (string $attribute, mixed $value, Closure $fail): void {
+                    if (! in_array($value, $this->allowedCampaignIds(), true)) {
+                        $fail(__('game-tables::messages.validation.campaign_not_owned'));
                     }
-                }),
+                },
             ],
             'synopsis' => ['nullable', 'string', 'max:5000'],
             'location' => ['nullable', 'string', 'max:500'],
@@ -121,7 +154,7 @@ final class FrontendCreateGameTableRequest extends FormRequest
             'language.required' => __('game-tables::messages.validation.language_required'),
             'experience_level.required' => __('game-tables::messages.validation.experience_level_required'),
             'character_creation.required' => __('game-tables::messages.validation.character_creation_required'),
-            'campaign_id.exists' => __('game-tables::messages.validation.campaign_not_owned'),
+            'campaign_id.required_if' => __('game-tables::messages.validation.campaign_required'),
         ];
     }
 
@@ -141,11 +174,27 @@ final class FrontendCreateGameTableRequest extends FormRequest
     }
 
     /**
-     * Campaign stored on the table being edited (null on create).
+     * Campaigns the author may create sessions of, plus the one stored on the table being edited.
+     *
+     * @return list<string>
      */
-    private function storedCampaignId(): ?string
+    private function allowedCampaignIds(): array
     {
-        return $this->editableTable()?->campaign_id;
+        if ($this->allowedCampaignIds !== null) {
+            return $this->allowedCampaignIds;
+        }
+
+        $userId = (string) $this->user()?->getAuthIdentifier();
+        $campaignIds = $userId !== ''
+            ? app(CampaignSessionCreationGate::class)->sessionCampaignIds($userId)
+            : [];
+
+        $storedCampaignId = $this->editableTable()?->campaign_id;
+        if ($storedCampaignId !== null) {
+            $campaignIds[] = $storedCampaignId;
+        }
+
+        return $this->allowedCampaignIds = $campaignIds;
     }
 
     /**

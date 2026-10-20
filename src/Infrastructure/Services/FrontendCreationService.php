@@ -41,7 +41,9 @@ use Modules\GameTables\Domain\Exceptions\CampaignNotFoundException;
 use Modules\GameTables\Domain\Exceptions\GameTableNotFoundException;
 use Modules\GameTables\Domain\Exceptions\NotEditableException;
 use Modules\GameTables\Domain\Exceptions\NotEligibleToCreateException;
+use Modules\GameTables\Domain\Exceptions\SessionBelowRosterException;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
+use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ContentWarningRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameSystemRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\EventGameTableConfigRepositoryInterface;
@@ -66,6 +68,8 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         private EventRepositoryInterface $eventRepository,
         private GameMasterServiceInterface $gameMasterService,
         private EventGameTableConfigRepositoryInterface $configRepository,
+        private CampaignSessionCreationGate $sessionGate,
+        private CampaignRosterRepositoryInterface $roster,
     ) {}
 
     /**
@@ -84,8 +88,16 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             ? $this->eventEligibilityService->canCreateTableForEvent($dto->eventId, $dto->createdBy)
             : $this->eligibilityService->canCreateTable($dto->createdBy);
 
-        if (! $eligibility->eligible) {
+        if (! $eligibility->eligible && ! $this->isSessionOfDirectedCampaign($dto)) {
             throw NotEligibleToCreateException::withReason($eligibility->reason ?? 'unknown');
+        }
+
+        // Decided before anything is saved: a table that would be published at once is refused
+        // whole when it has fewer seats than its campaign roster
+        $creationStatus = $this->determineInitialStatus($dto->createdBy);
+
+        if ($creationStatus === FrontendCreationStatus::Approved) {
+            $this->ensureFitsRoster($dto);
         }
 
         // 2. Get registration closes date from event if applicable
@@ -108,27 +120,52 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         // 4. Create the table (GameTableService handles the creation)
         $gameTable = $this->gameTableService->create($createDto);
 
-        // 5. Determine initial status based on publication mode
-        $creationStatus = $this->determineInitialStatus($dto->createdBy);
-
-        // 6. Retrieve the entity to update frontend creation status
+        // 5. Retrieve the entity to update frontend creation status
         $tableEntity = $this->gameTableRepository->find(new GameTableId($gameTable->id));
         if ($tableEntity !== null) {
             $tableEntity->setFrontendCreationStatus($creationStatus);
             $this->gameTableRepository->save($tableEntity);
         }
 
-        // 7. Sync game masters
+        // 6. Sync game masters
         if ($dto->gameMasters !== null && count($dto->gameMasters) > 0) {
             $this->gameMasterService->syncTableGameMasters($gameTable->id, $dto->gameMasters);
         }
 
-        // 8. Auto-publish for approved status
+        // 7. Auto-publish for approved status
         if ($creationStatus === FrontendCreationStatus::Approved) {
             $gameTable = $this->gameTableService->publish($gameTable->id);
         }
 
         return $gameTable;
+    }
+
+    /**
+     * Directing an approved campaign is enough to create its sessions outside an event, even
+     * when the general creation rules refuse the person (only the main creation switch applies).
+     */
+    private function isSessionOfDirectedCampaign(FrontendCreateGameTableDTO $dto): bool
+    {
+        return $dto->eventId === null
+            && $dto->tableType === TableType::CampaignSession
+            && $dto->campaignId !== null
+            && $this->sessionGate->allows($dto->createdBy, $dto->campaignId);
+    }
+
+    /**
+     * @throws SessionBelowRosterException
+     */
+    private function ensureFitsRoster(FrontendCreateGameTableDTO $dto): void
+    {
+        if ($dto->campaignId === null) {
+            return;
+        }
+
+        $rosterSize = $this->roster->count(new CampaignId($dto->campaignId));
+
+        if ($dto->maxPlayers < $rosterSize) {
+            throw SessionBelowRosterException::forNewSession($dto->maxPlayers, $rosterSize);
+        }
     }
 
     public function createCampaign(FrontendCreateCampaignDTO $dto): CampaignResponseDTO
@@ -183,12 +220,12 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
      *     languages: array<string, string>,
      *     campaign_frequencies: array<string, string>,
      *     events: array<array{id: string, name: string}>,
-     *     campaigns: array<array{id: string, name: string}>,
+     *     campaigns: list<array{id: string, name: string, game_system_id: string, max_players: int|null, roster_count: int}>,
      *     defaults: array{duration_minutes: int, min_players: int, max_players: int, max_spectators: int},
      *     limits: array{max_players: int, max_spectators: int, max_duration_minutes: int}
      * }
      */
-    public function getCreateFormData(): array
+    public function getCreateFormData(?string $keepCampaignId = null): array
     {
         // Get game systems
         $gameSystems = $this->gameSystemRepository->getActive();
@@ -198,11 +235,19 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
 
         $events = $this->selectableEvents();
 
-        // Get campaigns created by the current user
+        // Campaigns the current user may create sessions of, plus the one an edited table keeps
         $userId = auth()->id();
         $campaigns = $userId !== null
-            ? $this->campaignRepository->getByCreator($userId)
+            ? $this->sessionGate->sessionCampaigns((string) $userId)
             : [];
+
+        if ($keepCampaignId !== null && ! in_array($keepCampaignId, array_column($campaigns, 'id'), true)) {
+            $kept = $this->sessionGate->describe($keepCampaignId);
+
+            if ($kept !== null) {
+                $campaigns[] = $kept;
+            }
+        }
 
         return [
             'game_systems' => array_map(
@@ -234,10 +279,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
                     'start_date' => $event->startDate()->format('Y-m-d\TH:i'),
                 ],
             )->values()->all(),
-            'campaigns' => array_map(
-                static fn ($campaign): array => ['id' => $campaign->id->value, 'name' => $campaign->title],
-                $campaigns,
-            ),
+            'campaigns' => $campaigns,
             'defaults' => [
                 'duration_minutes' => $this->settingsReader->defaultDurationMinutes(),
                 'min_players' => $this->settingsReader->defaultMinPlayers(),

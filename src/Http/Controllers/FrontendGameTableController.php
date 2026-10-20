@@ -23,10 +23,13 @@ use Modules\GameTables\Application\Services\EventCreationEligibilityServiceInter
 use Modules\GameTables\Application\Services\EventGameTableConfigServiceInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
+use Modules\GameTables\Domain\Enums\TableType;
 use Modules\GameTables\Domain\Exceptions\NotEditableException;
+use Modules\GameTables\Domain\Exceptions\NotEligibleToCreateException;
 use Modules\GameTables\Domain\Exceptions\SessionBelowRosterException;
 use Modules\GameTables\Http\Requests\FrontendCreateGameTableRequest;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
+use Modules\GameTables\Infrastructure\Services\CampaignSessionCreationGate;
 
 final class FrontendGameTableController extends Controller
 {
@@ -37,6 +40,7 @@ final class FrontendGameTableController extends Controller
         private readonly EventGameTableConfigServiceInterface $eventConfigService,
         private readonly GameTableServiceInterface $gameTableService,
         private readonly SeoMetadataFactoryInterface $seo,
+        private readonly CampaignSessionCreationGate $sessionGate,
     ) {}
 
     /**
@@ -61,7 +65,13 @@ final class FrontendGameTableController extends Controller
             $eligibility = $this->eligibilityService->canCreateTable($user?->id);
         }
 
-        if (! $eligibility->eligible) {
+        // Someone the general rules refuse may still create sessions of the campaigns they direct
+        $sessionOnly = ! $eligibility->eligible
+            && $eventId === null
+            && $user !== null
+            && $this->sessionGate->canCreateSessionsOnly((string) $user->id);
+
+        if (! $eligibility->eligible && ! $sessionOnly) {
             // Show a page explaining why they can't create
             return Inertia::render('GameTables/CreateNotEligible', [
                 'reason' => $eligibility->reason,
@@ -89,11 +99,19 @@ final class FrontendGameTableController extends Controller
             'email' => $user->email,
         ] : null;
 
+        // «Añadir sesión» arrives with its campaign; any other id is ignored
+        $campaignId = $request->query('campaign');
+        $prefill = is_string($campaignId) && in_array($campaignId, array_column($formData['campaigns'], 'id'), true)
+            ? ['table_type' => TableType::CampaignSession->value, 'campaign_id' => $campaignId]
+            : null;
+
         return Inertia::render('GameTables/Create', [
             'formData' => $formData,
             'eligibility' => $eligibility->toArray(),
             'eventContext' => $eventContext?->toArray(),
             'currentUser' => $currentUser,
+            'sessionOnly' => $sessionOnly,
+            'prefill' => $prefill,
             'seo' => $this->seo->forPage(new SeoPageDTO(
                 title: (string) __('game-tables::messages.seo.create_table_title'),
                 noindex: true,
@@ -114,7 +132,14 @@ final class FrontendGameTableController extends Controller
             'created_by' => (string) $user->id,
         ]);
 
-        $this->creationService->createGameTable($dto);
+        try {
+            $this->creationService->createGameTable($dto);
+        } catch (NotEligibleToCreateException) {
+            abort(403);
+        } catch (SessionBelowRosterException $e) {
+            // Published at once but with fewer seats than the roster: nothing was saved
+            return back()->withErrors(['max_players' => $e->getMessage()])->withInput();
+        }
 
         return redirect()
             ->route('gametables.my-tables')
@@ -159,8 +184,8 @@ final class FrontendGameTableController extends Controller
         // Get the table DTO using the service (consistent with architecture)
         $table = $this->gameTableService->findOrFail($gameTable->id);
 
-        // Get form data for the edit form
-        $formData = $this->creationService->getCreateFormData();
+        // Get form data for the edit form, keeping the campaign stored on the table
+        $formData = $this->creationService->getCreateFormData($gameTable->campaign_id);
 
         // Get event context if a table is associated with an event
         $eventContext = null;

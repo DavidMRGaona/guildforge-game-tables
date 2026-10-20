@@ -23,4 +23,15 @@ final class SessionBelowRosterException extends DomainException
             'session_below_roster',
         );
     }
+
+    /**
+     * For a session refused before it is saved.
+     */
+    public static function forNewSession(int $maxPlayers, int $rosterSize): self
+    {
+        return new self(
+            __('game-tables::messages.errors.session_below_roster', ['max' => $maxPlayers, 'count' => $rosterSize]),
+            'session_below_roster',
+        );
+    }
 }
