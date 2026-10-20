@@ -6,8 +6,9 @@ import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { FormCombobox, FormSelect, FormCheckboxGroup, FormCheckboxWithTooltip, FormRadioGroup, FormTagsInput, FormNumberInput } from '@/components/form';
 import type { CheckboxGroup, RadioOption } from '@/components/form';
-import type { GameSystem, GameTableEditData, TableFormDefaults, TableFormLimits } from '../../types/gametables';
+import type { GameSystem, GameTableEditData, SessionCampaignOption, TableFormDefaults, TableFormLimits } from '../../types/gametables';
 import GameMasterSection from '../../components/GameMasterSection.vue';
+import SessionCampaignField from '../../components/SessionCampaignField.vue';
 import FormTabs from '../../components/FormTabs.vue';
 import type { FormTab } from '../../components/FormTabs.vue';
 
@@ -46,7 +47,8 @@ interface FormData {
     safety_tools: Record<string, string>;
     content_warnings: ContentWarning[];
     events: ContextOption[];
-    campaigns: ContextOption[];
+    // The campaigns the author may create sessions of, plus the one stored on the table
+    campaigns: SessionCampaignOption[];
     defaults: TableFormDefaults;
     limits: TableFormLimits;
 }
@@ -205,17 +207,30 @@ function findFirstTabWithErrors(): string | null {
     return null;
 }
 
-// Context type for event/campaign association
-type ContextType = 'independent' | 'event' | 'campaign';
+// Context type for the event association (the campaign goes with the session type)
+type ContextType = 'independent' | 'event';
 
 // Determine initial context type from existing data (using snake_case keys)
 function getInitialContextType(): ContextType {
-    if (props.table.event_id) return 'event';
-    if (props.table.campaign_id) return 'campaign';
-    return 'independent';
+    return props.table.event_id ? 'event' : 'independent';
 }
 
 const contextType = ref<ContextType>(getInitialContextType());
+
+// A session needs its campaign: the field shows right under the type, and the form is not sent without it
+const isCampaignSession = computed(() => form.table_type === 'campaign_session');
+const sessionWithoutCampaign = computed(() => isCampaignSession.value && !form.campaign_id);
+
+// Another type takes no campaign: clear it (the field hides)
+watch(() => form.table_type, (type) => {
+    if (type !== 'campaign_session') form.campaign_id = null;
+});
+
+// Choosing the campaign fills what the session takes from it
+function applyCampaign(values: { gameSystemId: string; maxPlayers: number }): void {
+    form.game_system_id = values.gameSystemId;
+    form.max_players = values.maxPlayers;
+}
 
 // Selected time slot for slot-based scheduling
 const selectedTimeSlot = ref<string | null>(null);
@@ -252,11 +267,10 @@ watch(selectedTimeSlot, (slotIndex) => {
     }
 });
 
-// Clear the other field when context type changes (only when not in event context mode)
+// Clear the event when the table leaves it (only when not in event context mode)
 watch(contextType, (newType) => {
     if (isEventContextMode.value) return; // Don't change event association in event context mode
     if (newType !== 'event') form.event_id = null;
-    if (newType !== 'campaign') form.campaign_id = null;
 });
 
 // Get selected event name for display
@@ -292,13 +306,6 @@ const contextOptions = computed((): RadioOption[] => {
             description: t('gameTables.create.context.eventDescription'),
         });
     }
-    if (props.formData.campaigns.length > 0) {
-        options.push({
-            value: 'campaign',
-            label: t('gameTables.create.context.campaign'),
-            description: t('gameTables.create.context.campaignDescription'),
-        });
-    }
     return options;
 });
 
@@ -307,14 +314,6 @@ const eventOptions = computed(() =>
     props.formData.events.map((event) => ({
         id: event.id,
         name: event.name,
-    }))
-);
-
-// Transform campaigns for combobox
-const campaignOptions = computed(() =>
-    props.formData.campaigns.map((campaign) => ({
-        id: campaign.id,
-        name: campaign.name,
     }))
 );
 
@@ -621,6 +620,16 @@ function cancel(): void {
                                     </p>
                                 </div>
 
+                                <!-- Campaign of the session -->
+                                <SessionCampaignField
+                                    v-if="isCampaignSession"
+                                    v-model="form.campaign_id"
+                                    :campaigns="props.formData.campaigns"
+                                    :default-max-players="props.formData.defaults.max_players"
+                                    :error="form.errors.campaign_id"
+                                    @fill="applyCampaign"
+                                />
+
                                 <!-- Table Format -->
                                 <div>
                                     <label for="table_format" class="block text-sm font-medium text-base-secondary">
@@ -674,7 +683,7 @@ function cancel(): void {
                                     </p>
                                 </div>
 
-                                <!-- Context (Event/Campaign association) - hide when coming from event context -->
+                                <!-- Context (event association) - hide when coming from event context -->
                                 <div
                                     v-if="!isEventContextMode && contextOptions.length > 1"
                                     class="rounded-lg border border-base-subtle bg-surface-subtle p-4"
@@ -707,26 +716,6 @@ function cancel(): void {
                                             />
                                             <p v-if="form.errors.event_id" class="mt-1 text-sm text-error">
                                                 {{ form.errors.event_id }}
-                                            </p>
-                                        </div>
-
-                                        <!-- Campaign selector -->
-                                        <div v-if="contextType === 'campaign'">
-                                            <label for="campaign_id" class="block text-sm font-medium text-base-secondary">
-                                                {{ t('gameTables.create.fields.campaign') }}
-                                            </label>
-                                            <FormCombobox
-                                                id="campaign_id"
-                                                v-model="form.campaign_id"
-                                                :options="campaignOptions"
-                                                option-label="name"
-                                                option-value="id"
-                                                :placeholder="t('gameTables.create.fields.selectCampaign')"
-                                                :error="form.errors.campaign_id"
-                                                class="mt-1"
-                                            />
-                                            <p v-if="form.errors.campaign_id" class="mt-1 text-sm text-error">
-                                                {{ form.errors.campaign_id }}
                                             </p>
                                         </div>
                                     </div>
@@ -1064,7 +1053,7 @@ function cancel(): void {
                     <BaseButton
                         type="submit"
                         variant="primary"
-                        :disabled="form.processing"
+                        :disabled="form.processing || sessionWithoutCampaign"
                         :loading="form.processing"
                     >
                         {{ t('gameTables.edit.submit') }}

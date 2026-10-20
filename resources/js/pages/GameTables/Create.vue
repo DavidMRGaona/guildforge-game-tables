@@ -6,8 +6,9 @@ import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { FormCombobox, FormSelect, FormCheckboxGroup, FormCheckboxWithTooltip, FormRadioGroup, FormTagsInput, FormNumberInput } from '@/components/form';
 import type { CheckboxGroup, RadioOption } from '@/components/form';
-import type { GameSystem, TableFormDefaults, TableFormLimits } from '../../types/gametables';
+import type { GameSystem, SessionCampaignOption, TableFormDefaults, TableFormLimits, TableFormPrefill } from '../../types/gametables';
 import GameMasterSection from '../../components/GameMasterSection.vue';
+import SessionCampaignField from '../../components/SessionCampaignField.vue';
 import FormTabs from '../../components/FormTabs.vue';
 import type { FormTab } from '../../components/FormTabs.vue';
 
@@ -46,7 +47,8 @@ interface FormData {
     safety_tools: Record<string, string>;
     content_warnings: ContentWarning[];
     events: ContextOption[];
-    campaigns: ContextOption[];
+    // The campaigns the author may create sessions of
+    campaigns: SessionCampaignOption[];
     defaults: TableFormDefaults;
     limits: TableFormLimits;
 }
@@ -93,9 +95,17 @@ interface Props {
     eligibility: Eligibility;
     eventContext?: EventContext | null;
     currentUser: CurrentUser;
+    /** The general rules refuse the author, who may still create sessions of the campaigns they direct */
+    sessionOnly?: boolean;
+    /** «Añadir sesión» arrives with the session type and its campaign */
+    prefill?: TableFormPrefill | null;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+    eventContext: null,
+    sessionOnly: false,
+    prefill: null,
+});
 
 const { t } = useI18n();
 
@@ -148,13 +158,13 @@ const form = useForm({
     title: '',
     starts_at: '',
     duration_minutes: props.formData.defaults.duration_minutes,
-    table_type: 'one_shot',
+    table_type: (props.prefill?.table_type ?? (props.sessionOnly ? 'campaign_session' : 'one_shot')) as string,
     table_format: 'in_person',
     min_players: props.formData.defaults.min_players,
     max_players: props.formData.defaults.max_players,
     max_spectators: props.formData.defaults.max_spectators,
     event_id: null as string | null,
-    campaign_id: null as string | null,
+    campaign_id: (props.prefill?.campaign_id ?? null) as string | null,
     synopsis: '',
     location: '',
     online_url: '',
@@ -205,9 +215,24 @@ function findFirstTabWithErrors(): string | null {
     return null;
 }
 
-// Context type for event/campaign association
-type ContextType = 'independent' | 'event' | 'campaign';
+// Context type for the event association (the campaign goes with the session type)
+type ContextType = 'independent' | 'event';
 const contextType = ref<ContextType>('independent');
+
+// A session needs its campaign: the field shows right under the type, and the form is not sent without it
+const isCampaignSession = computed(() => form.table_type === 'campaign_session');
+const sessionWithoutCampaign = computed(() => isCampaignSession.value && !form.campaign_id);
+
+// Another type takes no campaign: clear it (the field hides)
+watch(() => form.table_type, (type) => {
+    if (type !== 'campaign_session') form.campaign_id = null;
+});
+
+// Choosing the campaign fills what the session takes from it
+function applyCampaign(values: { gameSystemId: string; maxPlayers: number }): void {
+    form.game_system_id = values.gameSystemId;
+    form.max_players = values.maxPlayers;
+}
 
 // Selected time slot for slot-based scheduling
 const selectedTimeSlot = ref<string | null>(null);
@@ -239,10 +264,9 @@ watch(selectedTimeSlot, (slotIndex) => {
     }
 });
 
-// Clear the other field when context type changes
+// Clear the event when the table leaves it
 watch(contextType, (newType) => {
     if (newType !== 'event') form.event_id = null;
-    if (newType !== 'campaign') form.campaign_id = null;
 });
 
 // Get selected event name for display
@@ -278,13 +302,6 @@ const contextOptions = computed((): RadioOption[] => {
             description: t('gameTables.create.context.eventDescription'),
         });
     }
-    if (props.formData.campaigns.length > 0) {
-        options.push({
-            value: 'campaign',
-            label: t('gameTables.create.context.campaign'),
-            description: t('gameTables.create.context.campaignDescription'),
-        });
-    }
     return options;
 });
 
@@ -293,14 +310,6 @@ const eventOptions = computed(() =>
     props.formData.events.map((event) => ({
         id: event.id,
         name: event.name,
-    }))
-);
-
-// Transform campaigns for combobox
-const campaignOptions = computed(() =>
-    props.formData.campaigns.map((campaign) => ({
-        id: campaign.id,
-        name: campaign.name,
     }))
 );
 
@@ -446,7 +455,7 @@ function submit(): void {
 
         <main class="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
             <!-- Eligibility check -->
-            <div v-if="!props.eligibility.eligible" class="mb-6 rounded-lg border border-warning/30 bg-warning-bg p-4">
+            <div v-if="!props.eligibility.eligible && !props.sessionOnly" class="mb-6 rounded-lg border border-warning/30 bg-warning-bg p-4">
                 <div class="flex">
                     <div class="flex-shrink-0">
                         <svg class="h-5 w-5 text-warning" fill="currentColor" viewBox="0 0 20 20">
@@ -617,12 +626,27 @@ function submit(): void {
                                         id="table_type"
                                         v-model="form.table_type"
                                         :options="objectToOptions(props.formData.table_types)"
+                                        :disabled="props.sessionOnly"
                                         class="mt-1"
                                     />
+                                    <p v-if="props.sessionOnly" class="mt-1 text-xs text-base-muted">
+                                        {{ t('gameTables.create.campaign.sessionOnly') }}
+                                    </p>
                                     <p v-if="form.errors.table_type" class="mt-1 text-sm text-error">
                                         {{ form.errors.table_type }}
                                     </p>
                                 </div>
+
+                                <!-- Campaign of the session -->
+                                <SessionCampaignField
+                                    v-if="isCampaignSession"
+                                    v-model="form.campaign_id"
+                                    :campaigns="props.formData.campaigns"
+                                    :default-max-players="props.formData.defaults.max_players"
+                                    :error="form.errors.campaign_id"
+                                    :fill-on-mount="props.prefill !== null"
+                                    @fill="applyCampaign"
+                                />
 
                                 <!-- Table Format -->
                                 <div>
@@ -677,9 +701,10 @@ function submit(): void {
                                     </p>
                                 </div>
 
-                                <!-- Context (Event/Campaign association) - hide when coming from event context -->
+                                <!-- Context (event association) - hide when coming from event context, and for
+                                     sessions-only authors, whose sessions cannot go inside an event -->
                                 <div
-                                    v-if="!isEventContextMode && contextOptions.length > 1"
+                                    v-if="!isEventContextMode && !props.sessionOnly && contextOptions.length > 1"
                                     class="rounded-lg border border-base-subtle bg-surface-subtle p-4"
                                 >
                                     <h3 class="mb-3 text-sm font-medium text-base-primary">
@@ -710,26 +735,6 @@ function submit(): void {
                                             />
                                             <p v-if="form.errors.event_id" class="mt-1 text-sm text-error">
                                                 {{ form.errors.event_id }}
-                                            </p>
-                                        </div>
-
-                                        <!-- Campaign selector -->
-                                        <div v-if="contextType === 'campaign'">
-                                            <label for="campaign_id" class="block text-sm font-medium text-base-secondary">
-                                                {{ t('gameTables.create.fields.campaign') }}
-                                            </label>
-                                            <FormCombobox
-                                                id="campaign_id"
-                                                v-model="form.campaign_id"
-                                                :options="campaignOptions"
-                                                option-label="name"
-                                                option-value="id"
-                                                :placeholder="t('gameTables.create.fields.selectCampaign')"
-                                                :error="form.errors.campaign_id"
-                                                class="mt-1"
-                                            />
-                                            <p v-if="form.errors.campaign_id" class="mt-1 text-sm text-error">
-                                                {{ form.errors.campaign_id }}
                                             </p>
                                         </div>
                                     </div>
@@ -1060,7 +1065,7 @@ function submit(): void {
                     <BaseButton
                         type="submit"
                         variant="primary"
-                        :disabled="form.processing || !props.eligibility.eligible"
+                        :disabled="form.processing || (!props.eligibility.eligible && !props.sessionOnly) || sessionWithoutCampaign"
                         :loading="form.processing"
                     >
                         {{ t('gameTables.create.submit') }}

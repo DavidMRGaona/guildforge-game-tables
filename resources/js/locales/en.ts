@@ -153,6 +153,23 @@ export default {
             registeredAt: 'Registered on',
             withdrawalClosed: 'The session has already started: you can no longer cancel your registration',
         },
+        // The registration box of a campaign session
+        campaignSession: {
+            enrolled: 'Registered through the campaign',
+            sessionOf: 'Session of',
+            waiting: 'On the waiting list (position {position}). You have priority as a roster member.',
+            cannotGo: 'I cannot make this session',
+            cannotGoTitle: 'Cannot make this session?',
+            cannotGoMessage: 'You will stay in the campaign and in the other sessions.',
+            cannotGoConfirm: 'Drop out',
+            stillInCampaign: 'You stay in the campaign and in the other sessions.',
+            absent: 'You are not going to this session',
+            absentHint: 'If you can make it after all, sign up again while there are seats left.',
+            rejoin: 'Sign me up again',
+            viewCampaign: 'View campaign',
+            wholeCampaign: 'Want to play the whole campaign?',
+            requestToJoin: 'Ask to join',
+        },
         status: {
             draft: 'Draft',
             published: 'Published',
@@ -281,8 +298,15 @@ export default {
                 independent: 'Independent table',
                 event: 'Part of an event',
                 eventDescription: 'This table will be played during an association event',
-                campaign: 'Campaign session',
-                campaignDescription: 'This table is a session within an ongoing campaign',
+            },
+            // The campaign of a «Campaign session», chosen with the type
+            campaign: {
+                placeholder: 'Select the campaign',
+                notice: 'Once published, the roster ({count} player) will be registered and receive an email. The game system and the maximum number of players ({max}) have been filled in. | Once published, the roster ({count} players) will be registered and receive an email. The game system and the maximum number of players ({max}) have been filled in.',
+                empty: 'You do not direct any published campaign.',
+                createLink: 'Create a campaign',
+                emptyAlternative: '(opens in a new tab) or choose another table type.',
+                sessionOnly: 'You can only create sessions of the campaigns you direct.',
             },
             contentWarnings: {
                 all: 'Content warnings',
@@ -326,7 +350,6 @@ export default {
                 event: 'Event',
                 selectEvent: 'Search event...',
                 campaign: 'Campaign',
-                selectCampaign: 'Search campaign...',
             },
             gameMasters: {
                 title: 'Game masters',

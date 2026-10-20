@@ -164,6 +164,23 @@ export default {
             registeredAt: 'Inscrito el',
             withdrawalClosed: 'La partida ya ha comenzado: ya no puedes cancelar la inscripción',
         },
+        // The registration box of a campaign session
+        campaignSession: {
+            enrolled: 'Inscrito por la campaña',
+            sessionOf: 'Sesión de',
+            waiting: 'En lista de espera (puesto {position}). Tienes prioridad por ser de la plantilla.',
+            cannotGo: 'No puedo ir a esta sesión',
+            cannotGoTitle: '¿No puedes ir a esta sesión?',
+            cannotGoMessage: 'Seguirás en la campaña y en las demás sesiones.',
+            cannotGoConfirm: 'Darme de baja',
+            stillInCampaign: 'Sigues en la campaña y en las demás sesiones.',
+            absent: 'No vas a esta sesión',
+            absentHint: 'Si al final puedes, vuelve a apuntarte mientras quede sitio.',
+            rejoin: 'Volver a apuntarme',
+            viewCampaign: 'Ver campaña',
+            wholeCampaign: '¿Quieres jugar toda la campaña?',
+            requestToJoin: 'Solicita unirte',
+        },
         status: {
             draft: 'Borrador',
             published: 'Publicada',
@@ -281,8 +298,15 @@ export default {
                 independent: 'Mesa independiente',
                 event: 'Parte de un evento',
                 eventDescription: 'Esta mesa se jugará durante un evento de la asociación',
-                campaign: 'Sesión de campaña',
-                campaignDescription: 'Esta mesa es una sesión dentro de una campaña en curso',
+            },
+            // The campaign of a «Sesión de campaña», chosen with the type
+            campaign: {
+                placeholder: 'Selecciona la campaña',
+                notice: 'Al publicarse, la plantilla ({count} jugador) quedará inscrita y recibirá un correo. Se han rellenado el sistema de juego y el máximo de jugadores ({max}). | Al publicarse, la plantilla ({count} jugadores) quedará inscrita y recibirá un correo. Se han rellenado el sistema de juego y el máximo de jugadores ({max}).',
+                empty: 'No diriges ninguna campaña publicada.',
+                createLink: 'Crea una campaña',
+                emptyAlternative: '(se abre en otra pestaña) o elige otro tipo de mesa.',
+                sessionOnly: 'Solo puedes crear sesiones de las campañas que diriges.',
             },
             contentWarnings: {
                 all: 'Advertencias de contenido',
@@ -329,7 +353,6 @@ export default {
                 event: 'Evento',
                 selectEvent: 'Buscar evento...',
                 campaign: 'Campaña',
-                selectCampaign: 'Buscar campaña...',
             },
             gameMasters: {
                 title: 'Directores de juego',

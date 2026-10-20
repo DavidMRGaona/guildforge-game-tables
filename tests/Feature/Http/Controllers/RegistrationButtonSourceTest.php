@@ -34,14 +34,87 @@ final class RegistrationButtonSourceTest extends TestCase
         $this->assertStringContainsString('eligibility.value?.canCancel === true', $body);
     }
 
-    public function test_closed_reasons_include_the_start_the_end_and_the_invitation(): void
+    public function test_closed_reasons_include_the_start_the_end_the_invitation_and_the_closed_campaign(): void
     {
         $source = $this->source('components/RegistrationButton.vue');
 
         $this->assertStringContainsString(
-            "['registration_closed', 'table_started', 'table_ended', 'invitation_only']",
+            "['registration_closed', 'table_started', 'table_ended', 'invitation_only', 'campaign_roster_only']",
             $source
         );
+    }
+
+    public function test_a_signed_in_roster_member_gets_the_campaign_box_instead_of_the_usual_flow(): void
+    {
+        $source = $this->source('components/RegistrationButton.vue');
+
+        $box = $this->computedBody($source, 'rosterSession');
+        $this->assertStringContainsString('if (!isAuthenticated.value) return null;', $box);
+        $this->assertStringContainsString('if (props.campaignSession?.is_roster_member !== true) return null;', $box);
+        // A member's active spectator row is not a roster seat: it keeps the usual flow
+        $this->assertStringContainsString("return !hasActiveRegistration.value || registration.value?.role !== 'spectator' ? props.campaignSession : null;", $box);
+
+        $this->assertStringContainsString('campaignSession?: CampaignSessionInfo | null;', $source);
+        $this->assertStringContainsString("<CampaignSessionRosterBox\n            v-if=\"rosterSession\"", $source);
+        $this->assertStringContainsString("<template v-else>", $source);
+    }
+
+    public function test_the_campaign_box_cancels_and_rejoins_through_the_registration_routes(): void
+    {
+        $source = $this->source('components/CampaignSessionRosterBox.vue');
+
+        $this->assertStringContainsString('router.delete(`/mesas/${props.table.slug}/inscripcion`', $source);
+        $this->assertStringContainsString("router.post(\n        `/mesas/\${props.table.slug}/inscripcion`,\n        { role: 'player' },", $source);
+        $this->assertStringContainsString('<ConfirmDialog', $source);
+        $this->assertStringContainsString(':disabled="!campaignSession.can_rejoin"', $source);
+    }
+
+    public function test_the_campaign_session_copy_is_pinned_in_both_locales(): void
+    {
+        $es = $this->source('locales/es.ts');
+        $en = $this->source('locales/en.ts');
+
+        foreach ([
+            "enrolled: 'Inscrito por la campaña',",
+            "waiting: 'En lista de espera (puesto {position}). Tienes prioridad por ser de la plantilla.',",
+            "cannotGo: 'No puedo ir a esta sesión',",
+            "cannotGoTitle: '¿No puedes ir a esta sesión?',",
+            "cannotGoMessage: 'Seguirás en la campaña y en las demás sesiones.',",
+            "cannotGoConfirm: 'Darme de baja',",
+            "stillInCampaign: 'Sigues en la campaña y en las demás sesiones.',",
+            "absent: 'No vas a esta sesión',",
+            "absentHint: 'Si al final puedes, vuelve a apuntarte mientras quede sitio.',",
+            "rejoin: 'Volver a apuntarme',",
+            "viewCampaign: 'Ver campaña',",
+            "wholeCampaign: '¿Quieres jugar toda la campaña?',",
+            "requestToJoin: 'Solicita unirte',",
+            "empty: 'No diriges ninguna campaña publicada.',",
+            "createLink: 'Crea una campaña',",
+            "emptyAlternative: '(se abre en otra pestaña) o elige otro tipo de mesa.',",
+            "sessionOnly: 'Solo puedes crear sesiones de las campañas que diriges.',",
+        ] as $line) {
+            $this->assertStringContainsString($line, $es);
+        }
+        $this->assertStringContainsString(
+            "notice: 'Al publicarse, la plantilla ({count} jugador) quedará inscrita y recibirá un correo. Se han rellenado el sistema de juego y el máximo de jugadores ({max}). | Al publicarse, la plantilla ({count} jugadores) quedará inscrita y recibirá un correo. Se han rellenado el sistema de juego y el máximo de jugadores ({max}).',",
+            $es
+        );
+
+        foreach (['campaignSession: {', 'cannotGoConfirm:', 'rejoin:', 'requestToJoin:', 'emptyAlternative:', 'sessionOnly:', 'notice:'] as $key) {
+            $this->assertStringContainsString($key, $en);
+        }
+    }
+
+    public function test_the_form_offers_no_campaign_context_any_more(): void
+    {
+        foreach (['pages/GameTables/Create.vue', 'pages/GameTables/Edit.vue'] as $page) {
+            $source = $this->source($page);
+
+            $this->assertStringNotContainsString("context.campaign", $source, $page);
+            $this->assertStringContainsString("type ContextType = 'independent' | 'event';", $source, $page);
+            $this->assertStringContainsString('<SessionCampaignField', $source, $page);
+            $this->assertStringContainsString("if (type !== 'campaign_session') form.campaign_id = null;", $source, $page);
+        }
     }
 
     public function test_an_active_registration_wins_over_every_closed_reason(): void

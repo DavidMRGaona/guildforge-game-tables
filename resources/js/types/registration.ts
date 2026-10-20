@@ -49,6 +49,25 @@ export interface ParticipantData {
     createdAt: string;
 }
 
+/** A roster member's place in a campaign session (null for everyone else). */
+export type CampaignSessionRosterState = 'enrolled' | 'waiting' | 'absent' | 'none';
+
+/** The campaign side of a session page (CampaignSessionBoxDTO), null for tables without campaign. */
+export interface CampaignSessionInfo {
+    campaign_title: string;
+    // Null while the campaign is not published: it has no public page
+    campaign_slug: string | null;
+    // Closed to people outside the roster
+    closed: boolean;
+    is_roster_member: boolean;
+    roster_state: CampaignSessionRosterState | null;
+    // The place among those waiting
+    waiting_list_position: number | null;
+    can_rejoin: boolean;
+    // Why a member without a seat cannot take it back now
+    rejoin_refusal: string | null;
+}
+
 export interface RegisterRequest {
     role?: ParticipantRole | undefined;
     notes?: string | undefined;

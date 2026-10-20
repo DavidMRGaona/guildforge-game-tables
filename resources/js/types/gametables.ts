@@ -404,6 +404,24 @@ export interface TableFormLimits {
     max_duration_minutes: number;
 }
 
+/**
+ * A campaign the author may create sessions of (FrontendCreationService::getCreateFormData()):
+ * the campaigns they direct that admit sessions, plus the one stored on an edited table.
+ */
+export interface SessionCampaignOption {
+    id: string;
+    name: string;
+    game_system_id: string;
+    max_players: number | null;
+    roster_count: number;
+}
+
+/** What «Añadir sesión» (`/mesas/crear?campaign={id}`) fills in the table form. */
+export interface TableFormPrefill {
+    table_type: 'campaign_session';
+    campaign_id: string;
+}
+
 /** Who may ask to join a campaign's roster (RosterAccess enum). */
 export type RosterAccessValue = 'anyone' | 'members_only';
 

@@ -13,6 +13,7 @@ import { useI18n } from 'vue-i18n';
 import { Link, usePage, router } from '@inertiajs/vue3';
 import type { GameTable } from '../types/gametables';
 import type {
+    CampaignSessionInfo,
     ParticipantData,
     ParticipantRole,
     EligibilityResponse,
@@ -21,6 +22,7 @@ import type {
 import { isFinalStatus } from '../types/registration';
 import RegistrationStatus from './RegistrationStatus.vue';
 import GuestRegistrationModal from './GuestRegistrationModal.vue';
+import CampaignSessionRosterBox from './CampaignSessionRosterBox.vue';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 import { useVerificationGate, type VerificationGateAction } from '@/composables/useVerificationGate';
 import { useFlashMessages } from '@/composables/useFlashMessages';
@@ -34,9 +36,13 @@ interface Props {
     guestEligibility: GuestEligibility | null;
     /** The signed-in user's registration (null when there is none, or for visitors) */
     userRegistration: ParticipantData | null;
+    /** A campaign session: whether it is closed to outsiders and where a roster member stands (null otherwise) */
+    campaignSession?: CampaignSessionInfo | null;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+    campaignSession: null,
+});
 const page = usePage();
 const { t, locale } = useI18n();
 // Registering and cancelling are closed to accounts that must verify their email (guests are not)
@@ -216,6 +222,24 @@ const canCancel = computed(() => {
 
 const isTableFull = computed(() => spotsAvailable.value <= 0);
 
+// A signed-in roster member handles their seat in the campaign's box instead of this flow. An
+// active spectator row of theirs is not a roster seat: it keeps the usual flow
+const rosterSession = computed<CampaignSessionInfo | null>(() => {
+    if (!isAuthenticated.value) return null;
+    if (props.campaignSession?.is_roster_member !== true) return null;
+    return !hasActiveRegistration.value || registration.value?.role !== 'spectator' ? props.campaignSession : null;
+});
+
+// The campaign's public page (none while the campaign is not published)
+const campaignUrl = computed(() =>
+    props.campaignSession?.campaign_slug ? `/campanas/${props.campaignSession.campaign_slug}` : null
+);
+
+// Someone outside the roster: a closed campaign says where it is, an open one invites to join it
+const isCampaignOutsider = computed(() => props.campaignSession !== null && !props.campaignSession.is_roster_member);
+const showsClosedCampaignLink = computed(() => isCampaignOutsider.value && props.campaignSession?.closed === true && campaignUrl.value !== null);
+const invitesToCampaign = computed(() => isCampaignOutsider.value && props.campaignSession?.closed === false && campaignUrl.value !== null);
+
 // A player registration goes to the waiting list (only when the module setting is on)
 const canJoinWaitingList = computed(() => {
     if (!canRegister.value) return false;
@@ -249,7 +273,7 @@ const waitingListHelp = computed(() => {
 });
 
 // Reasons that close the registrations for everyone, whatever the seats
-const CLOSED_REASONS: readonly string[] = ['registration_closed', 'table_started', 'table_ended', 'invitation_only'];
+const CLOSED_REASONS: readonly string[] = ['registration_closed', 'table_started', 'table_ended', 'invitation_only', 'campaign_roster_only'];
 
 const isRegistrationClosed = computed(() => {
     if (!eligibility.value) return true;
@@ -479,9 +503,9 @@ function cancelRoleSelect(): void {
 
 <template>
     <div class="registration-button-container">
-        <!-- Current registration status -->
+        <!-- Current registration status (the roster box shows its own) -->
         <RegistrationStatus
-            v-if="registration && !isFinalStatus(registration.status)"
+            v-if="!rosterSession && registration && !isFinalStatus(registration.status)"
             :registration="registration"
             class="mb-4"
         />
@@ -510,370 +534,400 @@ function cancelRoleSelect(): void {
             {{ error }}
         </div>
 
-        <!-- Role selection modal -->
-        <Teleport to="body">
-            <Transition
-                enter-active-class="transition-opacity duration-200"
-                enter-from-class="opacity-0"
-                enter-to-class="opacity-100"
-                leave-active-class="transition-opacity duration-150"
-                leave-from-class="opacity-100"
-                leave-to-class="opacity-0"
-            >
-                <div
-                    v-if="showRoleSelect"
-                    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-                    @click.self="cancelRoleSelect"
-                >
-                    <Transition
-                        enter-active-class="transition-all duration-200"
-                        enter-from-class="scale-95 opacity-0"
-                        enter-to-class="scale-100 opacity-100"
-                        leave-active-class="transition-all duration-150"
-                        leave-from-class="scale-100 opacity-100"
-                        leave-to-class="scale-95 opacity-0"
-                    >
-                        <div
-                            v-if="showRoleSelect"
-                            role="dialog"
-                            aria-modal="true"
-                            :aria-labelledby="roleDialogTitleId"
-                            class="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl dark:bg-stone-800"
-                        >
-                            <h3
-                                :id="roleDialogTitleId"
-                                ref="roleDialogHeading"
-                                tabindex="-1"
-                                class="mb-4 text-center text-lg font-semibold text-gray-900 focus:outline-none dark:text-stone-100"
-                            >
-                                {{ showNotesInput ? t('gameTables.registration.addNotes') : t('gameTables.registration.selectRole') }}
-                            </h3>
+        <!-- A roster member: their seat in this session of the campaign -->
+        <CampaignSessionRosterBox
+            v-if="rosterSession"
+            :table="tableData"
+            :campaign-session="rosterSession"
+            :registration="registration"
+            :can-cancel="canCancel"
+        />
 
-                            <!-- Role buttons -->
-                            <div v-if="!showNotesInput" class="space-y-3">
-                                <!-- The whole card is the button (stretched over it); the reason sits outside it -->
-                                <div
-                                    class="relative w-full rounded-lg px-4 py-3 text-left transition-colors"
-                                    :class="{
-                                        'bg-primary-light hover:bg-primary-200 dark:bg-primary-900/20 dark:hover:bg-primary-900/30':
-                                            playerEligible && !canJoinWaitingList,
-                                        'bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30':
-                                            canJoinWaitingList,
-                                        'bg-gray-100 dark:bg-stone-700': !playerEligible,
-                                    }"
+        <template v-else>
+            <!-- Role selection modal -->
+            <Teleport to="body">
+                <Transition
+                    enter-active-class="transition-opacity duration-200"
+                    enter-from-class="opacity-0"
+                    enter-to-class="opacity-100"
+                    leave-active-class="transition-opacity duration-150"
+                    leave-from-class="opacity-100"
+                    leave-to-class="opacity-0"
+                >
+                    <div
+                        v-if="showRoleSelect"
+                        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                        @click.self="cancelRoleSelect"
+                    >
+                        <Transition
+                            enter-active-class="transition-all duration-200"
+                            enter-from-class="scale-95 opacity-0"
+                            enter-to-class="scale-100 opacity-100"
+                            leave-active-class="transition-all duration-150"
+                            leave-from-class="scale-100 opacity-100"
+                            leave-to-class="scale-95 opacity-0"
+                        >
+                            <div
+                                v-if="showRoleSelect"
+                                role="dialog"
+                                aria-modal="true"
+                                :aria-labelledby="roleDialogTitleId"
+                                class="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl dark:bg-stone-800"
+                            >
+                                <h3
+                                    :id="roleDialogTitleId"
+                                    ref="roleDialogHeading"
+                                    tabindex="-1"
+                                    class="mb-4 text-center text-lg font-semibold text-gray-900 focus:outline-none dark:text-stone-100"
                                 >
-                                    <button
-                                        ref="playerOptionButton"
-                                        type="button"
-                                        :disabled="!playerEligible"
-                                        :aria-describedby="playerOptionHelpId"
-                                        class="w-full text-left font-medium text-gray-900 before:absolute before:inset-0 before:rounded-lg focus:outline-none focus-visible:before:ring-2 focus-visible:before:ring-primary-500 disabled:cursor-not-allowed dark:text-stone-100"
-                                        @click="selectRole('player')"
+                                    {{ showNotesInput ? t('gameTables.registration.addNotes') : t('gameTables.registration.selectRole') }}
+                                </h3>
+
+                                <!-- Role buttons -->
+                                <div v-if="!showNotesInput" class="space-y-3">
+                                    <!-- The whole card is the button (stretched over it); the reason sits outside it -->
+                                    <div
+                                        class="relative w-full rounded-lg px-4 py-3 text-left transition-colors"
+                                        :class="{
+                                            'bg-primary-light hover:bg-primary-200 dark:bg-primary-900/20 dark:hover:bg-primary-900/30':
+                                                playerEligible && !canJoinWaitingList,
+                                            'bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30':
+                                                canJoinWaitingList,
+                                            'bg-gray-100 dark:bg-stone-700': !playerEligible,
+                                        }"
                                     >
-                                        {{ canJoinWaitingList ? t('gameTables.registration.joinWaitingList') : t('gameTables.registration.registerAsPlayer') }}
-                                    </button>
-                                    <p :id="playerOptionHelpId" class="mt-1 text-sm text-gray-500 dark:text-stone-400">
-                                        <template v-if="canJoinWaitingList">
-                                            {{ waitingListHelp }}
-                                            <template v-if="waitingListCount > 0">
-                                                ({{ waitingListCount }} {{ t('gameTables.participants.waitingList').toLowerCase() }})
+                                        <button
+                                            ref="playerOptionButton"
+                                            type="button"
+                                            :disabled="!playerEligible"
+                                            :aria-describedby="playerOptionHelpId"
+                                            class="w-full text-left font-medium text-gray-900 before:absolute before:inset-0 before:rounded-lg focus:outline-none focus-visible:before:ring-2 focus-visible:before:ring-primary-500 disabled:cursor-not-allowed dark:text-stone-100"
+                                            @click="selectRole('player')"
+                                        >
+                                            {{ canJoinWaitingList ? t('gameTables.registration.joinWaitingList') : t('gameTables.registration.registerAsPlayer') }}
+                                        </button>
+                                        <p :id="playerOptionHelpId" class="mt-1 text-sm text-gray-500 dark:text-stone-400">
+                                            <template v-if="canJoinWaitingList">
+                                                {{ waitingListHelp }}
+                                                <template v-if="waitingListCount > 0">
+                                                    ({{ waitingListCount }} {{ t('gameTables.participants.waitingList').toLowerCase() }})
+                                                </template>
                                             </template>
-                                        </template>
-                                        <template v-else-if="playerEligible">
-                                            {{ t('gameTables.details.spotsAvailable', { spots: spotsAvailable }) }}
-                                        </template>
-                                        <template v-else>
-                                            {{ eligibility?.message ?? t('gameTables.details.full') }}
-                                        </template>
-                                    </p>
+                                            <template v-else-if="playerEligible">
+                                                {{ t('gameTables.details.spotsAvailable', { spots: spotsAvailable }) }}
+                                            </template>
+                                            <template v-else>
+                                                {{ eligibility?.message ?? t('gameTables.details.full') }}
+                                            </template>
+                                        </p>
+                                    </div>
+
+                                    <div
+                                        v-if="tableData?.maxSpectators && tableData.maxSpectators > 0"
+                                        class="relative w-full rounded-lg px-4 py-3 text-left transition-colors"
+                                        :class="{
+                                            'bg-gray-50 hover:bg-gray-100 dark:bg-stone-700/50 dark:hover:bg-stone-700':
+                                                spectatorEligible,
+                                            'bg-gray-100 dark:bg-stone-700': !spectatorEligible,
+                                        }"
+                                    >
+                                        <button
+                                            ref="spectatorOptionButton"
+                                            type="button"
+                                            :disabled="!spectatorEligible"
+                                            :aria-describedby="spectatorOptionHelpId"
+                                            class="w-full text-left font-medium text-gray-900 before:absolute before:inset-0 before:rounded-lg focus:outline-none focus-visible:before:ring-2 focus-visible:before:ring-primary-500 disabled:cursor-not-allowed dark:text-stone-100"
+                                            @click="selectRole('spectator')"
+                                        >
+                                            {{ t('gameTables.registration.registerAsSpectator') }}
+                                        </button>
+                                        <p :id="spectatorOptionHelpId" class="mt-1 text-sm text-gray-500 dark:text-stone-400">
+                                            <template v-if="spectatorEligible && spectatorSpotsAvailable !== null">
+                                                {{ t('gameTables.details.spotsAvailable', { spots: spectatorSpotsAvailable }) }}
+                                            </template>
+                                            <template v-else-if="spectatorEligible">
+                                                {{ t('gameTables.details.spectators') }}
+                                            </template>
+                                            <template v-else-if="eligibility?.spectator?.reason === 'spectators_full'">
+                                                {{ t('gameTables.registration.spectatorsFull') }}
+                                            </template>
+                                            <template v-else>
+                                                {{ eligibility?.spectator?.message ?? t('gameTables.registration.spectatorsFull') }}
+                                            </template>
+                                        </p>
+                                    </div>
                                 </div>
 
-                                <div
-                                    v-if="tableData?.maxSpectators && tableData.maxSpectators > 0"
-                                    class="relative w-full rounded-lg px-4 py-3 text-left transition-colors"
-                                    :class="{
-                                        'bg-gray-50 hover:bg-gray-100 dark:bg-stone-700/50 dark:hover:bg-stone-700':
-                                            spectatorEligible,
-                                        'bg-gray-100 dark:bg-stone-700': !spectatorEligible,
-                                    }"
-                                >
-                                    <button
-                                        ref="spectatorOptionButton"
-                                        type="button"
-                                        :disabled="!spectatorEligible"
-                                        :aria-describedby="spectatorOptionHelpId"
-                                        class="w-full text-left font-medium text-gray-900 before:absolute before:inset-0 before:rounded-lg focus:outline-none focus-visible:before:ring-2 focus-visible:before:ring-primary-500 disabled:cursor-not-allowed dark:text-stone-100"
-                                        @click="selectRole('spectator')"
-                                    >
-                                        {{ t('gameTables.registration.registerAsSpectator') }}
-                                    </button>
-                                    <p :id="spectatorOptionHelpId" class="mt-1 text-sm text-gray-500 dark:text-stone-400">
-                                        <template v-if="spectatorEligible && spectatorSpotsAvailable !== null">
-                                            {{ t('gameTables.details.spotsAvailable', { spots: spectatorSpotsAvailable }) }}
-                                        </template>
-                                        <template v-else-if="spectatorEligible">
-                                            {{ t('gameTables.details.spectators') }}
-                                        </template>
-                                        <template v-else-if="eligibility?.spectator?.reason === 'spectators_full'">
-                                            {{ t('gameTables.registration.spectatorsFull') }}
-                                        </template>
-                                        <template v-else>
-                                            {{ eligibility?.spectator?.message ?? t('gameTables.registration.spectatorsFull') }}
-                                        </template>
-                                    </p>
+                                <!-- Notes input -->
+                                <div v-else class="space-y-4">
+                                    <div>
+                                        <label
+                                            for="registration-notes"
+                                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-stone-300"
+                                        >
+                                            {{ t('gameTables.registration.notesLabel') }}
+                                        </label>
+                                        <textarea
+                                            id="registration-notes"
+                                            ref="notesInput"
+                                            v-model="notes"
+                                            rows="3"
+                                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 dark:focus:border-primary-400"
+                                            :placeholder="t('gameTables.registration.notesPlaceholder')"
+                                        ></textarea>
+                                    </div>
+
+                                    <div class="flex gap-3">
+                                        <button
+                                            type="button"
+                                            class="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
+                                            @click="showNotesInput = false"
+                                        >
+                                            {{ $t('common.back') }}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            :disabled="loading"
+                                            class="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                            @click="submitWithNotes"
+                                        >
+                                            <span v-if="loading" class="flex items-center justify-center">
+                                                <svg
+                                                    class="mr-2 h-4 w-4 animate-spin"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <circle
+                                                        class="opacity-25"
+                                                        cx="12"
+                                                        cy="12"
+                                                        r="10"
+                                                        stroke="currentColor"
+                                                        stroke-width="4"
+                                                    ></circle>
+                                                    <path
+                                                        class="opacity-75"
+                                                        fill="currentColor"
+                                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                    ></path>
+                                                </svg>
+                                            </span>
+                                            <span v-else>{{ $t('buttons.confirm') }}</span>
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <!-- Notes input -->
-                            <div v-else class="space-y-4">
-                                <div>
-                                    <label
-                                        for="registration-notes"
-                                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-stone-300"
-                                    >
-                                        {{ t('gameTables.registration.notesLabel') }}
-                                    </label>
-                                    <textarea
-                                        id="registration-notes"
-                                        ref="notesInput"
-                                        v-model="notes"
-                                        rows="3"
-                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 dark:focus:border-primary-400"
-                                        :placeholder="t('gameTables.registration.notesPlaceholder')"
-                                    ></textarea>
-                                </div>
-
-                                <div class="flex gap-3">
-                                    <button
-                                        type="button"
-                                        class="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
-                                        @click="showNotesInput = false"
-                                    >
-                                        {{ $t('common.back') }}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        :disabled="loading"
-                                        class="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
-                                        @click="submitWithNotes"
-                                    >
-                                        <span v-if="loading" class="flex items-center justify-center">
-                                            <svg
-                                                class="mr-2 h-4 w-4 animate-spin"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <circle
-                                                    class="opacity-25"
-                                                    cx="12"
-                                                    cy="12"
-                                                    r="10"
-                                                    stroke="currentColor"
-                                                    stroke-width="4"
-                                                ></circle>
-                                                <path
-                                                    class="opacity-75"
-                                                    fill="currentColor"
-                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                                ></path>
-                                            </svg>
-                                        </span>
-                                        <span v-else>{{ $t('buttons.confirm') }}</span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Cancel button (role selection step only) -->
-                            <button
-                                v-if="!showNotesInput"
-                                type="button"
-                                class="mt-4 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
-                                @click="cancelRoleSelect"
-                            >
-                                {{ $t('common.cancel') }}
-                            </button>
-                        </div>
-                    </Transition>
-                </div>
-            </Transition>
-        </Teleport>
-
-        <!-- Main action button -->
-        <button
-            v-if="!showRoleSelect"
-            ref="triggerButton"
-            type="button"
-            :disabled="buttonDisabled"
-            :aria-describedby="triggerDescribedBy"
-            class="w-full rounded-lg px-6 py-3 text-center font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2"
-            :class="{
-                'bg-primary text-white hover:bg-primary-700 focus:ring-primary-500':
-                    (isAuthenticated && canRegister && !canJoinWaitingList && !verificationBlocked) || (canRegisterAsGuest && !guestJoinsWaitingList),
-                'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500':
-                    (isAuthenticated && canJoinWaitingList && !verificationBlocked) || (canRegisterAsGuest && guestJoinsWaitingList),
-                'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500': canCancel && !verificationBlocked,
-                'bg-stone-600 text-white hover:bg-stone-700 focus:ring-stone-500 dark:bg-stone-500 dark:hover:bg-stone-400':
-                    !isAuthenticated && !canRegisterAsGuest,
-                'cursor-not-allowed bg-gray-300 text-gray-500 dark:bg-stone-700 dark:text-stone-500':
-                    isAuthenticated && buttonDisabled && (!canCancel || verificationBlocked),
-            }"
-            @click="handleClick"
-        >
-            <span v-if="loading" class="flex items-center justify-center">
-                <svg
-                    class="mr-2 h-5 w-5 animate-spin"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                >
-                    <circle
-                        class="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        stroke-width="4"
-                    ></circle>
-                    <path
-                        class="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                </svg>
-                {{ $t('common.loading') }}
-            </span>
-            <span v-else>{{ buttonText }}</span>
-        </button>
-
-        <!-- Why the button is disabled while the account must verify its email -->
-        <p
-            v-if="verificationBlockedAction"
-            :id="verificationReasonId"
-            class="mt-2 rounded-md bg-warning-bg p-3 text-center text-sm text-base-primary"
-        >
-            {{ gate.reason(verificationBlockedAction) }}
-            <Link
-                :href="gate.noticeUrl"
-                class="font-semibold underline underline-offset-2 hover:no-underline"
-            >
-                {{ gate.linkLabel.value }}
-                <span aria-hidden="true">→</span>
-            </Link>
-        </p>
-
-        <!-- Capacity info -->
-        <div
-            v-if="tableData && !isRegistrationClosed"
-            class="mt-2 text-center text-sm text-gray-500 dark:text-stone-400"
-        >
-            <template v-if="!isTableFull">
-                {{ t('gameTables.details.spotsAvailable', { spots: spotsAvailable }) }}
-            </template>
-            <template v-else>
-                {{ t('gameTables.details.full') }}
-            </template>
-            <template v-if="waitingListCount > 0">
-                · {{ waitingListCount }} {{ t('gameTables.participants.waitingList').toLowerCase() }}
-            </template>
-        </div>
-
-        <!-- How the waiting list works -->
-        <p
-            v-if="showsWaitingListHelp"
-            :id="waitingListHelpId"
-            class="mt-2 text-center text-sm text-gray-500 dark:text-stone-400"
-        >
-            {{ waitingListHelp }}
-        </p>
-
-        <!-- Cancel confirmation modal -->
-        <Teleport to="body">
-            <Transition
-                enter-active-class="transition-opacity duration-200"
-                enter-from-class="opacity-0"
-                enter-to-class="opacity-100"
-                leave-active-class="transition-opacity duration-150"
-                leave-from-class="opacity-100"
-                leave-to-class="opacity-0"
-            >
-                <div
-                    v-if="showCancelConfirm"
-                    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-                    @click.self="showCancelConfirm = false"
-                >
-                    <Transition
-                        enter-active-class="transition-all duration-200"
-                        enter-from-class="scale-95 opacity-0"
-                        enter-to-class="scale-100 opacity-100"
-                        leave-active-class="transition-all duration-150"
-                        leave-from-class="scale-100 opacity-100"
-                        leave-to-class="scale-95 opacity-0"
-                    >
-                        <div
-                            v-if="showCancelConfirm"
-                            class="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl dark:bg-stone-800"
-                        >
-                            <!-- Icon -->
-                            <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
-                                <svg
-                                    class="h-6 w-6 text-red-600 dark:text-red-400"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                                    />
-                                </svg>
-                            </div>
-
-                            <!-- Title -->
-                            <h3 class="mb-2 text-center text-lg font-semibold text-gray-900 dark:text-stone-100">
-                                {{ t('gameTables.registration.cancelRegistration') }}
-                            </h3>
-
-                            <!-- Message -->
-                            <p class="mb-6 text-center text-sm text-gray-600 dark:text-stone-400">
-                                {{ t('gameTables.registration.confirmCancel') }}
-                            </p>
-
-                            <!-- Buttons -->
-                            <div class="flex gap-3">
+                                <!-- Cancel button (role selection step only) -->
                                 <button
+                                    v-if="!showNotesInput"
                                     type="button"
-                                    class="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
-                                    @click="showCancelConfirm = false"
+                                    class="mt-4 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
+                                    @click="cancelRoleSelect"
                                 >
                                     {{ $t('common.cancel') }}
                                 </button>
-                                <button
-                                    type="button"
-                                    class="flex-1 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
-                                    @click="handleCancel"
-                                >
-                                    {{ $t('buttons.confirm') }}
-                                </button>
                             </div>
-                        </div>
-                    </Transition>
-                </div>
-            </Transition>
-        </Teleport>
+                        </Transition>
+                    </div>
+                </Transition>
+            </Teleport>
 
-        <!-- Guest registration modal -->
-        <GuestRegistrationModal
-            :is-open="showGuestModal"
-            :table-slug="resolvedTableSlug"
-            :has-spectator-slots="(tableData?.maxSpectators ?? 0) > 0 && guestEligibility?.spectator.eligible === true"
-            :player-available="guestEligibility?.eligible === true"
-            :waiting-list="guestJoinsWaitingList"
-            :waiting-list-help="waitingListHelp"
-            :confirmation="guestEligibility?.confirmation ?? null"
-            :table-starts-at="tableData.startsAt"
-            @close="closeGuestModal"
-            @success="onGuestSuccess"
-        />
+            <!-- Main action button -->
+            <button
+                v-if="!showRoleSelect"
+                ref="triggerButton"
+                type="button"
+                :disabled="buttonDisabled"
+                :aria-describedby="triggerDescribedBy"
+                class="w-full rounded-lg px-6 py-3 text-center font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2"
+                :class="{
+                    'bg-primary text-white hover:bg-primary-700 focus:ring-primary-500':
+                        (isAuthenticated && canRegister && !canJoinWaitingList && !verificationBlocked) || (canRegisterAsGuest && !guestJoinsWaitingList),
+                    'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500':
+                        (isAuthenticated && canJoinWaitingList && !verificationBlocked) || (canRegisterAsGuest && guestJoinsWaitingList),
+                    'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500': canCancel && !verificationBlocked,
+                    'bg-stone-600 text-white hover:bg-stone-700 focus:ring-stone-500 dark:bg-stone-500 dark:hover:bg-stone-400':
+                        !isAuthenticated && !canRegisterAsGuest,
+                    'cursor-not-allowed bg-gray-300 text-gray-500 dark:bg-stone-700 dark:text-stone-500':
+                        isAuthenticated && buttonDisabled && (!canCancel || verificationBlocked),
+                }"
+                @click="handleClick"
+            >
+                <span v-if="loading" class="flex items-center justify-center">
+                    <svg
+                        class="mr-2 h-5 w-5 animate-spin"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                    >
+                        <circle
+                            class="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            stroke-width="4"
+                        ></circle>
+                        <path
+                            class="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                    </svg>
+                    {{ $t('common.loading') }}
+                </span>
+                <span v-else>{{ buttonText }}</span>
+            </button>
+
+            <!-- Why the button is disabled while the account must verify its email -->
+            <p
+                v-if="verificationBlockedAction"
+                :id="verificationReasonId"
+                class="mt-2 rounded-md bg-warning-bg p-3 text-center text-sm text-base-primary"
+            >
+                {{ gate.reason(verificationBlockedAction) }}
+                <Link
+                    :href="gate.noticeUrl"
+                    class="font-semibold underline underline-offset-2 hover:no-underline"
+                >
+                    {{ gate.linkLabel.value }}
+                    <span aria-hidden="true">→</span>
+                </Link>
+            </p>
+
+            <!-- Capacity info -->
+            <div
+                v-if="tableData && !isRegistrationClosed"
+                class="mt-2 text-center text-sm text-gray-500 dark:text-stone-400"
+            >
+                <template v-if="!isTableFull">
+                    {{ t('gameTables.details.spotsAvailable', { spots: spotsAvailable }) }}
+                </template>
+                <template v-else>
+                    {{ t('gameTables.details.full') }}
+                </template>
+                <template v-if="waitingListCount > 0">
+                    · {{ waitingListCount }} {{ t('gameTables.participants.waitingList').toLowerCase() }}
+                </template>
+            </div>
+
+            <!-- How the waiting list works -->
+            <p
+                v-if="showsWaitingListHelp"
+                :id="waitingListHelpId"
+                class="mt-2 text-center text-sm text-gray-500 dark:text-stone-400"
+            >
+                {{ waitingListHelp }}
+            </p>
+
+            <!-- A campaign session closed to people outside the roster: where the campaign is -->
+            <p v-if="showsClosedCampaignLink && campaignUrl" class="mt-2 text-center text-sm">
+                <Link
+                    :href="campaignUrl"
+                    class="font-medium text-primary underline underline-offset-2 hover:no-underline focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                    {{ t('gameTables.campaignSession.viewCampaign') }}
+                </Link>
+            </p>
+
+            <!-- An open campaign: the session is one way in, the roster another -->
+            <p v-if="invitesToCampaign && campaignUrl" class="mt-2 text-center text-sm text-gray-500 dark:text-stone-400">
+                {{ t('gameTables.campaignSession.wholeCampaign') }}
+                <Link
+                    :href="campaignUrl"
+                    class="font-medium text-primary underline underline-offset-2 hover:no-underline focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >{{ t('gameTables.campaignSession.requestToJoin') }}</Link>
+            </p>
+
+            <!-- Cancel confirmation modal -->
+            <Teleport to="body">
+                <Transition
+                    enter-active-class="transition-opacity duration-200"
+                    enter-from-class="opacity-0"
+                    enter-to-class="opacity-100"
+                    leave-active-class="transition-opacity duration-150"
+                    leave-from-class="opacity-100"
+                    leave-to-class="opacity-0"
+                >
+                    <div
+                        v-if="showCancelConfirm"
+                        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                        @click.self="showCancelConfirm = false"
+                    >
+                        <Transition
+                            enter-active-class="transition-all duration-200"
+                            enter-from-class="scale-95 opacity-0"
+                            enter-to-class="scale-100 opacity-100"
+                            leave-active-class="transition-all duration-150"
+                            leave-from-class="scale-100 opacity-100"
+                            leave-to-class="scale-95 opacity-0"
+                        >
+                            <div
+                                v-if="showCancelConfirm"
+                                class="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl dark:bg-stone-800"
+                            >
+                                <!-- Icon -->
+                                <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+                                    <svg
+                                        class="h-6 w-6 text-red-600 dark:text-red-400"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                                        />
+                                    </svg>
+                                </div>
+
+                                <!-- Title -->
+                                <h3 class="mb-2 text-center text-lg font-semibold text-gray-900 dark:text-stone-100">
+                                    {{ t('gameTables.registration.cancelRegistration') }}
+                                </h3>
+
+                                <!-- Message -->
+                                <p class="mb-6 text-center text-sm text-gray-600 dark:text-stone-400">
+                                    {{ t('gameTables.registration.confirmCancel') }}
+                                </p>
+
+                                <!-- Buttons -->
+                                <div class="flex gap-3">
+                                    <button
+                                        type="button"
+                                        class="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
+                                        @click="showCancelConfirm = false"
+                                    >
+                                        {{ $t('common.cancel') }}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="flex-1 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                                        @click="handleCancel"
+                                    >
+                                        {{ $t('buttons.confirm') }}
+                                    </button>
+                                </div>
+                            </div>
+                        </Transition>
+                    </div>
+                </Transition>
+            </Teleport>
+
+            <!-- Guest registration modal -->
+            <GuestRegistrationModal
+                :is-open="showGuestModal"
+                :table-slug="resolvedTableSlug"
+                :has-spectator-slots="(tableData?.maxSpectators ?? 0) > 0 && guestEligibility?.spectator.eligible === true"
+                :player-available="guestEligibility?.eligible === true"
+                :waiting-list="guestJoinsWaitingList"
+                :waiting-list-help="waitingListHelp"
+                :confirmation="guestEligibility?.confirmation ?? null"
+                :table-starts-at="tableData.startsAt"
+                @close="closeGuestModal"
+                @success="onGuestSuccess"
+            />
+        </template>
     </div>
 </template>
