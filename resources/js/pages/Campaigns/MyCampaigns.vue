@@ -178,14 +178,14 @@ function getCampaignLink(campaign: CampaignResponseDTO): string {
             <div
                 v-if="flashSuccess"
                 role="status"
-                class="mb-6 rounded-lg bg-success-light p-4 text-sm text-success"
+                class="mb-6 rounded-lg border-l-4 border-success bg-success/10 p-4 text-sm text-base-primary"
             >
                 {{ flashSuccess }}
             </div>
             <div
                 v-if="flashError"
                 role="alert"
-                class="mb-6 rounded-lg bg-red-50 p-4 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400"
+                class="mb-6 rounded-lg border-l-4 border-error bg-error/10 p-4 text-sm text-base-primary"
             >
                 {{ flashError }}
             </div>

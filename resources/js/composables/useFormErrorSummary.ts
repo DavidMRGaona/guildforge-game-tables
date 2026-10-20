@@ -18,6 +18,8 @@ interface FormErrorSummary {
     errorItems: ComputedRef<FormErrorItem[]>;
     revealErrors: () => void;
     focusError: (item: FormErrorItem) => Promise<void>;
+    /** A director row was removed (its position in the full list): drop its errors, move the later rows' up */
+    removeGameMasterRowErrors: (index: number) => void;
 }
 
 // An element of the page (an HTMLElement)
@@ -40,6 +42,35 @@ interface Options {
     fieldTargets?: Record<string, string>;
     /** The directors of the form, to name the row of a `game_masters.<i>.<field>` error */
     gameMasters?: () => GameMasterRow[];
+    /** Replaces every error of the form (`form.clearErrors().setErrors(...)`), for a removed director row */
+    replaceErrors?: (errors: Record<string, string>) => void;
+}
+
+const GAME_MASTER_ERROR = /^game_masters\.(\d+)\.(.+)$/;
+
+/**
+ * The errors once director row `removed` (its position in the full list) is gone. They are keyed by
+ * row position (`game_masters.<i>.<field>`): the removed row's errors go, each later row's move one
+ * position up, and every other error stays as it is, in the same order. Adding a row (at the end)
+ * moves nothing, so it needs no call.
+ */
+export function shiftGameMasterErrors(errors: Partial<Record<string, string>>, removed: number): Record<string, string> {
+    const shifted: Record<string, string> = {};
+
+    for (const [key, message] of Object.entries(errors)) {
+        if (typeof message !== 'string') continue;
+
+        const director = GAME_MASTER_ERROR.exec(key);
+        const row = director !== null ? Number(director[1]) : -1;
+
+        if (director === null || row < removed) {
+            shifted[key] = message;
+        } else if (row > removed) {
+            shifted[`game_masters.${row - 1}.${director[2] ?? ''}`] = message;
+        }
+    }
+
+    return shifted;
 }
 
 // Labels of each director's fields, the ones GameMasterSection shows
@@ -135,7 +166,7 @@ export function useFormErrorSummary(options: Options): FormErrorSummary {
     }
 
     function labelOf(key: string): string {
-        const director = options.gameMasters ? /^game_masters\.(\d+)\.(.+)$/.exec(key) : null;
+        const director = options.gameMasters ? GAME_MASTER_ERROR.exec(key) : null;
         if (director !== null) {
             const fieldLabel = GAME_MASTER_FIELD_LABELS[director[2] ?? ''];
 
@@ -229,5 +260,9 @@ export function useFormErrorSummary(options: Options): FormErrorSummary {
         }
     }
 
-    return { tabErrors, gameMasterErrors, errorItems, revealErrors, focusError };
+    function removeGameMasterRowErrors(index: number): void {
+        options.replaceErrors?.(shiftGameMasterErrors(options.errors(), index));
+    }
+
+    return { tabErrors, gameMasterErrors, errorItems, revealErrors, focusError, removeGameMasterRowErrors };
 }

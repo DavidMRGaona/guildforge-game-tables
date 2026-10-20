@@ -13,6 +13,7 @@ import FormTabs from '../../components/FormTabs.vue';
 import type { FormTab } from '../../components/FormTabs.vue';
 import FormErrorSummary from '../../components/FormErrorSummary.vue';
 import { useFormErrorSummary } from '../../composables/useFormErrorSummary';
+import { fieldStateClass } from '../../utils/fieldStateClass';
 
 type OptionsInput = Record<string, string> | Array<{ value: string; label: string }> | null | undefined;
 
@@ -233,7 +234,9 @@ const form = useForm({
 });
 
 // Errors per tab (badges), the directors' field errors and the summary shown after a failed save
-const { tabErrors, gameMasterErrors, errorItems, revealErrors, focusError } = useFormErrorSummary({
+// A removed director row takes only its own errors: the later rows' move up with them (adding a
+// row, at the end, keeps every error where it is)
+const { tabErrors, gameMasterErrors, errorItems, revealErrors, focusError, removeGameMasterRowErrors } = useFormErrorSummary({
     errors: () => form.errors,
     tabs,
     activeTab,
@@ -241,18 +244,9 @@ const { tabErrors, gameMasterErrors, errorItems, revealErrors, focusError } = us
     fieldLabels,
     fieldTargets,
     gameMasters: () => form.game_masters,
+    replaceErrors: (errors) => form.clearErrors().setError(errors as Parameters<typeof form.setError>[0]),
 });
 
-// The directors' errors are keyed by row position (`game_masters.1.email`): once a row is added or
-// removed they would point at the wrong row, so they are dropped until the next save
-watch(() => form.game_masters.length, () => {
-    const staleKeys = Object.keys(form.errors)
-        .filter((key) => key.startsWith('game_masters.')) as Array<Parameters<typeof form.clearErrors>[0]>;
-
-    if (staleKeys.length > 0) {
-        form.clearErrors(...staleKeys);
-    }
-});
 
 // Context type for the event association (the campaign goes with the session type)
 type ContextType = 'independent' | 'event';
@@ -507,7 +501,7 @@ function cancel(): void {
                 </div>
             </div>
 
-            <form @submit.prevent="submit">
+            <form novalidate @submit.prevent="submit">
                 <FormErrorSummary ref="errorSummary" :items="errorItems" @select="focusError" />
 
                 <div class="rounded-lg border border-default bg-surface">
@@ -549,10 +543,10 @@ function cancel(): void {
                                         required
                                         :aria-invalid="!!form.errors.title"
                                         :aria-describedby="form.errors.title ? 'title-error' : undefined"
-                                        class="mt-1 block w-full rounded-lg border border-default bg-surface px-4 py-2.5
+                                        :class="fieldStateClass(!!form.errors.title)"
+                                        class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
                                                text-base-primary placeholder-base-muted
-                                               hover:border-strong
-                                               focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                               focus:outline-none focus:ring-2"
                                     />
                                     <p v-if="form.errors.title" id="title-error" class="mt-1 text-sm text-error">
                                         {{ form.errors.title }}
@@ -568,6 +562,7 @@ function cancel(): void {
                                     <FormSelect
                                         id="time_slot"
                                         v-model="selectedTimeSlot"
+                                        :error="form.errors.starts_at ?? ''"
                                         :options="timeSlotOptions"
                                         :placeholder="t('gameTables.create.fields.selectTimeSlot')"
                                         class="mt-1"
@@ -593,10 +588,10 @@ function cancel(): void {
                                         name="starts_at"
                                         required
                                         :aria-invalid="!!form.errors.starts_at"
-                                        class="mt-1 block w-full rounded-lg border border-default bg-surface px-4 py-2.5
+                                        :class="fieldStateClass(!!form.errors.starts_at)"
+                                        class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
                                                text-base-primary
-                                               hover:border-strong
-                                               focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                               focus:outline-none focus:ring-2"
                                     />
                                     <p v-if="form.errors.starts_at" class="mt-1 text-sm text-error">
                                         {{ form.errors.starts_at }}
@@ -636,6 +631,7 @@ function cancel(): void {
                                     <FormSelect
                                         id="table_type"
                                         v-model="form.table_type"
+                                        :error="form.errors.table_type ?? ''"
                                         :options="objectToOptions(props.formData.table_types)"
                                         :disabled="props.sessionOnly"
                                         class="mt-1"
@@ -666,6 +662,7 @@ function cancel(): void {
                                     <FormSelect
                                         id="table_format"
                                         v-model="form.table_format"
+                                        :error="form.errors.table_format ?? ''"
                                         :options="objectToOptions(props.formData.table_formats)"
                                         class="mt-1"
                                     />
@@ -684,6 +681,7 @@ function cancel(): void {
                                         id="language"
                                         name="language"
                                         v-model="form.language"
+                                        :error="form.errors.language ?? ''"
                                         :options="objectToOptions(props.formData.languages)"
                                         class="mt-1"
                                     />
@@ -702,6 +700,7 @@ function cancel(): void {
                                         id="experience_level"
                                         name="experience_level"
                                         v-model="form.experience_level"
+                                        :error="form.errors.experience_level ?? ''"
                                         :options="objectToOptions(props.formData.experience_levels)"
                                         :placeholder="t('gameTables.create.fields.selectExperienceLevel')"
                                         class="mt-1"
@@ -763,6 +762,7 @@ function cancel(): void {
                                     :disabled="form.processing"
                                     :error="form.errors.game_masters"
                                     :errors="gameMasterErrors"
+                                    @remove="removeGameMasterRowErrors"
                                 />
 
                                 <!-- Separator -->
@@ -869,10 +869,10 @@ function cancel(): void {
                                         name="synopsis"
                                         rows="6"
                                         :aria-invalid="!!form.errors.synopsis"
-                                        class="mt-1 block w-full rounded-lg border border-default bg-surface px-4 py-2.5
+                                        :class="fieldStateClass(!!form.errors.synopsis)"
+                                        class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
                                                text-base-primary placeholder-base-muted
-                                               hover:border-strong
-                                               focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                               focus:outline-none focus:ring-2"
                                     />
                                     <p v-if="form.errors.synopsis" class="mt-1 text-sm text-error">
                                         {{ form.errors.synopsis }}
@@ -887,6 +887,7 @@ function cancel(): void {
                                     <FormSelect
                                         id="tone"
                                         v-model="form.tone"
+                                        :error="form.errors.tone ?? ''"
                                         :options="objectToOptions(props.formData.tones)"
                                         :placeholder="t('gameTables.create.fields.selectTone')"
                                         class="mt-1"
@@ -906,6 +907,7 @@ function cancel(): void {
                                         id="character_creation"
                                         name="character_creation"
                                         v-model="form.character_creation"
+                                        :error="form.errors.character_creation ?? ''"
                                         :options="objectToOptions(props.formData.character_creation)"
                                         :placeholder="t('gameTables.create.fields.selectCharacterCreation')"
                                         class="mt-1"
@@ -995,7 +997,7 @@ function cancel(): void {
                                             'mt-1 block w-full rounded-lg border px-4 py-2.5',
                                             isLocationDisabled
                                                 ? 'border-default bg-neutral-100 text-base-secondary cursor-not-allowed dark:bg-neutral-800'
-                                                : 'border-default bg-surface text-base-primary placeholder-base-muted hover:border-strong focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500'
+                                                : ['bg-surface text-base-primary placeholder-base-muted focus:outline-none focus:ring-2', fieldStateClass(!!form.errors.location)]
                                         ]"
                                     />
                                     <p v-if="isLocationDisabled" class="mt-1 text-xs text-base-muted">
@@ -1020,10 +1022,10 @@ function cancel(): void {
                                         :required="isOnline"
                                         :aria-invalid="!!form.errors.online_url"
                                         placeholder="https://..."
-                                        class="mt-1 block w-full rounded-lg border border-default bg-surface px-4 py-2.5
+                                        :class="fieldStateClass(!!form.errors.online_url)"
+                                        class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
                                                text-base-primary placeholder-base-muted
-                                               hover:border-strong
-                                               focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                               focus:outline-none focus:ring-2"
                                     />
                                     <p class="mt-1 text-xs text-base-muted">
                                         {{ t('gameTables.create.fields.onlineUrlHelp') }}
@@ -1054,10 +1056,10 @@ function cancel(): void {
                                         name="notes"
                                         rows="4"
                                         :aria-invalid="!!form.errors.notes"
-                                        class="mt-1 block w-full rounded-lg border border-default bg-surface px-4 py-2.5
+                                        :class="fieldStateClass(!!form.errors.notes)"
+                                        class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
                                                text-base-primary placeholder-base-muted
-                                               hover:border-strong
-                                               focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                               focus:outline-none focus:ring-2"
                                     />
                                     <p class="mt-1 text-xs text-base-muted">
                                         {{ t('gameTables.create.fields.notesHelp') }}

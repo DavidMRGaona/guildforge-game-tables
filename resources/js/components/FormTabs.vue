@@ -72,8 +72,8 @@ function tabAccessibleName(tab: FormTab): string | undefined {
                     hasErrors(tab.id)
                         ? 'text-error'
                         : activeTab === tab.id
-                          ? 'text-primary-600 dark:text-primary-400'
-                          : 'text-base-muted hover:text-base-secondary',
+                          ? 'text-[color:var(--color-primary-link)]'
+                          : 'text-base-secondary hover:text-base-primary',
                 ]"
                 @click="selectTab(tab.id)"
                 @keydown.left.prevent="() => {

@@ -372,6 +372,7 @@ export default {
                 description: 'Tú serás el director principal. Puedes añadir co-directores si lo deseas.',
                 mainGmLabel: 'Director principal (tú)',
                 youBadge: 'Tú',
+                appliesToAllTables: 'Se aplica a todas las mesas que diriges.',
                 customTitle: 'Título personalizado',
                 customTitlePlaceholder: 'ej: Dungeon Master, Narrador, Keeper...',
                 showNamePublicly: 'Mostrar nombre públicamente',

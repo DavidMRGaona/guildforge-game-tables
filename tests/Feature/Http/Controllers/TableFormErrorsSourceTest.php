@@ -81,7 +81,7 @@ final class TableFormErrorsSourceTest extends TestCase
         foreach (self::PAGES as $page) {
             $source = $this->source('resources/js/'.$page);
 
-            $this->assertStringContainsString('const { tabErrors, gameMasterErrors, errorItems, revealErrors, focusError } = useFormErrorSummary({', $source, $page);
+            $this->assertStringContainsString('const { tabErrors, gameMasterErrors, errorItems, revealErrors, focusError, removeGameMasterRowErrors } = useFormErrorSummary({', $source, $page);
             $this->assertStringContainsString(":error=\"form.errors.game_masters\"\n                                    :errors=\"gameMasterErrors\"", $source, $page);
         }
     }
@@ -100,7 +100,7 @@ final class TableFormErrorsSourceTest extends TestCase
         }
 
         foreach (['custom_title', 'phone'] as $field) {
-            $this->assertStringContainsString(":aria-invalid=\"!!fieldError(mainGmIndex, '{$field}')\"\n                        :aria-describedby=\"errorId(mainGmIndex, '{$field}')\"", $source, $field);
+            $this->assertStringContainsString(":aria-invalid=\"!!fieldError(mainGmIndex, '{$field}')\"\n                            :aria-describedby=\"errorId(mainGmIndex, '{$field}')\"", $source, $field);
         }
 
         $this->assertStringContainsString('<p v-if="gdprConsentError" id="gm_gdpr_consent-error" class="mt-1 text-sm text-error">', $source);
@@ -122,15 +122,15 @@ final class TableFormErrorsSourceTest extends TestCase
         }
     }
 
-    public function test_a_change_in_the_directors_list_clears_their_stale_errors(): void
+    public function test_a_removed_director_row_takes_only_its_own_errors(): void
     {
         foreach (self::PAGES as $page) {
             $source = $this->source('resources/js/'.$page);
 
-            // Errors are keyed by row position: once a row is added or removed they would name the wrong row
-            $this->assertStringContainsString('watch(() => form.game_masters.length, () => {', $source, $page);
-            $this->assertStringContainsString(".filter((key) => key.startsWith('game_masters.'))", $source, $page);
-            $this->assertStringContainsString('form.clearErrors(...staleKeys);', $source, $page);
+            // Errors are keyed by row position: removing a row moves the later rows' errors up
+            // (TableFormsThemeSourceTest); adding one, at the end, keeps them all
+            $this->assertStringContainsString('replaceErrors: (errors) => form.clearErrors().setError(errors as Parameters<typeof form.setError>[0]),', $source, $page);
+            $this->assertStringContainsString('@remove="removeGameMasterRowErrors"', $source, $page);
         }
     }
 }

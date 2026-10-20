@@ -11,6 +11,7 @@ import FormTabs from '../../components/FormTabs.vue';
 import type { FormTab } from '../../components/FormTabs.vue';
 import FormErrorSummary from '../../components/FormErrorSummary.vue';
 import { useFormErrorSummary } from '../../composables/useFormErrorSummary';
+import { fieldStateClass } from '../../utils/fieldStateClass';
 
 type OptionsInput = Record<string, string> | Array<{ value: string; label: string }> | null | undefined;
 
@@ -315,7 +316,7 @@ function submit(): void {
                 </div>
             </div>
 
-            <form @submit.prevent="submit">
+            <form novalidate @submit.prevent="submit">
                 <FormErrorSummary ref="errorSummary" :items="errorItems" @select="focusError" />
 
                 <div class="rounded-lg border border-default bg-surface">
@@ -360,10 +361,10 @@ function submit(): void {
                                         :disabled="!props.campaign.can_edit"
                                         :aria-invalid="!!form.errors.title"
                                         :aria-describedby="form.errors.title ? 'title-error' : undefined"
-                                        class="mt-1 block w-full rounded-lg border border-default bg-surface px-4 py-2.5
+                                        :class="fieldStateClass(!!form.errors.title)"
+                                        class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
                                                text-base-primary placeholder-base-muted
-                                               hover:border-strong
-                                               focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500
+                                               focus:outline-none focus:ring-2
                                                disabled:cursor-not-allowed disabled:opacity-50"
                                     />
                                     <p v-if="form.errors.title" id="title-error" class="mt-1 text-sm text-error">
@@ -380,6 +381,7 @@ function submit(): void {
                                     <FormSelect
                                         id="frequency"
                                         v-model="form.frequency"
+                                        :error="form.errors.frequency ?? ''"
                                         :options="objectToOptions(props.formData.campaign_frequencies)"
                                         :placeholder="t('campaigns.create.fields.selectFrequency')"
                                         :disabled="!props.campaign.can_edit"
@@ -403,10 +405,10 @@ function submit(): void {
                                         :disabled="!props.campaign.can_edit"
                                         :aria-invalid="!!form.errors.schedule_notes"
                                         :placeholder="t('campaigns.create.fields.scheduleNotesPlaceholder')"
-                                        class="mt-1 block w-full rounded-lg border border-default bg-surface px-4 py-2.5
+                                        :class="fieldStateClass(!!form.errors.schedule_notes)"
+                                        class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
                                                text-base-primary placeholder-base-muted
-                                               hover:border-strong
-                                               focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500
+                                               focus:outline-none focus:ring-2
                                                disabled:cursor-not-allowed disabled:opacity-50"
                                     />
                                     <p class="mt-1 text-xs text-base-muted">
@@ -426,6 +428,7 @@ function submit(): void {
                                     <FormSelect
                                         id="table_format"
                                         v-model="form.table_format"
+                                        :error="form.errors.table_format ?? ''"
                                         :options="objectToOptions(props.formData.table_formats)"
                                         :disabled="!props.campaign.can_edit"
                                         class="mt-1"
@@ -493,6 +496,7 @@ function submit(): void {
                                         id="language"
                                         name="language"
                                         v-model="form.language"
+                                        :error="form.errors.language ?? ''"
                                         :options="objectToOptions(props.formData.languages)"
                                         :disabled="!props.campaign.can_edit"
                                         class="mt-1"
@@ -511,6 +515,7 @@ function submit(): void {
                                         id="experience_level"
                                         name="experience_level"
                                         v-model="form.experience_level"
+                                        :error="form.errors.experience_level ?? ''"
                                         :options="objectToOptions(props.formData.experience_levels)"
                                         :placeholder="t('campaigns.create.fields.selectExperienceLevel')"
                                         :disabled="!props.campaign.can_edit"
@@ -539,10 +544,10 @@ function submit(): void {
                                         :disabled="!props.campaign.can_edit"
                                         :aria-invalid="!!form.errors.synopsis"
                                         :placeholder="t('campaigns.create.fields.synopsisPlaceholder')"
-                                        class="mt-1 block w-full rounded-lg border border-default bg-surface px-4 py-2.5
+                                        :class="fieldStateClass(!!form.errors.synopsis)"
+                                        class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
                                                text-base-primary placeholder-base-muted
-                                               hover:border-strong
-                                               focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500
+                                               focus:outline-none focus:ring-2
                                                disabled:cursor-not-allowed disabled:opacity-50"
                                     />
                                     <p v-if="form.errors.synopsis" class="mt-1 text-sm text-error">
@@ -558,6 +563,7 @@ function submit(): void {
                                     <FormSelect
                                         id="tone"
                                         v-model="form.tone"
+                                        :error="form.errors.tone ?? ''"
                                         :options="objectToOptions(props.formData.tones)"
                                         :placeholder="t('campaigns.create.fields.selectTone')"
                                         :disabled="!props.campaign.can_edit"
@@ -577,6 +583,7 @@ function submit(): void {
                                         id="character_creation"
                                         name="character_creation"
                                         v-model="form.character_creation"
+                                        :error="form.errors.character_creation ?? ''"
                                         :options="objectToOptions(props.formData.character_creation)"
                                         :placeholder="t('campaigns.create.fields.selectCharacterCreation')"
                                         :disabled="!props.campaign.can_edit"
@@ -664,10 +671,10 @@ function submit(): void {
                                         name="location"
                                         :disabled="!props.campaign.can_edit"
                                         :aria-invalid="!!form.errors.location"
-                                        class="mt-1 block w-full rounded-lg border border-default bg-surface px-4 py-2.5
+                                        :class="fieldStateClass(!!form.errors.location)"
+                                        class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
                                                text-base-primary placeholder-base-muted
-                                               hover:border-strong
-                                               focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500
+                                               focus:outline-none focus:ring-2
                                                disabled:cursor-not-allowed disabled:opacity-50"
                                     />
                                     <p class="mt-1 text-xs text-base-muted">
@@ -691,10 +698,10 @@ function submit(): void {
                                         :disabled="!props.campaign.can_edit"
                                         :aria-invalid="!!form.errors.online_url"
                                         placeholder="https://..."
-                                        class="mt-1 block w-full rounded-lg border border-default bg-surface px-4 py-2.5
+                                        :class="fieldStateClass(!!form.errors.online_url)"
+                                        class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
                                                text-base-primary placeholder-base-muted
-                                               hover:border-strong
-                                               focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500
+                                               focus:outline-none focus:ring-2
                                                disabled:cursor-not-allowed disabled:opacity-50"
                                     />
                                     <p class="mt-1 text-xs text-base-muted">
