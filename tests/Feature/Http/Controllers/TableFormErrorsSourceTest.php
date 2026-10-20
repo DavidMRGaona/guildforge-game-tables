@@ -44,10 +44,11 @@ final class TableFormErrorsSourceTest extends TestCase
         foreach (self::PAGES as $page) {
             $source = $this->source('resources/js/'.$page);
 
-            $this->assertStringContainsString("const field = key.split('.')[0] ?? key;\n        const tab = fieldToTab[field] ?? 'basic';", $source, $page);
+            // The shared summary composable maps each key by its first segment (FormErrorSummarySourceTest)
+            $this->assertStringContainsString("fieldToTab,\n    fieldLabels,", $source, $page);
             $this->assertStringNotContainsString('fieldToTab[key]', $source, $page);
             // A failed save opens the first tab with errors (Participantes when only a director failed)
-            $this->assertStringContainsString("const firstTabWithErrors = findFirstTabWithErrors();\n                if (firstTabWithErrors) {\n                    activeTab.value = firstTabWithErrors;", $source, $page);
+            $this->assertStringContainsString('onError: () => revealErrors(),', $source, $page);
         }
     }
 
@@ -78,7 +79,7 @@ final class TableFormErrorsSourceTest extends TestCase
         foreach (self::PAGES as $page) {
             $source = $this->source('resources/js/'.$page);
 
-            $this->assertStringContainsString("if ((key.startsWith('game_masters.') || key === 'gm_gdpr_consent') && typeof message === 'string') {", $source, $page);
+            $this->assertStringContainsString('const { tabErrors, gameMasterErrors, errorItems, revealErrors, focusError } = useFormErrorSummary({', $source, $page);
             $this->assertStringContainsString(":error=\"form.errors.game_masters\"\n                                    :errors=\"gameMasterErrors\"", $source, $page);
         }
     }
@@ -101,8 +102,8 @@ final class TableFormErrorsSourceTest extends TestCase
         }
 
         $this->assertStringContainsString('<p v-if="gdprConsentError" id="gm_gdpr_consent-error" class="mt-1 text-sm text-error">', $source);
-        // An error with no input of its own is still listed, so the tab badge never counts a hidden one
-        $this->assertStringContainsString('<p v-for="(message, i) in otherErrors" :key="i" class="text-sm text-status-error" role="alert">', $source);
+        // An error with no input of its own is listed by the form's error summary (FormErrorSummarySourceTest)
+        $this->assertStringNotContainsString('otherErrors', $source);
     }
 
     public function test_my_tables_shows_why_an_action_was_refused(): void

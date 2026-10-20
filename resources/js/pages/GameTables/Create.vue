@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
@@ -11,6 +11,8 @@ import GameMasterSection from '../../components/GameMasterSection.vue';
 import SessionCampaignField from '../../components/SessionCampaignField.vue';
 import FormTabs from '../../components/FormTabs.vue';
 import type { FormTab } from '../../components/FormTabs.vue';
+import FormErrorSummary from '../../components/FormErrorSummary.vue';
+import { useFormErrorSummary } from '../../composables/useFormErrorSummary';
 
 type OptionsInput = Record<string, string> | Array<{ value: string; label: string }> | null | undefined;
 
@@ -156,6 +158,47 @@ const fieldToTab: Record<string, string> = {
     notes: 'location',
 };
 
+// Field => the i18n key of its label on the form, for the error summary
+const fieldLabels: Record<string, string> = {
+    // Basic tab
+    game_system_id: 'gameTables.create.fields.gameSystem',
+    title: 'gameTables.create.fields.title',
+    starts_at: 'gameTables.create.fields.startsAt',
+    duration_minutes: 'gameTables.create.fields.duration',
+    table_type: 'gameTables.create.fields.tableType',
+    table_format: 'gameTables.create.fields.tableFormat',
+    language: 'gameTables.create.fields.language',
+    experience_level: 'gameTables.create.fields.experienceLevel',
+    event_id: 'gameTables.create.fields.event',
+    campaign_id: 'gameTables.create.fields.campaign',
+    // Participants tab
+    game_masters: 'gameTables.create.gameMasters.title',
+    gm_gdpr_consent: 'gameTables.create.gameMasters.gdprConsentLabel',
+    min_players: 'gameTables.create.fields.minPlayers',
+    max_players: 'gameTables.create.fields.maxPlayers',
+    max_spectators: 'gameTables.create.fields.maxSpectators',
+    minimum_age: 'gameTables.create.fields.minimumAge',
+    // Content tab
+    synopsis: 'gameTables.create.fields.synopsis',
+    tone: 'gameTables.create.fields.tone',
+    genres: 'gameTables.genres',
+    character_creation: 'gameTables.create.fields.characterCreation',
+    safety_tools: 'gameTables.create.fields.safetyTools',
+    content_warnings: 'gameTables.create.fields.contentWarnings',
+    content_warning_ids: 'gameTables.create.fields.contentWarnings',
+    custom_warnings: 'gameTables.create.fields.customWarnings',
+    // Location tab
+    location: 'gameTables.create.fields.location',
+    online_url: 'gameTables.create.fields.onlineUrl',
+    notes: 'gameTables.create.fields.notes',
+};
+
+// Where to focus a field whose element has another id: the time slot of a slot-based event, the warnings list
+const fieldTargets: Record<string, string> = {
+    starts_at: 'time_slot',
+    content_warning_ids: 'content_warnings',
+};
+
 const form = useForm({
     game_system_id: '' as string | null,
     title: '',
@@ -195,42 +238,16 @@ const form = useForm({
     gm_gdpr_consent: false,
 });
 
-// Calculate errors per tab for badge display
-const tabErrors = computed(() => {
-    const counts: Record<string, number> = {};
-    const errorKeys = Object.keys(form.errors);
-
-    for (const key of errorKeys) {
-        const field = key.split('.')[0] ?? key;
-        const tab = fieldToTab[field] ?? 'basic';
-        counts[tab] = (counts[tab] ?? 0) + 1;
-    }
-
-    return counts;
+// Errors per tab (badges), the directors' field errors and the summary shown after a failed save
+const { tabErrors, gameMasterErrors, errorItems, revealErrors, focusError } = useFormErrorSummary({
+    errors: () => form.errors,
+    tabs,
+    activeTab,
+    fieldToTab,
+    fieldLabels,
+    fieldTargets,
+    gameMasters: () => form.game_masters,
 });
-
-// Errors of the directors' fields (`game_masters.<i>.<field>`) and of their consent, shown under each input
-const gameMasterErrors = computed((): Record<string, string> => {
-    const errors: Record<string, string> = {};
-
-    for (const [key, message] of Object.entries(form.errors)) {
-        if ((key.startsWith('game_masters.') || key === 'gm_gdpr_consent') && typeof message === 'string') {
-            errors[key] = message;
-        }
-    }
-
-    return errors;
-});
-
-// Find first tab with errors
-function findFirstTabWithErrors(): string | null {
-    for (const tab of tabs.value) {
-        if ((tabErrors.value[tab.id] ?? 0) > 0) {
-            return tab.id;
-        }
-    }
-    return null;
-}
 
 // Context type for the event association (the campaign goes with the session type)
 type ContextType = 'independent' | 'event';
@@ -423,36 +440,11 @@ const contentWarningGroups = computed((): CheckboxGroup[] => {
     return groups;
 });
 
-function scrollToFirstError(): void {
-    const errorKeys = Object.keys(form.errors);
-    const firstErrorField = errorKeys[0];
-    if (!firstErrorField) return;
-
-    const element = document.querySelector(`[name="${firstErrorField}"]`)
-        ?? document.getElementById(firstErrorField);
-
-    if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        (element as HTMLElement).focus?.();
-    }
-}
-
 function submit(): void {
     form.post('/mesas/crear', {
         preserveScroll: true,
-        onError: () => {
-            nextTick(() => {
-                // Navigate to first tab with errors
-                const firstTabWithErrors = findFirstTabWithErrors();
-                if (firstTabWithErrors) {
-                    activeTab.value = firstTabWithErrors;
-                }
-                // Then scroll to first error field
-                nextTick(() => {
-                    scrollToFirstError();
-                });
-            });
-        },
+        // Opens the first tab with errors and focuses the summary
+        onError: () => revealErrors(),
     });
 }
 </script>
@@ -516,6 +508,8 @@ function submit(): void {
             </div>
 
             <form @submit.prevent="submit">
+                <FormErrorSummary ref="errorSummary" :items="errorItems" @select="focusError" />
+
                 <div class="rounded-lg border border-default bg-surface">
                     <FormTabs v-model="activeTab" :tabs="tabs" :errors="tabErrors">
                         <!-- Tab 1: Basic Information -->
@@ -764,6 +758,7 @@ function submit(): void {
                             <div class="space-y-6 p-6">
                                 <!-- Game Masters -->
                                 <GameMasterSection
+                                    id="game_masters"
                                     v-model="form.game_masters"
                                     v-model:gdpr-consent="form.gm_gdpr_consent"
                                     :current-user="props.currentUser"
@@ -926,7 +921,7 @@ function submit(): void {
                                 <hr class="border-default" />
 
                                 <!-- Safety Tools with tooltips -->
-                                <div>
+                                <div id="safety_tools">
                                     <label class="block text-sm font-medium text-base-secondary mb-3">
                                         {{ t('gameTables.create.fields.safetyTools') }}
                                     </label>
@@ -947,7 +942,7 @@ function submit(): void {
                                 </div>
 
                                 <!-- Content Warnings with collapsible groups -->
-                                <div>
+                                <div id="content_warnings">
                                     <label class="block text-sm font-medium text-base-secondary mb-3">
                                         {{ t('gameTables.create.fields.contentWarnings') }}
                                     </label>
@@ -960,7 +955,7 @@ function submit(): void {
                                 </div>
 
                                 <!-- Custom Warnings -->
-                                <div>
+                                <div id="custom_warnings">
                                     <label class="block text-sm font-medium text-base-secondary mb-2">
                                         {{ t('gameTables.create.fields.customWarnings') }}
                                     </label>

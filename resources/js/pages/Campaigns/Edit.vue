@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
@@ -9,6 +9,8 @@ import type { CheckboxGroup } from '@/components/form';
 import type { GameSystem } from '../../types/gametables';
 import FormTabs from '../../components/FormTabs.vue';
 import type { FormTab } from '../../components/FormTabs.vue';
+import FormErrorSummary from '../../components/FormErrorSummary.vue';
+import { useFormErrorSummary } from '../../composables/useFormErrorSummary';
 
 type OptionsInput = Record<string, string> | Array<{ value: string; label: string }> | null | undefined;
 
@@ -76,7 +78,8 @@ const tabs = computed((): FormTab[] => [
     { id: 'location', label: t('campaigns.create.tabs.location') },
 ]);
 
-// Field to tab mapping for error navigation
+// Field to tab mapping for error navigation (an error key is matched by its first segment, so
+// `genres.0` lands on the tab of its field)
 const fieldToTab: Record<string, string> = {
     // Basic tab
     game_system_id: 'basic',
@@ -101,6 +104,31 @@ const fieldToTab: Record<string, string> = {
     online_url: 'location',
 };
 
+// Field => the i18n key of its label on the form, for the error summary
+const fieldLabels: Record<string, string> = {
+    // Basic tab
+    game_system_id: 'campaigns.create.fields.gameSystem',
+    title: 'campaigns.create.fields.title',
+    frequency: 'campaigns.create.fields.frequency',
+    schedule_notes: 'campaigns.create.fields.scheduleNotes',
+    min_players: 'campaigns.create.fields.minPlayers',
+    max_players: 'campaigns.create.fields.maxPlayers',
+    table_format: 'campaigns.create.fields.tableFormat',
+    language: 'campaigns.create.fields.language',
+    experience_level: 'campaigns.create.fields.experienceLevel',
+    // Content tab
+    synopsis: 'campaigns.create.fields.synopsis',
+    tone: 'campaigns.create.fields.tone',
+    genres: 'gameTables.genres',
+    character_creation: 'campaigns.create.fields.characterCreation',
+    safety_tools: 'campaigns.create.fields.safetyTools',
+    content_warning_ids: 'campaigns.create.fields.contentWarnings',
+    custom_warnings: 'campaigns.create.fields.customWarnings',
+    // Location tab
+    location: 'campaigns.create.fields.location',
+    online_url: 'campaigns.create.fields.onlineUrl',
+};
+
 // Pre-populate form with existing campaign data
 const form = useForm({
     game_system_id: props.campaign.game_system_id as string | null,
@@ -123,28 +151,14 @@ const form = useForm({
     custom_warnings: [] as string[],
 });
 
-// Calculate errors per tab for badge display
-const tabErrors = computed(() => {
-    const counts: Record<string, number> = {};
-    const errorKeys = Object.keys(form.errors);
-
-    for (const key of errorKeys) {
-        const tab = fieldToTab[key] ?? 'basic';
-        counts[tab] = (counts[tab] ?? 0) + 1;
-    }
-
-    return counts;
+// Errors per tab (badges) and the summary shown after a failed save
+const { tabErrors, errorItems, revealErrors, focusError } = useFormErrorSummary({
+    errors: () => form.errors,
+    tabs,
+    activeTab,
+    fieldToTab,
+    fieldLabels,
 });
-
-// Find first tab with errors
-function findFirstTabWithErrors(): string | null {
-    for (const tab of tabs.value) {
-        if ((tabErrors.value[tab.id] ?? 0) > 0) {
-            return tab.id;
-        }
-    }
-    return null;
-}
 
 const isOnline = computed(() => form.table_format === 'online');
 const isInPerson = computed(() => form.table_format === 'in_person');
@@ -239,37 +253,12 @@ const contentWarningGroups = computed((): CheckboxGroup[] => {
     return groups;
 });
 
-function scrollToFirstError(): void {
-    const errorKeys = Object.keys(form.errors);
-    const firstErrorField = errorKeys[0];
-    if (!firstErrorField) return;
-
-    const element = document.querySelector(`[name="${firstErrorField}"]`)
-        ?? document.getElementById(firstErrorField);
-
-    if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        (element as HTMLElement).focus?.();
-    }
-}
-
 function submit(): void {
     // PUT /campanas/mis-campanas/{id} (campaigns.frontend-update); /editar is the GET of this page
     form.put(`/campanas/mis-campanas/${props.campaign.id}`, {
         preserveScroll: true,
-        onError: () => {
-            nextTick(() => {
-                // Navigate to first tab with errors
-                const firstTabWithErrors = findFirstTabWithErrors();
-                if (firstTabWithErrors) {
-                    activeTab.value = firstTabWithErrors;
-                }
-                // Then scroll to first error field
-                nextTick(() => {
-                    scrollToFirstError();
-                });
-            });
-        },
+        // Opens the first tab with errors and focuses the summary
+        onError: () => revealErrors(),
     });
 }
 </script>
@@ -327,6 +316,8 @@ function submit(): void {
             </div>
 
             <form @submit.prevent="submit">
+                <FormErrorSummary ref="errorSummary" :items="errorItems" @select="focusError" />
+
                 <div class="rounded-lg border border-default bg-surface">
                     <FormTabs v-model="activeTab" :tabs="tabs" :errors="tabErrors">
                         <!-- Tab 1: Basic Information -->
@@ -600,7 +591,7 @@ function submit(): void {
                                 <hr class="border-default" />
 
                                 <!-- Safety Tools with tooltips -->
-                                <div>
+                                <div id="safety_tools">
                                     <label class="block text-sm font-medium text-base-secondary mb-3">
                                         {{ t('campaigns.create.fields.safetyTools') }}
                                     </label>
@@ -622,7 +613,7 @@ function submit(): void {
                                 </div>
 
                                 <!-- Content Warnings with collapsible groups -->
-                                <div>
+                                <div id="content_warning_ids">
                                     <label class="block text-sm font-medium text-base-secondary mb-3">
                                         {{ t('campaigns.create.fields.contentWarnings') }}
                                     </label>
@@ -636,7 +627,7 @@ function submit(): void {
                                 </div>
 
                                 <!-- Custom Warnings -->
-                                <div>
+                                <div id="custom_warnings">
                                     <label class="block text-sm font-medium text-base-secondary mb-2">
                                         {{ t('campaigns.create.fields.customWarnings') }}
                                     </label>

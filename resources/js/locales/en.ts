@@ -280,6 +280,14 @@ export default {
             deleteTitle: 'Delete table',
             confirmDelete: 'Are you sure you want to delete "{title}"? This action cannot be undone.',
         },
+        // Summary of the errors of a failed save, above the tabs of the table and campaign forms
+        formErrors: {
+            title: 'Could not save',
+            intro: 'Check {count} field before saving: | Check {count} fields before saving:',
+            otherData: 'Other data',
+            // Accessible name of a tab with errors
+            tabWithErrors: '{tab}, {count} error | {tab}, {count} errors',
+        },
         create: {
             title: 'Create game table',
             subtitle: 'Organize a new role-playing session',
@@ -374,6 +382,7 @@ export default {
                 phone: 'Phone',
                 phonePlaceholder: '+1 555 000 0000',
                 gdprConsent: 'I confirm that I have consent from the co-GMs to share their personal data (name, email, and phone) on this platform.',
+                gdprConsentLabel: "Co-GMs' consent",
                 roleMain: 'Main GM',
                 roleCogm: 'Co-GM',
                 removeGmLabel: 'Remove co-GM #{n}',

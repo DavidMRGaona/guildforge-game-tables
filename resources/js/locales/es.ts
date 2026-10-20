@@ -280,6 +280,14 @@ export default {
             deleteTitle: 'Eliminar mesa',
             confirmDelete: '¿Estás seguro de que quieres eliminar "{title}"? Esta acción no se puede deshacer.',
         },
+        // Summary of the errors of a failed save, above the tabs of the table and campaign forms
+        formErrors: {
+            title: 'No se ha podido guardar',
+            intro: 'Revisa {count} campo antes de guardar: | Revisa {count} campos antes de guardar:',
+            otherData: 'Otros datos',
+            // Accessible name of a tab with errors
+            tabWithErrors: '{tab}, {count} error | {tab}, {count} errores',
+        },
         create: {
             title: 'Crear mesa de juego',
             subtitle: 'Organiza una nueva partida de rol',
@@ -377,6 +385,7 @@ export default {
                 phone: 'Teléfono',
                 phonePlaceholder: '+34 600 000 000',
                 gdprConsent: 'Confirmo que tengo el consentimiento de los co-directores para compartir sus datos personales (nombre, email y teléfono) en esta plataforma.',
+                gdprConsentLabel: 'Consentimiento de los co-directores',
                 roleMain: 'Director principal',
                 roleCogm: 'Co-director',
                 removeGmLabel: 'Eliminar co-director #{n}',

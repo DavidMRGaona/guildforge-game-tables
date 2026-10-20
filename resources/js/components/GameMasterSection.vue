@@ -28,7 +28,8 @@ interface Props {
     gdprConsent?: boolean;
     disabled?: boolean;
     error?: string | undefined;
-    /** Errors of each director's fields (`game_masters.<i>.<field>`, `i` in the full list) and of `gm_gdpr_consent` */
+    /** Errors of each director's fields (`game_masters.<i>.<field>`, `i` in the full list) and of `gm_gdpr_consent`;
+     *  the page's error summary lists every one, including those with no input here (e.g. a role) */
     errors?: Record<string, string>;
 }
 
@@ -88,9 +89,7 @@ function fullIndexOf(additionalIndex: number): number {
 }
 
 // The fields shown for each director: their errors go under the input
-const MAIN_GM_FIELDS = ['custom_title', 'phone'] as const;
-const ADDITIONAL_GM_FIELDS = ['first_name', 'last_name', 'email', 'phone', 'custom_title'] as const;
-type GameMasterField = (typeof ADDITIONAL_GM_FIELDS)[number];
+type GameMasterField = 'first_name' | 'last_name' | 'email' | 'phone' | 'custom_title';
 
 function fieldName(fullIndex: number, field: GameMasterField): string {
     return `game_masters.${fullIndex}.${field}`;
@@ -109,22 +108,6 @@ function errorId(fullIndex: number, field: GameMasterField): string | undefined 
 }
 
 const gdprConsentError = computed(() => props.errors.gm_gdpr_consent);
-
-// Errors with no input of their own here (e.g. a role): listed with the general error so none is hidden
-const otherErrors = computed((): string[] => {
-    const shown = new Set<string>();
-    if (mainGmIndex.value >= 0) {
-        MAIN_GM_FIELDS.forEach((field) => shown.add(fieldName(mainGmIndex.value, field)));
-    }
-    additionalGmIndexes.value.forEach((i) => ADDITIONAL_GM_FIELDS.forEach((field) => shown.add(fieldName(i, field))));
-    if (showGdprConsent.value) {
-        shown.add('gm_gdpr_consent');
-    }
-
-    return Object.entries(props.errors)
-        .filter(([key]) => !shown.has(key))
-        .map(([, message]) => message);
-});
 
 // Update main GM fields
 function updateMainGm(field: keyof GameMaster, value: unknown): void {
@@ -376,7 +359,7 @@ function cancelRemoveGm(): void {
                     <div>
                         <label :for="fieldId(fullIndexOf(index), 'first_name')" class="block text-sm font-medium text-base-secondary mb-1">
                             {{ t('gameTables.create.gameMasters.firstName') }}
-                            <span class="text-status-error">*</span>
+                            <span class="text-error">*</span>
                         </label>
                         <input
                             :id="fieldId(fullIndexOf(index), 'first_name')"
@@ -427,7 +410,7 @@ function cancelRemoveGm(): void {
                     <div>
                         <label :for="fieldId(fullIndexOf(index), 'email')" class="block text-sm font-medium text-base-secondary mb-1">
                             {{ t('gameTables.create.gameMasters.email') }}
-                            <span class="text-status-error">*</span>
+                            <span class="text-error">*</span>
                         </label>
                         <input
                             :id="fieldId(fullIndexOf(index), 'email')"
@@ -554,10 +537,7 @@ function cancelRemoveGm(): void {
         </button>
 
         <!-- Error message -->
-        <p v-if="error" class="text-sm text-status-error" role="alert">{{ error }}</p>
-        <p v-for="(message, i) in otherErrors" :key="i" class="text-sm text-status-error" role="alert">
-            {{ message }}
-        </p>
+        <p v-if="error" class="text-sm text-error">{{ error }}</p>
 
         <!-- Delete confirmation dialog -->
         <ConfirmDialog
