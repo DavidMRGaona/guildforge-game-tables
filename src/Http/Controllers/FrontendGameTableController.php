@@ -233,6 +233,9 @@ final class FrontendGameTableController extends Controller
         } catch (NotEditableException) {
             // The policy let an admin permission through, but the service only edits the author's own draft
             abort(403);
+        } catch (NotEligibleToCreateException) {
+            // The edited table is one the author may not create
+            abort(403);
         }
 
         return redirect()
@@ -253,6 +256,8 @@ final class FrontendGameTableController extends Controller
 
         try {
             $this->creationService->submitForReview($gameTable->id, (string) $user->id);
+        } catch (NotEligibleToCreateException) {
+            abort(403);
         } catch (SessionBelowRosterException $e) {
             // Published at once (automatic mode) but with fewer seats than the roster
             return back()->with('error', $e->getMessage());

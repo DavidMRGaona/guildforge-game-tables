@@ -9,6 +9,7 @@ use App\Domain\Entities\Event;
 use App\Domain\Repositories\EventRepositoryInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Modules\GameTables\Application\DTOs\CampaignResponseDTO;
 use Modules\GameTables\Application\DTOs\FrontendCreateCampaignDTO;
 use Modules\GameTables\Application\DTOs\FrontendCreateGameTableDTO;
@@ -84,22 +85,25 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
     public function createGameTable(FrontendCreateGameTableDTO $dto): GameTableResponseDTO
     {
         // 1. Check eligibility - use event-specific if event ID provided
-        $eligibility = $dto->eventId !== null
-            ? $this->eventEligibilityService->canCreateTableForEvent($dto->eventId, $dto->createdBy)
-            : $this->eligibilityService->canCreateTable($dto->createdBy);
+        $this->ensureMayCreate($dto->createdBy, $dto->eventId, $dto->tableType, $dto->campaignId);
 
-        if (! $eligibility->eligible && ! $this->isSessionOfDirectedCampaign($dto)) {
-            throw NotEligibleToCreateException::withReason($eligibility->reason ?? 'unknown');
-        }
-
-        // Decided before anything is saved: a table that would be published at once is refused
-        // whole when it has fewer seats than its campaign roster
+        // A table that would be published at once is refused before anything is saved when it has
+        // fewer seats than its campaign roster; the transaction below covers a roster that grows
+        // meanwhile (publish() checks again and nothing is kept)
         $creationStatus = $this->determineInitialStatus($dto->createdBy);
 
         if ($creationStatus === FrontendCreationStatus::Approved) {
             $this->ensureFitsRoster($dto);
         }
 
+        return DB::transaction(fn (): GameTableResponseDTO => $this->persistNewTable($dto, $creationStatus));
+    }
+
+    /**
+     * @throws SessionBelowRosterException when it is published at once with fewer seats than the roster
+     */
+    private function persistNewTable(FrontendCreateGameTableDTO $dto, FrontendCreationStatus $creationStatus): GameTableResponseDTO
+    {
         // 2. Get registration closes date from event if applicable
         $registrationClosesAt = null;
         if ($dto->eventId !== null) {
@@ -141,15 +145,31 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
     }
 
     /**
-     * Directing an approved campaign is enough to create its sessions outside an event, even
-     * when the general creation rules refuse the person (only the main creation switch applies).
+     * Creating, editing and sending to review a table follow the usual creation rules (the event's
+     * when it belongs to one), with one exception: directing an approved campaign is enough to
+     * create its sessions outside an event (only the main creation switch applies).
+     *
+     * @throws NotEligibleToCreateException
      */
-    private function isSessionOfDirectedCampaign(FrontendCreateGameTableDTO $dto): bool
+    private function ensureMayCreate(string $userId, ?string $eventId, TableType $tableType, ?string $campaignId): void
     {
-        return $dto->eventId === null
-            && $dto->tableType === TableType::CampaignSession
-            && $dto->campaignId !== null
-            && $this->sessionGate->allows($dto->createdBy, $dto->campaignId);
+        $eligibility = $eventId !== null
+            ? $this->eventEligibilityService->canCreateTableForEvent($eventId, $userId)
+            : $this->eligibilityService->canCreateTable($userId);
+
+        if ($eligibility->eligible || $this->isSessionOfDirectedCampaign($userId, $eventId, $tableType, $campaignId)) {
+            return;
+        }
+
+        throw NotEligibleToCreateException::withReason($eligibility->reason ?? 'unknown');
+    }
+
+    private function isSessionOfDirectedCampaign(string $userId, ?string $eventId, TableType $tableType, ?string $campaignId): bool
+    {
+        return $eventId === null
+            && $tableType === TableType::CampaignSession
+            && $campaignId !== null
+            && $this->sessionGate->allows($userId, $campaignId);
     }
 
     /**
@@ -366,6 +386,9 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             throw $this->notChangeableByAuthor($table->isPublished, $table->frontendCreationStatus);
         }
 
+        // The same rules as creating it
+        $this->ensureMayCreate($userId, $table->eventId, $table->tableType, $table->campaignId?->value);
+
         // Sent to review: clears the reason of an earlier rejection
         $table->submitForModeration();
 
@@ -407,6 +430,9 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         if (! $table->canBeChangedByAuthor()) {
             throw $this->notChangeableByAuthor($table->isPublished, $table->frontendCreationStatus);
         }
+
+        // The same rules as creating it, for the table as it will be saved
+        $this->ensureMayCreate($dto->createdBy, $dto->eventId, $dto->tableType, $dto->campaignId);
 
         // Default registration closes at to event start date if event is set and no existing value
         $registrationClosesAt = $table->registrationClosesAt;

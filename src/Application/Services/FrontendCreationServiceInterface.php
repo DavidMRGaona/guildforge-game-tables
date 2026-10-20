@@ -70,6 +70,7 @@ interface FrontendCreationServiceInterface
      *
      * @throws \Modules\GameTables\Domain\Exceptions\TableNotFoundException
      * @throws \Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException
+     * @throws \Modules\GameTables\Domain\Exceptions\NotEligibleToCreateException when the author may not create it any more
      * @throws \Modules\GameTables\Domain\Exceptions\SessionBelowRosterException when it would be published at once
      */
     public function submitForReview(string $tableId, string $userId): void;
@@ -79,6 +80,7 @@ interface FrontendCreationServiceInterface
      *
      * @throws \Modules\GameTables\Domain\Exceptions\TableNotFoundException
      * @throws \Modules\GameTables\Domain\Exceptions\NotEditableException
+     * @throws \Modules\GameTables\Domain\Exceptions\NotEligibleToCreateException when the author may not create the edited table
      */
     public function updateDraft(string $tableId, FrontendCreateGameTableDTO $dto): GameTableResponseDTO;
 

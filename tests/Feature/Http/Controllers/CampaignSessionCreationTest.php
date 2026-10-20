@@ -4,16 +4,21 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Tests\Feature\Http\Controllers;
 
+use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\GameTables\Application\DTOs\FrontendCreateGameTableDTO;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
+use Modules\GameTables\Domain\Entities\EventGameTableConfig;
+use Modules\GameTables\Domain\Enums\LocationMode;
+use Modules\GameTables\Domain\Enums\SchedulingMode;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\GameMasterRole;
 use Modules\GameTables\Domain\Exceptions\SessionBelowRosterException;
 use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
+use Modules\GameTables\Domain\Repositories\EventGameTableConfigRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
@@ -294,6 +299,130 @@ final class CampaignSessionCreationTest extends ModuleTestCase
         $this->assertSame(0, GameTableModel::query()->count());
     }
 
+    public function test_a_session_only_director_posting_with_an_event_is_refused(): void
+    {
+        $campaign = $this->campaignDirectedAsGm('Campaña de Jane');
+        $event = $this->eventWithTables();
+
+        $this->actingAs($this->jane)
+            ->post(route('gametables.store'), [...$this->sessionData('Sesión en evento', $campaign->id), 'event_id' => $event->id])
+            ->assertForbidden();
+
+        $this->assertFalse(GameTableModel::query()->where('title', 'Sesión en evento')->exists());
+    }
+
+    public function test_a_session_only_director_may_edit_and_send_their_session(): void
+    {
+        $campaign = $this->campaignDirectedAsGm('Campaña de Jane');
+        $draft = $this->sessionDraft($campaign);
+
+        $this->actingAs($this->jane)
+            ->put(route('gametables.update', $draft->slug), $this->sessionData('Sesión corregida', $campaign->id))
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('gametables.my-tables'));
+        // A new title renews the slug
+        $draft->refresh();
+        $this->actingAs($this->jane)
+            ->post(route('gametables.submit-review', $draft->slug))
+            ->assertRedirect(route('gametables.my-tables'));
+
+        $draft->refresh();
+        $this->assertSame('Sesión corregida', $draft->title);
+        $this->assertSame('pending_review', $draft->frontend_creation_status->value);
+    }
+
+    public function test_a_session_only_director_cannot_edit_the_draft_into_a_one_shot(): void
+    {
+        $campaign = $this->campaignDirectedAsGm('Campaña de Jane');
+        $draft = $this->sessionDraft($campaign);
+
+        $this->actingAs($this->jane)
+            ->put(route('gametables.update', $draft->slug), [...$this->sessionData('Partida suelta', $campaign->id), 'table_type' => 'one_shot'])
+            ->assertForbidden();
+
+        $draft->refresh();
+        $this->assertSame('Sesión en borrador', $draft->title);
+        $this->assertSame('campaign_session', $draft->table_type->value);
+        $this->assertSame($campaign->id, $draft->campaign_id);
+    }
+
+    public function test_a_session_only_director_cannot_move_the_draft_into_an_event(): void
+    {
+        $campaign = $this->campaignDirectedAsGm('Campaña de Jane');
+        $draft = $this->sessionDraft($campaign);
+        $event = $this->eventWithTables();
+
+        $this->actingAs($this->jane)
+            ->put(route('gametables.update', $draft->slug), [...$this->sessionData('Sesión en evento', $campaign->id), 'event_id' => $event->id])
+            ->assertForbidden();
+
+        $draft->refresh();
+        $this->assertSame('Sesión en borrador', $draft->title);
+        $this->assertNull($draft->event_id);
+    }
+
+    public function test_a_session_only_director_cannot_send_a_draft_that_is_no_longer_a_directed_session(): void
+    {
+        $campaign = $this->campaignDirectedAsGm('Campaña de Jane');
+        $oneShot = $this->sessionDraft($campaign);
+        $oneShot->update(['table_type' => 'one_shot', 'campaign_id' => null]);
+
+        $this->actingAs($this->jane)
+            ->post(route('gametables.submit-review', $oneShot->slug))
+            ->assertForbidden();
+
+        $this->assertSame('draft', $oneShot->refresh()->frontend_creation_status->value);
+    }
+
+    public function test_an_eligible_author_keeps_editing_and_sending_any_draft(): void
+    {
+        $this->configure('registered');
+        $campaign = $this->campaignDirectedAsGm('Campaña de Jane');
+        $draft = $this->sessionDraft($campaign);
+
+        $this->actingAs($this->jane)
+            ->put(route('gametables.update', $draft->slug), [...$this->sessionData('Partida suelta', null), 'table_type' => 'one_shot'])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('gametables.my-tables'));
+        // A new title renews the slug
+        $draft->refresh();
+        $this->actingAs($this->jane)
+            ->post(route('gametables.submit-review', $draft->slug))
+            ->assertRedirect(route('gametables.my-tables'));
+
+        $draft->refresh();
+        $this->assertSame('one_shot', $draft->table_type->value);
+        $this->assertNull($draft->campaign_id);
+        $this->assertSame('pending_review', $draft->frontend_creation_status->value);
+    }
+
+    /**
+     * A roster that grows between the early check and the publication leaves nothing behind.
+     */
+    public function test_a_roster_that_grows_during_an_auto_publication_leaves_no_table(): void
+    {
+        $this->configure('registered', 'auto');
+        $campaign = $this->campaignDirectedAsGm('Campaña de Jane');
+        $this->fillRoster($campaign, 2);
+        GameTableModel::created(function () use ($campaign): void {
+            $this->fillRoster($campaign, 1);
+        });
+
+        try {
+            app(FrontendCreationServiceInterface::class)->createGameTable(FrontendCreateGameTableDTO::fromArray([
+                ...$this->sessionData('Sesión directa', $campaign->id),
+                'min_players' => 1,
+                'max_players' => 2,
+                'created_by' => $this->jane->id,
+            ]));
+            $this->fail('A session below the roster must not be auto-published');
+        } catch (SessionBelowRosterException $e) {
+            $this->assertSame('Esta sesión tiene menos plazas (2) que la plantilla de la campaña (3). Sube el máximo de jugadores antes de publicarla.', $e->getMessage());
+        }
+
+        $this->assertSame(0, GameTableModel::query()->count());
+    }
+
     /**
      * The roster may grow between validation and publication: the service refusal becomes a
      * form error instead of a server error.
@@ -388,6 +517,25 @@ final class CampaignSessionCreationTest extends ModuleTestCase
             'is_published' => $isPublished,
             'frontend_creation_status' => $creationStatus,
         ]);
+    }
+
+    private function eventWithTables(): EventModel
+    {
+        $event = EventModel::factory()->published()->upcoming()->create();
+        app(EventGameTableConfigRepositoryInterface::class)->save(new EventGameTableConfig(
+            eventId: (string) $event->id,
+            tablesEnabled: true,
+            schedulingMode: SchedulingMode::FreeSchedule,
+            timeSlots: [],
+            locationMode: LocationMode::FreeChoice,
+            fixedLocation: null,
+            eligibilityOverride: null,
+            earlyAccessEnabled: false,
+            creationOpensAt: null,
+            earlyAccessTier: null,
+        ));
+
+        return $event;
     }
 
     private function fillRoster(CampaignModel $campaign, int $size): void

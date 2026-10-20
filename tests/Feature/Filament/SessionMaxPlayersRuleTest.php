@@ -102,6 +102,28 @@ final class SessionMaxPlayersRuleTest extends ModuleTestCase
         $this->assertSame(3, $this->table->max_players);
     }
 
+    /**
+     * The roster may have grown after a session started or ended: editing it is not blocked.
+     */
+    public function test_a_session_that_started_or_ended_is_left_alone(): void
+    {
+        $campaign = $this->campaign(null, 3);
+
+        foreach ([
+            ['status' => 'completed'],
+            ['status' => 'cancelled'],
+            ['status' => 'in_progress'],
+            ['status' => 'scheduled', 'starts_at' => CarbonImmutable::now()->subHour()],
+        ] as $attributes) {
+            $this->table->update(['campaign_id' => $campaign->id, 'max_players' => 2, ...$attributes]);
+
+            $this->edit()
+                ->fillForm(['max_players' => 2])
+                ->call('save')
+                ->assertHasNoFormErrors(['max_players']);
+        }
+    }
+
     public function test_choosing_a_campaign_sets_its_maximum(): void
     {
         $campaign = $this->campaign(6, 1);

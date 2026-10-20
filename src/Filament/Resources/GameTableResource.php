@@ -739,11 +739,16 @@ final class GameTableResource extends BaseResource
     }
 
     /**
-     * A session never has fewer seats than the roster of its campaign.
+     * A session never has fewer seats than the roster of its campaign. A session that has started or
+     * ended is left alone: the roster may have grown since, and it no longer enrols anybody.
      */
     private static function fitsTheCampaignRoster(): Closure
     {
-        return fn (Get $get): Closure => function (string $attribute, mixed $value, Closure $fail) use ($get): void {
+        return fn (Get $get, ?Model $record): Closure => function (string $attribute, mixed $value, Closure $fail) use ($get, $record): void {
+            if ($record instanceof GameTableModel && self::hasStartedOrEnded($record)) {
+                return;
+            }
+
             $campaignId = $get('campaign_id');
 
             if (! is_numeric($value) || ! is_string($campaignId) || $campaignId === '') {
@@ -756,6 +761,13 @@ final class GameTableResource extends BaseResource
                 $fail(__('game-tables::messages.validation.max_players_below_roster', ['count' => $rosterSize]));
             }
         };
+    }
+
+    private static function hasStartedOrEnded(GameTableModel $table): bool
+    {
+        return $table->status->isFinal()
+            || $table->status === TableStatus::InProgress
+            || $table->starts_at <= CarbonImmutable::now();
     }
 
     private static function rosterSize(string $campaignId): int
