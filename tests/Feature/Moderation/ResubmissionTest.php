@@ -45,7 +45,10 @@ final class ResubmissionTest extends ModuleTestCase
         $campaign = $this->campaign('draft');
 
         $this->actingAs($this->creator)->post(route('campaigns.submit-review', $campaign->id))->assertRedirect();
-        $this->actingAs($this->creator)->post(route('campaigns.submit-review', $campaign->id))->assertForbidden();
+        // The second send takes the author back to «Mis campañas» with the reason
+        $this->actingAs($this->creator)->post(route('campaigns.submit-review', $campaign->id))
+            ->assertRedirect(route('campaigns.my-campaigns'))
+            ->assertSessionHas('error', 'Esta campaña ya se ha enviado a revisión y ya no se puede modificar.');
 
         $this->assertSame('pending_review', $campaign->refresh()->frontend_creation_status?->value);
         Notification::assertSentOnDemandTimes(CampaignModerationSubmittedNotification::class, 1);
@@ -65,7 +68,9 @@ final class ResubmissionTest extends ModuleTestCase
     {
         $campaign = $this->campaign('approved', published: true);
 
-        $this->actingAs($this->creator)->post(route('campaigns.submit-review', $campaign->id))->assertForbidden();
+        $this->actingAs($this->creator)->post(route('campaigns.submit-review', $campaign->id))
+            ->assertRedirect(route('campaigns.my-campaigns'))
+            ->assertSessionHas('error', 'Esta campaña ya está publicada y ya no se puede modificar.');
 
         $campaign->refresh();
         $this->assertSame('approved', $campaign->frontend_creation_status?->value);
@@ -81,7 +86,7 @@ final class ResubmissionTest extends ModuleTestCase
         // The second send takes the author back to «Mis mesas» with the reason
         $this->actingAs($this->creator)->post(route('gametables.submit-review', $table->slug))
             ->assertRedirect(route('gametables.my-tables'))
-            ->assertSessionHas('error', 'Esta mesa ya se ha enviado a revisión y no se puede editar.');
+            ->assertSessionHas('error', 'Esta mesa ya se ha enviado a revisión y ya no se puede modificar.');
 
         $this->assertSame('pending_review', $table->refresh()->frontend_creation_status?->value);
         Notification::assertSentOnDemandTimes(ModerationSubmittedNotification::class, 1);

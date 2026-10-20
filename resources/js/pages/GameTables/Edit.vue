@@ -136,7 +136,6 @@ const fieldToTab: Record<string, string> = {
     genres: 'content',
     character_creation: 'content',
     safety_tools: 'content',
-    content_warnings: 'content',
     content_warning_ids: 'content',
     custom_warnings: 'content',
     // Location tab
@@ -171,7 +170,6 @@ const fieldLabels: Record<string, string> = {
     genres: 'gameTables.genres',
     character_creation: 'gameTables.create.fields.characterCreation',
     safety_tools: 'gameTables.create.fields.safetyTools',
-    content_warnings: 'gameTables.create.fields.contentWarnings',
     content_warning_ids: 'gameTables.create.fields.contentWarnings',
     custom_warnings: 'gameTables.create.fields.customWarnings',
     // Location tab
@@ -180,10 +178,9 @@ const fieldLabels: Record<string, string> = {
     notes: 'gameTables.create.fields.notes',
 };
 
-// Where to focus a field whose element has another id: the time slot of a slot-based event, the warnings list
+// Where to focus a field whose element has another id: the time slot of a slot-based event
 const fieldTargets: Record<string, string> = {
     starts_at: 'time_slot',
-    content_warning_ids: 'content_warnings',
 };
 
 // Helper to extract IDs from safety tools (which come as {value, label} objects)
@@ -214,7 +211,7 @@ const form = useForm({
     genres: props.table.genres,
     tone: (props.table.tone ?? '') as string | null,
     safety_tools: extractSafetyToolIds(props.table.safety_tools),
-    content_warnings: props.table.content_warnings,
+    content_warning_ids: props.table.content_warnings,
     custom_warnings: props.table.custom_warnings,
     minimum_age: props.table.minimum_age,
     notes: props.table.notes ?? '',
@@ -241,6 +238,17 @@ const { tabErrors, gameMasterErrors, errorItems, revealErrors, focusError } = us
     fieldLabels,
     fieldTargets,
     gameMasters: () => form.game_masters,
+});
+
+// The directors' errors are keyed by row position (`game_masters.1.email`): once a row is added or
+// removed they would point at the wrong row, so they are dropped until the next save
+watch(() => form.game_masters.length, () => {
+    const staleKeys = Object.keys(form.errors)
+        .filter((key) => key.startsWith('game_masters.')) as Array<Parameters<typeof form.clearErrors>[0]>;
+
+    if (staleKeys.length > 0) {
+        form.clearErrors(...staleKeys);
+    }
 });
 
 // Context type for the event association (the campaign goes with the session type)
@@ -929,15 +937,15 @@ function cancel(): void {
                                 </div>
 
                                 <!-- Content Warnings with collapsible groups -->
-                                <div id="content_warnings">
+                                <div id="content_warning_ids">
                                     <label class="block text-sm font-medium text-base-secondary mb-3">
                                         {{ t('gameTables.create.fields.contentWarnings') }}
                                     </label>
                                     <FormCheckboxGroup
-                                        v-model="form.content_warnings"
+                                        v-model="form.content_warning_ids"
                                         :groups="contentWarningGroups"
                                         collapsible
-                                        :error="form.errors.content_warnings"
+                                        :error="form.errors.content_warning_ids"
                                     />
                                 </div>
 

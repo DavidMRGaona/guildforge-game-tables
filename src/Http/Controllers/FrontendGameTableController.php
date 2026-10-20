@@ -325,14 +325,14 @@ final class FrontendGameTableController extends Controller
         }
 
         $reason = match (true) {
-            (bool) $table->is_published => 'table_locked_published',
-            $table->frontend_creation_status === FrontendCreationStatus::PendingReview => 'table_locked_in_review',
-            default => 'table_locked',
+            (bool) $table->is_published => 'game-tables::messages.errors.table_locked_published',
+            $table->frontend_creation_status === FrontendCreationStatus::PendingReview => 'game-tables::messages.errors.table_locked_in_review',
+            default => 'game-tables::messages.errors.table_locked',
         };
 
         return redirect()
             ->route('gametables.my-tables')
-            ->with('error', __("game-tables::messages.errors.{$reason}"));
+            ->with('error', __($reason));
     }
 
     /**

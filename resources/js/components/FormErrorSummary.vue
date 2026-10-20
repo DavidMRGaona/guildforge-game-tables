@@ -16,7 +16,8 @@ const { t } = useI18n();
 const titleId = useId();
 const root = ref<HTMLElement | null>(null);
 
-// After a failed save the page moves the focus here, so the summary is read first
+// After a failed save the page moves the focus here, so the summary is read first. That focus is
+// the announcement: the summary is a region named by its title, not an alert (it would be read twice)
 function focus(): void {
     root.value?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     root.value?.focus({ preventScroll: true });
@@ -26,11 +27,10 @@ defineExpose({ focus });
 </script>
 
 <template>
-    <div
+    <section
         v-if="items.length > 0"
         ref="root"
         tabindex="-1"
-        role="alert"
         :aria-labelledby="titleId"
         class="mb-6 rounded-lg border border-l-4 border-error/40 border-l-error bg-surface p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-error"
     >
@@ -72,5 +72,5 @@ defineExpose({ focus });
                 </ul>
             </div>
         </div>
-    </div>
+    </section>
 </template>

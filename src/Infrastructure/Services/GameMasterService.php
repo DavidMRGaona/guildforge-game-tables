@@ -324,6 +324,11 @@ final class GameMasterService implements GameMasterServiceInterface
                 ->first();
 
             if ($existing !== null) {
+                // The person's record is shared by their tables: a phone typed now is kept, a blank one changes nothing
+                if (is_string($attributes['phone']) && $attributes['phone'] !== '' && $attributes['phone'] !== $existing->phone) {
+                    $existing->update(['phone' => $attributes['phone']]);
+                }
+
                 return $existing;
             }
         }

@@ -588,13 +588,32 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | «Mis mesas» and «Mis campañas»: outcome of the author's changes
+    |--------------------------------------------------------------------------
+    */
+    'frontend' => [
+        'table_created' => 'Table created successfully',
+        'table_updated' => 'Table updated successfully',
+        'table_deleted' => 'Table deleted successfully',
+        'submitted_for_review' => 'Table sent for review',
+        'campaign_created' => 'Campaign created successfully',
+        'campaign_updated' => 'Campaign updated successfully',
+        'campaign_deleted' => 'Campaign deleted successfully',
+        'campaign_submitted_for_review' => 'Campaign sent for review',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | API Errors & Success Messages
     |--------------------------------------------------------------------------
     */
     'errors' => [
-        'table_locked_published' => 'This table is already published and can no longer be edited.',
-        'table_locked_in_review' => 'This table has already been sent for review and can no longer be edited.',
-        'table_locked' => 'This table has already been sent for review or published and can no longer be edited.',
+        'table_locked_published' => 'This table is already published and can no longer be changed.',
+        'table_locked_in_review' => 'This table has already been sent for review and can no longer be changed.',
+        'table_locked' => 'This table has already been sent for review or published and can no longer be changed.',
+        'campaign_locked_published' => 'This campaign is already published and can no longer be changed.',
+        'campaign_locked_in_review' => 'This campaign has already been sent for review and can no longer be changed.',
+        'campaign_locked' => 'This campaign has already been sent for review or published and can no longer be changed.',
         'unauthenticated' => 'You must be logged in to perform this action',
         'registration_closed' => 'Registration is closed',
         'registration_not_open' => 'Registration is not open yet',

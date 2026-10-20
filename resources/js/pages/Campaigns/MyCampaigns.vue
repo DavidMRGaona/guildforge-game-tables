@@ -7,6 +7,7 @@ import BaseButton from '@/components/ui/BaseButton.vue';
 import EmptyState from '@/components/ui/EmptyState.vue';
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
 import StatusBadge from '../../components/StatusBadge.vue';
+import { useFlashMessages } from '@/composables/useFlashMessages';
 import type { CampaignResponseDTO } from '../../types/gametables';
 
 interface Props {
@@ -18,6 +19,10 @@ const props = withDefaults(defineProps<Props>(), {
     campaigns: () => [],
     canCreate: false,
 });
+
+// What the last action did (created, saved, sent, deleted) or why it was refused (e.g. a campaign
+// already sent to review or published)
+const { success: flashSuccess, error: flashError } = useFlashMessages();
 
 const { t } = useI18n();
 
@@ -170,6 +175,21 @@ function getCampaignLink(campaign: CampaignResponseDTO): string {
         </div>
 
         <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+            <div
+                v-if="flashSuccess"
+                role="status"
+                class="mb-6 rounded-lg bg-success-light p-4 text-sm text-success"
+            >
+                {{ flashSuccess }}
+            </div>
+            <div
+                v-if="flashError"
+                role="alert"
+                class="mb-6 rounded-lg bg-red-50 p-4 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400"
+            >
+                {{ flashError }}
+            </div>
+
             <EmptyState
                 v-if="!hasCampaigns"
                 icon="book"

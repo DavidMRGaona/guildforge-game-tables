@@ -68,9 +68,11 @@ final class TableFormErrorsSourceTest extends TestCase
 
             $this->assertSame('participants', $map['game_masters'], $page);
             $this->assertSame('participants', $map['gm_gdpr_consent'] ?? null, $page);
-            foreach (['genres', 'safety_tools', 'content_warnings', 'content_warning_ids', 'custom_warnings'] as $field) {
+            foreach (['genres', 'safety_tools', 'content_warning_ids', 'custom_warnings'] as $field) {
                 $this->assertSame('content', $map[$field], "{$page}: {$field}");
             }
+            // The form sends the warnings as `content_warning_ids`, the key the request validates
+            $this->assertArrayNotHasKey('content_warnings', $map, $page);
         }
     }
 
@@ -106,12 +108,29 @@ final class TableFormErrorsSourceTest extends TestCase
         $this->assertStringNotContainsString('otherErrors', $source);
     }
 
-    public function test_my_tables_shows_why_an_action_was_refused(): void
+    public function test_my_tables_and_my_campaigns_show_the_outcome_of_an_action(): void
     {
-        $source = $this->source('resources/js/pages/GameTables/MyTables.vue');
+        foreach (['pages/GameTables/MyTables.vue', 'pages/Campaigns/MyCampaigns.vue'] as $page) {
+            $source = $this->source('resources/js/'.$page);
 
-        $this->assertStringContainsString("const { error: flashError } = useFlashMessages();", $source);
-        $this->assertStringContainsString("<div\n                v-if=\"flashError\"\n                role=\"alert\"", $source);
-        $this->assertStringContainsString('{{ flashError }}', $source);
+            $this->assertStringContainsString('const { success: flashSuccess, error: flashError } = useFlashMessages();', $source, $page);
+            // What was done (created, saved, sent, deleted) and why an action was refused
+            $this->assertStringContainsString("<div\n                v-if=\"flashSuccess\"\n                role=\"status\"", $source, $page);
+            $this->assertStringContainsString('{{ flashSuccess }}', $source, $page);
+            $this->assertStringContainsString("<div\n                v-if=\"flashError\"\n                role=\"alert\"", $source, $page);
+            $this->assertStringContainsString('{{ flashError }}', $source, $page);
+        }
+    }
+
+    public function test_a_change_in_the_directors_list_clears_their_stale_errors(): void
+    {
+        foreach (self::PAGES as $page) {
+            $source = $this->source('resources/js/'.$page);
+
+            // Errors are keyed by row position: once a row is added or removed they would name the wrong row
+            $this->assertStringContainsString('watch(() => form.game_masters.length, () => {', $source, $page);
+            $this->assertStringContainsString(".filter((key) => key.startsWith('game_masters.'))", $source, $page);
+            $this->assertStringContainsString('form.clearErrors(...staleKeys);', $source, $page);
+        }
     }
 }

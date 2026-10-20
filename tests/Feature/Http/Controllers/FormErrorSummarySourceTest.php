@@ -92,8 +92,13 @@ final class FormErrorSummarySourceTest extends TestCase
         $source = $this->source('components/FormErrorSummary.vue');
 
         $this->assertStringContainsString('v-if="items.length > 0"', $source);
+        // Focused after a failed save, so not an alert too (it would be read twice): a region named by its title
         $this->assertStringContainsString('tabindex="-1"', $source);
-        $this->assertStringContainsString('role="alert"', $source);
+        $this->assertStringNotContainsString('role="alert"', $source);
+        $this->assertStringNotContainsString('aria-live', $source);
+        $this->assertStringContainsString("<section\n        v-if=\"items.length > 0\"", $source);
+        $this->assertStringContainsString(':aria-labelledby="titleId"', $source);
+        $this->assertStringContainsString('<h2 :id="titleId"', $source);
         $this->assertStringContainsString("t('gameTables.formErrors.title')", $source);
         $this->assertStringContainsString("t('gameTables.formErrors.intro', { count: items.length }, items.length)", $source);
         $this->assertStringContainsString('<li v-for="item in items" :key="item.key">', $source);
@@ -167,8 +172,8 @@ final class FormErrorSummarySourceTest extends TestCase
             $tabs = $this->pageMap($page, 'fieldToTab');
             $labels = $this->pageMap($page, 'fieldLabels');
 
-            $this->assertSame('content', $tabs['content_warnings'], $page);
             $this->assertSame('content', $tabs['content_warning_ids'], $page);
+            $this->assertArrayNotHasKey('content_warnings', $tabs, $page);
             $this->assertSame('gameTables.create.gameMasters.gdprConsentLabel', $labels['gm_gdpr_consent'], $page);
             $this->assertSame('gameTables.create.gameMasters.title', $labels['game_masters'], $page);
             $this->assertStringContainsString('gameMasters: () => form.game_masters,', $this->source($page), $page);
@@ -195,7 +200,7 @@ final class FormErrorSummarySourceTest extends TestCase
         foreach (self::TABLE_PAGES as $page) {
             $source = $this->source($page);
 
-            foreach (['safety_tools', 'content_warnings', 'custom_warnings'] as $id) {
+            foreach (['safety_tools', 'content_warning_ids', 'custom_warnings'] as $id) {
                 $this->assertStringContainsString("<div id=\"{$id}\">", $source, "{$page}: {$id}");
             }
             $this->assertStringContainsString('<GameMasterSection

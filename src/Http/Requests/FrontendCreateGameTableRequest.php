@@ -133,6 +133,7 @@ final class FrontendCreateGameTableRequest extends FormRequest
             'game_masters.*.first_name' => ['required_without:game_masters.*.user_id', 'nullable', 'string', 'max:100'],
             'game_masters.*.last_name' => ['nullable', 'string', 'max:100'],
             'game_masters.*.email' => ['required_without:game_masters.*.user_id', 'nullable', 'email', 'max:255'],
+            'game_masters.*.phone' => ['nullable', 'string', 'max:30'],
             'game_masters.*.custom_title' => ['nullable', 'string', 'max:100'],
             'game_masters.*.is_name_public' => ['boolean'],
             'game_masters.*.role' => ['required', 'string', Rule::in(GameMasterRole::values())],

@@ -9,8 +9,10 @@ use App\Application\Seo\Services\SeoMetadataFactoryInterface;
 use App\Http\Controllers\Controller;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Exceptions\NotEditableException;
 use Modules\GameTables\Domain\Exceptions\CampaignNotFoundException;
 use Modules\GameTables\Application\DTOs\FrontendCreateCampaignDTO;
@@ -18,6 +20,7 @@ use Modules\GameTables\Application\DTOs\CampaignResponseDTO;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Http\Requests\FrontendCreateCampaignRequest;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 
 final class FrontendCampaignController extends Controller
 {
@@ -109,8 +112,16 @@ final class FrontendCampaignController extends Controller
     /**
      * Show edit form for a draft campaign.
      */
-    public function edit(string $id): Response
+    public function edit(string $id): Response|RedirectResponse
     {
+        $stored = CampaignModel::query()->find($id);
+        if (($locked = $this->sendLockedAuthorBack($stored)) !== null) {
+            return $locked;
+        }
+        if ($stored !== null) {
+            Gate::authorize('update', $stored);
+        }
+
         /** @var UserModel $user */
         $user = auth()->user();
 
@@ -147,6 +158,10 @@ final class FrontendCampaignController extends Controller
      */
     public function update(string $id, FrontendCreateCampaignRequest $request): RedirectResponse
     {
+        if (($locked = $this->sendLockedAuthorBack(CampaignModel::query()->find($id))) !== null) {
+            return $locked;
+        }
+
         /** @var UserModel $user */
         $user = auth()->user();
 
@@ -174,6 +189,10 @@ final class FrontendCampaignController extends Controller
      */
     public function submitForReview(string $id): RedirectResponse
     {
+        if (($locked = $this->sendLockedAuthorBack(CampaignModel::query()->find($id))) !== null) {
+            return $locked;
+        }
+
         /** @var UserModel $user */
         $user = auth()->user();
 
@@ -188,7 +207,7 @@ final class FrontendCampaignController extends Controller
 
         return redirect()
             ->route('campaigns.my-campaigns')
-            ->with('success', __('game-tables::messages.frontend.submitted_for_review'));
+            ->with('success', __('game-tables::messages.frontend.campaign_submitted_for_review'));
     }
 
     /**
@@ -196,6 +215,10 @@ final class FrontendCampaignController extends Controller
      */
     public function destroy(string $id): RedirectResponse
     {
+        if (($locked = $this->sendLockedAuthorBack(CampaignModel::query()->find($id))) !== null) {
+            return $locked;
+        }
+
         /** @var UserModel $user */
         $user = auth()->user();
 
@@ -211,5 +234,32 @@ final class FrontendCampaignController extends Controller
         return redirect()
             ->route('campaigns.my-campaigns')
             ->with('success', __('game-tables::messages.frontend.campaign_deleted'));
+    }
+
+    /**
+     * The author of a campaign that is no longer theirs to change (sent to review or published)
+     * goes back to «Mis campañas» with the reason instead of a bare 403, as on tables. Anyone else
+     * still meets the usual refusal.
+     */
+    private function sendLockedAuthorBack(?CampaignModel $campaign): ?RedirectResponse
+    {
+        /** @var UserModel $user */
+        $user = auth()->user();
+
+        if ($campaign === null
+            || $campaign->created_by !== $user->id
+            || FrontendCreationStatus::allowsAuthorChanges($campaign->frontend_creation_status, (bool) $campaign->is_published)) {
+            return null;
+        }
+
+        $reason = match (true) {
+            (bool) $campaign->is_published => 'game-tables::messages.errors.campaign_locked_published',
+            $campaign->frontend_creation_status === FrontendCreationStatus::PendingReview => 'game-tables::messages.errors.campaign_locked_in_review',
+            default => 'game-tables::messages.errors.campaign_locked',
+        };
+
+        return redirect()
+            ->route('campaigns.my-campaigns')
+            ->with('error', __($reason));
     }
 }
