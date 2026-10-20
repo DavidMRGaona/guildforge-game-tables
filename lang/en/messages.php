@@ -147,6 +147,8 @@ return [
         'campaign_status' => 'Campaign status',
         'accepts_new_players' => 'Accepts new players',
         'accepts_new_players_help' => 'Indicates if the campaign is actively looking for new players.',
+        'roster_access' => 'Who can request',
+        'roster_access_help' => 'Who can ask to join the roster from the website.',
         'user' => 'User',
         'participant_role' => 'Role',
         'participant_status' => 'Status',
@@ -687,6 +689,26 @@ return [
     |--------------------------------------------------------------------------
     */
     'relation_managers' => [
+        'roster' => [
+            'title' => 'Roster',
+            'name' => 'Name',
+            'email' => 'Email',
+            'since' => 'In the roster since',
+            'add' => 'Add player',
+            'player' => 'Player',
+            'remove' => 'Remove',
+            'remove_description' => 'They will lose their seats in the upcoming sessions and will receive an email.',
+        ],
+        'join_requests' => [
+            'title' => 'Requests',
+            'player' => 'Player',
+            'message' => 'Message',
+            'status' => 'Status',
+            'requested_at' => 'Requested on',
+            'accept' => 'Accept',
+            'reject' => 'Reject',
+            'reason' => 'Reason (optional)',
+        ],
         'participants' => [
             'title' => 'Participants',
             'add' => 'Add participant',

@@ -174,6 +174,8 @@ return [
         'campaign_status' => 'Estado de la campaña',
         'accepts_new_players' => 'Acepta nuevos jugadores',
         'accepts_new_players_help' => 'Indica si la campaña está buscando nuevos jugadores activamente.',
+        'roster_access' => 'Quién puede solicitar',
+        'roster_access_help' => 'Quién puede pedir entrar en la plantilla desde la web.',
 
         // Participant fields
         'user' => 'Usuario',
@@ -774,6 +776,26 @@ return [
     |--------------------------------------------------------------------------
     */
     'relation_managers' => [
+        'roster' => [
+            'title' => 'Plantilla',
+            'name' => 'Nombre',
+            'email' => 'Email',
+            'since' => 'En la plantilla desde',
+            'add' => 'Añadir jugador',
+            'player' => 'Jugador',
+            'remove' => 'Quitar',
+            'remove_description' => 'Perderá sus plazas en las próximas sesiones y recibirá un correo.',
+        ],
+        'join_requests' => [
+            'title' => 'Solicitudes',
+            'player' => 'Jugador',
+            'message' => 'Mensaje',
+            'status' => 'Estado',
+            'requested_at' => 'Solicitada el',
+            'accept' => 'Aceptar',
+            'reject' => 'Rechazar',
+            'reason' => 'Motivo (opcional)',
+        ],
         'participants' => [
             'title' => 'Participantes',
             'add' => 'Añadir participante',
