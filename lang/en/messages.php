@@ -591,6 +591,7 @@ return [
         'already_registered' => 'You are already registered for this table',
         'members_only' => 'This table is for members only',
         'invitation_only' => 'This table is by invitation only: the organisation registers the players',
+        'campaign_roster_only' => 'Only for the campaign roster',
         'minimum_age' => 'You do not meet the minimum age requirement',
         'not_found' => 'Registration not found',
         'cannot_cancel' => 'Unable to cancel registration at this time',

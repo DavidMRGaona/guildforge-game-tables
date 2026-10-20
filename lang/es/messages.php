@@ -678,6 +678,7 @@ return [
         'email_has_account' => 'Este email pertenece a una cuenta. Inicia sesión para inscribirte.',
         'members_only' => 'Esta mesa es solo para socios',
         'invitation_only' => 'Esta mesa es solo por invitación: la organización inscribe a los jugadores',
+        'campaign_roster_only' => 'Solo para la plantilla de la campaña',
         'guests_not_allowed' => 'Esta mesa no permite inscripciones de invitados',
         'minimum_age' => 'No cumples con la edad mínima requerida',
         'not_found' => 'No se encontró la inscripción',

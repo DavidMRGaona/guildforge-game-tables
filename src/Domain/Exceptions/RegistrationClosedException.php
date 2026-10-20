@@ -63,4 +63,12 @@ final class RegistrationClosedException extends DomainException
             'invitation_only'
         );
     }
+
+    public static function rosterOnly(string $tableId): self
+    {
+        return new self(
+            "Game table '{$tableId}' belongs to a campaign closed to new players: only its roster can register.",
+            'campaign_roster_only'
+        );
+    }
 }
