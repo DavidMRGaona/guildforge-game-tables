@@ -246,6 +246,32 @@ final class GameTablesSettings extends Page implements HasForms
                 ])
                 ->columns(3),
 
+            Section::make(__('game-tables::messages.settings.sections.campaign_notifications'))
+                ->description(__('game-tables::messages.settings.sections.campaign_notifications_description'))
+                ->schema([
+                    Toggle::make('campaign_notifications.session_scheduled')
+                        ->label(__('game-tables::messages.settings.fields.campaign_notify_session_scheduled')),
+
+                    Toggle::make('campaign_notifications.join_request_received')
+                        ->label(__('game-tables::messages.settings.fields.campaign_notify_join_request_received')),
+
+                    Toggle::make('campaign_notifications.join_request_accepted')
+                        ->label(__('game-tables::messages.settings.fields.campaign_notify_join_request_accepted')),
+
+                    Toggle::make('campaign_notifications.join_request_rejected')
+                        ->label(__('game-tables::messages.settings.fields.campaign_notify_join_request_rejected')),
+
+                    Toggle::make('campaign_notifications.roster_added')
+                        ->label(__('game-tables::messages.settings.fields.campaign_notify_roster_added')),
+
+                    Toggle::make('campaign_notifications.roster_removed')
+                        ->label(__('game-tables::messages.settings.fields.campaign_notify_roster_removed')),
+
+                    Toggle::make('campaign_notifications.player_left')
+                        ->label(__('game-tables::messages.settings.fields.campaign_notify_player_left')),
+                ])
+                ->columns(2),
+
             Section::make(__('game-tables::messages.settings.sections.limits'))
                 ->schema([
                     TextInput::make('limits.max_players_limit')

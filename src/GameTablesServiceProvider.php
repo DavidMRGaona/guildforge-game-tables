@@ -71,6 +71,13 @@ use Modules\GameTables\Http\Controllers\GuestConfirmationController;
 use Modules\GameTables\Domain\Events\CampaignModerationApproved;
 use Modules\GameTables\Domain\Events\CampaignModerationRejected;
 use Modules\GameTables\Domain\Events\CampaignSubmittedForReview;
+use Modules\GameTables\Domain\Events\RosterMemberEnrolledInSession;
+use Modules\GameTables\Domain\Events\CampaignJoinRequested;
+use Modules\GameTables\Domain\Events\CampaignJoinRequestAccepted;
+use Modules\GameTables\Domain\Events\CampaignJoinRequestRejected;
+use Modules\GameTables\Domain\Events\CampaignRosterMemberAdded;
+use Modules\GameTables\Domain\Events\CampaignRosterMemberRemoved;
+use Modules\GameTables\Domain\Events\CampaignRosterMemberLeft;
 use Modules\GameTables\Domain\Events\GameTableCancelled;
 use Modules\GameTables\Domain\Events\GameTableModerationApproved;
 use Modules\GameTables\Domain\Events\GameTableModerationRejected;
@@ -142,6 +149,13 @@ use Modules\GameTables\Listeners\SendGuestRegistrationConfirmation;
 use Modules\GameTables\Listeners\SendGuestRegistrationExpiredNotification;
 use Modules\GameTables\Listeners\SendRegistrationConfirmation;
 use Modules\GameTables\Listeners\SendRejectionNotification;
+use Modules\GameTables\Listeners\SendCampaignSessionScheduled;
+use Modules\GameTables\Listeners\NotifyDirectionOfJoinRequest;
+use Modules\GameTables\Listeners\SendJoinRequestAccepted;
+use Modules\GameTables\Listeners\SendJoinRequestRejected;
+use Modules\GameTables\Listeners\SendRosterMemberAdded;
+use Modules\GameTables\Listeners\SendRosterMemberRemoved;
+use Modules\GameTables\Listeners\NotifyDirectionOfPlayerLeft;
 
 final class GameTablesServiceProvider extends ModuleServiceProvider
 {
@@ -589,6 +603,42 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         Event::listen(
             CampaignModerationRejected::class,
             [NotifyUserOnCampaignModerationRejected::class, 'handle']
+        );
+
+        // Campaign roster emails
+        Event::listen(
+            RosterMemberEnrolledInSession::class,
+            [SendCampaignSessionScheduled::class, 'handle']
+        );
+
+        Event::listen(
+            CampaignJoinRequested::class,
+            [NotifyDirectionOfJoinRequest::class, 'handle']
+        );
+
+        Event::listen(
+            CampaignJoinRequestAccepted::class,
+            [SendJoinRequestAccepted::class, 'handle']
+        );
+
+        Event::listen(
+            CampaignJoinRequestRejected::class,
+            [SendJoinRequestRejected::class, 'handle']
+        );
+
+        Event::listen(
+            CampaignRosterMemberAdded::class,
+            [SendRosterMemberAdded::class, 'handle']
+        );
+
+        Event::listen(
+            CampaignRosterMemberRemoved::class,
+            [SendRosterMemberRemoved::class, 'handle']
+        );
+
+        Event::listen(
+            CampaignRosterMemberLeft::class,
+            [NotifyDirectionOfPlayerLeft::class, 'handle']
         );
     }
 

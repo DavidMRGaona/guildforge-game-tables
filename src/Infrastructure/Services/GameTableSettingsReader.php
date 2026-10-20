@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Services;
 
+use InvalidArgumentException;
 use Modules\GameTables\Domain\Enums\CreationAccessLevel;
 use Modules\GameTables\Domain\Enums\GuestAccountsMode;
 use Modules\GameTables\Domain\Enums\GuestConfirmationMode;
@@ -16,6 +17,17 @@ use Modules\GameTables\Domain\Enums\RegistrationType;
  */
 final class GameTableSettingsReader
 {
+    /** Keys of the campaign roster emails under `campaign_notifications` */
+    public const array CAMPAIGN_NOTIFICATIONS = [
+        'session_scheduled',
+        'join_request_received',
+        'join_request_accepted',
+        'join_request_rejected',
+        'roster_added',
+        'roster_removed',
+        'player_left',
+    ];
+
     /** @var array<string, mixed>|null */
     private static ?array $shippedDefaults = null;
 
@@ -60,6 +72,15 @@ final class GameTableSettingsReader
     public function isNotifyWaitingListPromotionEnabled(): bool
     {
         return $this->bool('notifications.notify_waiting_list_promotion', true);
+    }
+
+    public function isCampaignNotificationEnabled(string $key): bool
+    {
+        if (! in_array($key, self::CAMPAIGN_NOTIFICATIONS, true)) {
+            throw new InvalidArgumentException("Unknown campaign notification [{$key}].");
+        }
+
+        return $this->bool('campaign_notifications.'.$key, true);
     }
 
     /**

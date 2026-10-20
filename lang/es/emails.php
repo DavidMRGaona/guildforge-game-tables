@@ -230,4 +230,67 @@ return [
         'cancel' => 'Si al final no puedes venir, cancela tu inscripción desde la página de la mesa para dejar la plaza libre.',
         'cancel_guest' => 'Si al final no puedes venir, cancela tu inscripción para dejar la plaza libre: :url',
     ],
+
+    'campaign_sessions' => [
+        'intro' => 'Quedas inscrito en estas sesiones:',
+        'waiting_suffix' => ' (en lista de espera, con prioridad por ser de la plantilla)',
+        'no_sessions' => 'Todavía no hay sesiones programadas: te avisaremos cuando se publique la próxima.',
+        'absence_hint' => 'Si no puedes ir a una sesión, date de baja desde su ficha: seguirás en la campaña.',
+    ],
+
+    'campaign_session_scheduled' => [
+        'subject' => 'Nueva sesión de :campaignTitle: :date',
+        'greeting' => '¡Hola, :name!',
+        'intro' => 'Se ha programado una nueva sesión de la campaña «:campaignTitle» y ya tienes tu plaza.',
+        'intro_waiting' => 'Se ha programado una nueva sesión de la campaña «:campaignTitle». Está completa: estás en la lista de espera, con prioridad por ser de la plantilla.',
+        'table_title' => 'Mesa',
+        'table_date' => 'Fecha',
+        'table_location' => 'Ubicación',
+        'absence_hint' => 'Si no puedes ir a una sesión, date de baja desde su ficha: seguirás en la campaña.',
+        'view_session' => 'Ver sesión',
+    ],
+
+    'campaign_join_request_received' => [
+        'subject' => 'Solicitud para unirse a :campaignTitle',
+        'greeting' => '¡Hola, :name!',
+        'intro' => ':player quiere unirse a la campaña «:campaignTitle».',
+        'message' => 'Mensaje: «:message»',
+        'review_requests' => 'Revisar solicitudes',
+    ],
+
+    'campaign_join_request_accepted' => [
+        'subject' => 'Ya formas parte de :campaignTitle',
+        'greeting' => '¡Hola, :name!',
+        'intro' => 'La dirección ha aceptado tu solicitud para unirte a la campaña «:campaignTitle».',
+        'view_campaign' => 'Ver campaña',
+    ],
+
+    'campaign_join_request_rejected' => [
+        'subject' => 'Solicitud para :campaignTitle',
+        'greeting' => '¡Hola, :name!',
+        'intro' => 'La dirección no ha aceptado tu solicitud para unirte a la campaña «:campaignTitle».',
+        'reason' => 'Motivo: :reason',
+        'view_campaign' => 'Ver campaña',
+    ],
+
+    'campaign_roster_added' => [
+        'subject' => 'Te han añadido a :campaignTitle',
+        'greeting' => '¡Hola, :name!',
+        'intro' => 'La dirección te ha añadido a la plantilla de la campaña «:campaignTitle».',
+        'view_campaign' => 'Ver campaña',
+    ],
+
+    'campaign_roster_removed' => [
+        'subject' => 'Ya no formas parte de :campaignTitle',
+        'greeting' => '¡Hola, :name!',
+        'intro' => 'La dirección te ha quitado de la plantilla de la campaña «:campaignTitle». Tus plazas en las próximas sesiones se han liberado.',
+        'view_campaign' => 'Ver campaña',
+    ],
+
+    'campaign_player_left' => [
+        'subject' => ':player ha salido de :campaignTitle',
+        'greeting' => '¡Hola, :name!',
+        'intro' => ':player ha salido de la plantilla de la campaña «:campaignTitle». Sus plazas en las próximas sesiones se han liberado.',
+        'view_roster' => 'Ver plantilla',
+    ],
 ];

@@ -226,4 +226,27 @@ final class GameTableSettingsReaderTest extends TestCase
         $this->assertSame(1, $this->reader->guestRateLimitPerHour());
         $this->assertSame(1, $this->reader->duplicateSignalWindowHours());
     }
+
+    public function test_campaign_notifications_default_to_enabled(): void
+    {
+        foreach (GameTableSettingsReader::CAMPAIGN_NOTIFICATIONS as $key) {
+            $this->assertTrue($this->reader->isCampaignNotificationEnabled($key), $key);
+        }
+        $this->assertCount(7, GameTableSettingsReader::CAMPAIGN_NOTIFICATIONS);
+    }
+
+    public function test_a_stored_false_campaign_notification_is_read_back(): void
+    {
+        config()->set('modules.settings.game-tables', ['campaign_notifications' => ['roster_added' => false]]);
+
+        $this->assertFalse($this->reader->isCampaignNotificationEnabled('roster_added'));
+        $this->assertTrue($this->reader->isCampaignNotificationEnabled('roster_removed'));
+    }
+
+    public function test_an_unknown_campaign_notification_key_is_refused(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        $this->reader->isCampaignNotificationEnabled('nope');
+    }
 }
