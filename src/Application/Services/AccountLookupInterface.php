@@ -15,4 +15,10 @@ interface AccountLookupInterface
     public function findByEmail(string $email): ?AccountDTO;
 
     public function findById(string $userId): ?AccountDTO;
+
+    /**
+     * The account with this id while it is active: anonymized, deleted and unknown accounts (or
+     * an id that is not a UUID) give null.
+     */
+    public function findActiveById(string $userId): ?AccountDTO;
 }

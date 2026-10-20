@@ -7,10 +7,13 @@ namespace Modules\GameTables\Tests\Integration\Infrastructure\Services;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Carbon\CarbonImmutable;
 use Closure;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Modules\GameTables\Application\Services\CampaignRosterServiceInterface;
+use Modules\GameTables\Application\Services\CampaignRosterSessionSyncInterface;
 use Modules\GameTables\Application\Services\MembershipCheckerInterface;
 use Modules\GameTables\Domain\Entities\CampaignJoinRequest;
 use Modules\GameTables\Domain\Enums\JoinRequestStatus;
@@ -28,6 +31,7 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
+use RuntimeException;
 use Tests\Support\Modules\ModuleTestCase;
 
 /**
@@ -453,6 +457,66 @@ final class CampaignRosterServiceTest extends ModuleTestCase
         }
         $this->assertSame(0, $this->roster()->count($this->campaignId));
         Event::assertNotDispatched(CampaignRosterMemberAdded::class);
+    }
+
+    public function test_adding_an_anonymized_or_unknown_account_is_refused(): void
+    {
+        $this->richard->forceFill(['anonymized_at' => CarbonImmutable::now()])->save();
+
+        foreach ([$this->richard->id, (string) Str::uuid()] as $userId) {
+            $this->assertRefused(
+                'account_not_found',
+                'No se ha podido añadir a esa cuenta. Comprueba el email.',
+                fn () => $this->service()->addUser($this->campaign->id, $userId, $this->mary->id),
+            );
+        }
+        $this->assertSame(0, DB::table('gametables_campaign_players')->where('campaign_id', $this->campaign->id)->count());
+        Event::assertNotDispatched(CampaignRosterMemberAdded::class);
+    }
+
+    public function test_a_failing_session_sync_keeps_the_new_member_and_still_announces_it(): void
+    {
+        Exceptions::fake();
+        $sync = $this->createStub(CampaignRosterSessionSyncInterface::class);
+        $sync->method('onMemberJoined')->willThrowException(new RuntimeException('Sync failed'));
+        $this->app->instance(CampaignRosterSessionSyncInterface::class, $sync);
+        $this->service()->requestToJoin($this->campaign->id, $this->john->id, null);
+        $request = $this->pendingOf($this->john);
+
+        $this->service()->acceptRequest($request->id->value, $this->mary->id);
+        $this->service()->addUser($this->campaign->id, $this->jane->id, $this->mary->id);
+
+        $this->assertTrue($this->roster()->contains($this->campaignId, $this->john->id));
+        $this->assertTrue($this->roster()->contains($this->campaignId, $this->jane->id));
+        Event::assertDispatched(
+            CampaignJoinRequestAccepted::class,
+            fn (CampaignJoinRequestAccepted $event): bool => $event->userId === $this->john->id && $event->sessions === [],
+        );
+        Event::assertDispatched(
+            CampaignRosterMemberAdded::class,
+            fn (CampaignRosterMemberAdded $event): bool => $event->userId === $this->jane->id && $event->sessions === [],
+        );
+        Exceptions::assertReported(RuntimeException::class);
+    }
+
+    public function test_a_closed_campaign_says_so_before_saying_it_is_full(): void
+    {
+        $this->campaign->update(['max_players' => 2, 'accepts_new_players' => false]);
+        $this->addToRoster($this->jane, $this->richard);
+
+        $this->assertRequestRefused('not_accepting', 'Esta campaña no acepta jugadores nuevos.', $this->john);
+    }
+
+    public function test_a_member_with_a_pending_request_is_told_they_are_a_member(): void
+    {
+        $this->service()->requestToJoin($this->campaign->id, $this->john->id, null);
+        $this->addToRoster($this->john);
+
+        $this->assertRefused(
+            'already_member',
+            'Ya formas parte de la plantilla.',
+            fn () => $this->service()->requestToJoin($this->campaign->id, $this->john->id, null),
+        );
     }
 
     public function test_adding_a_member_again_is_refused(): void

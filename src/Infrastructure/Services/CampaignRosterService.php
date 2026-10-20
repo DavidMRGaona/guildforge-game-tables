@@ -27,6 +27,7 @@ use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\JoinRequestId;
+use Throwable;
 
 final readonly class CampaignRosterService implements CampaignRosterServiceInterface
 {
@@ -127,10 +128,7 @@ final readonly class CampaignRosterService implements CampaignRosterServiceInter
             return $request;
         });
 
-        // Each session takes its own table lock: never inside the campaign lock
-        $sessions = $this->sessions->onMemberJoined($campaignId, $request->userId);
-
-        CampaignJoinRequestAccepted::dispatch($request->id->value, $campaignId, $request->userId, $this->toArray($sessions));
+        CampaignJoinRequestAccepted::dispatch($request->id->value, $campaignId, $request->userId, $this->enrolInSessions($campaignId, $request->userId));
     }
 
     public function rejectRequest(string $requestId, string $actorUserId, ?string $reason): void
@@ -166,6 +164,11 @@ final readonly class CampaignRosterService implements CampaignRosterServiceInter
 
             $this->ensureRosterCanChange($campaign);
 
+            // Same answer as an unknown email: an anonymized account would be a dead roster row
+            if ($this->accounts->findActiveById($userId) === null) {
+                throw RosterActionRefusedException::because('account_not_found');
+            }
+
             if ($this->direction->isDirector($campaignId, $userId)) {
                 throw RosterActionRefusedException::because('is_director');
             }
@@ -186,10 +189,27 @@ final readonly class CampaignRosterService implements CampaignRosterServiceInter
             }
         });
 
-        // Each session takes its own table lock: never inside the campaign lock
-        $sessions = $this->sessions->onMemberJoined($campaignId, $userId);
+        CampaignRosterMemberAdded::dispatch($campaignId, $userId, $this->enrolInSessions($campaignId, $userId));
+    }
 
-        CampaignRosterMemberAdded::dispatch($campaignId, $userId, $this->toArray($sessions));
+    /**
+     * Runs once the campaign lock is released: each session takes its own table lock. The member
+     * is already in the roster, so a failure here is reported and the join still announced (with
+     * no sessions) instead of failing an action that succeeded.
+     *
+     * @return list<array{game_table_id: string, waiting: bool}>
+     */
+    private function enrolInSessions(string $campaignId, string $userId): array
+    {
+        try {
+            $sessions = $this->sessions->onMemberJoined($campaignId, $userId);
+        } catch (Throwable $e) {
+            report($e);
+
+            return [];
+        }
+
+        return array_map(fn (EnrolledSessionDTO $session): array => $session->toArray(), $sessions);
     }
 
     /**
@@ -236,14 +256,5 @@ final readonly class CampaignRosterService implements CampaignRosterServiceInter
         if (! $campaign->hasRoomFor($this->roster->count($campaign->id))) {
             throw RosterActionRefusedException::because('roster_full');
         }
-    }
-
-    /**
-     * @param  list<EnrolledSessionDTO>  $sessions
-     * @return list<array{game_table_id: string, waiting: bool}>
-     */
-    private function toArray(array $sessions): array
-    {
-        return array_map(fn (EnrolledSessionDTO $session): array => $session->toArray(), $sessions);
     }
 }

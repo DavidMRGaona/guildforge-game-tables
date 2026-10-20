@@ -55,7 +55,8 @@ interface CampaignRosterServiceInterface
      * user is accepted with the actor as decider.
      *
      * @throws CampaignNotFoundException
-     * @throws RosterActionRefusedException unavailable, finished, is_director, account_already_member
+     * @throws RosterActionRefusedException unavailable, finished, account_not_found (unknown or
+     *                                      anonymized account), is_director, account_already_member
      *                                      or roster_full
      */
     public function addUser(string $campaignId, string $userId, string $actorUserId): void;

@@ -67,6 +67,26 @@ final class UserModelAccountLookupTest extends ModuleTestCase
         $this->assertNull($lookup->findById('00000000-0000-0000-0000-000000000000'));
     }
 
+    public function test_find_active_by_id_finds_an_active_account(): void
+    {
+        $john = UserModel::factory()->create(['name' => 'John Doe', 'email' => 'john@example.com']);
+
+        $this->assertSame($john->id, app(AccountLookupInterface::class)->findActiveById($john->id)?->userId);
+    }
+
+    public function test_find_active_by_id_ignores_anonymized_deleted_and_unknown_accounts(): void
+    {
+        $anonymized = UserModel::factory()->create(['email' => 'john@example.com', 'anonymized_at' => now()]);
+        $deleted = UserModel::factory()->create(['email' => 'jane@example.com']);
+        $deleted->delete();
+        $lookup = app(AccountLookupInterface::class);
+
+        $this->assertNull($lookup->findActiveById($anonymized->id));
+        $this->assertNull($lookup->findActiveById($deleted->id));
+        $this->assertNull($lookup->findActiveById('00000000-0000-0000-0000-000000000000'));
+        $this->assertNull($lookup->findActiveById('not-a-uuid'));
+    }
+
     /**
      * The model lowercases the email it is given; older rows may keep capitals.
      */
