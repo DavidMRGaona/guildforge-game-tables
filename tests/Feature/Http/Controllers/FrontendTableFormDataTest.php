@@ -217,6 +217,88 @@ final class FrontendTableFormDataTest extends ModuleTestCase
         $this->assertNull(GameTableModel::query()->where('title', 'Mesa con teléfono largo')->first());
     }
 
+    public function test_a_co_director_row_with_another_users_id_does_not_reach_that_users_record(): void
+    {
+        $jane = UserModel::factory()->create(['name' => 'Jane Doe', 'email' => 'jane@example.com']);
+        $janeRecord = $this->accountGameMaster($jane, 'co_gm', 'Jane', '600 000 010');
+        $forgedRow = [...$this->coGameMaster('Jane', 'Doe', 'jane@example.com', '600 999 999'), 'user_id' => $jane->id];
+
+        $this->actingAs($this->author)
+            ->post('/mesas/crear', [
+                ...$this->tableData('Mesa con fila ajena'),
+                'game_masters' => [$this->mainGameMaster(''), $forgedRow],
+            ])
+            ->assertSessionHasNoErrors();
+        $created = GameTableModel::query()->where('title', 'Mesa con fila ajena')->firstOrFail();
+
+        $draft = $this->draftTable();
+        $this->actingAs($this->author)
+            ->put("/mesas/mis-mesas/{$draft->slug}", [
+                ...$this->tableData('Mesa corregida'),
+                'game_masters' => [$this->mainGameMaster(''), $forgedRow],
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('600 000 010', $janeRecord->refresh()->phone);
+        foreach ([$created, $draft] as $table) {
+            $this->assertNotContains($janeRecord->id, $table->gameMasters()->pluck('gametables_game_masters.id')->all());
+            // The row stays, as a co-director without an account
+            $coDirector = $table->gameMasters()->where('role', 'co_gm')->firstOrFail();
+            $this->assertNull($coDirector->user_id);
+            $this->assertSame('jane@example.com', $coDirector->email);
+        }
+    }
+
+    public function test_the_main_director_row_is_always_the_author(): void
+    {
+        $jane = UserModel::factory()->create(['name' => 'Jane Doe', 'email' => 'jane@example.com']);
+        $janeRecord = $this->accountGameMaster($jane, 'main', 'Jane', '600 000 011');
+
+        $this->actingAs($this->author)
+            ->post('/mesas/crear', [
+                ...$this->tableData('Mesa con director ajeno'),
+                'game_masters' => [[...$this->mainGameMaster('600 000 012'), 'user_id' => $jane->id]],
+            ])
+            ->assertSessionHasNoErrors();
+
+        $table = GameTableModel::query()->where('title', 'Mesa con director ajeno')->firstOrFail();
+        $main = $table->gameMasters()->where('role', 'main')->firstOrFail();
+        $this->assertSame($this->author->id, $main->user_id);
+        $this->assertSame('600 000 012', $main->phone);
+        $this->assertSame('600 000 011', $janeRecord->refresh()->phone);
+        $this->assertNotContains($janeRecord->id, $table->gameMasters()->pluck('gametables_game_masters.id')->all());
+    }
+
+    public function test_the_authors_own_record_still_takes_the_phone_even_without_an_id_in_the_row(): void
+    {
+        $record = $this->accountGameMaster($this->author, 'main', 'John', null);
+
+        $this->actingAs($this->author)
+            ->post('/mesas/crear', [
+                ...$this->tableData('Mesa sin id'),
+                'game_masters' => [[...$this->mainGameMaster('600 000 013'), 'user_id' => null]],
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('600 000 013', $record->refresh()->phone);
+        $table = GameTableModel::query()->where('title', 'Mesa sin id')->firstOrFail();
+        $this->assertContains($record->id, $table->gameMasters()->pluck('gametables_game_masters.id')->all());
+    }
+
+    private function accountGameMaster(UserModel $user, string $role, string $firstName, ?string $phone): GameMasterModel
+    {
+        return GameMasterModel::create([
+            'id' => (string) Str::uuid(),
+            'user_id' => $user->id,
+            'first_name' => $firstName,
+            'last_name' => 'Doe',
+            'phone' => $phone,
+            'role' => $role,
+            'notify_by_email' => true,
+            'is_name_public' => true,
+        ]);
+    }
+
     private function source(string $file): string
     {
         return (string) file_get_contents(dirname(__DIR__, 4).'/'.$file);

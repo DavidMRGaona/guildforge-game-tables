@@ -27,6 +27,7 @@ use Modules\GameTables\Domain\Enums\CampaignStatus;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
+use Modules\GameTables\Domain\Enums\GameMasterRole;
 use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\Language;
 use Modules\GameTables\Domain\Enums\SafetyTool;
@@ -137,7 +138,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
 
         // 6. Sync game masters
         if ($dto->gameMasters !== null && count($dto->gameMasters) > 0) {
-            $this->gameMasterService->syncTableGameMasters($gameTable->id, $dto->gameMasters);
+            $this->gameMasterService->syncTableGameMasters($gameTable->id, $this->authorOwnedRows($dto->gameMasters, $dto->createdBy));
         }
 
         // 7. Auto-publish for approved status
@@ -488,7 +489,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
 
         // Sync game masters
         if ($dto->gameMasters !== null && count($dto->gameMasters) > 0) {
-            $this->gameMasterService->syncTableGameMasters($tableId, $dto->gameMasters);
+            $this->gameMasterService->syncTableGameMasters($tableId, $this->authorOwnedRows($dto->gameMasters, $dto->createdBy));
         }
 
         return $result;
@@ -788,6 +789,32 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         }
 
         $this->campaignRepository->delete($campaign->id);
+    }
+
+    /**
+     * The directors' rows of the web form may only link the author's own account: the first main
+     * row is the author, every other row is a director without an account (its name and email
+     * apply). A row can never reach, nor change, another person's director record.
+     *
+     * @param  array<int, array<string, mixed>>  $rows
+     * @return array<int, array<string, mixed>>
+     */
+    private function authorOwnedRows(array $rows, string $authorId): array
+    {
+        $mainSeen = false;
+
+        foreach ($rows as $index => $row) {
+            unset($row['user_id']);
+
+            if (! $mainSeen && ($row['role'] ?? null) === GameMasterRole::Main->value) {
+                $row['user_id'] = $authorId;
+                $mainSeen = true;
+            }
+
+            $rows[$index] = $row;
+        }
+
+        return $rows;
     }
 
     /**
