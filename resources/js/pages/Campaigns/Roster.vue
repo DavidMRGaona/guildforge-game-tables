@@ -169,7 +169,9 @@ const chipKeys: Record<RosterSessionState, string> = {
 };
 
 const chipColors: Record<RosterSessionState, string> = {
-    going: 'border-green-300 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-900/30 dark:text-green-300',
+    // dark:text-green-400, not -300: the core stylesheet ships text-green-800 and outranks
+    // the module's layer, so the dark variant must be one the core ships too
+    going: 'border-green-300 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-900/30 dark:text-green-400',
     absent: 'border-red-300 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300',
     waiting: 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
     none: 'border-default bg-muted text-base-secondary',
