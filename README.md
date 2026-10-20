@@ -232,7 +232,9 @@ Del mismo modo, una mesa creada o editada desde la web solo se puede vincular a 
 
 ## Plantillas de campaña
 
-Cada campaña tiene una **plantilla**: las personas que juegan la campaña entera. Las campañas ya existentes arrancan con la plantilla vacía, así que nada cambia hasta que alguien la use.
+Cada campaña tiene una **plantilla**: las personas que juegan la campaña entera. Las campañas ya existentes arrancan con la plantilla vacía.
+
+Las campañas que ya estén cerradas (**Acepta nuevos jugadores** desactivado, o en pausa, completadas o canceladas) rechazan desde que se instala esta versión las inscripciones web de quien no esté en la plantilla. Las inscripciones que ya existían se mantienen. La dirección debe añadir a sus jugadores a la plantilla: al añadir a un jugador, sus inscripciones en las próximas sesiones pasan a ser de la plantilla, sin enviar correos de sesión.
 
 ### Quién dirige una campaña
 
@@ -254,7 +256,7 @@ Cada campaña define **Quién puede solicitar** (`roster_access`): **Cualquier c
 Se entra de tres formas:
 
 1. **Solicitud.** Desde la ficha de la campaña, con sesión iniciada y un mensaje opcional (hasta 500 caracteres); se puede retirar mientras esté pendiente. Hay un límite de 5 solicitudes por minuto y 20 por hora y usuario. La dirección la acepta o la rechaza (con un motivo opcional) desde la página de plantilla o desde el panel.
-2. **Alta directa.** La dirección escribe el email exacto de la cuenta; no hay buscador de usuarios. Si la cuenta no existe, el mensaje no revela nada más.
+2. **Alta directa.** La dirección escribe el email exacto de la cuenta; no hay buscador de usuarios. Si la cuenta no existe, el mensaje no revela nada más: una campaña completa, terminada o no publicada da la misma respuesta para cualquier email. Hay un límite de 20 altas por minuto y usuario.
 3. **Aceptar una solicitud.**
 
 La dirección puede añadir o aceptar mientras la campaña está cerrada a nuevos jugadores o en pausa (no una vez completada o cancelada); solo las solicitudes necesitan una campaña abierta. Las cuentas anonimizadas no cuentan para el límite, no se inscriben, no reciben correos y sus solicitudes pendientes no se muestran.
