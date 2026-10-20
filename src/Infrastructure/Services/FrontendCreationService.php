@@ -632,6 +632,8 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
                     pendingRequests: $isDirected ? ($pending[$id] ?? 0) : 0,
                     directedByViewer: $isDirected,
                     acceptsSessions: $isDirected && $campaign->isAvailableForSessions() && $creationEnabled,
+                    // Moderator feedback is addressed to the author, not to co-directors
+                    showModeratorFeedback: $campaign->createdBy === $userId,
                 ),
             ];
         }

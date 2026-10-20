@@ -67,6 +67,7 @@ final readonly class CampaignResponseDTO
         int $pendingRequests = 0,
         bool $directedByViewer = false,
         bool $acceptsSessions = false,
+        bool $showModeratorFeedback = true,
     ): self {
         return new self(
             id: $campaign->id->value,
@@ -92,10 +93,10 @@ final readonly class CampaignResponseDTO
             gameTables: $gameTables,
             hasActiveOrUpcomingTables: $hasActiveOrUpcomingTables,
             frontendCreationStatus: $campaign->frontendCreationStatus,
-            moderationNotes: $campaign->moderationNotes,
+            moderationNotes: $showModeratorFeedback ? $campaign->moderationNotes : null,
             createdAt: $campaign->createdAt,
             updatedAt: $campaign->updatedAt,
-            rejectionReason: $campaign->rejectionReason(),
+            rejectionReason: $showModeratorFeedback ? $campaign->rejectionReason() : null,
             pendingRequests: $pendingRequests,
             directedByViewer: $directedByViewer,
             acceptsSessions: $acceptsSessions,

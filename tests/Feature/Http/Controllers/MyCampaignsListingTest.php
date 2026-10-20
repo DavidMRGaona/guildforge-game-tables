@@ -138,6 +138,27 @@ final class MyCampaignsListingTest extends ModuleTestCase
                 ->where('campaigns.0.can_add_session', false));
     }
 
+    public function test_moderator_feedback_is_only_shown_to_the_creator(): void
+    {
+        $mary = UserModel::factory()->create(['name' => 'Mary Major']);
+        $campaign = $this->campaign('Campaña con notas', $mary, FrontendCreationStatus::Approved);
+        $campaign->update(['moderation_notes' => 'Revisa la descripción']);
+        $this->makeGameMaster($campaign, $this->jane);
+
+        $this->actingAs($this->jane)
+            ->get(route('campaigns.my-campaigns'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('campaigns', 1)
+                ->where('campaigns.0.moderation_notes', null)
+                ->where('campaigns.0.rejection_reason', null));
+
+        $this->actingAs($mary)
+            ->get(route('campaigns.my-campaigns'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('campaigns', 1)
+                ->where('campaigns.0.moderation_notes', 'Revisa la descripción'));
+    }
+
     public function test_a_campaign_directed_twice_is_listed_once(): void
     {
         $campaign = $this->campaign('Campaña doble', $this->jane, FrontendCreationStatus::Approved);
