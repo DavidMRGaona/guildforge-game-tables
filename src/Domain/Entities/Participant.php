@@ -81,6 +81,15 @@ final class Participant
     }
 
     /**
+     * A registration made outside the roster path (a loose one, the panel's, a spectator seat):
+     * a reused row must not keep the roster's priority or its confirmed promotion.
+     */
+    public function unmarkFromRoster(): void
+    {
+        $this->fromRoster = false;
+    }
+
+    /**
      * Missed this session on purpose. A cancelled roster row with no reason is an absence too:
      * only an explicit "left the roster" lets the member be enrolled again.
      */

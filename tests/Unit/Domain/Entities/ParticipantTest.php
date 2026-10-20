@@ -502,6 +502,16 @@ final class ParticipantTest extends TestCase
         $this->assertTrue($participant->fromRoster);
     }
 
+    public function test_unmark_from_roster_drops_the_roster_mark(): void
+    {
+        $participant = $this->createParticipant(status: ParticipantStatus::Confirmed);
+        $participant->markFromRoster();
+
+        $participant->unmarkFromRoster();
+
+        $this->assertFalse($participant->fromRoster);
+    }
+
     public function test_a_cancelled_roster_row_without_reason_counts_as_absence(): void
     {
         $participant = $this->createParticipant(status: ParticipantStatus::Confirmed);

@@ -226,6 +226,21 @@ final class CampaignSessionBoxTest extends ModuleTestCase
             ->assertSessionHas('success', 'Inscripción cancelada correctamente');
     }
 
+    public function test_an_ex_member_registering_loosely_keeps_the_usual_message(): void
+    {
+        // Richard left the roster: his row in the session was cancelled as left_roster
+        $this->rosterRow($this->richard, ['status' => 'cancelled', 'cancellation_reason' => 'left_roster']);
+
+        $this->actingAs($this->richard)
+            ->from('/mesas/'.$this->session->slug)
+            ->post('/mesas/'.$this->session->slug.'/inscripcion', ['role' => 'player'])
+            ->assertSessionHas('success', 'Te has inscrito correctamente');
+
+        $row = ParticipantModel::query()->where('user_id', $this->richard->id)->sole();
+        $this->assertSame('confirmed', $row->status->value);
+        $this->assertFalse($row->from_roster);
+    }
+
     private function table(string $title, ?string $campaignId): GameTableModel
     {
         return GameTableModel::create([

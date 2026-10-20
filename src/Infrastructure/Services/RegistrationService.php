@@ -616,6 +616,9 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         if ($existing !== null) {
             $participant = $existing;
             $participant->reactivate();
+            // Not the roster path (rosterRow() marks its own rows): a row left by an absence or by
+            // leaving the roster is an ordinary registration now
+            $participant->unmarkFromRoster();
             $participant->changeRole($dto->role);
             $participant->updateNotes($dto->notes);
         } else {

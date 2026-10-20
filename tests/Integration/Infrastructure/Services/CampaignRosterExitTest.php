@@ -11,9 +11,11 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
+use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
 use Modules\GameTables\Application\Services\CampaignRosterServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterSessionSyncInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
+use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\RosterAccess;
 use Modules\GameTables\Domain\Events\CampaignRosterMemberAdded;
 use Modules\GameTables\Domain\Events\CampaignRosterMemberLeft;
@@ -265,6 +267,64 @@ final class CampaignRosterExitTest extends ModuleTestCase
         Event::assertDispatched(CampaignRosterMemberRemoved::class);
         Event::assertDispatched(CampaignRosterMemberLeft::class);
         Exceptions::assertReported(RuntimeException::class);
+    }
+
+    // A row left by leaving the roster (or an absence) is reused by any later registration: only
+    // the roster path marks it as the roster's
+
+    public function test_an_ex_member_registering_loosely_gets_no_roster_mark(): void
+    {
+        $this->service()->leave($this->campaign->id, $this->jane->id);
+
+        $registration = $this->registrations()->register(new RegisterParticipantDTO($this->s1->id, $this->jane->id));
+
+        $this->assertFalse($registration->fromRoster);
+        $row = $this->rowOf($this->s1, $this->jane);
+        $this->assertSame('pending', $row->status->value);
+        $this->assertFalse($row->from_roster);
+        $this->assertNull($row->getRawOriginal('cancellation_reason'));
+    }
+
+    public function test_an_ex_member_registering_loosely_gets_no_waiting_list_priority(): void
+    {
+        config()->set('modules.settings.game-tables', ['registration' => ['waiting_list_enabled' => true]]);
+        $this->service()->leave($this->campaign->id, $this->jane->id);
+        $this->s1->update(['max_players' => 1]);
+
+        // An outsider waits first; the ex-member comes after them and must stay after them
+        $this->registrations()->register(new RegisterParticipantDTO($this->s1->id, $this->richard->id));
+        $this->registrations()->register(new RegisterParticipantDTO($this->s1->id, $this->jane->id));
+        $this->assertSame('waiting_list', $this->rowOf($this->s1, $this->jane)->status->value);
+        $this->assertFalse($this->rowOf($this->s1, $this->jane)->from_roster);
+
+        $this->registrations()->cancelByUser($this->s1->id, $this->john->id);
+
+        // The outsider takes the seat, as pending (the table confirms by hand); the ex-member keeps waiting
+        $this->assertSame('pending', $this->rowOf($this->s1, $this->richard)->status->value);
+        $this->assertSame('waiting_list', $this->rowOf($this->s1, $this->jane)->status->value);
+    }
+
+    public function test_staff_registering_an_ex_member_add_no_roster_mark(): void
+    {
+        $this->service()->leave($this->campaign->id, $this->jane->id);
+
+        $registration = $this->registrations()->registerByAdmin(new RegisterParticipantDTO($this->s1->id, $this->jane->id));
+
+        $this->assertFalse($registration->fromRoster);
+        $this->assertFalse($this->rowOf($this->s1, $this->jane)->from_roster);
+    }
+
+    public function test_a_member_registering_as_spectator_over_an_absence_gets_no_roster_mark(): void
+    {
+        $this->s1->update(['max_spectators' => 2]);
+        $this->sync()->markAbsence($this->campaign->id, $this->s1->id, $this->john->id);
+
+        $registration = $this->registrations()->register(new RegisterParticipantDTO($this->s1->id, $this->john->id, ParticipantRole::Spectator));
+
+        $this->assertFalse($registration->fromRoster);
+        $row = $this->rowOf($this->s1, $this->john);
+        $this->assertSame('spectator', $row->role->value);
+        $this->assertFalse($row->from_roster);
     }
 
     public function test_settings_change_without_review(): void
