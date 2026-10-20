@@ -432,7 +432,7 @@ export interface CampaignResponseDTO {
     // Why it was rejected, while the author may still change it
     rejection_reason: string | null;
     can_edit: boolean;
-    // Roster: only set for the campaigns the viewer directs
+    // Roster: always sent, meaningful only when directed_by_viewer
     pending_requests: number;
     directed_by_viewer: boolean;
     can_add_session: boolean;

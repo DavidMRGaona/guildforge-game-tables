@@ -529,6 +529,14 @@ export default {
                 absent: '{date} ✗ no va',
                 waiting: '{date} · en espera',
                 none: '{date} —',
+                // Read by screen readers: player, full date and state
+                accessibleName: '{name}, {date}: {state}',
+                states: {
+                    going: 'va',
+                    absent: 'no va',
+                    waiting: 'en espera',
+                    none: 'sin plaza',
+                },
             },
             footnote: 'Pulsar una sesión cambia entre «va» y «no va» para ese jugador; el jugador recibe un correo. Sigue en la plantilla.',
         },

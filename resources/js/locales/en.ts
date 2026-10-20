@@ -497,6 +497,14 @@ export default {
                 absent: '{date} ✗ not going',
                 waiting: '{date} · waiting',
                 none: '{date} —',
+                // Read by screen readers: player, full date and state
+                accessibleName: '{name}, {date}: {state}',
+                states: {
+                    going: 'going',
+                    absent: 'not going',
+                    waiting: 'waiting',
+                    none: 'no seat',
+                },
             },
             footnote: 'Pressing a session switches that player between «going» and «not going»; the player receives an email. They stay in the roster.',
         },

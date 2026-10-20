@@ -24,18 +24,22 @@ const { success: flashSuccess, error: flashError } = useFlashMessages();
 
 const baseUrl = computed(() => `/campanas/mis-campanas/${props.campaign.id}/plantilla`);
 
-// A roster action is on its way: its buttons wait for the answer
+// A roster action is on its way: its buttons stay focusable (aria-disabled) and ignore clicks
+// until the answer, so keyboard users keep their place
 const processing = ref(false);
 
 type VisitOptions = NonNullable<Parameters<typeof router.delete>[1]>;
 
-function visitOptions(): VisitOptions {
+function visitOptions(onFinish?: () => void): VisitOptions {
     processing.value = true;
 
     return {
         preserveScroll: true,
+        // Same page: keep the instance, so the focused button survives the reload of the props
+        preserveState: true,
         onFinish: () => {
             processing.value = false;
+            onFinish?.();
         },
     };
 }
@@ -87,6 +91,8 @@ function saveSettings(): void {
 
 // Requests
 function acceptRequest(request: RosterRequest): void {
+    if (processing.value) return;
+
     router.post(`${baseUrl.value}/solicitudes/${request.id}/aceptar`, {}, visitOptions());
 }
 
@@ -110,6 +116,8 @@ watch(rejecting, async (request) => {
 });
 
 function openReject(request: RosterRequest): void {
+    if (processing.value) return;
+
     rejecting.value = request;
 }
 
@@ -175,7 +183,18 @@ function chipTitle(cell: RosterPlayerSession): string {
     return sessionsById.value.get(cell.game_table_id)?.date ?? '';
 }
 
+// «Jane Doe, 08/11/2026 18:00: va»: the visible text has neither the player nor the time
+function chipAccessibleName(player: RosterPlayer, cell: RosterPlayerSession): string {
+    return t('campaigns.roster.chips.accessibleName', {
+        name: player.name,
+        date: chipTitle(cell),
+        state: t(`campaigns.roster.chips.states.${cell.state}`),
+    });
+}
+
 function toggleAbsence(player: RosterPlayer, cell: RosterPlayerSession): void {
+    if (processing.value) return;
+
     router.post(
         `${baseUrl.value}/ausencias`,
         {
@@ -191,16 +210,23 @@ const removing = ref<RosterPlayer | null>(null);
 const showRemoveDialog = ref(false);
 
 function askRemove(player: RosterPlayer): void {
+    if (processing.value) return;
+
     removing.value = player;
     showRemoveDialog.value = true;
 }
 
+// The name stays in the dialog's message until it has closed: it is cleared after the visit
 function confirmRemove(): void {
     const player = removing.value;
-    removing.value = null;
     if (player === null) return;
 
-    router.delete(`${baseUrl.value}/jugadores/${player.user_id}`, visitOptions());
+    router.delete(
+        `${baseUrl.value}/jugadores/${player.user_id}`,
+        visitOptions(() => {
+            removing.value = null;
+        }),
+    );
 }
 
 const inputClass = 'mt-1 block w-full rounded-lg border border-default bg-surface px-4 py-2.5 text-base-primary placeholder-base-muted hover:border-strong focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500';
@@ -355,7 +381,8 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6 dark:shadow-neutra
                             <BaseButton
                                 variant="primary"
                                 size="sm"
-                                :disabled="processing"
+                                :aria-disabled="processing ? 'true' : undefined"
+                                class="aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
                                 @click="acceptRequest(request)"
                             >
                                 {{ t('campaigns.roster.requests.accept') }}
@@ -363,7 +390,8 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6 dark:shadow-neutra
                             <BaseButton
                                 variant="secondary"
                                 size="sm"
-                                :disabled="processing"
+                                :aria-disabled="processing ? 'true' : undefined"
+                                class="aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
                                 @click="openReject(request)"
                             >
                                 {{ t('campaigns.roster.requests.reject') }}
@@ -454,11 +482,12 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6 dark:shadow-neutra
                                                 type="button"
                                                 :aria-pressed="cell.state !== 'absent'"
                                                 :title="chipTitle(cell)"
-                                                :disabled="processing"
+                                                :aria-label="chipAccessibleName(player, cell)"
+                                                :aria-disabled="processing ? 'true' : undefined"
                                                 :class="[
                                                     'inline-flex min-h-[32px] items-center whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
                                                     'hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-page',
-                                                    'disabled:cursor-not-allowed disabled:opacity-50',
+                                                    'aria-disabled:cursor-not-allowed aria-disabled:opacity-50',
                                                     chipColors[cell.state],
                                                 ]"
                                                 @click="toggleAbsence(player, cell)"
@@ -473,7 +502,8 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6 dark:shadow-neutra
                                                     chipColors[cell.state],
                                                 ]"
                                             >
-                                                {{ chipLabel(cell) }}
+                                                <span aria-hidden="true">{{ chipLabel(cell) }}</span>
+                                                <span class="sr-only">{{ chipAccessibleName(player, cell) }}</span>
                                             </span>
                                         </template>
                                     </div>
@@ -482,7 +512,8 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6 dark:shadow-neutra
                                     <BaseButton
                                         variant="ghost"
                                         size="sm"
-                                        :disabled="processing"
+                                        :aria-disabled="processing ? 'true' : undefined"
+                                        class="aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
                                         @click="askRemove(player)"
                                     >
                                         {{ t('campaigns.roster.players.remove') }}
@@ -507,6 +538,7 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6 dark:shadow-neutra
                 class="fixed inset-0 m-auto w-[calc(100%-2rem)] max-w-md rounded-lg border-0 bg-transparent p-0 backdrop:bg-neutral-900/60"
                 @click="onRejectBackdropClick"
                 @cancel.prevent="closeReject"
+                @close="closeReject"
             >
                 <form
                     class="w-full rounded-lg bg-surface p-6 shadow-xl dark:shadow-neutral-900/50"
@@ -550,7 +582,6 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6 dark:shadow-neutra
             :cancel-label="t('common.cancel')"
             confirm-variant="danger"
             @confirm="confirmRemove"
-            @cancel="removing = null"
         />
     </DefaultLayout>
 </template>
