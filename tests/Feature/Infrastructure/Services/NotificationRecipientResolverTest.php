@@ -13,6 +13,7 @@ use Modules\GameTables\Domain\Enums\ParticipantStatus;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Enums\TableType;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
@@ -443,5 +444,56 @@ final class NotificationRecipientResolverTest extends TestCase
         $result = $this->resolver->getParticipantDisplayName($participant->id);
 
         $this->assertEquals('User Player', $result);
+    }
+
+    public function test_a_campaign_session_reaches_the_inherited_gms_except_excluded(): void
+    {
+        $system = GameSystemModel::create(['id' => (string) Str::uuid(), 'name' => 'Sistema', 'slug' => 'sistema', 'is_active' => true]);
+        $campaign = CampaignModel::create([
+            'id' => (string) Str::uuid(),
+            'game_system_id' => $system->id,
+            'created_by' => $this->tableCreator->id,
+            'title' => 'Campaña',
+            'slug' => 'campana',
+            'status' => 'recruiting',
+        ]);
+        $table = GameTableModel::create([
+            'id' => (string) Str::uuid(),
+            'game_system_id' => $system->id,
+            'campaign_id' => $campaign->id,
+            'created_by' => $this->tableCreator->id,
+            'title' => 'Sesión',
+            'starts_at' => now()->addWeek(),
+            'duration_minutes' => 240,
+            'table_type' => TableType::CampaignSession,
+            'table_format' => TableFormat::InPerson,
+            'status' => TableStatus::Draft,
+            'min_players' => 2,
+            'max_players' => 6,
+            'language' => 'es',
+            'auto_confirm' => true,
+        ]);
+
+        $makeGm = fn (string $first, string $email): GameMasterModel => GameMasterModel::create([
+            'id' => (string) Str::uuid(),
+            'first_name' => $first,
+            'last_name' => 'Doe',
+            'email' => $email,
+            'role' => GameMasterRole::Main,
+            'notify_by_email' => true,
+            'is_name_public' => true,
+        ]);
+        $jane = $makeGm('Jane', 'jane@example.com');
+        $richard = $makeGm('Richard', 'richard@example.com');
+        $mary = $makeGm('Mary', 'mary@example.com');
+
+        $campaign->gameMasters()->attach($jane->id, ['sort_order' => 1]);
+        $campaign->gameMasters()->attach($richard->id, ['sort_order' => 2]);
+        $table->gameMasters()->attach($richard->id, ['source' => 'campaign', 'excluded' => true, 'sort_order' => 1]);
+        $table->gameMasters()->attach($mary->id, ['source' => 'local', 'excluded' => false, 'sort_order' => 2]);
+
+        $result = $this->resolver->getGameMasterEmails($table->id);
+
+        $this->assertEqualsCanonicalizing(['jane@example.com', 'mary@example.com'], $result);
     }
 }

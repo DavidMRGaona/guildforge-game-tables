@@ -54,6 +54,7 @@ use Modules\GameTables\Application\Services\GameMasterServiceInterface;
 use Modules\GameTables\Application\Services\MembershipCheckerInterface;
 use Modules\CookieConsent\Application\DTOs\DeclaredCookieDTO;
 use Modules\CookieConsent\Application\Services\CookieDeclarationRegistryInterface;
+use Modules\GameTables\Application\Services\CampaignDirectionInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
@@ -115,6 +116,7 @@ use Modules\GameTables\Infrastructure\Services\FrontendCreationService;
 use Modules\GameTables\Infrastructure\Services\GameMasterService;
 use Modules\GameTables\Infrastructure\Services\GameTableQueryService;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
+use Modules\GameTables\Infrastructure\Services\CampaignDirection;
 use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
 use Modules\GameTables\Infrastructure\Services\GameTableService;
 use Modules\GameTables\Infrastructure\Services\AssociationRoleMembershipChecker;
@@ -175,6 +177,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         $this->app->bind(EventGameTableConfigServiceInterface::class, EventGameTableConfigService::class);
         $this->app->bind(EventCreationEligibilityServiceInterface::class, EventCreationEligibilityService::class);
         $this->app->bind(NotificationRecipientResolverInterface::class, NotificationRecipientResolver::class);
+        $this->app->bind(CampaignDirectionInterface::class, CampaignDirection::class);
 
         // Query service bindings
         $this->app->bind(GameTableQueryServiceInterface::class, GameTableQueryService::class);
