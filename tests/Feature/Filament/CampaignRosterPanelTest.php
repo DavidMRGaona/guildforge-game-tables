@@ -99,15 +99,15 @@ final class CampaignRosterPanelTest extends ModuleTestCase
             ->assertHasNoFormErrors();
     }
 
-    public function test_adding_a_player_creates_the_roster_row_and_announces_it(): void
+    public function test_adding_a_player_by_email_creates_the_roster_row_and_announces_it(): void
     {
         Event::fake([CampaignRosterMemberAdded::class]);
         $campaign = $this->campaign();
-        $user = $this->user('John Doe');
+        $user = $this->user('John Doe', 'john@example.com');
 
         $this->roster($campaign)
-            ->callTableAction('add', data: ['user_id' => $user->id])
-            ->assertHasNoTableActionErrors()
+            ->callAction(TestAction::make('add')->table(), data: ['email' => 'john@example.com'])
+            ->assertHasNoFormErrors()
             ->assertNotified('Jugador añadido a la plantilla.');
 
         $this->assertTrue(app(CampaignRosterRepositoryInterface::class)->contains(new CampaignId($campaign->id), $user->id));
@@ -118,27 +118,27 @@ final class CampaignRosterPanelTest extends ModuleTestCase
     {
         $campaign = $this->campaign(1);
         $this->member($campaign, 'John Doe');
-        $user = $this->user('Jane Doe');
+        $user = $this->user('Jane Doe', 'jane@example.com');
 
         $this->roster($campaign)
-            ->callTableAction('add', data: ['user_id' => $user->id])
+            ->callAction(TestAction::make('add')->table(), data: ['email' => 'jane@example.com'])
             ->assertNotified('La plantilla está completa.');
 
         $this->assertFalse(app(CampaignRosterRepositoryInterface::class)->contains(new CampaignId($campaign->id), $user->id));
     }
 
-    public function test_the_player_search_skips_anonymized_accounts_and_matches_name_or_email(): void
+    public function test_an_unknown_or_anonymized_email_gets_the_same_generic_refusal(): void
     {
         $campaign = $this->campaign();
-        $this->user('Mary Major', 'mary@example.com');
-        $this->user('Mary Ghost', 'ghost@example.com', anonymized: true);
+        $ghost = $this->user('Mary Ghost', 'ghost@example.com', anonymized: true);
 
-        $search = new \ReflectionMethod(RosterRelationManager::class, 'searchUsers');
-        $manager = $this->roster($campaign)->instance();
+        foreach (['nobody@example.com', 'ghost@example.com'] as $email) {
+            $this->roster($campaign)
+                ->callAction(TestAction::make('add')->table(), data: ['email' => $email])
+                ->assertNotified('No se ha podido añadir a esa cuenta. Comprueba el email.');
+        }
 
-        $this->assertSame(['Mary Major (mary@example.com)'], array_values($search->invoke($manager, 'mary')));
-        $this->assertSame(['Mary Major (mary@example.com)'], array_values($search->invoke($manager, 'MAJOR')));
-        $this->assertSame([], $search->invoke($manager, 'ghost'));
+        $this->assertFalse(app(CampaignRosterRepositoryInterface::class)->contains(new CampaignId($campaign->id), $ghost->id));
     }
 
     public function test_removing_a_player_announces_it(): void
@@ -236,34 +236,63 @@ final class CampaignRosterPanelTest extends ModuleTestCase
         $this->requests($campaign)->assertCanNotSeeTableRecords([$request]);
     }
 
-    public function test_a_user_without_the_update_permission_cannot_run_the_actions(): void
+    public function test_the_tabs_follow_the_update_permission_without_the_users_permission(): void
+    {
+        Event::fake([CampaignRosterMemberRemoved::class, CampaignJoinRequestAccepted::class]);
+        $campaign = $this->campaign();
+        $member = $this->member($campaign, 'John Doe');
+        $request = $this->request($campaign, $this->user('Jane Doe'));
+        $this->actingAs($this->editorWith(['gametables:campaigns.view_any', 'gametables:campaigns.view', 'gametables:campaigns.update']));
+
+        $this->assertTrue(RosterRelationManager::canViewForRecord($campaign, EditCampaign::class));
+        $this->assertTrue(JoinRequestsRelationManager::canViewForRecord($campaign, EditCampaign::class));
+
+        $this->roster($campaign)
+            ->assertCanSeeTableRecords([$member])
+            ->callTableAction('remove', $member)
+            ->assertNotified('Jugador quitado de la plantilla.');
+        $this->requests($campaign)
+            ->assertCanSeeTableRecords([$request])
+            ->callTableAction('accept', $request)
+            ->assertNotified('Solicitud aceptada.');
+
+        Event::assertDispatched(CampaignRosterMemberRemoved::class);
+        Event::assertDispatched(CampaignJoinRequestAccepted::class);
+    }
+
+    public function test_a_user_without_the_update_permission_sees_no_tab_and_forged_calls_change_nothing(): void
     {
         Event::fake([CampaignRosterMemberAdded::class, CampaignRosterMemberRemoved::class, CampaignJoinRequestAccepted::class]);
         $campaign = $this->campaign();
         $member = $this->member($campaign, 'John Doe');
         $request = $this->request($campaign, $this->user('Jane Doe'));
-        $candidate = $this->user('Mary Major');
-        // Listing accounts takes the users permission too: the roster is a list of users
-        $this->actingAs($this->editorWith(['gametables:campaigns.view_any', 'gametables:campaigns.view', 'users.view_any']));
+        $candidate = $this->user('Mary Major', 'mary@example.com');
+        $this->actingAs($this->editorWith(['gametables:campaigns.view_any', 'gametables:campaigns.view']));
 
-        $this->roster($campaign)
-            ->assertTableActionHidden('remove', $member);
-        $this->requests($campaign)
-            ->assertTableActionHidden('accept', $request)
-            ->assertTableActionHidden('reject', $request);
+        $this->assertFalse(RosterRelationManager::canViewForRecord($campaign, EditCampaign::class));
+        $this->assertFalse(JoinRequestsRelationManager::canViewForRecord($campaign, EditCampaign::class));
 
-        // Hiding the buttons is not enough: the server refuses the calls as well
-        $this->roster($campaign)
-            ->call('mountAction', 'remove', [], ['table' => true, 'recordKey' => $member->getKey()])
-            ->assertSet('mountedActions', [])
-            ->set('mountedActions', [['name' => 'remove', 'arguments' => [], 'context' => ['table' => true, 'recordKey' => $member->getKey()], 'data' => []]])
-            ->call('callMountedAction');
-        $this->roster($campaign)
-            ->set('mountedActions', [['name' => 'add', 'arguments' => [], 'context' => ['table' => true], 'data' => ['user_id' => $candidate->id]]])
-            ->call('callMountedAction');
-        $this->requests($campaign)
-            ->set('mountedActions', [['name' => 'accept', 'arguments' => [], 'context' => ['table' => true, 'recordKey' => $request->getKey()], 'data' => []]])
-            ->call('callMountedAction');
+        // Hiding the buttons is not enough: the server refuses the calls as well (the component
+        // itself may refuse to render, which is as good)
+        $forged = [
+            fn () => $this->roster($campaign)
+                ->set('mountedActions', [['name' => 'remove', 'arguments' => [], 'context' => ['table' => true, 'recordKey' => $member->getKey()], 'data' => []]])
+                ->call('callMountedAction'),
+            fn () => $this->roster($campaign)
+                ->set('mountedActions', [['name' => 'add', 'arguments' => [], 'context' => ['table' => true], 'data' => ['email' => 'mary@example.com']]])
+                ->call('callMountedAction'),
+            fn () => $this->requests($campaign)
+                ->set('mountedActions', [['name' => 'accept', 'arguments' => [], 'context' => ['table' => true, 'recordKey' => $request->getKey()], 'data' => []]])
+                ->call('callMountedAction'),
+        ];
+
+        foreach ($forged as $call) {
+            try {
+                $call();
+            } catch (\Throwable) {
+                // Refused before reaching the action
+            }
+        }
 
         $repository = app(CampaignRosterRepositoryInterface::class);
         $this->assertTrue($repository->contains(new CampaignId($campaign->id), $member->id));

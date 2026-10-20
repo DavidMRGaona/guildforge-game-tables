@@ -782,7 +782,7 @@ return [
             'email' => 'Email',
             'since' => 'En la plantilla desde',
             'add' => 'Añadir jugador',
-            'player' => 'Jugador',
+            'account_email' => 'Email de la cuenta',
             'remove' => 'Quitar',
             'remove_description' => 'Perderá sus plazas en las próximas sesiones y recibirá un correo.',
         ],

@@ -695,7 +695,7 @@ return [
             'email' => 'Email',
             'since' => 'In the roster since',
             'add' => 'Add player',
-            'player' => 'Player',
+            'account_email' => 'Account email',
             'remove' => 'Remove',
             'remove_description' => 'They will lose their seats in the upcoming sessions and will receive an email.',
         ],

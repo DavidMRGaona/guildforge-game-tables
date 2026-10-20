@@ -6,17 +6,15 @@ namespace Modules\GameTables\Filament\Resources\CampaignResource\RelationManager
 
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
-use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Gate;
+use Modules\GameTables\Filament\Resources\CampaignResource\RelationManagers\Concerns\ManagesCampaignRoster;
 use Modules\GameTables\Application\Services\CampaignRosterServiceInterface;
 use Modules\GameTables\Domain\Enums\JoinRequestStatus;
-use Modules\GameTables\Domain\Exceptions\RosterActionRefusedException;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignJoinRequestModel;
 
 /**
@@ -24,6 +22,8 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignJoinRe
  */
 final class JoinRequestsRelationManager extends RelationManager
 {
+    use ManagesCampaignRoster;
+
     protected static string $relationship = 'joinRequests';
 
     public static function getTitle(Model $ownerRecord, string $pageClass): string
@@ -102,23 +102,5 @@ final class JoinRequestsRelationManager extends RelationManager
                         ), 'rejected');
                     }),
             ]);
-    }
-
-    private function canManage(): bool
-    {
-        return Gate::allows('update', $this->getOwnerRecord());
-    }
-
-    private function run(callable $change, string $success): void
-    {
-        try {
-            $change();
-        } catch (RosterActionRefusedException $exception) {
-            Notification::make()->title($exception->getMessage())->danger()->send();
-
-            return;
-        }
-
-        Notification::make()->title(__('game-tables::messages.roster.success.'.$success))->success()->send();
     }
 }
