@@ -24,6 +24,7 @@ use Modules\GameTables\Application\Services\EventGameTableConfigServiceInterface
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
 use Modules\GameTables\Domain\Exceptions\NotEditableException;
+use Modules\GameTables\Domain\Exceptions\SessionBelowRosterException;
 use Modules\GameTables\Http\Requests\FrontendCreateGameTableRequest;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
@@ -225,7 +226,12 @@ final class FrontendGameTableController extends Controller
         /** @var UserModel $user */
         $user = auth()->user();
 
-        $this->creationService->submitForReview($gameTable->id, (string) $user->id);
+        try {
+            $this->creationService->submitForReview($gameTable->id, (string) $user->id);
+        } catch (SessionBelowRosterException $e) {
+            // Published at once (automatic mode) but with fewer seats than the roster
+            return back()->with('error', $e->getMessage());
+        }
 
         return redirect()
             ->route('gametables.my-tables')

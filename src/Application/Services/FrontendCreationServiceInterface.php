@@ -63,6 +63,7 @@ interface FrontendCreationServiceInterface
      *
      * @throws \Modules\GameTables\Domain\Exceptions\TableNotFoundException
      * @throws \Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException
+     * @throws \Modules\GameTables\Domain\Exceptions\SessionBelowRosterException when it would be published at once
      */
     public function submitForReview(string $tableId, string $userId): void;
 
@@ -86,6 +87,7 @@ interface FrontendCreationServiceInterface
      * Approve a frontend-created table for publication.
      *
      * @throws \Modules\GameTables\Domain\Exceptions\GameTableNotFoundException
+     * @throws \Modules\GameTables\Domain\Exceptions\SessionBelowRosterException
      */
     public function approveFrontendCreation(string $tableId, ?string $notes = null): void;
 

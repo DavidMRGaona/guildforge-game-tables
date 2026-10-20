@@ -608,6 +608,7 @@ return [
         'confirmation_filled_up' => 'The table filled up while you were confirming.',
         'too_many_confirmation_attempts' => 'Too many attempts with this link. Wait a moment and try again.',
         'guest_rate_limited' => 'You have made too many registrations in a row. Wait a few minutes and try again.',
+        'session_below_roster' => 'This session has fewer seats (:max) than the campaign roster (:count). Raise the maximum number of players before publishing it.',
     ],
 
     'success' => [

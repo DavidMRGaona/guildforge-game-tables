@@ -15,6 +15,8 @@ use Modules\GameTables\Domain\Events\GameTableCancelled;
 use Modules\GameTables\Domain\Events\GameTableCompleted;
 use Modules\GameTables\Domain\Events\GameTableCreated;
 use Modules\GameTables\Domain\Events\GameTablePublished;
+use Modules\GameTables\Domain\Exceptions\SessionBelowRosterException;
+use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
@@ -28,6 +30,7 @@ final readonly class GameTableService implements GameTableServiceInterface
     public function __construct(
         private GameTableRepositoryInterface $gameTableRepository,
         private ParticipantRepositoryInterface $participantRepository,
+        private ?CampaignRosterRepositoryInterface $roster = null,
     ) {}
 
     public function create(CreateGameTableDTO $dto): GameTableResponseDTO
@@ -151,12 +154,19 @@ final readonly class GameTableService implements GameTableServiceInterface
     {
         $gameTable = $this->gameTableRepository->findOrFail(new GameTableId($id));
 
+        $this->guardRoster($gameTable);
+
         $gameTable->publish();
         $this->gameTableRepository->save($gameTable);
 
         GameTablePublished::dispatch($gameTable->id->value, $gameTable->title);
 
         return GameTableResponseDTO::fromEntity($gameTable);
+    }
+
+    public function ensureFitsRoster(string $id): void
+    {
+        $this->guardRoster($this->gameTableRepository->findOrFail(new GameTableId($id)));
     }
 
     public function unpublish(string $id): GameTableResponseDTO
@@ -302,6 +312,22 @@ final readonly class GameTableService implements GameTableServiceInterface
             fn (GameTable $gt): GameTableListDTO => $this->toListDTO($gt),
             $gameTables,
         );
+    }
+
+    /**
+     * @throws SessionBelowRosterException when the session has fewer seats than its campaign roster
+     */
+    private function guardRoster(GameTable $gameTable): void
+    {
+        if ($this->roster === null || $gameTable->campaignId === null) {
+            return;
+        }
+
+        $rosterSize = $this->roster->count($gameTable->campaignId);
+
+        if ($gameTable->maxPlayers < $rosterSize) {
+            throw SessionBelowRosterException::forTable($gameTable->id->value, $gameTable->maxPlayers, $rosterSize);
+        }
     }
 
     private function toListDTO(GameTable $gameTable): GameTableListDTO

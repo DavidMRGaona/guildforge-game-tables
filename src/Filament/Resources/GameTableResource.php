@@ -55,6 +55,7 @@ use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Enums\TableType;
 use Modules\GameTables\Domain\Enums\Tone;
 use Modules\GameTables\Domain\Exceptions\NotEditableException;
+use Modules\GameTables\Domain\Exceptions\SessionBelowRosterException;
 use Modules\GameTables\Filament\Resources\GameTableResource\Pages;
 use Modules\GameTables\Filament\Resources\GameTableResource\RelationManagers\ParticipantsRelationManager;
 use Modules\GameTables\Filament\Support\PublicationLock;
@@ -532,6 +533,10 @@ final class GameTableResource extends BaseResource
                             self::warnStatusAlreadyChanged();
 
                             return;
+                        } catch (SessionBelowRosterException $e) {
+                            self::refuseBelowRoster($e);
+
+                            return;
                         }
 
                         Notification::make()
@@ -593,6 +598,9 @@ final class GameTableResource extends BaseResource
                                         $approvedCount++;
                                     } catch (NotEditableException) {
                                         $skipped = true;
+                                    } catch (SessionBelowRosterException $e) {
+                                        // Left in review: the others are still approved
+                                        self::refuseBelowRoster($e);
                                     }
                                 }
                             }
@@ -654,6 +662,14 @@ final class GameTableResource extends BaseResource
         Notification::make()
             ->title(__('game-tables::messages.notifications.status_already_changed'))
             ->warning()
+            ->send();
+    }
+
+    private static function refuseBelowRoster(SessionBelowRosterException $e): void
+    {
+        Notification::make()
+            ->title($e->getMessage())
+            ->danger()
             ->send();
     }
 

@@ -9,6 +9,7 @@ use Modules\GameTables\Application\DTOs\GameTableListDTO;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
 use Modules\GameTables\Application\DTOs\UpdateGameTableDTO;
 use Modules\GameTables\Domain\Enums\TableStatus;
+use Modules\GameTables\Domain\Exceptions\SessionBelowRosterException;
 
 interface GameTableServiceInterface
 {
@@ -22,7 +23,18 @@ interface GameTableServiceInterface
 
     public function findOrFail(string $id): GameTableResponseDTO;
 
+    /**
+     * @throws SessionBelowRosterException when a campaign session has fewer seats than its roster
+     */
     public function publish(string $id): GameTableResponseDTO;
+
+    /**
+     * Refuses a campaign session with fewer seats than its campaign roster, so it is never
+     * published (approved or published automatically) without room for the whole roster.
+     *
+     * @throws SessionBelowRosterException
+     */
+    public function ensureFitsRoster(string $id): void;
 
     public function unpublish(string $id): GameTableResponseDTO;
 

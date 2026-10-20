@@ -332,6 +332,9 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         $mode = $this->settingsReader->getPublicationMode();
 
         if ($mode === 'auto' || $this->checkAutoPublishEligibility($userId)) {
+            // Refused before anything is saved: the table stays a draft
+            $this->gameTableService->ensureFitsRoster($tableId);
+
             $table->approveFrontendCreation();
             $this->gameTableRepository->save($table);
             $this->gameTableService->publish($tableId);
@@ -449,6 +452,9 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
 
         // Only what the author sent to review is approved (and so published)
         $this->assertInReview($table->frontendCreationStatus);
+
+        // Refused before anything is saved: the table stays in review
+        $this->gameTableService->ensureFitsRoster($tableId);
 
         $table->approveFrontendCreation($notes);
         $this->gameTableRepository->save($table);

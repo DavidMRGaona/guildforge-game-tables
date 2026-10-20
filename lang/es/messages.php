@@ -692,6 +692,7 @@ return [
         'confirmation_filled_up' => 'Se ha llenado mientras confirmabas.',
         'too_many_confirmation_attempts' => 'Demasiados intentos con este enlace. Espera un momento y vuelve a intentarlo.',
         'guest_rate_limited' => 'Has hecho demasiadas inscripciones seguidas. Espera unos minutos y vuelve a intentarlo.',
+        'session_below_roster' => 'Esta sesión tiene menos plazas (:max) que la plantilla de la campaña (:count). Sube el máximo de jugadores antes de publicarla.',
     ],
 
     'success' => [

@@ -11,6 +11,7 @@ use Livewire\Livewire;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Events\GameTableCompleted;
+use Modules\GameTables\Domain\Events\GameTablePublished;
 use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
 use Modules\GameTables\Filament\Resources\GameTableResource;
 use Modules\GameTables\Filament\Resources\GameTableResource\Pages\EditGameTable;
@@ -20,8 +21,9 @@ use Tests\Support\Modules\InteractsWithModulePanel;
 use Tests\Support\Modules\ModuleTestCase;
 
 /**
- * «Iniciar» and «Completar» go through the service, as the automatic update does, so both give
- * the same result and completing announces GameTableCompleted.
+ * «Publicar», «Iniciar» and «Completar» go through the service, as the automatic update and the
+ * web do, so both give the same result: publishing announces GameTablePublished and completing
+ * announces GameTableCompleted.
  */
 final class GameTableStatusActionsTest extends ModuleTestCase
 {
@@ -39,6 +41,24 @@ final class GameTableStatusActionsTest extends ModuleTestCase
 
         $this->registerOnAdminPanel([GameTableResource::class], []);
         $this->admin = $this->actingAsPanelAdmin();
+    }
+
+    public function test_publishing_a_table_from_the_panel_announces_it(): void
+    {
+        Event::fake([GameTablePublished::class]);
+        $table = $this->table(TableStatus::Scheduled, published: false);
+
+        Livewire::test(EditGameTable::class, ['record' => $table->getRouteKey()])
+            ->callAction('publish')
+            ->assertFormSet(['is_published' => true, 'status' => TableStatus::Scheduled->value])
+            ->assertActionHidden('publish')
+            ->assertActionVisible('unpublish');
+
+        $table->refresh();
+        $this->assertTrue($table->is_published);
+        $this->assertNotNull($table->published_at);
+        Event::assertDispatchedTimes(GameTablePublished::class, 1);
+        Event::assertDispatched(GameTablePublished::class, fn (GameTablePublished $event): bool => $event->gameTableId === $table->id);
     }
 
     public function test_starting_a_table_from_the_panel_puts_it_in_progress(): void
@@ -90,7 +110,7 @@ final class GameTableStatusActionsTest extends ModuleTestCase
         $this->assertSame('The table is no longer in a status that allows this change', trans('game-tables::messages.notifications.status_already_changed', [], 'en'));
     }
 
-    private function table(TableStatus $status): GameTableModel
+    private function table(TableStatus $status, bool $published = true): GameTableModel
     {
         $system = GameSystemModel::create([
             'id' => (string) Str::uuid(),
@@ -113,7 +133,7 @@ final class GameTableStatusActionsTest extends ModuleTestCase
             'min_players' => 2,
             'max_players' => 5,
             'language' => 'es',
-            'is_published' => true,
+            'is_published' => $published,
         ]);
     }
 }
