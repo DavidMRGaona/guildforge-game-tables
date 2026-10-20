@@ -24,12 +24,18 @@ trait ManagesCampaignRoster
     }
 
     /**
-     * Filament asks this for the table and its actions (viewAny, view, create...): answer with the
-     * campaign's update permission instead of the related model's policy.
+     * Filament asks this for the table and its stock actions: seeing the tab (viewAny, view)
+     * follows the campaign's update permission instead of the related model's policy; anything
+     * else (create, edit, delete...) is denied, so a stock action added later grants nothing. The
+     * tab's own actions authorise themselves with canManage().
      */
     public function getAuthorizationResponse(string $action, ?Model $record = null): Response
     {
-        return Gate::inspect('update', $this->getOwnerRecord());
+        if (in_array($action, ['viewAny', 'view'], true)) {
+            return Gate::inspect('update', $this->getOwnerRecord());
+        }
+
+        return Response::deny();
     }
 
     private function canManage(): bool

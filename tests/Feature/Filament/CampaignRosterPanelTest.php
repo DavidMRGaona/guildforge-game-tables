@@ -260,6 +260,28 @@ final class CampaignRosterPanelTest extends ModuleTestCase
         Event::assertDispatched(CampaignJoinRequestAccepted::class);
     }
 
+    /**
+     * The campaign's update permission opens the tabs (viewAny, view) and nothing else: a stock
+     * edit, delete or create action added later would not inherit it.
+     */
+    public function test_the_update_permission_only_answers_for_viewing(): void
+    {
+        $campaign = $this->campaign();
+        $member = $this->member($campaign, 'John Doe');
+        $request = $this->request($campaign, $this->user('Jane Doe'));
+        $this->actingAs($this->editorWith(['gametables:campaigns.view_any', 'gametables:campaigns.view', 'gametables:campaigns.update']));
+
+        foreach ([[$this->roster($campaign), $member], [$this->requests($campaign), $request]] as [$tab, $record]) {
+            $manager = $tab->instance();
+
+            $this->assertTrue($manager->getAuthorizationResponse('viewAny')->allowed());
+            $this->assertTrue($manager->getAuthorizationResponse('view', $record)->allowed());
+            foreach (['create', 'update', 'delete', 'deleteAny', 'attach', 'detach', 'associate', 'reorder'] as $ability) {
+                $this->assertFalse($manager->getAuthorizationResponse($ability, $record)->allowed(), $ability);
+            }
+        }
+    }
+
     public function test_a_user_without_the_update_permission_sees_no_tab_and_forged_calls_change_nothing(): void
     {
         Event::fake([CampaignRosterMemberAdded::class, CampaignRosterMemberRemoved::class, CampaignJoinRequestAccepted::class]);
