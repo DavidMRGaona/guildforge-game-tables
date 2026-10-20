@@ -140,7 +140,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
 
         // 6. Sync game masters
         if ($dto->gameMasters !== null && count($dto->gameMasters) > 0) {
-            $this->gameMasterService->syncTableGameMasters($gameTable->id, $this->authorOwnedRows($dto->gameMasters, $dto->createdBy));
+            $this->syncAuthorDirectors($gameTable->id, $dto->gameMasters, $dto->createdBy, edited: false);
         }
 
         // 7. Auto-publish for approved status
@@ -491,7 +491,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
 
         // Sync game masters
         if ($dto->gameMasters !== null && count($dto->gameMasters) > 0) {
-            $this->gameMasterService->syncTableGameMasters($tableId, $this->authorOwnedRows($dto->gameMasters, $dto->createdBy, $tableId));
+            $this->syncAuthorDirectors($tableId, $dto->gameMasters, $dto->createdBy, edited: true);
         }
 
         return $result;
@@ -511,6 +511,25 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         }
 
         return $rows;
+    }
+
+    public function editableCoDirectorIds(string $tableId): array
+    {
+        return array_values($this->localGameMasters($tableId)
+            ->filter(fn (GameMasterModel $gm): bool => $this->isEditableCoDirector($gm))
+            ->map(fn (GameMasterModel $gm): string => (string) $gm->id)
+            ->all());
+    }
+
+    public function getAuthorGameMasterProfile(string $authorId): array
+    {
+        $record = $this->authorsSharedRecord($authorId);
+
+        return [
+            'phone' => $record?->phone ?? '',
+            'custom_title' => $record?->custom_title ?? '',
+            'is_name_public' => $record !== null ? (bool) $record->is_name_public : true,
+        ];
     }
 
     public function deleteDraft(string $tableId, string $userId): void
@@ -810,9 +829,57 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
     }
 
     /**
-     * The directors' rows of the web form may only link the author's own account: the first main
-     * row is the author, every other row is a director without an account (its name and email
-     * apply). A row can never reach, nor change, another person's director record.
+     * The directors of a web save: the rows made safe (authorOwnedRows), synced to the table, and
+     * the author's own values (custom title, phone, «Mostrar nombre públicamente») written to their
+     * director record, which every table they direct shares.
+     *
+     * @param  array<int, array<string, mixed>>  $rows
+     */
+    private function syncAuthorDirectors(string $tableId, array $rows, string $authorId, bool $edited): void
+    {
+        $safeRows = $this->authorOwnedRows($rows, $authorId, $edited ? $tableId : null);
+
+        $this->gameMasterService->syncTableGameMasters($tableId, $safeRows);
+
+        $this->saveAuthorProfile($tableId, $safeRows[0], $authorId);
+    }
+
+    /**
+     * Only the author's own record, and only the values the row carries: a blank one clears it,
+     * a missing one changes nothing. The form pre-fills them from the record (create and edit).
+     *
+     * @param  array<string, mixed>  $authorRow
+     */
+    private function saveAuthorProfile(string $tableId, array $authorRow, string $authorId): void
+    {
+        $record = $this->localGameMasters($tableId)
+            ->first(fn (GameMasterModel $gm): bool => $this->isAuthorsMainRecord($gm, $authorId));
+
+        if ($record === null) {
+            return;
+        }
+
+        $values = [];
+        foreach (['custom_title', 'phone'] as $field) {
+            if (array_key_exists($field, $authorRow)) {
+                $value = $authorRow[$field];
+                $values[$field] = is_string($value) && trim($value) !== '' ? $value : null;
+            }
+        }
+        if (array_key_exists('is_name_public', $authorRow)) {
+            $values['is_name_public'] = (bool) $authorRow['is_name_public'];
+        }
+
+        if ($values !== []) {
+            $record->update($values);
+        }
+    }
+
+    /**
+     * The directors' rows of the web form may only link the author's own account: exactly one main
+     * row, the author's (prepended when the payload has none), and every other row is a director
+     * without an account (its name and email apply). A row can never reach, nor change, another
+     * person's director record.
      *
      * On an edit ($tableId given) a row keeps its `id` only when it names a co-director without an
      * account already on this table, so the same record is updated; any other id is dropped and the
@@ -820,38 +887,54 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
      * or a main director other than the author, both linked by staff) are added back unchanged.
      *
      * @param  array<int, array<string, mixed>>  $rows
-     * @return array<int, array<string, mixed>>
+     * @return non-empty-list<array<string, mixed>> the author's main row first
      */
     private function authorOwnedRows(array $rows, string $authorId, ?string $tableId = null): array
     {
         $local = $tableId !== null ? $this->localGameMasters($tableId) : null;
         $editableIds = $local?->filter(fn (GameMasterModel $gm): bool => $this->isEditableCoDirector($gm))
             ->modelKeys() ?? [];
-        $mainSeen = false;
+        $authorRow = null;
+        $coRows = [];
 
-        foreach ($rows as $index => $row) {
+        foreach ($rows as $row) {
             unset($row['user_id'], $row['excluded']);
 
-            if (! $mainSeen && ($row['role'] ?? null) === GameMasterRole::Main->value) {
+            if ($authorRow === null && ($row['role'] ?? null) === GameMasterRole::Main->value) {
                 // The author's own record is found by their account, never by an id
                 unset($row['id']);
                 $row['user_id'] = $authorId;
-                $mainSeen = true;
-            } elseif (! in_array($row['id'] ?? null, $editableIds, true)) {
-                unset($row['id']);
+                $authorRow = $row;
+
+                continue;
             }
 
-            $rows[$index] = $row;
+            if (! in_array($row['id'] ?? null, $editableIds, true)) {
+                unset($row['id']);
+            }
+            // A second main row is a co-director like any other
+            $row['role'] = GameMasterRole::CoGm->value;
+            $coRows[] = $row;
         }
+
+        // No main row: the author stays the main director, their record's values untouched
+        if ($authorRow === null) {
+            $authorRow = array_intersect_key(
+                $this->newAuthorRow($authorId),
+                array_flip(['user_id', 'first_name', 'last_name', 'email', 'role']),
+            );
+        }
+
+        $result = [$authorRow, ...$coRows];
 
         foreach ($local ?? [] as $gm) {
             if (! $this->isEditableCoDirector($gm) && ! $this->isAuthorsMainRecord($gm, $authorId)) {
                 // The same values: the record is kept linked and left as it is
-                $rows[] = ['id' => $gm->id, 'user_id' => $gm->user_id, 'first_name' => $gm->first_name, 'email' => $gm->email];
+                $result[] = ['id' => $gm->id, 'user_id' => $gm->user_id, 'first_name' => $gm->first_name, 'email' => $gm->email];
             }
         }
 
-        return $rows;
+        return $result;
     }
 
     /**
@@ -895,7 +978,8 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
 
     /**
      * The author as main director of a table that has no record of theirs yet (named as on the
-     * create form: the first word of the account name, then the rest).
+     * create form: the first word of the account name, then the rest; custom title, phone and name
+     * visibility from their shared record).
      *
      * @return array{id: string|null, user_id: string|null, first_name: string, last_name: string, email: string, phone: string, custom_title: string, is_name_public: bool, role: string}
      */
@@ -910,11 +994,22 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             'first_name' => $name[0],
             'last_name' => $name[1] ?? '',
             'email' => (string) $author->email,
-            'phone' => '',
-            'custom_title' => '',
-            'is_name_public' => true,
+            // Saving writes them to the author's shared record: they start from it
+            ...$this->getAuthorGameMasterProfile($authorId),
             'role' => GameMasterRole::Main->value,
         ];
+    }
+
+    /**
+     * The author's main director record, the one their tables share (found as
+     * GameMasterService::findOrCreateGameMaster finds it).
+     */
+    private function authorsSharedRecord(string $authorId): ?GameMasterModel
+    {
+        return GameMasterModel::query()
+            ->where('user_id', $authorId)
+            ->where('role', GameMasterRole::Main->value)
+            ->first();
     }
 
     /**

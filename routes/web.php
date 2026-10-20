@@ -74,10 +74,11 @@ Route::prefix('campanas')->name('campaigns.')->group(function (): void {
         Route::get('/crear', [FrontendCampaignController::class, 'create'])->name('frontend-create');
         Route::post('/crear', [FrontendCampaignController::class, 'store'])->name('frontend-store');
         Route::get('/mis-campanas', [FrontendCampaignController::class, 'myCampaigns'])->name('my-campaigns');
-        Route::get('/mis-campanas/{id}/editar', [FrontendCampaignController::class, 'edit'])->name('frontend-edit');
-        Route::put('/mis-campanas/{id}', [FrontendCampaignController::class, 'update'])->name('frontend-update');
-        Route::post('/mis-campanas/{id}/enviar-revision', [FrontendCampaignController::class, 'submitForReview'])->name('submit-review');
-        Route::delete('/mis-campanas/{id}', [FrontendCampaignController::class, 'destroy'])->name('frontend-destroy');
+        // A malformed id is not found (the id column is a uuid: PostgreSQL refuses to compare it)
+        Route::get('/mis-campanas/{id}/editar', [FrontendCampaignController::class, 'edit'])->whereUuid('id')->name('frontend-edit');
+        Route::put('/mis-campanas/{id}', [FrontendCampaignController::class, 'update'])->whereUuid('id')->name('frontend-update');
+        Route::post('/mis-campanas/{id}/enviar-revision', [FrontendCampaignController::class, 'submitForReview'])->whereUuid('id')->name('submit-review');
+        Route::delete('/mis-campanas/{id}', [FrontendCampaignController::class, 'destroy'])->whereUuid('id')->name('frontend-destroy');
 
         // Roster page of the direction (the emails link to it)
         Route::get('/mis-campanas/{id}/plantilla', [CampaignRosterController::class, 'show'])->name('roster');

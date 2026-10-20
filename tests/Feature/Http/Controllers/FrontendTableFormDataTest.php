@@ -22,9 +22,6 @@ final class FrontendTableFormDataTest extends ModuleTestCase
 {
     private const PAGES = ['pages/GameTables/Create.vue', 'pages/GameTables/Edit.vue'];
 
-    // Sent by the form but checked only in the browser
-    private const CLIENT_ONLY_FIELDS = ['gm_gdpr_consent'];
-
     protected ?string $moduleName = 'game-tables';
 
     protected bool $autoEnableModule = true;
@@ -85,7 +82,7 @@ final class FrontendTableFormDataTest extends ModuleTestCase
         $fields = array_values(array_unique($matches[1]));
 
         foreach (self::PAGES as $page) {
-            foreach (array_diff($this->formKeys($page), self::CLIENT_ONLY_FIELDS) as $key) {
+            foreach ($this->formKeys($page) as $key) {
                 $this->assertContains($key, $fields, "{$page}: {$key} is sent but never validated");
             }
         }
@@ -154,6 +151,7 @@ final class FrontendTableFormDataTest extends ModuleTestCase
         $this->actingAs($this->author)
             ->post('/mesas/crear', [
                 ...$this->tableData('Mesa con teléfonos'),
+                'gm_gdpr_consent' => true,
                 'game_masters' => [
                     $this->mainGameMaster('600 000 001'),
                     $this->coGameMaster('Jane', 'Doe', 'jane@example.com', '600 000 002'),
@@ -188,15 +186,12 @@ final class FrontendTableFormDataTest extends ModuleTestCase
 
         $this->assertSame('600 000 003', $gameMaster->refresh()->phone);
 
-        // A later form left blank keeps the stored phone
+        // The record is shared by the author's tables: a later create form starts from that phone
+        // (and a phone the author clears there is cleared: FrontendAuthorDirectorRecordTest)
         $this->actingAs($this->author)
-            ->post('/mesas/crear', [
-                ...$this->tableData('Tercera mesa'),
-                'game_masters' => [$this->mainGameMaster('')],
-            ])
-            ->assertSessionHasNoErrors();
-
-        $this->assertSame('600 000 003', $gameMaster->refresh()->phone);
+            ->get('/mesas/crear')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('currentUser.phone', '600 000 003'));
     }
 
     public function test_the_phone_of_each_director_is_kept_on_edit(): void
@@ -206,6 +201,7 @@ final class FrontendTableFormDataTest extends ModuleTestCase
         $this->actingAs($this->author)
             ->put("/mesas/mis-mesas/{$table->slug}", [
                 ...$this->tableData('Mesa corregida'),
+                'gm_gdpr_consent' => true,
                 'game_masters' => [
                     $this->mainGameMaster('600 000 004'),
                     $this->coGameMaster('Richard', 'Roe', 'richard@example.com', '600 000 005'),
@@ -242,6 +238,7 @@ final class FrontendTableFormDataTest extends ModuleTestCase
         $this->actingAs($this->author)
             ->post('/mesas/crear', [
                 ...$this->tableData('Mesa con fila ajena'),
+                'gm_gdpr_consent' => true,
                 'game_masters' => [$this->mainGameMaster(''), $forgedRow],
             ])
             ->assertSessionHasNoErrors();
@@ -251,6 +248,7 @@ final class FrontendTableFormDataTest extends ModuleTestCase
         $this->actingAs($this->author)
             ->put("/mesas/mis-mesas/{$draft->slug}", [
                 ...$this->tableData('Mesa corregida'),
+                'gm_gdpr_consent' => true,
                 'game_masters' => [$this->mainGameMaster(''), $forgedRow],
             ])
             ->assertSessionHasNoErrors();

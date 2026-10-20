@@ -95,6 +95,22 @@ interface FrontendCreationServiceInterface
     public function getDraftGameMasters(string $tableId, string $authorId): array;
 
     /**
+     * Ids of the table's co-directors without an account: the only rows of the web form that keep
+     * their id on save. A co-director row with any other id (or none) is a new co-director.
+     *
+     * @return list<string>
+     */
+    public function editableCoDirectorIds(string $tableId): array;
+
+    /**
+     * The author's own values as main director, kept on the director record every table they
+     * direct shares (defaults when they have none yet): the web form pre-fills them.
+     *
+     * @return array{phone: string, custom_title: string, is_name_public: bool}
+     */
+    public function getAuthorGameMasterProfile(string $authorId): array;
+
+    /**
      * Delete a draft table.
      *
      * @throws \Modules\GameTables\Domain\Exceptions\TableNotFoundException

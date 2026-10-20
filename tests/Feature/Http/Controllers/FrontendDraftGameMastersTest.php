@@ -135,6 +135,8 @@ final class FrontendDraftGameMastersTest extends ModuleTestCase
     public function test_the_edit_page_offers_the_author_as_main_director_when_the_table_has_none(): void
     {
         $this->table->gameMasters()->detach();
+        // Without any record of the author: their account and the defaults
+        $this->authorRecord->delete();
 
         $this->actingAs($this->author)
             ->get("/mesas/mis-mesas/{$this->table->slug}/editar")
@@ -222,7 +224,7 @@ final class FrontendDraftGameMastersTest extends ModuleTestCase
         $rows = $this->rowsOnTheEditPage();
         $rows[] = $this->coRow('Jane', 'Doe', 'otra@example.com', '600 999 999', id: $foreign->id);
 
-        $this->save($rows);
+        $this->save($rows, consent: true);
 
         $this->assertNotContains($foreign->id, $this->linkedIds($this->table));
         $foreign->refresh();
@@ -252,13 +254,14 @@ final class FrontendDraftGameMastersTest extends ModuleTestCase
         $this->actingAs($this->author)
             ->post('/mesas/crear', [
                 ...$this->tableData('Mesa nueva'),
+                'gm_gdpr_consent' => true,
                 'game_masters' => [$this->mainRow(), $forged],
             ])
             ->assertSessionHasNoErrors();
         $created = GameTableModel::query()->where('title', 'Mesa nueva')->firstOrFail();
 
         // On update
-        $this->save([...$this->rowsOnTheEditPage(), $forged]);
+        $this->save([...$this->rowsOnTheEditPage(), $forged], consent: true);
 
         $janeRecord->refresh();
         $this->assertSame(
@@ -337,12 +340,14 @@ final class FrontendDraftGameMastersTest extends ModuleTestCase
 
     /**
      * @param  list<array<string, mixed>>  $rows
+     * @param  bool  $consent  the co-directors' consent, asked when a row adds a co-director
      */
-    private function save(array $rows): void
+    private function save(array $rows, bool $consent = false): void
     {
         $this->actingAs($this->author)
             ->put("/mesas/mis-mesas/{$this->table->slug}", [
                 ...$this->tableData('Mesa corregida'),
+                'gm_gdpr_consent' => $consent,
                 'game_masters' => $rows,
             ])
             ->assertSessionHasNoErrors()

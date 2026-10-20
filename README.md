@@ -199,6 +199,8 @@ Con **Creación desde web** activada, los usuarios con sesión iniciada que cump
 
 El autor solo edita, envía a revisión o borra una mesa o campaña que no esté publicada y esté en borrador (o rechazada antes de la versión 2.10.0), lo mismo que ofrecen **Mis mesas** y **Mis campañas**; el servidor responde 403 a cualquier otra petición. Una mesa o campaña publicada desde el panel cuando aún estaba en borrador queda fuera de su alcance, igual que las creadas desde el panel. Los permisos de edición y borrado del panel (`gametables.update`/`.delete`, `campaigns.update`/`.delete`) siguen dando acceso completo.
 
+En el formulario web de mesas el autor es siempre el único director principal; el resto de filas son co-directores sin cuenta. Su título personalizado, su teléfono y **Mostrar nombre públicamente** se guardan en su ficha de director, que comparten todas las mesas que dirige: el formulario parte de ella y lo indica bajo su tarjeta. Guardar una mesa que añade un co-director pide confirmar el consentimiento de los co-directores; los que ya estaban en la mesa no lo vuelven a pedir.
+
 Según el modo de publicación:
 
 - `auto`: la mesa o campaña queda aprobada y publicada al crearla o al enviarla.

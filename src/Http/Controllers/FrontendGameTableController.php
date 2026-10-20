@@ -23,12 +23,12 @@ use Modules\GameTables\Application\Services\EventCreationEligibilityServiceInter
 use Modules\GameTables\Application\Services\EventGameTableConfigServiceInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
-use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\TableType;
 use Modules\GameTables\Domain\Exceptions\NotEditableException;
 use Modules\GameTables\Domain\Exceptions\NotEligibleToCreateException;
 use Modules\GameTables\Domain\Exceptions\SessionBelowRosterException;
 use Modules\GameTables\Http\Requests\FrontendCreateGameTableRequest;
+use Modules\GameTables\Http\Support\AuthorLockRedirect;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Services\CampaignSessionCreationGate;
 
@@ -42,6 +42,7 @@ final class FrontendGameTableController extends Controller
         private readonly GameTableServiceInterface $gameTableService,
         private readonly SeoMetadataFactoryInterface $seo,
         private readonly CampaignSessionCreationGate $sessionGate,
+        private readonly AuthorLockRedirect $authorLock,
     ) {}
 
     /**
@@ -93,11 +94,13 @@ final class FrontendGameTableController extends Controller
             $eventContext = $this->eventConfigService->getCreationContext($eventId);
         }
 
-        // Prepare current user data for GM section
+        // Prepare current user data for GM section: their custom title, phone and name visibility
+        // come from their director record, shared by every table they direct (saving writes them there)
         $currentUser = $user !== null ? [
             'id' => (string) $user->id,
             'name' => $user->name,
             'email' => $user->email,
+            ...$this->creationService->getAuthorGameMasterProfile((string) $user->id),
         ] : null;
 
         // «Añadir sesión» arrives with its campaign; any other id is ignored
@@ -323,23 +326,7 @@ final class FrontendGameTableController extends Controller
      */
     private function sendLockedAuthorBack(GameTableModel $table): ?RedirectResponse
     {
-        /** @var UserModel $user */
-        $user = auth()->user();
-
-        if ($table->created_by !== $user->id
-            || FrontendCreationStatus::allowsAuthorChanges($table->frontend_creation_status, (bool) $table->is_published)) {
-            return null;
-        }
-
-        $reason = match (true) {
-            (bool) $table->is_published => 'game-tables::messages.errors.table_locked_published',
-            $table->frontend_creation_status === FrontendCreationStatus::PendingReview => 'game-tables::messages.errors.table_locked_in_review',
-            default => 'game-tables::messages.errors.table_locked',
-        };
-
-        return redirect()
-            ->route('gametables.my-tables')
-            ->with('error', __($reason));
+        return $this->authorLock->forTable($table, (string) auth()->id());
     }
 
     /**
