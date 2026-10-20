@@ -23,6 +23,7 @@ use Modules\GameTables\Application\Services\EventCreationEligibilityServiceInter
 use Modules\GameTables\Application\Services\EventGameTableConfigServiceInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
+use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\TableType;
 use Modules\GameTables\Domain\Exceptions\NotEditableException;
 use Modules\GameTables\Domain\Exceptions\NotEligibleToCreateException;
@@ -173,9 +174,12 @@ final class FrontendGameTableController extends Controller
     /**
      * Show an edit form for a draft table.
      */
-    public function edit(string $gameTable): Response
+    public function edit(string $gameTable): Response|RedirectResponse
     {
         $gameTable = $this->findAuthorTable($gameTable);
+        if (($locked = $this->sendLockedAuthorBack($gameTable)) !== null) {
+            return $locked;
+        }
         Gate::authorize('update', $gameTable);
 
         /** @var UserModel $user */
@@ -225,6 +229,9 @@ final class FrontendGameTableController extends Controller
     public function update(string $gameTable, FrontendCreateGameTableRequest $request): RedirectResponse
     {
         $gameTable = $this->findAuthorTable($gameTable);
+        if (($locked = $this->sendLockedAuthorBack($gameTable)) !== null) {
+            return $locked;
+        }
         Gate::authorize('update', $gameTable);
 
         /** @var UserModel $user */
@@ -256,6 +263,9 @@ final class FrontendGameTableController extends Controller
     public function submitForReview(string $gameTable): RedirectResponse
     {
         $gameTable = $this->findAuthorTable($gameTable);
+        if (($locked = $this->sendLockedAuthorBack($gameTable)) !== null) {
+            return $locked;
+        }
         Gate::authorize('submitForReview', $gameTable);
 
         /** @var UserModel $user */
@@ -281,6 +291,9 @@ final class FrontendGameTableController extends Controller
     public function destroy(string $gameTable): RedirectResponse
     {
         $gameTable = $this->findAuthorTable($gameTable);
+        if (($locked = $this->sendLockedAuthorBack($gameTable)) !== null) {
+            return $locked;
+        }
         Gate::authorize('delete', $gameTable);
 
         /** @var UserModel $user */
@@ -295,6 +308,31 @@ final class FrontendGameTableController extends Controller
         return redirect()
             ->route('gametables.my-tables')
             ->with('success', __('game-tables::messages.frontend.table_deleted'));
+    }
+
+    /**
+     * The author of a table that is no longer theirs to change (sent to review or published) goes
+     * back to «Mis mesas» with the reason instead of a bare 403. Anyone else still meets the policy.
+     */
+    private function sendLockedAuthorBack(GameTableModel $table): ?RedirectResponse
+    {
+        /** @var UserModel $user */
+        $user = auth()->user();
+
+        if ($table->created_by !== $user->id
+            || FrontendCreationStatus::allowsAuthorChanges($table->frontend_creation_status, (bool) $table->is_published)) {
+            return null;
+        }
+
+        $reason = match (true) {
+            (bool) $table->is_published => 'table_locked_published',
+            $table->frontend_creation_status === FrontendCreationStatus::PendingReview => 'table_locked_in_review',
+            default => 'table_locked',
+        };
+
+        return redirect()
+            ->route('gametables.my-tables')
+            ->with('error', __("game-tables::messages.errors.{$reason}"));
     }
 
     /**

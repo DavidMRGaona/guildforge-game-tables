@@ -9,6 +9,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
 import StatusBadge from '../../components/StatusBadge.vue';
 import FormatBadge from '../../components/FormatBadge.vue';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
+import { useFlashMessages } from '@/composables/useFlashMessages';
 
 interface GameTableResponseDTO {
     id: string;
@@ -41,6 +42,9 @@ const props = withDefaults(defineProps<Props>(), {
     tables: () => [],
     canCreate: false,
 });
+
+// Why the last action was refused (e.g. a table already sent to review or published)
+const { error: flashError } = useFlashMessages();
 
 const { t, locale } = useI18n();
 
@@ -176,6 +180,14 @@ function getTableLink(table: GameTableResponseDTO): string {
         </div>
 
         <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+            <div
+                v-if="flashError"
+                role="alert"
+                class="mb-6 rounded-lg bg-red-50 p-4 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400"
+            >
+                {{ flashError }}
+            </div>
+
             <EmptyState
                 v-if="!hasTables"
                 icon="calendar"

@@ -28,12 +28,15 @@ interface Props {
     gdprConsent?: boolean;
     disabled?: boolean;
     error?: string | undefined;
+    /** Errors of each director's fields (`game_masters.<i>.<field>`, `i` in the full list) and of `gm_gdpr_consent` */
+    errors?: Record<string, string>;
 }
 
 const props = withDefaults(defineProps<Props>(), {
     gdprConsent: false,
     disabled: false,
     error: undefined,
+    errors: () => ({}),
 });
 
 const emit = defineEmits<{
@@ -74,6 +77,55 @@ const additionalGms = computed(() => props.modelValue.filter((gm) => gm.role !==
 // GDPR consent is required when there are additional GMs
 const showGdprConsent = computed(() => additionalGms.value.length > 0);
 
+// Position in the full list of the main GM and of each additional GM: the errors are keyed by it
+const mainGmIndex = computed(() => props.modelValue.findIndex((gm) => gm.role === 'main'));
+const additionalGmIndexes = computed(() =>
+    props.modelValue.flatMap((gm, i) => (gm.role !== 'main' ? [i] : []))
+);
+
+function fullIndexOf(additionalIndex: number): number {
+    return additionalGmIndexes.value[additionalIndex] ?? -1;
+}
+
+// The fields shown for each director: their errors go under the input
+const MAIN_GM_FIELDS = ['custom_title', 'phone'] as const;
+const ADDITIONAL_GM_FIELDS = ['first_name', 'last_name', 'email', 'phone', 'custom_title'] as const;
+type GameMasterField = (typeof ADDITIONAL_GM_FIELDS)[number];
+
+function fieldName(fullIndex: number, field: GameMasterField): string {
+    return `game_masters.${fullIndex}.${field}`;
+}
+
+function fieldId(fullIndex: number, field: GameMasterField): string {
+    return `gm-${fullIndex}-${field}`;
+}
+
+function fieldError(fullIndex: number, field: GameMasterField): string | undefined {
+    return props.errors[fieldName(fullIndex, field)];
+}
+
+function errorId(fullIndex: number, field: GameMasterField): string | undefined {
+    return fieldError(fullIndex, field) ? `${fieldId(fullIndex, field)}-error` : undefined;
+}
+
+const gdprConsentError = computed(() => props.errors.gm_gdpr_consent);
+
+// Errors with no input of their own here (e.g. a role): listed with the general error so none is hidden
+const otherErrors = computed((): string[] => {
+    const shown = new Set<string>();
+    if (mainGmIndex.value >= 0) {
+        MAIN_GM_FIELDS.forEach((field) => shown.add(fieldName(mainGmIndex.value, field)));
+    }
+    additionalGmIndexes.value.forEach((i) => ADDITIONAL_GM_FIELDS.forEach((field) => shown.add(fieldName(i, field))));
+    if (showGdprConsent.value) {
+        shown.add('gm_gdpr_consent');
+    }
+
+    return Object.entries(props.errors)
+        .filter(([key]) => !shown.has(key))
+        .map(([, message]) => message);
+});
+
 // Update main GM fields
 function updateMainGm(field: keyof GameMaster, value: unknown): void {
     const updated = props.modelValue.map((gm) => {
@@ -102,17 +154,7 @@ function addGm(): void {
 // Update an additional GM
 function updateAdditionalGm(index: number, field: keyof GameMaster, value: unknown): void {
     // Find the actual index in the full array (skip main GM)
-    let actualIndex = -1;
-    let additionalCount = 0;
-    for (let i = 0; i < props.modelValue.length; i++) {
-        if (props.modelValue[i]?.role !== 'main') {
-            if (additionalCount === index) {
-                actualIndex = i;
-                break;
-            }
-            additionalCount++;
-        }
-    }
+    const actualIndex = fullIndexOf(index);
 
     if (actualIndex < 0) return;
 
@@ -141,17 +183,7 @@ function confirmRemoveGm(): void {
     const index = gmToDeleteIndex.value;
 
     // Find the actual index in the full array
-    let actualIndex = -1;
-    let additionalCount = 0;
-    for (let i = 0; i < props.modelValue.length; i++) {
-        if (props.modelValue[i]?.role !== 'main') {
-            if (additionalCount === index) {
-                actualIndex = i;
-                break;
-            }
-            additionalCount++;
-        }
-    }
+    const actualIndex = fullIndexOf(index);
 
     if (actualIndex >= 0) {
         const updated = props.modelValue.filter((_, i) => i !== actualIndex);
@@ -222,32 +254,54 @@ function cancelRemoveGm(): void {
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <!-- Custom title -->
                 <div>
-                    <label class="block text-sm font-medium text-base-secondary mb-1">
+                    <label :for="fieldId(mainGmIndex, 'custom_title')" class="block text-sm font-medium text-base-secondary mb-1">
                         {{ t('gameTables.create.gameMasters.customTitle') }}
                     </label>
                     <input
+                        :id="fieldId(mainGmIndex, 'custom_title')"
+                        :name="fieldName(mainGmIndex, 'custom_title')"
                         type="text"
+                        :aria-invalid="!!fieldError(mainGmIndex, 'custom_title')"
+                        :aria-describedby="errorId(mainGmIndex, 'custom_title')"
                         :value="mainGm.custom_title"
                         :placeholder="t('gameTables.create.gameMasters.customTitlePlaceholder')"
                         :disabled="disabled"
                         class="w-full rounded-md border border-default bg-surface px-3 py-2 text-sm text-base-primary placeholder-base-muted focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:opacity-50"
                         @input="updateMainGm('custom_title', ($event.target as HTMLInputElement).value)"
                     />
+                    <p
+                        v-if="fieldError(mainGmIndex, 'custom_title')"
+                        :id="errorId(mainGmIndex, 'custom_title')"
+                        class="mt-1 text-sm text-error"
+                    >
+                        {{ fieldError(mainGmIndex, 'custom_title') }}
+                    </p>
                 </div>
 
                 <!-- Phone -->
                 <div>
-                    <label class="block text-sm font-medium text-base-secondary mb-1">
+                    <label :for="fieldId(mainGmIndex, 'phone')" class="block text-sm font-medium text-base-secondary mb-1">
                         {{ t('gameTables.create.gameMasters.phone') }}
                     </label>
                     <input
+                        :id="fieldId(mainGmIndex, 'phone')"
+                        :name="fieldName(mainGmIndex, 'phone')"
                         type="tel"
+                        :aria-invalid="!!fieldError(mainGmIndex, 'phone')"
+                        :aria-describedby="errorId(mainGmIndex, 'phone')"
                         :value="mainGm.phone"
                         :placeholder="t('gameTables.create.gameMasters.phonePlaceholder')"
                         :disabled="disabled"
                         class="w-full rounded-md border border-default bg-surface px-3 py-2 text-sm text-base-primary placeholder-base-muted focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:opacity-50"
                         @input="updateMainGm('phone', ($event.target as HTMLInputElement).value)"
                     />
+                    <p
+                        v-if="fieldError(mainGmIndex, 'phone')"
+                        :id="errorId(mainGmIndex, 'phone')"
+                        class="mt-1 text-sm text-error"
+                    >
+                        {{ fieldError(mainGmIndex, 'phone') }}
+                    </p>
                 </div>
 
                 <!-- Name visibility -->
@@ -320,76 +374,131 @@ function cancelRemoveGm(): void {
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <!-- First name -->
                     <div>
-                        <label class="block text-sm font-medium text-base-secondary mb-1">
+                        <label :for="fieldId(fullIndexOf(index), 'first_name')" class="block text-sm font-medium text-base-secondary mb-1">
                             {{ t('gameTables.create.gameMasters.firstName') }}
                             <span class="text-status-error">*</span>
                         </label>
                         <input
+                            :id="fieldId(fullIndexOf(index), 'first_name')"
+                            :name="fieldName(fullIndexOf(index), 'first_name')"
                             type="text"
+                            :aria-invalid="!!fieldError(fullIndexOf(index), 'first_name')"
+                            :aria-describedby="errorId(fullIndexOf(index), 'first_name')"
                             :value="gm.first_name"
                             :disabled="disabled"
                             class="w-full rounded-md border border-default bg-surface px-3 py-2 text-sm text-base-primary placeholder-base-muted focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:opacity-50"
                             @input="updateAdditionalGm(index, 'first_name', ($event.target as HTMLInputElement).value)"
                         />
+                        <p
+                            v-if="fieldError(fullIndexOf(index), 'first_name')"
+                            :id="errorId(fullIndexOf(index), 'first_name')"
+                            class="mt-1 text-sm text-error"
+                        >
+                            {{ fieldError(fullIndexOf(index), 'first_name') }}
+                        </p>
                     </div>
 
                     <!-- Last name -->
                     <div>
-                        <label class="block text-sm font-medium text-base-secondary mb-1">
+                        <label :for="fieldId(fullIndexOf(index), 'last_name')" class="block text-sm font-medium text-base-secondary mb-1">
                             {{ t('gameTables.create.gameMasters.lastName') }}
                         </label>
                         <input
+                            :id="fieldId(fullIndexOf(index), 'last_name')"
+                            :name="fieldName(fullIndexOf(index), 'last_name')"
                             type="text"
+                            :aria-invalid="!!fieldError(fullIndexOf(index), 'last_name')"
+                            :aria-describedby="errorId(fullIndexOf(index), 'last_name')"
                             :value="gm.last_name"
                             :disabled="disabled"
                             class="w-full rounded-md border border-default bg-surface px-3 py-2 text-sm text-base-primary placeholder-base-muted focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:opacity-50"
                             @input="updateAdditionalGm(index, 'last_name', ($event.target as HTMLInputElement).value)"
                         />
+                        <p
+                            v-if="fieldError(fullIndexOf(index), 'last_name')"
+                            :id="errorId(fullIndexOf(index), 'last_name')"
+                            class="mt-1 text-sm text-error"
+                        >
+                            {{ fieldError(fullIndexOf(index), 'last_name') }}
+                        </p>
                     </div>
 
                     <!-- Email -->
                     <div>
-                        <label class="block text-sm font-medium text-base-secondary mb-1">
+                        <label :for="fieldId(fullIndexOf(index), 'email')" class="block text-sm font-medium text-base-secondary mb-1">
                             {{ t('gameTables.create.gameMasters.email') }}
                             <span class="text-status-error">*</span>
                         </label>
                         <input
+                            :id="fieldId(fullIndexOf(index), 'email')"
+                            :name="fieldName(fullIndexOf(index), 'email')"
                             type="email"
+                            :aria-invalid="!!fieldError(fullIndexOf(index), 'email')"
+                            :aria-describedby="errorId(fullIndexOf(index), 'email')"
                             :value="gm.email"
                             :disabled="disabled"
                             class="w-full rounded-md border border-default bg-surface px-3 py-2 text-sm text-base-primary placeholder-base-muted focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:opacity-50"
                             @input="updateAdditionalGm(index, 'email', ($event.target as HTMLInputElement).value)"
                         />
+                        <p
+                            v-if="fieldError(fullIndexOf(index), 'email')"
+                            :id="errorId(fullIndexOf(index), 'email')"
+                            class="mt-1 text-sm text-error"
+                        >
+                            {{ fieldError(fullIndexOf(index), 'email') }}
+                        </p>
                     </div>
 
                     <!-- Phone -->
                     <div>
-                        <label class="block text-sm font-medium text-base-secondary mb-1">
+                        <label :for="fieldId(fullIndexOf(index), 'phone')" class="block text-sm font-medium text-base-secondary mb-1">
                             {{ t('gameTables.create.gameMasters.phone') }}
                         </label>
                         <input
+                            :id="fieldId(fullIndexOf(index), 'phone')"
+                            :name="fieldName(fullIndexOf(index), 'phone')"
                             type="tel"
+                            :aria-invalid="!!fieldError(fullIndexOf(index), 'phone')"
+                            :aria-describedby="errorId(fullIndexOf(index), 'phone')"
                             :value="gm.phone"
                             :placeholder="t('gameTables.create.gameMasters.phonePlaceholder')"
                             :disabled="disabled"
                             class="w-full rounded-md border border-default bg-surface px-3 py-2 text-sm text-base-primary placeholder-base-muted focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:opacity-50"
                             @input="updateAdditionalGm(index, 'phone', ($event.target as HTMLInputElement).value)"
                         />
+                        <p
+                            v-if="fieldError(fullIndexOf(index), 'phone')"
+                            :id="errorId(fullIndexOf(index), 'phone')"
+                            class="mt-1 text-sm text-error"
+                        >
+                            {{ fieldError(fullIndexOf(index), 'phone') }}
+                        </p>
                     </div>
 
                     <!-- Custom title -->
                     <div>
-                        <label class="block text-sm font-medium text-base-secondary mb-1">
+                        <label :for="fieldId(fullIndexOf(index), 'custom_title')" class="block text-sm font-medium text-base-secondary mb-1">
                             {{ t('gameTables.create.gameMasters.customTitle') }}
                         </label>
                         <input
+                            :id="fieldId(fullIndexOf(index), 'custom_title')"
+                            :name="fieldName(fullIndexOf(index), 'custom_title')"
                             type="text"
+                            :aria-invalid="!!fieldError(fullIndexOf(index), 'custom_title')"
+                            :aria-describedby="errorId(fullIndexOf(index), 'custom_title')"
                             :value="gm.custom_title"
                             :placeholder="t('gameTables.create.gameMasters.customTitlePlaceholder')"
                             :disabled="disabled"
                             class="w-full rounded-md border border-default bg-surface px-3 py-2 text-sm text-base-primary placeholder-base-muted focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:opacity-50"
                             @input="updateAdditionalGm(index, 'custom_title', ($event.target as HTMLInputElement).value)"
                         />
+                        <p
+                            v-if="fieldError(fullIndexOf(index), 'custom_title')"
+                            :id="errorId(fullIndexOf(index), 'custom_title')"
+                            class="mt-1 text-sm text-error"
+                        >
+                            {{ fieldError(fullIndexOf(index), 'custom_title') }}
+                        </p>
                     </div>
 
                     <!-- Name visibility -->
@@ -408,11 +517,16 @@ function cancelRemoveGm(): void {
         <!-- GDPR consent for co-GMs data -->
         <div v-if="showGdprConsent" class="rounded-lg border border-default bg-surface p-4">
             <FormCheckbox
+                id="gm_gdpr_consent"
+                name="gm_gdpr_consent"
                 :model-value="gdprConsent"
                 :disabled="disabled"
                 :label="t('gameTables.create.gameMasters.gdprConsent')"
                 @update:model-value="emit('update:gdprConsent', $event)"
             />
+            <p v-if="gdprConsentError" id="gm_gdpr_consent-error" class="mt-1 text-sm text-error">
+                {{ gdprConsentError }}
+            </p>
         </div>
 
         <!-- Add GM button (ghost variant with user icon) -->
@@ -441,6 +555,9 @@ function cancelRemoveGm(): void {
 
         <!-- Error message -->
         <p v-if="error" class="text-sm text-status-error" role="alert">{{ error }}</p>
+        <p v-for="(message, i) in otherErrors" :key="i" class="text-sm text-status-error" role="alert">
+            {{ message }}
+        </p>
 
         <!-- Delete confirmation dialog -->
         <ConfirmDialog

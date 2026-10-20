@@ -107,7 +107,8 @@ const tabs = computed((): FormTab[] => [
     { id: 'location', label: t('gameTables.create.tabs.location') },
 ]);
 
-// Field to tab mapping for error navigation
+// Field to tab mapping for error navigation (an error key is matched by its first segment, so
+// `game_masters.1.email` or `genres.0` land on the tab of their field)
 const fieldToTab: Record<string, string> = {
     // Basic tab
     game_system_id: 'basic',
@@ -122,6 +123,7 @@ const fieldToTab: Record<string, string> = {
     campaign_id: 'basic',
     // Participants tab
     game_masters: 'participants',
+    gm_gdpr_consent: 'participants',
     min_players: 'participants',
     max_players: 'participants',
     max_spectators: 'participants',
@@ -133,6 +135,7 @@ const fieldToTab: Record<string, string> = {
     character_creation: 'content',
     safety_tools: 'content',
     content_warnings: 'content',
+    content_warning_ids: 'content',
     custom_warnings: 'content',
     // Location tab
     location: 'location',
@@ -192,11 +195,25 @@ const tabErrors = computed(() => {
     const errorKeys = Object.keys(form.errors);
 
     for (const key of errorKeys) {
-        const tab = fieldToTab[key] ?? 'basic';
+        const field = key.split('.')[0] ?? key;
+        const tab = fieldToTab[field] ?? 'basic';
         counts[tab] = (counts[tab] ?? 0) + 1;
     }
 
     return counts;
+});
+
+// Errors of the directors' fields (`game_masters.<i>.<field>`) and of their consent, shown under each input
+const gameMasterErrors = computed((): Record<string, string> => {
+    const errors: Record<string, string> = {};
+
+    for (const [key, message] of Object.entries(form.errors)) {
+        if ((key.startsWith('game_masters.') || key === 'gm_gdpr_consent') && typeof message === 'string') {
+            errors[key] = message;
+        }
+    }
+
+    return errors;
 });
 
 // Find first tab with errors
@@ -739,6 +756,7 @@ function cancel(): void {
                                     :current-user="props.currentUser"
                                     :disabled="form.processing"
                                     :error="form.errors.game_masters"
+                                    :errors="gameMasterErrors"
                                 />
 
                                 <!-- Separator -->

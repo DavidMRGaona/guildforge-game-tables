@@ -78,7 +78,10 @@ final class ResubmissionTest extends ModuleTestCase
         $table = $this->table('draft');
 
         $this->actingAs($this->creator)->post(route('gametables.submit-review', $table->slug))->assertRedirect();
-        $this->actingAs($this->creator)->post(route('gametables.submit-review', $table->slug))->assertForbidden();
+        // The second send takes the author back to «Mis mesas» with the reason
+        $this->actingAs($this->creator)->post(route('gametables.submit-review', $table->slug))
+            ->assertRedirect(route('gametables.my-tables'))
+            ->assertSessionHas('error', 'Esta mesa ya se ha enviado a revisión y no se puede editar.');
 
         $this->assertSame('pending_review', $table->refresh()->frontend_creation_status?->value);
         Notification::assertSentOnDemandTimes(ModerationSubmittedNotification::class, 1);

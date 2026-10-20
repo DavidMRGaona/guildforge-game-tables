@@ -676,6 +676,9 @@ return [
     |--------------------------------------------------------------------------
     */
     'errors' => [
+        'table_locked_published' => 'Esta mesa ya está publicada y no se puede editar.',
+        'table_locked_in_review' => 'Esta mesa ya se ha enviado a revisión y no se puede editar.',
+        'table_locked' => 'Esta mesa ya se ha enviado a revisión o está publicada y no se puede editar.',
         'unauthenticated' => 'Debes iniciar sesión para realizar esta acción',
         'registration_closed' => 'Las inscripciones están cerradas',
         'registration_not_open' => 'Las inscripciones aún no están abiertas',

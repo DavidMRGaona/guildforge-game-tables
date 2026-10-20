@@ -36,7 +36,8 @@ const selected = computed(() => props.campaigns.find((campaign) => campaign.id =
 const filledMax = ref<number | null>(null);
 
 // FormSelect (core) leaves extra attributes on its wrapper, not on the button that takes the
-// focus: the button is told it is required and which message describes its error
+// focus: the button is told which message describes its error. A button does not take
+// `aria-required`; the visible marker on the label says the field is required.
 const errorId = useId();
 const selectWrapper = ref<HTMLElement | null>(null);
 
@@ -45,7 +46,6 @@ watchEffect(
         const button = selectWrapper.value?.querySelector<HTMLElement>('#campaign_id') ?? null;
         if (button === null) return;
 
-        button.setAttribute('aria-required', 'true');
         if (props.error) {
             button.setAttribute('aria-describedby', errorId);
         } else {

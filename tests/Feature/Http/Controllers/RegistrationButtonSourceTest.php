@@ -146,8 +146,10 @@ final class RegistrationButtonSourceTest extends TestCase
 
         // The new-tab warning is part of the link's text, hence of its accessible name
         $this->assertStringContainsString(">{{ t('gameTables.create.campaign.createLink') }} {{ t('gameTables.create.campaign.newTab') }}</a>", $source);
-        // The focusable button of the select is the one told it is required and described by the error
-        $this->assertStringContainsString("button.setAttribute('aria-required', 'true');", $source);
+        // The focusable button of the select is the one described by the error; a button does not
+        // take `aria-required` (the label's marker says the field is required)
+        $this->assertStringNotContainsString("setAttribute('aria-required'", $source);
+        $this->assertStringNotContainsString(':aria-required', $source);
         $this->assertStringContainsString("button.setAttribute('aria-describedby', errorId);", $source);
         $this->assertStringContainsString('<p v-if="error" :id="errorId" class="mt-1 text-sm text-error">', $source);
     }

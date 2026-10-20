@@ -592,6 +592,9 @@ return [
     |--------------------------------------------------------------------------
     */
     'errors' => [
+        'table_locked_published' => 'This table is already published and can no longer be edited.',
+        'table_locked_in_review' => 'This table has already been sent for review and can no longer be edited.',
+        'table_locked' => 'This table has already been sent for review or published and can no longer be edited.',
         'unauthenticated' => 'You must be logged in to perform this action',
         'registration_closed' => 'Registration is closed',
         'registration_not_open' => 'Registration is not open yet',

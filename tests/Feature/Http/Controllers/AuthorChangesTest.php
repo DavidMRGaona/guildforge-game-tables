@@ -73,14 +73,11 @@ final class AuthorChangesTest extends ModuleTestCase
         $this->assertNull(GameTableModel::query()->find($other->id));
     }
 
-    public function test_the_author_cannot_edit_submit_or_delete_a_published_draft_table(): void
+    public function test_the_author_of_a_published_table_goes_back_to_my_tables_with_the_reason(): void
     {
         $table = $this->table(published: true, status: 'draft');
 
-        $this->actingAs($this->author)->get("/mesas/mis-mesas/{$table->slug}/editar")->assertForbidden();
-        $this->actingAs($this->author)->put("/mesas/mis-mesas/{$table->slug}", $this->tableData('Mesa forzada'))->assertForbidden();
-        $this->actingAs($this->author)->post("/mesas/mis-mesas/{$table->slug}/enviar-revision")->assertForbidden();
-        $this->actingAs($this->author)->delete("/mesas/mis-mesas/{$table->slug}")->assertForbidden();
+        $this->assertAuthorSentBackFromEveryRoute($table, 'Esta mesa ya está publicada y no se puede editar.');
 
         $table->refresh();
         $this->assertSame('Mesa del autor', $table->title);
@@ -88,17 +85,62 @@ final class AuthorChangesTest extends ModuleTestCase
         $this->assertSame('draft', $table->frontend_creation_status?->value);
     }
 
-    public function test_the_author_cannot_edit_submit_or_delete_a_table_in_review(): void
+    public function test_the_author_of_a_table_in_review_goes_back_to_my_tables_with_the_reason(): void
     {
         $table = $this->table(published: false, status: 'pending_review');
 
-        $this->actingAs($this->author)->put("/mesas/mis-mesas/{$table->slug}", $this->tableData('Mesa forzada'))->assertForbidden();
-        $this->actingAs($this->author)->post("/mesas/mis-mesas/{$table->slug}/enviar-revision")->assertForbidden();
-        $this->actingAs($this->author)->delete("/mesas/mis-mesas/{$table->slug}")->assertForbidden();
+        $this->assertAuthorSentBackFromEveryRoute($table, 'Esta mesa ya se ha enviado a revisión y no se puede editar.');
 
         $table->refresh();
         $this->assertSame('Mesa del autor', $table->title);
         $this->assertSame('pending_review', $table->frontend_creation_status?->value);
+    }
+
+    public function test_the_author_of_an_approved_unpublished_table_gets_the_general_reason(): void
+    {
+        $table = $this->table(published: false, status: 'approved');
+
+        $this->actingAs($this->author)
+            ->get("/mesas/mis-mesas/{$table->slug}/editar")
+            ->assertRedirect(route('gametables.my-tables'))
+            ->assertSessionHas('error', 'Esta mesa ya se ha enviado a revisión o está publicada y no se puede editar.');
+    }
+
+    public function test_the_reason_follows_the_locale(): void
+    {
+        app()->setLocale('en');
+        $table = $this->table(published: false, status: 'pending_review');
+
+        $this->actingAs($this->author)
+            ->get("/mesas/mis-mesas/{$table->slug}/editar")
+            ->assertRedirect(route('gametables.my-tables'))
+            ->assertSessionHas('error', 'This table has already been sent for review and can no longer be edited.');
+    }
+
+    public function test_anyone_but_the_author_still_gets_forbidden_on_a_table_in_review_or_published(): void
+    {
+        $other = UserModel::factory()->create();
+
+        foreach ([[false, 'pending_review'], [true, 'draft']] as $i => [$published, $status]) {
+            $table = $this->table(published: $published, status: $status, slug: "mesa-ajena-{$i}");
+
+            $this->actingAs($other)->get("/mesas/mis-mesas/{$table->slug}/editar")->assertForbidden();
+            $this->actingAs($other)->put("/mesas/mis-mesas/{$table->slug}", $this->tableData('Mesa ajena'))->assertForbidden();
+            $this->actingAs($other)->post("/mesas/mis-mesas/{$table->slug}/enviar-revision")->assertForbidden();
+            $this->actingAs($other)->delete("/mesas/mis-mesas/{$table->slug}")->assertForbidden();
+
+            $this->assertSame('Mesa del autor', $table->refresh()->title);
+        }
+    }
+
+    public function test_the_author_still_opens_the_edit_form_of_a_draft(): void
+    {
+        $table = $this->table(published: false, status: 'draft');
+
+        $this->actingAs($this->author)
+            ->get("/mesas/mis-mesas/{$table->slug}/editar")
+            ->assertOk()
+            ->assertSessionMissing('error');
     }
 
     public function test_the_author_still_edits_submits_and_deletes_an_unpublished_draft_campaign(): void
@@ -195,6 +237,28 @@ final class AuthorChangesTest extends ModuleTestCase
             ->assertForbidden();
 
         $this->assertSame($title, $table->refresh()->title);
+        $this->assertNotNull(GameTableModel::query()->find($table->id));
+    }
+
+    /**
+     * Every author route (edit form, save, send to review, delete) sends the author back to
+     * «Mis mesas» with the reason, and none of them is forbidden.
+     */
+    private function assertAuthorSentBackFromEveryRoute(GameTableModel $table, string $reason): void
+    {
+        $responses = [
+            'edit' => $this->actingAs($this->author)->get("/mesas/mis-mesas/{$table->slug}/editar"),
+            'update' => $this->actingAs($this->author)->put("/mesas/mis-mesas/{$table->slug}", $this->tableData('Mesa forzada')),
+            'submit' => $this->actingAs($this->author)->post("/mesas/mis-mesas/{$table->slug}/enviar-revision"),
+            'destroy' => $this->actingAs($this->author)->delete("/mesas/mis-mesas/{$table->slug}"),
+        ];
+
+        foreach ($responses as $route => $response) {
+            $this->assertSame(302, $response->getStatusCode(), "{$route} status");
+            $response->assertRedirect(route('gametables.my-tables'));
+            $response->assertSessionHas('error', $reason);
+        }
+
         $this->assertNotNull(GameTableModel::query()->find($table->id));
     }
 
