@@ -80,7 +80,10 @@ final class CampaignQueryService implements CampaignQueryServiceInterface
     ): \Illuminate\Database\Eloquent\Builder {
         $query = CampaignModel::query()
             ->with(['gameSystem', 'creator', 'gameMasters.user'])
-            ->withCount(['gameTables', 'players'])
+            ->withCount([
+                'gameTables',
+                'players' => fn ($players) => $players->whereNull('users.anonymized_at'),
+            ])
             ->where('is_published', true)
             ->whereNotIn('status', [CampaignStatus::Cancelled->value]);
 

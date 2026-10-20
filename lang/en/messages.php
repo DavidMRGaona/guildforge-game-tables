@@ -147,6 +147,8 @@ return [
         'campaign_status' => 'Campaign status',
         'accepts_new_players' => 'Accepts new players',
         'accepts_new_players_help' => 'Indicates if the campaign is actively looking for new players.',
+        'roster_access' => 'Who can request',
+        'roster_access_help' => 'Who can ask to join the roster from the website.',
         'user' => 'User',
         'participant_role' => 'Role',
         'participant_status' => 'Status',
@@ -310,6 +312,16 @@ return [
             'completed' => 'Completed',
             'cancelled' => 'Cancelled',
         ],
+        'roster_access' => [
+            'anyone' => 'Any account',
+            'members_only' => 'Members only',
+        ],
+        'join_request_status' => [
+            'pending' => 'Pending',
+            'accepted' => 'Accepted',
+            'rejected' => 'Rejected',
+            'withdrawn' => 'Withdrawn',
+        ],
         'campaign_frequency' => [
             'weekly' => 'Weekly',
             'biweekly' => 'Biweekly',
@@ -388,6 +400,8 @@ return [
             'automation' => 'Automation',
             'defaults' => 'Default values',
             'notifications' => 'Notifications',
+            'campaign_notifications' => 'Campaign notifications',
+            'campaign_notifications_description' => 'Emails about campaign rosters. Rosters start empty: nothing is sent until someone uses them.',
             'limits' => 'Limits',
         ],
         'fields' => [
@@ -413,6 +427,13 @@ return [
             'send_reminder' => 'Send a reminder before the table',
             'send_reminder_help' => 'An email to every confirmed participant (account or confirmed email) the given hours before the start. Off by default.',
             'reminder_hours_before' => 'Reminder lead time (hours)',
+            'campaign_notify_session_scheduled' => 'Session scheduled (to the roster)',
+            'campaign_notify_join_request_received' => 'Request received (to the direction)',
+            'campaign_notify_join_request_accepted' => 'Request accepted',
+            'campaign_notify_join_request_rejected' => 'Request rejected',
+            'campaign_notify_roster_added' => 'Added to the roster',
+            'campaign_notify_roster_removed' => 'Removed from the roster',
+            'campaign_notify_player_left' => 'Left the roster (to the direction)',
             'max_players_limit' => 'Maximum players limit',
             'max_spectators_limit' => 'Maximum spectators limit',
             'max_duration' => 'Maximum duration (minutes)',
@@ -567,10 +588,34 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | «Mis mesas» and «Mis campañas»: outcome of the author's changes
+    |--------------------------------------------------------------------------
+    */
+    'frontend' => [
+        'table_created' => 'Table created successfully',
+        'table_updated' => 'Table updated successfully',
+        'table_deleted' => 'Table deleted successfully',
+        'submitted_for_review' => 'Table sent for review',
+        'table_published' => 'Table published successfully',
+        'campaign_created' => 'Campaign created successfully',
+        'campaign_updated' => 'Campaign updated successfully',
+        'campaign_deleted' => 'Campaign deleted successfully',
+        'campaign_submitted_for_review' => 'Campaign sent for review',
+        'campaign_published' => 'Campaign published successfully',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | API Errors & Success Messages
     |--------------------------------------------------------------------------
     */
     'errors' => [
+        'table_locked_published' => 'This table is already published and can no longer be changed.',
+        'table_locked_in_review' => 'This table has already been sent for review and can no longer be changed.',
+        'table_locked' => 'This table has already been sent for review or published and can no longer be changed.',
+        'campaign_locked_published' => 'This campaign is already published and can no longer be changed.',
+        'campaign_locked_in_review' => 'This campaign has already been sent for review and can no longer be changed.',
+        'campaign_locked' => 'This campaign has already been sent for review or published and can no longer be changed.',
         'unauthenticated' => 'You must be logged in to perform this action',
         'registration_closed' => 'Registration is closed',
         'registration_not_open' => 'Registration is not open yet',
@@ -581,6 +626,7 @@ return [
         'already_registered' => 'You are already registered for this table',
         'members_only' => 'This table is for members only',
         'invitation_only' => 'This table is by invitation only: the organisation registers the players',
+        'campaign_roster_only' => 'Only for the campaign roster',
         'minimum_age' => 'You do not meet the minimum age requirement',
         'not_found' => 'Registration not found',
         'cannot_cancel' => 'Unable to cancel registration at this time',
@@ -598,6 +644,7 @@ return [
         'confirmation_filled_up' => 'The table filled up while you were confirming.',
         'too_many_confirmation_attempts' => 'Too many attempts with this link. Wait a moment and try again.',
         'guest_rate_limited' => 'You have made too many registrations in a row. Wait a few minutes and try again.',
+        'session_below_roster' => 'This session has fewer seats (:max) than the campaign roster (:count). Raise the maximum number of players before publishing it.',
     ],
 
     'success' => [
@@ -650,7 +697,14 @@ return [
         'language_required' => 'Language is required',
         'experience_level_required' => 'Experience level is required',
         'character_creation_required' => 'Character creation type is required',
-        'campaign_not_owned' => 'You can only link the table to a campaign you created',
+        'campaign_required' => 'Choose the campaign of the session.',
+        'co_director_first_name_required' => 'The co-GM first name is required.',
+        'co_director_email_required' => 'The co-GM email is required.',
+        'co_directors_consent_required' => 'Confirm that you have the co-GMs\' consent.',
+        'campaign_not_owned' => 'You can only link the table to a campaign you direct.',
+        'max_players_below_roster' => 'The maximum number of players cannot be lower than the campaign roster (:count).',
+        'join_message_max' => 'The message may not be longer than 500 characters.',
+        'rejection_reason_max' => 'The reason may not be longer than 500 characters.',
         'event_not_open' => 'You can only link the table to an event open to new tables',
         'registration_closes_after_start' => 'Registrations cannot close after the table starts (:date)',
         'registration_closes_after_end' => 'Registrations cannot close after the session ends (:date)',
@@ -662,6 +716,26 @@ return [
     |--------------------------------------------------------------------------
     */
     'relation_managers' => [
+        'roster' => [
+            'title' => 'Roster',
+            'name' => 'Name',
+            'email' => 'Email',
+            'since' => 'In the roster since',
+            'add' => 'Add player',
+            'account_email' => 'Account email',
+            'remove' => 'Remove',
+            'remove_description' => 'They will lose their seats in the upcoming sessions and will receive an email.',
+        ],
+        'join_requests' => [
+            'title' => 'Requests',
+            'player' => 'Player',
+            'message' => 'Message',
+            'status' => 'Status',
+            'requested_at' => 'Requested on',
+            'accept' => 'Accept',
+            'reject' => 'Reject',
+            'reason' => 'Reason (optional)',
+        ],
         'participants' => [
             'title' => 'Participants',
             'add' => 'Add participant',
@@ -774,6 +848,44 @@ return [
         'awaiting_email' => 'Awaiting confirmation',
     ],
 
+    'roster' => [
+        'errors' => [
+            'unavailable' => 'This campaign is not published.',
+            'finished' => 'The campaign has ended: its roster no longer changes.',
+            'not_accepting' => 'This campaign is not accepting new players.',
+            'roster_full' => 'The roster is full.',
+            'members_only' => 'This campaign only accepts requests from members.',
+            'already_member' => 'You are already part of the roster.',
+            'account_already_member' => 'That account is already part of the roster.',
+            'request_pending' => 'You already have a pending request.',
+            'is_director' => 'Whoever runs the campaign cannot join the roster as a player.',
+            'account_not_found' => 'That account could not be added. Check the email.',
+            'not_pending' => 'This request is no longer pending.',
+            'not_member' => 'That person is not part of the roster.',
+            'max_below_roster' => 'The maximum number of players cannot be lower than the current roster (:count).',
+            'session_not_in_campaign' => 'That session does not belong to this campaign.',
+            'session_started' => 'The session has already started.',
+            'nothing_to_change' => 'There is nothing to change in that session.',
+            'not_member_self' => 'You are not part of the roster of this campaign.',
+            'too_many_requests' => 'You have sent too many requests in a row. Wait a few minutes and try again.',
+            'too_many_additions' => 'You have added too many players in a row. Wait a minute and try again.',
+        ],
+        'success' => [
+            'requested' => 'Request sent. The direction will let you know by email.',
+            'withdrawn' => 'Request withdrawn.',
+            'accepted' => 'Request accepted.',
+            'rejected' => 'Request rejected.',
+            'added' => 'Player added to the roster.',
+            'removed' => 'Player removed from the roster.',
+            'left' => 'You have left the campaign.',
+            'settings_saved' => 'Settings saved.',
+            'absence_marked' => 'Absence marked.',
+            'absence_cleared' => 'Absence cleared.',
+            'rejoined' => 'You are registered for this session again.',
+            'session_absence' => 'You have dropped out of this session. You are still in the campaign.',
+        ],
+    ],
+
     // Server-rendered page metadata (link previews and search engines)
     'seo' => [
         'tables_title' => 'Game tables',
@@ -789,5 +901,55 @@ return [
         'create_campaign_title' => 'Create campaign',
         'edit_campaign_title' => 'Edit campaign',
         'my_campaigns_title' => 'My campaigns',
+        'roster_title' => 'Roster · :title',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Web form fields in validation messages (lowercase: they go inside a sentence)
+    |--------------------------------------------------------------------------
+    */
+    'form_attributes' => [
+        'game_system_id' => 'game system',
+        'title' => 'title',
+        'starts_at' => 'start date and time',
+        'duration_minutes' => 'duration',
+        'table_type' => 'game type',
+        'table_format' => 'format',
+        'min_players' => 'minimum players',
+        'max_players' => 'maximum players',
+        'max_spectators' => 'maximum spectators',
+        'event_id' => 'event',
+        'campaign_id' => 'campaign',
+        'synopsis' => 'synopsis',
+        'location' => 'location',
+        'online_url' => 'online session link',
+        'minimum_age' => 'minimum age',
+        'language' => 'language',
+        'genres' => 'genres',
+        'genres_item' => 'genre',
+        'tone' => 'tone of the game',
+        'experience_level' => 'experience level',
+        'character_creation' => 'character creation',
+        'safety_tools' => 'safety tools',
+        'safety_tools_item' => 'safety tool',
+        'content_warning_ids' => 'content warnings',
+        'content_warning_ids_item' => 'content warning',
+        'custom_warnings' => 'custom warnings',
+        'custom_warnings_item' => 'custom warning',
+        'game_masters' => 'game masters',
+        'game_masters_id' => 'co-GM identifier',
+        'game_masters_user_id' => 'game master account',
+        'game_masters_first_name' => 'co-GM first name',
+        'game_masters_last_name' => 'co-GM last name',
+        'game_masters_email' => 'co-GM email',
+        'game_masters_phone' => 'game master phone',
+        'game_masters_custom_title' => 'game master custom title',
+        'game_masters_is_name_public' => 'show name publicly',
+        'game_masters_role' => 'game master role',
+        'gm_gdpr_consent' => 'co-GMs consent',
+        'notes' => 'additional notes',
+        'frequency' => 'session frequency',
+        'schedule_notes' => 'schedule notes',
     ],
 ];

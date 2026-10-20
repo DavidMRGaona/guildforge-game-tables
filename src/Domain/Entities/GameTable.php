@@ -246,6 +246,15 @@ final class GameTable
     }
 
     /**
+     * Whether the campaign roster may be enrolled now: the opening date and members' early
+     * access do not delay it, only the effective closing does.
+     */
+    public function admitsRosterEnrollment(DateTimeImmutable $now): bool
+    {
+        return $this->canRegister() && $now < $this->effectiveRegistrationClosesAt();
+    }
+
+    /**
      * The moment registrations really close: the configured closing date or the limit of the
      * table (its start, or its end when it admits registrations in play), whichever comes first.
      */

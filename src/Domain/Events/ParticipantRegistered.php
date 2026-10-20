@@ -22,5 +22,8 @@ final class ParticipantRegistered
         // The place among those waiting for the same role (1, 2…), not the stored position, which
         // may have gaps; the name stays so queued events keep working across the update
         public readonly ?int $waitingListPosition = null,
+        // False when the organisation itself restored the registration: the directors are not
+        // told, the participant still gets their confirmation
+        public readonly bool $notifyOrganization = true,
     ) {}
 }

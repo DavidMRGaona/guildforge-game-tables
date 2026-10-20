@@ -21,6 +21,7 @@ use Modules\GameTables\Domain\Entities\Participant;
 use Modules\GameTables\Domain\Enums\GuestAccountsMode;
 use Modules\GameTables\Domain\Enums\GuestConfirmationMode;
 use Modules\GameTables\Domain\Enums\GuestConfirmationOutcome;
+use Modules\GameTables\Domain\Enums\ParticipantCancellationReason;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
 use Modules\GameTables\Domain\Events\GuestConfirmationRequested;
@@ -38,6 +39,7 @@ use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
 use Modules\GameTables\Domain\Exceptions\ParticipantNotFoundException;
 use Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException;
 use Modules\GameTables\Domain\Exceptions\TableFullException;
+use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
@@ -62,6 +64,8 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         private GameTableSettingsReader $settings = new GameTableSettingsReader(),
         // Without it, guest emails are not checked against accounts
         private ?AccountLookupInterface $accounts = null,
+        // Without it, nobody is enrolled from a roster and register() never takes the roster path
+        private ?CampaignRosterRepositoryInterface $roster = null,
     ) {
         $this->seats = new SeatCounter($participantRepository, $settings);
         $this->confirmationPolicy = new GuestConfirmationPolicy($participantRepository, $settings);
@@ -85,6 +89,13 @@ final readonly class RegistrationService implements RegistrationServiceInterface
                 return [...$this->withRank($participant), $wasAwaiting, $promoted, true];
             }
 
+            // A roster member taking their seat back skips the table rules
+            $rejoin = $this->rosterRejoinOf($dto, $userId);
+
+            if ($rejoin !== null) {
+                return [...$this->withRank($this->rejoinLocked($rejoin[0], $rejoin[1], $dto, $userId, $now)), true, $promoted, false];
+            }
+
             // The same rules the table page applies, checked under the lock
             $this->eligibilityService->ensureUserCanRegister($dto->gameTableId, $userId, $dto->role);
 
@@ -101,6 +112,337 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         }
 
         return ParticipantResponseDTO::fromEntity($participant, waitingListRank: $rank, linkedFromGuest: $linked);
+    }
+
+    /**
+     * The session and the user's own row when the request takes the roster path: a roster member
+     * asking for a player seat, with no row yet, an active one (refused as a duplicate) or a
+     * cancelled one (an absence, leaving the roster or their own cancellation). A rejected, no-show
+     * or expired row is the organisation's say: the usual rules apply, as to anyone else. Null
+     * otherwise. Runs under the table lock.
+     *
+     * @return array{GameTable, Participant|null}|null
+     */
+    private function rosterRejoinOf(RegisterParticipantDTO $dto, string $userId): ?array
+    {
+        if ($this->roster === null || $dto->role !== ParticipantRole::Player) {
+            return null;
+        }
+
+        $gameTable = $this->gameTableRepository->find(new GameTableId($dto->gameTableId));
+
+        if ($gameTable === null || ! $this->isRosterMember($gameTable, $userId)) {
+            return null;
+        }
+
+        $existing = $this->participantRepository->findByTableAndUser($gameTable->id, $userId);
+
+        if ($existing !== null && ! $existing->isActive() && ! $existing->isCancelled()) {
+            return null;
+        }
+
+        return [$gameTable, $existing];
+    }
+
+    /**
+     * Whether the user is in the roster of the session's campaign (read as it stands now).
+     */
+    private function isRosterMember(GameTable $gameTable, string $userId): bool
+    {
+        return $this->roster !== null
+            && $gameTable->campaignId !== null
+            && $this->roster->contains($gameTable->campaignId, $userId);
+    }
+
+    /**
+     * A roster member asks for their seat again (after an absence, or with no row yet): only while
+     * the session admits roster enrolment and a seat is free, never onto the waiting list. Runs
+     * under the table lock.
+     *
+     * @throws RegistrationNotAllowedException registration_closed
+     * @throws AlreadyRegisteredException
+     * @throws TableFullException
+     */
+    private function rejoinLocked(GameTable $gameTable, ?Participant $existing, RegisterParticipantDTO $dto, string $userId, DateTimeImmutable $now): Participant
+    {
+        $this->ensureAdmitsRoster($gameTable, $now);
+
+        if ($existing !== null && $existing->isActive()) {
+            throw AlreadyRegisteredException::forTable($userId, $gameTable->id->value);
+        }
+
+        $participant = $this->seatRosterMember($gameTable, $existing, $userId, $now);
+        $participant->updateNotes($dto->notes);
+        $participant->recordFingerprint($dto->fingerprint);
+        $this->participantRepository->save($participant);
+
+        return $participant;
+    }
+
+    /**
+     * @throws RegistrationNotAllowedException registration_closed
+     */
+    private function ensureAdmitsRoster(GameTable $gameTable, DateTimeImmutable $now): void
+    {
+        if (! $gameTable->admitsRosterEnrollment($now)) {
+            throw RegistrationNotAllowedException::because('registration_closed', __('game-tables::messages.errors.registration_closed'));
+        }
+    }
+
+    /**
+     * A free player seat, confirmed whatever the table's confirmation, for the member's inactive
+     * row (reactivated, same id) or a new one. Not saved: the caller saves it.
+     *
+     * @throws TableFullException with nothing changed
+     */
+    private function seatRosterMember(GameTable $gameTable, ?Participant $existing, string $userId, DateTimeImmutable $now): Participant
+    {
+        if (! $gameTable->hasCapacity($this->seats->takenPlayerSeats($gameTable))) {
+            throw TableFullException::forTable($gameTable->id->value);
+        }
+
+        $participant = $this->rosterRow($gameTable, $existing, $userId, $now);
+        $participant->confirm();
+
+        return $participant;
+    }
+
+    /**
+     * The member's inactive row reactivated (same id) or a new pending one, as a roster player row.
+     */
+    private function rosterRow(GameTable $gameTable, ?Participant $existing, string $userId, DateTimeImmutable $now): Participant
+    {
+        $participant = $existing ?? new Participant(
+            id: ParticipantId::generate(),
+            gameTableId: $gameTable->id,
+            userId: $userId,
+            role: ParticipantRole::Player,
+            status: ParticipantStatus::Pending,
+            createdAt: $now,
+            fromRoster: true,
+        );
+
+        if ($existing !== null) {
+            $participant->reactivate();
+        }
+
+        $participant->markFromRoster();
+        $participant->changeRole(ParticipantRole::Player);
+
+        return $participant;
+    }
+
+    public function enrollRoster(string $gameTableId, ?string $onlyUserId = null): array
+    {
+        if ($this->roster === null) {
+            return [];
+        }
+
+        $now = CarbonImmutable::now()->toDateTimeImmutable();
+
+        [$placed, $promotions] = $this->lock->forTable($gameTableId, function () use ($gameTableId, $onlyUserId, $now): array {
+            $gameTable = $this->gameTableRepository->find(new GameTableId($gameTableId));
+
+            if ($gameTable?->campaignId === null || ! $gameTable->admitsRosterEnrollment($now)) {
+                return [[], []];
+            }
+
+            $placed = [];
+            $promotions = [];
+
+            foreach ($this->rosterMembers($gameTable, $onlyUserId) as $userId) {
+                [$participant, $promoted] = $this->enrollMemberLocked($gameTable, $userId, $now);
+
+                if ($participant !== null) {
+                    $placed[] = $this->withRank($participant);
+                }
+
+                if ($promoted !== null) {
+                    $promotions[] = $promoted;
+                }
+            }
+
+            return [$placed, $promotions];
+        });
+
+        // Someone else moved into a seat meanwhile (a lapsed guest row, a guest row taken over) is
+        // told as usual; the members placed are announced by the caller
+        foreach ($promotions as $promoted) {
+            $this->announcePromotion($promoted);
+        }
+
+        return array_map(
+            fn (array $row): ParticipantResponseDTO => ParticipantResponseDTO::fromEntity($row[0], waitingListRank: $row[1]),
+            $placed,
+        );
+    }
+
+    /**
+     * Read under the table lock: the whole roster, or only $onlyUserId while a member.
+     *
+     * @return list<string>
+     */
+    private function rosterMembers(GameTable $gameTable, ?string $onlyUserId): array
+    {
+        if ($onlyUserId !== null) {
+            return $this->isRosterMember($gameTable, $onlyUserId) ? [$onlyUserId] : [];
+        }
+
+        return $this->roster !== null && $gameTable->campaignId !== null
+            ? $this->roster->memberIds($gameTable->campaignId)
+            : [];
+    }
+
+    /**
+     * One member in one session, idempotent (there is no unique key on table and user): an active
+     * loose player row is adopted as it is; a rejected, no-show, expired or absent row stands, and
+     * nothing else is done; otherwise an active guest row made with the member's verified account
+     * email is adopted (taken over as their own registration would take it), a row cancelled on
+     * leaving the roster is reactivated, no row gets a new one, and a plain cancellation of their
+     * own stays. Runs under the table lock.
+     *
+     * @return array{Participant|null, Participant|null} the row placed now (null when nothing was
+     *                                                    placed) and anyone else promoted meanwhile
+     */
+    private function enrollMemberLocked(GameTable $gameTable, string $userId, DateTimeImmutable $now): array
+    {
+        $existing = $this->participantRepository->findByTableAndUser($gameTable->id, $userId);
+
+        if ($existing !== null && $existing->isActive()) {
+            $this->adoptAsRosterRow($existing);
+
+            return [null, null];
+        }
+
+        // The organisation's decision (rejected, no-show, expired) or an absence stands: not even a
+        // guest row of the member's is taken over, as that would delete it
+        if ($existing !== null && (! $existing->isCancelled() || $existing->isSessionAbsence())) {
+            return [null, null];
+        }
+
+        // Also lapses the member's overdue guest row, whose seat may promote someone
+        [$guest, $account, $promoted] = $this->guestOfAccount($gameTable->id->value, $userId, $now);
+
+        if ($guest !== null && $account !== null) {
+            return $this->adoptGuestLocked($guest, $account, $now);
+        }
+
+        if ($existing !== null && ! $existing->leftRoster()) {
+            return [null, $promoted];
+        }
+
+        $participant = $this->rosterRow($gameTable, $existing, $userId, $now);
+        $this->placeRoster($participant, $gameTable);
+        $this->participantRepository->save($participant);
+
+        return [$participant, $promoted];
+    }
+
+    /**
+     * An active player registration of the member's keeps its status and gets the roster's
+     * priority; any other role is left as it is.
+     */
+    private function adoptAsRosterRow(Participant $participant): void
+    {
+        if ($participant->isPlayer() && ! $participant->fromRoster) {
+            $participant->markFromRoster();
+            $this->participantRepository->save($participant);
+        }
+    }
+
+    /**
+     * The member's active guest row becomes theirs instead of a second row. Only a verified account
+     * email proves it is theirs; unverified, or a row that held nothing and finds no room, it stays
+     * the guest's and the member is not enrolled (registering by themselves takes it over as
+     * usual). A row whose email was unconfirmed (never announced) counts as placed now; one that
+     * was already confirmed is adopted as it is. Runs under the table lock.
+     *
+     * @return array{Participant|null, Participant|null} the row placed now and anyone promoted
+     */
+    private function adoptGuestLocked(Participant $guest, AccountDTO $account, DateTimeImmutable $now): array
+    {
+        if (! $account->emailVerified) {
+            return [null, null];
+        }
+
+        try {
+            [$participant, $wasAwaiting, $promoted] = $this->attachGuestLocked($guest, $account->userId, $now);
+        } catch (TableFullException) {
+            return [null, null];
+        }
+
+        $this->adoptAsRosterRow($participant);
+
+        return [$wasAwaiting && $participant->isPlayer() ? $participant : null, $promoted];
+    }
+
+    /**
+     * A free player seat, confirmed whatever the table's confirmation; with none free, the waiting
+     * list, where roster rows come before outsiders.
+     */
+    private function placeRoster(Participant $participant, GameTable $gameTable): void
+    {
+        if ($gameTable->hasCapacity($this->seats->takenPlayerSeats($gameTable))) {
+            $participant->confirm();
+
+            return;
+        }
+
+        $participant->addToWaitingList($this->participantRepository->getNextWaitingListPosition($gameTable->id));
+    }
+
+    public function withdrawRosterMember(string $gameTableId, string $userId): bool
+    {
+        [$cancelled, $promoted] = $this->lock->forTable($gameTableId, function () use ($gameTableId, $userId): array {
+            $participant = $this->participantRepository->findByTableAndUser(new GameTableId($gameTableId), $userId);
+
+            if ($participant === null || ! $participant->fromRoster || ! $participant->canBeCancelled()) {
+                return [false, null];
+            }
+
+            [, , $promoted] = $this->cancelLocked($participant, ParticipantCancellationReason::LeftRoster);
+
+            return [true, $promoted];
+        });
+
+        // Leaving the roster is announced by the caller: no cancellation emails per session
+        if ($promoted !== null) {
+            $this->announcePromotion($promoted);
+        }
+
+        return $cancelled;
+    }
+
+    public function restoreAbsence(string $gameTableId, string $userId): ParticipantResponseDTO
+    {
+        $now = CarbonImmutable::now()->toDateTimeImmutable();
+
+        $participant = $this->lock->forTable($gameTableId, function () use ($gameTableId, $userId, $now): Participant {
+            $existing = $this->participantRepository->findByTableAndUser(new GameTableId($gameTableId), $userId);
+
+            if ($existing === null || ! $existing->isSessionAbsence()) {
+                throw ParticipantNotFoundException::forUserInTable($userId, $gameTableId);
+            }
+
+            $gameTable = $this->gameTableRepository->findOrFail($existing->gameTableId);
+
+            // An absence left behind by someone who has since left the roster is not theirs to restore
+            if (! $this->isRosterMember($gameTable, $userId)) {
+                throw ParticipantNotFoundException::forUserInTable($userId, $gameTableId);
+            }
+
+            $this->ensureAdmitsRoster($gameTable, $now);
+
+            $participant = $this->seatRosterMember($gameTable, $existing, $userId, $now);
+            $this->participantRepository->save($participant);
+
+            return $participant;
+        });
+
+        // The organisation cleared the absence itself: only the member is told
+        $this->announceUserRegistration($participant, null, notifyOrganization: false);
+
+        return $this->toResponse($participant);
     }
 
     /**
@@ -132,14 +474,11 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
     /**
      * In this order: the rules of a user registration (seats aside), then the account's email,
-     * which only proves the guest registration is the user's once verified. The row keeps its
-     * place and role, becomes the user's and loses the guest's email and tokens; an unconfirmed
-     * email counts as confirmed, and a row that held nothing yet (wait mode) is placed as the link
-     * would place it. Refused, the guest row stays as it was. Runs under the table lock.
+     * which only proves the guest registration is the user's once verified; then the row becomes
+     * the user's (attachGuestLocked()). Refused, the guest row stays as it was. Runs under the
+     * table lock.
      *
-     * @return array{Participant, bool, Participant|null} the participant, whether its email was
-     *                                                     unconfirmed (the organisation never heard
-     *                                                     of it) and anyone promoted into a seat
+     * @return array{Participant, bool, Participant|null} as attachGuestLocked()
      *
      * @throws RegistrationNotAllowedException when the user could not register with their account
      * @throws AlreadyRegisteredException when the account's email is not verified
@@ -154,6 +493,25 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             throw AlreadyRegisteredException::emailRegisteredAsGuest($gameTableId);
         }
 
+        return $this->attachGuestLocked($guest, $account->userId, $now);
+    }
+
+    /**
+     * The guest row becomes the user's, whose verified account email proves it is theirs: it keeps
+     * its place and role and loses the guest's email and tokens; an unconfirmed email counts as
+     * confirmed, and a row that held nothing yet (wait mode) is placed as the link would place it.
+     * Runs under the table lock.
+     *
+     * @return array{Participant, bool, Participant|null} the participant, whether its email was
+     *                                                     unconfirmed (the organisation never heard
+     *                                                     of it) and anyone promoted into a seat
+     *
+     * @throws AlreadyRegisteredException when the user has an active registration of their own
+     * @throws TableFullException with nothing changed, when an unplaced row finds no room
+     */
+    private function attachGuestLocked(Participant $guest, string $userId, DateTimeImmutable $now): array
+    {
+        $gameTableId = $guest->gameTableId->value;
         $wasAwaiting = $guest->isAwaitingEmailConfirmation();
         $promoted = null;
 
@@ -168,20 +526,21 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         }
 
         // One row per user and table: a registration of their own that no longer holds anything
-        // (an active one was refused above) gives way to the one taken over
-        $own = $this->participantRepository->findByTableAndUser($guest->gameTableId, $account->userId);
+        // gives way to the one taken over
+        $own = $this->participantRepository->findByTableAndUser($guest->gameTableId, $userId);
 
         if ($own !== null) {
-            // Never reached in the normal flow: ensureUserRulesAdmit() refuses an active row as
-            // already_registered. It stays so a change to the rules can never leave two active rows
+            // Never reached in the normal flow: the user's rules refuse an active row as
+            // already_registered and the roster enrolment adopts it first. It stays so a change to
+            // either can never leave two active rows
             if ($own->isActive()) {
-                throw AlreadyRegisteredException::forTable($account->userId, $gameTableId);
+                throw AlreadyRegisteredException::forTable($userId, $gameTableId);
             }
 
             $this->participantRepository->delete($own->id);
         }
 
-        $guest->attachToAccount($account->userId, $now);
+        $guest->attachToAccount($userId, $now);
         $this->participantRepository->save($guest);
 
         return [$guest, $wasAwaiting, $promoted];
@@ -257,6 +616,9 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         if ($existing !== null) {
             $participant = $existing;
             $participant->reactivate();
+            // Not the roster path (rosterRow() marks its own rows): a row left by an absence or by
+            // leaving the roster is an ordinary registration now
+            $participant->unmarkFromRoster();
             $participant->changeRole($dto->role);
             $participant->updateNotes($dto->notes);
         } else {
@@ -400,8 +762,9 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
     /**
      * @param  int|null  $waitingListRank  the place among those waiting, for the confirmation email
+     * @param  bool  $notifyOrganization  false when the organisation itself restored the registration
      */
-    private function announceUserRegistration(Participant $participant, ?int $waitingListRank): void
+    private function announceUserRegistration(Participant $participant, ?int $waitingListRank, bool $notifyOrganization = true): void
     {
         ParticipantRegistered::dispatch(
             $participant->id->value,
@@ -410,6 +773,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             $participant->role->value,
             $participant->status,
             $waitingListRank,
+            $notifyOrganization,
         );
 
         if ($participant->isConfirmed()) {
@@ -543,7 +907,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     /**
      * @return array{Participant, bool, Participant|null} the cancelled participant, whether it was confirmed, the promoted one
      */
-    private function cancelLocked(Participant $participant): array
+    private function cancelLocked(Participant $participant, ?ParticipantCancellationReason $reason = null): array
     {
         if (! $participant->canBeCancelled()) {
             throw CannotCancelException::notAllowed($participant->id->value);
@@ -552,7 +916,10 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         $wasConfirmed = $participant->isConfirmed();
         $wasPending = $participant->isPending();
 
-        $participant->cancel();
+        // A roster row cancelled without a stated reason is the member missing this session
+        $reason ??= $participant->fromRoster ? ParticipantCancellationReason::SessionAbsence : null;
+
+        $participant->cancel($reason);
         $this->participantRepository->save($participant);
 
         // The only automatic promotion: one waiting player per freed player seat (a pending
@@ -607,8 +974,9 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             return null;
         }
 
-        // A table with manual confirmation keeps the director's say: the promoted player waits as pending
-        $participant->promoteFromWaitingList($gameTable->autoConfirm);
+        // A table with manual confirmation keeps the director's say: the promoted player waits as
+        // pending, except a roster member, who is always confirmed
+        $participant->promoteFromWaitingList($participant->fromRoster || $gameTable->autoConfirm);
         $this->participantRepository->save($participant);
 
         return $participant;

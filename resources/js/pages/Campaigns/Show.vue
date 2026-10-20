@@ -2,19 +2,22 @@
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import type { Campaign } from '../../types/gametables';
+import type { Campaign, JoinBox } from '../../types/gametables';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import StatusBadge from '../../components/StatusBadge.vue';
 import SafetyToolBadge from '../../components/SafetyToolBadge.vue';
 import ContentWarningBadge from '../../components/ContentWarningBadge.vue';
 import GameTableCard from '../../components/GameTableCard.vue';
+import CampaignJoinBox from '../../components/campaigns/CampaignJoinBox.vue';
 import ModuleSlot from '@/components/layout/ModuleSlot.vue';
 import { buildHeroImageUrl } from '@/utils/cloudinary';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 
 interface Props {
     campaign: Campaign;
+    // What the viewer can do with the roster
+    joinBox: JoinBox;
 }
 
 const props = defineProps<Props>();
@@ -329,22 +332,29 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                             </div>
                         </div>
 
-                        <!-- Capacity -->
-                        <div v-if="campaign.maxPlayers !== null">
-                            <h3 class="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
-                                {{ t('campaigns.capacity') }}
-                            </h3>
-                            <div class="text-stone-700 dark:text-stone-300">
-                                <p>
-                                    {{ t('campaigns.playersCount', {
-                                        current: campaign.currentPlayers,
-                                        max: campaign.maxPlayers,
-                                    }) }}
-                                </p>
-                                <p v-if="spotsAvailable !== null" class="text-sm">
-                                    {{ spotsAvailable }} {{ t('campaigns.spotsAvailable') }}
-                                </p>
-                            </div>
+                        <!-- Capacity and the join box -->
+                        <div>
+                            <template v-if="campaign.maxPlayers !== null">
+                                <h3 class="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                                    {{ t('campaigns.capacity') }}
+                                </h3>
+                                <div class="mb-3 text-stone-700 dark:text-stone-300">
+                                    <p>
+                                        {{ t('campaigns.playersCount', {
+                                            current: campaign.currentPlayers,
+                                            max: campaign.maxPlayers,
+                                        }) }}
+                                    </p>
+                                    <p v-if="spotsAvailable !== null" class="text-sm">
+                                        {{ spotsAvailable }} {{ t('campaigns.spotsAvailable') }}
+                                    </p>
+                                </div>
+                            </template>
+                            <CampaignJoinBox
+                                :join-box="joinBox"
+                                :campaign-title="campaign.title"
+                                :campaign-slug="campaign.slug"
+                            />
                         </div>
 
                         <!-- Total Sessions -->

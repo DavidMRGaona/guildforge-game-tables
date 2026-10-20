@@ -54,6 +54,10 @@ use Modules\GameTables\Application\Services\GameMasterServiceInterface;
 use Modules\GameTables\Application\Services\MembershipCheckerInterface;
 use Modules\CookieConsent\Application\DTOs\DeclaredCookieDTO;
 use Modules\CookieConsent\Application\Services\CookieDeclarationRegistryInterface;
+use Modules\GameTables\Application\Services\CampaignDirectionInterface;
+use Modules\GameTables\Application\Services\CampaignRosterQueryInterface;
+use Modules\GameTables\Application\Services\CampaignRosterServiceInterface;
+use Modules\GameTables\Application\Services\CampaignRosterSessionSyncInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
@@ -68,6 +72,13 @@ use Modules\GameTables\Http\Controllers\GuestConfirmationController;
 use Modules\GameTables\Domain\Events\CampaignModerationApproved;
 use Modules\GameTables\Domain\Events\CampaignModerationRejected;
 use Modules\GameTables\Domain\Events\CampaignSubmittedForReview;
+use Modules\GameTables\Domain\Events\RosterMemberEnrolledInSession;
+use Modules\GameTables\Domain\Events\CampaignJoinRequested;
+use Modules\GameTables\Domain\Events\CampaignJoinRequestAccepted;
+use Modules\GameTables\Domain\Events\CampaignJoinRequestRejected;
+use Modules\GameTables\Domain\Events\CampaignRosterMemberAdded;
+use Modules\GameTables\Domain\Events\CampaignRosterMemberRemoved;
+use Modules\GameTables\Domain\Events\CampaignRosterMemberLeft;
 use Modules\GameTables\Domain\Events\GameTableCancelled;
 use Modules\GameTables\Domain\Events\GameTableModerationApproved;
 use Modules\GameTables\Domain\Events\GameTableModerationRejected;
@@ -80,7 +91,9 @@ use Modules\GameTables\Domain\Events\ParticipantConfirmed;
 use Modules\GameTables\Domain\Events\ParticipantPromotedFromWaitingList;
 use Modules\GameTables\Domain\Events\ParticipantRegistered;
 use Modules\GameTables\Domain\Events\ParticipantRejected;
+use Modules\GameTables\Domain\Repositories\CampaignJoinRequestRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
+use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ContentWarningRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\EventGameTableConfigRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameSystemRepositoryInterface;
@@ -94,7 +107,9 @@ use Modules\GameTables\Infrastructure\Listeners\NotifyOnRegistration;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnWaitingListPromotion;
 use Modules\GameTables\Infrastructure\Observers\GameTableObserver;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\EventGameTableConfigModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentCampaignJoinRequestRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentCampaignRepository;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentCampaignRosterRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentContentWarningRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentEventGameTableConfigRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentGameSystemRepository;
@@ -111,6 +126,10 @@ use Modules\GameTables\Infrastructure\Services\FrontendCreationService;
 use Modules\GameTables\Infrastructure\Services\GameMasterService;
 use Modules\GameTables\Infrastructure\Services\GameTableQueryService;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
+use Modules\GameTables\Infrastructure\Services\CampaignDirection;
+use Modules\GameTables\Infrastructure\Services\CampaignRosterQuery;
+use Modules\GameTables\Infrastructure\Services\CampaignRosterService;
+use Modules\GameTables\Infrastructure\Services\CampaignRosterSessionSync;
 use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
 use Modules\GameTables\Infrastructure\Services\GameTableService;
 use Modules\GameTables\Infrastructure\Services\AssociationRoleMembershipChecker;
@@ -132,6 +151,13 @@ use Modules\GameTables\Listeners\SendGuestRegistrationConfirmation;
 use Modules\GameTables\Listeners\SendGuestRegistrationExpiredNotification;
 use Modules\GameTables\Listeners\SendRegistrationConfirmation;
 use Modules\GameTables\Listeners\SendRejectionNotification;
+use Modules\GameTables\Listeners\SendCampaignSessionScheduled;
+use Modules\GameTables\Listeners\NotifyDirectionOfJoinRequest;
+use Modules\GameTables\Listeners\SendJoinRequestAccepted;
+use Modules\GameTables\Listeners\SendJoinRequestRejected;
+use Modules\GameTables\Listeners\SendRosterMemberAdded;
+use Modules\GameTables\Listeners\SendRosterMemberRemoved;
+use Modules\GameTables\Listeners\NotifyDirectionOfPlayerLeft;
 
 final class GameTablesServiceProvider extends ModuleServiceProvider
 {
@@ -151,6 +177,8 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         $this->app->bind(GameSystemRepositoryInterface::class, EloquentGameSystemRepository::class);
         $this->app->bind(ContentWarningRepositoryInterface::class, EloquentContentWarningRepository::class);
         $this->app->bind(CampaignRepositoryInterface::class, EloquentCampaignRepository::class);
+        $this->app->bind(CampaignRosterRepositoryInterface::class, EloquentCampaignRosterRepository::class);
+        $this->app->bind(CampaignJoinRequestRepositoryInterface::class, EloquentCampaignJoinRequestRepository::class);
         $this->app->bind(GameTableRepositoryInterface::class, EloquentGameTableRepository::class);
         $this->app->bind(ParticipantRepositoryInterface::class, EloquentParticipantRepository::class);
         $this->app->bind(EventGameTableConfigRepositoryInterface::class, EloquentEventGameTableConfigRepository::class);
@@ -169,6 +197,10 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         $this->app->bind(EventGameTableConfigServiceInterface::class, EventGameTableConfigService::class);
         $this->app->bind(EventCreationEligibilityServiceInterface::class, EventCreationEligibilityService::class);
         $this->app->bind(NotificationRecipientResolverInterface::class, NotificationRecipientResolver::class);
+        $this->app->bind(CampaignDirectionInterface::class, CampaignDirection::class);
+        $this->app->bind(CampaignRosterSessionSyncInterface::class, CampaignRosterSessionSync::class);
+        $this->app->bind(CampaignRosterServiceInterface::class, CampaignRosterService::class);
+        $this->app->bind(CampaignRosterQueryInterface::class, CampaignRosterQuery::class);
 
         // Query service bindings
         $this->app->bind(GameTableQueryServiceInterface::class, GameTableQueryService::class);
@@ -418,7 +450,9 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     /**
      * Per IP, over the limit a translated message, never an error page. The guest confirmation
      * link (page and button): wide enough for a person, tight enough to stop guessing tokens. The
-     * guest registration form: the limits of the settings, as a form error on the table page.
+     * guest registration form: the limits of the settings, as a form error on the table page. The
+     * requests to join a campaign and the players added from the roster page are limited per user
+     * instead, as a flash on the page.
      */
     private function registerRateLimiters(): void
     {
@@ -467,6 +501,39 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                 Limit::perMinute($settings->guestRateLimitPerMinute())->by('gt-guest:'.$ip)->response($tooMany),
                 Limit::perHour($settings->guestRateLimitPerHour())->by('gt-guest-h:'.$ip)->response($tooMany),
             ];
+        });
+
+        // Requests to join a campaign, per user (the route sits behind auth)
+        RateLimiter::for('game-tables-campaign-join', static function (Request $request): array {
+            $userId = (string) ($request->user()?->getAuthIdentifier() ?? $request->ip() ?? 'unknown');
+            $tooMany = static function (Request $request, array $headers): HttpResponse {
+                $message = (string) __('game-tables::messages.roster.errors.too_many_requests');
+
+                // Inertia cannot show a 429 on the campaign page: the error goes where the refusals go
+                return $request->expectsJson()
+                    ? response()->json(['message' => $message], 429, $headers)
+                    : back()->with('error', $message);
+            };
+
+            return [
+                Limit::perMinute(5)->by('gt-join:'.$userId)->response($tooMany),
+                Limit::perHour(20)->by('gt-join-h:'.$userId)->response($tooMany),
+            ];
+        });
+
+        // Players added by email from the roster page, per user: enough for a direction filling
+        // its roster, too few to try addresses one after another
+        RateLimiter::for('game-tables-campaign-roster-add', static function (Request $request): Limit {
+            $userId = (string) ($request->user()?->getAuthIdentifier() ?? $request->ip() ?? 'unknown');
+
+            return Limit::perMinute(20)->by('gt-roster-add:'.$userId)->response(static function (Request $request, array $headers): HttpResponse {
+                $message = (string) __('game-tables::messages.roster.errors.too_many_additions');
+
+                // As the refusals of the roster page: a flash, not Inertia's raw 429
+                return $request->expectsJson()
+                    ? response()->json(['message' => $message], 429, $headers)
+                    : back()->with('error', $message);
+            });
         });
     }
 
@@ -574,6 +641,42 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         Event::listen(
             CampaignModerationRejected::class,
             [NotifyUserOnCampaignModerationRejected::class, 'handle']
+        );
+
+        // Campaign roster emails
+        Event::listen(
+            RosterMemberEnrolledInSession::class,
+            [SendCampaignSessionScheduled::class, 'handle']
+        );
+
+        Event::listen(
+            CampaignJoinRequested::class,
+            [NotifyDirectionOfJoinRequest::class, 'handle']
+        );
+
+        Event::listen(
+            CampaignJoinRequestAccepted::class,
+            [SendJoinRequestAccepted::class, 'handle']
+        );
+
+        Event::listen(
+            CampaignJoinRequestRejected::class,
+            [SendJoinRequestRejected::class, 'handle']
+        );
+
+        Event::listen(
+            CampaignRosterMemberAdded::class,
+            [SendRosterMemberAdded::class, 'handle']
+        );
+
+        Event::listen(
+            CampaignRosterMemberRemoved::class,
+            [SendRosterMemberRemoved::class, 'handle']
+        );
+
+        Event::listen(
+            CampaignRosterMemberLeft::class,
+            [NotifyDirectionOfPlayerLeft::class, 'handle']
         );
     }
 
@@ -935,7 +1038,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                 module: $this->moduleName(),
                 order: 0,
                 props: [],
-                dataKeys: ['table', 'eligibility', 'guestEligibility', 'userRegistration'],
+                dataKeys: ['table', 'eligibility', 'guestEligibility', 'userRegistration', 'campaignSession'],
             ),
             new SlotRegistrationDTO(
                 slot: 'event-detail-actions',

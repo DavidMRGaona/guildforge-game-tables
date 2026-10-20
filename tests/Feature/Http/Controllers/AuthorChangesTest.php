@@ -73,14 +73,11 @@ final class AuthorChangesTest extends ModuleTestCase
         $this->assertNull(GameTableModel::query()->find($other->id));
     }
 
-    public function test_the_author_cannot_edit_submit_or_delete_a_published_draft_table(): void
+    public function test_the_author_of_a_published_table_goes_back_to_my_tables_with_the_reason(): void
     {
         $table = $this->table(published: true, status: 'draft');
 
-        $this->actingAs($this->author)->get("/mesas/mis-mesas/{$table->slug}/editar")->assertForbidden();
-        $this->actingAs($this->author)->put("/mesas/mis-mesas/{$table->slug}", $this->tableData('Mesa forzada'))->assertForbidden();
-        $this->actingAs($this->author)->post("/mesas/mis-mesas/{$table->slug}/enviar-revision")->assertForbidden();
-        $this->actingAs($this->author)->delete("/mesas/mis-mesas/{$table->slug}")->assertForbidden();
+        $this->assertAuthorSentBackFromEveryRoute($table, 'Esta mesa ya está publicada y ya no se puede modificar.');
 
         $table->refresh();
         $this->assertSame('Mesa del autor', $table->title);
@@ -88,17 +85,62 @@ final class AuthorChangesTest extends ModuleTestCase
         $this->assertSame('draft', $table->frontend_creation_status?->value);
     }
 
-    public function test_the_author_cannot_edit_submit_or_delete_a_table_in_review(): void
+    public function test_the_author_of_a_table_in_review_goes_back_to_my_tables_with_the_reason(): void
     {
         $table = $this->table(published: false, status: 'pending_review');
 
-        $this->actingAs($this->author)->put("/mesas/mis-mesas/{$table->slug}", $this->tableData('Mesa forzada'))->assertForbidden();
-        $this->actingAs($this->author)->post("/mesas/mis-mesas/{$table->slug}/enviar-revision")->assertForbidden();
-        $this->actingAs($this->author)->delete("/mesas/mis-mesas/{$table->slug}")->assertForbidden();
+        $this->assertAuthorSentBackFromEveryRoute($table, 'Esta mesa ya se ha enviado a revisión y ya no se puede modificar.');
 
         $table->refresh();
         $this->assertSame('Mesa del autor', $table->title);
         $this->assertSame('pending_review', $table->frontend_creation_status?->value);
+    }
+
+    public function test_the_author_of_an_approved_unpublished_table_gets_the_general_reason(): void
+    {
+        $table = $this->table(published: false, status: 'approved');
+
+        $this->actingAs($this->author)
+            ->get("/mesas/mis-mesas/{$table->slug}/editar")
+            ->assertRedirect(route('gametables.my-tables'))
+            ->assertSessionHas('error', 'Esta mesa ya se ha enviado a revisión o está publicada y ya no se puede modificar.');
+    }
+
+    public function test_the_reason_follows_the_locale(): void
+    {
+        app()->setLocale('en');
+        $table = $this->table(published: false, status: 'pending_review');
+
+        $this->actingAs($this->author)
+            ->get("/mesas/mis-mesas/{$table->slug}/editar")
+            ->assertRedirect(route('gametables.my-tables'))
+            ->assertSessionHas('error', 'This table has already been sent for review and can no longer be changed.');
+    }
+
+    public function test_anyone_but_the_author_still_gets_forbidden_on_a_table_in_review_or_published(): void
+    {
+        $other = UserModel::factory()->create();
+
+        foreach ([[false, 'pending_review'], [true, 'draft']] as $i => [$published, $status]) {
+            $table = $this->table(published: $published, status: $status, slug: "mesa-ajena-{$i}");
+
+            $this->actingAs($other)->get("/mesas/mis-mesas/{$table->slug}/editar")->assertForbidden();
+            $this->actingAs($other)->put("/mesas/mis-mesas/{$table->slug}", $this->tableData('Mesa ajena'))->assertForbidden();
+            $this->actingAs($other)->post("/mesas/mis-mesas/{$table->slug}/enviar-revision")->assertForbidden();
+            $this->actingAs($other)->delete("/mesas/mis-mesas/{$table->slug}")->assertForbidden();
+
+            $this->assertSame('Mesa del autor', $table->refresh()->title);
+        }
+    }
+
+    public function test_the_author_still_opens_the_edit_form_of_a_draft(): void
+    {
+        $table = $this->table(published: false, status: 'draft');
+
+        $this->actingAs($this->author)
+            ->get("/mesas/mis-mesas/{$table->slug}/editar")
+            ->assertOk()
+            ->assertSessionMissing('error');
     }
 
     public function test_the_author_still_edits_submits_and_deletes_an_unpublished_draft_campaign(): void
@@ -123,13 +165,11 @@ final class AuthorChangesTest extends ModuleTestCase
         $this->assertNull(CampaignModel::query()->find($other->id));
     }
 
-    public function test_the_author_cannot_edit_submit_or_delete_a_published_draft_campaign(): void
+    public function test_the_author_of_a_published_campaign_goes_back_to_my_campaigns_with_the_reason(): void
     {
         $campaign = $this->campaign(published: true, status: 'draft');
 
-        $this->actingAs($this->author)->put("/campanas/mis-campanas/{$campaign->id}", $this->campaignData('Campaña forzada'))->assertForbidden();
-        $this->actingAs($this->author)->post("/campanas/mis-campanas/{$campaign->id}/enviar-revision")->assertForbidden();
-        $this->actingAs($this->author)->delete("/campanas/mis-campanas/{$campaign->id}")->assertForbidden();
+        $this->assertCampaignAuthorSentBackFromEveryRoute($campaign, 'Esta campaña ya está publicada y ya no se puede modificar.');
 
         $campaign->refresh();
         $this->assertSame('Campaña del autor', $campaign->title);
@@ -137,17 +177,143 @@ final class AuthorChangesTest extends ModuleTestCase
         $this->assertSame('draft', $campaign->frontend_creation_status?->value);
     }
 
-    public function test_the_author_cannot_edit_submit_or_delete_a_campaign_in_review(): void
+    public function test_the_author_of_a_campaign_in_review_goes_back_to_my_campaigns_with_the_reason(): void
     {
         $campaign = $this->campaign(published: false, status: 'pending_review');
 
-        $this->actingAs($this->author)->put("/campanas/mis-campanas/{$campaign->id}", $this->campaignData('Campaña forzada'))->assertForbidden();
-        $this->actingAs($this->author)->post("/campanas/mis-campanas/{$campaign->id}/enviar-revision")->assertForbidden();
-        $this->actingAs($this->author)->delete("/campanas/mis-campanas/{$campaign->id}")->assertForbidden();
+        $this->assertCampaignAuthorSentBackFromEveryRoute($campaign, 'Esta campaña ya se ha enviado a revisión y ya no se puede modificar.');
 
         $campaign->refresh();
         $this->assertSame('Campaña del autor', $campaign->title);
         $this->assertSame('pending_review', $campaign->frontend_creation_status?->value);
+    }
+
+    public function test_the_author_of_an_approved_unpublished_campaign_gets_the_general_reason(): void
+    {
+        $campaign = $this->campaign(published: false, status: 'approved');
+
+        $this->actingAs($this->author)
+            ->get("/campanas/mis-campanas/{$campaign->id}/editar")
+            ->assertRedirect(route('campaigns.my-campaigns'))
+            ->assertSessionHas('error', 'Esta campaña ya se ha enviado a revisión o está publicada y ya no se puede modificar.');
+    }
+
+    public function test_the_campaign_reason_follows_the_locale(): void
+    {
+        app()->setLocale('en');
+        $campaign = $this->campaign(published: true, status: 'approved');
+
+        $this->actingAs($this->author)
+            ->delete("/campanas/mis-campanas/{$campaign->id}")
+            ->assertRedirect(route('campaigns.my-campaigns'))
+            ->assertSessionHas('error', 'This campaign is already published and can no longer be changed.');
+    }
+
+    public function test_anyone_but_the_author_still_gets_forbidden_on_a_campaign_in_review_or_published(): void
+    {
+        $other = UserModel::factory()->create();
+
+        foreach ([[false, 'pending_review'], [true, 'draft']] as $i => [$published, $status]) {
+            $campaign = $this->campaign(published: $published, status: $status, slug: "campana-ajena-{$i}");
+
+            // The edit form does not reveal that the campaign exists
+            $this->actingAs($other)->get("/campanas/mis-campanas/{$campaign->id}/editar")->assertNotFound();
+            $this->actingAs($other)->put("/campanas/mis-campanas/{$campaign->id}", $this->campaignData('Campaña ajena'))->assertForbidden();
+            $this->actingAs($other)->post("/campanas/mis-campanas/{$campaign->id}/enviar-revision")->assertForbidden();
+            $this->actingAs($other)->delete("/campanas/mis-campanas/{$campaign->id}")->assertForbidden();
+
+            $this->assertSame('Campaña del autor', $campaign->refresh()->title);
+        }
+    }
+
+    public function test_the_edit_form_of_someone_elses_campaign_is_not_found(): void
+    {
+        $other = UserModel::factory()->create();
+        $manager = $this->userWith(['gametables:campaigns.update']);
+
+        foreach ([[false, 'draft'], [false, 'rejected'], [false, 'approved'], [true, 'approved']] as $i => [$published, $status]) {
+            $campaign = $this->campaign(published: $published, status: $status, slug: "campana-ajena-{$i}");
+
+            $this->actingAs($other)->get("/campanas/mis-campanas/{$campaign->id}/editar")->assertNotFound();
+            $this->actingAs($manager)->get("/campanas/mis-campanas/{$campaign->id}/editar")->assertNotFound();
+        }
+
+        $this->actingAs($other)->get('/campanas/mis-campanas/'.Str::uuid().'/editar')->assertNotFound();
+    }
+
+    public function test_a_table_sent_for_review_says_so(): void
+    {
+        $table = $this->table(published: false, status: 'draft');
+
+        $this->actingAs($this->author)
+            ->post("/mesas/mis-mesas/{$table->slug}/enviar-revision")
+            ->assertRedirect(route('gametables.my-tables'))
+            ->assertSessionHas('success', 'Mesa enviada para revisión');
+
+        $this->assertFalse($table->refresh()->is_published);
+    }
+
+    public function test_a_table_published_without_review_says_it_was_published(): void
+    {
+        config()->set('modules.settings.game-tables.frontend_creation.publication.mode', 'auto');
+        $table = $this->table(published: false, status: 'draft');
+
+        $this->actingAs($this->author)
+            ->post("/mesas/mis-mesas/{$table->slug}/enviar-revision")
+            ->assertRedirect(route('gametables.my-tables'))
+            ->assertSessionHas('success', 'Mesa publicada correctamente');
+
+        $this->assertTrue($table->refresh()->is_published);
+    }
+
+    public function test_a_campaign_sent_for_review_says_so(): void
+    {
+        $campaign = $this->campaign(published: false, status: 'draft');
+
+        $this->actingAs($this->author)
+            ->post("/campanas/mis-campanas/{$campaign->id}/enviar-revision")
+            ->assertRedirect(route('campaigns.my-campaigns'))
+            ->assertSessionHas('success', 'Campaña enviada para revisión');
+
+        $this->assertFalse($campaign->refresh()->is_published);
+    }
+
+    public function test_a_campaign_published_without_review_says_it_was_published(): void
+    {
+        config()->set('modules.settings.game-tables.frontend_creation.publication.mode', 'auto');
+        $campaign = $this->campaign(published: false, status: 'draft');
+
+        $this->actingAs($this->author)
+            ->post("/campanas/mis-campanas/{$campaign->id}/enviar-revision")
+            ->assertRedirect(route('campaigns.my-campaigns'))
+            ->assertSessionHas('success', 'Campaña publicada correctamente');
+
+        $this->assertTrue($campaign->refresh()->is_published);
+    }
+
+    public function test_the_published_message_follows_the_locale(): void
+    {
+        app()->setLocale('en');
+        config()->set('modules.settings.game-tables.frontend_creation.publication.mode', 'auto');
+        $table = $this->table(published: false, status: 'draft');
+        $campaign = $this->campaign(published: false, status: 'draft');
+
+        $this->actingAs($this->author)
+            ->post("/mesas/mis-mesas/{$table->slug}/enviar-revision")
+            ->assertSessionHas('success', 'Table published successfully');
+        $this->actingAs($this->author)
+            ->post("/campanas/mis-campanas/{$campaign->id}/enviar-revision")
+            ->assertSessionHas('success', 'Campaign published successfully');
+    }
+
+    public function test_the_author_still_opens_the_edit_form_of_a_draft_campaign(): void
+    {
+        $campaign = $this->campaign(published: false, status: 'draft');
+
+        $this->actingAs($this->author)
+            ->get("/campanas/mis-campanas/{$campaign->id}/editar")
+            ->assertOk()
+            ->assertSessionMissing('error');
     }
 
     public function test_the_author_policy_follows_the_same_rule(): void
@@ -196,6 +362,50 @@ final class AuthorChangesTest extends ModuleTestCase
 
         $this->assertSame($title, $table->refresh()->title);
         $this->assertNotNull(GameTableModel::query()->find($table->id));
+    }
+
+    /**
+     * Every author route (edit form, save, send to review, delete) sends the author back to
+     * «Mis mesas» with the reason, and none of them is forbidden.
+     */
+    private function assertAuthorSentBackFromEveryRoute(GameTableModel $table, string $reason): void
+    {
+        $responses = [
+            'edit' => $this->actingAs($this->author)->get("/mesas/mis-mesas/{$table->slug}/editar"),
+            'update' => $this->actingAs($this->author)->put("/mesas/mis-mesas/{$table->slug}", $this->tableData('Mesa forzada')),
+            'submit' => $this->actingAs($this->author)->post("/mesas/mis-mesas/{$table->slug}/enviar-revision"),
+            'destroy' => $this->actingAs($this->author)->delete("/mesas/mis-mesas/{$table->slug}"),
+        ];
+
+        foreach ($responses as $route => $response) {
+            $this->assertSame(302, $response->getStatusCode(), "{$route} status");
+            $response->assertRedirect(route('gametables.my-tables'));
+            $response->assertSessionHas('error', $reason);
+        }
+
+        $this->assertNotNull(GameTableModel::query()->find($table->id));
+    }
+
+    /**
+     * Every author route of a campaign (edit form, save, send to review, delete) sends the author
+     * back to «Mis campañas» with the reason, and none of them is forbidden.
+     */
+    private function assertCampaignAuthorSentBackFromEveryRoute(CampaignModel $campaign, string $reason): void
+    {
+        $responses = [
+            'edit' => $this->actingAs($this->author)->get("/campanas/mis-campanas/{$campaign->id}/editar"),
+            'update' => $this->actingAs($this->author)->put("/campanas/mis-campanas/{$campaign->id}", $this->campaignData('Campaña forzada')),
+            'submit' => $this->actingAs($this->author)->post("/campanas/mis-campanas/{$campaign->id}/enviar-revision"),
+            'destroy' => $this->actingAs($this->author)->delete("/campanas/mis-campanas/{$campaign->id}"),
+        ];
+
+        foreach ($responses as $route => $response) {
+            $this->assertSame(302, $response->getStatusCode(), "{$route} status");
+            $response->assertRedirect(route('campaigns.my-campaigns'));
+            $response->assertSessionHas('error', $reason);
+        }
+
+        $this->assertNotNull(CampaignModel::query()->find($campaign->id));
     }
 
     /**

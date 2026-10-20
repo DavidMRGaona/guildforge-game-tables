@@ -9,12 +9,18 @@ use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Enums\CampaignFrequency;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
+use Modules\GameTables\Domain\Enums\RosterAccess;
+use Modules\GameTables\Domain\Exceptions\RosterActionRefusedException;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\GameSystemId;
-use PHPUnit\Framework\TestCase;
+use Tests\Support\Modules\ModuleTestCase;
 
-final class CampaignTest extends TestCase
+final class CampaignTest extends ModuleTestCase
 {
+    protected ?string $moduleName = 'game-tables';
+
+    protected bool $autoEnableModule = true;
+
     public function test_it_creates_campaign_with_required_data(): void
     {
         $id = CampaignId::generate();
@@ -301,5 +307,85 @@ final class CampaignTest extends TestCase
             status: $status,
             acceptsNewPlayers: $acceptsNewPlayers,
         );
+    }
+
+    private function rosterCampaign(
+        CampaignStatus $status = CampaignStatus::Recruiting,
+        bool $accepts = true,
+        ?int $max = null,
+        bool $published = false,
+        ?FrontendCreationStatus $frontend = null,
+        string $createdBy = 'user-uuid-123',
+    ): Campaign {
+        return new Campaign(
+            id: CampaignId::generate(),
+            gameSystemId: GameSystemId::generate(),
+            createdBy: $createdBy,
+            title: 'Curse of Strahd',
+            slug: 'curse-of-strahd',
+            status: $status,
+            acceptsNewPlayers: $accepts,
+            maxPlayers: $max,
+            isPublished: $published,
+            frontendCreationStatus: $frontend,
+        );
+    }
+
+    public function test_an_active_campaign_accepting_players_is_open(): void
+    {
+        $this->assertTrue($this->rosterCampaign(CampaignStatus::Recruiting)->canAcceptNewPlayers());
+        $this->assertTrue($this->rosterCampaign(CampaignStatus::Active)->canAcceptNewPlayers());
+        $this->assertFalse($this->rosterCampaign(CampaignStatus::OnHold)->canAcceptNewPlayers());
+        $this->assertFalse($this->rosterCampaign(CampaignStatus::Completed)->canAcceptNewPlayers());
+        $this->assertFalse($this->rosterCampaign(CampaignStatus::Cancelled)->canAcceptNewPlayers());
+        $this->assertFalse($this->rosterCampaign(CampaignStatus::Active, accepts: false)->canAcceptNewPlayers());
+    }
+
+    public function test_available_for_sessions_needs_approval_or_publication_and_not_finished(): void
+    {
+        $this->assertFalse($this->rosterCampaign(frontend: FrontendCreationStatus::Draft)->isAvailableForSessions());
+        $this->assertFalse($this->rosterCampaign(frontend: FrontendCreationStatus::PendingReview)->isAvailableForSessions());
+        $this->assertTrue($this->rosterCampaign(frontend: FrontendCreationStatus::Approved)->isAvailableForSessions());
+        $this->assertTrue($this->rosterCampaign(published: true)->isAvailableForSessions());
+        $this->assertFalse($this->rosterCampaign(CampaignStatus::Completed, published: true)->isAvailableForSessions());
+        $this->assertTrue($this->rosterCampaign(CampaignStatus::Completed)->isFinished());
+        $this->assertFalse($this->rosterCampaign(CampaignStatus::OnHold)->isFinished());
+    }
+
+    public function test_has_room_for(): void
+    {
+        $limited = $this->rosterCampaign(max: 5);
+
+        $this->assertTrue($limited->hasRoomFor(4));
+        $this->assertFalse($limited->hasRoomFor(5));
+        $this->assertTrue($this->rosterCampaign()->hasRoomFor(500));
+    }
+
+    public function test_web_creator_directs_only_web_campaigns(): void
+    {
+        $web = $this->rosterCampaign(frontend: FrontendCreationStatus::Approved);
+        $panel = $this->rosterCampaign();
+
+        $this->assertTrue($web->isDirectedFromWebBy('user-uuid-123'));
+        $this->assertFalse($web->isDirectedFromWebBy('other'));
+        $this->assertFalse($panel->isDirectedFromWebBy('user-uuid-123'));
+    }
+
+    public function test_roster_settings_refuse_a_max_below_the_roster(): void
+    {
+        $campaign = $this->rosterCampaign();
+
+        try {
+            $campaign->changeRosterSettings(true, RosterAccess::MembersOnly, 3, 4);
+            $this->fail('Expected a refusal');
+        } catch (RosterActionRefusedException $e) {
+            $this->assertSame('max_below_roster', $e->reason);
+            $this->assertSame('El máximo de jugadores no puede ser menor que la plantilla actual (4).', $e->getMessage());
+        }
+
+        $campaign->changeRosterSettings(false, RosterAccess::MembersOnly, null, 4);
+        $this->assertFalse($campaign->acceptsNewPlayers);
+        $this->assertSame(RosterAccess::MembersOnly, $campaign->rosterAccess);
+        $this->assertNull($campaign->maxPlayers);
     }
 }

@@ -130,4 +130,34 @@ final class GameTablesSettingsLabelsTest extends ModuleTestCase
             ->call('save')
             ->assertHasFormErrors(['guest_confirmation.hold_hours']);
     }
+
+    public function test_the_campaign_notifications_section_shows_its_seven_toggles(): void
+    {
+        app()->setLocale('es');
+
+        $html = Livewire::test(GameTablesSettings::class)
+            ->assertOk()
+            ->assertFormFieldExists('campaign_notifications.session_scheduled')
+            ->assertFormFieldExists('campaign_notifications.join_request_received')
+            ->assertFormFieldExists('campaign_notifications.join_request_accepted')
+            ->assertFormFieldExists('campaign_notifications.join_request_rejected')
+            ->assertFormFieldExists('campaign_notifications.roster_added')
+            ->assertFormFieldExists('campaign_notifications.roster_removed')
+            ->assertFormFieldExists('campaign_notifications.player_left')
+            ->assertSee('Notificaciones de campañas')
+            ->assertSee('Sesión programada (a la plantilla)')
+            ->assertSee('Solicitud recibida (a la dirección)')
+            ->assertSee('Solicitud aceptada')
+            ->assertSee('Solicitud rechazada')
+            ->assertSee('Añadido a la plantilla')
+            ->assertSee('Quitado de la plantilla')
+            ->assertSee('Salida de la plantilla (a la dirección)')
+            ->html();
+
+        $general = strpos($html, 'Antelación del recordatorio');
+        $campaigns = strpos($html, 'Notificaciones de campañas');
+        $this->assertNotFalse($general);
+        $this->assertNotFalse($campaigns);
+        $this->assertGreaterThan($general, $campaigns);
+    }
 }

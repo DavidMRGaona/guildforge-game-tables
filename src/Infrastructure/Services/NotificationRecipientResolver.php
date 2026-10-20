@@ -54,11 +54,14 @@ final readonly class NotificationRecipientResolver implements NotificationRecipi
      */
     public function getGameMasterEmails(string $gameTableId): array
     {
-        return GameMasterModel::query()
-            ->whereHas('gameTables', fn ($query) => $query->where('gametables_tables.id', $gameTableId))
-            ->where('notify_by_email', true)
-            ->with('user')
-            ->get()
+        $gameTable = GameTableModel::query()->find($gameTableId);
+
+        if ($gameTable === null) {
+            return [];
+        }
+
+        return $gameTable->effective_game_masters
+            ->filter(fn (GameMasterModel $gm): bool => $gm->notify_by_email)
             ->map(fn (GameMasterModel $gm): ?string => $gm->email ?? $gm->user?->email)
             ->filter()
             ->unique()

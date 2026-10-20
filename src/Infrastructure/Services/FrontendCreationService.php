@@ -9,11 +9,13 @@ use App\Domain\Entities\Event;
 use App\Domain\Repositories\EventRepositoryInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Modules\GameTables\Application\DTOs\CampaignResponseDTO;
 use Modules\GameTables\Application\DTOs\FrontendCreateCampaignDTO;
 use Modules\GameTables\Application\DTOs\FrontendCreateGameTableDTO;
 use Modules\GameTables\Application\DTOs\GameMasterResponseDTO;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
+use Modules\GameTables\Application\Services\CampaignDirectionInterface;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
 use Modules\GameTables\Application\Services\EventCreationEligibilityServiceInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
@@ -25,6 +27,7 @@ use Modules\GameTables\Domain\Enums\CampaignStatus;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
+use Modules\GameTables\Domain\Enums\GameMasterRole;
 use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\Language;
 use Modules\GameTables\Domain\Enums\SafetyTool;
@@ -41,7 +44,10 @@ use Modules\GameTables\Domain\Exceptions\CampaignNotFoundException;
 use Modules\GameTables\Domain\Exceptions\GameTableNotFoundException;
 use Modules\GameTables\Domain\Exceptions\NotEditableException;
 use Modules\GameTables\Domain\Exceptions\NotEligibleToCreateException;
+use Modules\GameTables\Domain\Exceptions\SessionBelowRosterException;
+use Modules\GameTables\Domain\Repositories\CampaignJoinRequestRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
+use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ContentWarningRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameSystemRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\EventGameTableConfigRepositoryInterface;
@@ -50,6 +56,8 @@ use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\GameSystemId;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
 final readonly class FrontendCreationService implements FrontendCreationServiceInterface
 {
@@ -66,6 +74,10 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         private EventRepositoryInterface $eventRepository,
         private GameMasterServiceInterface $gameMasterService,
         private EventGameTableConfigRepositoryInterface $configRepository,
+        private CampaignSessionCreationGate $sessionGate,
+        private CampaignRosterRepositoryInterface $roster,
+        private CampaignDirectionInterface $direction,
+        private CampaignJoinRequestRepositoryInterface $joinRequests,
     ) {}
 
     /**
@@ -80,14 +92,25 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
     public function createGameTable(FrontendCreateGameTableDTO $dto): GameTableResponseDTO
     {
         // 1. Check eligibility - use event-specific if event ID provided
-        $eligibility = $dto->eventId !== null
-            ? $this->eventEligibilityService->canCreateTableForEvent($dto->eventId, $dto->createdBy)
-            : $this->eligibilityService->canCreateTable($dto->createdBy);
+        $this->ensureMayCreate($dto->createdBy, $dto->eventId, $dto->tableType, $dto->campaignId);
 
-        if (! $eligibility->eligible) {
-            throw NotEligibleToCreateException::withReason($eligibility->reason ?? 'unknown');
+        // A table that would be published at once is refused before anything is saved when it has
+        // fewer seats than its campaign roster; the transaction below covers a roster that grows
+        // meanwhile (publish() checks again and nothing is kept)
+        $creationStatus = $this->determineInitialStatus($dto->createdBy);
+
+        if ($creationStatus === FrontendCreationStatus::Approved) {
+            $this->ensureFitsRoster($dto);
         }
 
+        return DB::transaction(fn (): GameTableResponseDTO => $this->persistNewTable($dto, $creationStatus));
+    }
+
+    /**
+     * @throws SessionBelowRosterException when it is published at once with fewer seats than the roster
+     */
+    private function persistNewTable(FrontendCreateGameTableDTO $dto, FrontendCreationStatus $creationStatus): GameTableResponseDTO
+    {
         // 2. Get registration closes date from event if applicable
         $registrationClosesAt = null;
         if ($dto->eventId !== null) {
@@ -108,27 +131,68 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         // 4. Create the table (GameTableService handles the creation)
         $gameTable = $this->gameTableService->create($createDto);
 
-        // 5. Determine initial status based on publication mode
-        $creationStatus = $this->determineInitialStatus($dto->createdBy);
-
-        // 6. Retrieve the entity to update frontend creation status
+        // 5. Retrieve the entity to update frontend creation status
         $tableEntity = $this->gameTableRepository->find(new GameTableId($gameTable->id));
         if ($tableEntity !== null) {
             $tableEntity->setFrontendCreationStatus($creationStatus);
             $this->gameTableRepository->save($tableEntity);
         }
 
-        // 7. Sync game masters
+        // 6. Sync game masters
         if ($dto->gameMasters !== null && count($dto->gameMasters) > 0) {
-            $this->gameMasterService->syncTableGameMasters($gameTable->id, $dto->gameMasters);
+            $this->syncAuthorDirectors($gameTable->id, $dto->gameMasters, $dto->createdBy, edited: false);
         }
 
-        // 8. Auto-publish for approved status
+        // 7. Auto-publish for approved status
         if ($creationStatus === FrontendCreationStatus::Approved) {
             $gameTable = $this->gameTableService->publish($gameTable->id);
         }
 
         return $gameTable;
+    }
+
+    /**
+     * Creating, editing and sending to review a table follow the usual creation rules (the event's
+     * when it belongs to one), with one exception: directing an approved campaign is enough to
+     * create its sessions outside an event (only the main creation switch applies).
+     *
+     * @throws NotEligibleToCreateException
+     */
+    private function ensureMayCreate(string $userId, ?string $eventId, TableType $tableType, ?string $campaignId): void
+    {
+        $eligibility = $eventId !== null
+            ? $this->eventEligibilityService->canCreateTableForEvent($eventId, $userId)
+            : $this->eligibilityService->canCreateTable($userId);
+
+        if ($eligibility->eligible || $this->isSessionOfDirectedCampaign($userId, $eventId, $tableType, $campaignId)) {
+            return;
+        }
+
+        throw NotEligibleToCreateException::withReason($eligibility->reason ?? 'unknown');
+    }
+
+    private function isSessionOfDirectedCampaign(string $userId, ?string $eventId, TableType $tableType, ?string $campaignId): bool
+    {
+        return $eventId === null
+            && $tableType === TableType::CampaignSession
+            && $campaignId !== null
+            && $this->sessionGate->allows($userId, $campaignId);
+    }
+
+    /**
+     * @throws SessionBelowRosterException
+     */
+    private function ensureFitsRoster(FrontendCreateGameTableDTO $dto): void
+    {
+        if ($dto->campaignId === null) {
+            return;
+        }
+
+        $rosterSize = $this->roster->count(new CampaignId($dto->campaignId));
+
+        if ($dto->maxPlayers < $rosterSize) {
+            throw SessionBelowRosterException::forNewSession($dto->maxPlayers, $rosterSize);
+        }
     }
 
     public function createCampaign(FrontendCreateCampaignDTO $dto): CampaignResponseDTO
@@ -183,12 +247,12 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
      *     languages: array<string, string>,
      *     campaign_frequencies: array<string, string>,
      *     events: array<array{id: string, name: string}>,
-     *     campaigns: array<array{id: string, name: string}>,
+     *     campaigns: list<array{id: string, name: string, game_system_id: string, max_players: int|null, roster_count: int}>,
      *     defaults: array{duration_minutes: int, min_players: int, max_players: int, max_spectators: int},
      *     limits: array{max_players: int, max_spectators: int, max_duration_minutes: int}
      * }
      */
-    public function getCreateFormData(): array
+    public function getCreateFormData(?string $keepCampaignId = null): array
     {
         // Get game systems
         $gameSystems = $this->gameSystemRepository->getActive();
@@ -198,11 +262,19 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
 
         $events = $this->selectableEvents();
 
-        // Get campaigns created by the current user
+        // Campaigns the current user may create sessions of, plus the one an edited table keeps
         $userId = auth()->id();
         $campaigns = $userId !== null
-            ? $this->campaignRepository->getByCreator($userId)
+            ? $this->sessionGate->sessionCampaigns((string) $userId)
             : [];
+
+        if ($keepCampaignId !== null && ! in_array($keepCampaignId, array_column($campaigns, 'id'), true)) {
+            $kept = $this->sessionGate->describe($keepCampaignId);
+
+            if ($kept !== null) {
+                $campaigns[] = $kept;
+            }
+        }
 
         return [
             'game_systems' => array_map(
@@ -234,10 +306,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
                     'start_date' => $event->startDate()->format('Y-m-d\TH:i'),
                 ],
             )->values()->all(),
-            'campaigns' => array_map(
-                static fn ($campaign): array => ['id' => $campaign->id->value, 'name' => $campaign->title],
-                $campaigns,
-            ),
+            'campaigns' => $campaigns,
             'defaults' => [
                 'duration_minutes' => $this->settingsReader->defaultDurationMinutes(),
                 'min_players' => $this->settingsReader->defaultMinPlayers(),
@@ -324,6 +393,9 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             throw $this->notChangeableByAuthor($table->isPublished, $table->frontendCreationStatus);
         }
 
+        // The same rules as creating it
+        $this->ensureMayCreate($userId, $table->eventId, $table->tableType, $table->campaignId?->value);
+
         // Sent to review: clears the reason of an earlier rejection
         $table->submitForModeration();
 
@@ -332,6 +404,9 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         $mode = $this->settingsReader->getPublicationMode();
 
         if ($mode === 'auto' || $this->checkAutoPublishEligibility($userId)) {
+            // Refused before anything is saved: the table stays a draft
+            $this->gameTableService->ensureFitsRoster($tableId);
+
             $table->approveFrontendCreation();
             $this->gameTableRepository->save($table);
             $this->gameTableService->publish($tableId);
@@ -362,6 +437,9 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         if (! $table->canBeChangedByAuthor()) {
             throw $this->notChangeableByAuthor($table->isPublished, $table->frontendCreationStatus);
         }
+
+        // The same rules as creating it, for the table as it will be saved
+        $this->ensureMayCreate($dto->createdBy, $dto->eventId, $dto->tableType, $dto->campaignId);
 
         // Default registration closes at to event start date if event is set and no existing value
         $registrationClosesAt = $table->registrationClosesAt;
@@ -413,10 +491,45 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
 
         // Sync game masters
         if ($dto->gameMasters !== null && count($dto->gameMasters) > 0) {
-            $this->gameMasterService->syncTableGameMasters($tableId, $dto->gameMasters);
+            $this->syncAuthorDirectors($tableId, $dto->gameMasters, $dto->createdBy, edited: true);
         }
 
         return $result;
+    }
+
+    public function getDraftGameMasters(string $tableId, string $authorId): array
+    {
+        $local = $this->localGameMasters($tableId);
+        $authorRecord = $local->first(fn (GameMasterModel $gm): bool => $this->isAuthorsMainRecord($gm, $authorId));
+
+        $rows = [$authorRecord !== null ? $this->editableRow($authorRecord) : $this->newAuthorRow($authorId)];
+
+        foreach ($local as $gm) {
+            if ($this->isEditableCoDirector($gm)) {
+                $rows[] = $this->editableRow($gm);
+            }
+        }
+
+        return $rows;
+    }
+
+    public function editableCoDirectorIds(string $tableId): array
+    {
+        return array_values($this->localGameMasters($tableId)
+            ->filter(fn (GameMasterModel $gm): bool => $this->isEditableCoDirector($gm))
+            ->map(fn (GameMasterModel $gm): string => (string) $gm->id)
+            ->all());
+    }
+
+    public function getAuthorGameMasterProfile(string $authorId): array
+    {
+        $record = $this->authorsSharedRecord($authorId);
+
+        return [
+            'phone' => $record?->phone ?? '',
+            'custom_title' => $record?->custom_title ?? '',
+            'is_name_public' => $record !== null ? (bool) $record->is_name_public : true,
+        ];
     }
 
     public function deleteDraft(string $tableId, string $userId): void
@@ -449,6 +562,9 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
 
         // Only what the author sent to review is approved (and so published)
         $this->assertInReview($table->frontendCreationStatus);
+
+        // Refused before anything is saved: the table stays in review
+        $this->gameTableService->ensureFitsRoster($tableId);
 
         $table->approveFrontendCreation($notes);
         $this->gameTableRepository->save($table);
@@ -510,6 +626,62 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             },
             array_values($draftCampaigns),
         );
+    }
+
+    /**
+     * @return list<CampaignResponseDTO>
+     */
+    public function getMyCampaigns(string $userId): array
+    {
+        /** @var array<string, Campaign> $own */
+        $own = [];
+        foreach ($this->campaignRepository->getByCreator($userId) as $campaign) {
+            if ($campaign->frontendCreationStatus !== null && ! $campaign->isPublished) {
+                $own[$campaign->id->value] = $campaign;
+            }
+        }
+
+        /** @var array<string, Campaign> $directed */
+        $directed = [];
+        foreach ($this->direction->campaignIdsDirectedBy($userId) as $campaignId) {
+            $campaign = $this->campaignRepository->find(new CampaignId($campaignId));
+
+            if ($campaign !== null && $campaign->isApprovedOrPublished()) {
+                $directed[$campaign->id->value] = $campaign;
+            }
+        }
+
+        $ids = array_map(static fn (string $id): CampaignId => new CampaignId($id), array_keys($directed));
+        $players = $this->roster->countsFor($ids);
+        $pending = $this->joinRequests->pendingCountsFor($ids);
+        $creationEnabled = $this->settingsReader->isFrontendCreationEnabled();
+
+        $dtos = [];
+        foreach ($own + $directed as $id => $campaign) {
+            $gameSystem = $this->gameSystemRepository->find($campaign->gameSystemId);
+            $isDirected = isset($directed[$id]);
+
+            $dtos[] = [
+                $campaign->createdAt,
+                CampaignResponseDTO::fromEntity(
+                    $campaign,
+                    $gameSystem?->name ?? '',
+                    currentPlayers: $isDirected ? ($players[$id] ?? 0) : 0,
+                    pendingRequests: $isDirected ? ($pending[$id] ?? 0) : 0,
+                    directedByViewer: $isDirected,
+                    acceptsSessions: $isDirected && $campaign->isAvailableForSessions() && $creationEnabled,
+                    // Moderator feedback is addressed to the author, not to co-directors
+                    showModeratorFeedback: $campaign->createdBy === $userId,
+                ),
+            ];
+        }
+
+        usort(
+            $dtos,
+            static fn (array $a, array $b): int => ($b[0]?->getTimestamp() ?? 0) <=> ($a[0]?->getTimestamp() ?? 0),
+        );
+
+        return array_map(static fn (array $pair): CampaignResponseDTO => $pair[1], $dtos);
     }
 
     public function updateCampaignDraft(string $campaignId, FrontendCreateCampaignDTO $dto): CampaignResponseDTO
@@ -654,6 +826,190 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         }
 
         $this->campaignRepository->delete($campaign->id);
+    }
+
+    /**
+     * The directors of a web save: the rows made safe (authorOwnedRows), synced to the table, and
+     * the author's own values (custom title, phone, «Mostrar nombre públicamente») written to their
+     * director record, which every table they direct shares.
+     *
+     * @param  array<int, array<string, mixed>>  $rows
+     */
+    private function syncAuthorDirectors(string $tableId, array $rows, string $authorId, bool $edited): void
+    {
+        $safeRows = $this->authorOwnedRows($rows, $authorId, $edited ? $tableId : null);
+
+        $this->gameMasterService->syncTableGameMasters($tableId, $safeRows);
+
+        $this->saveAuthorProfile($tableId, $safeRows[0], $authorId);
+    }
+
+    /**
+     * Only the author's own record, and only the values the row carries: a blank one clears it,
+     * a missing one changes nothing. The form pre-fills them from the record (create and edit).
+     *
+     * @param  array<string, mixed>  $authorRow
+     */
+    private function saveAuthorProfile(string $tableId, array $authorRow, string $authorId): void
+    {
+        $record = $this->localGameMasters($tableId)
+            ->first(fn (GameMasterModel $gm): bool => $this->isAuthorsMainRecord($gm, $authorId));
+
+        if ($record === null) {
+            return;
+        }
+
+        $values = [];
+        foreach (['custom_title', 'phone'] as $field) {
+            if (array_key_exists($field, $authorRow)) {
+                $value = $authorRow[$field];
+                $values[$field] = is_string($value) && trim($value) !== '' ? $value : null;
+            }
+        }
+        if (array_key_exists('is_name_public', $authorRow)) {
+            $values['is_name_public'] = (bool) $authorRow['is_name_public'];
+        }
+
+        if ($values !== []) {
+            $record->update($values);
+        }
+    }
+
+    /**
+     * The directors' rows of the web form may only link the author's own account: exactly one main
+     * row, the author's (prepended when the payload has none), and every other row is a director
+     * without an account (its name and email apply). A row can never reach, nor change, another
+     * person's director record.
+     *
+     * On an edit ($tableId given) a row keeps its `id` only when it names a co-director without an
+     * account already on this table, so the same record is updated; any other id is dropped and the
+     * row becomes a new director. The table's directors the form does not show (another account,
+     * or a main director other than the author, both linked by staff) are added back unchanged.
+     *
+     * @param  array<int, array<string, mixed>>  $rows
+     * @return non-empty-list<array<string, mixed>> the author's main row first
+     */
+    private function authorOwnedRows(array $rows, string $authorId, ?string $tableId = null): array
+    {
+        $local = $tableId !== null ? $this->localGameMasters($tableId) : null;
+        $editableIds = $local?->filter(fn (GameMasterModel $gm): bool => $this->isEditableCoDirector($gm))
+            ->modelKeys() ?? [];
+        $authorRow = null;
+        $coRows = [];
+
+        foreach ($rows as $row) {
+            unset($row['user_id'], $row['excluded']);
+
+            if ($authorRow === null && ($row['role'] ?? null) === GameMasterRole::Main->value) {
+                // The author's own record is found by their account, never by an id
+                unset($row['id']);
+                $row['user_id'] = $authorId;
+                $authorRow = $row;
+
+                continue;
+            }
+
+            if (! in_array($row['id'] ?? null, $editableIds, true)) {
+                unset($row['id']);
+            }
+            // A second main row is a co-director like any other
+            $row['role'] = GameMasterRole::CoGm->value;
+            $coRows[] = $row;
+        }
+
+        // No main row: the author stays the main director, their record's values untouched
+        if ($authorRow === null) {
+            $authorRow = array_intersect_key(
+                $this->newAuthorRow($authorId),
+                array_flip(['user_id', 'first_name', 'last_name', 'email', 'role']),
+            );
+        }
+
+        $result = [$authorRow, ...$coRows];
+
+        foreach ($local ?? [] as $gm) {
+            if (! $this->isEditableCoDirector($gm) && ! $this->isAuthorsMainRecord($gm, $authorId)) {
+                // The same values: the record is kept linked and left as it is
+                $result[] = ['id' => $gm->id, 'user_id' => $gm->user_id, 'first_name' => $gm->first_name, 'email' => $gm->email];
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Collection<int, GameMasterModel>
+     */
+    private function localGameMasters(string $tableId): \Illuminate\Database\Eloquent\Collection
+    {
+        return GameTableModel::query()->findOrFail($tableId)->localGameMasters()->get();
+    }
+
+    /**
+     * A co-director without an account: the only record a web row may update through its id.
+     */
+    private function isEditableCoDirector(GameMasterModel $gm): bool
+    {
+        return $gm->user_id === null && $gm->role === GameMasterRole::CoGm;
+    }
+
+    private function isAuthorsMainRecord(GameMasterModel $gm, string $authorId): bool
+    {
+        return $gm->user_id === $authorId && $gm->role === GameMasterRole::Main;
+    }
+
+    /**
+     * @return array{id: string|null, user_id: string|null, first_name: string, last_name: string, email: string, phone: string, custom_title: string, is_name_public: bool, role: string}
+     */
+    private function editableRow(GameMasterModel $gm): array
+    {
+        return [
+            'id' => $gm->id,
+            'user_id' => $gm->user_id,
+            'first_name' => $gm->first_name ?? '',
+            'last_name' => $gm->last_name ?? '',
+            'email' => $gm->email ?? '',
+            'phone' => $gm->phone ?? '',
+            'custom_title' => $gm->custom_title ?? '',
+            'is_name_public' => (bool) $gm->is_name_public,
+            'role' => $gm->role->value,
+        ];
+    }
+
+    /**
+     * The author as main director of a table that has no record of theirs yet (named as on the
+     * create form: the first word of the account name, then the rest; custom title, phone and name
+     * visibility from their shared record).
+     *
+     * @return array{id: string|null, user_id: string|null, first_name: string, last_name: string, email: string, phone: string, custom_title: string, is_name_public: bool, role: string}
+     */
+    private function newAuthorRow(string $authorId): array
+    {
+        $author = UserModel::query()->findOrFail($authorId);
+        $name = explode(' ', (string) $author->name, 2);
+
+        return [
+            'id' => null,
+            'user_id' => $authorId,
+            'first_name' => $name[0],
+            'last_name' => $name[1] ?? '',
+            'email' => (string) $author->email,
+            // Saving writes them to the author's shared record: they start from it
+            ...$this->getAuthorGameMasterProfile($authorId),
+            'role' => GameMasterRole::Main->value,
+        ];
+    }
+
+    /**
+     * The author's main director record, the one their tables share (found as
+     * GameMasterService::findOrCreateGameMaster finds it).
+     */
+    private function authorsSharedRecord(string $authorId): ?GameMasterModel
+    {
+        return GameMasterModel::query()
+            ->where('user_id', $authorId)
+            ->where('role', GameMasterRole::Main->value)
+            ->first();
     }
 
     /**

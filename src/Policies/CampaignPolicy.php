@@ -6,6 +6,7 @@ namespace Modules\GameTables\Policies;
 
 use App\Infrastructure\Authorization\Policies\AuthorizesWithPermissions;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Modules\GameTables\Application\Services\CampaignDirectionInterface;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 
@@ -54,6 +55,16 @@ final class CampaignPolicy
     public function forceDelete(UserModel $user, CampaignModel $campaign): bool
     {
         return $this->authorize($user, 'gametables:campaigns.delete');
+    }
+
+    /**
+     * Directors manage the roster of an approved or published campaign; staff permissions do not grant it.
+     */
+    public function manageRoster(UserModel $user, CampaignModel $campaign): bool
+    {
+        $open = $campaign->frontend_creation_status === FrontendCreationStatus::Approved || (bool) $campaign->is_published;
+
+        return $open && app(CampaignDirectionInterface::class)->isDirector($campaign->id, $user->id);
     }
 
     /**

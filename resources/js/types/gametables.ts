@@ -281,6 +281,23 @@ export interface ProfileCreatedTablesData {
 }
 
 /**
+ * A director of a draft as its author edits it (FrontendCreationService::getDraftGameMasters()):
+ * the author's own table, so the email and phone are included. `id` is null for an author who has
+ * no director record on the table yet.
+ */
+export interface EditableGameMaster {
+    id: string | null;
+    user_id: string | null;
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone: string;
+    custom_title: string;
+    is_name_public: boolean;
+    role: 'main' | 'co_gm';
+}
+
+/**
  * GameTable data as returned by GameTableResponseDTO::toArray() (snake_case keys).
  * Used for Edit form pre-population where data comes directly from DTO.
  */
@@ -402,4 +419,138 @@ export interface TableFormLimits {
     max_players: number;
     max_spectators: number;
     max_duration_minutes: number;
+}
+
+/**
+ * A campaign the author may create sessions of (FrontendCreationService::getCreateFormData()):
+ * the campaigns they direct that admit sessions, plus the one stored on an edited table.
+ */
+export interface SessionCampaignOption {
+    id: string;
+    name: string;
+    game_system_id: string;
+    max_players: number | null;
+    roster_count: number;
+}
+
+/** What «Añadir sesión» (`/mesas/crear?campaign={id}`) fills in the table form. */
+export interface TableFormPrefill {
+    table_type: 'campaign_session';
+    campaign_id: string;
+}
+
+/** Who may ask to join a campaign's roster (RosterAccess enum). */
+export type RosterAccessValue = 'anyone' | 'members_only';
+
+/**
+ * A campaign of «Mis campañas», as returned by CampaignResponseDTO::toArray() (snake_case keys).
+ * Only the keys the page reads.
+ */
+export interface CampaignResponseDTO {
+    id: string;
+    title: string;
+    slug: string | null;
+    game_system_name: string;
+    frequency: string | null;
+    frequency_label: string | null;
+    max_players: number | null;
+    current_players: number;
+    status: string;
+    status_label: string;
+    status_color: string;
+    frontend_creation_status: string | null;
+    frontend_creation_status_label: string | null;
+    is_published: boolean;
+    is_recruiting: boolean;
+    accepts_new_players: boolean;
+    moderation_notes: string | null;
+    // Why it was rejected, while the author may still change it
+    rejection_reason: string | null;
+    can_edit: boolean;
+    // Roster: always sent, meaningful only when directed_by_viewer
+    pending_requests: number;
+    directed_by_viewer: boolean;
+    can_add_session: boolean;
+    roster_access: RosterAccessValue;
+    roster_access_label: string;
+    created_at: string | null;
+}
+
+/** A player's place in one upcoming session of the roster page. */
+export type RosterSessionState = 'going' | 'absent' | 'waiting' | 'none';
+
+export interface RosterCampaign {
+    id: string;
+    title: string;
+    slug: string | null;
+    status_label: string;
+    is_finished: boolean;
+    accepts_new_players: boolean;
+    roster_access: RosterAccessValue;
+    max_players: number | null;
+    roster_count: number;
+}
+
+export interface RosterRequest {
+    id: string;
+    user_name: string;
+    message: string | null;
+    // d/m/Y
+    created_at: string | null;
+}
+
+export interface RosterSession {
+    game_table_id: string;
+    title: string;
+    slug: string;
+    // d/m
+    date_short: string;
+    // d/m/Y H:i
+    date: string;
+}
+
+export interface RosterPlayerSession {
+    game_table_id: string;
+    state: RosterSessionState;
+    can_toggle: boolean;
+}
+
+export interface RosterPlayer {
+    user_id: string;
+    name: string;
+    // d/m/Y
+    joined_at: string | null;
+    // One per upcoming session, in the order of RosterPage.sessions
+    sessions: RosterPlayerSession[];
+}
+
+/** Props of the Campaigns/Roster page (RosterPageDTO::toArray()). */
+export interface RosterPage {
+    campaign: RosterCampaign;
+    roster_access_options: Record<RosterAccessValue, string>;
+    max_players_limit: number;
+    requests: RosterRequest[];
+    sessions: RosterSession[];
+    players: RosterPlayer[];
+    can_add: boolean;
+}
+
+/** What the viewer of a campaign page can do with its roster (JoinBoxDTO). */
+export type JoinBoxState =
+    | 'director'
+    | 'member'
+    | 'pending'
+    | 'finished'
+    | 'not_accepting'
+    | 'full'
+    | 'guest'
+    | 'members_only'
+    | 'can_request';
+
+export interface JoinBox {
+    state: JoinBoxState;
+    // d/m/Y, with a pending request
+    requested_at: string | null;
+    // For the direction, the roster page
+    roster_url: string | null;
 }

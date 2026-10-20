@@ -15,6 +15,7 @@ use Modules\GameTables\Application\Services\EligibilityServiceInterface;
 use Modules\GameTables\Application\Services\RegistrationLockInterface;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Entities\Participant;
+use Modules\GameTables\Domain\Enums\ParticipantCancellationReason;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
 use Modules\GameTables\Domain\Enums\RegistrationType;
@@ -66,6 +67,11 @@ final class RegistrationServiceTest extends TestCase
             new class implements RegistrationLockInterface
             {
                 public function forTable(string $gameTableId, Closure $callback): mixed
+                {
+                    return $callback();
+                }
+
+                public function forCampaign(string $campaignId, Closure $callback): mixed
                 {
                     return $callback();
                 }
@@ -863,6 +869,67 @@ final class RegistrationServiceTest extends TestCase
         $this->assertSame('not_allowed', $this->service->withdrawalRefusal(ParticipantId::generate()->value));
     }
 
+    #[AllowMockObjectsWithoutExpectations]
+    public function test_cancelling_a_roster_row_records_an_absence(): void
+    {
+        $participant = $this->participantWith(ParticipantStatus::Confirmed);
+        $participant->markFromRoster();
+        $this->participantRepository->method('findByTableAndUser')->willReturn($participant);
+        $this->participantRepository->method('findOrFail')->willReturn($participant);
+        $this->gameTableRepository->method('find')
+            ->willReturn($this->createGameTable($participant->gameTableId->value));
+
+        $this->service->cancelByUser($participant->gameTableId->value, 'user-123');
+
+        $this->assertSame(ParticipantStatus::Cancelled, $participant->status);
+        $this->assertSame(ParticipantCancellationReason::SessionAbsence, $participant->cancellationReason);
+    }
+
+    #[AllowMockObjectsWithoutExpectations]
+    public function test_cancelling_a_loose_row_records_no_reason(): void
+    {
+        $participant = $this->participantWith(ParticipantStatus::Confirmed);
+        $this->participantRepository->method('findByTableAndUser')->willReturn($participant);
+        $this->participantRepository->method('findOrFail')->willReturn($participant);
+        $this->gameTableRepository->method('find')
+            ->willReturn($this->createGameTable($participant->gameTableId->value));
+
+        $this->service->cancelByUser($participant->gameTableId->value, 'user-123');
+
+        $this->assertSame(ParticipantStatus::Cancelled, $participant->status);
+        $this->assertNull($participant->cancellationReason);
+    }
+
+    #[AllowMockObjectsWithoutExpectations]
+    public function test_a_promoted_roster_row_is_confirmed_on_a_manual_table(): void
+    {
+        $participant = $this->participantWith(ParticipantStatus::WaitingList);
+        $participant->markFromRoster();
+        $this->participantRepository->method('getFirstInWaitingList')->willReturn($participant);
+        $table = $this->createGameTable($participant->gameTableId->value, autoConfirm: false);
+        $table->isPublished = true;
+        $this->gameTableRepository->method('find')->willReturn($table);
+
+        $result = $this->service->promoteFromWaitingList($participant->gameTableId->value);
+
+        $this->assertNotNull($result);
+        $this->assertSame(ParticipantStatus::Confirmed, $participant->status);
+    }
+
+    #[AllowMockObjectsWithoutExpectations]
+    public function test_a_promoted_loose_row_stays_pending_on_a_manual_table(): void
+    {
+        $participant = $this->participantWith(ParticipantStatus::WaitingList);
+        $this->participantRepository->method('getFirstInWaitingList')->willReturn($participant);
+        $table = $this->createGameTable($participant->gameTableId->value, autoConfirm: false);
+        $table->isPublished = true;
+        $this->gameTableRepository->method('find')->willReturn($table);
+
+        $this->service->promoteFromWaitingList($participant->gameTableId->value);
+
+        $this->assertSame(ParticipantStatus::Pending, $participant->status);
+    }
+
     private function participantWith(ParticipantStatus $status, ?string $token = null): Participant
     {
         return new Participant(
@@ -895,6 +962,11 @@ final class RegistrationServiceTest extends TestCase
             new class implements RegistrationLockInterface
             {
                 public function forTable(string $gameTableId, Closure $callback): mixed
+                {
+                    throw new LogicException('The lock must not be taken');
+                }
+
+                public function forCampaign(string $campaignId, Closure $callback): mixed
                 {
                     throw new LogicException('The lock must not be taken');
                 }
@@ -984,6 +1056,11 @@ final class RegistrationServiceTest extends TestCase
             new class implements RegistrationLockInterface
             {
                 public function forTable(string $gameTableId, Closure $callback): mixed
+                {
+                    return $callback();
+                }
+
+                public function forCampaign(string $campaignId, Closure $callback): mixed
                 {
                     return $callback();
                 }

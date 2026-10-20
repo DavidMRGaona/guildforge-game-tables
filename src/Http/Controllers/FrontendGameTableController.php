@@ -23,9 +23,14 @@ use Modules\GameTables\Application\Services\EventCreationEligibilityServiceInter
 use Modules\GameTables\Application\Services\EventGameTableConfigServiceInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
+use Modules\GameTables\Domain\Enums\TableType;
 use Modules\GameTables\Domain\Exceptions\NotEditableException;
+use Modules\GameTables\Domain\Exceptions\NotEligibleToCreateException;
+use Modules\GameTables\Domain\Exceptions\SessionBelowRosterException;
 use Modules\GameTables\Http\Requests\FrontendCreateGameTableRequest;
+use Modules\GameTables\Http\Support\AuthorLockRedirect;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
+use Modules\GameTables\Infrastructure\Services\CampaignSessionCreationGate;
 
 final class FrontendGameTableController extends Controller
 {
@@ -36,6 +41,8 @@ final class FrontendGameTableController extends Controller
         private readonly EventGameTableConfigServiceInterface $eventConfigService,
         private readonly GameTableServiceInterface $gameTableService,
         private readonly SeoMetadataFactoryInterface $seo,
+        private readonly CampaignSessionCreationGate $sessionGate,
+        private readonly AuthorLockRedirect $authorLock,
     ) {}
 
     /**
@@ -60,7 +67,13 @@ final class FrontendGameTableController extends Controller
             $eligibility = $this->eligibilityService->canCreateTable($user?->id);
         }
 
-        if (! $eligibility->eligible) {
+        // Someone the general rules refuse may still create sessions of the campaigns they direct
+        $sessionOnly = ! $eligibility->eligible
+            && $eventId === null
+            && $user !== null
+            && $this->sessionGate->canCreateSessionsOnly((string) $user->id);
+
+        if (! $eligibility->eligible && ! $sessionOnly) {
             // Show a page explaining why they can't create
             return Inertia::render('GameTables/CreateNotEligible', [
                 'reason' => $eligibility->reason,
@@ -81,18 +94,28 @@ final class FrontendGameTableController extends Controller
             $eventContext = $this->eventConfigService->getCreationContext($eventId);
         }
 
-        // Prepare current user data for GM section
+        // Prepare current user data for GM section: their custom title, phone and name visibility
+        // come from their director record, shared by every table they direct (saving writes them there)
         $currentUser = $user !== null ? [
             'id' => (string) $user->id,
             'name' => $user->name,
             'email' => $user->email,
+            ...$this->creationService->getAuthorGameMasterProfile((string) $user->id),
         ] : null;
+
+        // «Añadir sesión» arrives with its campaign; any other id is ignored
+        $campaignId = $request->query('campaign');
+        $prefill = is_string($campaignId) && in_array($campaignId, array_column($formData['campaigns'], 'id'), true)
+            ? ['table_type' => TableType::CampaignSession->value, 'campaign_id' => $campaignId]
+            : null;
 
         return Inertia::render('GameTables/Create', [
             'formData' => $formData,
             'eligibility' => $eligibility->toArray(),
             'eventContext' => $eventContext?->toArray(),
             'currentUser' => $currentUser,
+            'sessionOnly' => $sessionOnly,
+            'prefill' => $prefill,
             'seo' => $this->seo->forPage(new SeoPageDTO(
                 title: (string) __('game-tables::messages.seo.create_table_title'),
                 noindex: true,
@@ -113,7 +136,14 @@ final class FrontendGameTableController extends Controller
             'created_by' => (string) $user->id,
         ]);
 
-        $this->creationService->createGameTable($dto);
+        try {
+            $this->creationService->createGameTable($dto);
+        } catch (NotEligibleToCreateException) {
+            abort(403);
+        } catch (SessionBelowRosterException $e) {
+            // Published at once but with fewer seats than the roster: nothing was saved
+            return back()->withErrors(['max_players' => $e->getMessage()])->withInput();
+        }
 
         return redirect()
             ->route('gametables.my-tables')
@@ -147,9 +177,12 @@ final class FrontendGameTableController extends Controller
     /**
      * Show an edit form for a draft table.
      */
-    public function edit(string $gameTable): Response
+    public function edit(string $gameTable): Response|RedirectResponse
     {
         $gameTable = $this->findAuthorTable($gameTable);
+        if (($locked = $this->sendLockedAuthorBack($gameTable)) !== null) {
+            return $locked;
+        }
         Gate::authorize('update', $gameTable);
 
         /** @var UserModel $user */
@@ -158,8 +191,8 @@ final class FrontendGameTableController extends Controller
         // Get the table DTO using the service (consistent with architecture)
         $table = $this->gameTableService->findOrFail($gameTable->id);
 
-        // Get form data for the edit form
-        $formData = $this->creationService->getCreateFormData();
+        // Get form data for the edit form, keeping the campaign stored on the table
+        $formData = $this->creationService->getCreateFormData($gameTable->campaign_id);
 
         // Get event context if a table is associated with an event
         $eventContext = null;
@@ -174,11 +207,20 @@ final class FrontendGameTableController extends Controller
             'email' => $user->email,
         ];
 
+        // As on the create form: someone the general rules refuse only keeps sessions of the
+        // campaigns they direct (saving applies the same rule)
+        $sessionOnly = $gameTable->event_id === null
+            && ! $this->eligibilityService->canCreateTable((string) $user->id)->eligible
+            && $this->sessionGate->canCreateSessionsOnly((string) $user->id);
+
         return Inertia::render('GameTables/Edit', [
             'table' => $table->toArray(),
+            // The author's own table: the directors come with their email and phone
+            'gameMasters' => $this->creationService->getDraftGameMasters($gameTable->id, (string) $user->id),
             'formData' => $formData,
             'eventContext' => $eventContext?->toArray(),
             'currentUser' => $currentUser,
+            'sessionOnly' => $sessionOnly,
             'seo' => $this->seo->forPage(new SeoPageDTO(
                 title: (string) __('game-tables::messages.seo.edit_table_title'),
                 noindex: true,
@@ -192,6 +234,9 @@ final class FrontendGameTableController extends Controller
     public function update(string $gameTable, FrontendCreateGameTableRequest $request): RedirectResponse
     {
         $gameTable = $this->findAuthorTable($gameTable);
+        if (($locked = $this->sendLockedAuthorBack($gameTable)) !== null) {
+            return $locked;
+        }
         Gate::authorize('update', $gameTable);
 
         /** @var UserModel $user */
@@ -207,6 +252,9 @@ final class FrontendGameTableController extends Controller
         } catch (NotEditableException) {
             // The policy let an admin permission through, but the service only edits the author's own draft
             abort(403);
+        } catch (NotEligibleToCreateException) {
+            // The edited table is one the author may not create
+            abort(403);
         }
 
         return redirect()
@@ -220,16 +268,31 @@ final class FrontendGameTableController extends Controller
     public function submitForReview(string $gameTable): RedirectResponse
     {
         $gameTable = $this->findAuthorTable($gameTable);
+        if (($locked = $this->sendLockedAuthorBack($gameTable)) !== null) {
+            return $locked;
+        }
         Gate::authorize('submitForReview', $gameTable);
 
         /** @var UserModel $user */
         $user = auth()->user();
 
-        $this->creationService->submitForReview($gameTable->id, (string) $user->id);
+        try {
+            $this->creationService->submitForReview($gameTable->id, (string) $user->id);
+        } catch (NotEligibleToCreateException) {
+            abort(403);
+        } catch (SessionBelowRosterException $e) {
+            // Published at once (automatic mode) but with fewer seats than the roster
+            return back()->with('error', $e->getMessage());
+        }
+
+        // Without review (automatic mode, or an author who may publish directly) it is already published
+        $published = (bool) $gameTable->refresh()->is_published;
 
         return redirect()
             ->route('gametables.my-tables')
-            ->with('success', __('game-tables::messages.frontend.submitted_for_review'));
+            ->with('success', __($published
+                ? 'game-tables::messages.frontend.table_published'
+                : 'game-tables::messages.frontend.submitted_for_review'));
     }
 
     /**
@@ -238,6 +301,9 @@ final class FrontendGameTableController extends Controller
     public function destroy(string $gameTable): RedirectResponse
     {
         $gameTable = $this->findAuthorTable($gameTable);
+        if (($locked = $this->sendLockedAuthorBack($gameTable)) !== null) {
+            return $locked;
+        }
         Gate::authorize('delete', $gameTable);
 
         /** @var UserModel $user */
@@ -252,6 +318,15 @@ final class FrontendGameTableController extends Controller
         return redirect()
             ->route('gametables.my-tables')
             ->with('success', __('game-tables::messages.frontend.table_deleted'));
+    }
+
+    /**
+     * The author of a table that is no longer theirs to change (sent to review or published) goes
+     * back to «Mis mesas» with the reason instead of a bare 403. Anyone else still meets the policy.
+     */
+    private function sendLockedAuthorBack(GameTableModel $table): ?RedirectResponse
+    {
+        return $this->authorLock->forTable($table, (string) auth()->id());
     }
 
     /**

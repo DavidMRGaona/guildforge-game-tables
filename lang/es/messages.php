@@ -174,6 +174,8 @@ return [
         'campaign_status' => 'Estado de la campaña',
         'accepts_new_players' => 'Acepta nuevos jugadores',
         'accepts_new_players_help' => 'Indica si la campaña está buscando nuevos jugadores activamente.',
+        'roster_access' => 'Quién puede solicitar',
+        'roster_access_help' => 'Quién puede pedir entrar en la plantilla desde la web.',
 
         // Participant fields
         'user' => 'Usuario',
@@ -351,6 +353,16 @@ return [
             'completed' => 'Completada',
             'cancelled' => 'Cancelada',
         ],
+        'roster_access' => [
+            'anyone' => 'Cualquier cuenta',
+            'members_only' => 'Solo socios',
+        ],
+        'join_request_status' => [
+            'pending' => 'Pendiente',
+            'accepted' => 'Aceptada',
+            'rejected' => 'Rechazada',
+            'withdrawn' => 'Retirada',
+        ],
         'campaign_frequency' => [
             'weekly' => 'Semanal',
             'biweekly' => 'Quincenal',
@@ -441,6 +453,8 @@ return [
             'automation' => 'Automatización',
             'defaults' => 'Valores por defecto',
             'notifications' => 'Notificaciones',
+            'campaign_notifications' => 'Notificaciones de campañas',
+            'campaign_notifications_description' => 'Correos de la plantilla de las campañas. Las plantillas empiezan vacías: no se envía nada hasta que alguien las use.',
             'limits' => 'Límites',
             'frontend_creation' => 'Creación desde web',
             'frontend_creation_description' => 'Permite que los usuarios creen mesas y campañas desde el frontend público',
@@ -468,6 +482,13 @@ return [
             'send_reminder' => 'Enviar recordatorio antes de la mesa',
             'send_reminder_help' => 'Un correo a cada inscripción confirmada (con cuenta o con el email confirmado) las horas indicadas antes del inicio. Desactivado por defecto.',
             'reminder_hours_before' => 'Antelación del recordatorio (horas)',
+            'campaign_notify_session_scheduled' => 'Sesión programada (a la plantilla)',
+            'campaign_notify_join_request_received' => 'Solicitud recibida (a la dirección)',
+            'campaign_notify_join_request_accepted' => 'Solicitud aceptada',
+            'campaign_notify_join_request_rejected' => 'Solicitud rechazada',
+            'campaign_notify_roster_added' => 'Añadido a la plantilla',
+            'campaign_notify_roster_removed' => 'Quitado de la plantilla',
+            'campaign_notify_player_left' => 'Salida de la plantilla (a la dirección)',
             'max_players_limit' => 'Límite máximo de jugadores',
             'max_spectators_limit' => 'Límite máximo de espectadores',
             'max_duration' => 'Duración máxima (minutos)',
@@ -639,14 +660,24 @@ return [
             'closed' => 'Cerrada',
             'member_early_access' => 'Acceso anticipado para socios activo',
         ],
-        'frontend' => [
-            'table_created' => 'Mesa creada correctamente',
-            'table_updated' => 'Mesa actualizada correctamente',
-            'table_deleted' => 'Mesa eliminada correctamente',
-            'submitted_for_review' => 'Mesa enviada para revisión',
-            'not_eligible' => 'No tienes permiso para crear mesas',
-            'cannot_edit_pending_review' => 'No puedes editar una mesa que está pendiente de revisión',
-        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | «Mis mesas» and «Mis campañas»: outcome of the author's changes
+    |--------------------------------------------------------------------------
+    */
+    'frontend' => [
+        'table_created' => 'Mesa creada correctamente',
+        'table_updated' => 'Mesa actualizada correctamente',
+        'table_deleted' => 'Mesa eliminada correctamente',
+        'submitted_for_review' => 'Mesa enviada para revisión',
+        'table_published' => 'Mesa publicada correctamente',
+        'campaign_created' => 'Campaña creada correctamente',
+        'campaign_updated' => 'Campaña actualizada correctamente',
+        'campaign_deleted' => 'Campaña eliminada correctamente',
+        'campaign_submitted_for_review' => 'Campaña enviada para revisión',
+        'campaign_published' => 'Campaña publicada correctamente',
     ],
 
     /*
@@ -655,6 +686,12 @@ return [
     |--------------------------------------------------------------------------
     */
     'errors' => [
+        'table_locked_published' => 'Esta mesa ya está publicada y ya no se puede modificar.',
+        'table_locked_in_review' => 'Esta mesa ya se ha enviado a revisión y ya no se puede modificar.',
+        'table_locked' => 'Esta mesa ya se ha enviado a revisión o está publicada y ya no se puede modificar.',
+        'campaign_locked_published' => 'Esta campaña ya está publicada y ya no se puede modificar.',
+        'campaign_locked_in_review' => 'Esta campaña ya se ha enviado a revisión y ya no se puede modificar.',
+        'campaign_locked' => 'Esta campaña ya se ha enviado a revisión o está publicada y ya no se puede modificar.',
         'unauthenticated' => 'Debes iniciar sesión para realizar esta acción',
         'registration_closed' => 'Las inscripciones están cerradas',
         'registration_not_open' => 'Las inscripciones aún no están abiertas',
@@ -668,6 +705,7 @@ return [
         'email_has_account' => 'Este email pertenece a una cuenta. Inicia sesión para inscribirte.',
         'members_only' => 'Esta mesa es solo para socios',
         'invitation_only' => 'Esta mesa es solo por invitación: la organización inscribe a los jugadores',
+        'campaign_roster_only' => 'Solo para la plantilla de la campaña',
         'guests_not_allowed' => 'Esta mesa no permite inscripciones de invitados',
         'minimum_age' => 'No cumples con la edad mínima requerida',
         'not_found' => 'No se encontró la inscripción',
@@ -682,6 +720,7 @@ return [
         'confirmation_filled_up' => 'Se ha llenado mientras confirmabas.',
         'too_many_confirmation_attempts' => 'Demasiados intentos con este enlace. Espera un momento y vuelve a intentarlo.',
         'guest_rate_limited' => 'Has hecho demasiadas inscripciones seguidas. Espera unos minutos y vuelve a intentarlo.',
+        'session_below_roster' => 'Esta sesión tiene menos plazas (:max) que la plantilla de la campaña (:count). Sube el máximo de jugadores antes de publicarla.',
     ],
 
     'success' => [
@@ -737,7 +776,14 @@ return [
         'language_required' => 'El idioma es obligatorio',
         'experience_level_required' => 'El nivel de experiencia es obligatorio',
         'character_creation_required' => 'El tipo de creación de personajes es obligatorio',
-        'campaign_not_owned' => 'Solo puedes vincular la mesa a una campaña creada por ti',
+        'campaign_required' => 'Elige la campaña de la sesión.',
+        'co_director_first_name_required' => 'El nombre del co-director es obligatorio.',
+        'co_director_email_required' => 'El email del co-director es obligatorio.',
+        'co_directors_consent_required' => 'Confirma que tienes el consentimiento de los co-directores.',
+        'campaign_not_owned' => 'Solo puedes vincular la mesa a una campaña que dirijas.',
+        'max_players_below_roster' => 'El máximo de jugadores no puede ser menor que la plantilla de la campaña (:count).',
+        'join_message_max' => 'El mensaje no puede superar los 500 caracteres.',
+        'rejection_reason_max' => 'El motivo no puede superar los 500 caracteres.',
         'event_not_open' => 'Solo puedes vincular la mesa a un evento abierto a nuevas mesas',
         'registration_closes_after_start' => 'El cierre de inscripciones no puede ser posterior al inicio de la mesa (:date)',
         'registration_closes_after_end' => 'El cierre de inscripciones no puede ser posterior al final de la partida (:date)',
@@ -749,6 +795,26 @@ return [
     |--------------------------------------------------------------------------
     */
     'relation_managers' => [
+        'roster' => [
+            'title' => 'Plantilla',
+            'name' => 'Nombre',
+            'email' => 'Email',
+            'since' => 'En la plantilla desde',
+            'add' => 'Añadir jugador',
+            'account_email' => 'Email de la cuenta',
+            'remove' => 'Quitar',
+            'remove_description' => 'Perderá sus plazas en las próximas sesiones y recibirá un correo.',
+        ],
+        'join_requests' => [
+            'title' => 'Solicitudes',
+            'player' => 'Jugador',
+            'message' => 'Mensaje',
+            'status' => 'Estado',
+            'requested_at' => 'Solicitada el',
+            'accept' => 'Aceptar',
+            'reject' => 'Rechazar',
+            'reason' => 'Motivo (opcional)',
+        ],
         'participants' => [
             'title' => 'Participantes',
             'add' => 'Añadir participante',
@@ -861,6 +927,44 @@ return [
         'awaiting_email' => 'Pendiente de confirmar',
     ],
 
+    'roster' => [
+        'errors' => [
+            'unavailable' => 'Esta campaña no está publicada.',
+            'finished' => 'La campaña ha terminado: su plantilla ya no cambia.',
+            'not_accepting' => 'Esta campaña no acepta jugadores nuevos.',
+            'roster_full' => 'La plantilla está completa.',
+            'members_only' => 'Esta campaña solo admite solicitudes de socios.',
+            'already_member' => 'Ya formas parte de la plantilla.',
+            'account_already_member' => 'Esa cuenta ya forma parte de la plantilla.',
+            'request_pending' => 'Ya tienes una solicitud pendiente.',
+            'is_director' => 'Quien dirige la campaña no puede entrar en la plantilla como jugador.',
+            'account_not_found' => 'No se ha podido añadir a esa cuenta. Comprueba el email.',
+            'not_pending' => 'Esta solicitud ya no está pendiente.',
+            'not_member' => 'Esa persona no forma parte de la plantilla.',
+            'max_below_roster' => 'El máximo de jugadores no puede ser menor que la plantilla actual (:count).',
+            'session_not_in_campaign' => 'Esa sesión no es de esta campaña.',
+            'session_started' => 'La sesión ya ha empezado.',
+            'nothing_to_change' => 'No hay nada que cambiar en esa sesión.',
+            'not_member_self' => 'No formas parte de la plantilla de esta campaña.',
+            'too_many_requests' => 'Has enviado demasiadas solicitudes seguidas. Espera unos minutos y vuelve a intentarlo.',
+            'too_many_additions' => 'Has añadido demasiados jugadores seguidos. Espera un minuto y vuelve a intentarlo.',
+        ],
+        'success' => [
+            'requested' => 'Solicitud enviada. La dirección te avisará por correo.',
+            'withdrawn' => 'Solicitud retirada.',
+            'accepted' => 'Solicitud aceptada.',
+            'rejected' => 'Solicitud rechazada.',
+            'added' => 'Jugador añadido a la plantilla.',
+            'removed' => 'Jugador quitado de la plantilla.',
+            'left' => 'Has salido de la campaña.',
+            'settings_saved' => 'Ajustes guardados.',
+            'absence_marked' => 'Ausencia marcada.',
+            'absence_cleared' => 'Ausencia quitada.',
+            'rejoined' => 'Vuelves a estar inscrito en esta sesión.',
+            'session_absence' => 'Te has dado de baja de esta sesión. Sigues en la campaña.',
+        ],
+    ],
+
     // Server-rendered page metadata (link previews and search engines)
     'seo' => [
         'tables_title' => 'Mesas de rol',
@@ -876,5 +980,55 @@ return [
         'create_campaign_title' => 'Crear campaña',
         'edit_campaign_title' => 'Editar campaña',
         'my_campaigns_title' => 'Mis campañas',
+        'roster_title' => 'Plantilla · :title',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Web form fields in validation messages (lowercase: they go inside a sentence)
+    |--------------------------------------------------------------------------
+    */
+    'form_attributes' => [
+        'game_system_id' => 'sistema de juego',
+        'title' => 'título',
+        'starts_at' => 'fecha y hora de inicio',
+        'duration_minutes' => 'duración',
+        'table_type' => 'tipo de partida',
+        'table_format' => 'formato',
+        'min_players' => 'mínimo de jugadores',
+        'max_players' => 'máximo de jugadores',
+        'max_spectators' => 'máximo de espectadores',
+        'event_id' => 'evento',
+        'campaign_id' => 'campaña',
+        'synopsis' => 'sinopsis',
+        'location' => 'ubicación',
+        'online_url' => 'enlace de la sesión online',
+        'minimum_age' => 'edad mínima',
+        'language' => 'idioma',
+        'genres' => 'géneros',
+        'genres_item' => 'género',
+        'tone' => 'tono de la partida',
+        'experience_level' => 'nivel de experiencia',
+        'character_creation' => 'creación de personajes',
+        'safety_tools' => 'herramientas de seguridad',
+        'safety_tools_item' => 'herramienta de seguridad',
+        'content_warning_ids' => 'avisos de contenido',
+        'content_warning_ids_item' => 'aviso de contenido',
+        'custom_warnings' => 'avisos personalizados',
+        'custom_warnings_item' => 'aviso personalizado',
+        'game_masters' => 'directores de juego',
+        'game_masters_id' => 'identificador del co-director',
+        'game_masters_user_id' => 'cuenta del director',
+        'game_masters_first_name' => 'nombre del co-director',
+        'game_masters_last_name' => 'apellidos del co-director',
+        'game_masters_email' => 'email del co-director',
+        'game_masters_phone' => 'teléfono del director',
+        'game_masters_custom_title' => 'título personalizado del director',
+        'game_masters_is_name_public' => 'mostrar nombre públicamente',
+        'game_masters_role' => 'rol del director',
+        'gm_gdpr_consent' => 'consentimiento de los co-directores',
+        'notes' => 'notas adicionales',
+        'frequency' => 'frecuencia de las sesiones',
+        'schedule_notes' => 'notas de horario',
     ],
 ];

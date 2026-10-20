@@ -281,9 +281,9 @@ final class GameTableModel extends Model
         if ($this->campaign_id !== null) {
             $campaignGms = $this->campaign?->gameMasters()
                 ->whereNotIn('gametables_game_masters.id', $excludedIds)
-                ->get() ?? collect();
+                ->get() ?? new \Illuminate\Database\Eloquent\Collection();
         } else {
-            $campaignGms = collect();
+            $campaignGms = new \Illuminate\Database\Eloquent\Collection();
         }
 
         // Add local GMs

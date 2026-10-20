@@ -22,7 +22,7 @@ final readonly class NotifyOnRegistration
 
     public function handle(ParticipantRegistered $event): void
     {
-        if (! $this->settingsReader->isNotifyOnRegistrationEnabled()) {
+        if (! $event->notifyOrganization || ! $this->settingsReader->isNotifyOnRegistrationEnabled()) {
             return;
         }
 

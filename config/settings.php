@@ -75,6 +75,23 @@ return [
         'reminder_hours_before' => 24,
     ],
 
+    'campaign_notifications' => [
+        // Email the roster members when a session of their campaign is published
+        'session_scheduled' => true,
+        // Email the direction when someone asks to join
+        'join_request_received' => true,
+        // Email the player when the direction accepts their request
+        'join_request_accepted' => true,
+        // Email the player when the direction rejects their request
+        'join_request_rejected' => true,
+        // Email the player when the direction adds them to the roster
+        'roster_added' => true,
+        // Email the player when the direction removes them from the roster
+        'roster_removed' => true,
+        // Email the direction when a player leaves the roster
+        'player_left' => true,
+    ],
+
     'limits' => [
         'max_players_limit' => 20,
         'max_spectators_limit' => 50,

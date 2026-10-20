@@ -14,8 +14,12 @@ interface FrontendCreationServiceInterface
     /**
      * Create a new game table from the frontend.
      * The table will be created in Draft or PendingReview status depending on config.
+     * A campaign session outside an event is also created for someone who directs its campaign
+     * when the general creation rules refuse them.
      *
      * @throws \Modules\GameTables\Domain\Exceptions\NotEligibleToCreateException
+     * @throws \Modules\GameTables\Domain\Exceptions\SessionBelowRosterException when it would be published at once
+     *         with fewer seats than its campaign roster (nothing is saved)
      */
     public function createGameTable(FrontendCreateGameTableDTO $dto): GameTableResponseDTO;
 
@@ -27,7 +31,9 @@ interface FrontendCreationServiceInterface
     public function createCampaign(FrontendCreateCampaignDTO $dto): CampaignResponseDTO;
 
     /**
-     * Get data needed to render the creation form (game systems, formats, etc.).
+     * Get data needed to render the creation form (game systems, formats, etc.). The campaigns are
+     * the ones the current user may create sessions of, plus $keepCampaignId (the campaign stored on
+     * a table being edited) when it is not among them.
      *
      * @return array{
      *     game_systems: array,
@@ -38,10 +44,11 @@ interface FrontendCreationServiceInterface
      *     character_creation: array,
      *     safety_tools: array,
      *     content_warnings: array,
-     *     genres: array
+     *     genres: array,
+     *     campaigns: list<array{id: string, name: string, game_system_id: string, max_players: int|null, roster_count: int}>
      * }
      */
-    public function getCreateFormData(): array;
+    public function getCreateFormData(?string $keepCampaignId = null): array;
 
     /**
      * Ids of the events a table created or edited from the web may be linked to: the ones the
@@ -63,6 +70,8 @@ interface FrontendCreationServiceInterface
      *
      * @throws \Modules\GameTables\Domain\Exceptions\TableNotFoundException
      * @throws \Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException
+     * @throws \Modules\GameTables\Domain\Exceptions\NotEligibleToCreateException when the author may not create it any more
+     * @throws \Modules\GameTables\Domain\Exceptions\SessionBelowRosterException when it would be published at once
      */
     public function submitForReview(string $tableId, string $userId): void;
 
@@ -71,8 +80,35 @@ interface FrontendCreationServiceInterface
      *
      * @throws \Modules\GameTables\Domain\Exceptions\TableNotFoundException
      * @throws \Modules\GameTables\Domain\Exceptions\NotEditableException
+     * @throws \Modules\GameTables\Domain\Exceptions\NotEligibleToCreateException when the author may not create the edited table
      */
     public function updateDraft(string $tableId, FrontendCreateGameTableDTO $dto): GameTableResponseDTO;
+
+    /**
+     * The directors of a draft as its author edits them on the web: the author as main director
+     * (their own record on the table, or a new row from their account) and the co-directors without
+     * an account, in order. Directors with another account (only staff link them) are left out and
+     * kept as they are on save.
+     *
+     * @return list<array{id: string|null, user_id: string|null, first_name: string, last_name: string, email: string, phone: string, custom_title: string, is_name_public: bool, role: string}>
+     */
+    public function getDraftGameMasters(string $tableId, string $authorId): array;
+
+    /**
+     * Ids of the table's co-directors without an account: the only rows of the web form that keep
+     * their id on save. A co-director row with any other id (or none) is a new co-director.
+     *
+     * @return list<string>
+     */
+    public function editableCoDirectorIds(string $tableId): array;
+
+    /**
+     * The author's own values as main director, kept on the director record every table they
+     * direct shares (defaults when they have none yet): the web form pre-fills them.
+     *
+     * @return array{phone: string, custom_title: string, is_name_public: bool}
+     */
+    public function getAuthorGameMasterProfile(string $authorId): array;
 
     /**
      * Delete a draft table.
@@ -86,6 +122,7 @@ interface FrontendCreationServiceInterface
      * Approve a frontend-created table for publication.
      *
      * @throws \Modules\GameTables\Domain\Exceptions\GameTableNotFoundException
+     * @throws \Modules\GameTables\Domain\Exceptions\SessionBelowRosterException
      */
     public function approveFrontendCreation(string $tableId, ?string $notes = null): void;
 
@@ -102,6 +139,14 @@ interface FrontendCreationServiceInterface
      * @return array<CampaignResponseDTO>
      */
     public function getUserCampaignDrafts(string $userId): array;
+
+    /**
+     * The campaigns shown in «Mis campañas»: the person's own web drafts plus every approved or
+     * published campaign they direct (finished ones included), newest first.
+     *
+     * @return list<CampaignResponseDTO>
+     */
+    public function getMyCampaigns(string $userId): array;
 
     /**
      * Update a draft campaign.

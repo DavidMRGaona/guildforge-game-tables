@@ -7,6 +7,7 @@ namespace Modules\GameTables\Domain\Entities;
 use Carbon\CarbonImmutable;
 use DateTimeImmutable;
 use Modules\GameTables\Domain\Enums\GuestConfirmationMode;
+use Modules\GameTables\Domain\Enums\ParticipantCancellationReason;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
 use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
@@ -40,6 +41,8 @@ final class Participant
         public ?DateTimeImmutable $confirmationSentAt = null,
         public ?GuestConfirmationMode $confirmationMode = null,
         public ?string $fingerprint = null,
+        public bool $fromRoster = false,
+        public ?ParticipantCancellationReason $cancellationReason = null,
     ) {}
 
     public function confirm(): void
@@ -48,8 +51,9 @@ final class Participant
         $this->confirmedAt = CarbonImmutable::now()->toDateTimeImmutable();
     }
 
-    public function cancel(): void
+    public function cancel(?ParticipantCancellationReason $reason = null): void
     {
+        $this->cancellationReason = $reason;
         $this->status = ParticipantStatus::Cancelled;
         $this->cancelledAt = CarbonImmutable::now()->toDateTimeImmutable();
         $this->confirmationExpiresAt = null;
@@ -68,6 +72,40 @@ final class Participant
         $this->confirmationSentAt = null;
         $this->confirmationMode = null;
         $this->fingerprint = null;
+        $this->cancellationReason = null;
+    }
+
+    public function markFromRoster(): void
+    {
+        $this->fromRoster = true;
+    }
+
+    /**
+     * A registration made outside the roster path (a loose one, the panel's, a spectator seat):
+     * a reused row must not keep the roster's priority or its confirmed promotion.
+     */
+    public function unmarkFromRoster(): void
+    {
+        $this->fromRoster = false;
+    }
+
+    /**
+     * Missed this session on purpose. A cancelled roster row with no reason is an absence too:
+     * only an explicit "left the roster" lets the member be enrolled again.
+     */
+    public function isSessionAbsence(): bool
+    {
+        if (! $this->isCancelled()) {
+            return false;
+        }
+
+        return $this->cancellationReason === ParticipantCancellationReason::SessionAbsence
+            || ($this->fromRoster && $this->cancellationReason === null);
+    }
+
+    public function leftRoster(): bool
+    {
+        return $this->isCancelled() && $this->cancellationReason === ParticipantCancellationReason::LeftRoster;
     }
 
     public function reject(): void

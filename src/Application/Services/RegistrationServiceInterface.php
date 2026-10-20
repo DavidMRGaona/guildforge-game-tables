@@ -12,7 +12,49 @@ use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
 
 interface RegistrationServiceInterface
 {
+    /**
+     * A roster member asking for a player seat in a session of their campaign rejoins without the
+     * table rules (membership, dates of the public registration): while the session admits roster
+     * enrolment and a seat is free, their row is reactivated (or created) confirmed. Anyone else,
+     * or a spectator request, follows the table rules.
+     *
+     * @throws \Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException when the table does not admit the user (for a roster member: registration_closed)
+     * @throws \Modules\GameTables\Domain\Exceptions\AlreadyRegisteredException when the user already has an active registration
+     * @throws \Modules\GameTables\Domain\Exceptions\TableFullException when a roster member finds no free seat
+     */
     public function register(RegisterParticipantDTO $dto): ParticipantResponseDTO;
+
+    /**
+     * Enrols the campaign roster (or only $onlyUserId, when a member) in a session, under the table
+     * lock, while the session admits roster enrolment: a member without a row, or whose row was
+     * cancelled on leaving the roster, gets a player seat confirmed (whatever the table's
+     * confirmation), or a place on the waiting list ahead of outsiders when the session is full.
+     * An active loose player registration is adopted as it is; any other row (an absence, a plain
+     * cancellation, a rejection, an active spectator…) is left untouched. Nothing is announced:
+     * the caller does it.
+     *
+     * @return list<ParticipantResponseDTO> the rows placed now (adopted ones are not)
+     */
+    public function enrollRoster(string $gameTableId, ?string $onlyUserId = null): array;
+
+    /**
+     * The member left the roster: their active roster row in the session is cancelled (reason
+     * left_roster) and the freed seat promotes the first waiting player, who is told. No
+     * cancellation is announced.
+     *
+     * @return bool whether a row was cancelled
+     */
+    public function withdrawRosterMember(string $gameTableId, string $userId): bool;
+
+    /**
+     * Clears a member's absence from a session: the same placement as a member rejoining, but the
+     * organisation, which did it, is not told; the member gets the usual confirmation.
+     *
+     * @throws \Modules\GameTables\Domain\Exceptions\ParticipantNotFoundException when the user has no absence in the session
+     * @throws \Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException when the session no longer admits roster enrolment (registration_closed)
+     * @throws \Modules\GameTables\Domain\Exceptions\TableFullException when no seat is free
+     */
+    public function restoreAbsence(string $gameTableId, string $userId): ParticipantResponseDTO;
 
     /**
      * The participant's own cancellation: refused once the table has started.

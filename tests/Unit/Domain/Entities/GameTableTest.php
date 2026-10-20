@@ -481,6 +481,35 @@ final class GameTableTest extends TestCase
         }
     }
 
+    public function test_roster_enrollment_ignores_the_opening_date(): void
+    {
+        $table = $this->publishedTable();
+        $table->registrationOpensAt = new DateTimeImmutable('2026-01-31 12:00:00');
+
+        $this->assertTrue($table->admitsRosterEnrollment(new DateTimeImmutable('2026-01-30 12:00:00')));
+    }
+
+    public function test_roster_enrollment_stops_at_the_effective_closing(): void
+    {
+        $table = $this->publishedTable();
+        $table->registrationClosesAt = new DateTimeImmutable('2026-02-01 18:00:00');
+
+        $this->assertTrue($table->admitsRosterEnrollment(new DateTimeImmutable('2026-02-01 17:59:00')));
+        $this->assertFalse($table->admitsRosterEnrollment(new DateTimeImmutable('2026-02-01 18:00:00')));
+    }
+
+    public function test_unpublished_or_cancelled_tables_admit_no_roster(): void
+    {
+        $now = new DateTimeImmutable('2026-01-30 12:00:00');
+
+        $unpublished = $this->createGameTable(TableStatus::Scheduled);
+        $unpublished->isPublished = false;
+        $cancelled = $this->publishedTable(status: TableStatus::Cancelled);
+
+        $this->assertFalse($unpublished->admitsRosterEnrollment($now));
+        $this->assertFalse($cancelled->admitsRosterEnrollment($now));
+    }
+
     private function publishedTable(bool $inPlay = false, TableStatus $status = TableStatus::Scheduled): GameTable
     {
         $table = $this->createGameTable($status);

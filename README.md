@@ -7,6 +7,7 @@ Módulo de GuildForge para gestionar mesas de rol y campañas: inscripciones de 
 - **Mesas**: sesiones de juego de tipo one-shot, aventura, sesión de campaña, demo o tutorial; presenciales, online o híbridas.
 - **Campañas**: agrupan sesiones, con estado (reclutando, activa, en pausa, completada, cancelada) y frecuencia.
 - **Directores de juego**: director principal y co-directores, propios de la mesa o heredados de la campaña.
+- **Plantilla de la campaña**: los jugadores fijos de una campaña. Se inscriben solos en cada sesión que se publica, solicitan entrar desde la web o los añade la dirección. Ver [Plantillas de campaña](#plantillas-de-campaña).
 - **Inscripciones**: como jugador o espectador, con confirmación automática o manual por mesa.
 - **Invitados**: quien no tiene cuenta se inscribe con nombre y email en las mesas abiertas a todos, y cancela con un enlace con token.
 - **Lista de espera** (ajuste, desactivada por defecto): con las plazas de jugador completas, los jugadores se apuntan a la lista y cada plaza liberada pasa al primero mientras las inscripciones sigan abiertas. Ver [Lista de espera](#lista-de-espera).
@@ -62,6 +63,7 @@ Se configura en el panel: **Mesas de rol** → **Configuración** (permiso `game
 | **Acceso anticipado para socios** | **Acceso anticipado para socios** (clave `membership_integration.enabled`): si quienes tienen el rol de socio del core pueden inscribirse antes de la apertura según los días de acceso anticipado de cada mesa (desactivado, se inscriben con la apertura general); no depende del módulo de gestión de socios. **Días de acceso anticipado**: con cuántos empieza cada mesa nueva del panel |
 | **Valores por defecto** | Duración y número de jugadores y espectadores con los que empiezan los formularios de mesa del panel y de la web; confirmación automática y tipo de inscripción de las mesas nuevas del panel y de las creadas desde la web. Al guardar, cada valor por defecto se comprueba contra los **Límites** del mismo envío (no contra los guardados antes) y el mínimo de jugadores no puede superar el máximo; si no, el campo muestra el error y no se guarda nada. Los topes fijos siguen por encima: 20 jugadores, 50 espectadores, 720 minutos y 30 días de acceso anticipado |
 | **Notificaciones** | Correos de inscripción y de cancelación a los directores y al email de la mesa, y correos de promoción desde la lista de espera (al participante y a los directores) |
+| **Notificaciones de campañas** | Siete interruptores, todos activados por defecto (`campaign_notifications.*`): `session_scheduled`, `join_request_received`, `join_request_accepted`, `join_request_rejected`, `roster_added`, `roster_removed` y `player_left`. Ver [Correos de las plantillas](#correos-de-las-plantillas) |
 | **Límites** | Máximo de jugadores, de espectadores y de duración en los formularios de mesa del panel y de la web (también al validar el envío) |
 | **Creación desde web** | Activar la creación desde la web, qué se puede crear (mesas, campañas o ambas), quién puede crear (cualquier persona, usuarios registrados, roles concretos separados por comas o un permiso) y el modo de publicación (`auto`, `approval`, `role_based`) |
 
@@ -197,6 +199,8 @@ Con **Creación desde web** activada, los usuarios con sesión iniciada que cump
 
 El autor solo edita, envía a revisión o borra una mesa o campaña que no esté publicada y esté en borrador (o rechazada antes de la versión 2.10.0), lo mismo que ofrecen **Mis mesas** y **Mis campañas**; el servidor responde 403 a cualquier otra petición. Una mesa o campaña publicada desde el panel cuando aún estaba en borrador queda fuera de su alcance, igual que las creadas desde el panel. Los permisos de edición y borrado del panel (`gametables.update`/`.delete`, `campaigns.update`/`.delete`) siguen dando acceso completo.
 
+En el formulario web de mesas el autor es siempre el único director principal; el resto de filas son co-directores sin cuenta. Su título personalizado, su teléfono y **Mostrar nombre públicamente** se guardan en su ficha de director, que comparten todas las mesas que dirige: el formulario parte de ella y lo indica bajo su tarjeta. Guardar una mesa que añade un co-director pide confirmar el consentimiento de los co-directores; los que ya estaban en la mesa no lo vuelven a pedir.
+
 Según el modo de publicación:
 
 - `auto`: la mesa o campaña queda aprobada y publicada al crearla o al enviarla.
@@ -222,9 +226,88 @@ El panel nunca publica una mesa o campaña creada desde la web que el autor no h
 
 **Campañas**: en **Mesas de rol** → **Campañas** se aprueban o se rechazan, una a una desde la lista, sin correo al autor.
 
-Una mesa creada o editada desde la web solo se puede vincular a una campaña creada por quien la crea (las que ofrece el formulario); el servidor rechaza cualquier otra con «Solo puedes vincular la mesa a una campaña creada por ti». Desde el panel se puede vincular cualquier campaña. Al editar una mesa desde la web se puede conservar la campaña que ya tenga, aunque la haya vinculado un administrador desde el panel.
+Una mesa creada o editada desde la web solo se puede vincular a una campaña que dirija quien la crea (las que ofrece el formulario); el servidor rechaza cualquier otra con «Solo puedes vincular la mesa a una campaña que dirijas.». Quién dirige una campaña se explica en [Plantillas de campaña](#quién-dirige-una-campaña). Desde el panel se puede vincular cualquier campaña. Al editar una mesa desde la web se puede conservar la campaña que ya tenga, aunque la haya vinculado un administrador desde el panel.
+
+Dirigir una campaña aprobada basta para crear sus sesiones desde la web, aunque las reglas generales de creación (nivel de acceso, rol o permiso) no lo permitieran; solo hace falta que **Creación desde web** esté activada. Quien solo puede crear sesiones (no cumple las reglas generales) ve únicamente el tipo «Sesión de campaña» y solo puede editar o enviar a revisión las sesiones de campañas que dirige. Editar un borrador o enviarlo a revisión aplica siempre las reglas de creación vigentes en ese momento. Esta excepción no alcanza a las sesiones que pertenecen a un evento: esas siguen las reglas de creación del evento como cualquier mesa. Las sesiones siguen pasando por la revisión de mesas según el modo de publicación.
 
 Del mismo modo, una mesa creada o editada desde la web solo se puede vincular a un evento que ofrezca el formulario: publicado, sin terminar y con las mesas activadas. El servidor rechaza cualquier otro con «Solo puedes vincular la mesa a un evento abierto a nuevas mesas». El panel ofrece cualquier evento publicado que no haya empezado, tenga o no las mesas activadas. Al editar una mesa desde la web se puede conservar el evento que ya tenga, aunque haya terminado o lo haya vinculado un administrador desde el panel.
+
+## Plantillas de campaña
+
+Cada campaña tiene una **plantilla**: las personas que juegan la campaña entera. Las campañas ya existentes arrancan con la plantilla vacía.
+
+Las campañas que ya estén cerradas (**Acepta nuevos jugadores** desactivado, o en pausa, completadas o canceladas) rechazan desde que se instala esta versión las inscripciones web de quien no esté en la plantilla. Las inscripciones que ya existían se mantienen. La dirección debe añadir a sus jugadores a la plantilla: al añadir a un jugador, sus inscripciones en las próximas sesiones pasan a ser de la plantilla, sin enviar correos de sesión.
+
+### Quién dirige una campaña
+
+La **dirección** la forman:
+
+- quien creó la campaña, solo si la creó desde la web; quien la crea desde el panel (normalmente para otra persona) no forma parte de la dirección;
+- todo director de la campaña que tenga cuenta. Los directores externos, sin cuenta, no dirigen ni reciben correos.
+
+Los correos a la dirección respetan el interruptor **Notificar por email** de cada director; quien creó la campaña en la web los recibe siempre. Las cuentas anonimizadas no cuentan. Los codirectores no ven el motivo de rechazo de moderación dirigido a quien creó la campaña. La dirección gestiona la plantilla y crea sesiones de la campaña desde la web. Quien dirige una campaña no puede entrar en su plantilla como jugador.
+
+### Acceso a la plantilla
+
+Cada campaña define **Quién puede solicitar** (`roster_access`): **Cualquier cuenta** (por defecto) o **Solo socios**. La condición de socio se comprueba con el rol de socio configurado en el core, nunca por nombre de rol. Además:
+
+- la campaña tiene que estar publicada y **abierta**: **Acepta nuevos jugadores** activado y estado Reclutando o Activa. En pausa, completada o cancelada cuenta como cerrada para solicitudes y para inscripciones sueltas;
+- el máximo de jugadores de la campaña (vacío = sin límite) limita la plantilla: con la plantilla llena no se puede aceptar ni añadir a nadie, y no puede bajarse por debajo de la plantilla actual;
+- una campaña completada o cancelada ya no cambia su plantilla, aunque la dirección puede quitar jugadores.
+
+Se entra de tres formas:
+
+1. **Solicitud.** Desde la ficha de la campaña, con sesión iniciada y un mensaje opcional (hasta 500 caracteres); se puede retirar mientras esté pendiente. Hay un límite de 5 solicitudes por minuto y 20 por hora y usuario. La dirección la acepta o la rechaza (con un motivo opcional) desde la página de plantilla o desde el panel.
+2. **Alta directa.** La dirección escribe el email exacto de la cuenta; no hay buscador de usuarios. Si la cuenta no existe, el mensaje no revela nada más: una campaña completa, terminada o no publicada da la misma respuesta para cualquier email. Hay un límite de 20 altas por minuto y usuario.
+3. **Aceptar una solicitud.**
+
+La dirección puede añadir o aceptar mientras la campaña está cerrada a nuevos jugadores o en pausa (no una vez completada o cancelada); solo las solicitudes necesitan una campaña abierta. Las cuentas anonimizadas no cuentan para el límite, no se inscriben, no reciben correos y sus solicitudes pendientes no se muestran.
+
+### Páginas de la web
+
+- **Ficha de la campaña**: la caja de unirse muestra el estado de cada persona (invitada, con solicitud pendiente, de la plantilla, campaña completa o cerrada, solo socios o dirección). La plantilla puede **Salir de la campaña** con confirmación.
+- **Mis campañas** (`/campanas/mis-campanas`): además de los borradores, lista las campañas aprobadas o publicadas que la persona dirige, también las completadas o canceladas (sin **Añadir sesión**), con el número de solicitudes pendientes y los accesos **Plantilla** y **Añadir sesión**.
+- **Plantilla** (`/campanas/mis-campanas/{id}/plantilla`): ajustes (acepta jugadores nuevos, quién puede solicitar y máximo de jugadores; no devuelven la campaña a revisión), solicitudes pendientes, alta directa y la lista de jugadores con una ficha por sesión próxima (va, no va, en espera). El resto de la ficha de una campaña publicada solo se edita en el panel.
+
+### Inscripción al publicar una sesión
+
+Una **sesión de campaña** es cualquier mesa con campaña, sea cual sea su tipo. Cuando queda publicada y admite inscripciones, la plantilla se inscribe sola: por aprobación en la revisión, por publicación directa o desde el panel (el interruptor, el estado o la acción **Publicar**, que pasa por el mismo servicio). No se inscribe al crear el borrador.
+
+- Las inscripciones de la plantilla son de jugador y quedan **confirmadas**, sin pasar por las reglas de la mesa (tipo de inscripción, solo socios o confirmación manual). Cada persona recibe un solo correo de sesión programada.
+- **Entrada tardía.** Quien entra en la plantilla cuando ya hay sesiones publicadas se inscribe en las que siguen admitiendo inscripciones; si una sesión ya está llena de gente de fuera, pasa a su lista de espera con prioridad de plantilla. El correo de entrada lista solo las sesiones en las que quedó inscrito.
+- **Publicar otra vez** (despublicar y volver a publicar, o un cambio entre Completa y Programada) no crea una segunda fila ni manda un segundo correo. La sincronización solo añade a quien no tiene inscripción y reactiva las canceladas por salir de la plantilla; nunca toca las canceladas por una baja de esa sesión, ni las rechazadas, de no presentados o caducadas. El mismo criterio vale cuando alguien vuelve a apuntarse a una sesión: el camino de la plantilla no deshace una decisión de la organización.
+- **Aforo.** La plantilla siempre cabe: una sesión nueva toma por defecto el máximo de la campaña (o el tamaño de la plantilla, si es mayor) y el servidor rechaza un máximo de jugadores menor que la plantilla al crear, editar o publicar, también desde el panel. Las inscripciones que añade el personal desde el panel pueden superar lo que necesita la plantilla.
+
+### Bajas de una sesión y salidas
+
+- **Baja de una sola sesión** («No puedo ir a esta sesión», con el enlace de cancelación del correo, o marcada por la dirección en la ficha de la plantilla). La persona sigue en la plantilla y en las demás sesiones, y la sincronización no la vuelve a inscribir en esa sesión, ni aunque salga de la campaña y vuelva a entrar o la sesión se despublique y se publique de nuevo. Puede **Volver a apuntarse** mientras haya sitio y las inscripciones sigan abiertas, sin pasar por las reglas de la mesa. La dirección puede marcar una ausencia hasta que empiece la sesión y quitarla mientras admita inscripciones. La baja usa los correos de cancelación que ya existían, con sus ajustes.
+- **Salir de la campaña.** La persona pierde sus plazas en todas las sesiones próximas que no han empezado, publicadas o no, y no recibe correo. Las sesiones pasadas no se tocan. Si la dirección la quita, sí recibe un correo (no uno por sesión). Las plazas que se liberan se anuncian como cualquier promoción de la lista de espera.
+- **Plaza liberada.** En una campaña abierta queda para inscripciones sueltas o la lista de espera, como cualquier baja; en una cerrada queda vacía.
+
+### Campañas cerradas y abiertas
+
+- **Cerrada** (sin nuevos jugadores, en pausa, completada o cancelada): solo se inscribe la plantilla. El resto ve «Solo para la plantilla de la campaña» con un enlace a la campaña, no se le ofrece el formulario de invitado y el servidor rechaza las dos vías. El personal puede saltarse esta regla al inscribir desde el panel.
+- **Abierta**: se puede ir a una sesión con las reglas normales de la mesa (invitados, aprobación, lista de espera), lo que no hace entrar en la plantilla. La ficha de la sesión enlaza a «Solicita unirte».
+
+### Panel
+
+La ficha de la campaña tiene dos pestañas de relación, **Plantilla** (añadir con el email exacto de la cuenta y quitar) y **Solicitudes** (aceptar y rechazar), con las mismas reglas, correos y servicio que la web. Se ven y se usan con el permiso de edición de campañas (`campaigns.update`); no hace falta ningún permiso de usuarios del core. **Quién puede solicitar** está en la pestaña **Progreso**, junto al máximo de jugadores, y **Acepta nuevos jugadores** en **Publicación**.
+
+### Correos de las plantillas
+
+Siete correos, cada uno con su interruptor en **Notificaciones de campañas** (todos activados por defecto):
+
+| Interruptor | Correo | Destinatarios |
+|-------------|--------|---------------|
+| `session_scheduled` | Sesión programada | Cada persona de la plantilla al publicarse una sesión (con variante si queda en la lista de espera) |
+| `join_request_received` | Solicitud recibida | Dirección |
+| `join_request_accepted` | Solicitud aceptada | Quien la envió, con las sesiones en las que queda inscrito |
+| `join_request_rejected` | Solicitud rechazada | Quien la envió, con el motivo si lo hay |
+| `roster_added` | Añadido a la plantilla | La persona añadida, con sus sesiones |
+| `roster_removed` | Quitado de la plantilla | La persona quitada |
+| `player_left` | Salida de la plantilla | Dirección |
+
+Los textos que escriben las personas (mensaje de la solicitud, motivo del rechazo, nombres) se muestran tal cual en el correo, nunca como formato.
 
 ## Verificación de email
 
@@ -242,7 +325,7 @@ Los invitados (inscripción sin cuenta y cancelación con el enlace del correo),
 | Grupo | Elemento | Contenido |
 |-------|----------|-----------|
 | Mesas de rol | Mesas | Formulario por pestañas (información básica, dirección, horario y ubicación, capacidad y requisitos, contenido y seguridad, inscripciones, publicación), participantes y moderación |
-| Mesas de rol | Campañas | Campañas, sus directores y publicación |
+| Mesas de rol | Campañas | Campañas, sus directores y publicación, y las pestañas **Plantilla** y **Solicitudes** (ver [Plantillas de campaña](#plantillas-de-campaña)) |
 | Mesas de rol | Avisos de contenido | Catálogo de avisos con severidad |
 | Mesas de rol | Configuración | Configuración del módulo (permiso `gametables.settings`) |
 | Catálogo de juegos | Editoriales | Editoriales de los sistemas de juego (también se crean desde el formulario de sistemas) |
@@ -278,6 +361,13 @@ Widget del dashboard: `PendingModerationWidget` (mesas y campañas pendientes de
 | `GET` | `/campanas/mis-campanas/{id}/editar` | `campaigns.frontend-edit` | Autor |
 | `PUT` / `DELETE` | `/campanas/mis-campanas/{id}` | `campaigns.frontend-update` / `campaigns.frontend-destroy` | Autor |
 | `POST` | `/campanas/mis-campanas/{id}/enviar-revision` | `campaigns.submit-review` | Autor |
+| `GET` | `/campanas/mis-campanas/{id}/plantilla` | `campaigns.roster` | Dirección |
+| `PUT` | `/campanas/mis-campanas/{id}/plantilla/ajustes` | `campaigns.roster.settings` | Dirección |
+| `POST` / `DELETE` | `/campanas/mis-campanas/{id}/plantilla/jugadores[/{userId}]` | `campaigns.roster.add` / `campaigns.roster.remove` | Dirección |
+| `POST` | `/campanas/mis-campanas/{id}/plantilla/solicitudes/{requestId}/aceptar` / `rechazar` | `campaigns.roster.accept` / `campaigns.roster.reject` | Dirección |
+| `POST` | `/campanas/mis-campanas/{id}/plantilla/ausencias` | `campaigns.roster.absence` | Dirección |
+| `POST` / `DELETE` | `/campanas/{slug}/solicitud` | `campaigns.join.request` / `campaigns.join.withdraw` | Usuarios autenticados |
+| `DELETE` | `/campanas/{slug}/plantilla` | `campaigns.leave` | Plantilla |
 
 `{gameTable}` es el slug de la mesa; en las rutas de **Mis mesas** (`/mesas/mis-mesas/…`) también vale su id, la forma que llevan los correos de rechazo enviados antes de la versión 2.8.0 (los nuevos enlazan por slug). En las rutas de **Mis campañas**, `{id}` es el id de la campaña. El módulo no tiene API: el número de mesas de un evento llega a su página como prop de Inertia (`gameTableCount`). `gametables.index`, `gametables.calendar` y `campaigns.index` aparecen entre las páginas que se pueden enlazar desde el editor de menús.
 
@@ -297,6 +387,7 @@ Widget del dashboard: `PendingModerationWidget` (mesas y campañas pendientes de
 | `Campaigns/Create`, `Campaigns/CreateNotEligible` | `/campanas/crear` |
 | `Campaigns/Edit` | `/campanas/mis-campanas/{id}/editar` |
 | `Campaigns/MyCampaigns` | `/campanas/mis-campanas` |
+| `Campaigns/Roster` | `/campanas/mis-campanas/{id}/plantilla` |
 
 ### Componentes
 
@@ -328,6 +419,10 @@ Widget del dashboard: `PendingModerationWidget` (mesas y campañas pendientes de
 | Promoción desde la lista de espera | Participante siempre; directores y email de la mesa si **Notificaciones** lo permite; en las mesas con confirmación manual indican que la inscripción queda pendiente |
 | Cancelación de la mesa | Participantes |
 | Recordatorio antes de la mesa | Participantes confirmados (con cuenta o con el email confirmado), una vez, las horas configuradas antes del inicio; desactivado por defecto (`game-tables:send-reminders`, cada hora) |
+| Sesión de campaña programada | Plantilla (ver [Correos de las plantillas](#correos-de-las-plantillas)) |
+| Solicitud de entrada recibida, aceptada o rechazada | Dirección (recibida) o quien la envió (aceptada y rechazada) |
+| Añadido o quitado de la plantilla | La persona afectada |
+| Salida de la plantilla | Dirección |
 | Mesa o campaña enviada a revisión | Usuarios con rol `admin` o `editor` |
 | Mesa o campaña aprobada o rechazada | Autor (el rechazo incluye el motivo y el enlace para editarla) |
 
@@ -351,6 +446,9 @@ Widget del dashboard: `PendingModerationWidget` (mesas y campañas pendientes de
 | `ParticipantRejected` | Se rechaza una inscripción |
 | `ParticipantCancelled` | Se cancela una inscripción (`byOrganization` cuando la cancela la organización desde el panel) |
 | `ParticipantPromotedFromWaitingList` | Un participante sale de la lista de espera |
+| `CampaignJoinRequested`, `CampaignJoinRequestAccepted`, `CampaignJoinRequestRejected` | Se envía, se acepta o se rechaza una solicitud de entrada |
+| `CampaignRosterMemberAdded`, `CampaignRosterMemberRemoved`, `CampaignRosterMemberLeft` | La dirección añade o quita a alguien, o alguien sale por su cuenta |
+| `RosterMemberEnrolledInSession` | Una persona de la plantilla queda inscrita en una sesión |
 
 `CampaignCreated` y `CampaignStatusChanged` están definidos pero hoy no se emiten.
 
@@ -370,7 +468,7 @@ El módulo registra sus permisos con el prefijo `gametables:` (por ejemplo `game
 | `contentwarnings.view_any`, `contentwarnings.manage` | — | Ver y gestionar avisos de contenido |
 | `gametables.settings` | — | Abrir y guardar la página de configuración del módulo |
 
-La columna de rol indica el rol al que el módulo propone el permiso; habilitar el módulo no lo asigna, se concede en **Roles**. Los administradores tienen acceso completo. Los autores gestionan sus propias mesas y campañas desde «Mis mesas» y «Mis campañas»; solo pueden editarlas, enviarlas a revisión o borrarlas mientras no estén publicadas y estén en borrador o rechazadas.
+La columna de rol indica el rol al que el módulo propone el permiso; habilitar el módulo no lo asigna, se concede en **Roles**. Los administradores tienen acceso completo. La dirección de una campaña gestiona su plantilla desde la web sin ningún permiso del panel. Los autores gestionan sus propias mesas y campañas desde «Mis mesas» y «Mis campañas»; solo pueden editarlas, enviarlas a revisión o borrarlas mientras no estén publicadas y estén en borrador o rechazadas.
 
 ## Comandos
 

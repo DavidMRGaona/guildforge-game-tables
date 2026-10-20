@@ -7,6 +7,7 @@ namespace Modules\GameTables\Tests\Unit\Domain\Entities;
 use DateTimeImmutable;
 use Modules\GameTables\Domain\Entities\Participant;
 use Modules\GameTables\Domain\Enums\GuestConfirmationMode;
+use Modules\GameTables\Domain\Enums\ParticipantCancellationReason;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
 use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
@@ -476,6 +477,57 @@ final class ParticipantTest extends TestCase
         $this->assertNull($guest->confirmationSentAt);
         $this->assertNull($guest->confirmationMode);
         $this->assertNull($guest->fingerprint);
+    }
+
+    public function test_cancel_keeps_the_reason(): void
+    {
+        $participant = $this->createParticipant(status: ParticipantStatus::Confirmed);
+
+        $participant->cancel(ParticipantCancellationReason::LeftRoster);
+
+        $this->assertSame(ParticipantCancellationReason::LeftRoster, $participant->cancellationReason);
+        $this->assertTrue($participant->leftRoster());
+        $this->assertFalse($participant->isSessionAbsence());
+    }
+
+    public function test_reactivate_clears_the_reason_and_keeps_the_roster_mark(): void
+    {
+        $participant = $this->createParticipant(status: ParticipantStatus::Confirmed);
+        $participant->markFromRoster();
+        $participant->cancel(ParticipantCancellationReason::SessionAbsence);
+
+        $participant->reactivate();
+
+        $this->assertNull($participant->cancellationReason);
+        $this->assertTrue($participant->fromRoster);
+    }
+
+    public function test_unmark_from_roster_drops_the_roster_mark(): void
+    {
+        $participant = $this->createParticipant(status: ParticipantStatus::Confirmed);
+        $participant->markFromRoster();
+
+        $participant->unmarkFromRoster();
+
+        $this->assertFalse($participant->fromRoster);
+    }
+
+    public function test_a_cancelled_roster_row_without_reason_counts_as_absence(): void
+    {
+        $participant = $this->createParticipant(status: ParticipantStatus::Confirmed);
+        $participant->markFromRoster();
+        $participant->cancel();
+
+        $this->assertTrue($participant->isSessionAbsence());
+        $this->assertFalse($participant->leftRoster());
+    }
+
+    public function test_a_cancelled_loose_row_without_reason_is_not_an_absence(): void
+    {
+        $participant = $this->createParticipant(status: ParticipantStatus::Confirmed);
+        $participant->cancel();
+
+        $this->assertFalse($participant->isSessionAbsence());
     }
 
     private function createGuest(ParticipantStatus $status = ParticipantStatus::Pending): Participant

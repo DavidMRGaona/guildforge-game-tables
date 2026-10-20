@@ -1,15 +1,19 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { FormCombobox, FormSelect, FormCheckboxGroup, FormCheckboxWithTooltip, FormRadioGroup, FormTagsInput, FormNumberInput } from '@/components/form';
 import type { CheckboxGroup, RadioOption } from '@/components/form';
-import type { GameSystem, GameTableEditData, TableFormDefaults, TableFormLimits } from '../../types/gametables';
+import type { EditableGameMaster, GameSystem, GameTableEditData, SessionCampaignOption, TableFormDefaults, TableFormLimits } from '../../types/gametables';
 import GameMasterSection from '../../components/GameMasterSection.vue';
+import SessionCampaignField from '../../components/SessionCampaignField.vue';
 import FormTabs from '../../components/FormTabs.vue';
 import type { FormTab } from '../../components/FormTabs.vue';
+import FormErrorSummary from '../../components/FormErrorSummary.vue';
+import { useFormErrorSummary } from '../../composables/useFormErrorSummary';
+import { fieldStateClass } from '../../utils/fieldStateClass';
 
 type OptionsInput = Record<string, string> | Array<{ value: string; label: string }> | null | undefined;
 
@@ -46,7 +50,8 @@ interface FormData {
     safety_tools: Record<string, string>;
     content_warnings: ContentWarning[];
     events: ContextOption[];
-    campaigns: ContextOption[];
+    // The campaigns the author may create sessions of, plus the one stored on the table
+    campaigns: SessionCampaignOption[];
     defaults: TableFormDefaults;
     limits: TableFormLimits;
 }
@@ -83,9 +88,13 @@ interface CurrentUser {
 
 interface Props {
     table: GameTableEditData;
+    /** The stored directors: the author first, then the co-directors, as the form edits them */
+    gameMasters: EditableGameMaster[];
     formData: FormData;
     eventContext?: EventContext | null;
     currentUser: CurrentUser;
+    /** The author may only create sessions of the campaigns they direct (as on the create form) */
+    sessionOnly?: boolean;
 }
 
 const props = defineProps<Props>();
@@ -103,7 +112,8 @@ const tabs = computed((): FormTab[] => [
     { id: 'location', label: t('gameTables.create.tabs.location') },
 ]);
 
-// Field to tab mapping for error navigation
+// Field to tab mapping for error navigation (an error key is matched by its first segment, so
+// `game_masters.1.email` or `genres.0` land on the tab of their field)
 const fieldToTab: Record<string, string> = {
     // Basic tab
     game_system_id: 'basic',
@@ -118,6 +128,7 @@ const fieldToTab: Record<string, string> = {
     campaign_id: 'basic',
     // Participants tab
     game_masters: 'participants',
+    gm_gdpr_consent: 'participants',
     min_players: 'participants',
     max_players: 'participants',
     max_spectators: 'participants',
@@ -128,12 +139,51 @@ const fieldToTab: Record<string, string> = {
     genres: 'content',
     character_creation: 'content',
     safety_tools: 'content',
-    content_warnings: 'content',
+    content_warning_ids: 'content',
     custom_warnings: 'content',
     // Location tab
     location: 'location',
     online_url: 'location',
     notes: 'location',
+};
+
+// Field => the i18n key of its label on the form, for the error summary
+const fieldLabels: Record<string, string> = {
+    // Basic tab
+    game_system_id: 'gameTables.create.fields.gameSystem',
+    title: 'gameTables.create.fields.title',
+    starts_at: 'gameTables.create.fields.startsAt',
+    duration_minutes: 'gameTables.create.fields.duration',
+    table_type: 'gameTables.create.fields.tableType',
+    table_format: 'gameTables.create.fields.tableFormat',
+    language: 'gameTables.create.fields.language',
+    experience_level: 'gameTables.create.fields.experienceLevel',
+    event_id: 'gameTables.create.fields.event',
+    campaign_id: 'gameTables.create.fields.campaign',
+    // Participants tab
+    game_masters: 'gameTables.create.gameMasters.title',
+    gm_gdpr_consent: 'gameTables.create.gameMasters.gdprConsentLabel',
+    min_players: 'gameTables.create.fields.minPlayers',
+    max_players: 'gameTables.create.fields.maxPlayers',
+    max_spectators: 'gameTables.create.fields.maxSpectators',
+    minimum_age: 'gameTables.create.fields.minimumAge',
+    // Content tab
+    synopsis: 'gameTables.create.fields.synopsis',
+    tone: 'gameTables.create.fields.tone',
+    genres: 'gameTables.genres',
+    character_creation: 'gameTables.create.fields.characterCreation',
+    safety_tools: 'gameTables.create.fields.safetyTools',
+    content_warning_ids: 'gameTables.create.fields.contentWarnings',
+    custom_warnings: 'gameTables.create.fields.customWarnings',
+    // Location tab
+    location: 'gameTables.create.fields.location',
+    online_url: 'gameTables.create.fields.onlineUrl',
+    notes: 'gameTables.create.fields.notes',
+};
+
+// Where to focus a field whose element has another id: the time slot of a slot-based event
+const fieldTargets: Record<string, string> = {
+    starts_at: 'time_slot',
 };
 
 // Helper to extract IDs from safety tools (which come as {value, label} objects)
@@ -164,58 +214,64 @@ const form = useForm({
     genres: props.table.genres,
     tone: (props.table.tone ?? '') as string | null,
     safety_tools: extractSafetyToolIds(props.table.safety_tools),
-    content_warnings: props.table.content_warnings,
+    content_warning_ids: props.table.content_warnings,
     custom_warnings: props.table.custom_warnings,
     minimum_age: props.table.minimum_age,
     notes: props.table.notes ?? '',
-    game_masters: (props.table.game_masters ?? []).map((gm: Record<string, unknown>) => ({
-        ...(gm.id ? { id: gm.id as string } : {}),
-        ...(gm.user_id !== undefined ? { user_id: gm.user_id as string | null } : {}),
-        first_name: gm.display_name?.toString().split(' ')[0] || '',
-        last_name: gm.display_name?.toString().split(' ').slice(1).join(' ') || '',
-        email: '',
-        phone: '',
-        ...(gm.custom_title ? { custom_title: gm.custom_title as string } : {}),
-        is_name_public: (gm.is_name_public as boolean) ?? true,
-        role: gm.role as 'main' | 'co_gm',
+    // Each co-director keeps its id so saving updates the same record instead of replacing it
+    game_masters: props.gameMasters.map((gm) => ({
+        ...(gm.id !== null ? { id: gm.id } : {}),
+        user_id: gm.user_id,
+        first_name: gm.first_name,
+        last_name: gm.last_name,
+        email: gm.email,
+        phone: gm.phone,
+        custom_title: gm.custom_title,
+        is_name_public: gm.is_name_public,
+        role: gm.role,
     })),
     gm_gdpr_consent: false,
 });
 
-// Calculate errors per tab for badge display
-const tabErrors = computed(() => {
-    const counts: Record<string, number> = {};
-    const errorKeys = Object.keys(form.errors);
-
-    for (const key of errorKeys) {
-        const tab = fieldToTab[key] ?? 'basic';
-        counts[tab] = (counts[tab] ?? 0) + 1;
-    }
-
-    return counts;
+// Errors per tab (badges), the directors' field errors and the summary shown after a failed save
+// A removed director row takes only its own errors: the later rows' move up with them (adding a
+// row, at the end, keeps every error where it is)
+const { tabErrors, gameMasterErrors, errorItems, revealErrors, focusError, removeGameMasterRowErrors } = useFormErrorSummary({
+    errors: () => form.errors,
+    tabs,
+    activeTab,
+    fieldToTab,
+    fieldLabels,
+    fieldTargets,
+    gameMasters: () => form.game_masters,
+    replaceErrors: (errors) => form.clearErrors().setError(errors as Parameters<typeof form.setError>[0]),
 });
 
-// Find first tab with errors
-function findFirstTabWithErrors(): string | null {
-    for (const tab of tabs.value) {
-        if ((tabErrors.value[tab.id] ?? 0) > 0) {
-            return tab.id;
-        }
-    }
-    return null;
-}
 
-// Context type for event/campaign association
-type ContextType = 'independent' | 'event' | 'campaign';
+// Context type for the event association (the campaign goes with the session type)
+type ContextType = 'independent' | 'event';
 
 // Determine initial context type from existing data (using snake_case keys)
 function getInitialContextType(): ContextType {
-    if (props.table.event_id) return 'event';
-    if (props.table.campaign_id) return 'campaign';
-    return 'independent';
+    return props.table.event_id ? 'event' : 'independent';
 }
 
 const contextType = ref<ContextType>(getInitialContextType());
+
+// A session needs its campaign: the field shows right under the type, and the form is not sent without it
+const isCampaignSession = computed(() => form.table_type === 'campaign_session');
+const sessionWithoutCampaign = computed(() => isCampaignSession.value && !form.campaign_id);
+
+// Another type takes no campaign: clear it (the field hides)
+watch(() => form.table_type, (type) => {
+    if (type !== 'campaign_session') form.campaign_id = null;
+});
+
+// Choosing the campaign fills what the session takes from it
+function applyCampaign(values: { gameSystemId: string; maxPlayers: number }): void {
+    form.game_system_id = values.gameSystemId;
+    form.max_players = values.maxPlayers;
+}
 
 // Selected time slot for slot-based scheduling
 const selectedTimeSlot = ref<string | null>(null);
@@ -252,11 +308,10 @@ watch(selectedTimeSlot, (slotIndex) => {
     }
 });
 
-// Clear the other field when context type changes (only when not in event context mode)
+// Clear the event when the table leaves it (only when not in event context mode)
 watch(contextType, (newType) => {
     if (isEventContextMode.value) return; // Don't change event association in event context mode
     if (newType !== 'event') form.event_id = null;
-    if (newType !== 'campaign') form.campaign_id = null;
 });
 
 // Get selected event name for display
@@ -292,13 +347,6 @@ const contextOptions = computed((): RadioOption[] => {
             description: t('gameTables.create.context.eventDescription'),
         });
     }
-    if (props.formData.campaigns.length > 0) {
-        options.push({
-            value: 'campaign',
-            label: t('gameTables.create.context.campaign'),
-            description: t('gameTables.create.context.campaignDescription'),
-        });
-    }
     return options;
 });
 
@@ -307,14 +355,6 @@ const eventOptions = computed(() =>
     props.formData.events.map((event) => ({
         id: event.id,
         name: event.name,
-    }))
-);
-
-// Transform campaigns for combobox
-const campaignOptions = computed(() =>
-    props.formData.campaigns.map((campaign) => ({
-        id: campaign.id,
-        name: campaign.name,
     }))
 );
 
@@ -408,37 +448,12 @@ const contentWarningGroups = computed((): CheckboxGroup[] => {
     return groups;
 });
 
-function scrollToFirstError(): void {
-    const errorKeys = Object.keys(form.errors);
-    const firstErrorField = errorKeys[0];
-    if (!firstErrorField) return;
-
-    const element = document.querySelector(`[name="${firstErrorField}"]`)
-        ?? document.getElementById(firstErrorField);
-
-    if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        (element as HTMLElement).focus?.();
-    }
-}
-
 function submit(): void {
     // The {gameTable} routes find the table by its slug, not its id
     form.put(`/mesas/mis-mesas/${props.table.slug}`, {
         preserveScroll: true,
-        onError: () => {
-            nextTick(() => {
-                // Navigate to first tab with errors
-                const firstTabWithErrors = findFirstTabWithErrors();
-                if (firstTabWithErrors) {
-                    activeTab.value = firstTabWithErrors;
-                }
-                // Then scroll to first error field
-                nextTick(() => {
-                    scrollToFirstError();
-                });
-            });
-        },
+        // Opens the first tab with errors and focuses the summary
+        onError: () => revealErrors(),
     });
 }
 
@@ -486,7 +501,9 @@ function cancel(): void {
                 </div>
             </div>
 
-            <form @submit.prevent="submit">
+            <form novalidate @submit.prevent="submit">
+                <FormErrorSummary ref="errorSummary" :items="errorItems" @select="focusError" />
+
                 <div class="rounded-lg border border-default bg-surface">
                     <FormTabs v-model="activeTab" :tabs="tabs" :errors="tabErrors">
                         <!-- Tab 1: Basic Information -->
@@ -526,10 +543,10 @@ function cancel(): void {
                                         required
                                         :aria-invalid="!!form.errors.title"
                                         :aria-describedby="form.errors.title ? 'title-error' : undefined"
-                                        class="mt-1 block w-full rounded-lg border border-default bg-surface px-4 py-2.5
+                                        :class="fieldStateClass(!!form.errors.title)"
+                                        class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
                                                text-base-primary placeholder-base-muted
-                                               hover:border-strong
-                                               focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                               focus:outline-none focus:ring-2"
                                     />
                                     <p v-if="form.errors.title" id="title-error" class="mt-1 text-sm text-error">
                                         {{ form.errors.title }}
@@ -545,6 +562,7 @@ function cancel(): void {
                                     <FormSelect
                                         id="time_slot"
                                         v-model="selectedTimeSlot"
+                                        :error="form.errors.starts_at ?? ''"
                                         :options="timeSlotOptions"
                                         :placeholder="t('gameTables.create.fields.selectTimeSlot')"
                                         class="mt-1"
@@ -570,10 +588,10 @@ function cancel(): void {
                                         name="starts_at"
                                         required
                                         :aria-invalid="!!form.errors.starts_at"
-                                        class="mt-1 block w-full rounded-lg border border-default bg-surface px-4 py-2.5
+                                        :class="fieldStateClass(!!form.errors.starts_at)"
+                                        class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
                                                text-base-primary
-                                               hover:border-strong
-                                               focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                               focus:outline-none focus:ring-2"
                                     />
                                     <p v-if="form.errors.starts_at" class="mt-1 text-sm text-error">
                                         {{ form.errors.starts_at }}
@@ -613,13 +631,28 @@ function cancel(): void {
                                     <FormSelect
                                         id="table_type"
                                         v-model="form.table_type"
+                                        :error="form.errors.table_type ?? ''"
                                         :options="objectToOptions(props.formData.table_types)"
+                                        :disabled="props.sessionOnly"
                                         class="mt-1"
                                     />
+                                    <p v-if="props.sessionOnly" class="mt-1 text-xs text-base-muted">
+                                        {{ t('gameTables.create.campaign.sessionOnly') }}
+                                    </p>
                                     <p v-if="form.errors.table_type" class="mt-1 text-sm text-error">
                                         {{ form.errors.table_type }}
                                     </p>
                                 </div>
+
+                                <!-- Campaign of the session -->
+                                <SessionCampaignField
+                                    v-if="isCampaignSession"
+                                    v-model="form.campaign_id"
+                                    :campaigns="props.formData.campaigns"
+                                    :default-max-players="props.formData.defaults.max_players"
+                                    :error="form.errors.campaign_id"
+                                    @fill="applyCampaign"
+                                />
 
                                 <!-- Table Format -->
                                 <div>
@@ -629,6 +662,7 @@ function cancel(): void {
                                     <FormSelect
                                         id="table_format"
                                         v-model="form.table_format"
+                                        :error="form.errors.table_format ?? ''"
                                         :options="objectToOptions(props.formData.table_formats)"
                                         class="mt-1"
                                     />
@@ -647,6 +681,7 @@ function cancel(): void {
                                         id="language"
                                         name="language"
                                         v-model="form.language"
+                                        :error="form.errors.language ?? ''"
                                         :options="objectToOptions(props.formData.languages)"
                                         class="mt-1"
                                     />
@@ -665,6 +700,7 @@ function cancel(): void {
                                         id="experience_level"
                                         name="experience_level"
                                         v-model="form.experience_level"
+                                        :error="form.errors.experience_level ?? ''"
                                         :options="objectToOptions(props.formData.experience_levels)"
                                         :placeholder="t('gameTables.create.fields.selectExperienceLevel')"
                                         class="mt-1"
@@ -674,7 +710,7 @@ function cancel(): void {
                                     </p>
                                 </div>
 
-                                <!-- Context (Event/Campaign association) - hide when coming from event context -->
+                                <!-- Context (event association) - hide when coming from event context -->
                                 <div
                                     v-if="!isEventContextMode && contextOptions.length > 1"
                                     class="rounded-lg border border-base-subtle bg-surface-subtle p-4"
@@ -709,26 +745,6 @@ function cancel(): void {
                                                 {{ form.errors.event_id }}
                                             </p>
                                         </div>
-
-                                        <!-- Campaign selector -->
-                                        <div v-if="contextType === 'campaign'">
-                                            <label for="campaign_id" class="block text-sm font-medium text-base-secondary">
-                                                {{ t('gameTables.create.fields.campaign') }}
-                                            </label>
-                                            <FormCombobox
-                                                id="campaign_id"
-                                                v-model="form.campaign_id"
-                                                :options="campaignOptions"
-                                                option-label="name"
-                                                option-value="id"
-                                                :placeholder="t('gameTables.create.fields.selectCampaign')"
-                                                :error="form.errors.campaign_id"
-                                                class="mt-1"
-                                            />
-                                            <p v-if="form.errors.campaign_id" class="mt-1 text-sm text-error">
-                                                {{ form.errors.campaign_id }}
-                                            </p>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -739,11 +755,14 @@ function cancel(): void {
                             <div class="space-y-6 p-6">
                                 <!-- Game Masters -->
                                 <GameMasterSection
+                                    id="game_masters"
                                     v-model="form.game_masters"
                                     v-model:gdpr-consent="form.gm_gdpr_consent"
                                     :current-user="props.currentUser"
                                     :disabled="form.processing"
                                     :error="form.errors.game_masters"
+                                    :errors="gameMasterErrors"
+                                    @remove="removeGameMasterRowErrors"
                                 />
 
                                 <!-- Separator -->
@@ -850,10 +869,10 @@ function cancel(): void {
                                         name="synopsis"
                                         rows="6"
                                         :aria-invalid="!!form.errors.synopsis"
-                                        class="mt-1 block w-full rounded-lg border border-default bg-surface px-4 py-2.5
+                                        :class="fieldStateClass(!!form.errors.synopsis)"
+                                        class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
                                                text-base-primary placeholder-base-muted
-                                               hover:border-strong
-                                               focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                               focus:outline-none focus:ring-2"
                                     />
                                     <p v-if="form.errors.synopsis" class="mt-1 text-sm text-error">
                                         {{ form.errors.synopsis }}
@@ -868,6 +887,7 @@ function cancel(): void {
                                     <FormSelect
                                         id="tone"
                                         v-model="form.tone"
+                                        :error="form.errors.tone ?? ''"
                                         :options="objectToOptions(props.formData.tones)"
                                         :placeholder="t('gameTables.create.fields.selectTone')"
                                         class="mt-1"
@@ -887,6 +907,7 @@ function cancel(): void {
                                         id="character_creation"
                                         name="character_creation"
                                         v-model="form.character_creation"
+                                        :error="form.errors.character_creation ?? ''"
                                         :options="objectToOptions(props.formData.character_creation)"
                                         :placeholder="t('gameTables.create.fields.selectCharacterCreation')"
                                         class="mt-1"
@@ -900,7 +921,7 @@ function cancel(): void {
                                 <hr class="border-default" />
 
                                 <!-- Safety Tools with tooltips -->
-                                <div>
+                                <div id="safety_tools">
                                     <label class="block text-sm font-medium text-base-secondary mb-3">
                                         {{ t('gameTables.create.fields.safetyTools') }}
                                     </label>
@@ -921,20 +942,20 @@ function cancel(): void {
                                 </div>
 
                                 <!-- Content Warnings with collapsible groups -->
-                                <div>
+                                <div id="content_warning_ids">
                                     <label class="block text-sm font-medium text-base-secondary mb-3">
                                         {{ t('gameTables.create.fields.contentWarnings') }}
                                     </label>
                                     <FormCheckboxGroup
-                                        v-model="form.content_warnings"
+                                        v-model="form.content_warning_ids"
                                         :groups="contentWarningGroups"
                                         collapsible
-                                        :error="form.errors.content_warnings"
+                                        :error="form.errors.content_warning_ids"
                                     />
                                 </div>
 
                                 <!-- Custom Warnings -->
-                                <div>
+                                <div id="custom_warnings">
                                     <label class="block text-sm font-medium text-base-secondary mb-2">
                                         {{ t('gameTables.create.fields.customWarnings') }}
                                     </label>
@@ -976,7 +997,7 @@ function cancel(): void {
                                             'mt-1 block w-full rounded-lg border px-4 py-2.5',
                                             isLocationDisabled
                                                 ? 'border-default bg-neutral-100 text-base-secondary cursor-not-allowed dark:bg-neutral-800'
-                                                : 'border-default bg-surface text-base-primary placeholder-base-muted hover:border-strong focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500'
+                                                : ['bg-surface text-base-primary placeholder-base-muted focus:outline-none focus:ring-2', fieldStateClass(!!form.errors.location)]
                                         ]"
                                     />
                                     <p v-if="isLocationDisabled" class="mt-1 text-xs text-base-muted">
@@ -1001,10 +1022,10 @@ function cancel(): void {
                                         :required="isOnline"
                                         :aria-invalid="!!form.errors.online_url"
                                         placeholder="https://..."
-                                        class="mt-1 block w-full rounded-lg border border-default bg-surface px-4 py-2.5
+                                        :class="fieldStateClass(!!form.errors.online_url)"
+                                        class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
                                                text-base-primary placeholder-base-muted
-                                               hover:border-strong
-                                               focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                               focus:outline-none focus:ring-2"
                                     />
                                     <p class="mt-1 text-xs text-base-muted">
                                         {{ t('gameTables.create.fields.onlineUrlHelp') }}
@@ -1035,10 +1056,10 @@ function cancel(): void {
                                         name="notes"
                                         rows="4"
                                         :aria-invalid="!!form.errors.notes"
-                                        class="mt-1 block w-full rounded-lg border border-default bg-surface px-4 py-2.5
+                                        :class="fieldStateClass(!!form.errors.notes)"
+                                        class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
                                                text-base-primary placeholder-base-muted
-                                               hover:border-strong
-                                               focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                               focus:outline-none focus:ring-2"
                                     />
                                     <p class="mt-1 text-xs text-base-muted">
                                         {{ t('gameTables.create.fields.notesHelp') }}
@@ -1064,7 +1085,7 @@ function cancel(): void {
                     <BaseButton
                         type="submit"
                         variant="primary"
-                        :disabled="form.processing"
+                        :disabled="form.processing || sessionWithoutCampaign"
                         :loading="form.processing"
                     >
                         {{ t('gameTables.edit.submit') }}

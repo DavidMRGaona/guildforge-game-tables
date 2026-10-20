@@ -12,12 +12,12 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel
 use Tests\Support\Modules\ModuleTestCase;
 
 /**
- * The web form offers only the author's own campaigns; the server applies the same rule, so a
+ * The web form offers only the campaigns the author directs; the server applies the same rule, so a
  * forged campaign_id never links a table to someone else's campaign.
  */
 final class FrontendTableCampaignOwnershipTest extends ModuleTestCase
 {
-    private const string REFUSED = 'Solo puedes vincular la mesa a una campaña creada por ti';
+    private const string REFUSED = 'Solo puedes vincular la mesa a una campaña que dirijas.';
 
     protected ?string $moduleName = 'game-tables';
 
@@ -173,7 +173,7 @@ final class FrontendTableCampaignOwnershipTest extends ModuleTestCase
     public function test_the_refusal_is_translated_in_both_languages(): void
     {
         $this->assertSame(self::REFUSED, trans('game-tables::messages.validation.campaign_not_owned', [], 'es'));
-        $this->assertSame('You can only link the table to a campaign you created', trans('game-tables::messages.validation.campaign_not_owned', [], 'en'));
+        $this->assertSame('You can only link the table to a campaign you direct.', trans('game-tables::messages.validation.campaign_not_owned', [], 'en'));
     }
 
     /**
@@ -187,7 +187,8 @@ final class FrontendTableCampaignOwnershipTest extends ModuleTestCase
             'title' => $title,
             'starts_at' => now()->addWeeks(2)->toIso8601String(),
             'duration_minutes' => 240,
-            'table_type' => 'one_shot',
+            // A campaign is only kept for a campaign session
+            'table_type' => $campaignId === null ? 'one_shot' : 'campaign_session',
             'table_format' => 'in_person',
             'min_players' => 2,
             'max_players' => 5,
@@ -209,6 +210,8 @@ final class FrontendTableCampaignOwnershipTest extends ModuleTestCase
             'status' => 'recruiting',
             'max_players' => 5,
             'is_published' => true,
+            // Created from the web, so its creator directs it
+            'frontend_creation_status' => 'approved',
         ]);
     }
 

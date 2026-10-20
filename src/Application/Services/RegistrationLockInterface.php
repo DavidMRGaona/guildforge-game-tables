@@ -22,6 +22,16 @@ interface RegistrationLockInterface
     public function forTable(string $gameTableId, Closure $callback): mixed;
 
     /**
+     * Serialises the roster changes of one campaign.
+     *
+     * @template T
+     *
+     * @param  Closure(): T  $callback
+     * @return T
+     */
+    public function forCampaign(string $campaignId, Closure $callback): mixed;
+
+    /**
      * The lock of the participant's table.
      *
      * @template T

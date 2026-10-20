@@ -13,6 +13,7 @@ use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
 use Modules\GameTables\Application\Services\RegistrationLockInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
@@ -63,6 +64,26 @@ final class RegistrationLockTest extends ModuleTestCase
         $result = $lock->forTable($this->table->id, fn (): int => DB::transactionLevel());
 
         $this->assertSame($level + 1, $result);
+    }
+
+    public function test_for_campaign_returns_the_callback_value_in_a_transaction(): void
+    {
+        $system = GameSystemModel::query()->firstOrFail();
+        $campaign = CampaignModel::create([
+            'id' => (string) Str::uuid(),
+            'game_system_id' => $system->id,
+            'created_by' => UserModel::factory()->create()->id,
+            'title' => 'Campaña',
+            'slug' => 'campana',
+            'status' => 'recruiting',
+        ]);
+        $lock = new DatabaseRegistrationLock();
+        $level = DB::transactionLevel();
+
+        $result = $lock->forCampaign($campaign->id, fn (): int => DB::transactionLevel());
+
+        $this->assertSame($level + 1, $result);
+        $this->assertSame('ok', $lock->forCampaign((string) Str::uuid(), fn (): string => 'ok'));
     }
 
     public function test_the_lock_of_a_participant_and_of_a_token_find_the_table(): void
@@ -180,6 +201,13 @@ final class RegistrationLockTest extends ModuleTestCase
                 $this->calls[] = 'table:'.$gameTableId;
 
                 return $this->inner->forTable($gameTableId, $callback);
+            }
+
+            public function forCampaign(string $campaignId, Closure $callback): mixed
+            {
+                $this->calls[] = 'campaign:'.$campaignId;
+
+                return $this->inner->forCampaign($campaignId, $callback);
             }
 
             public function forParticipant(string $participantId, Closure $callback): mixed

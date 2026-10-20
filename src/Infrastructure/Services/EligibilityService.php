@@ -16,6 +16,8 @@ use Modules\GameTables\Domain\Exceptions\MembersOnlyException;
 use Modules\GameTables\Domain\Exceptions\RegistrationClosedException;
 use Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException;
 use Modules\GameTables\Domain\Exceptions\TableFullException;
+use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
+use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
@@ -29,6 +31,8 @@ final readonly class EligibilityService implements EligibilityServiceInterface
         private GameTableRepositoryInterface $gameTableRepository,
         private ?MembershipCheckerInterface $membershipChecker = null,
         private GameTableSettingsReader $settings = new GameTableSettingsReader(),
+        private ?CampaignRepositoryInterface $campaigns = null,
+        private ?CampaignRosterRepositoryInterface $roster = null,
     ) {
         $this->seats = new SeatCounter($participantRepository, $settings);
     }
@@ -72,6 +76,11 @@ final readonly class EligibilityService implements EligibilityServiceInterface
         // whatever the dates, the membership or the seats
         if ($gameTable->requiresInvitation()) {
             throw RegistrationClosedException::invitationOnly($gameTable->id->value);
+        }
+
+        // The sessions of a campaign closed to new players are for its roster only
+        if ($this->closedToOutsiders($gameTable, $userId)) {
+            throw RegistrationClosedException::rosterOnly($gameTable->id->value);
         }
 
         // The time of the table closes registrations whatever its dates and the early access
@@ -283,6 +292,25 @@ final readonly class EligibilityService implements EligibilityServiceInterface
         return ['eligible' => false, 'reason' => $reason, 'message' => $this->translateReason($reason)];
     }
 
+    /**
+     * The table belongs to a campaign that takes no new players (on hold, closed to newcomers,
+     * finished) and the person is not on its roster. Without a user (a guest) nobody is on it.
+     */
+    private function closedToOutsiders(GameTable $gameTable, ?string $userId): bool
+    {
+        if ($gameTable->campaignId === null || $this->campaigns === null || $this->roster === null) {
+            return false;
+        }
+
+        $campaign = $this->campaigns->find($gameTable->campaignId);
+
+        if ($campaign === null || $campaign->canAcceptNewPlayers()) {
+            return false;
+        }
+
+        return $userId === null || ! $this->roster->contains($gameTable->campaignId, $userId);
+    }
+
     private function checkMembership(string $userId): bool
     {
         return $this->membershipChecker?->isActiveMember($userId) ?? false;
@@ -295,6 +323,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
             'registration_not_open' => __('game-tables::messages.errors.registration_not_open'),
             'members_only' => __('game-tables::messages.errors.members_only'),
             'invitation_only' => __('game-tables::messages.errors.invitation_only'),
+            'campaign_roster_only' => __('game-tables::messages.errors.campaign_roster_only'),
             'table_started' => __('game-tables::messages.errors.table_started'),
             'table_ended' => __('game-tables::messages.errors.table_ended'),
             'already_registered' => __('game-tables::messages.errors.already_registered'),
@@ -328,6 +357,11 @@ final readonly class EligibilityService implements EligibilityServiceInterface
         // Members-only tables admit no guests
         if ($gameTable->requiresMembership()) {
             return $this->guestRefusal('guests_not_allowed');
+        }
+
+        // A guest is always an outsider to the roster of a closed campaign
+        if ($this->closedToOutsiders($gameTable, null)) {
+            return $this->guestRefusal('campaign_roster_only');
         }
 
         // Check if registration is open

@@ -14,6 +14,7 @@ use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\GameTables\Application\Services\CampaignQueryServiceInterface;
+use Modules\GameTables\Application\Services\CampaignRosterQueryInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use App\Application\Services\SlugRedirectServiceInterface;
 use Modules\GameTables\Http\Concerns\ReadsListFilters;
@@ -31,6 +32,7 @@ final class CampaignController extends Controller
         private readonly GameTableQueryServiceInterface $tableQueryService,
         private readonly SlugRedirectServiceInterface $slugRedirectService,
         private readonly SeoMetadataFactoryInterface $seo,
+        private readonly CampaignRosterQueryInterface $rosterQuery,
     ) {}
 
     public function index(Request $request): Response
@@ -84,6 +86,8 @@ final class CampaignController extends Controller
         if ($campaign !== null) {
             return Inertia::render('Campaigns/Show', [
                 'campaign' => CampaignResource::make($campaign)->resolve(),
+                // What the viewer can do with the roster: ask to join, withdraw, leave or manage it
+                'joinBox' => $this->rosterQuery->joinBox($campaign->id, auth()->id() !== null ? (string) auth()->id() : null)->toArray(),
                 'seo' => $this->seo->forPage(new SeoPageDTO(
                     title: $campaign->title,
                     description: $campaign->description,

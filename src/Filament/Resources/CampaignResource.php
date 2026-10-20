@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources;
 
+use Closure;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
@@ -35,6 +36,11 @@ use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Modules\GameTables\Domain\Enums\CampaignFrequency;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
+use Modules\GameTables\Domain\Enums\RosterAccess;
+use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
+use Modules\GameTables\Domain\ValueObjects\CampaignId;
+use Modules\GameTables\Filament\Resources\CampaignResource\RelationManagers\JoinRequestsRelationManager;
+use Modules\GameTables\Filament\Resources\CampaignResource\RelationManagers\RosterRelationManager;
 use Modules\GameTables\Domain\Exceptions\NotEditableException;
 use Modules\GameTables\Filament\Forms\Components\GameMasterRepeater;
 use Modules\GameTables\Filament\Resources\CampaignResource\Pages;
@@ -149,7 +155,16 @@ final class CampaignResource extends BaseResource
                                     ->label(__('game-tables::messages.fields.max_players'))
                                     ->numeric()
                                     ->minValue(1)
-                                    ->maxValue(20),
+                                    ->maxValue(20)
+                                    ->rules([self::fitsTheRoster()]),
+
+                                Select::make('roster_access')
+                                    ->label(__('game-tables::messages.fields.roster_access'))
+                                    ->helperText(__('game-tables::messages.fields.roster_access_help'))
+                                    ->options(RosterAccess::options())
+                                    ->default(RosterAccess::Anyone->value)
+                                    ->native(false)
+                                    ->required(),
 
                                 TextInput::make('session_count')
                                     ->label(__('game-tables::messages.fields.session_count'))
@@ -307,6 +322,32 @@ final class CampaignResource extends BaseResource
             ->title(__('game-tables::messages.notifications.campaign_status_already_changed'))
             ->warning()
             ->send();
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            RosterRelationManager::class,
+            JoinRequestsRelationManager::class,
+        ];
+    }
+
+    /**
+     * The maximum never goes below the players already in the roster.
+     */
+    private static function fitsTheRoster(): Closure
+    {
+        return fn (?Model $record): Closure => function (string $attribute, mixed $value, Closure $fail) use ($record): void {
+            if (! $record instanceof CampaignModel || ! is_numeric($value)) {
+                return;
+            }
+
+            $count = app(CampaignRosterRepositoryInterface::class)->count(new CampaignId($record->id));
+
+            if ((int) $value < $count) {
+                $fail(__('game-tables::messages.roster.errors.max_below_roster', ['count' => $count]));
+            }
+        };
     }
 
     public static function getPages(): array

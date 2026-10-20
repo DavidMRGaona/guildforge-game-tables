@@ -20,6 +20,7 @@ use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Events\GameTableCancelled;
 use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
 use Modules\GameTables\Domain\Exceptions\NotEditableException;
+use Modules\GameTables\Domain\Exceptions\SessionBelowRosterException;
 use Modules\GameTables\Filament\Resources\GameTableResource;
 use Modules\GameTables\Filament\Support\PublicationLock;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
@@ -147,6 +148,10 @@ final class EditGameTable extends EditRecord
                         $this->warnStatusAlreadyChanged();
 
                         return;
+                    } catch (SessionBelowRosterException $e) {
+                        $this->refuseBelowRoster($e);
+
+                        return;
                     }
 
                     Notification::make()
@@ -203,11 +208,20 @@ final class EditGameTable extends EditRecord
                 // A web-created table the author has not sent, or one awaiting review, is published by approving it
                 ->visible(fn (): bool => ! $this->record->is_published && ! PublicationLock::isLocked($this->getRecord()))
                 ->action(function (): void {
-                    $this->record->update([
-                        'is_published' => true,
-                        'status' => TableStatus::Scheduled->value,
-                        'published_at' => now(),
-                    ]);
+                    /** @var GameTableServiceInterface $service */
+                    $service = app(GameTableServiceInterface::class);
+
+                    try {
+                        // Through the service: it guards the campaign roster and announces GameTablePublished
+                        $service->publish((string) $this->getRecord()->getKey());
+                    } catch (SessionBelowRosterException $e) {
+                        $this->refuseBelowRoster($e);
+
+                        return;
+                    }
+
+                    // The service saved through its own model instance
+                    $this->getRecord()->refresh();
                     $this->refreshFormData(['is_published', 'status', 'published_at']);
                 }),
 
@@ -272,6 +286,14 @@ final class EditGameTable extends EditRecord
 
             DeleteAction::make(),
         ];
+    }
+
+    private function refuseBelowRoster(SessionBelowRosterException $e): void
+    {
+        Notification::make()
+            ->title($e->getMessage())
+            ->danger()
+            ->send();
     }
 
     private function warnStatusAlreadyChanged(): void

@@ -18,6 +18,8 @@ use Modules\GameTables\Application\DTOs\CampaignResponseDTO;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Http\Requests\FrontendCreateCampaignRequest;
+use Modules\GameTables\Http\Support\AuthorLockRedirect;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 
 final class FrontendCampaignController extends Controller
 {
@@ -25,6 +27,7 @@ final class FrontendCampaignController extends Controller
         private readonly FrontendCreationServiceInterface $creationService,
         private readonly CreationEligibilityServiceInterface $eligibilityService,
         private readonly SeoMetadataFactoryInterface $seo,
+        private readonly AuthorLockRedirect $authorLock,
     ) {}
 
     /**
@@ -82,13 +85,13 @@ final class FrontendCampaignController extends Controller
     }
 
     /**
-     * Show user's campaigns (drafts, pending review, rejected).
+     * Show user's campaigns: drafts, pending review, rejected and the ones they direct.
      */
     public function myCampaigns(): Response
     {
         /** @var UserModel $user */
         $user = auth()->user();
-        $campaigns = $this->creationService->getUserCampaignDrafts((string) $user->id);
+        $campaigns = $this->creationService->getMyCampaigns((string) $user->id);
 
         $eligibility = $this->eligibilityService->canCreateCampaign((string) $user->id);
 
@@ -109,12 +112,16 @@ final class FrontendCampaignController extends Controller
     /**
      * Show edit form for a draft campaign.
      */
-    public function edit(string $id): Response
+    public function edit(string $id): Response|RedirectResponse
     {
+        if (($locked = $this->sendLockedAuthorBack(CampaignModel::query()->find($id))) !== null) {
+            return $locked;
+        }
+
         /** @var UserModel $user */
         $user = auth()->user();
 
-        // Get user's drafts and find the one with matching ID
+        // Only the author's own drafts: anyone else gets 404, so the page never reveals that a campaign exists
         $drafts = $this->creationService->getUserCampaignDrafts((string) $user->id);
         $campaign = null;
 
@@ -147,6 +154,10 @@ final class FrontendCampaignController extends Controller
      */
     public function update(string $id, FrontendCreateCampaignRequest $request): RedirectResponse
     {
+        if (($locked = $this->sendLockedAuthorBack(CampaignModel::query()->find($id))) !== null) {
+            return $locked;
+        }
+
         /** @var UserModel $user */
         $user = auth()->user();
 
@@ -174,6 +185,10 @@ final class FrontendCampaignController extends Controller
      */
     public function submitForReview(string $id): RedirectResponse
     {
+        if (($locked = $this->sendLockedAuthorBack(CampaignModel::query()->find($id))) !== null) {
+            return $locked;
+        }
+
         /** @var UserModel $user */
         $user = auth()->user();
 
@@ -186,9 +201,14 @@ final class FrontendCampaignController extends Controller
             abort(403);
         }
 
+        // Without review (automatic mode, or an author who may publish directly) it is already published
+        $published = (bool) CampaignModel::query()->find($id)?->is_published;
+
         return redirect()
             ->route('campaigns.my-campaigns')
-            ->with('success', __('game-tables::messages.frontend.submitted_for_review'));
+            ->with('success', __($published
+                ? 'game-tables::messages.frontend.campaign_published'
+                : 'game-tables::messages.frontend.campaign_submitted_for_review'));
     }
 
     /**
@@ -196,6 +216,10 @@ final class FrontendCampaignController extends Controller
      */
     public function destroy(string $id): RedirectResponse
     {
+        if (($locked = $this->sendLockedAuthorBack(CampaignModel::query()->find($id))) !== null) {
+            return $locked;
+        }
+
         /** @var UserModel $user */
         $user = auth()->user();
 
@@ -211,5 +235,15 @@ final class FrontendCampaignController extends Controller
         return redirect()
             ->route('campaigns.my-campaigns')
             ->with('success', __('game-tables::messages.frontend.campaign_deleted'));
+    }
+
+    /**
+     * The author of a campaign that is no longer theirs to change (sent to review or published)
+     * goes back to «Mis campañas» with the reason instead of a bare 403, as on tables. Anyone else
+     * still meets the usual refusal.
+     */
+    private function sendLockedAuthorBack(?CampaignModel $campaign): ?RedirectResponse
+    {
+        return $this->authorLock->forCampaign($campaign, (string) auth()->id());
     }
 }

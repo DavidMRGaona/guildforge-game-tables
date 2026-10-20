@@ -198,4 +198,67 @@ return [
         'cancel' => 'If you can no longer come, cancel your registration from the table page to free the seat.',
         'cancel_guest' => 'If you can no longer come, cancel your registration to free the seat: :url',
     ],
+
+    'campaign_sessions' => [
+        'intro' => 'You are signed up for these sessions:',
+        'waiting_suffix' => ' (on the waiting list, with priority as a roster member)',
+        'no_sessions' => 'There are no sessions scheduled yet: we will let you know when the next one is published.',
+        'absence_hint' => 'If you cannot make a session, withdraw from it on its page: you will stay in the campaign.',
+    ],
+
+    'campaign_session_scheduled' => [
+        'subject' => 'New session of :campaignTitle: :date',
+        'greeting' => 'Hello, :name!',
+        'intro' => 'A new session of the campaign ":campaignTitle" has been scheduled and your seat is reserved.',
+        'intro_waiting' => 'A new session of the campaign ":campaignTitle" has been scheduled. It is full: you are on the waiting list, with priority as a roster member.',
+        'table_title' => 'Table',
+        'table_date' => 'Date',
+        'table_location' => 'Location',
+        'absence_hint' => 'If you cannot make a session, withdraw from it on its page: you will stay in the campaign.',
+        'view_session' => 'View session',
+    ],
+
+    'campaign_join_request_received' => [
+        'subject' => 'Request to join :campaignTitle',
+        'greeting' => 'Hello, :name!',
+        'intro' => ':player wants to join the campaign ":campaignTitle".',
+        'message' => 'Message: ":message"',
+        'review_requests' => 'Review requests',
+    ],
+
+    'campaign_join_request_accepted' => [
+        'subject' => 'You are now part of :campaignTitle',
+        'greeting' => 'Hello, :name!',
+        'intro' => 'The direction has accepted your request to join the campaign ":campaignTitle".',
+        'view_campaign' => 'View campaign',
+    ],
+
+    'campaign_join_request_rejected' => [
+        'subject' => 'Request for :campaignTitle',
+        'greeting' => 'Hello, :name!',
+        'intro' => 'The direction has not accepted your request to join the campaign ":campaignTitle".',
+        'reason' => 'Reason: :reason',
+        'view_campaign' => 'View campaign',
+    ],
+
+    'campaign_roster_added' => [
+        'subject' => 'You have been added to :campaignTitle',
+        'greeting' => 'Hello, :name!',
+        'intro' => 'The direction has added you to the roster of the campaign ":campaignTitle".',
+        'view_campaign' => 'View campaign',
+    ],
+
+    'campaign_roster_removed' => [
+        'subject' => 'You are no longer part of :campaignTitle',
+        'greeting' => 'Hello, :name!',
+        'intro' => 'The direction has removed you from the roster of the campaign ":campaignTitle". Your seats in the upcoming sessions have been freed.',
+        'view_campaign' => 'View campaign',
+    ],
+
+    'campaign_player_left' => [
+        'subject' => ':player has left :campaignTitle',
+        'greeting' => 'Hello, :name!',
+        'intro' => ':player has left the roster of the campaign ":campaignTitle". Their seats in the upcoming sessions have been freed.',
+        'view_roster' => 'View roster',
+    ],
 ];

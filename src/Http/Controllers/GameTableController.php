@@ -19,6 +19,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
+use Modules\GameTables\Application\Services\CampaignRosterQueryInterface;
 use Modules\GameTables\Application\Services\EligibilityServiceInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
@@ -47,6 +48,7 @@ final class GameTableController extends Controller
         private readonly SeatCounter $seatCounter,
         private readonly GameTableRepositoryInterface $gameTableRepository,
         private readonly GuestConfirmationPolicy $guestConfirmationPolicy,
+        private readonly CampaignRosterQueryInterface $rosterQuery,
     ) {}
 
     public function index(Request $request): Response
@@ -227,6 +229,8 @@ final class GameTableController extends Controller
             'eligibility' => $eligibility,
             'guestEligibility' => $guestEligibility,
             'userRegistration' => $userRegistration,
+            // A campaign session: whether it is closed to outsiders and where a roster member stands
+            'campaignSession' => $this->rosterQuery->sessionBox($table->id, $user !== null ? (string) $user->id : null, $now)?->toArray(),
             'seo' => $this->tableSeo($table),
         ]);
     }
@@ -266,6 +270,7 @@ final class GameTableController extends Controller
             'notes' => $dto->notes,
             'confirmedAt' => $dto->confirmedAt?->format('c'),
             'createdAt' => $dto->createdAt?->format('c'),
+            'fromRoster' => $dto->fromRoster,
         ];
     }
 }

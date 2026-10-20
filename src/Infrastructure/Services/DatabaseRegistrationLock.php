@@ -7,6 +7,7 @@ namespace Modules\GameTables\Infrastructure\Services;
 use Closure;
 use Illuminate\Support\Facades\DB;
 use Modules\GameTables\Application\Services\RegistrationLockInterface;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 
@@ -22,6 +23,15 @@ final readonly class DatabaseRegistrationLock implements RegistrationLockInterfa
     {
         return DB::transaction(function () use ($gameTableId, $callback): mixed {
             GameTableModel::query()->whereKey($gameTableId)->lockForUpdate()->value('id');
+
+            return $callback();
+        });
+    }
+
+    public function forCampaign(string $campaignId, Closure $callback): mixed
+    {
+        return DB::transaction(function () use ($campaignId, $callback): mixed {
+            CampaignModel::query()->whereKey($campaignId)->lockForUpdate()->value('id');
 
             return $callback();
         });
