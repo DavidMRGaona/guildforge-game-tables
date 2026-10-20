@@ -15,6 +15,7 @@ use Modules\GameTables\Application\DTOs\FrontendCreateCampaignDTO;
 use Modules\GameTables\Application\DTOs\FrontendCreateGameTableDTO;
 use Modules\GameTables\Application\DTOs\GameMasterResponseDTO;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
+use Modules\GameTables\Application\Services\CampaignDirectionInterface;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
 use Modules\GameTables\Application\Services\EventCreationEligibilityServiceInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
@@ -43,6 +44,7 @@ use Modules\GameTables\Domain\Exceptions\GameTableNotFoundException;
 use Modules\GameTables\Domain\Exceptions\NotEditableException;
 use Modules\GameTables\Domain\Exceptions\NotEligibleToCreateException;
 use Modules\GameTables\Domain\Exceptions\SessionBelowRosterException;
+use Modules\GameTables\Domain\Repositories\CampaignJoinRequestRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ContentWarningRepositoryInterface;
@@ -71,6 +73,8 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         private EventGameTableConfigRepositoryInterface $configRepository,
         private CampaignSessionCreationGate $sessionGate,
         private CampaignRosterRepositoryInterface $roster,
+        private CampaignDirectionInterface $direction,
+        private CampaignJoinRequestRepositoryInterface $joinRequests,
     ) {}
 
     /**
@@ -584,6 +588,60 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             },
             array_values($draftCampaigns),
         );
+    }
+
+    /**
+     * @return list<CampaignResponseDTO>
+     */
+    public function getMyCampaigns(string $userId): array
+    {
+        /** @var array<string, Campaign> $own */
+        $own = [];
+        foreach ($this->campaignRepository->getByCreator($userId) as $campaign) {
+            if ($campaign->frontendCreationStatus !== null && ! $campaign->isPublished) {
+                $own[$campaign->id->value] = $campaign;
+            }
+        }
+
+        /** @var array<string, Campaign> $directed */
+        $directed = [];
+        foreach ($this->direction->campaignIdsDirectedBy($userId) as $campaignId) {
+            $campaign = $this->campaignRepository->find(new CampaignId($campaignId));
+
+            if ($campaign !== null && $campaign->isApprovedOrPublished()) {
+                $directed[$campaign->id->value] = $campaign;
+            }
+        }
+
+        $ids = array_map(static fn (string $id): CampaignId => new CampaignId($id), array_keys($directed));
+        $players = $this->roster->countsFor($ids);
+        $pending = $this->joinRequests->pendingCountsFor($ids);
+        $creationEnabled = $this->settingsReader->isFrontendCreationEnabled();
+
+        $dtos = [];
+        foreach ($own + $directed as $id => $campaign) {
+            $gameSystem = $this->gameSystemRepository->find($campaign->gameSystemId);
+            $isDirected = isset($directed[$id]);
+
+            $dtos[] = [
+                $campaign->createdAt,
+                CampaignResponseDTO::fromEntity(
+                    $campaign,
+                    $gameSystem?->name ?? '',
+                    currentPlayers: $isDirected ? ($players[$id] ?? 0) : 0,
+                    pendingRequests: $isDirected ? ($pending[$id] ?? 0) : 0,
+                    directedByViewer: $isDirected,
+                    acceptsSessions: $isDirected && $campaign->isAvailableForSessions() && $creationEnabled,
+                ),
+            ];
+        }
+
+        usort(
+            $dtos,
+            static fn (array $a, array $b): int => ($b[0]?->getTimestamp() ?? 0) <=> ($a[0]?->getTimestamp() ?? 0),
+        );
+
+        return array_map(static fn (array $pair): CampaignResponseDTO => $pair[1], $dtos);
     }
 
     public function updateCampaignDraft(string $campaignId, FrontendCreateCampaignDTO $dto): CampaignResponseDTO

@@ -9,6 +9,7 @@ use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Enums\CampaignFrequency;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
+use Modules\GameTables\Domain\Enums\RosterAccess;
 
 final readonly class CampaignResponseDTO
 {
@@ -45,6 +46,10 @@ final readonly class CampaignResponseDTO
         public ?DateTimeInterface $updatedAt = null,
         // Why it was rejected, while the author may still change it (see Campaign::rejectionReason())
         public ?string $rejectionReason = null,
+        public int $pendingRequests = 0,
+        public bool $directedByViewer = false,
+        public bool $acceptsSessions = false,
+        public RosterAccess $rosterAccess = RosterAccess::Anyone,
     ) {}
 
     /**
@@ -58,6 +63,10 @@ final readonly class CampaignResponseDTO
         array $gameMasters = [],
         array $gameTables = [],
         bool $hasActiveOrUpcomingTables = false,
+        int $currentPlayers = 0,
+        int $pendingRequests = 0,
+        bool $directedByViewer = false,
+        bool $acceptsSessions = false,
     ): self {
         return new self(
             id: $campaign->id->value,
@@ -71,7 +80,7 @@ final readonly class CampaignResponseDTO
             status: $campaign->status,
             frequency: $campaign->frequency,
             maxPlayers: $campaign->maxPlayers,
-            currentPlayers: 0,
+            currentPlayers: $currentPlayers,
             isPublished: $campaign->isPublished,
             isRecruiting: $campaign->status === CampaignStatus::Recruiting,
             acceptsNewPlayers: $campaign->acceptsNewPlayers,
@@ -87,6 +96,10 @@ final readonly class CampaignResponseDTO
             createdAt: $campaign->createdAt,
             updatedAt: $campaign->updatedAt,
             rejectionReason: $campaign->rejectionReason(),
+            pendingRequests: $pendingRequests,
+            directedByViewer: $directedByViewer,
+            acceptsSessions: $acceptsSessions,
+            rosterAccess: $campaign->rosterAccess,
         );
     }
 
@@ -126,6 +139,11 @@ final readonly class CampaignResponseDTO
             'moderation_notes' => $this->moderationNotes,
             'rejection_reason' => $this->rejectionReason,
             'can_edit' => FrontendCreationStatus::allowsAuthorChanges($this->frontendCreationStatus, $this->isPublished),
+            'pending_requests' => $this->pendingRequests,
+            'directed_by_viewer' => $this->directedByViewer,
+            'can_add_session' => $this->acceptsSessions,
+            'roster_access' => $this->rosterAccess->value,
+            'roster_access_label' => $this->rosterAccess->label(),
             'created_at' => $this->createdAt?->format('c'),
             'updated_at' => $this->updatedAt?->format('c'),
         ];

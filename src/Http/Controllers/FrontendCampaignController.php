@@ -82,13 +82,13 @@ final class FrontendCampaignController extends Controller
     }
 
     /**
-     * Show user's campaigns (drafts, pending review, rejected).
+     * Show user's campaigns: drafts, pending review, rejected and the ones they direct.
      */
     public function myCampaigns(): Response
     {
         /** @var UserModel $user */
         $user = auth()->user();
-        $campaigns = $this->creationService->getUserCampaignDrafts((string) $user->id);
+        $campaigns = $this->creationService->getMyCampaigns((string) $user->id);
 
         $eligibility = $this->eligibilityService->canCreateCampaign((string) $user->id);
 

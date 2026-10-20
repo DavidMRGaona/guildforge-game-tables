@@ -115,6 +115,14 @@ interface FrontendCreationServiceInterface
     public function getUserCampaignDrafts(string $userId): array;
 
     /**
+     * The campaigns shown in «Mis campañas»: the person's own web drafts plus every approved or
+     * published campaign they direct (finished ones included), newest first.
+     *
+     * @return list<CampaignResponseDTO>
+     */
+    public function getMyCampaigns(string $userId): array;
+
+    /**
      * Update a draft campaign.
      *
      * @throws \Modules\GameTables\Domain\Exceptions\CampaignNotFoundException

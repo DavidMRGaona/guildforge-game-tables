@@ -129,6 +129,7 @@ final readonly class EloquentCampaignRepository implements CampaignRepositoryInt
                 },
                 'gameMasters.user',
             ])
+            ->withCount(['players' => fn ($players) => $players->whereNull('users.anonymized_at')])
             ->where('id', $id)
             ->where('is_published', true)
             ->first();
@@ -147,6 +148,7 @@ final readonly class EloquentCampaignRepository implements CampaignRepositoryInt
                 },
                 'gameMasters.user',
             ])
+            ->withCount(['players' => fn ($players) => $players->whereNull('users.anonymized_at')])
             ->where('slug', $slug)
             ->where('is_published', true)
             ->first();
