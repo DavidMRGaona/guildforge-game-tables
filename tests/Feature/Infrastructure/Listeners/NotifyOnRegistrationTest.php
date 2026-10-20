@@ -127,6 +127,28 @@ final class NotifyOnRegistrationTest extends TestCase
         Notification::assertNothingSent();
     }
 
+    // The organisation itself restored the registration (an absence cleared from the roster page)
+    public function test_no_organisation_email_when_not_asked(): void
+    {
+        config()->set('modules.settings.game-tables.notifications.notify_on_registration', true);
+
+        $this->gameTableRepository->expects($this->never())->method('find');
+        $this->recipientResolver->expects($this->never())->method($this->anything());
+
+        $event = new ParticipantRegistered(
+            participantId: 'participant-uuid',
+            gameTableId: GameTableId::generate()->value,
+            userId: 'user-uuid',
+            role: 'player',
+            status: ParticipantStatus::Confirmed,
+            notifyOrganization: false,
+        );
+
+        $this->listener->handle($event);
+
+        Notification::assertNothingSent();
+    }
+
     public function test_does_not_send_when_game_table_not_found(): void
     {
         config()->set('modules.settings.game-tables.notifications.notify_on_registration', true);
