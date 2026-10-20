@@ -254,7 +254,7 @@ final class RegistrationSlotPropsTest extends ModuleTestCase
 
         foreach ($provider->registerSlots() as $slot) {
             if ($slot->slot === 'game-table-registration') {
-                $this->assertSame(['table', 'eligibility', 'guestEligibility', 'userRegistration'], $slot->dataKeys);
+                $this->assertSame(['table', 'eligibility', 'guestEligibility', 'userRegistration', 'campaignSession'], $slot->dataKeys);
 
                 return $slot;
             }

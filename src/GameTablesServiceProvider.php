@@ -55,6 +55,7 @@ use Modules\GameTables\Application\Services\MembershipCheckerInterface;
 use Modules\CookieConsent\Application\DTOs\DeclaredCookieDTO;
 use Modules\CookieConsent\Application\Services\CookieDeclarationRegistryInterface;
 use Modules\GameTables\Application\Services\CampaignDirectionInterface;
+use Modules\GameTables\Application\Services\CampaignRosterQueryInterface;
 use Modules\GameTables\Application\Services\CampaignRosterServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterSessionSyncInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
@@ -126,6 +127,7 @@ use Modules\GameTables\Infrastructure\Services\GameMasterService;
 use Modules\GameTables\Infrastructure\Services\GameTableQueryService;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 use Modules\GameTables\Infrastructure\Services\CampaignDirection;
+use Modules\GameTables\Infrastructure\Services\CampaignRosterQuery;
 use Modules\GameTables\Infrastructure\Services\CampaignRosterService;
 use Modules\GameTables\Infrastructure\Services\CampaignRosterSessionSync;
 use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
@@ -198,6 +200,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         $this->app->bind(CampaignDirectionInterface::class, CampaignDirection::class);
         $this->app->bind(CampaignRosterSessionSyncInterface::class, CampaignRosterSessionSync::class);
         $this->app->bind(CampaignRosterServiceInterface::class, CampaignRosterService::class);
+        $this->app->bind(CampaignRosterQueryInterface::class, CampaignRosterQuery::class);
 
         // Query service bindings
         $this->app->bind(GameTableQueryServiceInterface::class, GameTableQueryService::class);
@@ -447,7 +450,8 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     /**
      * Per IP, over the limit a translated message, never an error page. The guest confirmation
      * link (page and button): wide enough for a person, tight enough to stop guessing tokens. The
-     * guest registration form: the limits of the settings, as a form error on the table page.
+     * guest registration form: the limits of the settings, as a form error on the table page. The
+     * requests to join a campaign are limited per user instead, as a flash on the campaign page.
      */
     private function registerRateLimiters(): void
     {
@@ -495,6 +499,24 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
             return [
                 Limit::perMinute($settings->guestRateLimitPerMinute())->by('gt-guest:'.$ip)->response($tooMany),
                 Limit::perHour($settings->guestRateLimitPerHour())->by('gt-guest-h:'.$ip)->response($tooMany),
+            ];
+        });
+
+        // Requests to join a campaign, per user (the route sits behind auth)
+        RateLimiter::for('game-tables-campaign-join', static function (Request $request): array {
+            $userId = (string) ($request->user()?->getAuthIdentifier() ?? $request->ip() ?? 'unknown');
+            $tooMany = static function (Request $request, array $headers): HttpResponse {
+                $message = (string) __('game-tables::messages.roster.errors.too_many_requests');
+
+                // Inertia cannot show a 429 on the campaign page: the error goes where the refusals go
+                return $request->expectsJson()
+                    ? response()->json(['message' => $message], 429, $headers)
+                    : back()->with('error', $message);
+            };
+
+            return [
+                Limit::perMinute(5)->by('gt-join:'.$userId)->response($tooMany),
+                Limit::perHour(20)->by('gt-join-h:'.$userId)->response($tooMany),
             ];
         });
     }
@@ -1000,7 +1022,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                 module: $this->moduleName(),
                 order: 0,
                 props: [],
-                dataKeys: ['table', 'eligibility', 'guestEligibility', 'userRegistration'],
+                dataKeys: ['table', 'eligibility', 'guestEligibility', 'userRegistration', 'campaignSession'],
             ),
             new SlotRegistrationDTO(
                 slot: 'event-detail-actions',

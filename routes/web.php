@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Modules\GameTables\Http\Controllers\CampaignController;
+use Modules\GameTables\Http\Controllers\CampaignJoinController;
+use Modules\GameTables\Http\Controllers\CampaignRosterController;
 use Modules\GameTables\Http\Controllers\FrontendCampaignController;
 use Modules\GameTables\Http\Controllers\FrontendGameTableController;
 use Modules\GameTables\Http\Controllers\GameTableController;
@@ -76,6 +78,27 @@ Route::prefix('campanas')->name('campaigns.')->group(function (): void {
         Route::put('/mis-campanas/{id}', [FrontendCampaignController::class, 'update'])->name('frontend-update');
         Route::post('/mis-campanas/{id}/enviar-revision', [FrontendCampaignController::class, 'submitForReview'])->name('submit-review');
         Route::delete('/mis-campanas/{id}', [FrontendCampaignController::class, 'destroy'])->name('frontend-destroy');
+
+        // Roster page of the direction (the emails link to it)
+        Route::get('/mis-campanas/{id}/plantilla', [CampaignRosterController::class, 'show'])->name('roster');
+        Route::put('/mis-campanas/{id}/plantilla/ajustes', [CampaignRosterController::class, 'updateSettings'])->name('roster.settings');
+        Route::post('/mis-campanas/{id}/plantilla/jugadores', [CampaignRosterController::class, 'add'])->name('roster.add');
+        Route::delete('/mis-campanas/{id}/plantilla/jugadores/{userId}', [CampaignRosterController::class, 'remove'])->name('roster.remove');
+        Route::post('/mis-campanas/{id}/plantilla/solicitudes/{requestId}/aceptar', [CampaignRosterController::class, 'accept'])->name('roster.accept');
+        Route::post('/mis-campanas/{id}/plantilla/solicitudes/{requestId}/rechazar', [CampaignRosterController::class, 'reject'])->name('roster.reject');
+        Route::post('/mis-campanas/{id}/plantilla/ausencias', [CampaignRosterController::class, 'toggleAbsence'])->name('roster.absence');
+
+        // The player's side, from the campaign page; requests are limited per user
+        Route::post('/{slug}/solicitud', [CampaignJoinController::class, 'request'])
+            ->where('slug', '[a-z0-9-]+')
+            ->middleware('throttle:game-tables-campaign-join')
+            ->name('join.request');
+        Route::delete('/{slug}/solicitud', [CampaignJoinController::class, 'withdraw'])
+            ->where('slug', '[a-z0-9-]+')
+            ->name('join.withdraw');
+        Route::delete('/{slug}/plantilla', [CampaignJoinController::class, 'leave'])
+            ->where('slug', '[a-z0-9-]+')
+            ->name('leave');
     });
 
     Route::get('/{slug}', [CampaignController::class, 'show'])

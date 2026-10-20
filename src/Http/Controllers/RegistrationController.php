@@ -74,6 +74,11 @@ final class RegistrationController extends Controller
             throw $this->refusal(__('game-tables::messages.errors.'.$e->reason));
         }
 
+        if ($registration->fromRoster) {
+            // A roster member taking their seat back: always a confirmed seat
+            return back()->with('success', __('game-tables::messages.roster.success.rejoined'));
+        }
+
         if ($registration->linkedFromGuest) {
             // The place among those waiting, not the stored position (which may have gaps)
             return back()->with('success', $registration->status === ParticipantStatus::WaitingList
@@ -104,9 +109,12 @@ final class RegistrationController extends Controller
         }
 
         try {
-            $this->registrationService->cancelByUser($gameTable->id, (string) $user->id);
+            $cancelled = $this->registrationService->cancelByUser($gameTable->id, (string) $user->id);
 
-            return back()->with('success', __('game-tables::messages.success.cancelled'));
+            // A roster seat given up is an absence from this session only
+            return back()->with('success', $cancelled->fromRoster
+                ? __('game-tables::messages.roster.success.session_absence')
+                : __('game-tables::messages.success.cancelled'));
         } catch (ParticipantNotFoundException) {
             return back()->with('error', __('game-tables::messages.errors.not_found'));
         } catch (CannotCancelException $e) {
