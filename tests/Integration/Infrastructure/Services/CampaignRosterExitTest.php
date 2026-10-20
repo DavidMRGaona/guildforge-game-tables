@@ -327,6 +327,41 @@ final class CampaignRosterExitTest extends ModuleTestCase
         $this->assertFalse($row->from_roster);
     }
 
+    public function test_one_failing_session_does_not_stop_the_others_when_joining(): void
+    {
+        Exceptions::fake();
+        $this->registrationsFailingOn($this->s1);
+
+        $this->service()->addUser($this->campaign->id, $this->richard->id, $this->mary->id);
+
+        $this->assertNull($this->findRow($this->s1, $this->richard));
+        $this->assertSame('confirmed', $this->rowOf($this->s2, $this->richard)->status->value);
+        // The welcome email lists the sessions actually enrolled
+        Event::assertDispatched(
+            CampaignRosterMemberAdded::class,
+            fn (CampaignRosterMemberAdded $event): bool => $event->userId === $this->richard->id
+                && $event->sessions === [['game_table_id' => $this->s2->id, 'waiting' => false]],
+        );
+        Exceptions::assertReported(fn (RuntimeException $e): bool => $e->getMessage() === 'Session sync failed');
+    }
+
+    public function test_one_failing_session_does_not_keep_the_leaver_in_the_others(): void
+    {
+        Exceptions::fake();
+        $this->registrationsFailingOn($this->s1);
+
+        $this->service()->leave($this->campaign->id, $this->jane->id);
+
+        $this->assertSame('confirmed', $this->rowOf($this->s1, $this->jane)->status->value);
+        foreach ([$this->s2, $this->s3] as $session) {
+            $row = $this->rowOf($session, $this->jane);
+            $this->assertSame('cancelled', $row->status->value, $session->title);
+            $this->assertSame('left_roster', $row->getRawOriginal('cancellation_reason'), $session->title);
+        }
+        Event::assertDispatched(CampaignRosterMemberLeft::class);
+        Exceptions::assertReported(fn (RuntimeException $e): bool => $e->getMessage() === 'Session sync failed');
+    }
+
     public function test_settings_change_without_review(): void
     {
         $this->service()->updateSettings($this->campaign->id, false, RosterAccess::MembersOnly, 4);
@@ -376,6 +411,26 @@ final class CampaignRosterExitTest extends ModuleTestCase
     private function registrations(): RegistrationServiceInterface
     {
         return $this->app->make(RegistrationServiceInterface::class);
+    }
+
+    /**
+     * The real registration service, except that every roster call on one session throws.
+     */
+    private function registrationsFailingOn(GameTableModel $failing): void
+    {
+        $real = $this->registrations();
+        $double = $this->createStub(RegistrationServiceInterface::class);
+        $double->method('enrollRoster')->willReturnCallback(
+            fn (string $gameTableId, ?string $onlyUserId = null): array => $gameTableId === $failing->id
+                ? throw new RuntimeException('Session sync failed')
+                : $real->enrollRoster($gameTableId, $onlyUserId),
+        );
+        $double->method('withdrawRosterMember')->willReturnCallback(
+            fn (string $gameTableId, string $userId): bool => $gameTableId === $failing->id
+                ? throw new RuntimeException('Session sync failed')
+                : $real->withdrawRosterMember($gameTableId, $userId),
+        );
+        $this->app->instance(RegistrationServiceInterface::class, $double);
     }
 
     private function roster(): CampaignRosterRepositoryInterface

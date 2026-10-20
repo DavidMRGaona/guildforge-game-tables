@@ -26,7 +26,8 @@ interface CampaignRosterSessionSyncInterface
     /**
      * Enrols a new roster member in the campaign sessions that still admit roster enrolment, in
      * order of start. Call it once the campaign lock is released: each session takes its own
-     * table lock. Nothing is announced here: the caller reports the sessions in its own event.
+     * table lock. Nothing is announced here: the caller reports the sessions in its own event. A
+     * session that fails is reported and skipped; the others are still processed.
      *
      * @return list<EnrolledSessionDTO> one per row placed now
      */
@@ -37,7 +38,8 @@ interface CampaignRosterSessionSyncInterface
      * every session of the campaign that has not started and is not over, published or not, so a
      * session published again later never keeps them. Call it once the campaign lock is released:
      * each session takes its own table lock. No cancellation is announced; the seats freed promote
-     * the waiting list as usual.
+     * the waiting list as usual. A session that fails is reported and skipped; the others are
+     * still processed.
      *
      * @return int the rows cancelled
      */

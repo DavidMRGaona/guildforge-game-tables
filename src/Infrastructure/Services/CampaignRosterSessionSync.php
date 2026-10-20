@@ -20,6 +20,7 @@ use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
+use Throwable;
 
 final readonly class CampaignRosterSessionSync implements CampaignRosterSessionSyncInterface
 {
@@ -56,13 +57,22 @@ final readonly class CampaignRosterSessionSync implements CampaignRosterSessionS
         $now = CarbonImmutable::now();
         $enrolled = [];
 
-        // By start; enrollRoster checks the window again under each table lock
+        // By start; enrollRoster checks the window again under each table lock. A session that
+        // fails is reported and skipped: the others still get the member, and only they are listed
         foreach ($this->gameTables->getByCampaign(new CampaignId($campaignId)) as $session) {
             if (! $session->admitsRosterEnrollment($now)) {
                 continue;
             }
 
-            foreach ($this->registrations->enrollRoster($session->id->value, $userId) as $participant) {
+            try {
+                $placed = $this->registrations->enrollRoster($session->id->value, $userId);
+            } catch (Throwable $e) {
+                report($e);
+
+                continue;
+            }
+
+            foreach ($placed as $participant) {
                 $enrolled[] = new EnrolledSessionDTO(
                     $participant->gameTableId,
                     $participant->status === ParticipantStatus::WaitingList,
@@ -84,8 +94,13 @@ final readonly class CampaignRosterSessionSync implements CampaignRosterSessionS
                 continue;
             }
 
-            if ($this->registrations->withdrawRosterMember($session->id->value, $userId)) {
-                $cancelled++;
+            // A session that fails is reported and skipped: the leaver never keeps the others
+            try {
+                if ($this->registrations->withdrawRosterMember($session->id->value, $userId)) {
+                    $cancelled++;
+                }
+            } catch (Throwable $e) {
+                report($e);
             }
         }
 
