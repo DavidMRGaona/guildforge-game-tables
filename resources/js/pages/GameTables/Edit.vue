@@ -6,7 +6,7 @@ import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { FormCombobox, FormSelect, FormCheckboxGroup, FormCheckboxWithTooltip, FormRadioGroup, FormTagsInput, FormNumberInput } from '@/components/form';
 import type { CheckboxGroup, RadioOption } from '@/components/form';
-import type { GameSystem, GameTableEditData, SessionCampaignOption, TableFormDefaults, TableFormLimits } from '../../types/gametables';
+import type { EditableGameMaster, GameSystem, GameTableEditData, SessionCampaignOption, TableFormDefaults, TableFormLimits } from '../../types/gametables';
 import GameMasterSection from '../../components/GameMasterSection.vue';
 import SessionCampaignField from '../../components/SessionCampaignField.vue';
 import FormTabs from '../../components/FormTabs.vue';
@@ -87,6 +87,8 @@ interface CurrentUser {
 
 interface Props {
     table: GameTableEditData;
+    /** The stored directors: the author first, then the co-directors, as the form edits them */
+    gameMasters: EditableGameMaster[];
     formData: FormData;
     eventContext?: EventContext | null;
     currentUser: CurrentUser;
@@ -215,16 +217,17 @@ const form = useForm({
     custom_warnings: props.table.custom_warnings,
     minimum_age: props.table.minimum_age,
     notes: props.table.notes ?? '',
-    game_masters: (props.table.game_masters ?? []).map((gm: Record<string, unknown>) => ({
-        ...(gm.id ? { id: gm.id as string } : {}),
-        ...(gm.user_id !== undefined ? { user_id: gm.user_id as string | null } : {}),
-        first_name: gm.display_name?.toString().split(' ')[0] || '',
-        last_name: gm.display_name?.toString().split(' ').slice(1).join(' ') || '',
-        email: '',
-        phone: '',
-        ...(gm.custom_title ? { custom_title: gm.custom_title as string } : {}),
-        is_name_public: (gm.is_name_public as boolean) ?? true,
-        role: gm.role as 'main' | 'co_gm',
+    // Each co-director keeps its id so saving updates the same record instead of replacing it
+    game_masters: props.gameMasters.map((gm) => ({
+        ...(gm.id !== null ? { id: gm.id } : {}),
+        user_id: gm.user_id,
+        first_name: gm.first_name,
+        last_name: gm.last_name,
+        email: gm.email,
+        phone: gm.phone,
+        custom_title: gm.custom_title,
+        is_name_public: gm.is_name_public,
+        role: gm.role,
     })),
     gm_gdpr_consent: false,
 });

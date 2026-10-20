@@ -212,6 +212,8 @@ final class FrontendGameTableController extends Controller
 
         return Inertia::render('GameTables/Edit', [
             'table' => $table->toArray(),
+            // The author's own table: the directors come with their email and phone
+            'gameMasters' => $this->creationService->getDraftGameMasters($gameTable->id, (string) $user->id),
             'formData' => $formData,
             'eventContext' => $eventContext?->toArray(),
             'currentUser' => $currentUser,
@@ -280,9 +282,14 @@ final class FrontendGameTableController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
+        // Without review (automatic mode, or an author who may publish directly) it is already published
+        $published = (bool) $gameTable->refresh()->is_published;
+
         return redirect()
             ->route('gametables.my-tables')
-            ->with('success', __('game-tables::messages.frontend.submitted_for_review'));
+            ->with('success', __($published
+                ? 'game-tables::messages.frontend.table_published'
+                : 'game-tables::messages.frontend.submitted_for_review'));
     }
 
     /**

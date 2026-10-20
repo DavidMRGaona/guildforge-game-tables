@@ -216,13 +216,94 @@ final class AuthorChangesTest extends ModuleTestCase
         foreach ([[false, 'pending_review'], [true, 'draft']] as $i => [$published, $status]) {
             $campaign = $this->campaign(published: $published, status: $status, slug: "campana-ajena-{$i}");
 
-            $this->actingAs($other)->get("/campanas/mis-campanas/{$campaign->id}/editar")->assertForbidden();
+            // The edit form does not reveal that the campaign exists
+            $this->actingAs($other)->get("/campanas/mis-campanas/{$campaign->id}/editar")->assertNotFound();
             $this->actingAs($other)->put("/campanas/mis-campanas/{$campaign->id}", $this->campaignData('Campaña ajena'))->assertForbidden();
             $this->actingAs($other)->post("/campanas/mis-campanas/{$campaign->id}/enviar-revision")->assertForbidden();
             $this->actingAs($other)->delete("/campanas/mis-campanas/{$campaign->id}")->assertForbidden();
 
             $this->assertSame('Campaña del autor', $campaign->refresh()->title);
         }
+    }
+
+    public function test_the_edit_form_of_someone_elses_campaign_is_not_found(): void
+    {
+        $other = UserModel::factory()->create();
+        $manager = $this->userWith(['gametables:campaigns.update']);
+
+        foreach ([[false, 'draft'], [false, 'rejected'], [false, 'approved'], [true, 'approved']] as $i => [$published, $status]) {
+            $campaign = $this->campaign(published: $published, status: $status, slug: "campana-ajena-{$i}");
+
+            $this->actingAs($other)->get("/campanas/mis-campanas/{$campaign->id}/editar")->assertNotFound();
+            $this->actingAs($manager)->get("/campanas/mis-campanas/{$campaign->id}/editar")->assertNotFound();
+        }
+
+        $this->actingAs($other)->get('/campanas/mis-campanas/'.Str::uuid().'/editar')->assertNotFound();
+    }
+
+    public function test_a_table_sent_for_review_says_so(): void
+    {
+        $table = $this->table(published: false, status: 'draft');
+
+        $this->actingAs($this->author)
+            ->post("/mesas/mis-mesas/{$table->slug}/enviar-revision")
+            ->assertRedirect(route('gametables.my-tables'))
+            ->assertSessionHas('success', 'Mesa enviada para revisión');
+
+        $this->assertFalse($table->refresh()->is_published);
+    }
+
+    public function test_a_table_published_without_review_says_it_was_published(): void
+    {
+        config()->set('modules.settings.game-tables.frontend_creation.publication.mode', 'auto');
+        $table = $this->table(published: false, status: 'draft');
+
+        $this->actingAs($this->author)
+            ->post("/mesas/mis-mesas/{$table->slug}/enviar-revision")
+            ->assertRedirect(route('gametables.my-tables'))
+            ->assertSessionHas('success', 'Mesa publicada correctamente');
+
+        $this->assertTrue($table->refresh()->is_published);
+    }
+
+    public function test_a_campaign_sent_for_review_says_so(): void
+    {
+        $campaign = $this->campaign(published: false, status: 'draft');
+
+        $this->actingAs($this->author)
+            ->post("/campanas/mis-campanas/{$campaign->id}/enviar-revision")
+            ->assertRedirect(route('campaigns.my-campaigns'))
+            ->assertSessionHas('success', 'Campaña enviada para revisión');
+
+        $this->assertFalse($campaign->refresh()->is_published);
+    }
+
+    public function test_a_campaign_published_without_review_says_it_was_published(): void
+    {
+        config()->set('modules.settings.game-tables.frontend_creation.publication.mode', 'auto');
+        $campaign = $this->campaign(published: false, status: 'draft');
+
+        $this->actingAs($this->author)
+            ->post("/campanas/mis-campanas/{$campaign->id}/enviar-revision")
+            ->assertRedirect(route('campaigns.my-campaigns'))
+            ->assertSessionHas('success', 'Campaña publicada correctamente');
+
+        $this->assertTrue($campaign->refresh()->is_published);
+    }
+
+    public function test_the_published_message_follows_the_locale(): void
+    {
+        app()->setLocale('en');
+        config()->set('modules.settings.game-tables.frontend_creation.publication.mode', 'auto');
+        $table = $this->table(published: false, status: 'draft');
+        $campaign = $this->campaign(published: false, status: 'draft');
+
+        $this->actingAs($this->author)
+            ->post("/mesas/mis-mesas/{$table->slug}/enviar-revision")
+            ->assertSessionHas('success', 'Table published successfully');
+        $this->actingAs($this->author)
+            ->post("/campanas/mis-campanas/{$campaign->id}/enviar-revision")
+            ->assertSessionHas('success', 'Campaign published successfully');
     }
 
     public function test_the_author_still_opens_the_edit_form_of_a_draft_campaign(): void

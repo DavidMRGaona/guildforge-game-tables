@@ -56,6 +56,8 @@ use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\GameSystemId;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
 final readonly class FrontendCreationService implements FrontendCreationServiceInterface
 {
@@ -489,10 +491,26 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
 
         // Sync game masters
         if ($dto->gameMasters !== null && count($dto->gameMasters) > 0) {
-            $this->gameMasterService->syncTableGameMasters($tableId, $this->authorOwnedRows($dto->gameMasters, $dto->createdBy));
+            $this->gameMasterService->syncTableGameMasters($tableId, $this->authorOwnedRows($dto->gameMasters, $dto->createdBy, $tableId));
         }
 
         return $result;
+    }
+
+    public function getDraftGameMasters(string $tableId, string $authorId): array
+    {
+        $local = $this->localGameMasters($tableId);
+        $authorRecord = $local->first(fn (GameMasterModel $gm): bool => $this->isAuthorsMainRecord($gm, $authorId));
+
+        $rows = [$authorRecord !== null ? $this->editableRow($authorRecord) : $this->newAuthorRow($authorId)];
+
+        foreach ($local as $gm) {
+            if ($this->isEditableCoDirector($gm)) {
+                $rows[] = $this->editableRow($gm);
+            }
+        }
+
+        return $rows;
     }
 
     public function deleteDraft(string $tableId, string $userId): void
@@ -796,25 +814,107 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
      * row is the author, every other row is a director without an account (its name and email
      * apply). A row can never reach, nor change, another person's director record.
      *
+     * On an edit ($tableId given) a row keeps its `id` only when it names a co-director without an
+     * account already on this table, so the same record is updated; any other id is dropped and the
+     * row becomes a new director. The table's directors the form does not show (another account,
+     * or a main director other than the author, both linked by staff) are added back unchanged.
+     *
      * @param  array<int, array<string, mixed>>  $rows
      * @return array<int, array<string, mixed>>
      */
-    private function authorOwnedRows(array $rows, string $authorId): array
+    private function authorOwnedRows(array $rows, string $authorId, ?string $tableId = null): array
     {
+        $local = $tableId !== null ? $this->localGameMasters($tableId) : null;
+        $editableIds = $local?->filter(fn (GameMasterModel $gm): bool => $this->isEditableCoDirector($gm))
+            ->modelKeys() ?? [];
         $mainSeen = false;
 
         foreach ($rows as $index => $row) {
-            unset($row['user_id']);
+            unset($row['user_id'], $row['excluded']);
 
             if (! $mainSeen && ($row['role'] ?? null) === GameMasterRole::Main->value) {
+                // The author's own record is found by their account, never by an id
+                unset($row['id']);
                 $row['user_id'] = $authorId;
                 $mainSeen = true;
+            } elseif (! in_array($row['id'] ?? null, $editableIds, true)) {
+                unset($row['id']);
             }
 
             $rows[$index] = $row;
         }
 
+        foreach ($local ?? [] as $gm) {
+            if (! $this->isEditableCoDirector($gm) && ! $this->isAuthorsMainRecord($gm, $authorId)) {
+                // The same values: the record is kept linked and left as it is
+                $rows[] = ['id' => $gm->id, 'user_id' => $gm->user_id, 'first_name' => $gm->first_name, 'email' => $gm->email];
+            }
+        }
+
         return $rows;
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Collection<int, GameMasterModel>
+     */
+    private function localGameMasters(string $tableId): \Illuminate\Database\Eloquent\Collection
+    {
+        return GameTableModel::query()->findOrFail($tableId)->localGameMasters()->get();
+    }
+
+    /**
+     * A co-director without an account: the only record a web row may update through its id.
+     */
+    private function isEditableCoDirector(GameMasterModel $gm): bool
+    {
+        return $gm->user_id === null && $gm->role === GameMasterRole::CoGm;
+    }
+
+    private function isAuthorsMainRecord(GameMasterModel $gm, string $authorId): bool
+    {
+        return $gm->user_id === $authorId && $gm->role === GameMasterRole::Main;
+    }
+
+    /**
+     * @return array{id: string|null, user_id: string|null, first_name: string, last_name: string, email: string, phone: string, custom_title: string, is_name_public: bool, role: string}
+     */
+    private function editableRow(GameMasterModel $gm): array
+    {
+        return [
+            'id' => $gm->id,
+            'user_id' => $gm->user_id,
+            'first_name' => $gm->first_name ?? '',
+            'last_name' => $gm->last_name ?? '',
+            'email' => $gm->email ?? '',
+            'phone' => $gm->phone ?? '',
+            'custom_title' => $gm->custom_title ?? '',
+            'is_name_public' => (bool) $gm->is_name_public,
+            'role' => $gm->role->value,
+        ];
+    }
+
+    /**
+     * The author as main director of a table that has no record of theirs yet (named as on the
+     * create form: the first word of the account name, then the rest).
+     *
+     * @return array{id: string|null, user_id: string|null, first_name: string, last_name: string, email: string, phone: string, custom_title: string, is_name_public: bool, role: string}
+     */
+    private function newAuthorRow(string $authorId): array
+    {
+        $author = UserModel::query()->findOrFail($authorId);
+        $name = explode(' ', (string) $author->name, 2);
+
+        return [
+            'id' => null,
+            'user_id' => $authorId,
+            'first_name' => $name[0],
+            'last_name' => $name[1] ?? '',
+            'email' => (string) $author->email,
+            'phone' => '',
+            'custom_title' => '',
+            'is_name_public' => true,
+            'role' => GameMasterRole::Main->value,
+        ];
     }
 
     /**

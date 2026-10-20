@@ -129,6 +129,8 @@ final class FrontendCreateGameTableRequest extends FormRequest
 
             // Game Masters
             'game_masters' => ['nullable', 'array', 'min:1'],
+            // Only a co-director without an account already on the edited table keeps its id (FrontendCreationService)
+            'game_masters.*.id' => ['nullable', 'uuid'],
             'game_masters.*.user_id' => ['nullable', 'uuid'],
             'game_masters.*.first_name' => ['required_without:game_masters.*.user_id', 'nullable', 'string', 'max:100'],
             'game_masters.*.last_name' => ['nullable', 'string', 'max:100'],

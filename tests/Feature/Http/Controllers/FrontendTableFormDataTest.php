@@ -91,7 +91,7 @@ final class FrontendTableFormDataTest extends ModuleTestCase
         }
 
         // Each director's row: the inputs of GameMasterSection
-        foreach (['first_name', 'last_name', 'email', 'phone', 'custom_title', 'is_name_public', 'role', 'user_id'] as $field) {
+        foreach (['id', 'first_name', 'last_name', 'email', 'phone', 'custom_title', 'is_name_public', 'role', 'user_id'] as $field) {
             $this->assertStringContainsString("'game_masters.*.{$field}' => [", $request, $field);
         }
     }
@@ -131,6 +131,22 @@ final class FrontendTableFormDataTest extends ModuleTestCase
             ->assertRedirect(route('gametables.my-tables'));
 
         $this->assertEqualsCanonicalizing([$this->violence->id, $this->horror->id], $table->contentWarnings()->pluck('id')->all());
+    }
+
+    public function test_unticking_every_content_warning_on_edit_clears_them(): void
+    {
+        $table = $this->draftTable();
+        $table->contentWarnings()->attach([$this->violence->id, $this->horror->id]);
+
+        $this->actingAs($this->author)
+            ->put("/mesas/mis-mesas/{$table->slug}", [
+                ...$this->tableData('Mesa sin avisos'),
+                'content_warning_ids' => [],
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('gametables.my-tables'));
+
+        $this->assertSame([], $table->contentWarnings()->pluck('id')->all());
     }
 
     public function test_the_phone_of_each_director_is_kept_on_create(): void
@@ -266,6 +282,28 @@ final class FrontendTableFormDataTest extends ModuleTestCase
         $this->assertSame($this->author->id, $main->user_id);
         $this->assertSame('600 000 012', $main->phone);
         $this->assertSame('600 000 011', $janeRecord->refresh()->phone);
+        $this->assertNotContains($janeRecord->id, $table->gameMasters()->pluck('gametables_game_masters.id')->all());
+    }
+
+    public function test_a_forged_main_director_row_on_edit_is_stored_as_the_author(): void
+    {
+        $jane = UserModel::factory()->create(['name' => 'Jane Doe', 'email' => 'jane@example.com']);
+        $janeRecord = $this->accountGameMaster($jane, 'main', 'Jane', '600 000 011');
+        $table = $this->draftTable();
+
+        $this->actingAs($this->author)
+            ->put("/mesas/mis-mesas/{$table->slug}", [
+                ...$this->tableData('Mesa corregida'),
+                'game_masters' => [[...$this->mainGameMaster('600 000 014'), 'id' => $janeRecord->id, 'user_id' => $jane->id]],
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('gametables.my-tables'));
+
+        $main = $table->gameMasters()->where('role', 'main')->firstOrFail();
+        $this->assertSame($this->author->id, $main->user_id);
+        $this->assertSame('600 000 014', $main->phone);
+        $janeRecord->refresh();
+        $this->assertSame(['600 000 011', $jane->id], [$janeRecord->phone, $janeRecord->user_id]);
         $this->assertNotContains($janeRecord->id, $table->gameMasters()->pluck('gametables_game_masters.id')->all());
     }
 

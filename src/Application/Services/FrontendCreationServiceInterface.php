@@ -85,6 +85,16 @@ interface FrontendCreationServiceInterface
     public function updateDraft(string $tableId, FrontendCreateGameTableDTO $dto): GameTableResponseDTO;
 
     /**
+     * The directors of a draft as its author edits them on the web: the author as main director
+     * (their own record on the table, or a new row from their account) and the co-directors without
+     * an account, in order. Directors with another account (only staff link them) are left out and
+     * kept as they are on save.
+     *
+     * @return list<array{id: string|null, user_id: string|null, first_name: string, last_name: string, email: string, phone: string, custom_title: string, is_name_public: bool, role: string}>
+     */
+    public function getDraftGameMasters(string $tableId, string $authorId): array;
+
+    /**
      * Delete a draft table.
      *
      * @throws \Modules\GameTables\Domain\Exceptions\TableNotFoundException

@@ -672,10 +672,12 @@ return [
         'table_updated' => 'Mesa actualizada correctamente',
         'table_deleted' => 'Mesa eliminada correctamente',
         'submitted_for_review' => 'Mesa enviada para revisión',
+        'table_published' => 'Mesa publicada correctamente',
         'campaign_created' => 'Campaña creada correctamente',
         'campaign_updated' => 'Campaña actualizada correctamente',
         'campaign_deleted' => 'Campaña eliminada correctamente',
         'campaign_submitted_for_review' => 'Campaña enviada para revisión',
+        'campaign_published' => 'Campaña publicada correctamente',
     ],
 
     /*

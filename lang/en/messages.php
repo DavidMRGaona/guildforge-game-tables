@@ -596,10 +596,12 @@ return [
         'table_updated' => 'Table updated successfully',
         'table_deleted' => 'Table deleted successfully',
         'submitted_for_review' => 'Table sent for review',
+        'table_published' => 'Table published successfully',
         'campaign_created' => 'Campaign created successfully',
         'campaign_updated' => 'Campaign updated successfully',
         'campaign_deleted' => 'Campaign deleted successfully',
         'campaign_submitted_for_review' => 'Campaign sent for review',
+        'campaign_published' => 'Campaign published successfully',
     ],
 
     /*

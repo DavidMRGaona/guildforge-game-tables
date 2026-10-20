@@ -9,7 +9,6 @@ use App\Application\Seo\Services\SeoMetadataFactoryInterface;
 use App\Http\Controllers\Controller;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
@@ -114,18 +113,14 @@ final class FrontendCampaignController extends Controller
      */
     public function edit(string $id): Response|RedirectResponse
     {
-        $stored = CampaignModel::query()->find($id);
-        if (($locked = $this->sendLockedAuthorBack($stored)) !== null) {
+        if (($locked = $this->sendLockedAuthorBack(CampaignModel::query()->find($id))) !== null) {
             return $locked;
-        }
-        if ($stored !== null) {
-            Gate::authorize('update', $stored);
         }
 
         /** @var UserModel $user */
         $user = auth()->user();
 
-        // Get user's drafts and find the one with matching ID
+        // Only the author's own drafts: anyone else gets 404, so the page never reveals that a campaign exists
         $drafts = $this->creationService->getUserCampaignDrafts((string) $user->id);
         $campaign = null;
 
@@ -205,9 +200,14 @@ final class FrontendCampaignController extends Controller
             abort(403);
         }
 
+        // Without review (automatic mode, or an author who may publish directly) it is already published
+        $published = (bool) CampaignModel::query()->find($id)?->is_published;
+
         return redirect()
             ->route('campaigns.my-campaigns')
-            ->with('success', __('game-tables::messages.frontend.campaign_submitted_for_review'));
+            ->with('success', __($published
+                ? 'game-tables::messages.frontend.campaign_published'
+                : 'game-tables::messages.frontend.campaign_submitted_for_review'));
     }
 
     /**

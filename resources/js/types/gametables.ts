@@ -281,6 +281,23 @@ export interface ProfileCreatedTablesData {
 }
 
 /**
+ * A director of a draft as its author edits it (FrontendCreationService::getDraftGameMasters()):
+ * the author's own table, so the email and phone are included. `id` is null for an author who has
+ * no director record on the table yet.
+ */
+export interface EditableGameMaster {
+    id: string | null;
+    user_id: string | null;
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone: string;
+    custom_title: string;
+    is_name_public: boolean;
+    role: 'main' | 'co_gm';
+}
+
+/**
  * GameTable data as returned by GameTableResponseDTO::toArray() (snake_case keys).
  * Used for Edit form pre-population where data comes directly from DTO.
  */
