@@ -295,10 +295,11 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
     /**
      * One member in one session, idempotent (there is no unique key on table and user): an active
-     * loose player row is adopted as it is, and so is an active guest row made with the member's
-     * verified account email (taken over as their own registration would take it); a row
-     * cancelled on leaving the roster is reactivated, no row gets a new one; any other row is the
-     * member's or the organisation's choice and stays. Runs under the table lock.
+     * loose player row is adopted as it is; a rejected, no-show, expired or absent row stands, and
+     * nothing else is done; otherwise an active guest row made with the member's verified account
+     * email is adopted (taken over as their own registration would take it), a row cancelled on
+     * leaving the roster is reactivated, no row gets a new one, and a plain cancellation of their
+     * own stays. Runs under the table lock.
      *
      * @return array{Participant|null, Participant|null} the row placed now (null when nothing was
      *                                                    placed) and anyone else promoted meanwhile
@@ -310,6 +311,12 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         if ($existing !== null && $existing->isActive()) {
             $this->adoptAsRosterRow($existing);
 
+            return [null, null];
+        }
+
+        // The organisation's decision (rejected, no-show, expired) or an absence stands: not even a
+        // guest row of the member's is taken over, as that would delete it
+        if ($existing !== null && (! $existing->isCancelled() || $existing->isSessionAbsence())) {
             return [null, null];
         }
 

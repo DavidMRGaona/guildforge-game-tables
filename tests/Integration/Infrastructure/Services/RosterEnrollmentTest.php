@@ -174,19 +174,7 @@ final class RosterEnrollmentTest extends ModuleTestCase
 
     public function test_a_members_guest_registration_is_taken_over_without_a_new_row(): void
     {
-        $guest = ParticipantModel::create([
-            'id' => (string) Str::uuid(),
-            'game_table_id' => $this->table->id,
-            'user_id' => null,
-            'role' => 'player',
-            'status' => 'confirmed',
-            'first_name' => 'John',
-            'last_name' => 'Doe',
-            'email' => 'john@example.com',
-            'cancellation_token' => 'token-de-prueba',
-            'email_confirmed_at' => now(),
-            'confirmed_at' => now(),
-        ]);
+        $guest = $this->guestRowOfJohn();
 
         $enrolled = $this->service()->enrollRoster($this->table->id);
 
@@ -200,6 +188,16 @@ final class RosterEnrollmentTest extends ModuleTestCase
         $this->assertNull($row->email);
         $this->assertSame('confirmed', $row->status->value);
         $this->assertTrue($row->from_roster);
+    }
+
+    public function test_a_guest_row_never_replaces_a_rejected_registration(): void
+    {
+        $this->assertGuestRowLeavesTheOwnRowAlone($this->row($this->john, 'rejected', fromRoster: true), 'rejected');
+    }
+
+    public function test_a_guest_row_never_replaces_an_absence(): void
+    {
+        $this->assertGuestRowLeavesTheOwnRowAlone($this->row($this->john, 'cancelled', fromRoster: true, reason: 'session_absence'), 'cancelled');
     }
 
     public function test_a_late_member_on_a_full_session_waits_ahead_of_outsiders(): void
@@ -398,6 +396,41 @@ final class RosterEnrollmentTest extends ModuleTestCase
 
         $this->assertSame($status, $row->refresh()->status->value);
         Event::assertNotDispatched(ParticipantRegistered::class);
+    }
+
+    /**
+     * John's own row is the organisation's decision or an absence; his active guest row (same
+     * email as his account) must not take its place on enrolment.
+     */
+    private function assertGuestRowLeavesTheOwnRowAlone(ParticipantModel $own, string $status): void
+    {
+        $guest = $this->guestRowOfJohn();
+
+        $this->assertSame([], $this->service()->enrollRoster($this->table->id, $this->john->id));
+
+        $this->assertSame($status, $own->refresh()->status->value);
+        $row = $guest->refresh();
+        $this->assertNull($row->user_id);
+        $this->assertSame('john@example.com', $row->email);
+        $this->assertSame('confirmed', $row->status->value);
+        $this->assertFalse($row->from_roster);
+    }
+
+    private function guestRowOfJohn(): ParticipantModel
+    {
+        return ParticipantModel::create([
+            'id' => (string) Str::uuid(),
+            'game_table_id' => $this->table->id,
+            'user_id' => null,
+            'role' => 'player',
+            'status' => 'confirmed',
+            'first_name' => 'John',
+            'last_name' => 'Doe',
+            'email' => 'john@example.com',
+            'cancellation_token' => 'token-de-prueba',
+            'email_confirmed_at' => now(),
+            'confirmed_at' => now(),
+        ]);
     }
 
     private function service(): RegistrationServiceInterface
