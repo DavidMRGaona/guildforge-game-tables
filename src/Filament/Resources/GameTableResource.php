@@ -598,6 +598,7 @@ final class GameTableResource extends BaseResource
                             $service = app(FrontendCreationServiceInterface::class);
                             $approvedCount = 0;
                             $skipped = false;
+                            $refused = false;
 
                             foreach ($records as $record) {
                                 // Only what the author sent to review: never a draft or an approved table
@@ -610,14 +611,18 @@ final class GameTableResource extends BaseResource
                                     } catch (SessionBelowRosterException $e) {
                                         // Left in review: the others are still approved
                                         self::refuseBelowRoster($e);
+                                        $refused = true;
                                     }
                                 }
                             }
 
-                            Notification::make()
-                                ->title(__('game-tables::messages.bulk_actions.approved_count', ['count' => $approvedCount]))
-                                ->success()
-                                ->send();
+                            // Nothing approved and a refusal shown: the refusal says it all
+                            if ($approvedCount > 0 || ! $refused) {
+                                Notification::make()
+                                    ->title(__('game-tables::messages.bulk_actions.approved_count', ['count' => $approvedCount]))
+                                    ->success()
+                                    ->send();
+                            }
 
                             if ($skipped) {
                                 self::warnStatusAlreadyChanged();

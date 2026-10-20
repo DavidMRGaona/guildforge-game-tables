@@ -412,8 +412,13 @@ final class RosterOnPublicationTest extends ModuleTestCase
         $session = $this->campaignSession(creationStatus: 'pending_review', maxPlayers: 1);
 
         Livewire::test(ListGameTables::class)
-            ->callTableBulkAction('approve', [$session])
-            ->assertNotified(self::BELOW_ROSTER);
+            ->callTableBulkAction('approve', [$session]);
+
+        // Read once (the notification assertions consume them): nothing was approved, so the
+        // refusal comes alone, without «0 mesa(s) aprobada(s)» next to it
+        $titles = array_column(session('filament.claimed_notifications') ?? session('filament.notifications', []), 'title');
+        $this->assertContains(self::BELOW_ROSTER, $titles);
+        $this->assertNotContains('0 mesa(s) aprobada(s)', $titles);
 
         $this->assertStillInReview($session);
     }
