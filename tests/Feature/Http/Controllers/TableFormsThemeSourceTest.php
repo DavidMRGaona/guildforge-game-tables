@@ -85,7 +85,7 @@ final class TableFormsThemeSourceTest extends TestCase
 
         $tabs = $this->source('components/FormTabs.vue');
         $this->assertStringContainsString("? 'text-[color:var(--color-primary-link)]'", $tabs);
-        $this->assertStringContainsString("'text-base-secondary hover:text-base-primary'", $tabs);
+        $this->assertStringContainsString("'text-[color:var(--color-text-secondary)] hover:text-[color:var(--color-text-primary)]'", $tabs);
         $this->assertStringContainsString('bg-error px-1.5 py-0.5 text-xs font-semibold text-base-inverted', $tabs);
 
         foreach (['pages/GameTables/MyTables.vue', 'pages/Campaigns/MyCampaigns.vue'] as $page) {

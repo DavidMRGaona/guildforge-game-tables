@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 export interface FormTab {
@@ -33,6 +33,35 @@ function selectTab(tabId: string): void {
     activeTab.value = tabId;
 }
 
+const tabButtons = ref<HTMLButtonElement[]>([]);
+
+function setTabButton(element: unknown, index: number): void {
+    if (element instanceof HTMLButtonElement) {
+        tabButtons.value[index] = element;
+    }
+}
+
+// ARIA tabs pattern: only the selected tab is in the tab order, so the focus moves with the selection
+function onKeydown(event: KeyboardEvent, index: number): void {
+    const last = props.tabs.length - 1;
+    const targets: Record<string, number> = {
+        ArrowLeft: index > 0 ? index - 1 : last,
+        ArrowRight: index < last ? index + 1 : 0,
+        Home: 0,
+        End: last,
+    };
+    const target = targets[event.key];
+
+    const tab = target === undefined ? undefined : props.tabs[target];
+    if (target === undefined || tab === undefined) {
+        return;
+    }
+
+    event.preventDefault();
+    selectTab(tab.id);
+    void nextTick(() => tabButtons.value[target]?.focus());
+}
+
 function getErrorCount(tabId: string): number {
     return props.errors[tabId] ?? 0;
 }
@@ -55,11 +84,12 @@ function tabAccessibleName(tab: FormTab): string | undefined {
         <nav
             class="flex gap-1 overflow-x-auto border-b border-default bg-surface px-1 sm:px-4"
             role="tablist"
-            aria-label="Form sections"
+            :aria-label="t('gameTables.formTabs.label')"
         >
             <button
-                v-for="tab in tabs"
+                v-for="(tab, index) in tabs"
                 :key="tab.id"
+                :ref="(element) => setTabButton(element, index)"
                 type="button"
                 role="tab"
                 :id="`tab-${tab.id}`"
@@ -73,19 +103,10 @@ function tabAccessibleName(tab: FormTab): string | undefined {
                         ? 'text-error'
                         : activeTab === tab.id
                           ? 'text-[color:var(--color-primary-link)]'
-                          : 'text-base-secondary hover:text-base-primary',
+                          : 'text-[color:var(--color-text-secondary)] hover:text-[color:var(--color-text-primary)]',
                 ]"
                 @click="selectTab(tab.id)"
-                @keydown.left.prevent="() => {
-                    const currentIndex = tabs.findIndex(t => t.id === activeTab);
-                    const prevIndex = currentIndex > 0 ? currentIndex - 1 : tabs.length - 1;
-                    selectTab(tabs[prevIndex]?.id ?? tabs[0]?.id ?? '');
-                }"
-                @keydown.right.prevent="() => {
-                    const currentIndex = tabs.findIndex(t => t.id === activeTab);
-                    const nextIndex = currentIndex < tabs.length - 1 ? currentIndex + 1 : 0;
-                    selectTab(tabs[nextIndex]?.id ?? tabs[0]?.id ?? '');
-                }"
+                @keydown="onKeydown($event, index)"
             >
                 <span>{{ tab.label }}</span>
 
