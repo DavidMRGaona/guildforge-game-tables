@@ -429,60 +429,6 @@ final class CampaignRosterServiceTest extends ModuleTestCase
         Event::assertNotDispatched(CampaignJoinRequestAccepted::class);
     }
 
-    public function test_add_by_email_ignores_case_and_spaces(): void
-    {
-        $session = $this->campaignSession('Sesión 1', CarbonImmutable::now()->addWeek());
-
-        $this->service()->addByEmail($this->campaign->id, ' John@Example.com ', $this->mary->id);
-
-        $this->assertTrue($this->roster()->contains($this->campaignId, $this->john->id));
-        Event::assertDispatched(
-            CampaignRosterMemberAdded::class,
-            fn (CampaignRosterMemberAdded $event): bool => $event->campaignId === $this->campaign->id
-                && $event->userId === $this->john->id
-                && $event->sessions === [['game_table_id' => $session->id, 'waiting' => false]],
-        );
-    }
-
-    public function test_an_unknown_email_gets_the_generic_message(): void
-    {
-        $this->richard->forceFill(['anonymized_at' => CarbonImmutable::now()])->save();
-
-        foreach (['nobody@example.com', 'richard@example.com'] as $email) {
-            $this->assertRefused(
-                'account_not_found',
-                'No se ha podido añadir a esa cuenta. Comprueba el email.',
-                fn () => $this->service()->addByEmail($this->campaign->id, $email, $this->mary->id),
-            );
-        }
-        $this->assertSame(0, $this->roster()->count($this->campaignId));
-        Event::assertNotDispatched(CampaignRosterMemberAdded::class);
-    }
-
-    /**
-     * The campaign's own refusals come before the email is looked up: otherwise a real account
-     * would get «completa» or «terminada» where an unknown email gets the generic message.
-     */
-    public function test_a_campaign_refusal_gives_every_email_the_same_answer(): void
-    {
-        $cases = [
-            'roster_full' => [['max_players' => 2], 'La plantilla está completa.'],
-            'finished' => [['status' => 'completed'], 'La campaña ha terminado: su plantilla ya no cambia.'],
-            'unavailable' => [['frontend_creation_status' => 'draft'], 'Esta campaña no está publicada.'],
-        ];
-        $this->addToRoster($this->jane, $this->richard);
-
-        foreach ($cases as $reason => [$attributes, $message]) {
-            $this->campaign->update(['max_players' => 3, 'status' => 'recruiting', 'frontend_creation_status' => 'approved', ...$attributes]);
-
-            foreach (['nobody@example.com', 'john@example.com'] as $email) {
-                $this->assertRefused($reason, $message, fn () => $this->service()->addByEmail($this->campaign->id, $email, $this->mary->id));
-            }
-        }
-        $this->assertFalse($this->roster()->contains($this->campaignId, $this->john->id));
-        Event::assertNotDispatched(CampaignRosterMemberAdded::class);
-    }
-
     public function test_adding_an_anonymized_or_unknown_account_is_refused(): void
     {
         $this->richard->forceFill(['anonymized_at' => CarbonImmutable::now()])->save();

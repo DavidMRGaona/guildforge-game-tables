@@ -45,14 +45,6 @@ interface CampaignRosterServiceInterface
     public function rejectRequest(string $requestId, string $actorUserId, ?string $reason): void;
 
     /**
-     * The same refusal for an unknown, anonymized or deleted account: nothing tells them apart.
-     *
-     * @throws CampaignNotFoundException
-     * @throws RosterActionRefusedException account_not_found, or any refusal of addUser()
-     */
-    public function addByEmail(string $campaignId, string $email, string $actorUserId): void;
-
-    /**
      * Allowed while the campaign is closed to new players or on hold; a pending request of the
      * user is accepted with the actor as decider.
      *

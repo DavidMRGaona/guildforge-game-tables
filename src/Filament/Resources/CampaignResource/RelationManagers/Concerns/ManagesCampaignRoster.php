@@ -47,8 +47,9 @@ trait ManagesCampaignRoster
      * Runs a roster change: a refusal becomes a danger notification, success the matching copy.
      *
      * @param  Closure(): void  $change
+     * @param  array<string, string>  $replace  placeholders of the success copy
      */
-    private function run(Closure $change, string $success): void
+    private function run(Closure $change, string $success, array $replace = []): void
     {
         try {
             $change();
@@ -58,6 +59,6 @@ trait ManagesCampaignRoster
             return;
         }
 
-        Notification::make()->title(__('game-tables::messages.roster.success.'.$success))->success()->send();
+        Notification::make()->title(__('game-tables::messages.roster.success.'.$success, $replace))->success()->send();
     }
 }

@@ -151,22 +151,6 @@ final readonly class CampaignRosterService implements CampaignRosterServiceInter
         CampaignJoinRequestRejected::dispatch($request->id->value, $campaignId, $request->userId, $request->decisionReason);
     }
 
-    public function addByEmail(string $campaignId, string $email, string $actorUserId): void
-    {
-        // The campaign's own refusals first: answered after the lookup, a real account would get
-        // «completa» or «terminada» where an unknown email gets the generic message. addUser()
-        // checks them again under the lock
-        $campaign = $this->campaigns->findOrFail(new CampaignId($campaignId));
-        $this->guard->ensureCanChange($campaign);
-        $this->guard->ensureRoomIn($campaign);
-
-        // Unknown, anonymized or deleted: the same answer, so nobody can probe for accounts
-        $account = $this->accounts->findByEmail($email)
-            ?? throw RosterActionRefusedException::because('account_not_found');
-
-        $this->addUser($campaignId, $account->userId, $actorUserId);
-    }
-
     public function addUser(string $campaignId, string $userId, string $actorUserId): void
     {
         $this->lock->forCampaign($campaignId, function () use ($campaignId, $userId, $actorUserId): void {
