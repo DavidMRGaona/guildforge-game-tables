@@ -739,6 +739,7 @@ return [
             'resend' => 'Resend',
             'cancel' => 'Cancel',
             'cancel_description' => 'The invitation will no longer be valid.',
+            'more_than_seats' => 'There are more pending invitations than free seats; whoever accepts first gets in.',
         ],
         'join_requests' => [
             'title' => 'Requests',

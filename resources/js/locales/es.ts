@@ -602,6 +602,7 @@ export default {
                 title: 'Invitaciones pendientes ({count})',
                 invitedBy: 'Invitada por {name}',
                 expires: 'Caduca el {date}',
+                sends: 'Envíos: {count}',
                 resend: 'Reenviar',
                 cancel: 'Cancelar',
                 cancelTitle: 'Cancelar invitación',

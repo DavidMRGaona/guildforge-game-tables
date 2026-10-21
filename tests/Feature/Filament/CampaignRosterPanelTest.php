@@ -161,6 +161,34 @@ final class CampaignRosterPanelTest extends ModuleTestCase
             ->assertCanNotSeeTableRecords([$expired]);
     }
 
+    public function test_the_tab_warns_when_pending_invitations_outnumber_free_seats(): void
+    {
+        $warning = 'Hay más invitaciones pendientes que plazas libres; entrará quien acepte primero.';
+        $campaign = $this->campaign(maxPlayers: 3);
+        $this->member($campaign, 'Richard Roe');
+        $this->invitation($campaign, 'john@example.com', CarbonImmutable::now()->addDays(3));
+        $this->invitation($campaign, 'jane@example.com', CarbonImmutable::now()->addDays(3));
+
+        // Two seats, two invitations: everyone fits
+        $this->invitations($campaign)->assertDontSee($warning);
+
+        // An expired one does not count
+        $this->invitation($campaign, 'old@example.com', CarbonImmutable::now()->subDay());
+        $this->invitations($campaign)->assertDontSee($warning);
+
+        $this->invitation($campaign, 'mary@example.com', CarbonImmutable::now()->addDays(3));
+        $this->invitations($campaign)->assertSee($warning);
+    }
+
+    public function test_the_tab_never_warns_without_a_maximum(): void
+    {
+        $campaign = $this->campaign();
+        $this->invitation($campaign, 'john@example.com', CarbonImmutable::now()->addDays(3));
+        $this->invitation($campaign, 'jane@example.com', CarbonImmutable::now()->addDays(3));
+
+        $this->invitations($campaign)->assertDontSee('Hay más invitaciones pendientes que plazas libres');
+    }
+
     public function test_invitations_tab_follows_the_campaign_update_permission(): void
     {
         $campaign = $this->campaign();

@@ -681,6 +681,8 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                                     {{ t('campaigns.roster.invitations.invitedBy', { name: invitation.inviter_name }) }}
                                     ·
                                     {{ t('campaigns.roster.invitations.expires', { date: formatExpiry(invitation) }) }}
+                                    ·
+                                    {{ t('campaigns.roster.invitations.sends', { count: invitation.send_count }) }}
                                 </p>
                             </div>
                             <div class="flex flex-col gap-2 sm:flex-row">

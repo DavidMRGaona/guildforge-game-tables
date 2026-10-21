@@ -58,6 +58,18 @@ final class RosterPageSourceTest extends TestCase
     }
 
     /**
+     * Each pending invitation shows how many times it was sent, as the panel does.
+     */
+    public function test_invitation_rows_show_the_send_count(): void
+    {
+        $root = dirname(__DIR__, 4).'/resources/js/locales/';
+
+        $this->assertStringContainsString("t('campaigns.roster.invitations.sends', { count: invitation.send_count })", $this->source());
+        $this->assertStringContainsString("sends: 'Envíos: {count}',", (string) file_get_contents($root.'es.ts'));
+        $this->assertStringContainsString("sends: 'Sends: {count}',", (string) file_get_contents($root.'en.ts'));
+    }
+
+    /**
      * WCAG 2.5.3: a cell's accessible name starts with its visible text («✓ Va»).
      */
     public function test_the_cell_name_starts_with_its_visible_text(): void

@@ -576,6 +576,7 @@ export default {
                 title: 'Pending invitations ({count})',
                 invitedBy: 'Invited by {name}',
                 expires: 'Expires on {date}',
+                sends: 'Sends: {count}',
                 resend: 'Resend',
                 cancel: 'Cancel',
                 cancelTitle: 'Cancel invitation',

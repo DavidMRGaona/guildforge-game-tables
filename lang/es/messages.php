@@ -816,6 +816,7 @@ return [
             'resend' => 'Reenviar',
             'cancel' => 'Cancelar',
             'cancel_description' => 'La invitación dejará de ser válida.',
+            'more_than_seats' => 'Hay más invitaciones pendientes que plazas libres; entrará quien acepte primero.',
         ],
         'join_requests' => [
             'title' => 'Solicitudes',

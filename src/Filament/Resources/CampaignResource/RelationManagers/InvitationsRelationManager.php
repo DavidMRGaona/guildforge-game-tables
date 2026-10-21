@@ -13,6 +13,8 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Modules\GameTables\Application\Services\CampaignInvitationServiceInterface;
+use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
+use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Filament\Resources\CampaignResource\RelationManagers\Concerns\ManagesCampaignRoster;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignInvitationModel;
 
@@ -37,6 +39,10 @@ final class InvitationsRelationManager extends RelationManager
             // An expired invitation the daily cleanup has not removed yet is not shown, as on the web
             ->modifyQueryUsing(fn (Builder $query): Builder => $query->where('expires_at', '>', now()))
             ->defaultSort('created_at', 'desc')
+            // No seat is reserved: whoever accepts first enters, so the direction is told (as on the web)
+            ->description(fn (): ?string => $this->moreInvitationsThanSeats()
+                ? __('game-tables::messages.relation_managers.invitations.more_than_seats')
+                : null)
             ->columns([
                 TextColumn::make('email')
                     ->label(__('game-tables::messages.relation_managers.invitations.email'))
@@ -105,5 +111,23 @@ final class InvitationsRelationManager extends RelationManager
                         ), 'invitation_cancelled');
                     }),
             ]);
+    }
+
+    private function moreInvitationsThanSeats(): bool
+    {
+        $campaign = $this->getOwnerRecord();
+        $maxPlayers = $campaign->getAttribute('max_players');
+
+        if ($maxPlayers === null) {
+            return false;
+        }
+
+        $pending = CampaignInvitationModel::query()
+            ->where('campaign_id', $campaign->getKey())
+            ->where('expires_at', '>', now())
+            ->count();
+        $rosterCount = app(CampaignRosterRepositoryInterface::class)->count(new CampaignId((string) $campaign->getKey()));
+
+        return $pending > (int) $maxPlayers - $rosterCount;
     }
 }
