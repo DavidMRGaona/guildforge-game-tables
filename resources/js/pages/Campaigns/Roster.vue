@@ -413,7 +413,7 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
             <div class="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
                 <Link
                     href="/campanas/mis-campanas"
-                    class="inline-flex items-center gap-1 text-sm text-base-secondary hover:underline focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
+                    class="-my-3 inline-flex min-h-[44px] items-center gap-1 text-sm text-base-secondary hover:underline focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
                 >
                     <span aria-hidden="true">←</span>
                     {{ t('campaigns.roster.back') }}
@@ -663,7 +663,7 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                                 <tr>
                                     <th
                                         scope="col"
-                                        class="sticky left-0 z-10 border-b border-default bg-surface py-2 pl-4 pr-3 font-medium text-base-secondary sm:pl-0"
+                                        class="sticky left-0 z-10 w-full border-b border-default bg-surface py-2 pl-4 pr-3 font-medium text-base-secondary sm:pl-0"
                                     >
                                         {{ t('campaigns.roster.players.name') }}
                                     </th>
@@ -671,14 +671,14 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                                         v-for="session in visibleSessions"
                                         :key="session.game_table_id"
                                         scope="col"
-                                        class="border-b border-default px-1 py-2 text-center align-bottom font-medium text-base-primary"
+                                        class="border-b border-default px-1 py-2 text-center align-bottom font-medium text-base-primary sm:min-w-[8rem]"
                                     >
                                         <span class="block whitespace-nowrap">{{ sessionLabel(session) }}</span>
                                         <span class="block whitespace-nowrap text-xs font-normal text-base-muted">
                                             {{ t('campaigns.roster.attendance.seats', { taken: session.seats_taken, max: session.max_players }) }}
                                         </span>
                                     </th>
-                                    <th scope="col" class="border-b border-default py-2 pl-2 pr-4 sm:pr-0">
+                                    <th scope="col" class="border-b border-default py-2 pl-2 pr-4 max-sm:hidden sm:pr-0">
                                         <span class="sr-only">{{ t('campaigns.roster.attendance.actionsColumn') }}</span>
                                     </th>
                                 </tr>
@@ -687,12 +687,25 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                                 <tr v-for="player in players" :key="player.user_id">
                                     <th
                                         scope="row"
-                                        class="sticky left-0 z-10 border-b border-default bg-surface py-2 pl-4 pr-3 align-middle font-medium text-base-primary sm:pl-0"
+                                        class="sticky left-0 z-10 w-full border-b border-default bg-surface py-2 pl-4 pr-3 align-middle font-medium text-base-primary sm:pl-0"
                                     >
                                         <span class="block max-w-[10rem] break-words sm:max-w-none">{{ player.name }}</span>
                                         <span v-if="player.joined_at" class="block text-xs font-normal text-base-muted">
                                             {{ t('campaigns.roster.players.since', { date: player.joined_at }) }}
                                         </span>
+                                        <!-- On phones «Quitar» sits under the name, so two sessions fit without scrolling.
+                                             The wrapper hides it: the core's display utilities outrank the module's variants -->
+                                        <div class="mt-2 sm:hidden">
+                                            <button
+                                                type="button"
+                                                :aria-disabled="processing ? 'true' : undefined"
+                                                :aria-label="t('campaigns.roster.players.removeNamed', { name: player.name })"
+                                                :class="dangerOutlineClass"
+                                                @click="askRemove(player)"
+                                            >
+                                                {{ t('campaigns.roster.players.remove') }}
+                                            </button>
+                                        </div>
                                     </th>
                                     <td
                                         v-for="session in visibleSessions"
@@ -707,7 +720,7 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                                             :aria-busy="busyCell === cellKey(player, session) ? 'true' : undefined"
                                             :aria-disabled="processing ? 'true' : undefined"
                                             :class="[
-                                                'inline-flex min-h-[44px] w-full min-w-[5.5rem] cursor-pointer items-center justify-center gap-1 rounded-md border px-2 py-1 text-xs font-medium transition-colors',
+                                                'inline-flex min-h-[44px] w-full min-w-[4.5rem] cursor-pointer items-center justify-center gap-1 rounded-md border px-2 py-1 text-xs font-medium transition-colors',
                                                 'hover:border-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-surface',
                                                 'aria-disabled:cursor-not-allowed aria-disabled:opacity-60',
                                                 cellTones[stateOf(player, session)],
@@ -721,7 +734,7 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                                         <span
                                             v-else
                                             :class="[
-                                                'inline-flex min-h-[44px] w-full min-w-[5.5rem] flex-col items-center justify-center rounded-md border border-dashed px-2 py-1 text-xs font-medium',
+                                                'inline-flex min-h-[44px] w-full min-w-[4.5rem] flex-col items-center justify-center rounded-md border border-dashed px-2 py-1 text-xs font-medium',
                                                 cellTones[stateOf(player, session)],
                                             ]"
                                         >
@@ -738,7 +751,7 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                                             <span class="sr-only">{{ cellAccessibleName(player, session, cellOf(player, session)) }}</span>
                                         </span>
                                     </td>
-                                    <td class="border-b border-default py-2 pl-2 pr-4 text-right align-middle sm:pr-0">
+                                    <td class="border-b border-default py-2 pl-2 pr-4 text-right align-middle max-sm:hidden sm:pr-0">
                                         <button
                                             type="button"
                                             :aria-disabled="processing ? 'true' : undefined"
