@@ -545,6 +545,8 @@ export interface RosterPage {
     sessions: RosterSession[];
     players: RosterPlayer[];
     can_add: boolean;
+    // Whether removing a player emails them
+    removal_notice: boolean;
 }
 
 /** What the viewer of a campaign page can do with its roster (JoinBoxDTO). */

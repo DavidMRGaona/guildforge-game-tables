@@ -234,6 +234,17 @@ function confirmRemove(): void {
     );
 }
 
+// What the server does on removal (CampaignRosterService::removeMember): out of the roster, out of
+// the sessions that have not started, and an email only while the roster_removed notice is on
+const removeMessage = computed(() =>
+    t(props.removal_notice ? 'campaigns.roster.players.removeMessage' : 'campaigns.roster.players.removeMessageNoEmail', {
+        name: removing.value?.name ?? '',
+    })
+);
+
+// A danger action that does not shout: BaseButton's size sm, outlined in the error tone
+const dangerOutlineClass = 'inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center gap-2 rounded-md border border-error/60 bg-transparent px-4 py-2 text-sm font-medium text-error transition-colors hover:bg-error/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-error focus-visible:ring-offset-2 focus-visible:ring-offset-surface aria-disabled:cursor-not-allowed aria-disabled:opacity-50';
+
 const inputClass = 'mt-1 block w-full rounded-lg border border-default bg-surface px-4 py-2.5 text-base-primary placeholder-base-muted hover:border-strong focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500';
 const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
 </script>
@@ -382,12 +393,13 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                                 {{ t('campaigns.roster.requests.noMessage') }}
                             </p>
                         </div>
-                        <div class="flex flex-shrink-0 gap-2">
+                        <!-- Below sm a full-width row of equal buttons -->
+                        <div class="grid flex-shrink-0 grid-cols-2 gap-2 sm:flex">
                             <BaseButton
                                 variant="primary"
                                 size="sm"
                                 :aria-disabled="processing ? 'true' : undefined"
-                                class="aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+                                class="w-full aria-disabled:cursor-not-allowed aria-disabled:opacity-50 sm:w-auto"
                                 @click="acceptRequest(request)"
                             >
                                 {{ t('campaigns.roster.requests.accept') }}
@@ -396,7 +408,7 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                                 variant="secondary"
                                 size="sm"
                                 :aria-disabled="processing ? 'true' : undefined"
-                                class="aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+                                class="w-full aria-disabled:cursor-not-allowed aria-disabled:opacity-50 sm:w-auto"
                                 @click="openReject(request)"
                             >
                                 {{ t('campaigns.roster.requests.reject') }}
@@ -431,7 +443,7 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                             {{ addForm.errors.email }}
                         </p>
                     </div>
-                    <BaseButton type="submit" variant="primary" :loading="addForm.processing">
+                    <BaseButton type="submit" variant="primary" class="w-full sm:w-auto" :loading="addForm.processing">
                         {{ t('campaigns.roster.add.submit') }}
                     </BaseButton>
                 </form>
@@ -442,6 +454,9 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                 <h2 id="roster-players-title" class="text-lg font-semibold text-base-primary">
                     {{ t('campaigns.roster.players.title', { count: players.length }) }}
                 </h2>
+                <p v-if="players.length > 0 && sessions.length > 0" class="mt-1 text-sm text-base-secondary">
+                    {{ t('campaigns.roster.footnote') }}
+                </p>
 
                 <p v-if="players.length === 0" class="mt-3 text-sm text-base-secondary">
                     {{ t('campaigns.roster.players.empty') }}
@@ -478,6 +493,9 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                                     class="block break-words pb-2 font-medium text-base-primary sm:table-cell sm:py-3 sm:pr-4 sm:align-top"
                                 >
                                     {{ player.name }}
+                                    <span v-if="player.joined_at" class="block text-xs font-normal text-base-muted">
+                                        {{ t('campaigns.roster.players.since', { date: player.joined_at }) }}
+                                    </span>
                                 </th>
                                 <td class="block pb-2 sm:table-cell sm:py-3 sm:pr-4 sm:align-top">
                                     <div class="flex flex-wrap gap-1.5">
@@ -514,23 +532,20 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                                     </div>
                                 </td>
                                 <td class="block sm:table-cell sm:py-3 sm:text-right sm:align-top">
-                                    <BaseButton
-                                        variant="ghost"
-                                        size="sm"
+                                    <button
+                                        type="button"
                                         :aria-disabled="processing ? 'true' : undefined"
-                                        class="aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+                                        :aria-label="t('campaigns.roster.players.removeNamed', { name: player.name })"
+                                        :class="[dangerOutlineClass, 'w-full sm:w-auto']"
                                         @click="askRemove(player)"
                                     >
                                         {{ t('campaigns.roster.players.remove') }}
-                                    </BaseButton>
+                                    </button>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
 
-                    <p v-if="sessions.length > 0" class="mt-4 text-sm text-base-muted">
-                        {{ t('campaigns.roster.footnote') }}
-                    </p>
                 </template>
             </section>
         </main>
@@ -582,7 +597,7 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
         <ConfirmDialog
             v-model="showRemoveDialog"
             :title="t('campaigns.roster.players.removeTitle')"
-            :message="t('campaigns.roster.players.removeMessage', { name: removing?.name ?? '' })"
+            :message="removeMessage"
             :confirm-label="t('campaigns.roster.players.remove')"
             :cancel-label="t('common.cancel')"
             confirm-variant="danger"

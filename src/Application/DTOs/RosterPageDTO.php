@@ -31,10 +31,12 @@ final readonly class RosterPageDTO
         public array $sessions,
         public array $players,
         public bool $canAdd,
+        // Whether removing a player emails them (the roster_removed notice is on)
+        public bool $removalNotice,
     ) {}
 
     /**
-     * @return array{campaign: RosterCampaign, roster_access_options: array<string, string>, max_players_limit: int, requests: list<RosterRequest>, sessions: list<RosterSession>, players: list<RosterPlayer>, can_add: bool}
+     * @return array{campaign: RosterCampaign, roster_access_options: array<string, string>, max_players_limit: int, requests: list<RosterRequest>, sessions: list<RosterSession>, players: list<RosterPlayer>, can_add: bool, removal_notice: bool}
      */
     public function toArray(): array
     {
@@ -46,6 +48,7 @@ final readonly class RosterPageDTO
             'sessions' => $this->sessions,
             'players' => $this->players,
             'can_add' => $this->canAdd,
+            'removal_notice' => $this->removalNotice,
         ];
     }
 }

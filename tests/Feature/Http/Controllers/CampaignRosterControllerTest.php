@@ -95,6 +95,7 @@ final class CampaignRosterControllerTest extends ModuleTestCase
                 ->where('roster_access_options.anyone', 'Cualquier cuenta')
                 ->has('max_players_limit')
                 ->where('can_add', true)
+                ->where('removal_notice', true)
                 ->has('requests', 1)
                 ->where('requests.0.id', $request->id)
                 ->where('requests.0.user_name', 'Richard Roe')
@@ -119,6 +120,16 @@ final class CampaignRosterControllerTest extends ModuleTestCase
                 ->where('players.1.sessions.1.state', 'going')
                 ->where('seo.title', 'Plantilla · La cripta olvidada')
                 ->where('seo.robots', 'noindex, nofollow'));
+    }
+
+    public function test_the_page_says_whether_removing_a_player_sends_them_an_email(): void
+    {
+        config()->set('modules.settings.game-tables.campaign_notifications.roster_removed', false);
+
+        // The remove dialog only promises the email the server will send
+        $this->actingAs($this->mary)
+            ->get('/campanas/mis-campanas/'.$this->campaign->id.'/plantilla')
+            ->assertInertia(fn (Assert $page) => $page->where('removal_notice', false));
     }
 
     public function test_the_page_marks_waiting_rows_and_sessions_without_a_row(): void

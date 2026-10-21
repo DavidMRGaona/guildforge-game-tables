@@ -91,6 +91,7 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
             ], $sessions),
             players: $players,
             canAdd: ! $campaign->isFinished() && $campaign->hasRoomFor($rosterCount),
+            removalNotice: $this->settings->isCampaignNotificationEnabled('roster_removed'),
         );
     }
 
