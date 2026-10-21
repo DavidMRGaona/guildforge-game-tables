@@ -186,10 +186,10 @@ const fieldTargets: Record<string, string> = {
     starts_at: 'time_slot',
 };
 
-// Helper to extract IDs from safety tools (which come as {value, label} objects)
-function extractSafetyToolIds(tools: unknown): string[] {
-    if (!Array.isArray(tools)) return [];
-    return tools.map((t) => (typeof t === 'string' ? t : t.value));
+// The stored safety tools and genres come as {value, label} objects: the request validates the values
+function extractOptionValues(options: unknown): string[] {
+    if (!Array.isArray(options)) return [];
+    return options.map((o) => (typeof o === 'string' ? o : o.value));
 }
 
 // Pre-populate form with existing table data (using snake_case keys from DTO::toArray())
@@ -211,9 +211,9 @@ const form = useForm({
     language: props.table.language,
     experience_level: (props.table.experience_level ?? '') as string | null,
     character_creation: (props.table.character_creation ?? '') as string | null,
-    genres: props.table.genres,
+    genres: extractOptionValues(props.table.genres),
     tone: (props.table.tone ?? '') as string | null,
-    safety_tools: extractSafetyToolIds(props.table.safety_tools),
+    safety_tools: extractOptionValues(props.table.safety_tools),
     content_warning_ids: props.table.content_warnings,
     custom_warnings: props.table.custom_warnings,
     minimum_age: props.table.minimum_age,
@@ -894,6 +894,26 @@ function cancel(): void {
                                     />
                                     <p v-if="form.errors.tone" class="mt-1 text-sm text-error">
                                         {{ form.errors.tone }}
+                                    </p>
+                                </div>
+
+                                <!-- Genres -->
+                                <div id="genres">
+                                    <label class="block text-sm font-medium text-base-secondary mb-3">
+                                        {{ t('gameTables.genres') }}
+                                    </label>
+                                    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                        <FormCheckboxWithTooltip
+                                            v-for="genre in objectToOptions(props.formData.genres)"
+                                            :id="`genre_${genre.value}`"
+                                            :key="genre.value"
+                                            v-model="form.genres"
+                                            :value="genre.value"
+                                            :label="genre.label"
+                                        />
+                                    </div>
+                                    <p v-if="form.errors.genres" class="mt-2 text-sm text-error">
+                                        {{ form.errors.genres }}
                                     </p>
                                 </div>
 
