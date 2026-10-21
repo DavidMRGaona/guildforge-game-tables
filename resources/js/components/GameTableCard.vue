@@ -74,13 +74,13 @@ const headerGradient = computed(() => {
     const format = props.table.tableFormat.value;
     switch (format) {
         case 'in_person':
-            return 'from-primary to-stone-700';
+            return 'from-primary to-black/70';
         case 'online':
-            return 'from-blue-600 to-stone-700';
+            return 'from-blue-600 to-black/70';
         case 'hybrid':
-            return 'from-purple-600 to-stone-700';
+            return 'from-purple-600 to-black/70';
         default:
-            return 'from-stone-600 to-stone-700';
+            return 'from-black/60 to-black/80';
     }
 });
 
@@ -102,7 +102,7 @@ const availabilityBadge = computed(() => {
     <Link
         :href="`/mesas/${table.slug}`"
         :aria-label="t('aria.viewGameTable', { title: table.title })"
-        class="group block overflow-hidden rounded-lg bg-surface shadow-sm transition-all duration-200 hover:scale-[1.02] hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:shadow-stone-900/50 dark:focus:ring-offset-page"
+        class="group block overflow-hidden rounded-lg bg-surface shadow-sm transition-all duration-200 hover:scale-[1.02] hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
     >
         <!-- Image with overlay badges (if image exists) -->
         <div v-if="imageUrl" class="relative">
@@ -116,7 +116,7 @@ const availabilityBadge = computed(() => {
 
             <!-- Date badge (top-left, overlaid on image) -->
             <div
-                class="absolute left-3 top-3 flex flex-col items-center rounded bg-white/95 px-2 py-1 shadow-sm dark:bg-stone-800/95"
+                class="absolute left-3 top-3 flex flex-col items-center rounded bg-surface/95 px-2 py-1 shadow-sm"
             >
                 <span class="text-lg font-bold leading-none text-primary">
                     {{ dateBadge.day }}
@@ -148,7 +148,7 @@ const availabilityBadge = computed(() => {
         >
             <!-- Date badge (top-left) -->
             <div
-                class="flex flex-col items-center rounded bg-white/95 px-2 py-1 shadow-sm dark:bg-stone-800/95"
+                class="flex flex-col items-center rounded bg-surface/95 px-2 py-1 shadow-sm"
             >
                 <span class="text-lg font-bold leading-none text-primary">
                     {{ dateBadge.day }}

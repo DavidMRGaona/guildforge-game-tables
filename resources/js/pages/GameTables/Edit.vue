@@ -464,7 +464,7 @@ function cancel(): void {
 
 <template>
     <DefaultLayout>
-        <div class="bg-surface shadow dark:shadow-neutral-900/50">
+        <div class="bg-surface shadow">
             <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                 <h1 class="text-3xl font-bold tracking-tight text-base-primary">
                     {{ t('gameTables.edit.title') }}
@@ -479,11 +479,11 @@ function cancel(): void {
             <!-- Event Context Banner -->
             <div
                 v-if="isEventContextMode && selectedEventName"
-                class="mb-6 rounded-lg border border-primary-200 bg-primary-50 p-4 dark:border-primary-800/40 dark:bg-primary-900/20"
+                class="mb-6 rounded-lg border border-primary-500/30 bg-primary-500/10 p-4"
             >
                 <div class="flex items-center gap-3">
                     <div class="flex-shrink-0">
-                        <svg class="h-5 w-5 text-primary-600 dark:text-primary-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg class="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                             <line x1="16" y1="2" x2="16" y2="6" />
                             <line x1="8" y1="2" x2="8" y2="6" />
@@ -491,10 +491,10 @@ function cancel(): void {
                         </svg>
                     </div>
                     <div>
-                        <p class="text-sm font-medium text-primary-700 dark:text-primary-300">
+                        <p class="text-sm font-medium text-primary">
                             {{ t('gameTables.edit.eventContext.associatedWith') }}
                         </p>
-                        <p class="text-base font-semibold text-primary-900 dark:text-primary-100">
+                        <p class="text-base font-semibold text-base-primary">
                             {{ selectedEventName }}
                         </p>
                     </div>
@@ -996,7 +996,7 @@ function cancel(): void {
                                         :class="[
                                             'mt-1 block w-full rounded-lg border px-4 py-2.5',
                                             isLocationDisabled
-                                                ? 'border-default bg-neutral-100 text-base-secondary cursor-not-allowed dark:bg-neutral-800'
+                                                ? 'border-default bg-base-secondary/10 text-base-secondary cursor-not-allowed'
                                                 : ['bg-surface text-base-primary placeholder-base-muted focus:outline-none focus:ring-2', fieldStateClass(!!form.errors.location)]
                                         ]"
                                     />

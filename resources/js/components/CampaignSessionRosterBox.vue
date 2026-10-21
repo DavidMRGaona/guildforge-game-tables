@@ -56,9 +56,9 @@ const rejoinOffered = computed(
     () => props.campaignSession.can_rejoin || props.campaignSession.rejoin_refusal !== null
 );
 
-const buttonClass = 'inline-flex min-h-[44px] items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 disabled:cursor-not-allowed disabled:opacity-50';
+const buttonClass = 'inline-flex min-h-[44px] items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface aria-disabled:cursor-not-allowed aria-disabled:opacity-50 disabled:cursor-not-allowed disabled:opacity-50';
 const primaryButtonClass = `${buttonClass} bg-primary text-white hover:bg-primary-700 focus:ring-primary-500`;
-const secondaryButtonClass = `${buttonClass} bg-muted text-base-primary hover:bg-neutral-200 focus:ring-neutral-400 dark:hover:bg-neutral-700`;
+const secondaryButtonClass = `${buttonClass} bg-base-secondary/10 text-base-primary hover:bg-base-secondary/20 focus:ring-primary-500`;
 
 // The action on the page, or the status line when the action cannot take the focus
 function focusAction(): boolean {
@@ -146,7 +146,7 @@ function rejoin(): void {
         <div
             v-if="error"
             role="alert"
-            class="mb-3 rounded-lg bg-red-50 p-3 text-red-800 dark:bg-red-900/20 dark:text-red-400"
+            class="mb-3 rounded-lg bg-error-light p-3 text-base-primary"
         >
             {{ error }}
         </div>

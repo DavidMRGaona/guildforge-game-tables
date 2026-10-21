@@ -50,7 +50,7 @@ function toggleDraftsSection(): void {
             <Link
                 v-else
                 :href="createUrl"
-                class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
             >
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -62,7 +62,7 @@ function toggleDraftsSection(): void {
         <!-- Published tables section -->
         <section>
             <h2 class="mb-6 flex items-center gap-2 text-lg font-semibold text-base-primary">
-                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-success-light text-xs font-bold text-green-700 dark:text-green-400">
+                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-success-light text-xs font-bold text-base-primary">
                     {{ publishedTables.length }}
                 </span>
                 {{ t('gameTables.profile.created.published') }}
@@ -78,7 +78,7 @@ function toggleDraftsSection(): void {
 
             <p
                 v-else
-                class="rounded-lg border border-dashed border-stone-300 bg-muted p-6 text-center text-sm text-base-muted dark:border-stone-600"
+                class="rounded-lg border border-dashed border-default bg-muted p-6 text-center text-sm text-base-muted"
             >
                 {{ t('gameTables.profile.created.noPublished') }}
             </p>
@@ -88,12 +88,12 @@ function toggleDraftsSection(): void {
         <section v-if="draftTables.length > 0" class="border-t border-default pt-8">
             <button
                 type="button"
-                class="mb-4 flex w-full items-center justify-between rounded-lg bg-muted px-4 py-3 text-left transition-colors hover:bg-stone-200 dark:hover:bg-stone-700"
+                class="mb-4 flex w-full items-center justify-between rounded-lg bg-base-secondary/10 px-4 py-3 text-left transition-colors hover:bg-base-secondary/20"
                 :aria-expanded="showDraftsSection"
                 @click="toggleDraftsSection"
             >
                 <span class="flex items-center gap-2 text-lg font-semibold text-base-primary">
-                    <span class="flex h-6 w-6 items-center justify-center rounded-full bg-yellow-100 text-xs font-bold text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+                    <span class="flex h-6 w-6 items-center justify-center rounded-full bg-warning-light text-xs font-bold text-base-primary">
                         {{ draftTables.length }}
                     </span>
                     {{ t('gameTables.profile.created.drafts') }}
@@ -139,7 +139,7 @@ function toggleDraftsSection(): void {
         <div v-if="canCreate && !gate.blocked.value" class="flex justify-center border-t border-default pt-8">
             <Link
                 :href="createUrl"
-                class="inline-flex items-center gap-2 rounded-lg border-2 border-primary px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary-light dark:hover:bg-primary-950/20"
+                class="inline-flex items-center gap-2 rounded-lg border-2 border-primary px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary-light"
             >
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -152,10 +152,10 @@ function toggleDraftsSection(): void {
     <!-- Empty state when no tables created -->
     <div
         v-else
-        class="rounded-lg border border-dashed border-stone-300 bg-muted p-12 text-center dark:border-stone-600"
+        class="rounded-lg border border-dashed border-default bg-muted p-12 text-center"
     >
         <svg
-            class="mx-auto h-12 w-12 text-stone-400"
+            class="mx-auto h-12 w-12 text-base-secondary"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

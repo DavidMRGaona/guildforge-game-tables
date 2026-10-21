@@ -124,7 +124,7 @@ const createTableUrl = computed(() => {
     <VerificationBlockedButton
         v-if="canCreateNow && gate.blocked.value"
         :reason="gate.reason('createTable')"
-        button-class="inline-flex items-center gap-2 rounded-lg border border-primary-200 bg-primary-50 px-4 py-2.5 text-sm font-medium text-primary-700 dark:border-primary-800/40 dark:bg-primary-900/20 dark:text-primary-400"
+        button-class="inline-flex items-center gap-2 rounded-lg border border-primary-500/30 bg-primary-500/10 px-4 py-2.5 text-sm font-medium text-primary"
     >
         <!-- Plus icon -->
         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -138,7 +138,7 @@ const createTableUrl = computed(() => {
     <Link
         v-else-if="canCreateNow"
         :href="createTableUrl"
-        class="inline-flex items-center gap-2 rounded-lg border border-primary-200 bg-primary-50 px-4 py-2.5 text-sm font-medium text-primary-700 transition-colors hover:bg-primary-100 hover:text-primary-800 dark:border-primary-800/40 dark:bg-primary-900/20 dark:text-primary-400 dark:hover:bg-primary-900/30 dark:hover:text-primary-300"
+        class="inline-flex items-center gap-2 rounded-lg border border-primary-500/30 bg-primary-500/10 px-4 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary-500/20 hover:underline"
     >
         <!-- Plus icon -->
         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -152,9 +152,9 @@ const createTableUrl = computed(() => {
     <Link
         v-else-if="showEarlyAccessForMembers"
         href="/iniciar-sesion"
-        class="inline-flex flex-col gap-1 rounded-lg border border-info-200 bg-info-50 px-4 py-2.5 text-sm transition-colors hover:bg-info-100 dark:border-info-800/40 dark:bg-info-900/20 dark:hover:bg-info-900/30"
+        class="inline-flex flex-col gap-1 rounded-lg border border-info/40 bg-info/10 px-4 py-2.5 text-sm transition-colors hover:bg-info/20"
     >
-        <span class="flex items-center gap-2 font-medium text-info-700 dark:text-info-400">
+        <span class="flex items-center gap-2 font-medium text-base-primary">
             <!-- Star icon -->
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -166,7 +166,7 @@ const createTableUrl = computed(() => {
                 <polyline points="12 6 12 12 16 14" />
             </svg>
         </span>
-        <span class="text-info-600 dark:text-info-300">
+        <span class="text-info">
             {{ t('gameTables.eventActions.generalOpeningAt', { date: formattedPublicDate }) }}
         </span>
     </Link>
@@ -174,7 +174,7 @@ const createTableUrl = computed(() => {
     <!-- State 3: General opening pending (not logged in, no early access) -->
     <div
         v-else-if="showGeneralOpeningPending"
-        class="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800/50 dark:text-neutral-400"
+        class="inline-flex items-center gap-2 rounded-lg border border-default bg-page px-4 py-2.5 text-sm text-base-secondary"
         role="status"
     >
         <!-- Clock icon -->
@@ -188,7 +188,7 @@ const createTableUrl = computed(() => {
     <!-- State 4: Logged in, waiting with early access privilege -->
     <div
         v-else-if="showWaitingAuthenticated && eligibility?.has_early_access"
-        class="inline-flex items-center gap-2 rounded-lg border border-info-200 bg-info-50 px-4 py-2.5 text-sm text-info-700 dark:border-info-800/40 dark:bg-info-900/20 dark:text-info-400"
+        class="inline-flex items-center gap-2 rounded-lg border border-info/40 bg-info-light px-4 py-2.5 text-sm text-base-primary"
         role="status"
     >
         <!-- Star icon -->
@@ -206,7 +206,7 @@ const createTableUrl = computed(() => {
     <!-- State 5: Logged in, waiting without early access -->
     <div
         v-else-if="showWaitingAuthenticated"
-        class="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800/50 dark:text-neutral-400"
+        class="inline-flex items-center gap-2 rounded-lg border border-default bg-page px-4 py-2.5 text-sm text-base-secondary"
         role="status"
     >
         <!-- Clock icon -->
@@ -221,7 +221,7 @@ const createTableUrl = computed(() => {
     <Link
         v-else-if="showLoginRequired"
         href="/iniciar-sesion"
-        class="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800/50 dark:text-neutral-400 dark:hover:bg-neutral-700/50 dark:hover:text-neutral-300"
+        class="inline-flex items-center gap-2 rounded-lg border border-default bg-base-secondary/10 px-4 py-2.5 text-sm font-medium text-base-secondary transition-colors hover:bg-base-secondary/20 hover:underline"
     >
         <!-- User icon -->
         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

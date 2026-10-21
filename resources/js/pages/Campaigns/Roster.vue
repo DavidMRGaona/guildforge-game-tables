@@ -173,12 +173,10 @@ const chipKeys: Record<RosterSessionState, string> = {
 };
 
 const chipColors: Record<RosterSessionState, string> = {
-    // dark:text-green-400, not -300: the core stylesheet ships text-green-800 and outranks
-    // the module's layer, so the dark variant must be one the core ships too
-    going: 'border-green-300 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-900/30 dark:text-green-400',
-    absent: 'border-red-300 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300',
-    waiting: 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
-    none: 'border-default bg-muted text-base-secondary',
+    going: 'border-success/40 bg-success-light text-base-primary',
+    absent: 'border-error/40 bg-error-light text-base-primary',
+    waiting: 'border-warning/40 bg-warning-light text-base-primary',
+    none: 'border-default bg-base-secondary/10 text-base-secondary',
 };
 
 function chipLabel(cell: RosterPlayerSession): string {
@@ -237,16 +235,16 @@ function confirmRemove(): void {
 }
 
 const inputClass = 'mt-1 block w-full rounded-lg border border-default bg-surface px-4 py-2.5 text-base-primary placeholder-base-muted hover:border-strong focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500';
-const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6 dark:shadow-neutral-900/50';
+const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
 </script>
 
 <template>
     <DefaultLayout>
-        <div class="bg-surface shadow dark:shadow-neutral-900/50">
+        <div class="bg-surface shadow">
             <div class="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
                 <Link
                     href="/campanas/mis-campanas"
-                    class="inline-flex items-center gap-1 text-sm text-base-secondary hover:text-base-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-page"
+                    class="inline-flex items-center gap-1 text-sm text-base-secondary hover:underline focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
                 >
                     <span aria-hidden="true">←</span>
                     {{ t('campaigns.roster.back') }}
@@ -272,7 +270,7 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6 dark:shadow-neutra
             <div
                 v-if="flashError"
                 role="alert"
-                class="rounded-lg bg-red-50 p-4 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400"
+                class="rounded-lg bg-error-light p-4 text-sm text-base-primary"
             >
                 {{ flashError }}
             </div>
@@ -493,7 +491,7 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6 dark:shadow-neutra
                                                 :aria-disabled="processing ? 'true' : undefined"
                                                 :class="[
                                                     'inline-flex min-h-[32px] items-center whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
-                                                    'hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-page',
+                                                    'hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface',
                                                     'aria-disabled:cursor-not-allowed aria-disabled:opacity-50',
                                                     chipColors[cell.state],
                                                 ]"
@@ -542,13 +540,13 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6 dark:shadow-neutra
             <dialog
                 ref="rejectDialog"
                 :aria-labelledby="rejectTitleId"
-                class="fixed inset-0 m-auto w-[calc(100%-2rem)] max-w-md rounded-lg border-0 bg-transparent p-0 backdrop:bg-neutral-900/60"
+                class="fixed inset-0 m-auto w-[calc(100%-2rem)] max-w-md rounded-lg border-0 bg-transparent p-0 backdrop:bg-black/60"
                 @click="onRejectBackdropClick"
                 @cancel.prevent="closeReject"
                 @close="closeReject"
             >
                 <form
-                    class="w-full rounded-lg bg-surface p-6 shadow-xl dark:shadow-neutral-900/50"
+                    class="w-full rounded-lg bg-surface p-6 shadow-xl"
                     @submit.prevent="confirmReject"
                 >
                     <h3 :id="rejectTitleId" class="text-lg font-semibold text-base-primary">

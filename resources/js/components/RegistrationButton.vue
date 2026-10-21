@@ -521,7 +521,7 @@ function cancelRoleSelect(): void {
         <div
             v-if="flashError && !error"
             role="alert"
-            class="mb-4 rounded-lg bg-red-50 p-4 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400"
+            class="mb-4 rounded-lg bg-error-light p-4 text-sm text-base-primary"
         >
             {{ flashError }}
         </div>
@@ -529,7 +529,7 @@ function cancelRoleSelect(): void {
         <!-- Error message -->
         <div
             v-if="error"
-            class="mb-4 rounded-lg bg-red-50 p-4 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400"
+            class="mb-4 rounded-lg bg-error-light p-4 text-sm text-base-primary"
         >
             {{ error }}
         </div>
@@ -572,13 +572,13 @@ function cancelRoleSelect(): void {
                                 role="dialog"
                                 aria-modal="true"
                                 :aria-labelledby="roleDialogTitleId"
-                                class="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl dark:bg-stone-800"
+                                class="w-full max-w-md rounded-xl bg-surface p-6 shadow-2xl"
                             >
                                 <h3
                                     :id="roleDialogTitleId"
                                     ref="roleDialogHeading"
                                     tabindex="-1"
-                                    class="mb-4 text-center text-lg font-semibold text-gray-900 focus:outline-none dark:text-stone-100"
+                                    class="mb-4 text-center text-lg font-semibold text-base-primary focus:outline-none"
                                 >
                                     {{ showNotesInput ? t('gameTables.registration.addNotes') : t('gameTables.registration.selectRole') }}
                                 </h3>
@@ -589,11 +589,11 @@ function cancelRoleSelect(): void {
                                     <div
                                         class="relative w-full rounded-lg px-4 py-3 text-left transition-colors"
                                         :class="{
-                                            'bg-primary-light hover:bg-primary-200 dark:bg-primary-900/20 dark:hover:bg-primary-900/30':
+                                            'bg-primary-500/10 hover:bg-primary-500/20':
                                                 playerEligible && !canJoinWaitingList,
-                                            'bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30':
+                                            'bg-info/10 hover:bg-info/20':
                                                 canJoinWaitingList,
-                                            'bg-gray-100 dark:bg-stone-700': !playerEligible,
+                                            'bg-base-secondary/10': !playerEligible,
                                         }"
                                     >
                                         <button
@@ -601,12 +601,12 @@ function cancelRoleSelect(): void {
                                             type="button"
                                             :disabled="!playerEligible"
                                             :aria-describedby="playerOptionHelpId"
-                                            class="w-full text-left font-medium text-gray-900 before:absolute before:inset-0 before:rounded-lg focus:outline-none focus-visible:before:ring-2 focus-visible:before:ring-primary-500 disabled:cursor-not-allowed dark:text-stone-100"
+                                            class="w-full text-left font-medium text-base-primary before:absolute before:inset-0 before:rounded-lg focus:outline-none focus-visible:before:ring-2 focus-visible:before:ring-primary-500 disabled:cursor-not-allowed"
                                             @click="selectRole('player')"
                                         >
                                             {{ canJoinWaitingList ? t('gameTables.registration.joinWaitingList') : t('gameTables.registration.registerAsPlayer') }}
                                         </button>
-                                        <p :id="playerOptionHelpId" class="mt-1 text-sm text-gray-500 dark:text-stone-400">
+                                        <p :id="playerOptionHelpId" class="mt-1 text-sm text-base-secondary">
                                             <template v-if="canJoinWaitingList">
                                                 {{ waitingListHelp }}
                                                 <template v-if="waitingListCount > 0">
@@ -626,9 +626,9 @@ function cancelRoleSelect(): void {
                                         v-if="tableData?.maxSpectators && tableData.maxSpectators > 0"
                                         class="relative w-full rounded-lg px-4 py-3 text-left transition-colors"
                                         :class="{
-                                            'bg-gray-50 hover:bg-gray-100 dark:bg-stone-700/50 dark:hover:bg-stone-700':
+                                            'bg-base-secondary/10 hover:bg-base-secondary/20':
                                                 spectatorEligible,
-                                            'bg-gray-100 dark:bg-stone-700': !spectatorEligible,
+                                            'bg-base-secondary/10': !spectatorEligible,
                                         }"
                                     >
                                         <button
@@ -636,12 +636,12 @@ function cancelRoleSelect(): void {
                                             type="button"
                                             :disabled="!spectatorEligible"
                                             :aria-describedby="spectatorOptionHelpId"
-                                            class="w-full text-left font-medium text-gray-900 before:absolute before:inset-0 before:rounded-lg focus:outline-none focus-visible:before:ring-2 focus-visible:before:ring-primary-500 disabled:cursor-not-allowed dark:text-stone-100"
+                                            class="w-full text-left font-medium text-base-primary before:absolute before:inset-0 before:rounded-lg focus:outline-none focus-visible:before:ring-2 focus-visible:before:ring-primary-500 disabled:cursor-not-allowed"
                                             @click="selectRole('spectator')"
                                         >
                                             {{ t('gameTables.registration.registerAsSpectator') }}
                                         </button>
-                                        <p :id="spectatorOptionHelpId" class="mt-1 text-sm text-gray-500 dark:text-stone-400">
+                                        <p :id="spectatorOptionHelpId" class="mt-1 text-sm text-base-secondary">
                                             <template v-if="spectatorEligible && spectatorSpotsAvailable !== null">
                                                 {{ t('gameTables.details.spotsAvailable', { spots: spectatorSpotsAvailable }) }}
                                             </template>
@@ -663,7 +663,7 @@ function cancelRoleSelect(): void {
                                     <div>
                                         <label
                                             for="registration-notes"
-                                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-stone-300"
+                                            class="mb-2 block text-sm font-medium text-base-secondary"
                                         >
                                             {{ t('gameTables.registration.notesLabel') }}
                                         </label>
@@ -672,7 +672,7 @@ function cancelRoleSelect(): void {
                                             ref="notesInput"
                                             v-model="notes"
                                             rows="3"
-                                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 dark:focus:border-primary-400"
+                                            class="w-full rounded-lg border border-strong bg-surface px-3 py-2 text-sm text-base-primary focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                                             :placeholder="t('gameTables.registration.notesPlaceholder')"
                                         ></textarea>
                                     </div>
@@ -680,7 +680,7 @@ function cancelRoleSelect(): void {
                                     <div class="flex gap-3">
                                         <button
                                             type="button"
-                                            class="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
+                                            class="flex-1 rounded-lg border border-default px-4 py-2.5 text-sm font-medium text-base-secondary transition-colors hover:bg-base-secondary/10"
                                             @click="showNotesInput = false"
                                         >
                                             {{ $t('common.back') }}
@@ -721,7 +721,7 @@ function cancelRoleSelect(): void {
                                 <button
                                     v-if="!showNotesInput"
                                     type="button"
-                                    class="mt-4 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
+                                    class="mt-4 w-full rounded-lg border border-default px-4 py-2.5 text-sm font-medium text-base-secondary transition-colors hover:bg-base-secondary/10"
                                     @click="cancelRoleSelect"
                                 >
                                     {{ $t('common.cancel') }}
@@ -739,16 +739,16 @@ function cancelRoleSelect(): void {
                 type="button"
                 :disabled="buttonDisabled"
                 :aria-describedby="triggerDescribedBy"
-                class="w-full rounded-lg px-6 py-3 text-center font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2"
+                class="w-full rounded-lg px-6 py-3 text-center font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface"
                 :class="{
                     'bg-primary text-white hover:bg-primary-700 focus:ring-primary-500':
                         (isAuthenticated && canRegister && !canJoinWaitingList && !verificationBlocked) || (canRegisterAsGuest && !guestJoinsWaitingList),
                     'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500':
                         (isAuthenticated && canJoinWaitingList && !verificationBlocked) || (canRegisterAsGuest && guestJoinsWaitingList),
                     'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500': canCancel && !verificationBlocked,
-                    'bg-stone-600 text-white hover:bg-stone-700 focus:ring-stone-500 dark:bg-stone-500 dark:hover:bg-stone-400':
+                    'bg-base-secondary text-base-inverted hover:bg-base-secondary/90 focus:ring-base-secondary':
                         !isAuthenticated && !canRegisterAsGuest,
-                    'cursor-not-allowed bg-gray-300 text-gray-500 dark:bg-stone-700 dark:text-stone-500':
+                    'cursor-not-allowed bg-base-secondary/10 text-base-secondary':
                         isAuthenticated && buttonDisabled && (!canCancel || verificationBlocked),
                 }"
                 @click="handleClick"
@@ -797,7 +797,7 @@ function cancelRoleSelect(): void {
             <!-- Capacity info -->
             <div
                 v-if="tableData && !isRegistrationClosed"
-                class="mt-2 text-center text-sm text-gray-500 dark:text-stone-400"
+                class="mt-2 text-center text-sm text-base-secondary"
             >
                 <template v-if="!isTableFull">
                     {{ t('gameTables.details.spotsAvailable', { spots: spotsAvailable }) }}
@@ -814,7 +814,7 @@ function cancelRoleSelect(): void {
             <p
                 v-if="showsWaitingListHelp"
                 :id="waitingListHelpId"
-                class="mt-2 text-center text-sm text-gray-500 dark:text-stone-400"
+                class="mt-2 text-center text-sm text-base-secondary"
             >
                 {{ waitingListHelp }}
             </p>
@@ -830,7 +830,7 @@ function cancelRoleSelect(): void {
             </p>
 
             <!-- An open campaign: the session is one way in, the roster another -->
-            <p v-if="invitesToCampaign && campaignUrl" class="mt-2 text-center text-sm text-gray-500 dark:text-stone-400">
+            <p v-if="invitesToCampaign && campaignUrl" class="mt-2 text-center text-sm text-base-secondary">
                 {{ t('gameTables.campaignSession.wholeCampaign') }}
                 <Link
                     :href="campaignUrl"
@@ -863,12 +863,12 @@ function cancelRoleSelect(): void {
                         >
                             <div
                                 v-if="showCancelConfirm"
-                                class="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl dark:bg-stone-800"
+                                class="w-full max-w-md rounded-xl bg-surface p-6 shadow-2xl"
                             >
                                 <!-- Icon -->
-                                <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+                                <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-error-light">
                                     <svg
-                                        class="h-6 w-6 text-red-600 dark:text-red-400"
+                                        class="h-6 w-6 text-error"
                                         fill="none"
                                         stroke="currentColor"
                                         viewBox="0 0 24 24"
@@ -883,12 +883,12 @@ function cancelRoleSelect(): void {
                                 </div>
 
                                 <!-- Title -->
-                                <h3 class="mb-2 text-center text-lg font-semibold text-gray-900 dark:text-stone-100">
+                                <h3 class="mb-2 text-center text-lg font-semibold text-base-primary">
                                     {{ t('gameTables.registration.cancelRegistration') }}
                                 </h3>
 
                                 <!-- Message -->
-                                <p class="mb-6 text-center text-sm text-gray-600 dark:text-stone-400">
+                                <p class="mb-6 text-center text-sm text-base-secondary">
                                     {{ t('gameTables.registration.confirmCancel') }}
                                 </p>
 
@@ -896,7 +896,7 @@ function cancelRoleSelect(): void {
                                 <div class="flex gap-3">
                                     <button
                                         type="button"
-                                        class="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
+                                        class="flex-1 rounded-lg border border-default px-4 py-2.5 text-sm font-medium text-base-secondary transition-colors hover:bg-base-secondary/10 focus:outline-none focus:ring-2 focus:ring-primary-500"
                                         @click="showCancelConfirm = false"
                                     >
                                         {{ $t('common.cancel') }}

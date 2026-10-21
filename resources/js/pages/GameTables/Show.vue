@@ -198,7 +198,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
             <div class="mb-6">
                 <Link
                     href="/mesas"
-                    class="inline-flex items-center text-sm text-base-muted hover:text-base-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-page"
+                    class="inline-flex items-center text-sm text-base-secondary hover:underline focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
                 >
                     <svg
                         class="mr-1 h-4 w-4"
@@ -219,7 +219,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
             </div>
 
             <article
-                class="overflow-hidden rounded-lg bg-surface shadow dark:shadow-neutral-900/50"
+                class="overflow-hidden rounded-lg bg-surface shadow"
             >
                 <!-- Game Table Image -->
                 <div v-if="imageUrl" class="relative">
@@ -718,7 +718,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                             </h3>
                             <Link
                                 :href="`/campanas/${table.campaignId}`"
-                                class="text-primary hover:text-primary-700"
+                                class="text-primary hover:underline"
                             >
                                 {{ table.campaignTitle }}
                             </Link>

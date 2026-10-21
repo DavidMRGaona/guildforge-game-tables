@@ -93,10 +93,10 @@ function loadMore(): void {
         <!-- No results message -->
         <div
             v-if="hasActiveFilters && filteredUpcoming.length === 0 && filteredPast.length === 0"
-            class="rounded-lg border border-dashed border-stone-300 bg-muted p-6 text-center dark:border-stone-600"
+            class="rounded-lg border border-dashed border-default bg-muted p-6 text-center"
         >
             <svg
-                class="mx-auto h-10 w-10 text-stone-400"
+                class="mx-auto h-10 w-10 text-base-secondary"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -118,7 +118,7 @@ function loadMore(): void {
             <!-- Upcoming section -->
             <section>
                 <h2 class="mb-6 flex items-center gap-2 text-lg font-semibold text-base-primary">
-                    <span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary-700 dark:text-primary-400">
+                    <span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary">
                         {{ filteredUpcoming.length }}
                     </span>
                     {{ t('gameTables.profile.upcoming') }}
@@ -134,7 +134,7 @@ function loadMore(): void {
 
                 <p
                     v-else
-                    class="rounded-lg border border-dashed border-stone-300 bg-muted p-6 text-center text-sm text-base-muted dark:border-stone-600"
+                    class="rounded-lg border border-dashed border-default bg-muted p-6 text-center text-sm text-base-muted"
                 >
                     {{ hasActiveFilters ? t('gameTables.profile.filters.noUpcomingMatch') : t('gameTables.profile.noUpcoming') }}
                 </p>
@@ -144,12 +144,12 @@ function loadMore(): void {
             <section v-if="filteredPast.length > 0" class="border-t border-default pt-8">
                 <button
                     type="button"
-                    class="mb-4 flex w-full items-center justify-between rounded-lg bg-muted px-4 py-3 text-left transition-colors hover:bg-stone-200 dark:hover:bg-stone-700"
+                    class="mb-4 flex w-full items-center justify-between rounded-lg bg-base-secondary/10 px-4 py-3 text-left transition-colors hover:bg-base-secondary/20"
                     :aria-expanded="showPastSection"
                     @click="togglePastSection"
                 >
                     <span class="flex items-center gap-2 text-lg font-semibold text-base-primary">
-                        <span class="flex h-6 w-6 items-center justify-center rounded-full bg-stone-200 text-xs font-bold text-stone-600 dark:bg-stone-700 dark:text-stone-400">
+                        <span class="flex h-6 w-6 items-center justify-center rounded-full bg-base-secondary/10 text-xs font-bold text-base-secondary">
                             {{ filteredPast.length }}
                         </span>
                         {{ t('gameTables.profile.past') }}
@@ -176,7 +176,7 @@ function loadMore(): void {
                     <button
                         v-if="hasMorePast"
                         type="button"
-                        class="flex w-full items-center justify-center gap-2 rounded-lg border border-stone-300 bg-surface py-3 text-sm font-medium text-base-secondary transition-colors hover:bg-stone-50 dark:border-stone-600 dark:hover:bg-stone-700"
+                        class="flex w-full items-center justify-center gap-2 rounded-lg border border-default bg-transparent py-3 text-sm font-medium text-base-secondary transition-colors hover:bg-base-secondary/10"
                         @click="loadMore"
                     >
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -192,10 +192,10 @@ function loadMore(): void {
     <!-- Empty state when no tables at all -->
     <div
         v-else
-        class="rounded-lg border border-dashed border-stone-300 bg-muted p-12 text-center dark:border-stone-600"
+        class="rounded-lg border border-dashed border-default bg-muted p-12 text-center"
     >
         <svg
-            class="mx-auto h-12 w-12 text-stone-400"
+            class="mx-auto h-12 w-12 text-base-secondary"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

@@ -19,7 +19,7 @@ const { t } = useI18n();
     <Link
         v-if="gameTableCount && gameTableCount > 0"
         :href="`/mesas?event=${props.event.slug}`"
-        class="inline-flex items-center gap-2 rounded-lg border border-primary-200 bg-primary-light px-4 py-2.5 text-sm font-medium text-primary-700 transition-colors hover:bg-primary-200 hover:text-primary-800 dark:border-primary-800/40 dark:bg-primary-900/20 dark:text-primary-400 dark:hover:bg-primary-900/30 dark:hover:text-primary-300"
+        class="inline-flex items-center gap-2 rounded-lg border border-primary-500/30 bg-primary-500/10 px-4 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary-500/20 hover:underline"
     >
         <!-- Dice icon (SVG) -->
         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
