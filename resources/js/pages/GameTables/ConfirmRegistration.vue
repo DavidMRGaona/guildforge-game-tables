@@ -54,9 +54,9 @@ const formattedDate = computed(() => {
 const isLoading = ref(false);
 
 const resultClasses: Record<ConfirmationResult['tone'], string> = {
-    success: 'bg-success-light text-success',
-    info: 'bg-info-light text-info',
-    error: 'bg-error-light text-error',
+    success: 'bg-success-light text-base-primary',
+    info: 'bg-info-light text-base-primary',
+    error: 'bg-error-light text-base-primary',
 };
 
 // The table, or the list of tables when the link no longer leads to one

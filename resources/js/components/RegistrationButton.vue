@@ -514,7 +514,7 @@ function cancelRoleSelect(): void {
         <div
             v-if="flashSuccess"
             role="status"
-            class="mb-4 rounded-lg bg-success-light p-4 text-sm text-success"
+            class="mb-4 rounded-lg bg-success-light p-4 text-sm text-base-primary"
         >
             {{ flashSuccess }}
         </div>

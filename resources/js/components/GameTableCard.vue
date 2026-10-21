@@ -88,12 +88,12 @@ const availabilityBadge = computed(() => {
     if (props.table.isFull) {
         return {
             text: t('gameTables.complete'),
-            classes: 'bg-error text-white',
+            classes: 'bg-error-light text-base-primary',
         };
     }
     return {
         text: t('gameTables.spots', { count: props.table.spotsAvailable }),
-        classes: 'bg-success text-white',
+        classes: 'bg-success-light text-base-primary',
     };
 });
 </script>

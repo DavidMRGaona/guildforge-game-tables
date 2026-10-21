@@ -156,7 +156,7 @@ function rejoin(): void {
             <p ref="statusLine" tabindex="-1" class="focus:outline-none">
                 <span
                     v-if="state === 'enrolled'"
-                    class="inline-flex rounded-full bg-success-light px-2.5 py-0.5 text-sm font-medium text-success"
+                    class="inline-flex rounded-full bg-success-light px-2.5 py-0.5 text-sm font-medium text-base-primary"
                 >
                     {{ t('gameTables.campaignSession.enrolled') }}
                 </span>

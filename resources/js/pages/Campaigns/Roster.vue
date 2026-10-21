@@ -263,7 +263,7 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
             <div
                 v-if="flashSuccess"
                 role="status"
-                class="rounded-lg bg-success-light p-4 text-sm text-success"
+                class="rounded-lg bg-success-light p-4 text-sm text-base-primary"
             >
                 {{ flashSuccess }}
             </div>

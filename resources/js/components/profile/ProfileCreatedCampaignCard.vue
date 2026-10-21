@@ -30,10 +30,10 @@ const editUrl = computed(() => `/campanas/mis-campanas/${props.campaign.id}/edit
 const statusColorClasses = computed(() => {
     const colorMap: Record<string, string> = {
         gray: 'bg-muted text-base-secondary',
-        success: 'bg-success-light text-success',
-        warning: 'bg-warning-light text-warning',
+        success: 'bg-success-light text-base-primary',
+        warning: 'bg-warning-light text-base-primary',
         primary: 'bg-primary-light text-primary',
-        danger: 'bg-error-light text-error',
+        danger: 'bg-error-light text-base-primary',
     };
     return colorMap[props.campaign.statusColor] ?? colorMap.gray;
 });

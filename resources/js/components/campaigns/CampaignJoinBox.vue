@@ -110,7 +110,7 @@ const closedMessage = computed<string | null>(() => {
         <div
             v-if="flashSuccess"
             role="status"
-            class="mb-3 rounded-lg bg-success-light p-3 text-success"
+            class="mb-3 rounded-lg bg-success-light p-3 text-base-primary"
         >
             {{ flashSuccess }}
         </div>
