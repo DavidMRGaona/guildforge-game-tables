@@ -377,8 +377,10 @@ final class EmailVerificationGateTest extends ModuleTestCase
         /** @var array{requires: array{core: string}} $manifest */
         $manifest = json_decode((string) file_get_contents(dirname(__DIR__, 4).'/module.json'), true, flags: JSON_THROW_ON_ERROR);
 
-        // auth.user.mustVerifyEmail and useVerificationGate() (bundled into the module) come with core 3.10
-        $this->assertSame('^3.10', $manifest['requires']['core']);
+        // auth.user.mustVerifyEmail and useVerificationGate() (bundled into the module) come with core 3.10:
+        // the module may require a later core, never an earlier one
+        $this->assertMatchesRegularExpression('/^\^\d+\.\d+$/', $manifest['requires']['core']);
+        $this->assertTrue(version_compare(ltrim($manifest['requires']['core'], '^'), '3.10', '>='));
     }
 
     private function requireVerification(): void
