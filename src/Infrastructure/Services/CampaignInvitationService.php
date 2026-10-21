@@ -102,12 +102,12 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
         $this->announce(...$sent);
     }
 
-    public function resend(string $invitationId, string $actorUserId): void
+    public function resend(string $campaignId, string $invitationId, string $actorUserId): void
     {
-        $campaignId = $this->liveInvitation($invitationId)->campaignId->value;
+        $this->liveInvitation($campaignId, $invitationId);
 
         $sent = $this->lock->forCampaign($campaignId, function () use ($invitationId, $campaignId): array {
-            $invitation = $this->liveInvitation($invitationId);
+            $invitation = $this->liveInvitation($campaignId, $invitationId);
             $campaign = $this->campaigns->findOrFail(new CampaignId($campaignId));
 
             $this->guard->ensureCanChange($campaign);
@@ -127,12 +127,15 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
         $this->announce(...$sent);
     }
 
-    public function cancel(string $invitationId): void
+    public function cancel(string $campaignId, string $invitationId): void
     {
-        $invitation = $this->invitations->find($this->idOf($invitationId))
-            ?? throw RosterActionRefusedException::because('invitation_not_found');
+        $this->lock->forCampaign($campaignId, function () use ($campaignId, $invitationId): void {
+            $invitation = $this->invitations->find($this->idOf($invitationId));
 
-        $this->lock->forCampaign($invitation->campaignId->value, function () use ($invitation): void {
+            if ($invitation === null || $invitation->campaignId->value !== $campaignId) {
+                throw RosterActionRefusedException::because('invitation_not_found');
+            }
+
             $this->invitations->delete($invitation->id);
         });
     }
@@ -197,13 +200,13 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
     }
 
     /**
-     * @throws RosterActionRefusedException when it does not exist or has expired
+     * @throws RosterActionRefusedException when it does not exist has expired or belongs to another campaign
      */
-    private function liveInvitation(string $invitationId): CampaignInvitation
+    private function liveInvitation(string $campaignId, string $invitationId): CampaignInvitation
     {
         $invitation = $this->invitations->find($this->idOf($invitationId));
 
-        if ($invitation === null || $invitation->isExpired(CarbonImmutable::now()->toDateTimeImmutable())) {
+        if ($invitation === null || $invitation->campaignId->value !== $campaignId || $invitation->isExpired(CarbonImmutable::now()->toDateTimeImmutable())) {
             throw RosterActionRefusedException::because('invitation_not_found');
         }
 

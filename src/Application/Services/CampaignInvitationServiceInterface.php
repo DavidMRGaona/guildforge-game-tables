@@ -23,12 +23,12 @@ interface CampaignInvitationServiceInterface
      * @throws CampaignNotFoundException
      * @throws RosterActionRefusedException
      */
-    public function resend(string $invitationId, string $actorUserId): void;
+    public function resend(string $campaignId, string $invitationId, string $actorUserId): void;
 
     /**
-     * @throws RosterActionRefusedException when the invitation does not exist
+     * @throws RosterActionRefusedException when the invitation does not exist or belongs to another campaign
      */
-    public function cancel(string $invitationId): void;
+    public function cancel(string $campaignId, string $invitationId): void;
 
     /**
      * The campaign's pending invitations that have not expired, oldest first.

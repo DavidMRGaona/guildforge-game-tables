@@ -211,7 +211,7 @@ final class CampaignInvitationServiceTest extends ModuleTestCase
     {
         foreach ([0, 1, 2] as $_) {
             $this->invite('ana@example.com');
-            $this->service()->cancel($this->pending('ana@example.com')->id->value);
+            $this->service()->cancel($this->campaign->id, $this->pending('ana@example.com')->id->value);
             $this->travel(25)->hours();
         }
 
@@ -225,7 +225,7 @@ final class CampaignInvitationServiceTest extends ModuleTestCase
         $this->travel(23)->hours();
 
         $this->assertRefused('invitation_too_soon', fn () => $this->invite('ana@example.com'));
-        $this->assertRefused('invitation_too_soon', fn () => $this->service()->resend($this->pending('ana@example.com')->id->value, $this->mary->id));
+        $this->assertRefused('invitation_too_soon', fn () => $this->service()->resend($this->campaign->id, $this->pending('ana@example.com')->id->value, $this->mary->id));
         Event::assertDispatchedTimes(CampaignInvitationSent::class, 1);
     }
 
@@ -249,7 +249,7 @@ final class CampaignInvitationServiceTest extends ModuleTestCase
         $first = $this->pending('ana@example.com');
         $this->travel(25)->hours();
 
-        $this->service()->resend($first->id->value, $this->mary->id);
+        $this->service()->resend($this->campaign->id, $first->id->value, $this->mary->id);
 
         $second = $this->pending('ana@example.com');
         $this->assertSame($first->id->value, $second->id->value);
@@ -265,13 +265,13 @@ final class CampaignInvitationServiceTest extends ModuleTestCase
 
     public function test_resending_an_unknown_or_expired_invitation_refuses(): void
     {
-        $this->assertRefused('invitation_not_found', fn () => $this->service()->resend((string) Str::uuid(), $this->mary->id));
+        $this->assertRefused('invitation_not_found', fn () => $this->service()->resend($this->campaign->id, (string) Str::uuid(), $this->mary->id));
 
         $this->invite('ana@example.com');
         $id = $this->pending('ana@example.com')->id->value;
         $this->travel(15)->days();
 
-        $this->assertRefused('invitation_not_found', fn () => $this->service()->resend($id, $this->mary->id));
+        $this->assertRefused('invitation_not_found', fn () => $this->service()->resend($this->campaign->id, $id, $this->mary->id));
         Event::assertDispatchedTimes(CampaignInvitationSent::class, 1);
     }
 
@@ -289,14 +289,58 @@ final class CampaignInvitationServiceTest extends ModuleTestCase
         $this->assertTrue($new->expiresAt > CarbonImmutable::now()->toDateTimeImmutable());
     }
 
+    private function otherCampaignInvitation(): CampaignInvitation
+    {
+        $other = CampaignModel::create([
+            'id' => (string) Str::uuid(),
+            'game_system_id' => $this->campaign->game_system_id,
+            'created_by' => $this->mary->id,
+            'title' => 'Otra campaña',
+            'slug' => 'otra-campana',
+            'status' => 'recruiting',
+            'frontend_creation_status' => 'approved',
+            'accepts_new_players' => true,
+            'max_players' => 3,
+            'roster_access' => 'anyone',
+        ]);
+        $this->service()->invite($other->id, 'ana@example.com', $this->mary->id);
+        Event::assertDispatchedTimes(CampaignInvitationSent::class, 1);
+
+        $invitation = $this->invitations()->findPending(new CampaignId($other->id), 'ana@example.com');
+        $this->assertNotNull($invitation);
+
+        return $invitation;
+    }
+
+    public function test_resend_of_another_campaigns_invitation_answers_not_found(): void
+    {
+        $foreign = $this->otherCampaignInvitation();
+        $this->travel(25)->hours();
+
+        $this->assertRefused('invitation_not_found', fn () => $this->service()->resend($this->campaign->id, $foreign->id->value, $this->mary->id));
+
+        $this->assertSame(1, $this->invitations()->find($foreign->id)?->sendCount);
+        Event::assertDispatchedTimes(CampaignInvitationSent::class, 1);
+    }
+
+    public function test_cancel_of_another_campaigns_invitation_answers_not_found(): void
+    {
+        $foreign = $this->otherCampaignInvitation();
+
+        $this->assertRefused('invitation_not_found', fn () => $this->service()->cancel($this->campaign->id, $foreign->id->value));
+
+        $this->assertNotNull($this->invitations()->find($foreign->id));
+        Event::assertDispatchedTimes(CampaignInvitationSent::class, 1);
+    }
+
     public function test_cancel_deletes(): void
     {
         $this->invite('ana@example.com');
 
-        $this->service()->cancel($this->pending('ana@example.com')->id->value);
+        $this->service()->cancel($this->campaign->id, $this->pending('ana@example.com')->id->value);
 
         $this->assertNull($this->invitations()->findPending($this->campaignId, 'ana@example.com'));
-        $this->assertRefused('invitation_not_found', fn () => $this->service()->cancel((string) Str::uuid()));
+        $this->assertRefused('invitation_not_found', fn () => $this->service()->cancel($this->campaign->id, (string) Str::uuid()));
     }
 
     public function test_pending_for_lists_with_can_resend(): void
@@ -321,9 +365,9 @@ final class CampaignInvitationServiceTest extends ModuleTestCase
         $this->assertArrayHasKey('can_resend', $list[0]->toArray());
 
         // Third send reached: no more resends even after 24 h
-        $this->service()->resend($this->pending('ana@example.com')->id->value, $this->mary->id);
+        $this->service()->resend($this->campaign->id, $this->pending('ana@example.com')->id->value, $this->mary->id);
         $this->travel(25)->hours();
-        $this->service()->resend($this->pending('ana@example.com')->id->value, $this->mary->id);
+        $this->service()->resend($this->campaign->id, $this->pending('ana@example.com')->id->value, $this->mary->id);
         $this->travel(25)->hours();
         $later = $this->service()->pendingFor($this->campaign->id, CarbonImmutable::now()->toDateTimeImmutable());
         $this->assertFalse($later[0]->canResend);
