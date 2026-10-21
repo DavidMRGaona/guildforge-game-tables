@@ -6,13 +6,17 @@ namespace Modules\GameTables\Infrastructure\Services;
 
 use Modules\GameTables\Application\DTOs\CampaignResponseDTO;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
+use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
+use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
+use Modules\GameTables\Domain\ValueObjects\CampaignId;
 
 final readonly class ProfileCreatedCampaignsDataProvider
 {
     public function __construct(
         private CampaignRepositoryInterface $campaignRepository,
         private CreationEligibilityServiceInterface $eligibilityService,
+        private CampaignRosterRepositoryInterface $roster,
     ) {}
 
     /**
@@ -40,11 +44,15 @@ final readonly class ProfileCreatedCampaignsDataProvider
             ];
         }
 
+        $players = $this->roster->countsFor(
+            array_values(array_map(static fn (Campaign $campaign): CampaignId => $campaign->id, $campaigns)),
+        );
+
         $published = [];
         $drafts = [];
 
         foreach ($campaigns as $campaign) {
-            $dto = CampaignResponseDTO::fromEntity($campaign);
+            $dto = CampaignResponseDTO::fromEntity($campaign, currentPlayers: $players[$campaign->id->value] ?? 0);
             $data = $this->formatCampaignForProfile($dto);
 
             if ($campaign->isPublished) {
