@@ -116,6 +116,24 @@ final class ProfileCampaignInvitationsTest extends ModuleTestCase
         $this->assertSame('profileCampaignInvitationsTotal', $slot->profileTab['badgeKey']);
     }
 
+    public function test_the_tab_sits_with_the_game_tables_tabs(): void
+    {
+        $provider = app()->getProvider(GameTablesServiceProvider::class);
+        $this->assertInstanceOf(GameTablesServiceProvider::class, $provider);
+
+        // The profile lists every module's tabs by order alone; parentId only indents them
+        $orders = collect($provider->registerSlots())
+            ->filter(fn (SlotRegistrationDTO $s): bool => $s->slot === 'profile-sections')
+            ->mapWithKeys(fn (SlotRegistrationDTO $s): array => [(string) ($s->profileTab['tabId'] ?? '') => $s->order]);
+
+        $this->assertSame(
+            ['gametables', 'gametables-created', 'gametables-campaigns', 'gametables-invitations'],
+            $orders->sort()->keys()->all(),
+        );
+        // Other modules' profile tabs (tournaments, venue bookings) start at 20
+        $this->assertLessThan(20, $orders->max());
+    }
+
     public function test_accept_and_reject_from_the_profile(): void
     {
         $system = GameSystemModel::query()->firstOrFail();

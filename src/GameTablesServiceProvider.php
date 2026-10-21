@@ -1234,7 +1234,8 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                 slot: 'profile-sections',
                 component: 'components/profile/ProfileCampaignInvitationsSection.vue',
                 module: $this->moduleName(),
-                order: 25,
+                // Tabs are listed by order across modules: stay before the others' tabs (20)
+                order: 17,
                 props: [],
                 // badgeKey and visibleKey are read from the slot's props, so they are listed too
                 dataKeys: ['profileCampaignInvitations', 'profileCampaignInvitationsTotal', 'profileCampaignInvitationsVisible'],
