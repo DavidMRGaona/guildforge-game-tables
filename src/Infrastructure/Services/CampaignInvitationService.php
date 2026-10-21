@@ -159,6 +159,21 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
         return $views;
     }
 
+    public function pendingForEmail(string $email, DateTimeImmutable $now): array
+    {
+        $views = [];
+        foreach ($this->invitations->pendingForEmail($this->normalise($email), $now) as $invitation) {
+            $campaign = $this->campaigns->find($invitation->campaignId);
+            if ($campaign === null) {
+                continue;
+            }
+
+            $views[] = $this->viewOf($invitation, $campaign->title, $campaign->slug, false);
+        }
+
+        return $views;
+    }
+
     public function viewByToken(string $token, DateTimeImmutable $now): ?CampaignInvitationViewDTO
     {
         $invitation = $this->liveByToken($token, $now);

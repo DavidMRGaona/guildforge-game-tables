@@ -260,6 +260,16 @@ export default {
                     coGm: 'Co-DJ',
                 },
             },
+            invitations: {
+                tabLabel: 'Invitaciones',
+                title: 'Invitaciones a campañas',
+                invitedBy: 'Te invita {inviter}',
+                expires: 'Caduca el {date}',
+                accept: 'Aceptar',
+                reject: 'Rechazar',
+                rejectTitle: 'Rechazar la invitación',
+                rejectMessage: 'Se borrará tu email de esta invitación y no recibirás más correos de ella.',
+            },
             created: {
                 tabLabel: 'Mis mesas',
                 published: 'Mesas publicadas',

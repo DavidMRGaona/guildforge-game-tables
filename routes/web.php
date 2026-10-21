@@ -109,6 +109,16 @@ Route::prefix('campanas')->name('campaigns.')->group(function (): void {
             ->name('leave');
     });
 
+    // The profile tab's actions: the account's own invitations, picked by id
+    Route::prefix('invitaciones/perfil/{invitationId}')
+        ->whereUuid('invitationId')
+        ->middleware(['auth', 'email.verified-if-required'])
+        ->name('invitation.')
+        ->group(function (): void {
+            Route::post('/aceptar', [CampaignInvitationController::class, 'profileAccept'])->name('profile-accept');
+            Route::post('/rechazar', [CampaignInvitationController::class, 'profileReject'])->name('profile-reject');
+        });
+
     // The link of the invitation email: the page and rejecting need only the token (no account),
     // accepting an account with the invited email. Before /{slug}, which would swallow the path
     Route::prefix('invitaciones/{token}')

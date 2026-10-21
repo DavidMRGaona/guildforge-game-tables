@@ -70,4 +70,12 @@ interface CampaignInvitationServiceInterface
      * @throws RosterActionRefusedException email_not_verified, invitation_not_found
      */
     public function rejectById(string $invitationId, string $userId): void;
+
+    /**
+     * The invitations addressed to an email (compared without case or surrounding spaces) that have
+     * not expired, oldest first.
+     *
+     * @return list<CampaignInvitationViewDTO>
+     */
+    public function pendingForEmail(string $email, DateTimeImmutable $now): array;
 }

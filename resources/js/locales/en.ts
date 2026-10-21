@@ -260,6 +260,16 @@ export default {
                     coGm: 'Co-GM',
                 },
             },
+            invitations: {
+                tabLabel: 'Invitations',
+                title: 'Campaign invitations',
+                invitedBy: '{inviter} invites you',
+                expires: 'Expires on {date}',
+                accept: 'Accept',
+                reject: 'Reject',
+                rejectTitle: 'Reject the invitation',
+                rejectMessage: 'Your email will be deleted from this invitation and you will not receive more emails from it.',
+            },
             created: {
                 tabLabel: 'My tables',
                 published: 'Published tables',

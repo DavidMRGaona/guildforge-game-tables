@@ -103,6 +103,26 @@ final class CampaignInvitationController extends Controller
     }
 
     /**
+     * From the profile tab: the service checks that the invitation is addressed to the account's
+     * verified email, whatever the tab showed.
+     */
+    public function profileAccept(string $invitationId): RedirectResponse
+    {
+        return $this->fromProfile(
+            fn (string $userId) => $this->invitations->acceptById($invitationId, $userId),
+            'invitation_accepted',
+        );
+    }
+
+    public function profileReject(string $invitationId): RedirectResponse
+    {
+        return $this->fromProfile(
+            fn (string $userId) => $this->invitations->rejectById($invitationId, $userId),
+            'invitation_rejected',
+        );
+    }
+
+    /**
      * The page without an invitation, with an error message. The answer over the rate limit.
      */
     public function limitedPage(string $message, string $token): Response
@@ -110,6 +130,24 @@ final class CampaignInvitationController extends Controller
         session()->now('error', $message);
 
         return $this->page('invalid', null, $token);
+    }
+
+    /**
+     * @param  callable(string): void  $action
+     */
+    private function fromProfile(callable $action, string $successKey): RedirectResponse
+    {
+        /** @var UserModel $user */
+        $user = auth()->user();
+        $back = redirect('/perfil?tab=gametables-invitations');
+
+        try {
+            $action((string) $user->id);
+        } catch (RosterActionRefusedException $e) {
+            return $back->with('error', $e->getMessage());
+        }
+
+        return $back->with('success', __('game-tables::messages.roster.success.'.$successKey));
     }
 
     private function viaAuthPage(string $token, string $route): RedirectResponse

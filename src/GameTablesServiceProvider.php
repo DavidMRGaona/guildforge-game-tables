@@ -34,6 +34,7 @@ use App\Application\Modules\DTOs\SlotRegistrationDTO;
 use App\Application\Services\EventQueryServiceInterface;
 use App\Filament\Resources\EventResource;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
+use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use App\Modules\ModuleServiceProvider;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -142,6 +143,7 @@ use Modules\GameTables\Infrastructure\Services\CampaignRosterSessionSync;
 use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
 use Modules\GameTables\Infrastructure\Services\GameTableService;
 use Modules\GameTables\Infrastructure\Services\AssociationRoleMembershipChecker;
+use Modules\GameTables\Infrastructure\Services\ProfileCampaignInvitationsDataProvider;
 use Modules\GameTables\Infrastructure\Services\ProfileCreatedCampaignsDataProvider;
 use Modules\GameTables\Infrastructure\Services\ProfileCreatedTablesDataProvider;
 use Modules\GameTables\Infrastructure\Services\ProfileGameTablesDataProvider;
@@ -238,6 +240,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         $this->shareProfileGameTables();
         $this->shareProfileCreatedTables();
         $this->shareProfileCreatedCampaigns();
+        $this->shareProfileCampaignInvitations();
         $this->shareEventCreationContext();
     }
 
@@ -368,6 +371,43 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
 
             return $data['total'] ?? 0;
         });
+    }
+
+    /**
+     * Share the pending campaign invitations of the account's verified email on the profile page.
+     * The tab is visible only for a verified email with at least one invitation.
+     */
+    private function shareProfileCampaignInvitations(): void
+    {
+        if (! class_exists(Inertia::class)) {
+            return;
+        }
+
+        // One lookup per request for the three props
+        $data = static function (): ?array {
+            $request = request();
+            if ($request->route()?->getName() !== 'profile.show') {
+                return null;
+            }
+
+            $user = auth()->user();
+            if (! $user instanceof UserModel) {
+                return null;
+            }
+
+            if (! $request->attributes->has('game-tables.profile-invitations')) {
+                $request->attributes->set(
+                    'game-tables.profile-invitations',
+                    app(ProfileCampaignInvitationsDataProvider::class)->getDataForUser($user),
+                );
+            }
+
+            return $request->attributes->get('game-tables.profile-invitations');
+        };
+
+        Inertia::share('profileCampaignInvitations', static fn (): ?array => $data());
+        Inertia::share('profileCampaignInvitationsTotal', static fn (): ?int => $data()['total'] ?? null);
+        Inertia::share('profileCampaignInvitationsVisible', static fn (): bool => ($data()['total'] ?? 0) > 0);
     }
 
     /**
@@ -1145,6 +1185,23 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                     'icon' => 'book-open',
                     'labelKey' => 'campaigns.profile.tabLabel',
                     'badgeKey' => 'profileCreatedCampaignsTotal',
+                ],
+            ),
+            new SlotRegistrationDTO(
+                slot: 'profile-sections',
+                component: 'components/profile/ProfileCampaignInvitationsSection.vue',
+                module: $this->moduleName(),
+                order: 25,
+                props: [],
+                // badgeKey and visibleKey are read from the slot's props, so they are listed too
+                dataKeys: ['profileCampaignInvitations', 'profileCampaignInvitationsTotal', 'profileCampaignInvitationsVisible'],
+                profileTab: [
+                    'tabId' => 'gametables-invitations',
+                    'parentId' => 'gametables',
+                    'icon' => 'envelope',
+                    'labelKey' => 'gameTables.profile.invitations.tabLabel',
+                    'badgeKey' => 'profileCampaignInvitationsTotal',
+                    'visibleKey' => 'profileCampaignInvitationsVisible',
                 ],
             ),
         ];

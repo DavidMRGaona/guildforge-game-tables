@@ -402,6 +402,21 @@ export interface ProfileCreatedCampaignsData {
     canCreate: boolean;
 }
 
+/** A pending invitation in the profile: only what the section shows */
+export interface ProfileCampaignInvitation {
+    id: string;
+    campaign_title: string;
+    campaign_slug: string;
+    inviter_name: string;
+    // ISO 8601
+    expires_at: string;
+}
+
+export interface ProfileCampaignInvitationsData {
+    invitations: ProfileCampaignInvitation[];
+    total: number;
+}
+
 // Re-export registration types for convenience
 export type { EligibilityResponse, ParticipantData } from './registration';
 
