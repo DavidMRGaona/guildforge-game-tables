@@ -86,6 +86,8 @@ return [
         'join_request_rejected' => true,
         // Email the player when the direction adds them to the roster
         'roster_added' => true,
+        // Email the direction when someone accepts an invitation (the invitation itself is always sent)
+        'invitation_accepted' => true,
         // Email the player when the direction removes them from the roster
         'roster_removed' => true,
         // Email the direction when a player leaves the roster

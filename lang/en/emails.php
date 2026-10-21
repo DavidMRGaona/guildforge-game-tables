@@ -261,4 +261,30 @@ return [
         'intro' => ':player has left the roster of the campaign ":campaignTitle". Their seats in the upcoming sessions have been freed.',
         'view_roster' => 'View roster',
     ],
+
+    'campaign_invitation' => [
+        'subject' => ':inviter invites you to the campaign ":campaignTitle"',
+        'greeting' => 'Hello!',
+        'intro' => ':inviter invites you to join the campaign ":campaignTitle".',
+        'view_campaign' => 'You can see the campaign page [here](:url).',
+        'view_invitation' => 'View invitation',
+        'reject' => 'If you do not want to join, open the invitation and press Reject: we will delete your email right away.',
+        'expires' => 'Expires on :date.',
+        'privacy_title' => '**Information about how we handle your email**',
+        'privacy_controller' => 'Controller: :name.',
+        'privacy_contact' => 'Contact: :email.',
+        'privacy_dpo' => 'Data protection officer: :dpo.',
+        'privacy_policy' => 'For your other rights, see the [privacy policy](:url).',
+        'privacy_default' => "Purpose: inviting you to this campaign.\n\nLegal basis: legitimate interest (art. 6.1.f GDPR) in sending you this invitation, which :inviter asked us to send you with your permission.\n\nSource: :inviter gave it to us.\n\nRetention: until you accept, reject or the invitation expires, at most :days days. We also keep, for 30 days, a fingerprint of the email (pseudonymised data that does not reveal it), only to limit how many invitations are sent.\n\nRights: rejecting the invitation deletes your email at once.",
+        'notice_label' => 'Campaign invitation email',
+        'notice_help' => 'Data protection block of the email received by a person invited to a campaign.',
+        'preview_campaign' => 'Sample campaign',
+    ],
+
+    'campaign_invitation_accepted' => [
+        'subject' => ':player has accepted your invitation to ":campaignTitle"',
+        'greeting' => 'Hello, :name!',
+        'intro' => ':player has accepted your invitation and is now on the roster of the campaign ":campaignTitle".',
+        'view_roster' => 'View roster',
+    ],
 ];

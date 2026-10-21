@@ -104,7 +104,7 @@ function getTableLink(table: GameTableResponseDTO): string {
     <DefaultLayout>
         <div class="bg-surface shadow">
             <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                <div class="flex items-center justify-between">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <!-- Back to the profile tab that links here -->
                         <Link
@@ -125,6 +125,7 @@ function getTableLink(table: GameTableResponseDTO): string {
                     <BaseButton
                         v-if="props.canCreate"
                         variant="primary"
+                        class="shrink-0 self-start sm:self-auto"
                         @click="handleCreate"
                     >
                         {{ t('gameTables.myTables.createTable') }}

@@ -17,14 +17,15 @@ use Livewire\Livewire;
 use Modules\GameTables\Domain\Enums\JoinRequestStatus;
 use Modules\GameTables\Domain\Events\CampaignJoinRequestAccepted;
 use Modules\GameTables\Domain\Events\CampaignJoinRequestRejected;
-use Modules\GameTables\Domain\Events\CampaignRosterMemberAdded;
 use Modules\GameTables\Domain\Events\CampaignRosterMemberRemoved;
 use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Filament\Resources\CampaignResource;
 use Modules\GameTables\Filament\Resources\CampaignResource\Pages\EditCampaign;
+use Modules\GameTables\Filament\Resources\CampaignResource\RelationManagers\InvitationsRelationManager;
 use Modules\GameTables\Filament\Resources\CampaignResource\RelationManagers\JoinRequestsRelationManager;
 use Modules\GameTables\Filament\Resources\CampaignResource\RelationManagers\RosterRelationManager;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignInvitationModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignJoinRequestModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
@@ -99,46 +100,117 @@ final class CampaignRosterPanelTest extends ModuleTestCase
             ->assertHasNoFormErrors();
     }
 
-    public function test_adding_a_player_by_email_creates_the_roster_row_and_announces_it(): void
+    public function test_panel_invites_by_email(): void
     {
-        Event::fake([CampaignRosterMemberAdded::class]);
         $campaign = $this->campaign();
-        $user = $this->user('John Doe', 'john@example.com');
 
-        $this->roster($campaign)
-            ->callAction(TestAction::make('add')->table(), data: ['email' => 'john@example.com'])
+        $this->invitations($campaign)
+            ->callAction(TestAction::make('invite')->table(), data: ['email' => 'John@Example.com', 'consent' => true])
             ->assertHasNoFormErrors()
-            ->assertNotified('Jugador añadido a la plantilla.');
+            ->assertNotified('Invitación enviada a john@example.com.');
 
-        $this->assertTrue(app(CampaignRosterRepositoryInterface::class)->contains(new CampaignId($campaign->id), $user->id));
-        Event::assertDispatched(CampaignRosterMemberAdded::class, fn (CampaignRosterMemberAdded $event): bool => $event->userId === $user->id);
+        $invitation = CampaignInvitationModel::query()->where('campaign_id', $campaign->id)->sole();
+        $this->assertSame('john@example.com', $invitation->email);
+        $this->invitations($campaign)->assertCanSeeTableRecords([$invitation]);
     }
 
-    public function test_adding_to_a_full_roster_shows_the_refusal(): void
-    {
-        $campaign = $this->campaign(1);
-        $this->member($campaign, 'John Doe');
-        $user = $this->user('Jane Doe', 'jane@example.com');
-
-        $this->roster($campaign)
-            ->callAction(TestAction::make('add')->table(), data: ['email' => 'jane@example.com'])
-            ->assertNotified('La plantilla está completa.');
-
-        $this->assertFalse(app(CampaignRosterRepositoryInterface::class)->contains(new CampaignId($campaign->id), $user->id));
-    }
-
-    public function test_an_unknown_or_anonymized_email_gets_the_same_generic_refusal(): void
+    public function test_panel_invite_requires_consent(): void
     {
         $campaign = $this->campaign();
-        $ghost = $this->user('Mary Ghost', 'ghost@example.com', anonymized: true);
 
-        foreach (['nobody@example.com', 'ghost@example.com'] as $email) {
-            $this->roster($campaign)
-                ->callAction(TestAction::make('add')->table(), data: ['email' => $email])
-                ->assertNotified('No se ha podido añadir a esa cuenta. Comprueba el email.');
+        $this->invitations($campaign)
+            ->callAction(TestAction::make('invite')->table(), data: ['email' => 'john@example.com', 'consent' => false])
+            ->assertHasFormErrors(['consent']);
+
+        $this->assertSame(0, CampaignInvitationModel::query()->count());
+    }
+
+    public function test_panel_resends_and_cancels(): void
+    {
+        $campaign = $this->campaign();
+        $this->invitations($campaign)
+            ->callAction(TestAction::make('invite')->table(), data: ['email' => 'john@example.com', 'consent' => true]);
+        $invitation = CampaignInvitationModel::query()->where('campaign_id', $campaign->id)->sole();
+        // The service waits 24 hours between sends
+        $this->travel(25)->hours();
+
+        $this->invitations($campaign)
+            ->callTableAction('resend', $invitation)
+            ->assertNotified('Invitación reenviada.');
+        $this->assertSame(2, $invitation->refresh()->send_count);
+
+        $this->invitations($campaign)
+            ->callTableAction('cancel', $invitation)
+            ->assertNotified('Invitación cancelada.');
+        $this->assertNull(CampaignInvitationModel::query()->find($invitation->id));
+    }
+
+    public function test_roster_tab_has_no_add_action(): void
+    {
+        $this->roster($this->campaign())->assertActionDoesNotExist(TestAction::make('add')->table());
+    }
+
+    public function test_expired_invitations_are_not_listed(): void
+    {
+        $campaign = $this->campaign();
+        $live = $this->invitation($campaign, 'john@example.com', CarbonImmutable::now()->addDays(3));
+        $expired = $this->invitation($campaign, 'jane@example.com', CarbonImmutable::now()->subDay());
+
+        $this->invitations($campaign)
+            ->assertCanSeeTableRecords([$live])
+            ->assertCanNotSeeTableRecords([$expired]);
+    }
+
+    public function test_the_tab_warns_when_pending_invitations_outnumber_free_seats(): void
+    {
+        $warning = 'Hay más invitaciones pendientes que plazas libres; entrará quien acepte primero.';
+        $campaign = $this->campaign(maxPlayers: 3);
+        $this->member($campaign, 'Richard Roe');
+        $this->invitation($campaign, 'john@example.com', CarbonImmutable::now()->addDays(3));
+        $this->invitation($campaign, 'jane@example.com', CarbonImmutable::now()->addDays(3));
+
+        // Two seats, two invitations: everyone fits
+        $this->invitations($campaign)->assertDontSee($warning);
+
+        // An expired one does not count
+        $this->invitation($campaign, 'old@example.com', CarbonImmutable::now()->subDay());
+        $this->invitations($campaign)->assertDontSee($warning);
+
+        $this->invitation($campaign, 'mary@example.com', CarbonImmutable::now()->addDays(3));
+        $this->invitations($campaign)->assertSee($warning);
+    }
+
+    public function test_the_tab_never_warns_without_a_maximum(): void
+    {
+        $campaign = $this->campaign();
+        $this->invitation($campaign, 'john@example.com', CarbonImmutable::now()->addDays(3));
+        $this->invitation($campaign, 'jane@example.com', CarbonImmutable::now()->addDays(3));
+
+        $this->invitations($campaign)->assertDontSee('Hay más invitaciones pendientes que plazas libres');
+    }
+
+    public function test_invitations_tab_follows_the_campaign_update_permission(): void
+    {
+        $campaign = $this->campaign();
+        $invitation = $this->invitation($campaign, 'john@example.com', CarbonImmutable::now()->addDays(3));
+
+        $this->actingAs($this->editorWith(['gametables:campaigns.view_any', 'gametables:campaigns.view']));
+        $this->assertFalse(InvitationsRelationManager::canViewForRecord($campaign, EditCampaign::class));
+        try {
+            $this->invitations($campaign)
+                ->set('mountedActions', [['name' => 'cancel', 'arguments' => [], 'context' => ['table' => true, 'recordKey' => $invitation->getKey()], 'data' => []]])
+                ->call('callMountedAction');
+        } catch (\Throwable) {
+            // Refused before reaching the action
         }
+        $this->assertNotNull(CampaignInvitationModel::query()->find($invitation->id));
 
-        $this->assertFalse(app(CampaignRosterRepositoryInterface::class)->contains(new CampaignId($campaign->id), $ghost->id));
+        $this->actingAs($this->editorWith(['gametables:campaigns.view_any', 'gametables:campaigns.view', 'gametables:campaigns.update']));
+        $this->assertTrue(InvitationsRelationManager::canViewForRecord($campaign, EditCampaign::class));
+        $this->invitations($campaign)
+            ->assertCanSeeTableRecords([$invitation])
+            ->callTableAction('cancel', $invitation)
+            ->assertNotified('Invitación cancelada.');
     }
 
     public function test_removing_a_player_announces_it(): void
@@ -284,11 +356,10 @@ final class CampaignRosterPanelTest extends ModuleTestCase
 
     public function test_a_user_without_the_update_permission_sees_no_tab_and_forged_calls_change_nothing(): void
     {
-        Event::fake([CampaignRosterMemberAdded::class, CampaignRosterMemberRemoved::class, CampaignJoinRequestAccepted::class]);
+        Event::fake([CampaignRosterMemberRemoved::class, CampaignJoinRequestAccepted::class]);
         $campaign = $this->campaign();
         $member = $this->member($campaign, 'John Doe');
         $request = $this->request($campaign, $this->user('Jane Doe'));
-        $candidate = $this->user('Mary Major', 'mary@example.com');
         $this->actingAs($this->editorWith(['gametables:campaigns.view_any', 'gametables:campaigns.view']));
 
         $this->assertFalse(RosterRelationManager::canViewForRecord($campaign, EditCampaign::class));
@@ -300,8 +371,8 @@ final class CampaignRosterPanelTest extends ModuleTestCase
             fn () => $this->roster($campaign)
                 ->set('mountedActions', [['name' => 'remove', 'arguments' => [], 'context' => ['table' => true, 'recordKey' => $member->getKey()], 'data' => []]])
                 ->call('callMountedAction'),
-            fn () => $this->roster($campaign)
-                ->set('mountedActions', [['name' => 'add', 'arguments' => [], 'context' => ['table' => true], 'data' => ['email' => 'mary@example.com']]])
+            fn () => $this->invitations($campaign)
+                ->set('mountedActions', [['name' => 'invite', 'arguments' => [], 'context' => ['table' => true], 'data' => ['email' => 'mary@example.com', 'consent' => true]]])
                 ->call('callMountedAction'),
             fn () => $this->requests($campaign)
                 ->set('mountedActions', [['name' => 'accept', 'arguments' => [], 'context' => ['table' => true, 'recordKey' => $request->getKey()], 'data' => []]])
@@ -318,9 +389,8 @@ final class CampaignRosterPanelTest extends ModuleTestCase
 
         $repository = app(CampaignRosterRepositoryInterface::class);
         $this->assertTrue($repository->contains(new CampaignId($campaign->id), $member->id));
-        $this->assertFalse($repository->contains(new CampaignId($campaign->id), $candidate->id));
+        $this->assertSame(0, CampaignInvitationModel::query()->count());
         $this->assertSame(JoinRequestStatus::Pending, $request->refresh()->status);
-        Event::assertNotDispatched(CampaignRosterMemberAdded::class);
         Event::assertNotDispatched(CampaignRosterMemberRemoved::class);
         Event::assertNotDispatched(CampaignJoinRequestAccepted::class);
     }
@@ -336,6 +406,25 @@ final class CampaignRosterPanelTest extends ModuleTestCase
     private function roster(CampaignModel $campaign): Testable
     {
         return Livewire::test(RosterRelationManager::class, ['ownerRecord' => $campaign, 'pageClass' => EditCampaign::class]);
+    }
+
+    private function invitations(CampaignModel $campaign): Testable
+    {
+        return Livewire::test(InvitationsRelationManager::class, ['ownerRecord' => $campaign, 'pageClass' => EditCampaign::class]);
+    }
+
+    private function invitation(CampaignModel $campaign, string $email, CarbonImmutable $expiresAt): CampaignInvitationModel
+    {
+        return CampaignInvitationModel::create([
+            'campaign_id' => $campaign->id,
+            'email' => $email,
+            'invited_by_user_id' => $this->admin->id,
+            'inviter_name' => $this->admin->name,
+            'token_hash' => hash('sha256', Str::random(64)),
+            'expires_at' => $expiresAt,
+            'send_count' => 1,
+            'last_sent_at' => CarbonImmutable::now(),
+        ]);
     }
 
     private function requests(CampaignModel $campaign): Testable

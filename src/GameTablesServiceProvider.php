@@ -34,16 +34,23 @@ use App\Application\Modules\DTOs\SlotRegistrationDTO;
 use App\Application\Services\EventQueryServiceInterface;
 use App\Filament\Resources\EventResource;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
+use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use App\Modules\ModuleServiceProvider;
 use Illuminate\Cache\RateLimiting\Limit;
+use App\Application\Legal\DTOs\LegalMailNoticeDTO;
+use App\Application\Legal\Services\LegalMailNoticeRegistryInterface;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\AnonymousNotifiable;
+use Modules\GameTables\Notifications\CampaignInvitationNotification;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use Inertia\Inertia;
 use Livewire\Livewire;
 use Modules\GameTables\Application\Services\CampaignQueryServiceInterface;
 use Modules\GameTables\Application\Services\AccountLookupInterface;
+use Modules\GameTables\Application\Services\CampaignInvitationSendLogInterface;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
 use Modules\GameTables\Application\Services\EligibilityServiceInterface;
 use Modules\GameTables\Application\Services\EventCreationEligibilityServiceInterface;
@@ -56,6 +63,7 @@ use Modules\CookieConsent\Application\DTOs\DeclaredCookieDTO;
 use Modules\CookieConsent\Application\Services\CookieDeclarationRegistryInterface;
 use Modules\GameTables\Application\Services\CampaignDirectionInterface;
 use Modules\GameTables\Application\Services\CampaignRosterQueryInterface;
+use Modules\GameTables\Application\Services\CampaignInvitationServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterSessionSyncInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
@@ -66,13 +74,17 @@ use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Illuminate\Console\Scheduling\Schedule;
 use Modules\GameTables\Console\Commands\ExpireGuestRegistrationsCommand;
 use Modules\GameTables\Console\Commands\GenerateSlugsCommand;
+use Modules\GameTables\Console\Commands\PruneCampaignInvitationsCommand;
 use Modules\GameTables\Console\Commands\SendTableRemindersCommand;
 use Modules\GameTables\Console\Commands\UpdateTableStatusesCommand;
+use Modules\GameTables\Http\Controllers\CampaignInvitationController;
 use Modules\GameTables\Http\Controllers\GuestConfirmationController;
 use Modules\GameTables\Domain\Events\CampaignModerationApproved;
 use Modules\GameTables\Domain\Events\CampaignModerationRejected;
 use Modules\GameTables\Domain\Events\CampaignSubmittedForReview;
 use Modules\GameTables\Domain\Events\RosterMemberEnrolledInSession;
+use Modules\GameTables\Domain\Events\CampaignInvitationAccepted;
+use Modules\GameTables\Domain\Events\CampaignInvitationSent;
 use Modules\GameTables\Domain\Events\CampaignJoinRequested;
 use Modules\GameTables\Domain\Events\CampaignJoinRequestAccepted;
 use Modules\GameTables\Domain\Events\CampaignJoinRequestRejected;
@@ -91,6 +103,7 @@ use Modules\GameTables\Domain\Events\ParticipantConfirmed;
 use Modules\GameTables\Domain\Events\ParticipantPromotedFromWaitingList;
 use Modules\GameTables\Domain\Events\ParticipantRegistered;
 use Modules\GameTables\Domain\Events\ParticipantRejected;
+use Modules\GameTables\Domain\Repositories\CampaignInvitationRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\CampaignJoinRequestRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
@@ -107,6 +120,7 @@ use Modules\GameTables\Infrastructure\Listeners\NotifyOnRegistration;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnWaitingListPromotion;
 use Modules\GameTables\Infrastructure\Observers\GameTableObserver;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\EventGameTableConfigModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentCampaignInvitationRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentCampaignJoinRequestRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentCampaignRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentCampaignRosterRepository;
@@ -127,12 +141,15 @@ use Modules\GameTables\Infrastructure\Services\GameMasterService;
 use Modules\GameTables\Infrastructure\Services\GameTableQueryService;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 use Modules\GameTables\Infrastructure\Services\CampaignDirection;
+use Modules\GameTables\Infrastructure\Services\DatabaseCampaignInvitationSendLog;
 use Modules\GameTables\Infrastructure\Services\CampaignRosterQuery;
+use Modules\GameTables\Infrastructure\Services\CampaignInvitationService;
 use Modules\GameTables\Infrastructure\Services\CampaignRosterService;
 use Modules\GameTables\Infrastructure\Services\CampaignRosterSessionSync;
 use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
 use Modules\GameTables\Infrastructure\Services\GameTableService;
 use Modules\GameTables\Infrastructure\Services\AssociationRoleMembershipChecker;
+use Modules\GameTables\Infrastructure\Services\ProfileCampaignInvitationsDataProvider;
 use Modules\GameTables\Infrastructure\Services\ProfileCreatedCampaignsDataProvider;
 use Modules\GameTables\Infrastructure\Services\ProfileCreatedTablesDataProvider;
 use Modules\GameTables\Infrastructure\Services\ProfileGameTablesDataProvider;
@@ -152,7 +169,9 @@ use Modules\GameTables\Listeners\SendGuestRegistrationExpiredNotification;
 use Modules\GameTables\Listeners\SendRegistrationConfirmation;
 use Modules\GameTables\Listeners\SendRejectionNotification;
 use Modules\GameTables\Listeners\SendCampaignSessionScheduled;
+use Modules\GameTables\Listeners\NotifyDirectionOfInvitationAccepted;
 use Modules\GameTables\Listeners\NotifyDirectionOfJoinRequest;
+use Modules\GameTables\Listeners\SendCampaignInvitation;
 use Modules\GameTables\Listeners\SendJoinRequestAccepted;
 use Modules\GameTables\Listeners\SendJoinRequestRejected;
 use Modules\GameTables\Listeners\SendRosterMemberAdded;
@@ -179,6 +198,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         $this->app->bind(CampaignRepositoryInterface::class, EloquentCampaignRepository::class);
         $this->app->bind(CampaignRosterRepositoryInterface::class, EloquentCampaignRosterRepository::class);
         $this->app->bind(CampaignJoinRequestRepositoryInterface::class, EloquentCampaignJoinRequestRepository::class);
+        $this->app->bind(CampaignInvitationRepositoryInterface::class, EloquentCampaignInvitationRepository::class);
         $this->app->bind(GameTableRepositoryInterface::class, EloquentGameTableRepository::class);
         $this->app->bind(ParticipantRepositoryInterface::class, EloquentParticipantRepository::class);
         $this->app->bind(EventGameTableConfigRepositoryInterface::class, EloquentEventGameTableConfigRepository::class);
@@ -187,6 +207,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         $this->app->bind(GameTableServiceInterface::class, GameTableService::class);
         $this->app->bind(EligibilityServiceInterface::class, EligibilityService::class);
         $this->app->bind(AccountLookupInterface::class, UserModelAccountLookup::class);
+        $this->app->bind(CampaignInvitationSendLogInterface::class, DatabaseCampaignInvitationSendLog::class);
         $this->app->bind(MembershipCheckerInterface::class, AssociationRoleMembershipChecker::class);
         $this->app->bind(CreationEligibilityServiceInterface::class, CreationEligibilityService::class);
         $this->app->bind(FrontendCreationServiceInterface::class, FrontendCreationService::class);
@@ -200,6 +221,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         $this->app->bind(CampaignDirectionInterface::class, CampaignDirection::class);
         $this->app->bind(CampaignRosterSessionSyncInterface::class, CampaignRosterSessionSync::class);
         $this->app->bind(CampaignRosterServiceInterface::class, CampaignRosterService::class);
+        $this->app->bind(CampaignInvitationServiceInterface::class, CampaignInvitationService::class);
         $this->app->bind(CampaignRosterQueryInterface::class, CampaignRosterQuery::class);
 
         // Query service bindings
@@ -220,10 +242,12 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         $this->registerSchedule();
         $this->registerRateLimiters();
         $this->registerCookieDeclaration();
+        $this->registerLegalMailNotice();
         $this->shareGameTableCount();
         $this->shareProfileGameTables();
         $this->shareProfileCreatedTables();
         $this->shareProfileCreatedCampaigns();
+        $this->shareProfileCampaignInvitations();
         $this->shareEventCreationContext();
     }
 
@@ -357,6 +381,43 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     }
 
     /**
+     * Share the pending campaign invitations of the account's verified email on the profile page.
+     * The tab is visible only for a verified email with at least one invitation.
+     */
+    private function shareProfileCampaignInvitations(): void
+    {
+        if (! class_exists(Inertia::class)) {
+            return;
+        }
+
+        // One lookup per request for the three props
+        $data = static function (): ?array {
+            $request = request();
+            if ($request->route()?->getName() !== 'profile.show') {
+                return null;
+            }
+
+            $user = auth()->user();
+            if (! $user instanceof UserModel) {
+                return null;
+            }
+
+            if (! $request->attributes->has('game-tables.profile-invitations')) {
+                $request->attributes->set(
+                    'game-tables.profile-invitations',
+                    app(ProfileCampaignInvitationsDataProvider::class)->getDataForUser($user),
+                );
+            }
+
+            return $request->attributes->get('game-tables.profile-invitations');
+        };
+
+        Inertia::share('profileCampaignInvitations', static fn (): ?array => $data());
+        Inertia::share('profileCampaignInvitationsTotal', static fn (): ?int => $data()['total'] ?? null);
+        Inertia::share('profileCampaignInvitationsVisible', static fn (): bool => ($data()['total'] ?? 0) > 0);
+    }
+
+    /**
      * Share game table count via Inertia for the event detail page.
      */
     private function shareGameTableCount(): void
@@ -397,6 +458,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
             $this->commands([
                 ExpireGuestRegistrationsCommand::class,
                 GenerateSlugsCommand::class,
+                PruneCampaignInvitationsCommand::class,
                 UpdateTableStatusesCommand::class,
                 SendTableRemindersCommand::class,
             ]);
@@ -417,6 +479,10 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
 
             $schedule->command('game-tables:expire-guest-registrations')
                 ->everyFiveMinutes()
+                ->withoutOverlapping(10);
+
+            $schedule->command('game-tables:prune-campaign-invitations')
+                ->daily()
                 ->withoutOverlapping(10);
 
             // Does nothing until the reminder is enabled in the module settings
@@ -448,6 +514,37 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     }
 
     /**
+     * The legal block of the campaign invitation email, editable from the core's legal pages when
+     * the core offers them (an older core keeps the fixed lines).
+     */
+    private function registerLegalMailNotice(): void
+    {
+        if (! interface_exists(LegalMailNoticeRegistryInterface::class)) {
+            return;
+        }
+
+        $this->callAfterResolving(LegalMailNoticeRegistryInterface::class, function (LegalMailNoticeRegistryInterface $registry): void {
+            $registry->register(new LegalMailNoticeDTO(
+                key: CampaignInvitationNotification::NOTICE_KEY,
+                module: 'game-tables',
+                label: (string) __('game-tables::emails.campaign_invitation.notice_label'),
+                help: (string) __('game-tables::emails.campaign_invitation.notice_help'),
+                defaultContent: (string) __('game-tables::emails.campaign_invitation.privacy_default'),
+                placeholders: [':inviter', ':campaign', ':site', ':days'],
+                preview: static fn (string $content): string => (string) (new CampaignInvitationNotification(
+                    inviterName: 'John Doe',
+                    campaignTitle: (string) __('game-tables::emails.campaign_invitation.preview_campaign'),
+                    campaignSlug: 'campana-de-ejemplo',
+                    email: 'john@example.com',
+                    token: Str::random(64),
+                    expiresAt: now()->addDays(CampaignInvitationNotification::EXPIRY_DAYS)->format('d/m/Y'),
+                    legalText: $content,
+                ))->toMail(new AnonymousNotifiable)->render(),
+            ));
+        });
+    }
+
+    /**
      * Per IP, over the limit a translated message, never an error page. The guest confirmation
      * link (page and button): wide enough for a person, tight enough to stop guessing tokens. The
      * guest registration form: the limits of the settings, as a form error on the table page. The
@@ -456,6 +553,29 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
      */
     private function registerRateLimiters(): void
     {
+        // The invitation page and its actions: the token is the credential, so guessing is limited per IP
+        RateLimiter::for('game-tables-campaign-invitation', static function (Request $request): Limit {
+            return Limit::perMinute(30)->by('gt-invitation:'.($request->ip() ?? 'unknown'))->response(
+                static function (Request $request, array $headers): HttpResponse {
+                    $message = (string) __('game-tables::messages.errors.too_many_confirmation_attempts');
+
+                    if ($request->expectsJson()) {
+                        return response()->json(['message' => $message], 429, $headers);
+                    }
+
+                    // The page with the message, still 429: a plain 429 would land in Inertia's raw error modal
+                    $token = $request->route('token');
+                    $response = app(CampaignInvitationController::class)
+                        ->limitedPage($message, is_string($token) ? $token : '')
+                        ->toResponse($request);
+                    $response->setStatusCode(429);
+                    $response->headers->add($headers);
+
+                    return $response;
+                },
+            );
+        });
+
         RateLimiter::for('game-tables-guest-confirmation', static function (Request $request): array {
             $ip = $request->ip() ?? 'unknown';
             $tooMany = static function (Request $request, array $headers): HttpResponse {
@@ -667,6 +787,16 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         Event::listen(
             CampaignRosterMemberAdded::class,
             [SendRosterMemberAdded::class, 'handle']
+        );
+
+        Event::listen(
+            CampaignInvitationSent::class,
+            [SendCampaignInvitation::class, 'handle']
+        );
+
+        Event::listen(
+            CampaignInvitationAccepted::class,
+            [NotifyDirectionOfInvitationAccepted::class, 'handle']
         );
 
         Event::listen(
@@ -1098,6 +1228,24 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                     'icon' => 'book-open',
                     'labelKey' => 'campaigns.profile.tabLabel',
                     'badgeKey' => 'profileCreatedCampaignsTotal',
+                ],
+            ),
+            new SlotRegistrationDTO(
+                slot: 'profile-sections',
+                component: 'components/profile/ProfileCampaignInvitationsSection.vue',
+                module: $this->moduleName(),
+                // Tabs are listed by order across modules: stay before the others' tabs (20)
+                order: 17,
+                props: [],
+                // badgeKey and visibleKey are read from the slot's props, so they are listed too
+                dataKeys: ['profileCampaignInvitations', 'profileCampaignInvitationsTotal', 'profileCampaignInvitationsVisible'],
+                profileTab: [
+                    'tabId' => 'gametables-invitations',
+                    'parentId' => 'gametables',
+                    'icon' => 'envelope',
+                    'labelKey' => 'gameTables.profile.invitations.tabLabel',
+                    'badgeKey' => 'profileCampaignInvitationsTotal',
+                    'visibleKey' => 'profileCampaignInvitationsVisible',
                 ],
             ),
         ];

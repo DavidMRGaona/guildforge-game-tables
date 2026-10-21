@@ -33,15 +33,40 @@ final class RosterPageSourceTest extends TestCase
     }
 
     /**
-     * A refusal (unknown email, full roster) comes back as a successful visit with an error
-     * flash: the typed email stays so it can be corrected; only a real addition clears it.
+     * A refusal (member, limits) comes back as a successful visit with an error
+     * flash: the typed email stays so it can be corrected; only a real invitation clears it.
      */
-    public function test_the_add_form_keeps_the_email_after_a_refusal(): void
+    public function test_the_invite_form_keeps_the_email_after_a_refusal(): void
     {
         $source = $this->source();
 
-        $this->assertStringContainsString("onSuccess: () => {\n            if (!flashError.value) addForm.reset('email');\n        },", $source);
-        $this->assertStringNotContainsString("onSuccess: () => addForm.reset('email'),", $source);
+        $this->assertStringContainsString("onSuccess: () => {\n            if (!flashError.value) inviteForm.reset();\n        },", $source);
+        $this->assertStringNotContainsString("onSuccess: () => inviteForm.reset(),", $source);
+    }
+
+    /**
+     * Pending invitations stay listed (to resend or cancel them) when the roster is full: only the
+     * invite form depends on can_add.
+     */
+    public function test_pending_invitations_do_not_depend_on_room_in_the_roster(): void
+    {
+        $source = $this->source();
+
+        $this->assertStringContainsString('<section v-if="invitations.length > 0"', $source);
+        $this->assertStringContainsString('<section v-if="can_add" :class="sectionClass" aria-labelledby="roster-invite-title">', $source);
+        $this->assertSame(1, substr_count($source, 'v-if="can_add"'));
+    }
+
+    /**
+     * Each pending invitation shows how many times it was sent, as the panel does.
+     */
+    public function test_invitation_rows_show_the_send_count(): void
+    {
+        $root = dirname(__DIR__, 4).'/resources/js/locales/';
+
+        $this->assertStringContainsString("t('campaigns.roster.invitations.sends', { count: invitation.send_count })", $this->source());
+        $this->assertStringContainsString("sends: 'Envíos: {count}',", (string) file_get_contents($root.'es.ts'));
+        $this->assertStringContainsString("sends: 'Sends: {count}',", (string) file_get_contents($root.'en.ts'));
     }
 
     /**

@@ -402,6 +402,21 @@ export interface ProfileCreatedCampaignsData {
     canCreate: boolean;
 }
 
+/** A pending invitation in the profile: only what the section shows */
+export interface ProfileCampaignInvitation {
+    id: string;
+    campaign_title: string;
+    campaign_slug: string;
+    inviter_name: string;
+    // ISO 8601
+    expires_at: string;
+}
+
+export interface ProfileCampaignInvitationsData {
+    invitations: ProfileCampaignInvitation[];
+    total: number;
+}
+
 // Re-export registration types for convenience
 export type { EligibilityResponse, ParticipantData } from './registration';
 
@@ -511,6 +526,16 @@ export interface RosterRequest {
     created_at: string | null;
 }
 
+export interface RosterInvitation {
+    id: string;
+    email: string;
+    inviter_name: string;
+    send_count: number;
+    // ISO 8601
+    expires_at: string;
+    can_resend: boolean;
+}
+
 export interface RosterSession {
     game_table_id: string;
     title: string;
@@ -553,6 +578,9 @@ export interface RosterPage {
     can_add: boolean;
     // Whether removing a player emails them
     removal_notice: boolean;
+    invitations: RosterInvitation[];
+    // More invitations pending than free seats
+    more_invitations_than_seats: boolean;
 }
 
 /** What the viewer of a campaign page can do with its roster (JoinBoxDTO). */
@@ -575,4 +603,16 @@ export interface JoinBox {
     roster_url: string | null;
     // For the direction, the requests awaiting an answer (0 for anyone else)
     pending_requests: number;
+}
+
+export type CampaignInvitationState = 'invalid' | 'rejected' | 'guest' | 'match' | 'mismatch' | 'must_verify';
+
+/** What the invitation page gets: the invited email and the expiry only when the state needs them */
+export interface CampaignInvitationView {
+    campaign_title: string;
+    campaign_slug: string;
+    inviter_name: string;
+    email?: string;
+    // ISO 8601
+    expires_at?: string;
 }

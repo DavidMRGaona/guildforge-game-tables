@@ -24,6 +24,7 @@ final class GameTableSettingsReader
         'join_request_accepted',
         'join_request_rejected',
         'roster_added',
+        'invitation_accepted',
         'roster_removed',
         'player_left',
     ];

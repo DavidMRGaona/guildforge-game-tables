@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\GameTables\Application\Services\CampaignInvitationServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterQueryInterface;
 use Modules\GameTables\Application\Services\CampaignRosterServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterSessionSyncInterface;
@@ -23,9 +24,11 @@ use Modules\GameTables\Domain\Exceptions\CampaignNotFoundException;
 use Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException;
 use Modules\GameTables\Domain\Exceptions\RosterActionRefusedException;
 use Modules\GameTables\Domain\Exceptions\TableFullException;
+use Modules\GameTables\Domain\Repositories\CampaignInvitationRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\CampaignJoinRequestRepositoryInterface;
+use Modules\GameTables\Domain\ValueObjects\CampaignInvitationId;
 use Modules\GameTables\Domain\ValueObjects\JoinRequestId;
-use Modules\GameTables\Http\Requests\AddRosterPlayerRequest;
+use Modules\GameTables\Http\Requests\InviteRosterPlayerRequest;
 use Modules\GameTables\Http\Requests\RejectJoinRequestRequest;
 use Modules\GameTables\Http\Requests\ToggleRosterAbsenceRequest;
 use Modules\GameTables\Http\Requests\UpdateRosterSettingsRequest;
@@ -43,6 +46,8 @@ final class CampaignRosterController extends Controller
         private readonly CampaignRosterSessionSyncInterface $sessions,
         private readonly CampaignRosterQueryInterface $query,
         private readonly CampaignJoinRequestRepositoryInterface $requests,
+        private readonly CampaignInvitationServiceInterface $invitations,
+        private readonly CampaignInvitationRepositoryInterface $invitationRows,
         private readonly SeoMetadataFactoryInterface $seo,
     ) {}
 
@@ -73,14 +78,35 @@ final class CampaignRosterController extends Controller
         ), 'settings_saved');
     }
 
-    public function add(AddRosterPlayerRequest $request, string $id): RedirectResponse
+    public function invite(InviteRosterPlayerRequest $request, string $id): RedirectResponse
     {
         $campaign = $this->authorizedCampaign($id);
+        $email = mb_strtolower(trim((string) $request->validated('email')));
 
         return $this->attempt(
-            fn () => $this->roster->addByEmail($campaign->id, (string) $request->validated('email'), $this->actorId()),
-            'added',
+            fn () => $this->invitations->invite($campaign->id, $email, $this->actorId()),
+            'invited',
+            ['email' => $email],
         );
+    }
+
+    public function resendInvitation(string $id, string $invitationId): RedirectResponse
+    {
+        $campaign = $this->authorizedCampaign($id);
+        $this->ensureInvitationOf($campaign, $invitationId);
+
+        return $this->attempt(
+            fn () => $this->invitations->resend($campaign->id, $invitationId, $this->actorId()),
+            'invitation_resent',
+        );
+    }
+
+    public function cancelInvitation(string $id, string $invitationId): RedirectResponse
+    {
+        $campaign = $this->authorizedCampaign($id);
+        $this->ensureInvitationOf($campaign, $invitationId);
+
+        return $this->attempt(fn () => $this->invitations->cancel($campaign->id, $invitationId), 'invitation_cancelled');
     }
 
     public function remove(string $id, string $userId): RedirectResponse
@@ -158,11 +184,24 @@ final class CampaignRosterController extends Controller
     }
 
     /**
+     * An invitation of another campaign is not found here, as with the requests.
+     */
+    private function ensureInvitationOf(CampaignModel $campaign, string $invitationId): void
+    {
+        $invitation = Str::isUuid($invitationId) ? $this->invitationRows->find(new CampaignInvitationId($invitationId)) : null;
+
+        if ($invitation === null || $invitation->campaignId->value !== $campaign->id) {
+            abort(404);
+        }
+    }
+
+    /**
      * Runs the roster action and answers with its success, or with the refusal it met.
      *
      * @param  Closure(): void  $action
+     * @param  array<string, string>  $replace  Values of the success message
      */
-    private function attempt(Closure $action, string $success): RedirectResponse
+    private function attempt(Closure $action, string $success, array $replace = []): RedirectResponse
     {
         try {
             $action();
@@ -174,7 +213,7 @@ final class CampaignRosterController extends Controller
             return back()->with('error', __('game-tables::messages.errors.'.$e->reason));
         }
 
-        return back()->with('success', __('game-tables::messages.roster.success.'.$success));
+        return back()->with('success', __('game-tables::messages.roster.success.'.$success, $replace));
     }
 
     private function actorId(): string

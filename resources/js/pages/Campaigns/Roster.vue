@@ -11,6 +11,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner.vue';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 import type {
     RosterAccessValue,
+    RosterInvitation,
     RosterPage,
     RosterPlayer,
     RosterPlayerSession,
@@ -146,20 +147,58 @@ function confirmReject(): void {
     );
 }
 
-// Add a player by the email of their account
-const addForm = useForm({ email: '' });
-const addEmailId = useId();
-const addErrorId = useId();
+// Invite a player by email; the consent is the direction's word that the person agreed
+const inviteForm = useForm({ email: '', consent: false });
+const inviteEmailId = useId();
+const inviteErrorId = useId();
+const inviteConsentId = useId();
 
-function addPlayer(): void {
-    addForm.post(`${baseUrl.value}/jugadores`, {
+function invitePlayer(): void {
+    inviteForm.post(`${baseUrl.value}/invitaciones`, {
         preserveScroll: true,
-        // A refusal (unknown email, full roster...) also comes back as a success with an error
-        // flash: keep what was typed so it can be corrected
+        // A refusal (member, limits...) also comes back as a success with an error flash: keep
+        // what was typed so it can be corrected
         onSuccess: () => {
-            if (!flashError.value) addForm.reset('email');
+            if (!flashError.value) inviteForm.reset();
         },
     });
+}
+
+function formatExpiry(invitation: RosterInvitation): string {
+    return new Date(invitation.expires_at).toLocaleDateString(locale.value, {
+        timeZone: VENUE_TIMEZONE,
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+    });
+}
+
+function resendInvitation(invitation: RosterInvitation): void {
+    if (processing.value || !invitation.can_resend) return;
+
+    router.post(`${baseUrl.value}/invitaciones/${invitation.id}/reenviar`, {}, visitOptions());
+}
+
+const cancelling = ref<RosterInvitation | null>(null);
+const showCancelDialog = ref(false);
+
+function askCancel(invitation: RosterInvitation): void {
+    if (processing.value) return;
+
+    cancelling.value = invitation;
+    showCancelDialog.value = true;
+}
+
+function confirmCancel(): void {
+    const invitation = cancelling.value;
+    if (invitation === null) return;
+
+    router.delete(
+        `${baseUrl.value}/invitaciones/${invitation.id}`,
+        visitOptions(() => {
+            cancelling.value = null;
+        }),
+    );
 }
 
 // Attendance: players × upcoming sessions. A window of sessions is shown at a time (a director may
@@ -576,35 +615,100 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                 </ul>
             </section>
 
-            <!-- Add a player -->
-            <section v-if="can_add" :class="sectionClass" aria-labelledby="roster-add-title">
-                <h2 id="roster-add-title" class="text-lg font-semibold text-base-primary">
-                    {{ t('campaigns.roster.add.title') }}
+            <!-- Invite a player -->
+            <section v-if="can_add" :class="sectionClass" aria-labelledby="roster-invite-title">
+                <h2 id="roster-invite-title" class="text-lg font-semibold text-base-primary">
+                    {{ t('campaigns.roster.invite.title') }}
                 </h2>
-                <form class="mt-4 flex flex-col gap-2 sm:flex-row sm:items-start" @submit.prevent="addPlayer">
-                    <div class="min-w-0 flex-1">
-                        <label :for="addEmailId" class="sr-only">{{ t('campaigns.roster.add.email') }}</label>
-                        <input
-                            :id="addEmailId"
-                            v-model="addForm.email"
-                            type="email"
-                            name="email"
-                            required
-                            maxlength="255"
-                            autocomplete="off"
-                            :placeholder="t('campaigns.roster.add.email')"
-                            :aria-invalid="!!addForm.errors.email"
-                            :aria-describedby="addForm.errors.email ? addErrorId : undefined"
-                            :class="[inputClass, 'mt-0']"
+                <form class="mt-4 flex flex-col gap-3" @submit.prevent="invitePlayer">
+                    <div class="flex flex-col gap-2 sm:flex-row sm:items-start">
+                        <div class="min-w-0 flex-1">
+                            <label :for="inviteEmailId" class="sr-only">{{ t('campaigns.roster.invite.email') }}</label>
+                            <input
+                                :id="inviteEmailId"
+                                v-model="inviteForm.email"
+                                type="email"
+                                name="email"
+                                required
+                                maxlength="255"
+                                autocomplete="off"
+                                :placeholder="t('campaigns.roster.invite.email')"
+                                :aria-invalid="!!inviteForm.errors.email"
+                                :aria-describedby="inviteForm.errors.email ? inviteErrorId : undefined"
+                                :class="[inputClass, 'mt-0']"
+                            />
+                            <p v-if="inviteForm.errors.email" :id="inviteErrorId" class="mt-1 text-sm text-error">
+                                {{ inviteForm.errors.email }}
+                            </p>
+                        </div>
+                        <BaseButton type="submit" variant="primary" class="w-full sm:w-auto" :loading="inviteForm.processing">
+                            {{ t('campaigns.roster.invite.submit') }}
+                        </BaseButton>
+                    </div>
+                    <div>
+                        <FormCheckbox
+                            :id="inviteConsentId"
+                            v-model="inviteForm.consent"
+                            name="consent"
+                            :label="t('campaigns.roster.invite.consent')"
                         />
-                        <p v-if="addForm.errors.email" :id="addErrorId" class="mt-1 text-sm text-error">
-                            {{ addForm.errors.email }}
+                        <p v-if="inviteForm.errors.consent" class="mt-1 text-sm text-error">
+                            {{ inviteForm.errors.consent }}
                         </p>
                     </div>
-                    <BaseButton type="submit" variant="primary" class="w-full sm:w-auto" :loading="addForm.processing">
-                        {{ t('campaigns.roster.add.submit') }}
-                    </BaseButton>
+                    <p class="text-sm text-base-secondary">{{ t('campaigns.roster.invite.note') }}</p>
                 </form>
+            </section>
+
+            <!-- Pending invitations: listed even when the roster is full or the campaign has finished -->
+            <section v-if="invitations.length > 0" :class="sectionClass" aria-labelledby="roster-invitations-title">
+                <div>
+                    <h2 id="roster-invitations-title" class="text-lg font-semibold text-base-primary">
+                        {{ t('campaigns.roster.invitations.title', { count: invitations.length }) }}
+                    </h2>
+                    <p v-if="more_invitations_than_seats" class="mt-2 text-sm text-warning" role="status">
+                        {{ t('campaigns.roster.invitations.tooManyPending') }}
+                    </p>
+                    <ul class="mt-3 divide-y divide-default">
+                        <li
+                            v-for="invitation in invitations"
+                            :key="invitation.id"
+                            class="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+                        >
+                            <div class="min-w-0">
+                                <p class="break-all font-medium text-base-primary">{{ invitation.email }}</p>
+                                <p class="text-sm text-base-secondary">
+                                    {{ t('campaigns.roster.invitations.invitedBy', { name: invitation.inviter_name }) }}
+                                    ·
+                                    {{ t('campaigns.roster.invitations.expires', { date: formatExpiry(invitation) }) }}
+                                    ·
+                                    {{ t('campaigns.roster.invitations.sends', { count: invitation.send_count }) }}
+                                </p>
+                            </div>
+                            <div class="flex flex-col gap-2 sm:flex-row">
+                                <BaseButton
+                                    variant="secondary"
+                                    size="sm"
+                                    :disabled="!invitation.can_resend"
+                                    :aria-disabled="processing ? 'true' : undefined"
+                                    class="w-full aria-disabled:cursor-not-allowed aria-disabled:opacity-50 sm:w-auto"
+                                    @click="resendInvitation(invitation)"
+                                >
+                                    {{ t('campaigns.roster.invitations.resend') }}
+                                </BaseButton>
+                                <BaseButton
+                                    variant="secondary"
+                                    size="sm"
+                                    :aria-disabled="processing ? 'true' : undefined"
+                                    class="w-full aria-disabled:cursor-not-allowed aria-disabled:opacity-50 sm:w-auto"
+                                    @click="askCancel(invitation)"
+                                >
+                                    {{ t('campaigns.roster.invitations.cancel') }}
+                                </BaseButton>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
             </section>
 
             <!-- Players and their attendance to the upcoming sessions -->
@@ -822,6 +926,17 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
             :cancel-label="t('common.cancel')"
             :confirm-variant="pendingChange?.kind === 'markAbsence' ? 'danger' : 'primary'"
             @confirm="confirmChange"
+        />
+
+        <!-- Cancel an invitation -->
+        <ConfirmDialog
+            v-model="showCancelDialog"
+            :title="t('campaigns.roster.invitations.cancelTitle')"
+            :message="t('campaigns.roster.invitations.cancelMessage', { email: cancelling?.email ?? '' })"
+            :confirm-label="t('campaigns.roster.invitations.cancel')"
+            :cancel-label="t('common.cancel')"
+            confirm-variant="danger"
+            @confirm="confirmCancel"
         />
 
         <!-- Remove a player -->

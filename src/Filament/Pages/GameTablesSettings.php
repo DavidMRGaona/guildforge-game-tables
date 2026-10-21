@@ -264,6 +264,9 @@ final class GameTablesSettings extends Page implements HasForms
                     Toggle::make('campaign_notifications.roster_added')
                         ->label(__('game-tables::messages.settings.fields.campaign_notify_roster_added')),
 
+                    Toggle::make('campaign_notifications.invitation_accepted')
+                        ->label(__('game-tables::messages.settings.fields.campaign_notify_invitation_accepted')),
+
                     Toggle::make('campaign_notifications.roster_removed')
                         ->label(__('game-tables::messages.settings.fields.campaign_notify_roster_removed')),
 

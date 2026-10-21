@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia as Assert;
+use Modules\GameTables\Application\Services\CampaignInvitationServiceInterface;
 use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignJoinRequestModel;
@@ -97,6 +98,8 @@ final class CampaignRosterControllerTest extends ModuleTestCase
                 ->has('max_players_limit')
                 ->where('can_add', true)
                 ->where('removal_notice', true)
+                ->has('invitations', 0)
+                ->where('more_invitations_than_seats', false)
                 ->has('requests', 1)
                 ->where('requests.0.id', $request->id)
                 ->where('requests.0.user_name', 'Richard Roe')
@@ -254,7 +257,7 @@ final class CampaignRosterControllerTest extends ModuleTestCase
 
         $this->actingAs($this->mary)
             ->from($this->rosterUrl())
-            ->post($this->rosterUrl().'/jugadores', ['email' => 'richard@example.com'])
+            ->post($this->rosterUrl().'/invitaciones', ['email' => 'richard@example.com', 'consent' => true])
             ->assertRedirect(route('verification.notice'));
 
         $this->assertFalse($this->roster()->contains(new CampaignId($this->campaign->id), $this->richard->id));
@@ -316,49 +319,176 @@ final class CampaignRosterControllerTest extends ModuleTestCase
             ->assertSessionHasErrors(['accepts_new_players', 'roster_access', 'max_players']);
     }
 
-    public function test_adding_a_player_by_email(): void
+    public function test_inviting_answers_the_same_for_unknown_and_known_emails(): void
     {
         $this->asDirector()
-            ->post($this->rosterUrl().'/jugadores', ['email' => 'richard@example.com'])
+            ->post($this->rosterUrl().'/invitaciones', ['email' => 'Nobody@Example.com', 'consent' => true])
             ->assertRedirect($this->rosterUrl())
-            ->assertSessionHas('success', 'Jugador añadido a la plantilla.');
+            ->assertSessionHas('success', 'Invitación enviada a nobody@example.com.');
 
-        $this->assertTrue($this->roster()->contains(new CampaignId($this->campaign->id), $this->richard->id));
+        $this->asDirector()
+            ->post($this->rosterUrl().'/invitaciones', ['email' => 'richard@example.com', 'consent' => true])
+            ->assertRedirect($this->rosterUrl())
+            ->assertSessionHas('success', 'Invitación enviada a richard@example.com.');
+
+        $this->assertFalse($this->roster()->contains(new CampaignId($this->campaign->id), $this->richard->id));
+        $this->assertSame(2, DB::table('gametables_campaign_invitations')->where('campaign_id', $this->campaign->id)->count());
     }
 
-    public function test_adding_an_unknown_email_is_refused(): void
+    public function test_inviting_requires_the_consent(): void
     {
         $this->asDirector()
-            ->post($this->rosterUrl().'/jugadores', ['email' => 'nobody@example.com'])
-            ->assertRedirect($this->rosterUrl())
-            ->assertSessionHas('error', 'No se ha podido añadir a esa cuenta. Comprueba el email.');
+            ->post($this->rosterUrl().'/invitaciones', ['email' => 'richard@example.com'])
+            ->assertSessionHasErrors(['consent' => 'Confirma que esta persona te ha dado permiso para invitarla.']);
+
+        $this->asDirector()
+            ->post($this->rosterUrl().'/invitaciones', ['email' => 'richard@example.com', 'consent' => false])
+            ->assertSessionHasErrors('consent');
+
+        $this->assertSame(0, DB::table('gametables_campaign_invitations')->count());
     }
 
-    public function test_the_twenty_first_addition_in_a_minute_is_rate_limited(): void
+    public function test_inviting_requires_a_valid_email(): void
+    {
+        $this->asDirector()
+            ->post($this->rosterUrl().'/invitaciones', ['email' => 'not-an-email', 'consent' => true])
+            ->assertSessionHasErrors('email');
+    }
+
+    public function test_inviting_a_member_flashes_the_refusal(): void
+    {
+        $this->asDirector()
+            ->post($this->rosterUrl().'/invitaciones', ['email' => 'john@example.com', 'consent' => true])
+            ->assertRedirect($this->rosterUrl())
+            ->assertSessionHas('error', 'Esa cuenta ya forma parte de la plantilla.');
+
+        $this->assertSame(0, DB::table('gametables_campaign_invitations')->count());
+    }
+
+    public function test_the_twenty_first_invitation_in_a_minute_is_rate_limited(): void
     {
         for ($i = 0; $i < 20; $i++) {
             $this->asDirector()
-                ->post($this->rosterUrl().'/jugadores', ['email' => "nobody{$i}@example.com"])
-                ->assertSessionHas('error', 'No se ha podido añadir a esa cuenta. Comprueba el email.');
+                ->post($this->rosterUrl().'/invitaciones', ['email' => "nobody{$i}@example.com", 'consent' => true])
+                ->assertSessionHas('success');
         }
 
         $this->asDirector()
-            ->post($this->rosterUrl().'/jugadores', ['email' => 'richard@example.com'])
+            ->post($this->rosterUrl().'/invitaciones', ['email' => 'richard@example.com', 'consent' => true])
             ->assertRedirect($this->rosterUrl())
-            ->assertSessionHas('error', 'Has añadido demasiados jugadores seguidos. Espera un minuto y vuelve a intentarlo.');
+            ->assertSessionHas('error', 'Has enviado demasiadas invitaciones seguidas. Espera un minuto y vuelve a intentarlo.');
         $this->actingAs($this->mary)
-            ->postJson($this->rosterUrl().'/jugadores', ['email' => 'richard@example.com'])
+            ->postJson($this->rosterUrl().'/invitaciones', ['email' => 'richard@example.com', 'consent' => true])
             ->assertStatus(429)
-            ->assertJson(['message' => 'Has añadido demasiados jugadores seguidos. Espera un minuto y vuelve a intentarlo.']);
+            ->assertJson(['message' => 'Has enviado demasiadas invitaciones seguidas. Espera un minuto y vuelve a intentarlo.']);
 
-        $this->assertFalse($this->roster()->contains(new CampaignId($this->campaign->id), $this->richard->id));
+        $this->assertSame(20, DB::table('gametables_campaign_invitations')->count());
     }
 
-    public function test_adding_requires_a_valid_email(): void
+    public function test_resending_and_cancelling_an_invitation(): void
     {
+        $this->travelTo(CarbonImmutable::parse('2026-11-02 10:00:00'));
+        $this->invite($this->campaign, 'ana@example.com');
+        $id = $this->invitationId($this->campaign, 'ana@example.com');
+
+        // Less than 24 hours after the first send
         $this->asDirector()
-            ->post($this->rosterUrl().'/jugadores', ['email' => 'not-an-email'])
-            ->assertSessionHasErrors('email');
+            ->post($this->rosterUrl().'/invitaciones/'.$id.'/reenviar')
+            ->assertSessionHas('error', 'Han de pasar 24 horas desde el último envío para volver a enviarla.');
+
+        $this->travelTo(CarbonImmutable::parse('2026-11-03 11:00:00'));
+        $this->asDirector()
+            ->post($this->rosterUrl().'/invitaciones/'.$id.'/reenviar')
+            ->assertRedirect($this->rosterUrl())
+            ->assertSessionHas('success', 'Invitación reenviada.');
+
+        $this->asDirector()
+            ->delete($this->rosterUrl().'/invitaciones/'.$id)
+            ->assertRedirect($this->rosterUrl())
+            ->assertSessionHas('success', 'Invitación cancelada.');
+
+        $this->assertSame(0, DB::table('gametables_campaign_invitations')->count());
+    }
+
+    public function test_resend_and_cancel_belong_to_the_campaign(): void
+    {
+        $other = $this->campaign('La torre del mago');
+        $this->invite($other, 'ana@example.com');
+        $id = $this->invitationId($other, 'ana@example.com');
+
+        $this->asDirector()->post($this->rosterUrl().'/invitaciones/'.$id.'/reenviar')->assertNotFound();
+        $this->asDirector()->delete($this->rosterUrl().'/invitaciones/'.$id)->assertNotFound();
+        $this->asDirector()->delete($this->rosterUrl().'/invitaciones/not-a-uuid')->assertNotFound();
+
+        $this->assertSame(1, DB::table('gametables_campaign_invitations')->where('campaign_id', $other->id)->count());
+    }
+
+    public function test_the_roster_page_lists_pending_invitations(): void
+    {
+        $this->invite($this->campaign, 'ana@example.com');
+        $id = $this->invitationId($this->campaign, 'ana@example.com');
+        // Invitations are listed oldest first: keep their creation times apart
+        $this->travel(1)->seconds();
+        $this->invite($this->campaign, 'luis@example.com');
+        $this->invite($this->campaign('La torre del mago'), 'other@example.com');
+
+        // 5 seats, 2 players, 2 pending: no warning
+        $this->asDirector()
+            ->get($this->rosterUrl())
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Campaigns/Roster', shouldExist: false)
+                ->has('invitations', 2)
+                ->where('invitations.0.id', $id)
+                ->where('invitations.0.email', 'ana@example.com')
+                ->where('invitations.0.inviter_name', 'Mary Major')
+                ->where('invitations.0.send_count', 1)
+                ->where('invitations.0.expires_at', CarbonImmutable::parse('2026-11-02 10:00:00')->addDays(14)->toIso8601String())
+                ->where('invitations.0.can_resend', false)
+                ->missing('invitations.0.campaign_id')
+                ->where('more_invitations_than_seats', false));
+
+        // 3 seats left (5 - 2) and now 4 pending
+        // Invitations are listed oldest first: keep their creation times apart
+        $this->travel(1)->seconds();
+        $this->invite($this->campaign, 'eva@example.com');
+        // Invitations are listed oldest first: keep their creation times apart
+        $this->travel(1)->seconds();
+        $this->invite($this->campaign, 'pau@example.com');
+        $this->asDirector()
+            ->get($this->rosterUrl())
+            ->assertInertia(fn (Assert $page) => $page->has('invitations', 4)->where('more_invitations_than_seats', true));
+
+        // Without a maximum there is no seat to run out of
+        $this->campaign->update(['max_players' => null]);
+        $this->asDirector()
+            ->get($this->rosterUrl())
+            ->assertInertia(fn (Assert $page) => $page->where('more_invitations_than_seats', false));
+    }
+
+    public function test_a_full_roster_still_lists_its_pending_invitations(): void
+    {
+        $this->invite($this->campaign, 'ana@example.com');
+        $this->campaign->update(['max_players' => 2]);
+
+        $this->asDirector()
+            ->get($this->rosterUrl())
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('can_add', false)
+                ->has('invitations', 1)
+                ->where('more_invitations_than_seats', true));
+    }
+
+    public function test_only_the_direction_invites(): void
+    {
+        $this->invite($this->campaign, 'ana@example.com');
+        $id = $this->invitationId($this->campaign, 'ana@example.com');
+        $url = $this->rosterUrl();
+
+        $this->actingAs($this->john)->post($url.'/invitaciones', ['email' => 'richard@example.com', 'consent' => true])->assertForbidden();
+        $this->actingAs($this->john)->post($url.'/invitaciones/'.$id.'/reenviar')->assertForbidden();
+        $this->actingAs($this->john)->delete($url.'/invitaciones/'.$id)->assertForbidden();
+
+        $this->assertSame(1, DB::table('gametables_campaign_invitations')->count());
     }
 
     public function test_removing_a_player(): void
@@ -514,7 +644,6 @@ final class CampaignRosterControllerTest extends ModuleTestCase
 
         $responses = [
             fn (): TestResponse => $this->actingAs($this->john)->put($url.'/ajustes', ['accepts_new_players' => false, 'roster_access' => 'anyone', 'max_players' => null]),
-            fn (): TestResponse => $this->actingAs($this->john)->post($url.'/jugadores', ['email' => 'richard@example.com']),
             fn (): TestResponse => $this->actingAs($this->john)->delete($url.'/jugadores/'.$this->jane->id),
             fn (): TestResponse => $this->actingAs($this->john)->post($url.'/solicitudes/'.$request->id.'/aceptar'),
             fn (): TestResponse => $this->actingAs($this->john)->post($url.'/solicitudes/'.$request->id.'/rechazar'),
@@ -542,6 +671,16 @@ final class CampaignRosterControllerTest extends ModuleTestCase
         $callback();
 
         return $count - $before;
+    }
+
+    private function invite(CampaignModel $campaign, string $email): void
+    {
+        $this->app->make(CampaignInvitationServiceInterface::class)->invite($campaign->id, $email, $this->mary->id);
+    }
+
+    private function invitationId(CampaignModel $campaign, string $email): string
+    {
+        return (string) DB::table('gametables_campaign_invitations')->where('campaign_id', $campaign->id)->where('email', $email)->value('id');
     }
 
     private function asDirector(): self

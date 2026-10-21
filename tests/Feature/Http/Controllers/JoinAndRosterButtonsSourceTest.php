@@ -80,9 +80,9 @@ final class JoinAndRosterButtonsSourceTest extends TestCase
         // The dialog only promises the email the server sends
         $this->assertStringContainsString("props.removal_notice ? 'campaigns.roster.players.removeMessage' : 'campaigns.roster.players.removeMessageNoEmail'", $roster);
         $this->assertStringNotContainsString('variant="ghost"', $roster);
-        // Requests and the add form: full-width buttons on phones
+        // Requests and the invite form: full-width buttons on phones
         $this->assertStringContainsString('class="grid flex-shrink-0 grid-cols-2 gap-2 sm:flex"', $roster);
-        $this->assertStringContainsString('<BaseButton type="submit" variant="primary" class="w-full sm:w-auto" :loading="addForm.processing">', $roster);
+        $this->assertStringContainsString('<BaseButton type="submit" variant="primary" class="w-full sm:w-auto" :loading="inviteForm.processing">', $roster);
         // The helper line sits under the heading
         $this->assertLessThan(
             strpos($roster, '<table'),

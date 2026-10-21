@@ -49,6 +49,7 @@ final readonly class UserModelAccountLookup implements AccountLookupInterface
             userId: (string) $user->id,
             email: $user->email,
             emailVerified: $user->email_verified_at !== null,
+            name: (string) $user->name,
         );
     }
 }

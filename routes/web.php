@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Modules\GameTables\Http\Controllers\CampaignController;
+use Modules\GameTables\Http\Controllers\CampaignInvitationController;
 use Modules\GameTables\Http\Controllers\CampaignJoinController;
 use Modules\GameTables\Http\Controllers\CampaignRosterController;
 use Modules\GameTables\Http\Controllers\FrontendCampaignController;
@@ -83,9 +84,13 @@ Route::prefix('campanas')->name('campaigns.')->group(function (): void {
         // Roster page of the direction (the emails link to it)
         Route::get('/mis-campanas/{id}/plantilla', [CampaignRosterController::class, 'show'])->name('roster');
         Route::put('/mis-campanas/{id}/plantilla/ajustes', [CampaignRosterController::class, 'updateSettings'])->name('roster.settings');
-        Route::post('/mis-campanas/{id}/plantilla/jugadores', [CampaignRosterController::class, 'add'])
+        Route::post('/mis-campanas/{id}/plantilla/invitaciones', [CampaignRosterController::class, 'invite'])
             ->middleware('throttle:game-tables-campaign-roster-add')
-            ->name('roster.add');
+            ->name('roster.invite');
+        Route::post('/mis-campanas/{id}/plantilla/invitaciones/{invitationId}/reenviar', [CampaignRosterController::class, 'resendInvitation'])
+            ->middleware('throttle:game-tables-campaign-roster-add')
+            ->name('roster.invitation.resend');
+        Route::delete('/mis-campanas/{id}/plantilla/invitaciones/{invitationId}', [CampaignRosterController::class, 'cancelInvitation'])->name('roster.invitation.cancel');
         Route::delete('/mis-campanas/{id}/plantilla/jugadores/{userId}', [CampaignRosterController::class, 'remove'])->name('roster.remove');
         Route::post('/mis-campanas/{id}/plantilla/solicitudes/{requestId}/aceptar', [CampaignRosterController::class, 'accept'])->name('roster.accept');
         Route::post('/mis-campanas/{id}/plantilla/solicitudes/{requestId}/rechazar', [CampaignRosterController::class, 'reject'])->name('roster.reject');
@@ -103,6 +108,33 @@ Route::prefix('campanas')->name('campaigns.')->group(function (): void {
             ->where('slug', '[a-z0-9-]+')
             ->name('leave');
     });
+
+    // The profile tab's actions: the account's own invitations, picked by id
+    Route::prefix('invitaciones/perfil/{invitationId}')
+        ->whereUuid('invitationId')
+        ->middleware(['auth', 'email.verified-if-required'])
+        ->name('invitation.')
+        ->group(function (): void {
+            Route::post('/aceptar', [CampaignInvitationController::class, 'profileAccept'])->name('profile-accept');
+            Route::post('/rechazar', [CampaignInvitationController::class, 'profileReject'])->name('profile-reject');
+        });
+
+    // The link of the invitation email: the page and rejecting need only the token (no account),
+    // accepting an account with the invited email. Before /{slug}, which would swallow the path
+    Route::prefix('invitaciones/{token}')
+        ->where(['token' => '[A-Za-z0-9]{64}'])
+        ->middleware('throttle:game-tables-campaign-invitation')
+        ->name('invitation.')
+        ->group(function (): void {
+            Route::get('/', [CampaignInvitationController::class, 'show'])->name('show');
+            Route::get('/iniciar-sesion', [CampaignInvitationController::class, 'login'])->name('login');
+            Route::get('/crear-cuenta', [CampaignInvitationController::class, 'register'])->name('register');
+            Route::get('/verificar', [CampaignInvitationController::class, 'verify'])->name('verify');
+            Route::post('/aceptar', [CampaignInvitationController::class, 'accept'])
+                ->middleware(['auth', 'email.verified-if-required'])
+                ->name('accept');
+            Route::post('/rechazar', [CampaignInvitationController::class, 'reject'])->name('reject');
+        });
 
     Route::get('/{slug}', [CampaignController::class, 'show'])
         ->where('slug', '[a-z0-9-]+')

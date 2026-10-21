@@ -10,5 +10,6 @@ final readonly class AccountDTO
         public string $userId,
         public string $email,
         public bool $emailVerified,
+        public string $name = '',
     ) {}
 }

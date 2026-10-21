@@ -39,6 +39,7 @@ use Modules\GameTables\Domain\Enums\CampaignStatus;
 use Modules\GameTables\Domain\Enums\RosterAccess;
 use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
+use Modules\GameTables\Filament\Resources\CampaignResource\RelationManagers\InvitationsRelationManager;
 use Modules\GameTables\Filament\Resources\CampaignResource\RelationManagers\JoinRequestsRelationManager;
 use Modules\GameTables\Filament\Resources\CampaignResource\RelationManagers\RosterRelationManager;
 use Modules\GameTables\Domain\Exceptions\NotEditableException;
@@ -329,6 +330,7 @@ final class CampaignResource extends BaseResource
         return [
             RosterRelationManager::class,
             JoinRequestsRelationManager::class,
+            InvitationsRelationManager::class,
         ];
     }
 

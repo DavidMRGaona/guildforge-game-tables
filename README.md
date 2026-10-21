@@ -7,7 +7,7 @@ Módulo de GuildForge para gestionar mesas de rol y campañas: inscripciones de 
 - **Mesas**: sesiones de juego de tipo one-shot, aventura, sesión de campaña, demo o tutorial; presenciales, online o híbridas.
 - **Campañas**: agrupan sesiones, con estado (reclutando, activa, en pausa, completada, cancelada) y frecuencia.
 - **Directores de juego**: director principal y co-directores, propios de la mesa o heredados de la campaña.
-- **Plantilla de la campaña**: los jugadores fijos de una campaña. Se inscriben solos en cada sesión que se publica, solicitan entrar desde la web o los añade la dirección. Ver [Plantillas de campaña](#plantillas-de-campaña).
+- **Plantilla de la campaña**: los jugadores fijos de una campaña. Se inscriben solos en cada sesión que se publica, solicitan entrar desde la web o aceptan una invitación por email de la dirección. Ver [Plantillas de campaña](#plantillas-de-campaña) e [Invitaciones](#invitaciones).
 - **Inscripciones**: como jugador o espectador, con confirmación automática o manual por mesa.
 - **Invitados**: quien no tiene cuenta se inscribe con nombre y email en las mesas abiertas a todos, y cancela con un enlace con token.
 - **Lista de espera** (ajuste, desactivada por defecto): con las plazas de jugador completas, los jugadores se apuntan a la lista y cada plaza liberada pasa al primero mientras las inscripciones sigan abiertas. Ver [Lista de espera](#lista-de-espera).
@@ -63,7 +63,7 @@ Se configura en el panel: **Mesas de rol** → **Configuración** (permiso `game
 | **Acceso anticipado para socios** | **Acceso anticipado para socios** (clave `membership_integration.enabled`): si quienes tienen el rol de socio del core pueden inscribirse antes de la apertura según los días de acceso anticipado de cada mesa (desactivado, se inscriben con la apertura general); no depende del módulo de gestión de socios. **Días de acceso anticipado**: con cuántos empieza cada mesa nueva del panel |
 | **Valores por defecto** | Duración y número de jugadores y espectadores con los que empiezan los formularios de mesa del panel y de la web; confirmación automática y tipo de inscripción de las mesas nuevas del panel y de las creadas desde la web. Al guardar, cada valor por defecto se comprueba contra los **Límites** del mismo envío (no contra los guardados antes) y el mínimo de jugadores no puede superar el máximo; si no, el campo muestra el error y no se guarda nada. Los topes fijos siguen por encima: 20 jugadores, 50 espectadores, 720 minutos y 30 días de acceso anticipado |
 | **Notificaciones** | Correos de inscripción y de cancelación a los directores y al email de la mesa, y correos de promoción desde la lista de espera (al participante y a los directores) |
-| **Notificaciones de campañas** | Siete interruptores, todos activados por defecto (`campaign_notifications.*`): `session_scheduled`, `join_request_received`, `join_request_accepted`, `join_request_rejected`, `roster_added`, `roster_removed` y `player_left`. Ver [Correos de las plantillas](#correos-de-las-plantillas) |
+| **Notificaciones de campañas** | Ocho interruptores, todos activados por defecto (`campaign_notifications.*`): `session_scheduled`, `join_request_received`, `join_request_accepted`, `join_request_rejected`, `roster_added`, `invitation_accepted`, `roster_removed` y `player_left`. El correo de invitación no tiene interruptor: es la invitación misma. Ver [Correos de las plantillas](#correos-de-las-plantillas) |
 | **Límites** | Máximo de jugadores, de espectadores y de duración en los formularios de mesa del panel y de la web (también al validar el envío) |
 | **Creación desde web** | Activar la creación desde la web, qué se puede crear (mesas, campañas o ambas), quién puede crear (cualquier persona, usuarios registrados, roles concretos separados por comas o un permiso) y el modo de publicación (`auto`, `approval`, `role_based`) |
 
@@ -236,7 +236,7 @@ Del mismo modo, una mesa creada o editada desde la web solo se puede vincular a 
 
 Cada campaña tiene una **plantilla**: las personas que juegan la campaña entera. Las campañas ya existentes arrancan con la plantilla vacía.
 
-Las campañas que ya estén cerradas (**Acepta nuevos jugadores** desactivado, o en pausa, completadas o canceladas) rechazan desde que se instala esta versión las inscripciones web de quien no esté en la plantilla. Las inscripciones que ya existían se mantienen. La dirección debe añadir a sus jugadores a la plantilla: al añadir a un jugador, sus inscripciones en las próximas sesiones pasan a ser de la plantilla, sin enviar correos de sesión.
+Las campañas que ya estén cerradas (**Acepta nuevos jugadores** desactivado, o en pausa, completadas o canceladas) rechazan desde que se instala esta versión las inscripciones web de quien no esté en la plantilla. Las inscripciones que ya existían se mantienen. La dirección debe invitar a sus jugadores a la plantilla: cuando un jugador entra, sus inscripciones en las próximas sesiones pasan a ser de la plantilla, sin enviar correos de sesión.
 
 ### Quién dirige una campaña
 
@@ -252,22 +252,50 @@ Los correos a la dirección respetan el interruptor **Notificar por email** de c
 Cada campaña define **Quién puede solicitar** (`roster_access`): **Cualquier cuenta** (por defecto) o **Solo socios**. La condición de socio se comprueba con el rol de socio configurado en el core, nunca por nombre de rol. Además:
 
 - la campaña tiene que estar publicada y **abierta**: **Acepta nuevos jugadores** activado y estado Reclutando o Activa. En pausa, completada o cancelada cuenta como cerrada para solicitudes y para inscripciones sueltas;
-- el máximo de jugadores de la campaña (vacío = sin límite) limita la plantilla: con la plantilla llena no se puede aceptar ni añadir a nadie, y no puede bajarse por debajo de la plantilla actual;
+- el máximo de jugadores de la campaña (vacío = sin límite) limita la plantilla: con la plantilla llena no se puede aceptar ni invitar a nadie, y no puede bajarse por debajo de la plantilla actual;
 - una campaña completada o cancelada ya no cambia su plantilla, aunque la dirección puede quitar jugadores.
 
 Se entra de tres formas:
 
 1. **Solicitud.** Desde la ficha de la campaña, con sesión iniciada y un mensaje opcional (hasta 500 caracteres); se puede retirar mientras esté pendiente. Hay un límite de 5 solicitudes por minuto y 20 por hora y usuario. La dirección la acepta o la rechaza (con un motivo opcional) desde la página de plantilla o desde el panel.
-2. **Alta directa.** La dirección escribe el email exacto de la cuenta; no hay buscador de usuarios. Si la cuenta no existe, el mensaje no revela nada más: una campaña completa, terminada o no publicada da la misma respuesta para cualquier email. Hay un límite de 20 altas por minuto y usuario.
+2. **Invitación.** La dirección invita por email a cualquier persona, tenga cuenta o no, y la persona entra al aceptar la invitación con una cuenta de ese email. Las cuentas que ya existen también tienen que aceptar: nadie entra en la plantilla sin pulsar **Aceptar**. Ver [Invitaciones](#invitaciones).
 3. **Aceptar una solicitud.**
 
-La dirección puede añadir o aceptar mientras la campaña está cerrada a nuevos jugadores o en pausa (no una vez completada o cancelada); solo las solicitudes necesitan una campaña abierta. Las cuentas anonimizadas no cuentan para el límite, no se inscriben, no reciben correos y sus solicitudes pendientes no se muestran.
+La dirección puede invitar o aceptar mientras la campaña está cerrada a nuevos jugadores o en pausa (no una vez completada o cancelada); solo las solicitudes necesitan una campaña abierta. Las cuentas anonimizadas no cuentan para el límite, no se inscriben, no reciben correos y sus solicitudes pendientes no se muestran.
+
+### Invitaciones
+
+- **Invitar.** Desde la página de plantilla o desde la pestaña **Invitaciones** del panel, la dirección escribe el email y marca la casilla «Confirmo que esta persona me ha dado permiso para usar su email para invitarla a la campaña.», obligatoria. La casilla es una declaración de quien invita, no el consentimiento de la persona invitada. La respuesta es siempre «Invitación enviada a {email}.», tenga cuenta o no, así que el formulario no sirve para averiguar qué emails tienen cuenta. Solo se responde otra cosa si la campaña no está disponible, ha terminado o tiene la plantilla completa, si ese email es de alguien que ya está en la plantilla o dirige la campaña, y cuando se superan los límites de envío. El email se guarda en minúsculas y sin espacios. Hay un límite de 20 invitaciones y reenvíos por minuto y usuario.
+- **El correo.** Dice quién invita y a qué campaña (con enlace a su ficha), lleva el botón **Ver invitación**, explica cómo rechazar, indica la caducidad e incluye el aviso de protección de datos (ver [Aviso legal del correo](#aviso-legal-del-correo)). Se envía siempre, sin depender de los ajustes de avisos.
+- **La página del enlace** (`/campanas/invitaciones/{token}`) no pide sesión y no se indexa. Muestra un estado según quién la abre:
+  - **sin sesión:** la campaña, quién invita, el email que hay que usar y los botones **Iniciar sesión** y **Crear cuenta**, que vuelven a la invitación al terminar;
+  - **con la cuenta de ese email** (sin distinguir mayúsculas): **Aceptar** y **Rechazar**;
+  - **con una cuenta que debe verificar su email:** solo **Rechazar** y el aviso «Verifica tu email para aceptar.», con un enlace a la verificación que vuelve a la invitación al verificar;
+  - **con otra cuenta:** «Esta invitación es para otro email», sin decir cuál, y **Cerrar sesión**;
+  - **recién rechazada:** «Invitación rechazada»;
+  - **caducada, usada, cancelada o inexistente:** un único mensaje genérico, «Invitación no válida».
+
+  Hay un límite de 30 visitas por minuto y conexión.
+- **Aceptar** es siempre un clic explícito de una cuenta con el email invitado; registrarse no cuenta como aceptar. Si el sitio exige verificación de email, la cuenta verifica antes; si no la exige, basta el enlace, que prueba que la persona controla ese buzón. Aceptar sigue las mismas reglas y correos que la entrada por la dirección (sesiones, correo de entrada, solicitud pendiente dada por aceptada), salta **Solo socios** y avisa a la dirección («{nombre} ha aceptado tu invitación», interruptor `invitation_accepted`).
+- **Rechazar** solo necesita el enlace, sin cuenta y con confirmación (nunca con solo abrir el enlace): la invitación y el email se borran en el acto y la dirección no recibe aviso.
+- **Pestaña del perfil.** La subpestaña **Invitaciones** de **Mesas**, con un contador, lista las invitaciones pendientes del email de la cuenta (también las enviadas antes de registrarse) con **Aceptar** y **Rechazar**. Solo aparece si el email de la cuenta está verificado y hay al menos una invitación pendiente; el servidor comprueba las dos cosas en cada acción, aunque se fuerce la petición.
+- **Lista de la dirección.** La página de plantilla y la pestaña **Invitaciones** del panel muestran las invitaciones pendientes con el email, quién invitó, los envíos y la caducidad, con **Reenviar** y **Cancelar** (cancelar la borra). Reenviar manda un enlace nuevo (el anterior deja de valer) y no alarga la caducidad. Si hay más invitaciones pendientes que plazas libres, avisa: «Hay más invitaciones pendientes que plazas libres; entrará quien acepte primero.».
+- **Límites** por campaña y email, entre todas las invitaciones (cancelar y volver a invitar no reinicia la cuenta): como máximo 3 envíos en 30 días, al menos 24 horas entre dos envíos y 30 días sin poder invitar tras un rechazo. Cancelar no bloquea, pero sus envíos cuentan.
+- **Plazas.** Una invitación no reserva plaza: el máximo de jugadores se comprueba al invitar y al aceptar. Si la plantilla está completa al aceptar, la invitación sigue pendiente hasta caducar, por si se libera una plaza.
+- **Conservación.** Una invitación caduca a los 14 días de crearse y se borra al aceptarla, rechazarla, cancelarla o caducar, y también cuando la campaña ha terminado o no está ni aprobada ni publicada. Una invitación pertenece a la campaña: sigue valiendo aunque quien la envió deje la dirección o borre su cuenta. Para los límites queda un registro de envíos sin el email en claro (un HMAC de la campaña y el email con la clave de la aplicación), que se borra a los 30 días. La limpieza la hace cada día `game-tables:prune-campaign-invitations`.
+
+#### Aviso legal del correo
+
+El bloque de protección de datos del correo de invitación (finalidad, legitimación, origen, conservación y derechos) se edita en el core, en **Páginas legales → Avisos en correos**, con una vista previa del correo. Los huecos `:inviter`, `:campaign`, `:site` y `:days` se rellenan solos; un texto vacío vuelve al texto por defecto del módulo. El responsable y sus contactos salen siempre de la pestaña **Datos de la asociación** de **Páginas legales** (con el nombre del sitio si el nombre legal está vacío), y el resto del correo, con el enlace a la política de privacidad, no se edita. La política de privacidad del sitio debe recoger esta finalidad.
+
+La pestaña del perfil que se oculta y el aviso editable necesitan el core `^3.14`. Con un core anterior el módulo funciona, pero la pestaña **Invitaciones** se ve siempre (vacía si no hay invitaciones) y el correo usa el aviso por defecto.
 
 ### Páginas de la web
 
+- **Invitación** (`/campanas/invitaciones/{token}`): la página del enlace del correo (ver [Invitaciones](#invitaciones)).
 - **Ficha de la campaña**: la caja de unirse muestra el estado de cada persona (invitada, con solicitud pendiente, de la plantilla, campaña completa o cerrada, solo socios o dirección). La plantilla puede **Salir de la campaña** con confirmación.
 - **Mis campañas** (`/campanas/mis-campanas`): además de los borradores, lista las campañas aprobadas o publicadas que la persona dirige, también las completadas o canceladas (sin **Añadir sesión**), con el número de solicitudes pendientes y los accesos **Plantilla** y **Añadir sesión**.
-- **Plantilla** (`/campanas/mis-campanas/{id}/plantilla`): ajustes (acepta jugadores nuevos, quién puede solicitar y máximo de jugadores; no devuelven la campaña a revisión), solicitudes pendientes, alta directa y la lista de jugadores con una ficha por sesión próxima (va, no va, en espera). El resto de la ficha de una campaña publicada solo se edita en el panel.
+- **Plantilla** (`/campanas/mis-campanas/{id}/plantilla`): ajustes (acepta jugadores nuevos, quién puede solicitar y máximo de jugadores; no devuelven la campaña a revisión), solicitudes pendientes, el formulario para invitar, las invitaciones pendientes y la lista de jugadores con una ficha por sesión próxima (va, no va, en espera). El resto de la ficha de una campaña publicada solo se edita en el panel.
 
 ### Inscripción al publicar una sesión
 
@@ -291,11 +319,11 @@ Una **sesión de campaña** es cualquier mesa con campaña, sea cual sea su tipo
 
 ### Panel
 
-La ficha de la campaña tiene dos pestañas de relación, **Plantilla** (añadir con el email exacto de la cuenta y quitar) y **Solicitudes** (aceptar y rechazar), con las mismas reglas, correos y servicio que la web. Se ven y se usan con el permiso de edición de campañas (`campaigns.update`); no hace falta ningún permiso de usuarios del core. **Quién puede solicitar** está en la pestaña **Progreso**, junto al máximo de jugadores, y **Acepta nuevos jugadores** en **Publicación**.
+La ficha de la campaña tiene tres pestañas de relación, **Plantilla** (quitar jugadores), **Invitaciones** (invitar, reenviar y cancelar; ver [Invitaciones](#invitaciones)) y **Solicitudes** (aceptar y rechazar), con las mismas reglas, correos y servicio que la web. Se ven y se usan con el permiso de edición de campañas (`campaigns.update`); no hace falta ningún permiso de usuarios del core. **Quién puede solicitar** está en la pestaña **Progreso**, junto al máximo de jugadores, y **Acepta nuevos jugadores** en **Publicación**.
 
 ### Correos de las plantillas
 
-Siete correos, cada uno con su interruptor en **Notificaciones de campañas** (todos activados por defecto):
+Nueve correos. El de invitación se envía siempre, porque es la invitación misma; los otros ocho tienen su interruptor en **Notificaciones de campañas** (todos activados por defecto):
 
 | Interruptor | Correo | Destinatarios |
 |-------------|--------|---------------|
@@ -303,7 +331,9 @@ Siete correos, cada uno con su interruptor en **Notificaciones de campañas** (t
 | `join_request_received` | Solicitud recibida | Dirección |
 | `join_request_accepted` | Solicitud aceptada | Quien la envió, con las sesiones en las que queda inscrito |
 | `join_request_rejected` | Solicitud rechazada | Quien la envió, con el motivo si lo hay |
-| `roster_added` | Añadido a la plantilla | La persona añadida, con sus sesiones |
+| — | Invitación a la campaña | El email invitado, al invitar y en cada reenvío |
+| `roster_added` | Añadido a la plantilla | La persona añadida (también al aceptar una invitación), con sus sesiones |
+| `invitation_accepted` | Invitación aceptada | Dirección |
 | `roster_removed` | Quitado de la plantilla | La persona quitada |
 | `player_left` | Salida de la plantilla | Dirección |
 
@@ -363,11 +393,18 @@ Widget del dashboard: `PendingModerationWidget` (mesas y campañas pendientes de
 | `POST` | `/campanas/mis-campanas/{id}/enviar-revision` | `campaigns.submit-review` | Autor |
 | `GET` | `/campanas/mis-campanas/{id}/plantilla` | `campaigns.roster` | Dirección |
 | `PUT` | `/campanas/mis-campanas/{id}/plantilla/ajustes` | `campaigns.roster.settings` | Dirección |
-| `POST` / `DELETE` | `/campanas/mis-campanas/{id}/plantilla/jugadores[/{userId}]` | `campaigns.roster.add` / `campaigns.roster.remove` | Dirección |
+| `DELETE` | `/campanas/mis-campanas/{id}/plantilla/jugadores/{userId}` | `campaigns.roster.remove` | Dirección |
+| `POST` | `/campanas/mis-campanas/{id}/plantilla/invitaciones` | `campaigns.roster.invite` | Dirección |
+| `POST` / `DELETE` | `/campanas/mis-campanas/{id}/plantilla/invitaciones/{invitationId}[/reenviar]` | `campaigns.roster.invitation.resend` / `campaigns.roster.invitation.cancel` | Dirección |
 | `POST` | `/campanas/mis-campanas/{id}/plantilla/solicitudes/{requestId}/aceptar` / `rechazar` | `campaigns.roster.accept` / `campaigns.roster.reject` | Dirección |
 | `POST` | `/campanas/mis-campanas/{id}/plantilla/ausencias` | `campaigns.roster.absence` | Dirección |
 | `POST` / `DELETE` | `/campanas/{slug}/solicitud` | `campaigns.join.request` / `campaigns.join.withdraw` | Usuarios autenticados |
 | `DELETE` | `/campanas/{slug}/plantilla` | `campaigns.leave` | Plantilla |
+| `GET` | `/campanas/invitaciones/{token}` | `campaigns.invitation.show` | Con el enlace |
+| `GET` | `/campanas/invitaciones/{token}/iniciar-sesion` / `crear-cuenta` / `verificar` | `campaigns.invitation.login` / `campaigns.invitation.register` / `campaigns.invitation.verify` | Con el enlace |
+| `POST` | `/campanas/invitaciones/{token}/aceptar` | `campaigns.invitation.accept` | La cuenta del email invitado |
+| `POST` | `/campanas/invitaciones/{token}/rechazar` | `campaigns.invitation.reject` | Con el enlace |
+| `POST` | `/campanas/invitaciones/perfil/{invitationId}/aceptar` / `rechazar` | `campaigns.invitation.profile-accept` / `campaigns.invitation.profile-reject` | La cuenta del email invitado, verificada |
 
 `{gameTable}` es el slug de la mesa; en las rutas de **Mis mesas** (`/mesas/mis-mesas/…`) también vale su id, la forma que llevan los correos de rechazo enviados antes de la versión 2.8.0 (los nuevos enlazan por slug). En las rutas de **Mis campañas**, `{id}` es el id de la campaña. El módulo no tiene API: el número de mesas de un evento llega a su página como prop de Inertia (`gameTableCount`). `gametables.index`, `gametables.calendar` y `campaigns.index` aparecen entre las páginas que se pueden enlazar desde el editor de menús.
 
@@ -388,6 +425,7 @@ Widget del dashboard: `PendingModerationWidget` (mesas y campañas pendientes de
 | `Campaigns/Edit` | `/campanas/mis-campanas/{id}/editar` |
 | `Campaigns/MyCampaigns` | `/campanas/mis-campanas` |
 | `Campaigns/Roster` | `/campanas/mis-campanas/{id}/plantilla` |
+| `Campaigns/Invitation` | `/campanas/invitaciones/{token}` |
 
 ### Componentes
 
@@ -403,7 +441,7 @@ Widget del dashboard: `PendingModerationWidget` (mesas y campañas pendientes de
 | `FormTabs` | Pestañas de los formularios de creación |
 | `EventTablesLink` | Enlace a las mesas del evento (slot `event-detail-actions`) |
 | `EventCreateTableButton` | Botón «crear mesa» en la página del evento (slot `event-detail-actions`) |
-| `profile/*` | Pestañas del perfil: Mesas, Mis mesas y Campañas (slot `profile-sections`) |
+| `profile/*` | Pestañas del perfil: Mesas, Mis mesas, Campañas e Invitaciones (slot `profile-sections`) |
 | `VerificationBlockedButton` | Acción desactivada con su motivo mientras la cuenta debe verificar su email (ver [Verificación de email](#verificación-de-email)) |
 
 ## Correos
@@ -421,6 +459,8 @@ Widget del dashboard: `PendingModerationWidget` (mesas y campañas pendientes de
 | Recordatorio antes de la mesa | Participantes confirmados (con cuenta o con el email confirmado), una vez, las horas configuradas antes del inicio; desactivado por defecto (`game-tables:send-reminders`, cada hora) |
 | Sesión de campaña programada | Plantilla (ver [Correos de las plantillas](#correos-de-las-plantillas)) |
 | Solicitud de entrada recibida, aceptada o rechazada | Dirección (recibida) o quien la envió (aceptada y rechazada) |
+| Invitación a una campaña | El email invitado, siempre (ver [Invitaciones](#invitaciones)) |
+| Invitación aceptada | Dirección |
 | Añadido o quitado de la plantilla | La persona afectada |
 | Salida de la plantilla | Dirección |
 | Mesa o campaña enviada a revisión | Usuarios con rol `admin` o `editor` |
@@ -447,7 +487,8 @@ Widget del dashboard: `PendingModerationWidget` (mesas y campañas pendientes de
 | `ParticipantCancelled` | Se cancela una inscripción (`byOrganization` cuando la cancela la organización desde el panel) |
 | `ParticipantPromotedFromWaitingList` | Un participante sale de la lista de espera |
 | `CampaignJoinRequested`, `CampaignJoinRequestAccepted`, `CampaignJoinRequestRejected` | Se envía, se acepta o se rechaza una solicitud de entrada |
-| `CampaignRosterMemberAdded`, `CampaignRosterMemberRemoved`, `CampaignRosterMemberLeft` | La dirección añade o quita a alguien, o alguien sale por su cuenta |
+| `CampaignRosterMemberAdded`, `CampaignRosterMemberRemoved`, `CampaignRosterMemberLeft` | Alguien entra en la plantilla, la dirección le quita o sale por su cuenta |
+| `CampaignInvitationSent`, `CampaignInvitationAccepted` | Se envía (o reenvía) una invitación, o alguien la acepta |
 | `RosterMemberEnrolledInSession` | Una persona de la plantilla queda inscrita en una sesión |
 
 `CampaignCreated` y `CampaignStatusChanged` están definidos pero hoy no se emiten.
@@ -478,12 +519,13 @@ php artisan gametables:generate-slugs --dry-run  # muestra qué haría sin cambi
 php artisan gametables:generate-slugs --force    # regenera también los existentes
 php artisan game-tables:update-statuses          # inicia y completa las mesas según su hora (programado cada cinco minutos)
 php artisan game-tables:expire-guest-registrations  # caduca invitados sin confirmar y borra huellas de mesas terminadas (programado cada cinco minutos)
+php artisan game-tables:prune-campaign-invitations  # borra las invitaciones caducadas o de campañas que ya no están abiertas y los registros de envíos de más de 30 días (programado a diario)
 ```
 
 ## Limitaciones actuales
 
 - Las rutas de creación desde la web exigen sesión iniciada, también con el nivel de acceso «Cualquier persona».
-- «Solo por invitación» no tiene sistema de invitaciones: nadie se inscribe desde la web (ni invitados ni usuarios con sesión, que ven «Esta mesa es solo por invitación: la organización inscribe a los jugadores») y la organización añade a los participantes desde el panel.
+- Las mesas «Solo por invitación» no tienen sistema de invitaciones (las invitaciones por email son de las campañas): nadie se inscribe desde la web (ni invitados ni usuarios con sesión, que ven «Esta mesa es solo por invitación: la organización inscribe a los jugadores») y la organización añade a los participantes desde el panel.
 
 ## Arquitectura
 

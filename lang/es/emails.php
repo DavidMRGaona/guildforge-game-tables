@@ -293,4 +293,30 @@ return [
         'intro' => ':player ha salido de la plantilla de la campaña «:campaignTitle». Sus plazas en las próximas sesiones se han liberado.',
         'view_roster' => 'Ver plantilla',
     ],
+
+    'campaign_invitation' => [
+        'subject' => ':inviter te invita a la campaña «:campaignTitle»',
+        'greeting' => '¡Hola!',
+        'intro' => ':inviter te invita a unirte a la campaña «:campaignTitle».',
+        'view_campaign' => 'Puedes ver la ficha de la campaña [aquí](:url).',
+        'view_invitation' => 'Ver invitación',
+        'reject' => 'Si no quieres unirte, abre la invitación y pulsa Rechazar: borraremos tu email al momento.',
+        'expires' => 'Caduca el :date.',
+        'privacy_title' => '**Información sobre el tratamiento de tu email**',
+        'privacy_controller' => 'Responsable: :name.',
+        'privacy_contact' => 'Contacto: :email.',
+        'privacy_dpo' => 'Delegado de protección de datos: :dpo.',
+        'privacy_policy' => 'El resto de tus derechos, en la [política de privacidad](:url).',
+        'privacy_default' => "Finalidad: invitarte a esta campaña.\n\nLegitimación: interés legítimo (art. 6.1.f RGPD) para enviarte esta invitación, que :inviter nos ha pedido enviarte con tu permiso.\n\nOrigen: te lo facilitó :inviter.\n\nConservación: hasta que aceptes, rechaces o caduque la invitación, como máximo :days días. Además guardamos durante 30 días una huella del email, un dato seudonimizado que no permite leerlo, solo para limitar los envíos.\n\nDerechos: rechazar la invitación borra tu email al instante.",
+        'notice_label' => 'Correo de invitación a una campaña',
+        'notice_help' => 'Bloque de protección de datos del correo que recibe una persona invitada a una campaña.',
+        'preview_campaign' => 'Campaña de ejemplo',
+    ],
+
+    'campaign_invitation_accepted' => [
+        'subject' => ':player ha aceptado tu invitación a «:campaignTitle»',
+        'greeting' => '¡Hola, :name!',
+        'intro' => ':player ha aceptado tu invitación y ya forma parte de la plantilla de la campaña «:campaignTitle».',
+        'view_roster' => 'Ver plantilla',
+    ],
 ];
