@@ -102,7 +102,7 @@ function goToNextMonth(): void {
 
 <template>
     <DefaultLayout>
-        <div class="bg-surface shadow dark:shadow-neutral-900/50">
+        <div class="bg-surface shadow">
             <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between">
                     <div>
@@ -121,7 +121,7 @@ function goToNextMonth(): void {
                             role="tab"
                             :aria-selected="false"
                             :aria-label="t('gameTables.filters.listView')"
-                            class="rounded-l-lg border border-default bg-surface px-3 py-2 text-base-secondary transition-colors hover:bg-muted"
+                            class="rounded-l-lg border border-default bg-transparent px-3 py-2 text-base-secondary transition-colors hover:bg-base-secondary/10"
                         >
                             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
@@ -234,7 +234,7 @@ function goToNextMonth(): void {
                 <h3 class="mt-4 text-lg font-medium text-base-primary">
                     {{ t('gameTables.noTablesThisMonth') }}
                 </h3>
-                <p class="mt-2 text-stone-500 dark:text-base-muted">
+                <p class="mt-2 text-base-secondary">
                     {{ t('gameTables.tryDifferentMonth') }}
                 </p>
             </div>

@@ -137,8 +137,8 @@ function getFilterLabel(
                         :class="[
                             'rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
                             isSelected('statuses', option.value)
-                                ? 'bg-primary-light text-primary-800 dark:text-primary-300'
-                                : 'bg-muted text-base-secondary hover:bg-stone-200 dark:hover:bg-stone-600',
+                                ? 'bg-primary-light text-base-primary'
+                                : 'bg-base-secondary/10 text-base-secondary hover:bg-base-secondary/20',
                         ]"
                         @click="toggleFilter('statuses', option.value)"
                     >
@@ -160,8 +160,8 @@ function getFilterLabel(
                         :class="[
                             'rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
                             isSelected('roles', option.value)
-                                ? 'bg-primary-light text-primary-800 dark:text-primary-300'
-                                : 'bg-muted text-base-secondary hover:bg-stone-200 dark:hover:bg-stone-600',
+                                ? 'bg-primary-light text-base-primary'
+                                : 'bg-base-secondary/10 text-base-secondary hover:bg-base-secondary/20',
                         ]"
                         @click="toggleFilter('roles', option.value)"
                     >
@@ -183,8 +183,8 @@ function getFilterLabel(
                         :class="[
                             'rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
                             isSelected('systems', option.value)
-                                ? 'bg-primary-light text-primary-800 dark:text-primary-300'
-                                : 'bg-muted text-base-secondary hover:bg-stone-200 dark:hover:bg-stone-600',
+                                ? 'bg-primary-light text-base-primary'
+                                : 'bg-base-secondary/10 text-base-secondary hover:bg-base-secondary/20',
                         ]"
                         @click="toggleFilter('systems', option.value)"
                     >
@@ -205,7 +205,7 @@ function getFilterLabel(
                 v-for="status in modelValue.statuses"
                 :key="`status-${status}`"
                 type="button"
-                class="inline-flex items-center gap-1 rounded-full bg-primary-light px-2 py-1 text-xs font-medium text-primary-800 transition-colors hover:bg-primary-200 dark:text-primary-300 dark:hover:bg-primary-900/60"
+                class="inline-flex items-center gap-1 rounded-full bg-primary-500/10 px-2 py-1 text-xs font-medium text-base-primary transition-colors hover:bg-primary-500/20"
                 :aria-label="t('gameTables.filters.removeFilter')"
                 @click="removeFilter('statuses', status)"
             >
@@ -220,7 +220,7 @@ function getFilterLabel(
                 v-for="role in modelValue.roles"
                 :key="`role-${role}`"
                 type="button"
-                class="inline-flex items-center gap-1 rounded-full bg-primary-light px-2 py-1 text-xs font-medium text-primary-800 transition-colors hover:bg-primary-200 dark:text-primary-300 dark:hover:bg-primary-900/60"
+                class="inline-flex items-center gap-1 rounded-full bg-primary-500/10 px-2 py-1 text-xs font-medium text-base-primary transition-colors hover:bg-primary-500/20"
                 :aria-label="t('gameTables.filters.removeFilter')"
                 @click="removeFilter('roles', role)"
             >
@@ -235,7 +235,7 @@ function getFilterLabel(
                 v-for="system in modelValue.systems"
                 :key="`system-${system}`"
                 type="button"
-                class="inline-flex items-center gap-1 rounded-full bg-primary-light px-2 py-1 text-xs font-medium text-primary-800 transition-colors hover:bg-primary-200 dark:text-primary-300 dark:hover:bg-primary-900/60"
+                class="inline-flex items-center gap-1 rounded-full bg-primary-500/10 px-2 py-1 text-xs font-medium text-base-primary transition-colors hover:bg-primary-500/20"
                 :aria-label="t('gameTables.filters.removeFilter')"
                 @click="removeFilter('systems', system)"
             >
@@ -248,7 +248,7 @@ function getFilterLabel(
             <!-- Clear all button -->
             <button
                 type="button"
-                class="text-xs text-base-muted underline transition-colors hover:text-base-secondary"
+                class="text-xs text-base-secondary underline transition-colors hover:no-underline"
                 @click="clearAllFilters"
             >
                 {{ t('gameTables.filters.clearAll') }}

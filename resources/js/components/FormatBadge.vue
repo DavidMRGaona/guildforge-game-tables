@@ -19,10 +19,10 @@ const sizeClasses: Record<NonNullable<typeof props.size>, string> = {
 
 // Map Filament-style color names to semantic CSS variable classes
 const colorClasses: Record<string, string> = {
-    success: 'bg-success-light text-success',
-    info: 'bg-info-light text-info',
-    warning: 'bg-warning-light text-warning',
-    danger: 'bg-error-light text-error',
+    success: 'bg-success-light text-base-primary',
+    info: 'bg-info-light text-base-primary',
+    warning: 'bg-warning-light text-base-primary',
+    danger: 'bg-error-light text-base-primary',
     gray: 'bg-muted text-base-secondary',
     primary: 'bg-primary-light text-primary',
 };

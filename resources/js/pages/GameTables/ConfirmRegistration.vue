@@ -54,9 +54,9 @@ const formattedDate = computed(() => {
 const isLoading = ref(false);
 
 const resultClasses: Record<ConfirmationResult['tone'], string> = {
-    success: 'bg-success-light text-success',
-    info: 'bg-info-light text-info',
-    error: 'bg-error-light text-error',
+    success: 'bg-success-light text-base-primary',
+    info: 'bg-info-light text-base-primary',
+    error: 'bg-error-light text-base-primary',
 };
 
 // The table, or the list of tables when the link no longer leads to one
@@ -64,9 +64,9 @@ const backHref = computed(() => (props.gameTable ? `/mesas/${props.gameTable.slu
 const backLabel = computed(() => (props.gameTable ? t('confirmRegistration.viewTable') : t('confirmRegistration.viewTables')));
 
 // A link styled as a button (a button inside a link is invalid interactive nesting)
-const linkButtonBase = 'inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-md px-4 py-2 text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2';
+const linkButtonBase = 'inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-md px-4 py-2 text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface';
 const primaryLinkClass = `${linkButtonBase} bg-primary text-white hover:bg-primary-700 focus:ring-primary-500`;
-const secondaryLinkClass = `${linkButtonBase} bg-muted text-base-primary hover:bg-neutral-200 dark:hover:bg-neutral-700 focus:ring-neutral-400`;
+const secondaryLinkClass = `${linkButtonBase} bg-base-secondary/10 text-base-primary hover:bg-base-secondary/20 focus:ring-primary-500`;
 
 // Only the button confirms: opening the link (as mail scanners do) changes nothing
 function handleConfirm(): void {

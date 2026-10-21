@@ -46,10 +46,10 @@ const editUrl = computed(() =>
 const statusColorClasses = computed(() => {
     const colorMap: Record<string, string> = {
         gray: 'bg-muted text-base-secondary',
-        success: 'bg-success-light text-success',
-        warning: 'bg-warning-light text-warning',
+        success: 'bg-success-light text-base-primary',
+        warning: 'bg-warning-light text-base-primary',
         primary: 'bg-primary-light text-primary',
-        danger: 'bg-error-light text-error',
+        danger: 'bg-error-light text-base-primary',
     };
     return colorMap[props.table.statusColor] ?? colorMap.gray;
 });
@@ -68,7 +68,7 @@ const playersText = computed(() => {
                     <Link
                         v-if="tableUrl && table.isPublished"
                         :href="tableUrl"
-                        class="truncate text-base font-medium text-base-primary hover:text-primary-700"
+                        class="truncate text-base font-medium text-base-primary hover:underline"
                     >
                         {{ table.title }}
                     </Link>
@@ -135,7 +135,7 @@ const playersText = computed(() => {
                     <Link
                         v-else
                         :href="editUrl"
-                        class="text-sm text-primary hover:text-primary-700"
+                        class="text-sm text-primary hover:underline"
                     >
                         {{ t('gameTables.profile.created.edit') }}
                     </Link>

@@ -210,8 +210,8 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
                     :class="[
                         'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
                         isSystemSelected(system.id)
-                            ? 'bg-primary-600 text-white ring-2 ring-primary-600 ring-offset-1 dark:ring-offset-page'
-                            : 'bg-muted text-base-secondary hover:bg-neutral-200 dark:hover:bg-neutral-600',
+                            ? 'bg-primary-600 text-white ring-2 ring-primary-600 ring-offset-1 ring-offset-surface'
+                            : 'bg-base-secondary/10 text-base-secondary hover:bg-base-secondary/20',
                     ]"
                     @click="toggleSystem(system.id)"
                 >
@@ -348,7 +348,7 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
                 <button
                     type="button"
                     :aria-label="`${t('gameTables.filters.removeFilter')}: ${pill.label}`"
-                    class="ml-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full transition-colors hover:bg-primary-200 dark:hover:bg-primary-800"
+                    class="ml-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full transition-colors hover:bg-primary-500/20"
                     @click.prevent="pill.remove()"
                 >
                     <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -359,7 +359,7 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
 
             <button
                 type="button"
-                class="text-xs font-medium text-base-muted transition-colors hover:text-base-primary"
+                class="text-xs font-medium text-base-secondary transition-colors hover:underline"
                 @click="clearFilters"
             >
                 {{ t('gameTables.filters.clearAll') }}

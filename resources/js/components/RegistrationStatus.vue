@@ -23,15 +23,15 @@ const stateClasses = computed(() => {
 
     switch (color) {
         case 'green':
-            return `${baseClasses} bg-success-light text-success`;
+            return `${baseClasses} bg-success-light text-base-primary`;
         case 'yellow':
-            return `${baseClasses} bg-warning-light text-warning`;
+            return `${baseClasses} bg-warning-light text-base-primary`;
         case 'blue':
-            return `${baseClasses} bg-info-light text-info`;
+            return `${baseClasses} bg-info-light text-base-primary`;
         case 'red':
-            return `${baseClasses} bg-error-light text-error`;
+            return `${baseClasses} bg-error-light text-base-primary`;
         case 'orange':
-            return `${baseClasses} bg-warning-light text-warning`;
+            return `${baseClasses} bg-warning-light text-base-primary`;
         default:
             return `${baseClasses} bg-muted text-base-secondary`;
     }
@@ -60,9 +60,9 @@ const showPosition = computed(() => {
                 <div
                     class="flex h-10 w-10 items-center justify-center rounded-full"
                     :class="{
-                        'bg-success-light text-success':
+                        'bg-success-light text-base-primary':
                             statusIcon === 'check-circle',
-                        'bg-info-light text-info':
+                        'bg-info-light text-base-primary':
                             statusIcon === 'clock',
                         'bg-muted text-base-muted':
                             statusIcon === 'x-circle',

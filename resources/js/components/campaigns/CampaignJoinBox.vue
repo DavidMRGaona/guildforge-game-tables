@@ -110,14 +110,14 @@ const closedMessage = computed<string | null>(() => {
         <div
             v-if="flashSuccess"
             role="status"
-            class="mb-3 rounded-lg bg-success-light p-3 text-success"
+            class="mb-3 rounded-lg bg-success-light p-3 text-base-primary"
         >
             {{ flashSuccess }}
         </div>
         <div
             v-if="flashError || error"
             role="alert"
-            class="mb-3 rounded-lg bg-red-50 p-3 text-red-800 dark:bg-red-900/20 dark:text-red-400"
+            class="mb-3 rounded-lg bg-error-light p-3 text-base-primary"
         >
             {{ error ?? flashError }}
         </div>
@@ -128,7 +128,7 @@ const closedMessage = computed<string | null>(() => {
             <Link
                 v-if="joinBox.roster_url"
                 :href="joinBox.roster_url"
-                class="mt-2 inline-flex font-medium text-primary underline underline-offset-2 hover:no-underline focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-page"
+                class="mt-2 inline-flex font-medium text-primary underline underline-offset-2 hover:no-underline focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
             >
                 {{ t('campaigns.join.manageRoster') }}
             </Link>
@@ -177,7 +177,7 @@ const closedMessage = computed<string | null>(() => {
             <p class="text-base-secondary">{{ t('campaigns.join.guest') }}</p>
             <Link
                 :href="routes.auth.login"
-                class="mt-2 inline-flex font-medium text-primary underline underline-offset-2 hover:no-underline focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-page"
+                class="mt-2 inline-flex font-medium text-primary underline underline-offset-2 hover:no-underline focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
             >
                 {{ t('campaigns.join.loginToRequest') }}
             </Link>

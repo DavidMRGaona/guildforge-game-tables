@@ -51,7 +51,7 @@ function handleNext(): void {
 
 <template>
     <DefaultLayout>
-        <div class="bg-surface shadow dark:shadow-neutral-900/50">
+        <div class="bg-surface shadow">
             <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between">
                     <div>
@@ -81,7 +81,7 @@ function handleNext(): void {
                             role="tab"
                             :aria-selected="false"
                             :aria-label="t('gameTables.filters.calendarView')"
-                            class="rounded-r-lg border border-default bg-surface px-3 py-2 text-base-secondary transition-colors hover:bg-muted"
+                            class="rounded-r-lg border border-default bg-transparent px-3 py-2 text-base-secondary transition-colors hover:bg-muted"
                         >
                             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />

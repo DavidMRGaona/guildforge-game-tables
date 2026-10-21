@@ -157,7 +157,7 @@ function getTableLink(table: GameTableResponseDTO): string {
 
 <template>
     <DefaultLayout>
-        <div class="bg-surface shadow dark:shadow-neutral-900/50">
+        <div class="bg-surface shadow">
             <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between">
                     <div>
@@ -215,7 +215,7 @@ function getTableLink(table: GameTableResponseDTO): string {
                 <div
                     v-for="table in props.tables"
                     :key="table.id"
-                    class="overflow-hidden rounded-lg bg-surface shadow transition-shadow hover:shadow-md dark:shadow-neutral-900/50"
+                    class="overflow-hidden rounded-lg bg-surface shadow transition-shadow hover:shadow-md"
                 >
                     <div class="p-6">
                         <div class="flex items-start justify-between gap-4">
@@ -308,7 +308,7 @@ function getTableLink(table: GameTableResponseDTO): string {
                                 <template v-else-if="isApproved(table)">
                                     <Link
                                         :href="getTableLink(table)"
-                                        class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-page"
+                                        class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
                                     >
                                         {{ t('gameTables.myTables.viewPublic') }}
                                     </Link>

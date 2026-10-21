@@ -61,7 +61,7 @@ const formattedTime = computed(() => {
 <template>
     <Link
         :href="tableUrl"
-        class="group block rounded-lg border border-default bg-surface p-4 transition-all hover:border-primary-300 hover:shadow-sm dark:hover:border-primary"
+        class="group block rounded-lg border border-default bg-surface p-4 transition-all hover:border-primary-300 hover:shadow-sm"
     >
         <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <!-- Left: Title and details -->
@@ -95,7 +95,7 @@ const formattedTime = computed(() => {
                         />
                     </svg>
                     <span>{{ formattedDate }}</span>
-                    <span v-if="formattedTime" class="text-stone-400 dark:text-stone-500">&middot;</span>
+                    <span v-if="formattedTime" class="text-base-secondary">&middot;</span>
                     <span v-if="formattedTime">{{ formattedTime }}</span>
                 </div>
             </div>
@@ -115,7 +115,7 @@ const formattedTime = computed(() => {
                 <!-- Waiting list position -->
                 <span
                     v-if="participation.waitingListPosition !== null"
-                    class="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+                    class="inline-flex items-center rounded-full bg-info-light px-2 py-0.5 text-xs font-medium text-base-primary"
                 >
                     {{ t('gameTables.profile.waitingPosition') }}: #{{ participation.waitingListPosition }}
                 </span>

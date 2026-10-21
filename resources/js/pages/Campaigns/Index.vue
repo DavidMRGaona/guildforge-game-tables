@@ -75,12 +75,12 @@ function getImageUrl(campaign: CampaignListItem): string | null {
 
 <template>
     <DefaultLayout>
-        <div class="bg-white shadow dark:bg-stone-800 dark:shadow-stone-900/50">
+        <div class="bg-surface shadow">
             <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                <h1 class="text-3xl font-bold tracking-tight text-stone-900 dark:text-stone-100">
+                <h1 class="text-3xl font-bold tracking-tight text-base-primary">
                     {{ t('campaigns.title') }}
                 </h1>
-                <p class="mt-2 text-lg text-stone-600 dark:text-stone-400">
+                <p class="mt-2 text-lg text-base-secondary">
                     {{ t('campaigns.description') }}
                 </p>
             </div>
@@ -92,7 +92,7 @@ function getImageUrl(campaign: CampaignListItem): string | null {
                     v-for="campaign in props.campaigns.data"
                     :key="campaign.id"
                     :href="`/campanas/${campaign.id}`"
-                    class="block transition-all duration-200 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-stone-900"
+                    class="block transition-all duration-200 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
                 >
                     <BaseCard :padding="false">
                         <!-- Campaign Image -->
@@ -108,7 +108,7 @@ function getImageUrl(campaign: CampaignListItem): string | null {
                             <!-- Header with title and badges -->
                             <div class="mb-3 flex flex-wrap items-start gap-2">
                                 <h3
-                                    class="line-clamp-2 flex-1 text-lg font-semibold text-stone-900 dark:text-stone-100"
+                                    class="line-clamp-2 flex-1 text-lg font-semibold text-base-primary"
                                 >
                                     {{ campaign.title }}
                                 </h3>
@@ -120,7 +120,7 @@ function getImageUrl(campaign: CampaignListItem): string | null {
                                     />
                                     <span
                                         v-if="campaign.acceptsNewPlayers"
-                                        class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                                        class="rounded-full bg-success-light px-2 py-0.5 text-xs font-medium text-base-primary"
                                     >
                                         {{ t('campaigns.lookingForPlayers') }}
                                     </span>
@@ -135,7 +135,7 @@ function getImageUrl(campaign: CampaignListItem): string | null {
                             <!-- Frequency -->
                             <div
                                 v-if="campaign.frequencyLabel"
-                                class="mb-2 flex items-center text-sm text-stone-600 dark:text-stone-400"
+                                class="mb-2 flex items-center text-sm text-base-secondary"
                             >
                                 <svg
                                     class="mr-2 h-4 w-4"
@@ -155,7 +155,7 @@ function getImageUrl(campaign: CampaignListItem): string | null {
                             </div>
 
                             <!-- Session Progress -->
-                            <div class="mb-3 flex items-center text-sm text-stone-600 dark:text-stone-400">
+                            <div class="mb-3 flex items-center text-sm text-base-secondary">
                                 <svg
                                     class="mr-2 h-4 w-4"
                                     fill="none"
@@ -186,7 +186,7 @@ function getImageUrl(campaign: CampaignListItem): string | null {
                             </div>
 
                             <!-- Total Sessions -->
-                            <div class="mb-3 flex items-center text-sm text-stone-600 dark:text-stone-400">
+                            <div class="mb-3 flex items-center text-sm text-base-secondary">
                                 <svg
                                     class="mr-2 h-4 w-4"
                                     fill="none"
@@ -234,9 +234,9 @@ function getImageUrl(campaign: CampaignListItem): string | null {
 
                             <!-- Footer -->
                             <div
-                                class="flex items-center justify-between border-t border-stone-200 pt-3 dark:border-stone-700"
+                                class="flex items-center justify-between border-t border-default pt-3"
                             >
-                                <div class="flex items-center text-sm text-stone-600 dark:text-stone-400">
+                                <div class="flex items-center text-sm text-base-secondary">
                                     <svg
                                         class="mr-2 h-4 w-4"
                                         fill="none"
@@ -268,9 +268,9 @@ function getImageUrl(campaign: CampaignListItem): string | null {
 
             <div
                 v-if="hasPagination"
-                class="mt-8 flex items-center justify-between border-t border-stone-200 pt-6 dark:border-stone-700"
+                class="mt-8 flex items-center justify-between border-t border-default pt-6"
             >
-                <p class="text-sm text-stone-700 dark:text-stone-300">
+                <p class="text-sm text-base-secondary">
                     {{ t('common.showing') }}
                     <span class="font-medium">
                         {{ firstItemNumber }}

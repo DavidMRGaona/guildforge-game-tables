@@ -82,7 +82,7 @@ onMounted(() => {
     <div
         class="rounded-lg border-l-4 p-4"
         :class="campaigns.length > 0
-            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+            ? 'border-primary-500 bg-primary-500/10'
             : 'border-warning bg-warning-bg'"
     >
         <template v-if="campaigns.length > 0">

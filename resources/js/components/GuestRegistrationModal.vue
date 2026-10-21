@@ -231,7 +231,7 @@ function goBack(): void {
                         <!-- Error message -->
                         <div
                             v-if="error"
-                            class="mb-4 rounded-lg bg-red-50 p-3 text-sm text-error dark:bg-red-900/20"
+                            class="mb-4 rounded-lg bg-error-light p-3 text-sm text-base-primary"
                         >
                             {{ error }}
                             <a
@@ -246,7 +246,7 @@ function goBack(): void {
                         <!-- Browser hint: a sign-up from this browser already exists -->
                         <p
                             v-if="step === 'form' && alreadyFromBrowser"
-                            class="mb-4 rounded-lg bg-blue-50 p-3 text-sm text-blue-800 dark:bg-blue-900/20 dark:text-blue-300"
+                            class="mb-4 rounded-lg bg-info-light p-3 text-sm text-base-primary"
                         >
                             {{ t('guestRegistration.alreadyFromBrowser') }}
                         </p>
@@ -254,7 +254,7 @@ function goBack(): void {
                         <!-- Spectator notice (when it is the only option) -->
                         <p
                             v-if="step === 'form' && spectatorOnly"
-                            class="mb-4 rounded-lg bg-blue-50 p-3 text-sm text-blue-800 dark:bg-blue-900/20 dark:text-blue-300"
+                            class="mb-4 rounded-lg bg-info-light p-3 text-sm text-base-primary"
                         >
                             {{ t('gameTables.registration.spectatorOnly') }}
                         </p>
@@ -262,7 +262,7 @@ function goBack(): void {
                         <!-- Waiting list notice (when it is the only option) -->
                         <p
                             v-if="step === 'form' && waitingList && playerAvailable && !choosesRole && waitingListHelp"
-                            class="mb-4 rounded-lg bg-blue-50 p-3 text-sm text-blue-800 dark:bg-blue-900/20 dark:text-blue-300"
+                            class="mb-4 rounded-lg bg-info-light p-3 text-sm text-base-primary"
                         >
                             {{ waitingListHelp }}
                         </p>
@@ -282,7 +282,7 @@ function goBack(): void {
                                     v-model="form.first_name"
                                     type="text"
                                     required
-                                    class="w-full rounded-lg border border-default px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:bg-stone-700 text-base-primary dark:focus:ring-offset-page"
+                                    class="w-full rounded-lg border border-strong bg-surface px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 text-base-primary"
                                     :placeholder="t('guestRegistration.firstNamePlaceholder')"
                                 />
                             </div>
@@ -300,7 +300,7 @@ function goBack(): void {
                                     v-model="form.email"
                                     type="email"
                                     required
-                                    class="w-full rounded-lg border border-default px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:bg-stone-700 text-base-primary dark:focus:ring-offset-page"
+                                    class="w-full rounded-lg border border-strong bg-surface px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 text-base-primary"
                                     :placeholder="t('guestRegistration.emailPlaceholder')"
                                 />
                             </div>
@@ -317,7 +317,7 @@ function goBack(): void {
                                     id="guest-phone"
                                     v-model="form.phone"
                                     type="tel"
-                                    class="w-full rounded-lg border border-default px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:bg-stone-700 text-base-primary dark:focus:ring-offset-page"
+                                    class="w-full rounded-lg border border-strong bg-surface px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 text-base-primary"
                                     :placeholder="t('guestRegistration.phonePlaceholder')"
                                 />
                             </div>
@@ -334,7 +334,7 @@ function goBack(): void {
                                     id="guest-notes"
                                     v-model="form.notes"
                                     rows="2"
-                                    class="w-full rounded-lg border border-default px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:bg-stone-700 text-base-primary dark:focus:ring-offset-page"
+                                    class="w-full rounded-lg border border-strong bg-surface px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 text-base-primary"
                                     :placeholder="t('gameTables.registration.notesPlaceholder')"
                                 ></textarea>
                             </div>
@@ -346,7 +346,7 @@ function goBack(): void {
                                     v-model="form.gdpr_consent"
                                     type="checkbox"
                                     required
-                                    class="mt-1 h-4 w-4 rounded border-default text-primary-600 focus:ring-primary-500 dark:bg-stone-700"
+                                    class="mt-1 h-4 w-4 rounded border-strong bg-surface text-primary focus:ring-primary-500"
                                 />
                                 <label
                                     for="guest-gdpr"
@@ -356,7 +356,7 @@ function goBack(): void {
                                     <a
                                         href="/privacidad"
                                         target="_blank"
-                                        class="text-primary underline hover:text-primary-700 dark:hover:text-primary-300"
+                                        class="text-primary underline"
                                     >
                                         {{ t('guestRegistration.privacyPolicy') }}
                                     </a>
@@ -416,7 +416,7 @@ function goBack(): void {
                             <button
                                 type="button"
                                 :disabled="loading"
-                                class="w-full rounded-lg bg-primary-light px-4 py-3 text-left transition-colors hover:bg-primary-200 dark:bg-primary-900/20 dark:hover:bg-primary-900/30 disabled:cursor-not-allowed disabled:opacity-50"
+                                class="w-full rounded-lg bg-primary-500/10 px-4 py-3 text-left transition-colors hover:bg-primary-500/20 disabled:cursor-not-allowed disabled:opacity-50"
                                 @click="selectRole('player')"
                             >
                                 <div class="font-medium text-base-primary">
@@ -430,7 +430,7 @@ function goBack(): void {
                             <button
                                 type="button"
                                 :disabled="loading"
-                                class="w-full rounded-lg bg-muted px-4 py-3 text-left transition-colors hover:bg-gray-100 dark:hover:bg-stone-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                class="w-full rounded-lg bg-base-secondary/10 px-4 py-3 text-left transition-colors hover:bg-base-secondary/20 disabled:cursor-not-allowed disabled:opacity-50"
                                 @click="selectRole('spectator')"
                             >
                                 <div class="font-medium text-base-primary">

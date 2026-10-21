@@ -116,8 +116,8 @@ function handleCreate(): void {
 }
 
 // Links styled as BaseButton (primary / secondary, size sm)
-const primaryLinkClass = 'inline-flex min-h-[44px] items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-page';
-const secondaryLinkClass = 'inline-flex min-h-[44px] items-center justify-center rounded-md bg-muted px-4 py-2 text-sm font-medium text-base-primary transition-colors hover:bg-neutral-200 focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-offset-2 dark:hover:bg-neutral-700 dark:focus:ring-offset-page';
+const primaryLinkClass = 'inline-flex min-h-[44px] items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface';
+const secondaryLinkClass = 'inline-flex min-h-[44px] items-center justify-center rounded-md bg-base-secondary/10 px-4 py-2 text-sm font-medium text-base-primary transition-colors hover:bg-base-secondary/20 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface';
 
 // «Semanal · 4/5 jugadores · Aceptando nuevos jugadores» on the campaigns the viewer directs
 function directedSummary(campaign: CampaignResponseDTO): string {
@@ -151,7 +151,7 @@ function getCampaignLink(campaign: CampaignResponseDTO): string {
 
 <template>
     <DefaultLayout>
-        <div class="bg-surface shadow dark:shadow-neutral-900/50">
+        <div class="bg-surface shadow">
             <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between">
                     <div>
@@ -209,7 +209,7 @@ function getCampaignLink(campaign: CampaignResponseDTO): string {
                 <div
                     v-for="campaign in props.campaigns"
                     :key="campaign.id"
-                    class="overflow-hidden rounded-lg bg-surface shadow transition-shadow hover:shadow-md dark:shadow-neutral-900/50"
+                    class="overflow-hidden rounded-lg bg-surface shadow transition-shadow hover:shadow-md"
                 >
                     <div class="p-4 sm:p-6">
                         <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -243,7 +243,7 @@ function getCampaignLink(campaign: CampaignResponseDTO): string {
                                     </p>
                                     <span
                                         v-if="campaign.pending_requests > 0"
-                                        class="mt-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+                                        class="mt-2 inline-flex items-center rounded-full bg-warning-light px-2 py-0.5 text-xs font-medium text-base-primary"
                                     >
                                         {{ t('campaigns.myCampaigns.pendingRequests', { count: campaign.pending_requests }, campaign.pending_requests) }}
                                     </span>
@@ -299,7 +299,7 @@ function getCampaignLink(campaign: CampaignResponseDTO): string {
                                     <!-- Recruiting badge -->
                                     <span
                                         v-if="campaign.is_recruiting"
-                                        class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                        class="inline-flex items-center gap-1 rounded-full bg-success-light px-2 py-0.5 text-xs font-medium text-base-primary"
                                     >
                                         <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" />

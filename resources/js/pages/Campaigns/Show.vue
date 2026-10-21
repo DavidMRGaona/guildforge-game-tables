@@ -92,7 +92,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
             <div class="mb-6">
                 <Link
                     href="/campanas"
-                    class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:text-stone-400 dark:hover:text-stone-300 dark:focus:ring-offset-stone-900"
+                    class="inline-flex items-center text-sm text-base-secondary hover:underline focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
                 >
                     <svg
                         class="mr-1 h-4 w-4"
@@ -113,7 +113,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
             </div>
 
             <article
-                class="overflow-hidden rounded-lg bg-white shadow dark:bg-stone-800 dark:shadow-stone-900/50"
+                class="overflow-hidden rounded-lg bg-surface shadow"
             >
                 <!-- Campaign Image -->
                 <div v-if="imageUrl" class="relative">
@@ -135,14 +135,14 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                         />
                         <span
                             v-if="campaign.acceptsNewPlayers"
-                            class="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                            class="inline-flex items-center rounded-full bg-success-light px-3 py-1 text-sm font-medium text-base-primary"
                         >
                             {{ t('campaigns.lookingForPlayers') }}
                         </span>
                     </div>
 
                     <h1
-                        class="mb-4 text-3xl font-bold text-gray-900 sm:text-4xl dark:text-stone-100"
+                        class="mb-4 text-3xl font-bold text-base-primary sm:text-4xl"
                     >
                         {{ campaign.title }}
                     </h1>
@@ -154,21 +154,21 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
 
                     <!-- Description -->
                     <div v-if="campaign.description" class="mb-6">
-                        <p class="whitespace-pre-line text-stone-700 dark:text-stone-300">
+                        <p class="whitespace-pre-line text-base-secondary">
                             {{ campaign.description }}
                         </p>
                     </div>
 
                     <!-- Key Information Grid -->
                     <div
-                        class="mb-6 grid grid-cols-1 gap-4 rounded-lg bg-stone-50 p-4 sm:grid-cols-2 dark:bg-stone-900/30"
+                        class="mb-6 grid grid-cols-1 gap-4 rounded-lg bg-page p-4 sm:grid-cols-2"
                     >
                         <!-- Frequency -->
                         <div v-if="campaign.frequencyLabel">
-                            <h3 class="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                            <h3 class="mb-1 text-sm font-semibold text-base-primary">
                                 {{ t('campaigns.frequency') }}
                             </h3>
-                            <div class="flex items-center text-stone-700 dark:text-stone-300">
+                            <div class="flex items-center text-base-secondary">
                                 <svg
                                     class="mr-2 h-5 w-5 text-primary"
                                     fill="none"
@@ -189,10 +189,10 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
 
                         <!-- Duration -->
                         <div v-if="campaign.expectedDurationMonths">
-                            <h3 class="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                            <h3 class="mb-1 text-sm font-semibold text-base-primary">
                                 {{ t('campaigns.expectedDuration') }}
                             </h3>
-                            <div class="flex items-center text-stone-700 dark:text-stone-300">
+                            <div class="flex items-center text-base-secondary">
                                 <svg
                                     class="mr-2 h-5 w-5 text-primary"
                                     fill="none"
@@ -215,26 +215,26 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
 
                         <!-- Start Date -->
                         <div v-if="formattedStartDate">
-                            <h3 class="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                            <h3 class="mb-1 text-sm font-semibold text-base-primary">
                                 {{ t('campaigns.startDate') }}
                             </h3>
-                            <p class="text-stone-700 dark:text-stone-300">{{ formattedStartDate }}</p>
+                            <p class="text-base-secondary">{{ formattedStartDate }}</p>
                         </div>
 
                         <!-- End Date -->
                         <div v-if="formattedEndDate">
-                            <h3 class="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                            <h3 class="mb-1 text-sm font-semibold text-base-primary">
                                 {{ t('campaigns.endDate') }}
                             </h3>
-                            <p class="text-stone-700 dark:text-stone-300">{{ formattedEndDate }}</p>
+                            <p class="text-base-secondary">{{ formattedEndDate }}</p>
                         </div>
 
                         <!-- Session Progress -->
                         <div>
-                            <h3 class="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                            <h3 class="mb-1 text-sm font-semibold text-base-primary">
                                 {{ t('campaigns.details.currentSession') }}
                             </h3>
-                            <div class="text-stone-700 dark:text-stone-300">
+                            <div class="text-base-secondary">
                                 <p>{{ sessionProgressLabel }}</p>
                                 <div v-if="sessionProgress !== null" class="mt-2">
                                     <div
@@ -251,7 +251,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
 
                         <!-- Game Masters -->
                         <div>
-                            <h3 class="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                            <h3 class="mb-1 text-sm font-semibold text-base-primary">
                                 {{ t('campaigns.gameMaster') }}
                             </h3>
                             <div class="space-y-1">
@@ -259,7 +259,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                                     <div
                                         v-for="gm in mainGameMasters"
                                         :key="gm.id"
-                                        class="flex items-center text-stone-700 dark:text-stone-300"
+                                        class="flex items-center text-base-secondary"
                                     >
                                         <svg
                                             class="mr-2 h-5 w-5 text-primary"
@@ -276,11 +276,11 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                                             />
                                         </svg>
                                         <span>{{ gm.isNamePublic ? gm.displayName : t('campaigns.anonymousGm') }}</span>
-                                        <span v-if="gm.customTitle" class="ml-1 text-sm text-stone-500">({{ gm.customTitle }})</span>
+                                        <span v-if="gm.customTitle" class="ml-1 text-sm text-base-secondary">({{ gm.customTitle }})</span>
                                     </div>
                                 </template>
                                 <template v-else>
-                                    <div class="flex items-center text-stone-700 dark:text-stone-300">
+                                    <div class="flex items-center text-base-secondary">
                                         <svg
                                             class="mr-2 h-5 w-5 text-primary"
                                             fill="none"
@@ -303,14 +303,14 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
 
                         <!-- Co-Game Masters -->
                         <div v-if="coGameMasters.length > 0">
-                            <h3 class="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                            <h3 class="mb-1 text-sm font-semibold text-base-primary">
                                 {{ t('gameTables.coGameMasters') }}
                             </h3>
                             <div class="space-y-1">
                                 <div
                                     v-for="gm in coGameMasters"
                                     :key="gm.id"
-                                    class="flex items-center text-stone-700 dark:text-stone-300"
+                                    class="flex items-center text-base-secondary"
                                 >
                                     <svg
                                         class="mr-2 h-5 w-5 text-primary"
@@ -327,7 +327,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                                         />
                                     </svg>
                                     <span>{{ gm.isNamePublic ? gm.displayName : t('campaigns.anonymousGm') }}</span>
-                                    <span v-if="gm.customTitle" class="ml-1 text-sm text-stone-500">({{ gm.customTitle }})</span>
+                                    <span v-if="gm.customTitle" class="ml-1 text-sm text-base-secondary">({{ gm.customTitle }})</span>
                                 </div>
                             </div>
                         </div>
@@ -335,10 +335,10 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                         <!-- Capacity and the join box -->
                         <div>
                             <template v-if="campaign.maxPlayers !== null">
-                                <h3 class="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                                <h3 class="mb-1 text-sm font-semibold text-base-primary">
                                     {{ t('campaigns.capacity') }}
                                 </h3>
-                                <div class="mb-3 text-stone-700 dark:text-stone-300">
+                                <div class="mb-3 text-base-secondary">
                                     <p>
                                         {{ t('campaigns.playersCount', {
                                             current: campaign.currentPlayers,
@@ -359,20 +359,20 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
 
                         <!-- Total Sessions -->
                         <div>
-                            <h3 class="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                            <h3 class="mb-1 text-sm font-semibold text-base-primary">
                                 {{ t('campaigns.totalSessions') }}
                             </h3>
-                            <p class="text-stone-700 dark:text-stone-300">
+                            <p class="text-base-secondary">
                                 {{ totalSessionsLabel }}
                             </p>
                         </div>
 
                         <!-- Experience Level -->
                         <div v-if="campaign.experienceLevelLabel">
-                            <h3 class="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                            <h3 class="mb-1 text-sm font-semibold text-base-primary">
                                 {{ t('campaigns.experienceLevel') }}
                             </h3>
-                            <p class="text-stone-700 dark:text-stone-300">
+                            <p class="text-base-secondary">
                                 {{ campaign.experienceLevelLabel }}
                             </p>
                         </div>
@@ -382,32 +382,32 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                     <div class="mb-6 space-y-4">
                         <!-- Language -->
                         <div v-if="campaign.language">
-                            <h3 class="mb-2 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                            <h3 class="mb-2 text-sm font-semibold text-base-primary">
                                 {{ t('campaigns.language') }}
                             </h3>
-                            <p class="text-stone-700 dark:text-stone-300">{{ campaign.language }}</p>
+                            <p class="text-base-secondary">{{ campaign.language }}</p>
                         </div>
 
                         <!-- Settings -->
                         <div v-if="campaign.settings">
-                            <h3 class="mb-2 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                            <h3 class="mb-2 text-sm font-semibold text-base-primary">
                                 {{ t('campaigns.settings') }}
                             </h3>
-                            <p class="whitespace-pre-line text-stone-700 dark:text-stone-300">
+                            <p class="whitespace-pre-line text-base-secondary">
                                 {{ campaign.settings }}
                             </p>
                         </div>
 
                         <!-- Themes -->
                         <div v-if="campaign.themes.length > 0">
-                            <h3 class="mb-2 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                            <h3 class="mb-2 text-sm font-semibold text-base-primary">
                                 {{ t('campaigns.themes') }}
                             </h3>
                             <div class="flex flex-wrap gap-2">
                                 <span
                                     v-for="(theme, index) in campaign.themes"
                                     :key="index"
-                                    class="rounded-full bg-stone-200 px-3 py-1 text-sm text-stone-700 dark:bg-stone-700 dark:text-stone-300"
+                                    class="rounded-full bg-base-secondary/10 px-3 py-1 text-sm text-base-secondary"
                                 >
                                     {{ theme }}
                                 </span>
@@ -416,7 +416,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
 
                         <!-- Safety Tools -->
                         <div v-if="campaign.safetyTools.length > 0">
-                            <h3 class="mb-2 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                            <h3 class="mb-2 text-sm font-semibold text-base-primary">
                                 {{ t('campaigns.safetyTools') }}
                             </h3>
                             <div class="flex flex-wrap gap-2">
@@ -430,7 +430,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
 
                         <!-- Content Warnings -->
                         <div v-if="campaign.contentWarnings.length > 0">
-                            <h3 class="mb-2 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                            <h3 class="mb-2 text-sm font-semibold text-base-primary">
                                 {{ t('campaigns.contentWarnings') }}
                             </h3>
                             <div class="flex flex-wrap gap-2">
@@ -444,21 +444,21 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
 
                         <!-- Minimum Age -->
                         <div v-if="campaign.minimumAge">
-                            <h3 class="mb-2 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                            <h3 class="mb-2 text-sm font-semibold text-base-primary">
                                 {{ t('campaigns.minimumAge') }}
                             </h3>
-                            <p class="text-stone-700 dark:text-stone-300">
+                            <p class="text-base-secondary">
                                 {{ t('campaigns.ageRequirement', { age: campaign.minimumAge }) }}
                             </p>
                         </div>
 
                         <!-- Recruitment Message -->
                         <div v-if="campaign.acceptsNewPlayers && campaign.recruitmentMessage">
-                            <h3 class="mb-2 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                            <h3 class="mb-2 text-sm font-semibold text-base-primary">
                                 {{ t('campaigns.recruitmentMessage') }}
                             </h3>
                             <div
-                                class="rounded-lg bg-green-50 p-4 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                                class="rounded-lg bg-success-light p-4 text-base-primary"
                             >
                                 <p class="whitespace-pre-line">{{ campaign.recruitmentMessage }}</p>
                             </div>
@@ -470,7 +470,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                         <ModuleSlot name="campaign-detail-actions" />
                     </div>
 
-                    <div class="border-t border-gray-200 pt-6 dark:border-stone-700">
+                    <div class="border-t border-default pt-6">
                         <Link href="/campanas">
                             <BaseButton variant="primary">
                                 {{ t('common.viewAll') }} {{ t('campaigns.campaigns').toLowerCase() }}
@@ -483,7 +483,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
             <!-- Campaign tables section -->
             <section v-if="campaign.gameTables.length > 0" class="mt-8">
                 <div class="mb-4 flex flex-wrap items-center justify-between gap-4">
-                    <h2 class="text-2xl font-bold text-stone-900 dark:text-stone-100">
+                    <h2 class="text-2xl font-bold text-base-primary">
                         {{ t('campaigns.tables') }}
                     </h2>
                     <Link
@@ -507,8 +507,8 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
 
             <!-- Empty state when no tables -->
             <section v-else class="mt-8">
-                <div class="rounded-lg border border-stone-200 bg-stone-50 p-8 text-center dark:border-stone-700 dark:bg-stone-800/50">
-                    <p class="text-stone-600 dark:text-stone-400">
+                <div class="rounded-lg border border-default bg-page p-8 text-center">
+                    <p class="text-base-secondary">
                         {{ t('campaigns.noTables') }}
                     </p>
                 </div>

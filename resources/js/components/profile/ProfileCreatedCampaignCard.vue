@@ -30,10 +30,10 @@ const editUrl = computed(() => `/campanas/mis-campanas/${props.campaign.id}/edit
 const statusColorClasses = computed(() => {
     const colorMap: Record<string, string> = {
         gray: 'bg-muted text-base-secondary',
-        success: 'bg-success-light text-success',
-        warning: 'bg-warning-light text-warning',
+        success: 'bg-success-light text-base-primary',
+        warning: 'bg-warning-light text-base-primary',
         primary: 'bg-primary-light text-primary',
-        danger: 'bg-error-light text-error',
+        danger: 'bg-error-light text-base-primary',
     };
     return colorMap[props.campaign.statusColor] ?? colorMap.gray;
 });
@@ -55,7 +55,7 @@ const playersText = computed(() => {
                     <Link
                         v-if="campaignUrl && campaign.isPublished"
                         :href="campaignUrl"
-                        class="truncate text-base font-medium text-base-primary hover:text-primary-700"
+                        class="truncate text-base font-medium text-base-primary hover:underline"
                     >
                         {{ campaign.title }}
                     </Link>
@@ -91,7 +91,7 @@ const playersText = computed(() => {
                     <!-- Recruiting badge -->
                     <span
                         v-if="campaign.isRecruiting"
-                        class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                        class="inline-flex items-center gap-1 rounded-full bg-success-light px-2 py-0.5 text-xs font-medium text-base-primary"
                     >
                         <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" />
@@ -123,7 +123,7 @@ const playersText = computed(() => {
                     <Link
                         v-else
                         :href="editUrl"
-                        class="text-sm text-primary hover:text-primary-700"
+                        class="text-sm text-primary hover:underline"
                     >
                         {{ t('campaigns.profile.edit') }}
                     </Link>

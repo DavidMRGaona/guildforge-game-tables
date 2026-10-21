@@ -18,21 +18,18 @@ final class RosterPageSourceTest extends TestCase
     }
 
     /**
-     * Module stylesheets load in a cascade layer below the core utilities, so a light
-     * utility the core ships beats a dark variant only the module ships. The core ships
-     * `text-green-800` but not `dark:text-green-300`, which left the «va» chip as dark
-     * green text on a dark background (contrast under 2:1); `dark:text-green-400` is in
-     * the core stylesheet, so it wins in dark mode.
+     * Module stylesheets load in a cascade layer below the core utilities, so the chips use theme
+     * tokens (their value flips with the theme) instead of a light/dark colour pair.
      */
-    public function test_the_going_chip_uses_a_dark_text_colour_the_core_stylesheet_ships(): void
+    public function test_the_going_chip_uses_theme_tokens(): void
     {
         $source = $this->source();
 
         $this->assertStringContainsString(
-            "going: 'border-green-300 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-900/30 dark:text-green-400',",
+            "going: 'border-success/40 bg-success-light text-base-primary',",
             $source
         );
-        $this->assertStringNotContainsString('dark:text-green-300', $source);
+        $this->assertStringNotContainsString('dark:', $source);
     }
 
     /**

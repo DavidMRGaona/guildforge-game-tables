@@ -43,7 +43,7 @@ const formattedCanCreateAt = computed((): string | null => {
         <main class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
             <div class="mx-auto max-w-md text-center">
                 <!-- Icon -->
-                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary-light dark:bg-primary-900/20">
+                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary-light">
                     <svg
                         class="h-8 w-8 text-primary"
                         fill="none"
