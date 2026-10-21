@@ -432,6 +432,7 @@ return [
             'campaign_notify_join_request_accepted' => 'Request accepted',
             'campaign_notify_join_request_rejected' => 'Request rejected',
             'campaign_notify_roster_added' => 'Added to the roster',
+            'campaign_notify_invitation_accepted' => 'Invitation accepted (to the direction)',
             'campaign_notify_roster_removed' => 'Removed from the roster',
             'campaign_notify_player_left' => 'Left the roster (to the direction)',
             'max_players_limit' => 'Maximum players limit',

@@ -487,6 +487,7 @@ return [
             'campaign_notify_join_request_accepted' => 'Solicitud aceptada',
             'campaign_notify_join_request_rejected' => 'Solicitud rechazada',
             'campaign_notify_roster_added' => 'Añadido a la plantilla',
+            'campaign_notify_invitation_accepted' => 'Invitación aceptada (a la dirección)',
             'campaign_notify_roster_removed' => 'Quitado de la plantilla',
             'campaign_notify_player_left' => 'Salida de la plantilla (a la dirección)',
             'max_players_limit' => 'Límite máximo de jugadores',

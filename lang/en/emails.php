@@ -261,4 +261,27 @@ return [
         'intro' => ':player has left the roster of the campaign ":campaignTitle". Their seats in the upcoming sessions have been freed.',
         'view_roster' => 'View roster',
     ],
+
+    'campaign_invitation' => [
+        'subject' => ':inviter invites you to the campaign ":campaignTitle"',
+        'greeting' => 'Hello!',
+        'intro' => ':inviter invites you to join the campaign ":campaignTitle".',
+        'view_campaign' => 'You can see the campaign page [here](:url).',
+        'view_invitation' => 'View invitation',
+        'reject' => 'If you do not want to join, open the invitation and press Reject: we will delete your email right away.',
+        'expires' => 'Expires on :date.',
+        'privacy_title' => '**Information about how we handle your email**',
+        'privacy_controller' => 'Controller: :site.',
+        'privacy_purpose' => 'Purpose: inviting you to this campaign.',
+        'privacy_origin' => 'Source: :inviter gave it to us.',
+        'privacy_retention' => 'Retention: until you accept, reject or the invitation expires, at most 14 days. We also keep an irreversible fingerprint of the email for 30 days to limit how many invitations are sent.',
+        'privacy_rights' => 'Rights: rejecting the invitation deletes your email at once. For your other rights, see the [privacy policy](:url).',
+    ],
+
+    'campaign_invitation_accepted' => [
+        'subject' => ':player has accepted your invitation to ":campaignTitle"',
+        'greeting' => 'Hello, :name!',
+        'intro' => ':player has accepted your invitation and is now on the roster of the campaign ":campaignTitle".',
+        'view_roster' => 'View roster',
+    ],
 ];

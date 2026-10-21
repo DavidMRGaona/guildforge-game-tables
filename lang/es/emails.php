@@ -293,4 +293,27 @@ return [
         'intro' => ':player ha salido de la plantilla de la campaña «:campaignTitle». Sus plazas en las próximas sesiones se han liberado.',
         'view_roster' => 'Ver plantilla',
     ],
+
+    'campaign_invitation' => [
+        'subject' => ':inviter te invita a la campaña «:campaignTitle»',
+        'greeting' => '¡Hola!',
+        'intro' => ':inviter te invita a unirte a la campaña «:campaignTitle».',
+        'view_campaign' => 'Puedes ver la ficha de la campaña [aquí](:url).',
+        'view_invitation' => 'Ver invitación',
+        'reject' => 'Si no quieres unirte, abre la invitación y pulsa Rechazar: borraremos tu email al momento.',
+        'expires' => 'Caduca el :date.',
+        'privacy_title' => '**Información sobre el tratamiento de tu email**',
+        'privacy_controller' => 'Responsable: :site.',
+        'privacy_purpose' => 'Finalidad: invitarte a esta campaña.',
+        'privacy_origin' => 'Origen: te lo facilitó :inviter.',
+        'privacy_retention' => 'Conservación: hasta que aceptes, rechaces o caduque la invitación, como máximo 14 días. Además guardamos durante 30 días una huella irreversible del email para limitar los envíos.',
+        'privacy_rights' => 'Derechos: rechazar la invitación borra tu email al instante. El resto de tus derechos, en la [política de privacidad](:url).',
+    ],
+
+    'campaign_invitation_accepted' => [
+        'subject' => ':player ha aceptado tu invitación a «:campaignTitle»',
+        'greeting' => '¡Hola, :name!',
+        'intro' => ':player ha aceptado tu invitación y ya forma parte de la plantilla de la campaña «:campaignTitle».',
+        'view_roster' => 'Ver plantilla',
+    ],
 ];

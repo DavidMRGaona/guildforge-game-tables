@@ -75,6 +75,8 @@ use Modules\GameTables\Domain\Events\CampaignModerationApproved;
 use Modules\GameTables\Domain\Events\CampaignModerationRejected;
 use Modules\GameTables\Domain\Events\CampaignSubmittedForReview;
 use Modules\GameTables\Domain\Events\RosterMemberEnrolledInSession;
+use Modules\GameTables\Domain\Events\CampaignInvitationAccepted;
+use Modules\GameTables\Domain\Events\CampaignInvitationSent;
 use Modules\GameTables\Domain\Events\CampaignJoinRequested;
 use Modules\GameTables\Domain\Events\CampaignJoinRequestAccepted;
 use Modules\GameTables\Domain\Events\CampaignJoinRequestRejected;
@@ -158,7 +160,9 @@ use Modules\GameTables\Listeners\SendGuestRegistrationExpiredNotification;
 use Modules\GameTables\Listeners\SendRegistrationConfirmation;
 use Modules\GameTables\Listeners\SendRejectionNotification;
 use Modules\GameTables\Listeners\SendCampaignSessionScheduled;
+use Modules\GameTables\Listeners\NotifyDirectionOfInvitationAccepted;
 use Modules\GameTables\Listeners\NotifyDirectionOfJoinRequest;
+use Modules\GameTables\Listeners\SendCampaignInvitation;
 use Modules\GameTables\Listeners\SendJoinRequestAccepted;
 use Modules\GameTables\Listeners\SendJoinRequestRejected;
 use Modules\GameTables\Listeners\SendRosterMemberAdded;
@@ -676,6 +680,16 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         Event::listen(
             CampaignRosterMemberAdded::class,
             [SendRosterMemberAdded::class, 'handle']
+        );
+
+        Event::listen(
+            CampaignInvitationSent::class,
+            [SendCampaignInvitation::class, 'handle']
+        );
+
+        Event::listen(
+            CampaignInvitationAccepted::class,
+            [NotifyDirectionOfInvitationAccepted::class, 'handle']
         );
 
         Event::listen(
