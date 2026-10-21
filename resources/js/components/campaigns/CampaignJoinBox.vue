@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // What the viewer of a campaign page can do with its roster: ask to join, withdraw the request,
 // leave, or go to the roster page when they direct it. The server decides the state.
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref, useId } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import BaseButton from '@/components/ui/BaseButton.vue';
@@ -33,6 +33,9 @@ const showWithdrawDialog = ref(false);
 // The request is written in a dialog; its errors show there, not in the box
 const showRequestDialog = ref(false);
 const requestError = ref<string | null>(null);
+// After a request is sent the button that opened the dialog is gone: the focus goes to the new status
+const pendingStatusId = useId();
+const pendingStatus = ref<HTMLElement | null>(null);
 
 const baseUrl = computed(() => `/campanas/${props.campaignSlug}`);
 
@@ -88,6 +91,7 @@ function requestToJoin(message: string | null): void {
                     return;
                 }
                 showRequestDialog.value = false;
+                void nextTick(() => pendingStatus.value?.focus());
             },
             onError: (errors) => {
                 requestError.value = Object.values(errors)[0] ?? null;
@@ -210,10 +214,18 @@ const closedMessage = computed<string | null>(() => {
 
         <!-- Request sent -->
         <template v-else-if="joinBox.state === 'pending'">
-            <p v-if="joinBox.requested_at" class="font-semibold text-base-primary">
-                {{ t('campaigns.join.pendingSince', { date: joinBox.requested_at }) }}
-            </p>
-            <p class="mt-1 text-base-secondary">{{ t('campaigns.join.pendingHint') }}</p>
+            <div
+                :id="pendingStatusId"
+                ref="pendingStatus"
+                role="status"
+                tabindex="-1"
+                class="rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+            >
+                <p v-if="joinBox.requested_at" class="font-semibold text-base-primary">
+                    {{ t('campaigns.join.pendingSince', { date: joinBox.requested_at }) }}
+                </p>
+                <p class="mt-1 text-base-secondary">{{ t('campaigns.join.pendingHint') }}</p>
+            </div>
             <div class="mt-3">
                 <VerificationBlockedButton
                     v-if="gate.blocked.value"

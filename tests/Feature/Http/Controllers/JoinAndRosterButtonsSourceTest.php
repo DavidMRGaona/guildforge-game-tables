@@ -29,6 +29,9 @@ final class JoinAndRosterButtonsSourceTest extends TestCase
         $this->assertStringContainsString('<JoinRequestDialog', $box);
         $this->assertStringContainsString(':error="requestError"', $box);
         $this->assertStringContainsString(':processing="processing"', $box);
+        // Once sent, the opening button is gone: the focus moves to the new pending status
+        $this->assertMatchesRegularExpression('/:id="pendingStatusId"\s+ref="pendingStatus"\s+role="status"\s+tabindex="-1"/', $box);
+        $this->assertStringContainsString("showRequestDialog.value = false;\n                void nextTick(() => pendingStatus.value?.focus());", $box);
         // Withdrawing asks first
         $this->assertStringContainsString('@click="askWithdraw"', $box);
         $this->assertStringContainsString('v-model="showWithdrawDialog"', $box);
