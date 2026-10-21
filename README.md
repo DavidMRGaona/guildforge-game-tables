@@ -363,7 +363,9 @@ Widget del dashboard: `PendingModerationWidget` (mesas y campañas pendientes de
 | `POST` | `/campanas/mis-campanas/{id}/enviar-revision` | `campaigns.submit-review` | Autor |
 | `GET` | `/campanas/mis-campanas/{id}/plantilla` | `campaigns.roster` | Dirección |
 | `PUT` | `/campanas/mis-campanas/{id}/plantilla/ajustes` | `campaigns.roster.settings` | Dirección |
-| `POST` / `DELETE` | `/campanas/mis-campanas/{id}/plantilla/jugadores[/{userId}]` | `campaigns.roster.add` / `campaigns.roster.remove` | Dirección |
+| `DELETE` | `/campanas/mis-campanas/{id}/plantilla/jugadores/{userId}` | `campaigns.roster.remove` | Dirección |
+| `POST` | `/campanas/mis-campanas/{id}/plantilla/invitaciones` | `campaigns.roster.invite` | Dirección |
+| `POST` / `DELETE` | `/campanas/mis-campanas/{id}/plantilla/invitaciones/{invitationId}[/reenviar]` | `campaigns.roster.invitation.resend` / `campaigns.roster.invitation.cancel` | Dirección |
 | `POST` | `/campanas/mis-campanas/{id}/plantilla/solicitudes/{requestId}/aceptar` / `rechazar` | `campaigns.roster.accept` / `campaigns.roster.reject` | Dirección |
 | `POST` | `/campanas/mis-campanas/{id}/plantilla/ausencias` | `campaigns.roster.absence` | Dirección |
 | `POST` / `DELETE` | `/campanas/{slug}/solicitud` | `campaigns.join.request` / `campaigns.join.withdraw` | Usuarios autenticados |

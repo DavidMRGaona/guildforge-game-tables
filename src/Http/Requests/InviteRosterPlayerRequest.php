@@ -7,10 +7,10 @@ namespace Modules\GameTables\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * The direction adds an account to the roster by its email; the controller checks who may
- * (manageRoster).
+ * The direction invites an email to the roster, saying the person agreed to be invited; the
+ * controller checks who may (manageRoster).
  */
-final class AddRosterPlayerRequest extends FormRequest
+final class InviteRosterPlayerRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -24,6 +24,7 @@ final class AddRosterPlayerRequest extends FormRequest
     {
         return [
             'email' => ['required', 'string', 'email', 'max:255'],
+            'consent' => ['accepted'],
         ];
     }
 
@@ -35,6 +36,7 @@ final class AddRosterPlayerRequest extends FormRequest
         return [
             'email.required' => __('game-tables::messages.validation.email_required'),
             'email.email' => __('game-tables::messages.validation.email_invalid'),
+            'consent.accepted' => __('game-tables::messages.validation.invitation_consent_required'),
         ];
     }
 }

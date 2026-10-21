@@ -768,6 +768,7 @@ return [
         'first_name_max' => 'El nombre no puede superar los 100 caracteres',
         'email_required' => 'El email es obligatorio',
         'email_invalid' => 'El email no es válido',
+        'invitation_consent_required' => 'Confirma que esta persona te ha dado permiso para invitarla.',
         'phone_max' => 'El teléfono no puede superar los 20 caracteres',
         'gdpr_consent_required' => 'Debes aceptar la política de privacidad para continuar',
         'title_required' => 'El título es obligatorio',
@@ -954,7 +955,7 @@ return [
             'nothing_to_change' => 'No hay nada que cambiar en esa sesión.',
             'not_member_self' => 'No formas parte de la plantilla de esta campaña.',
             'too_many_requests' => 'Has enviado demasiadas solicitudes seguidas. Espera unos minutos y vuelve a intentarlo.',
-            'too_many_additions' => 'Has añadido demasiados jugadores seguidos. Espera un minuto y vuelve a intentarlo.',
+            'too_many_additions' => 'Has enviado demasiadas invitaciones seguidas. Espera un minuto y vuelve a intentarlo.',
         ],
         'success' => [
             'requested' => 'Solicitud enviada. La dirección te avisará por correo.',

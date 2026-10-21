@@ -562,10 +562,22 @@ export default {
                 rejectConfirm: 'Rechazar',
                 empty: 'No hay solicitudes pendientes.',
             },
-            add: {
-                title: 'Añadir jugador',
-                email: 'Email de la cuenta',
-                submit: 'Añadir',
+            invite: {
+                title: 'Invitar jugador',
+                email: 'Email de la persona',
+                consent: 'Confirmo que esta persona me ha dado permiso para usar su email para invitarla a la campaña.',
+                submit: 'Enviar invitación',
+                note: 'Le enviaremos un correo para que acepte. Si aún no tiene cuenta, podrá crearla desde el enlace.',
+            },
+            invitations: {
+                title: 'Invitaciones pendientes ({count})',
+                invitedBy: 'Invitada por {name}',
+                expires: 'Caduca el {date}',
+                resend: 'Reenviar',
+                cancel: 'Cancelar',
+                cancelTitle: 'Cancelar invitación',
+                cancelMessage: 'La invitación a {email} dejará de ser válida.',
+                tooManyPending: 'Hay más invitaciones pendientes que plazas libres; entrará quien acepte primero.',
             },
             players: {
                 title: 'Jugadores ({count})',

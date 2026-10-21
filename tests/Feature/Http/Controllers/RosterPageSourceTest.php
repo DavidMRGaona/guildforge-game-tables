@@ -33,15 +33,15 @@ final class RosterPageSourceTest extends TestCase
     }
 
     /**
-     * A refusal (unknown email, full roster) comes back as a successful visit with an error
-     * flash: the typed email stays so it can be corrected; only a real addition clears it.
+     * A refusal (member, limits) comes back as a successful visit with an error
+     * flash: the typed email stays so it can be corrected; only a real invitation clears it.
      */
-    public function test_the_add_form_keeps_the_email_after_a_refusal(): void
+    public function test_the_invite_form_keeps_the_email_after_a_refusal(): void
     {
         $source = $this->source();
 
-        $this->assertStringContainsString("onSuccess: () => {\n            if (!flashError.value) addForm.reset('email');\n        },", $source);
-        $this->assertStringNotContainsString("onSuccess: () => addForm.reset('email'),", $source);
+        $this->assertStringContainsString("onSuccess: () => {\n            if (!flashError.value) inviteForm.reset();\n        },", $source);
+        $this->assertStringNotContainsString("onSuccess: () => inviteForm.reset(),", $source);
     }
 
     /**

@@ -9,10 +9,12 @@ use Carbon\CarbonImmutable;
 use DateTimeImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Modules\GameTables\Application\DTOs\CampaignInvitationViewDTO;
 use Modules\GameTables\Application\DTOs\CampaignSessionBoxDTO;
 use Modules\GameTables\Application\DTOs\JoinBoxDTO;
 use Modules\GameTables\Application\DTOs\RosterPageDTO;
 use Modules\GameTables\Application\Services\CampaignDirectionInterface;
+use Modules\GameTables\Application\Services\CampaignInvitationServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterQueryInterface;
 use Modules\GameTables\Application\Services\MembershipCheckerInterface;
 use Modules\GameTables\Domain\Entities\Campaign;
@@ -41,6 +43,7 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
         private ParticipantRepositoryInterface $participants,
         private SeatCounter $seats,
         private GameTableSettingsReader $settings,
+        private CampaignInvitationServiceInterface $invitations,
     ) {}
 
     public function rosterPage(string $campaignId, DateTimeImmutable $now): RosterPageDTO
@@ -48,6 +51,14 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
         $campaign = $this->campaigns->findOrFail(new CampaignId($campaignId));
         $rosterCount = $this->roster->count($campaign->id);
         $sessions = $this->upcomingSessions($campaign->id, $now);
+        $invitations = array_map(fn (CampaignInvitationViewDTO $invitation): array => [
+            'id' => $invitation->id,
+            'email' => $invitation->email,
+            'inviter_name' => $invitation->inviterName,
+            'send_count' => $invitation->sendCount,
+            'expires_at' => $invitation->expiresAt,
+            'can_resend' => $invitation->canResend,
+        ], $this->invitations->pendingFor($campaignId, $now));
 
         // Every session's rows and taken seats in one read each, however many sessions there are
         $rowsBySession = $this->rowsByUser($sessions);
@@ -96,6 +107,9 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
             players: $players,
             canAdd: ! $campaign->isFinished() && $campaign->hasRoomFor($rosterCount),
             removalNotice: $this->settings->isCampaignNotificationEnabled('roster_removed'),
+            invitations: $invitations,
+            // No seat is reserved: whoever accepts first enters, so the direction is told
+            moreInvitationsThanSeats: $campaign->maxPlayers !== null && count($invitations) > $campaign->maxPlayers - $rosterCount,
         );
     }
 

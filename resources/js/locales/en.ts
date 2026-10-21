@@ -536,10 +536,22 @@ export default {
                 rejectConfirm: 'Reject',
                 empty: 'There are no pending requests.',
             },
-            add: {
-                title: 'Add player',
-                email: 'Account email',
-                submit: 'Add',
+            invite: {
+                title: 'Invite player',
+                email: 'Email of the person',
+                consent: 'I confirm that this person has given me permission to use their email to invite them to the campaign.',
+                submit: 'Send invitation',
+                note: 'We will email them so they can accept. If they have no account yet, they can create one from the link.',
+            },
+            invitations: {
+                title: 'Pending invitations ({count})',
+                invitedBy: 'Invited by {name}',
+                expires: 'Expires on {date}',
+                resend: 'Resend',
+                cancel: 'Cancel',
+                cancelTitle: 'Cancel invitation',
+                cancelMessage: 'The invitation to {email} will stop being valid.',
+                tooManyPending: 'There are more pending invitations than free seats; whoever accepts first gets in.',
             },
             players: {
                 title: 'Players ({count})',

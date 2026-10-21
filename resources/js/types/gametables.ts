@@ -511,6 +511,16 @@ export interface RosterRequest {
     created_at: string | null;
 }
 
+export interface RosterInvitation {
+    id: string;
+    email: string;
+    inviter_name: string;
+    send_count: number;
+    // ISO 8601
+    expires_at: string;
+    can_resend: boolean;
+}
+
 export interface RosterSession {
     game_table_id: string;
     title: string;
@@ -553,6 +563,9 @@ export interface RosterPage {
     can_add: boolean;
     // Whether removing a player emails them
     removal_notice: boolean;
+    invitations: RosterInvitation[];
+    // More invitations pending than free seats
+    more_invitations_than_seats: boolean;
 }
 
 /** What the viewer of a campaign page can do with its roster (JoinBoxDTO). */

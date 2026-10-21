@@ -700,6 +700,9 @@ return [
         'character_creation_required' => 'Character creation type is required',
         'campaign_required' => 'Choose the campaign of the session.',
         'co_director_first_name_required' => 'The co-GM first name is required.',
+        'email_required' => 'The email is required.',
+        'email_invalid' => 'The email is not valid.',
+        'invitation_consent_required' => 'Confirm that this person has given you permission to invite them.',
         'co_director_email_required' => 'The co-GM email is required.',
         'co_directors_consent_required' => 'Confirm that you have the co-GMs\' consent.',
         'campaign_not_owned' => 'You can only link the table to a campaign you direct.',
@@ -875,7 +878,7 @@ return [
             'nothing_to_change' => 'There is nothing to change in that session.',
             'not_member_self' => 'You are not part of the roster of this campaign.',
             'too_many_requests' => 'You have sent too many requests in a row. Wait a few minutes and try again.',
-            'too_many_additions' => 'You have added too many players in a row. Wait a minute and try again.',
+            'too_many_additions' => 'You have sent too many invitations in a row. Wait a minute and try again.',
         ],
         'success' => [
             'requested' => 'Request sent. The direction will let you know by email.',
