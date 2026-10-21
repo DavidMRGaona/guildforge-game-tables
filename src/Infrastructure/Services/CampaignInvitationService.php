@@ -245,10 +245,18 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
         CampaignInvitationAccepted::dispatch($campaignId, $userId);
     }
 
+    /**
+     * The rejection and the deletion go together (the lock is a transaction): the 30-day block is
+     * never lost with the invitation gone, and a failed deletion records no rejection.
+     */
     private function decline(CampaignInvitation $invitation): void
     {
-        $this->invitations->delete($invitation->id);
-        $this->sendLog->recordRejection($invitation->campaignId->value, $invitation->email, CarbonImmutable::now()->toDateTimeImmutable());
+        $campaignId = $invitation->campaignId->value;
+
+        $this->lock->forCampaign($campaignId, function () use ($invitation, $campaignId): void {
+            $this->sendLog->recordRejection($campaignId, $invitation->email, CarbonImmutable::now()->toDateTimeImmutable());
+            $this->invitations->delete($invitation->id);
+        });
     }
 
     /**

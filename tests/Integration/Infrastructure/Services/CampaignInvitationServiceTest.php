@@ -7,6 +7,8 @@ namespace Modules\GameTables\Tests\Integration\Infrastructure\Services;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Carbon\CarbonImmutable;
 use Closure;
+use DateTimeImmutable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
 use Modules\GameTables\Application\Services\CampaignInvitationSendLogInterface;
@@ -27,6 +29,8 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignInvita
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignJoinRequestModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
+use Modules\GameTables\Infrastructure\Services\DatabaseCampaignInvitationSendLog;
+use RuntimeException;
 use Tests\Support\Modules\ModuleTestCase;
 
 /**
@@ -534,6 +538,126 @@ final class CampaignInvitationServiceTest extends ModuleTestCase
         $this->assertTrue($this->sendLog()->rejectedSince($this->campaign->id, 'john@example.com', CarbonImmutable::now()->subDay()->toDateTimeImmutable()));
         $this->assertRefused('invitation_not_found', fn () => $this->service()->reject($token));
         $this->assertFalse($this->isMember($this->john));
+    }
+
+    public function test_a_failed_deletion_records_no_rejection(): void
+    {
+        $token = $this->tokenFor('john@example.com');
+        $inner = $this->invitations();
+        $this->app->instance(CampaignInvitationRepositoryInterface::class, new readonly class($inner) implements CampaignInvitationRepositoryInterface
+        {
+            public function __construct(private CampaignInvitationRepositoryInterface $inner) {}
+
+            public function save(CampaignInvitation $invitation): void
+            {
+                $this->inner->save($invitation);
+            }
+
+            public function find(CampaignInvitationId $id): ?CampaignInvitation
+            {
+                return $this->inner->find($id);
+            }
+
+            public function findByTokenHash(string $hash): ?CampaignInvitation
+            {
+                return $this->inner->findByTokenHash($hash);
+            }
+
+            public function findPending(CampaignId $campaignId, string $email): ?CampaignInvitation
+            {
+                return $this->inner->findPending($campaignId, $email);
+            }
+
+            public function pendingFor(CampaignId $campaignId): array
+            {
+                return $this->inner->pendingFor($campaignId);
+            }
+
+            public function pendingForEmail(string $email, DateTimeImmutable $now): array
+            {
+                return $this->inner->pendingForEmail($email, $now);
+            }
+
+            public function delete(CampaignInvitationId $id): void
+            {
+                throw new RuntimeException('The database went away');
+            }
+
+            public function deleteExpired(DateTimeImmutable $now): int
+            {
+                return $this->inner->deleteExpired($now);
+            }
+
+            public function deleteForCampaignsNotOpen(): int
+            {
+                return $this->inner->deleteForCampaignsNotOpen();
+            }
+        });
+
+        try {
+            $this->service()->reject($token);
+            $this->fail('Expected the deletion to fail');
+        } catch (RuntimeException) {
+        }
+
+        $this->assertSame(0, $this->rejectionRows());
+        $this->assertNotNull($inner->findPending($this->campaignId, 'john@example.com'));
+    }
+
+    public function test_a_failed_rejection_record_keeps_the_invitation(): void
+    {
+        $token = $this->tokenFor('john@example.com');
+        // Writes the row, then fails: the row must not survive either
+        $this->app->instance(CampaignInvitationSendLogInterface::class, new readonly class(new DatabaseCampaignInvitationSendLog) implements CampaignInvitationSendLogInterface
+        {
+            public function __construct(private CampaignInvitationSendLogInterface $inner) {}
+
+            public function recordSend(string $campaignId, string $email, DateTimeImmutable $at): void
+            {
+                $this->inner->recordSend($campaignId, $email, $at);
+            }
+
+            public function recordRejection(string $campaignId, string $email, DateTimeImmutable $at): void
+            {
+                $this->inner->recordRejection($campaignId, $email, $at);
+
+                throw new RuntimeException('The database went away');
+            }
+
+            public function sendsSince(string $campaignId, string $email, DateTimeImmutable $since): int
+            {
+                return $this->inner->sendsSince($campaignId, $email, $since);
+            }
+
+            public function lastSendAt(string $campaignId, string $email): ?DateTimeImmutable
+            {
+                return $this->inner->lastSendAt($campaignId, $email);
+            }
+
+            public function rejectedSince(string $campaignId, string $email, DateTimeImmutable $since): bool
+            {
+                return $this->inner->rejectedSince($campaignId, $email, $since);
+            }
+
+            public function pruneBefore(DateTimeImmutable $before): int
+            {
+                return $this->inner->pruneBefore($before);
+            }
+        });
+
+        try {
+            $this->service()->reject($token);
+            $this->fail('Expected the rejection record to fail');
+        } catch (RuntimeException) {
+        }
+
+        $this->assertSame(0, $this->rejectionRows());
+        $this->assertNotNull($this->invitations()->findPending($this->campaignId, 'john@example.com'));
+    }
+
+    private function rejectionRows(): int
+    {
+        return DB::table('gametables_campaign_invitation_sends')->where('kind', 'rejected')->count();
     }
 
     public function test_accept_by_id_adds_a_verified_account(): void
