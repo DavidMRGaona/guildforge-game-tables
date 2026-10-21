@@ -45,6 +45,19 @@ final class RosterPageSourceTest extends TestCase
     }
 
     /**
+     * Pending invitations stay listed (to resend or cancel them) when the roster is full: only the
+     * invite form depends on can_add.
+     */
+    public function test_pending_invitations_do_not_depend_on_room_in_the_roster(): void
+    {
+        $source = $this->source();
+
+        $this->assertStringContainsString('<section v-if="invitations.length > 0"', $source);
+        $this->assertStringContainsString('<section v-if="can_add" :class="sectionClass" aria-labelledby="roster-invite-title">', $source);
+        $this->assertSame(1, substr_count($source, 'v-if="can_add"'));
+    }
+
+    /**
      * WCAG 2.5.3: a cell's accessible name starts with its visible text («✓ Va»).
      */
     public function test_the_cell_name_starts_with_its_visible_text(): void

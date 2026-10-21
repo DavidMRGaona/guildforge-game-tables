@@ -459,6 +459,19 @@ final class CampaignRosterControllerTest extends ModuleTestCase
             ->assertInertia(fn (Assert $page) => $page->where('more_invitations_than_seats', false));
     }
 
+    public function test_a_full_roster_still_lists_its_pending_invitations(): void
+    {
+        $this->invite($this->campaign, 'ana@example.com');
+        $this->campaign->update(['max_players' => 2]);
+
+        $this->asDirector()
+            ->get($this->rosterUrl())
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('can_add', false)
+                ->has('invitations', 1)
+                ->where('more_invitations_than_seats', true));
+    }
+
     public function test_only_the_direction_invites(): void
     {
         $this->invite($this->campaign, 'ana@example.com');

@@ -658,11 +658,14 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                     </div>
                     <p class="text-sm text-base-secondary">{{ t('campaigns.roster.invite.note') }}</p>
                 </form>
+            </section>
 
-                <div v-if="invitations.length > 0" class="mt-6">
-                    <h3 class="text-base font-semibold text-base-primary">
+            <!-- Pending invitations: listed even when the roster is full or the campaign has finished -->
+            <section v-if="invitations.length > 0" :class="sectionClass" aria-labelledby="roster-invitations-title">
+                <div>
+                    <h2 id="roster-invitations-title" class="text-lg font-semibold text-base-primary">
                         {{ t('campaigns.roster.invitations.title', { count: invitations.length }) }}
-                    </h3>
+                    </h2>
                     <p v-if="more_invitations_than_seats" class="mt-2 text-sm text-warning" role="status">
                         {{ t('campaigns.roster.invitations.tooManyPending') }}
                     </p>
