@@ -83,6 +83,14 @@ function getImageUrl(campaign: CampaignListItem): string | null {
                 <p class="mt-2 text-lg text-base-secondary">
                     {{ t('campaigns.description') }}
                 </p>
+                <!-- The tables, the other list of the module -->
+                <Link
+                    href="/mesas"
+                    class="mt-2 inline-flex min-h-[44px] items-center gap-1 text-sm font-medium text-primary underline-offset-2 hover:underline"
+                >
+                    {{ t('gameTables.viewAll') }}
+                    <span aria-hidden="true">→</span>
+                </Link>
             </div>
         </div>
 

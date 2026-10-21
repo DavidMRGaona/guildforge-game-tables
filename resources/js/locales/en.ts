@@ -101,6 +101,7 @@ export default {
             resultsCount: '{count} table found | {count} tables found',
             listView: 'List view',
             calendarView: 'Calendar view',
+            viewSwitch: 'Tables view',
         },
         details: {
             gameSystem: 'Game system',
@@ -265,6 +266,8 @@ export default {
                 noTables: 'No created tables',
                 noTablesDescription: 'You have not created any game tables yet.',
                 createNew: 'Create new table',
+                // Link to «Mis mesas», where every table the user created is managed
+                manage: 'Manage my tables',
                 createFirst: 'Create your first table',
                 edit: 'Edit',
                 players: 'players',
@@ -493,6 +496,10 @@ export default {
             biweekly: 'Biweekly',
             monthly: 'Monthly',
             irregular: 'Irregular',
+        },
+        profile: {
+            // Link to «Mis campañas», where every campaign the user created is managed
+            manage: 'Manage my campaigns',
         },
         myCampaigns: {
             // Campaigns the viewer directs

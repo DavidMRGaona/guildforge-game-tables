@@ -26,6 +26,11 @@ const totalTables = computed(() => props.profileCreatedTables?.total ?? 0);
 const canCreate = computed(() => props.profileCreatedTables?.canCreate ?? false);
 
 const createUrl = '/mesas/crear';
+// «Mis mesas»: every table the user created, with its actions
+const manageUrl = '/mesas/mis-mesas';
+
+// The look of the manage link; its disabled stand-in keeps it
+const manageLinkClass = 'inline-flex min-h-[44px] items-center gap-1 text-sm font-medium text-primary underline-offset-2 hover:underline';
 
 function toggleDraftsSection(): void {
     showDraftsSection.value = !showDraftsSection.value;
@@ -34,10 +39,26 @@ function toggleDraftsSection(): void {
 
 <template>
     <div v-if="profileCreatedTables && totalTables > 0" class="space-y-10">
-        <!-- Top create button -->
-        <div v-if="canCreate" class="flex justify-end">
+        <!-- Manage link and top create button -->
+        <div class="flex flex-wrap items-center justify-between gap-3">
             <VerificationBlockedButton
                 v-if="gate.blocked.value"
+                :reason="gate.reason('form')"
+                :button-class="manageLinkClass"
+            >
+                {{ t('gameTables.profile.created.manage') }}
+            </VerificationBlockedButton>
+            <Link
+                v-else
+                :href="manageUrl"
+                :class="manageLinkClass"
+            >
+                {{ t('gameTables.profile.created.manage') }}
+                <span aria-hidden="true">→</span>
+            </Link>
+
+            <VerificationBlockedButton
+                v-if="canCreate && gate.blocked.value"
                 :reason="gate.reason('createTable')"
                 align="end"
                 button-class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm"
@@ -48,7 +69,7 @@ function toggleDraftsSection(): void {
                 {{ t('gameTables.profile.created.createNew') }}
             </VerificationBlockedButton>
             <Link
-                v-else
+                v-else-if="canCreate"
                 :href="createUrl"
                 class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
             >
@@ -196,6 +217,16 @@ function toggleDraftsSection(): void {
                 </svg>
                 {{ t('gameTables.profile.created.createFirst') }}
             </Link>
+            <!-- While blocked the create button above already says why -->
+            <p v-if="!gate.blocked.value" class="mt-4">
+                <Link
+                    :href="manageUrl"
+                    :class="manageLinkClass"
+                >
+                    {{ t('gameTables.profile.created.manage') }}
+                    <span aria-hidden="true">→</span>
+                </Link>
+            </p>
         </div>
     </div>
 </template>

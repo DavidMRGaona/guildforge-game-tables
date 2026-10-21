@@ -254,7 +254,36 @@ final class CampaignJoinControllerTest extends ModuleTestCase
             ->get($this->pageUrl())
             ->assertInertia(fn (Assert $page) => $page
                 ->where('joinBox.state', 'director')
-                ->where('joinBox.roster_url', route('campaigns.roster', $this->campaign->id)));
+                ->where('joinBox.roster_url', route('campaigns.roster', $this->campaign->id))
+                ->where('joinBox.pending_requests', 0));
+    }
+
+    public function test_the_director_sees_how_many_requests_await_an_answer(): void
+    {
+        $this->pendingRequest($this->richard);
+        $this->pendingRequest(UserModel::factory()->create());
+        $this->pendingRequest(UserModel::factory()->create(['anonymized_at' => now()]));
+
+        $this->actingAs($this->mary)
+            ->get($this->pageUrl())
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('joinBox.state', 'director')
+                ->where('joinBox.pending_requests', 2));
+
+        // Nobody else learns about the requests: neither a player, nor someone who asked, nor a visitor
+        foreach ([$this->john, $this->richard] as $user) {
+            $this->actingAs($user)
+                ->get($this->pageUrl())
+                ->assertInertia(fn (Assert $page) => $page
+                    ->where('joinBox.roster_url', null)
+                    ->where('joinBox.pending_requests', 0));
+        }
+        auth()->logout();
+        $this->get($this->pageUrl())
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('joinBox.state', 'guest')
+                ->where('joinBox.roster_url', null)
+                ->where('joinBox.pending_requests', 0));
     }
 
     private function assertJoinBox(?UserModel $user, string $state): void
@@ -269,7 +298,8 @@ final class CampaignJoinControllerTest extends ModuleTestCase
                 ->component('Campaigns/Show', shouldExist: false)
                 ->where('joinBox.state', $state)
                 ->where('joinBox.requested_at', null)
-                ->where('joinBox.roster_url', null));
+                ->where('joinBox.roster_url', null)
+                ->where('joinBox.pending_requests', 0));
     }
 
     private function pageUrl(): string

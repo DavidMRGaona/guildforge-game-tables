@@ -16,10 +16,12 @@ final readonly class JoinBoxDTO
         public ?string $requestedAt = null,
         // For the direction, the roster page
         public ?string $rosterUrl = null,
+        // For the direction, the requests awaiting an answer
+        public int $pendingRequests = 0,
     ) {}
 
     /**
-     * @return array{state: string, requested_at: string|null, roster_url: string|null}
+     * @return array{state: string, requested_at: string|null, roster_url: string|null, pending_requests: int}
      */
     public function toArray(): array
     {
@@ -27,6 +29,7 @@ final readonly class JoinBoxDTO
             'state' => $this->state,
             'requested_at' => $this->requestedAt,
             'roster_url' => $this->rosterUrl,
+            'pending_requests' => $this->pendingRequests,
         ];
     }
 }

@@ -7,6 +7,7 @@ namespace Modules\GameTables\Tests\Integration\Infrastructure\Services;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignJoinRequestModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Services\ProfileCreatedCampaignsDataProvider;
@@ -72,6 +73,66 @@ final class ProfileCreatedCampaignsDataProviderTest extends ModuleTestCase
         $this->assertSame("Falta la sinopsis.\nRevisa el sistema.", $drafts['Rechazada']['rejectionReason']);
         $this->assertNull($drafts['En revisión']['rejectionReason']);
         $this->assertNull($drafts['Borrador']['rejectionReason']);
+    }
+
+    public function test_a_published_campaign_the_author_directs_links_to_its_roster_with_the_pending_requests(): void
+    {
+        $creator = $this->user();
+        $directed = $this->campaign($creator, ['frontend_creation_status' => 'approved', 'title' => 'Dirigida']);
+        $this->joinRequest($directed, $this->user(), 'pending');
+        $this->joinRequest($directed, $this->user(), 'pending');
+        $this->joinRequest($directed, $this->user(), 'rejected');
+        $this->joinRequest($directed, $this->user(anonymized: true), 'pending');
+        // Created in the panel: its creator does not direct it (CampaignDirection)
+        $this->campaign($creator, ['frontend_creation_status' => null, 'title' => 'Del panel']);
+        $this->campaign($creator, ['is_published' => false, 'frontend_creation_status' => 'draft', 'title' => 'Borrador']);
+
+        $data = app(ProfileCreatedCampaignsDataProvider::class)->getDataForUser((string) $creator->id);
+        $published = collect($data['campaigns'])->keyBy('title');
+
+        // As «Mis campañas»: pending requests of accounts that were not anonymized
+        $this->assertSame(route('campaigns.roster', $directed->id), $published['Dirigida']['rosterUrl']);
+        $this->assertSame(2, $published['Dirigida']['pendingRequests']);
+        $this->assertNull($published['Del panel']['rosterUrl']);
+        $this->assertSame(0, $published['Del panel']['pendingRequests']);
+        // The roster belongs to published campaigns, not to the drafts list
+        $this->assertNull($data['drafts'][0]['rosterUrl']);
+        $this->assertSame(0, $data['drafts'][0]['pendingRequests']);
+    }
+
+    public function test_a_panel_campaign_the_creator_directs_as_game_master_links_to_its_roster(): void
+    {
+        $creator = $this->user();
+        $campaign = $this->campaign($creator, ['frontend_creation_status' => null, 'title' => 'Del panel']);
+        $gameMasterId = (string) Str::uuid();
+        DB::table('gametables_game_masters')->insert([
+            'id' => $gameMasterId,
+            'user_id' => $creator->id,
+            'role' => 'main',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('gametables_campaign_gm')->insert([
+            'campaign_id' => $campaign->id,
+            'game_master_id' => $gameMasterId,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $data = app(ProfileCreatedCampaignsDataProvider::class)->getDataForUser((string) $creator->id);
+
+        $this->assertSame(route('campaigns.roster', $campaign->id), $data['campaigns'][0]['rosterUrl']);
+    }
+
+    private function joinRequest(CampaignModel $campaign, UserModel $user, string $status): void
+    {
+        CampaignJoinRequestModel::create([
+            'id' => (string) Str::uuid(),
+            'campaign_id' => $campaign->id,
+            'user_id' => $user->id,
+            'status' => $status,
+            'message' => null,
+        ]);
     }
 
     private function joinRoster(CampaignModel $campaign, UserModel $user): void

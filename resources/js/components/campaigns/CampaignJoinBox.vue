@@ -33,7 +33,8 @@ const showLeaveDialog = ref(false);
 
 const baseUrl = computed(() => `/campanas/${props.campaignSlug}`);
 
-// The look of BaseButton (size sm), for the disabled stand-in of an account that must verify its email
+// The look of BaseButton (size sm), for the roster link and the disabled stand-in of an account
+// that must verify its email
 const primaryButtonClass = 'inline-flex min-h-[44px] items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white';
 const secondaryButtonClass = 'inline-flex min-h-[44px] items-center justify-center rounded-md bg-muted px-4 py-2 text-sm font-medium text-base-primary';
 
@@ -125,13 +126,29 @@ const closedMessage = computed<string | null>(() => {
         <!-- Direction -->
         <template v-if="joinBox.state === 'director'">
             <p class="font-semibold text-base-primary">{{ t('campaigns.join.director') }}</p>
-            <Link
-                v-if="joinBox.roster_url"
-                :href="joinBox.roster_url"
-                class="mt-2 inline-flex font-medium text-primary underline underline-offset-2 hover:no-underline focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
+            <p
+                v-if="joinBox.pending_requests > 0"
+                class="mt-2 inline-flex rounded-full bg-warning-light px-2 py-0.5 text-xs font-medium text-base-primary"
             >
-                {{ t('campaigns.join.manageRoster') }}
-            </Link>
+                {{ t('campaigns.myCampaigns.pendingRequests', { count: joinBox.pending_requests }, joinBox.pending_requests) }}
+            </p>
+            <div v-if="joinBox.roster_url" class="mt-3">
+                <VerificationBlockedButton
+                    v-if="gate.blocked.value"
+                    :reason="gate.reason('form')"
+                    :button-class="`${primaryButtonClass} w-full`"
+                >
+                    {{ t('campaigns.join.manageRoster') }}
+                </VerificationBlockedButton>
+                <Link
+                    v-else
+                    :href="joinBox.roster_url"
+                    :class="primaryButtonClass"
+                    class="w-full transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
+                >
+                    {{ t('campaigns.join.manageRoster') }}
+                </Link>
+            </div>
         </template>
 
         <!-- In the roster -->

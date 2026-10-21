@@ -112,6 +112,7 @@ export default {
             resultsCount: '{count} mesa encontrada | {count} mesas encontradas',
             listView: 'Vista de lista',
             calendarView: 'Vista de calendario',
+            viewSwitch: 'Vista de las mesas',
         },
         details: {
             gameSystem: 'Sistema de juego',
@@ -265,6 +266,8 @@ export default {
                 noTables: 'Sin mesas creadas',
                 noTablesDescription: 'Aún no has creado ninguna mesa de juego.',
                 createNew: 'Crear nueva mesa',
+                // Link to «Mis mesas», where every table the user created is managed
+                manage: 'Gestionar mis mesas',
                 createFirst: 'Crear tu primera mesa',
                 edit: 'Editar',
                 players: 'jugadores',
@@ -502,6 +505,8 @@ export default {
             noCampaigns: 'Sin campañas creadas',
             noCampaignsDescription: 'Aún no has creado ninguna campaña.',
             createNew: 'Crear nueva campaña',
+            // Link to «Mis campañas», where every campaign the user created is managed
+            manage: 'Gestionar mis campañas',
             createFirst: 'Crear tu primera campaña',
             edit: 'Editar',
             players: 'jugadores',

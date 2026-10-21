@@ -386,6 +386,10 @@ export interface ProfileCreatedCampaign {
     canEdit: boolean;
     /** Why the moderators rejected it, while the author may still change it */
     rejectionReason: string | null;
+    /** The roster page, on a published campaign the user directs; null otherwise */
+    rosterUrl: string | null;
+    /** Requests awaiting an answer, with a rosterUrl (0 otherwise) */
+    pendingRequests: number;
     isRecruiting: boolean;
     maxPlayers: number | null;
     currentPlayers: number;
@@ -561,4 +565,6 @@ export interface JoinBox {
     requested_at: string | null;
     // For the direction, the roster page
     roster_url: string | null;
+    // For the direction, the requests awaiting an answer (0 for anyone else)
+    pending_requests: number;
 }

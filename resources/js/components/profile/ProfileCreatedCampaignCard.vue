@@ -2,6 +2,8 @@
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
+import { useVerificationGate } from '@/composables/useVerificationGate';
+import VerificationBlockedButton from '../VerificationBlockedButton.vue';
 import DraftActions from '../DraftActions.vue';
 import DraftRejectionReason from './DraftRejectionReason.vue';
 import type { ProfileCreatedCampaign } from '../../types/gametables';
@@ -20,6 +22,11 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const { t } = useI18n();
+// The roster page is closed to accounts that must verify their email
+const gate = useVerificationGate();
+
+// The look of BaseButton (secondary, size sm) on a link
+const rosterLinkClass = 'inline-flex min-h-[44px] w-full items-center justify-center rounded-md bg-muted px-4 py-2 text-sm font-medium text-base-primary transition-colors hover:bg-base-secondary/20 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface sm:w-auto';
 
 const campaignUrl = computed(() =>
     props.campaign.slug ? `/campanas/${props.campaign.slug}` : null
@@ -105,6 +112,34 @@ const playersText = computed(() => {
             >
                 {{ campaign.statusLabel }}
             </span>
+        </div>
+
+        <!-- A published campaign the user directs: its roster, with the requests awaiting an answer -->
+        <div
+            v-if="!showActions && campaign.rosterUrl"
+            class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end"
+        >
+            <span
+                v-if="campaign.pendingRequests > 0"
+                class="inline-flex self-start rounded-full bg-warning-light px-2 py-0.5 text-xs font-medium text-base-primary sm:self-auto"
+            >
+                {{ t('campaigns.myCampaigns.pendingRequests', { count: campaign.pendingRequests }, campaign.pendingRequests) }}
+            </span>
+            <VerificationBlockedButton
+                v-if="gate.blocked.value"
+                :reason="gate.reason('form')"
+                align="end"
+                :button-class="rosterLinkClass"
+            >
+                {{ t('campaigns.myCampaigns.roster') }}
+            </VerificationBlockedButton>
+            <Link
+                v-else
+                :href="campaign.rosterUrl"
+                :class="rosterLinkClass"
+            >
+                {{ t('campaigns.myCampaigns.roster') }}
+            </Link>
         </div>
 
         <!-- Rejected in review: the reason, addressed to the author, while it is back in their hands -->

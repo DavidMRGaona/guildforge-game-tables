@@ -99,8 +99,14 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
         $campaign = $this->campaigns->findOrFail(new CampaignId($campaignId));
 
         if ($userId !== null) {
+            // The campaign page shows published campaigns only, whose roster their directors may
+            // open (CampaignPolicy::manageRoster); the requests awaiting an answer are theirs alone
             if ($this->direction->isDirector($campaignId, $userId)) {
-                return new JoinBoxDTO('director', rosterUrl: route('campaigns.roster', $campaignId));
+                return new JoinBoxDTO(
+                    'director',
+                    rosterUrl: route('campaigns.roster', $campaignId),
+                    pendingRequests: $this->requests->pendingCountsFor([$campaign->id])[$campaignId] ?? 0,
+                );
             }
 
             if ($this->roster->contains($campaign->id, $userId)) {

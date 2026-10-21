@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Modules\GameTables\Infrastructure\Services;
 
 use Modules\GameTables\Application\DTOs\CampaignResponseDTO;
+use Modules\GameTables\Application\Services\CampaignDirectionInterface;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
 use Modules\GameTables\Domain\Entities\Campaign;
+use Modules\GameTables\Domain\Repositories\CampaignJoinRequestRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
@@ -17,6 +19,8 @@ final readonly class ProfileCreatedCampaignsDataProvider
         private CampaignRepositoryInterface $campaignRepository,
         private CreationEligibilityServiceInterface $eligibilityService,
         private CampaignRosterRepositoryInterface $roster,
+        private CampaignDirectionInterface $direction,
+        private CampaignJoinRequestRepositoryInterface $joinRequests,
     ) {}
 
     /**
@@ -48,6 +52,15 @@ final readonly class ProfileCreatedCampaignsDataProvider
             array_values(array_map(static fn (Campaign $campaign): CampaignId => $campaign->id, $campaigns)),
         );
 
+        // The roster page of the published campaigns the user directs (the roster policy's rule:
+        // open once approved or published, to its directors), with the requests awaiting an answer
+        $directedIds = array_flip($this->direction->campaignIdsDirectedBy($userId));
+        $rosterIds = array_values(array_filter(
+            array_map(static fn (Campaign $campaign): CampaignId => $campaign->id, $campaigns),
+            static fn (CampaignId $id): bool => isset($directedIds[$id->value]),
+        ));
+        $pending = $this->joinRequests->pendingCountsFor($rosterIds);
+
         $published = [];
         $drafts = [];
 
@@ -59,6 +72,9 @@ final readonly class ProfileCreatedCampaignsDataProvider
                 showModeratorFeedback: $campaign->createdBy === $userId,
             );
             $data = $this->formatCampaignForProfile($dto, $campaign->canBeChangedByAuthor());
+            $managesRoster = $campaign->isPublished && isset($directedIds[$campaign->id->value]);
+            $data['rosterUrl'] = $managesRoster ? route('campaigns.roster', $campaign->id->value) : null;
+            $data['pendingRequests'] = $managesRoster ? ($pending[$campaign->id->value] ?? 0) : 0;
 
             if ($campaign->isPublished) {
                 $published[] = $data;
