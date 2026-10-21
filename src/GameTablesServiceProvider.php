@@ -57,6 +57,7 @@ use Modules\CookieConsent\Application\DTOs\DeclaredCookieDTO;
 use Modules\CookieConsent\Application\Services\CookieDeclarationRegistryInterface;
 use Modules\GameTables\Application\Services\CampaignDirectionInterface;
 use Modules\GameTables\Application\Services\CampaignRosterQueryInterface;
+use Modules\GameTables\Application\Services\CampaignInvitationServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterSessionSyncInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
@@ -132,6 +133,7 @@ use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 use Modules\GameTables\Infrastructure\Services\CampaignDirection;
 use Modules\GameTables\Infrastructure\Services\DatabaseCampaignInvitationSendLog;
 use Modules\GameTables\Infrastructure\Services\CampaignRosterQuery;
+use Modules\GameTables\Infrastructure\Services\CampaignInvitationService;
 use Modules\GameTables\Infrastructure\Services\CampaignRosterService;
 use Modules\GameTables\Infrastructure\Services\CampaignRosterSessionSync;
 use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
@@ -206,6 +208,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         $this->app->bind(CampaignDirectionInterface::class, CampaignDirection::class);
         $this->app->bind(CampaignRosterSessionSyncInterface::class, CampaignRosterSessionSync::class);
         $this->app->bind(CampaignRosterServiceInterface::class, CampaignRosterService::class);
+        $this->app->bind(CampaignInvitationServiceInterface::class, CampaignInvitationService::class);
         $this->app->bind(CampaignRosterQueryInterface::class, CampaignRosterQuery::class);
 
         // Query service bindings
