@@ -275,7 +275,7 @@ return [
         'privacy_contact' => 'Contact: :email.',
         'privacy_dpo' => 'Data protection officer: :dpo.',
         'privacy_policy' => 'For your other rights, see the [privacy policy](:url).',
-        'privacy_default' => "Purpose: inviting you to this campaign.\n\nSource: :inviter gave it to us.\n\nRetention: until you accept, reject or the invitation expires, at most :days days. We also keep an irreversible fingerprint of the email for 30 days to limit how many invitations are sent.\n\nRights: rejecting the invitation deletes your email at once.",
+        'privacy_default' => "Purpose: inviting you to this campaign.\n\nLegal basis: legitimate interest (art. 6.1.f GDPR) in sending you this invitation, which :inviter asked us to send you with your permission.\n\nSource: :inviter gave it to us.\n\nRetention: until you accept, reject or the invitation expires, at most :days days. We also keep an irreversible fingerprint of the email for 30 days to limit how many invitations are sent.\n\nRights: rejecting the invitation deletes your email at once.",
         'notice_label' => 'Campaign invitation email',
         'notice_help' => 'Data protection block of the email received by a person invited to a campaign.',
         'preview_campaign' => 'Sample campaign',

@@ -307,7 +307,7 @@ return [
         'privacy_contact' => 'Contacto: :email.',
         'privacy_dpo' => 'Delegado de protección de datos: :dpo.',
         'privacy_policy' => 'El resto de tus derechos, en la [política de privacidad](:url).',
-        'privacy_default' => "Finalidad: invitarte a esta campaña.\n\nOrigen: te lo facilitó :inviter.\n\nConservación: hasta que aceptes, rechaces o caduque la invitación, como máximo :days días. Además guardamos durante 30 días una huella irreversible del email para limitar los envíos.\n\nDerechos: rechazar la invitación borra tu email al instante.",
+        'privacy_default' => "Finalidad: invitarte a esta campaña.\n\nLegitimación: interés legítimo (art. 6.1.f RGPD) para enviarte esta invitación, que :inviter nos ha pedido enviarte con tu permiso.\n\nOrigen: te lo facilitó :inviter.\n\nConservación: hasta que aceptes, rechaces o caduque la invitación, como máximo :days días. Además guardamos durante 30 días una huella irreversible del email para limitar los envíos.\n\nDerechos: rechazar la invitación borra tu email al instante.",
         'notice_label' => 'Correo de invitación a una campaña',
         'notice_help' => 'Bloque de protección de datos del correo que recibe una persona invitada a una campaña.',
         'preview_campaign' => 'Campaña de ejemplo',

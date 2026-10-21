@@ -40,6 +40,7 @@ final class CampaignInvitationLegalNoticeTest extends ModuleTestCase
         $this->assertSame('Bloque de protección de datos del correo que recibe una persona invitada a una campaña.', $notice->help);
         $this->assertSame([':inviter', ':campaign', ':site', ':days'], $notice->placeholders);
         $this->assertStringContainsString('Origen: te lo facilitó :inviter.', $notice->defaultContent);
+        $this->assertStringContainsString('Legitimación: interés legítimo (art. 6.1.f RGPD) para enviarte esta invitación, que :inviter nos ha pedido enviarte con tu permiso.', $notice->defaultContent);
         $this->assertStringContainsString('como máximo :days días', $notice->defaultContent);
         $this->assertStringNotContainsString('Responsable', $notice->defaultContent);
     }
@@ -58,7 +59,7 @@ final class CampaignInvitationLegalNoticeTest extends ModuleTestCase
 
     public function test_the_legal_pages_preview_shows_the_email_as_it_is_sent(): void
     {
-        if (! class_exists(LegalPagesSettings::class)) {
+        if (! interface_exists(LegalMailNoticeRegistryInterface::class)) {
             $this->markTestSkipped('The core has no legal pages preview.');
         }
 
