@@ -22,7 +22,7 @@ Módulo de GuildForge para gestionar mesas de rol y campañas: inscripciones de 
 
 ## Requisitos
 
-- GuildForge core `^3.10` (indica a las páginas si la cuenta debe verificar su email; ver [Verificación de email](#verificación-de-email))
+- GuildForge core `^3.14` (pestañas del perfil que se ocultan, avisos legales editables de los correos y si la cuenta debe verificar su email; ver [Verificación de email](#verificación-de-email))
 - PHP >= 8.5, Laravel >= 13, Filament 5
 
 El core rechaza el módulo si no se cumplen (`module.json` → `requires`).
@@ -288,7 +288,7 @@ La dirección puede invitar o aceptar mientras la campaña está cerrada a nuevo
 
 El bloque de protección de datos del correo de invitación (finalidad, legitimación, origen, conservación y derechos) se edita en el core, en **Páginas legales → Avisos en correos**, con una vista previa del correo. Los huecos `:inviter`, `:campaign`, `:site` y `:days` se rellenan solos; un texto vacío vuelve al texto por defecto del módulo. El responsable y sus contactos salen siempre de la pestaña **Datos de la asociación** de **Páginas legales** (con el nombre del sitio si el nombre legal está vacío), y el resto del correo, con el enlace a la política de privacidad, no se edita. La política de privacidad del sitio debe recoger esta finalidad.
 
-La pestaña del perfil que se oculta y el aviso editable necesitan el core `^3.14`. Con un core anterior el módulo funciona, pero la pestaña **Invitaciones** se ve siempre (vacía si no hay invitaciones) y el correo usa el aviso por defecto.
+La pestaña del perfil que se oculta y el aviso editable usan el core `^3.14`, la versión mínima que exige el módulo.
 
 ### Páginas de la web
 
