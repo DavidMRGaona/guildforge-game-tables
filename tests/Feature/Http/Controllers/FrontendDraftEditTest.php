@@ -150,6 +150,24 @@ final class FrontendDraftEditTest extends ModuleTestCase
         $this->assertSame('Mesa corregida por id', GameTableModel::query()->findOrFail($table->id)->title);
     }
 
+    public function test_a_draft_keeps_the_genres_chosen_on_the_edit_page(): void
+    {
+        $table = $this->tableDraft();
+        $table->update(['genres' => ['fantasy', 'horror']]);
+
+        // The edit page sends the genre values; it used to send back the {value, label} pairs it received
+        $this->actingAs($this->author)
+            ->put("/mesas/mis-mesas/{$table->id}", [...$this->tableData('Mesa con géneros'), 'genres' => ['horror', 'mystery']])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('gametables.my-tables'));
+
+        $this->assertSame(['horror', 'mystery'], GameTableModel::query()->findOrFail($table->id)->genres);
+
+        $this->actingAs($this->author)
+            ->put("/mesas/mis-mesas/{$table->id}", [...$this->tableData('Mesa con géneros'), 'genres' => [['value' => 'horror', 'label' => 'Terror']]])
+            ->assertSessionHasErrors('genres.0');
+    }
+
     public function test_another_account_is_refused_with_either_link_as_before(): void
     {
         $table = $this->tableDraft();

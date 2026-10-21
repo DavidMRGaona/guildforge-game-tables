@@ -76,6 +76,52 @@ final class TableFormErrorsSourceTest extends TestCase
         }
     }
 
+    public function test_every_field_the_request_validates_has_an_element_to_focus(): void
+    {
+        preg_match_all("/^            '([a-z_]+)(?:\.[a-z_*.]+)?' => \[/m", $this->source('src/Http/Requests/FrontendCreateGameTableRequest.php'), $matches);
+        // The directors' rows focus their own inputs (GameMasterSection)
+        $fields = array_diff(array_unique($matches[1]), ['game_masters']);
+
+        foreach (self::PAGES as $page) {
+            $source = $this->source('resources/js/'.$page);
+            preg_match('/^const fieldTargets: Record<string, string> = \{\n(.*?)^\};/ms', $source, $targetsBlock);
+            preg_match_all("/^\s+([a-z_]+): '([a-z_]+)',$/m", $targetsBlock[1] ?? '', $targetEntries, PREG_SET_ORDER);
+            $targets = [];
+            foreach ($targetEntries as [, $field, $target]) {
+                $targets[$field] = $target;
+            }
+
+            // The campaign and consent fields are rendered by components the page includes
+            $rendered = $source
+                .$this->source('resources/js/components/SessionCampaignField.vue')
+                .$this->source('resources/js/components/GameMasterSection.vue');
+
+            // A summary link that finds no element on the page goes nowhere
+            foreach ($fields as $field) {
+                $target = $targets[$field] ?? $field;
+                $this->assertMatchesRegularExpression(
+                    '/\s(?:id|name)="'.preg_quote($target, '/').'"/',
+                    $rendered,
+                    "{$page}: {$field}",
+                );
+            }
+        }
+    }
+
+    public function test_the_genres_are_chosen_on_the_content_tab_and_sent_as_their_values(): void
+    {
+        foreach (self::PAGES as $page) {
+            $source = $this->source('resources/js/'.$page);
+
+            $this->assertStringContainsString('<div id="genres">', $source, $page);
+            $this->assertStringContainsString("v-for=\"genre in objectToOptions(props.formData.genres)\"\n", $source, $page);
+            $this->assertStringContainsString('v-model="form.genres"', $source, $page);
+        }
+
+        // The edit page receives the stored genres as {value, label}: the request validates the values
+        $this->assertStringContainsString('genres: extractOptionValues(props.table.genres),', $this->source('resources/js/pages/GameTables/Edit.vue'));
+    }
+
     public function test_the_pages_hand_the_directors_field_errors_to_their_section(): void
     {
         foreach (self::PAGES as $page) {
