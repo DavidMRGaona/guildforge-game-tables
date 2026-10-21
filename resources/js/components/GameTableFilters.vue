@@ -210,7 +210,7 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
                     :class="[
                         'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
                         isSystemSelected(system.id)
-                            ? 'bg-primary-600 text-white ring-2 ring-primary-600 ring-offset-1 ring-offset-surface'
+                            ? 'bg-primary text-white ring-2 ring-primary-600 ring-offset-1 ring-offset-surface'
                             : 'bg-base-secondary/10 text-base-secondary hover:bg-base-secondary/20',
                     ]"
                     @click="toggleSystem(system.id)"
