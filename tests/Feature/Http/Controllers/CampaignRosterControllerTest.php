@@ -427,6 +427,8 @@ final class CampaignRosterControllerTest extends ModuleTestCase
     {
         $this->invite($this->campaign, 'ana@example.com');
         $id = $this->invitationId($this->campaign, 'ana@example.com');
+        // Invitations are listed oldest first: keep their creation times apart
+        $this->travel(1)->seconds();
         $this->invite($this->campaign, 'luis@example.com');
         $this->invite($this->campaign('La torre del mago'), 'other@example.com');
 
@@ -440,13 +442,17 @@ final class CampaignRosterControllerTest extends ModuleTestCase
                 ->where('invitations.0.email', 'ana@example.com')
                 ->where('invitations.0.inviter_name', 'Mary Major')
                 ->where('invitations.0.send_count', 1)
-                ->where('invitations.0.expires_at', CarbonImmutable::now()->addDays(14)->toIso8601String())
+                ->where('invitations.0.expires_at', CarbonImmutable::parse('2026-11-02 10:00:00')->addDays(14)->toIso8601String())
                 ->where('invitations.0.can_resend', false)
                 ->missing('invitations.0.campaign_id')
                 ->where('more_invitations_than_seats', false));
 
         // 3 seats left (5 - 2) and now 4 pending
+        // Invitations are listed oldest first: keep their creation times apart
+        $this->travel(1)->seconds();
         $this->invite($this->campaign, 'eva@example.com');
+        // Invitations are listed oldest first: keep their creation times apart
+        $this->travel(1)->seconds();
         $this->invite($this->campaign, 'pau@example.com');
         $this->asDirector()
             ->get($this->rosterUrl())
