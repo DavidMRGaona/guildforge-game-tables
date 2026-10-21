@@ -137,6 +137,14 @@ final class CampaignModel extends Model
     }
 
     /**
+     * @return HasMany<CampaignInvitationModel, $this>
+     */
+    public function invitations(): HasMany
+    {
+        return $this->hasMany(CampaignInvitationModel::class, 'campaign_id');
+    }
+
+    /**
      * @return HasMany<CampaignJoinRequestModel, $this>
      */
     public function joinRequests(): HasMany

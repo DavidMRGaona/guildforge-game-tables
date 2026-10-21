@@ -858,6 +858,7 @@ return [
             'already_member' => 'You are already part of the roster.',
             'account_already_member' => 'That account is already part of the roster.',
             'request_pending' => 'You already have a pending request.',
+            'invitation_pending' => 'There is already a pending invitation for that email.',
             'is_director' => 'Whoever runs the campaign cannot join the roster as a player.',
             'account_not_found' => 'That account could not be added. Check the email.',
             'not_pending' => 'This request is no longer pending.',

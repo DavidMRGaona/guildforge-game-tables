@@ -937,6 +937,7 @@ return [
             'already_member' => 'Ya formas parte de la plantilla.',
             'account_already_member' => 'Esa cuenta ya forma parte de la plantilla.',
             'request_pending' => 'Ya tienes una solicitud pendiente.',
+            'invitation_pending' => 'Ya hay una invitación pendiente para ese email.',
             'is_director' => 'Quien dirige la campaña no puede entrar en la plantilla como jugador.',
             'account_not_found' => 'No se ha podido añadir a esa cuenta. Comprueba el email.',
             'not_pending' => 'Esta solicitud ya no está pendiente.',
