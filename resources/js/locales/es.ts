@@ -581,15 +581,44 @@ export default {
                 empty: 'La plantilla está vacía.',
                 noSessions: 'No hay sesiones próximas.',
             },
-            chips: {
-                going: '{date} ✓ va',
-                absent: '{date} ✗ no va',
-                waiting: '{date} · en espera',
-                none: '{date} —',
-                // Read by screen readers: the visible text first, then the player and the full date
-                accessibleName: '{label} — {name}, {date}',
+            // Players × upcoming sessions
+            attendance: {
+                caption: 'Asistencia de la plantilla a las próximas sesiones',
+                previous: 'Anteriores',
+                next: 'Siguientes',
+                range: 'Sesiones {from}–{to} de {total}',
+                previousRange: 'Anteriores: sesiones {from}–{to} de {total}',
+                nextRange: 'Siguientes: sesiones {from}–{to} de {total}',
+                seats: '{taken}/{max} plazas',
+                actionsColumn: 'Acciones',
+                states: {
+                    going: 'Va',
+                    absent: 'Ausente',
+                    waiting: 'En espera',
+                    none: 'No inscrito',
+                },
+                actions: {
+                    markAbsence: 'Marcar ausencia',
+                    clearAbsence: 'Volver a inscribir',
+                },
+                blocked: {
+                    notFromRoster: 'Se inscribió por su cuenta: no se cambia desde la plantilla',
+                    closed: 'La sesión ya no admite inscripciones',
+                    full: 'La sesión está completa',
+                },
+                blockedShort: {
+                    notFromRoster: 'Por su cuenta',
+                    closed: 'Cerrada',
+                    full: 'Completa',
+                },
+                confirm: {
+                    markAbsence: '{name} quedará ausente de la sesión del {date}. Se le avisará por correo.',
+                    clearAbsence: '{name} volverá a tener plaza en la sesión del {date} y recibirá la confirmación por correo.',
+                },
+                // Read by screen readers: the visible text first, then the player, the full date and the action
+                accessibleName: '{label} — {name}, {date}. {action}',
             },
-            footnote: 'Pulsar una sesión cambia entre «va» y «no va» para ese jugador; el jugador recibe un correo. Sigue en la plantilla.',
+            footnote: 'Cada casilla es la asistencia de un jugador a una sesión. Púlsala para marcar su ausencia o volver a inscribirlo; el jugador recibe un correo.',
         },
         // The join box of the campaign page
         join: {

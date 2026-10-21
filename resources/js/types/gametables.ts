@@ -519,6 +519,12 @@ export interface RosterSession {
     date_short: string;
     // d/m/Y H:i
     date: string;
+    // ISO 8601, for the weekday
+    starts_at: string;
+    seats_taken: number;
+    max_players: number;
+    // Whether an absence can be cleared (a seat is free)
+    has_room: boolean;
 }
 
 export interface RosterPlayerSession {

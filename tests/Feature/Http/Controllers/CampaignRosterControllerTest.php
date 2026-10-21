@@ -7,6 +7,7 @@ namespace Modules\GameTables\Tests\Feature\Http\Controllers;
 use App\Application\Services\SettingsServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
@@ -130,6 +131,43 @@ final class CampaignRosterControllerTest extends ModuleTestCase
         $this->actingAs($this->mary)
             ->get('/campanas/mis-campanas/'.$this->campaign->id.'/plantilla')
             ->assertInertia(fn (Assert $page) => $page->where('removal_notice', false));
+    }
+
+    public function test_each_session_says_when_it_starts_and_how_many_seats_are_taken(): void
+    {
+        $this->second->forceFill(['max_players' => 2])->save();
+
+        $this->actingAs($this->mary)
+            ->get($this->rosterUrl())
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('sessions.0.starts_at', '2026-11-09T18:00:00+01:00')
+                ->where('sessions.0.seats_taken', 1)
+                ->where('sessions.0.max_players', 5)
+                ->where('sessions.0.has_room', true)
+                // John and Jane hold both seats of the second session
+                ->where('sessions.1.seats_taken', 2)
+                ->where('sessions.1.max_players', 2)
+                ->where('sessions.1.has_room', false));
+    }
+
+    public function test_the_page_reads_the_sessions_rows_at_once_however_many_sessions_there_are(): void
+    {
+        $queries = fn (): int => $this->countQueries(fn () => $this->actingAs($this->mary)->get($this->rosterUrl())->assertOk());
+        // The first request also warms caches (settings, permissions)
+        $queries();
+        $withTwo = $queries();
+
+        // A director may publish a whole season at once
+        for ($week = 3; $week <= 20; $week++) {
+            $session = $this->campaignSession($this->campaign, "Sesión {$week}", CarbonImmutable::parse('2026-11-02 18:00:00')->addWeeks($week));
+            $this->rosterRow($session, $this->john);
+            $this->rosterRow($session, $this->jane);
+        }
+
+        $this->actingAs($this->mary)
+            ->get($this->rosterUrl())
+            ->assertInertia(fn (Assert $page) => $page->has('sessions', 20)->has('players.0.sessions', 20));
+        $this->assertSame($withTwo, $queries());
     }
 
     public function test_the_page_marks_waiting_rows_and_sessions_without_a_row(): void
@@ -492,6 +530,18 @@ final class CampaignRosterControllerTest extends ModuleTestCase
         $this->assertFalse($this->roster()->contains(new CampaignId($this->campaign->id), $this->richard->id));
         $this->assertSame('pending', $this->requestStatus($request));
         $this->assertSame('cancelled', $this->rowOf($this->first, $this->jane)->status->value);
+    }
+
+    private function countQueries(callable $callback): int
+    {
+        $count = 0;
+        DB::listen(function () use (&$count): void {
+            $count++;
+        });
+        $before = $count;
+        $callback();
+
+        return $count - $before;
     }
 
     private function asDirector(): self

@@ -71,7 +71,7 @@ final class JoinAndRosterButtonsSourceTest extends TestCase
 
         // «Quitar»: an outlined danger button named after the player, confirmed in a dialog
         $this->assertStringContainsString("const dangerOutlineClass = 'inline-flex min-h-[44px]", $roster);
-        $this->assertStringContainsString(':class="[dangerOutlineClass, \'w-full sm:w-auto\']"', $roster);
+        $this->assertStringContainsString(':class="dangerOutlineClass"', $roster);
         $this->assertStringContainsString("t('campaigns.roster.players.removeNamed', { name: player.name })", $roster);
         $this->assertStringContainsString(':message="removeMessage"', $roster);
         // The dialog only promises the email the server sends

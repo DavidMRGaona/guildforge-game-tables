@@ -555,15 +555,44 @@ export default {
                 empty: 'The roster is empty.',
                 noSessions: 'There are no upcoming sessions.',
             },
-            chips: {
-                going: '{date} ✓ going',
-                absent: '{date} ✗ not going',
-                waiting: '{date} · waiting',
-                none: '{date} —',
-                // Read by screen readers: the visible text first, then the player and the full date
-                accessibleName: '{label} — {name}, {date}',
+            // Players × upcoming sessions
+            attendance: {
+                caption: 'Roster attendance to the upcoming sessions',
+                previous: 'Previous',
+                next: 'Next',
+                range: 'Sessions {from}–{to} of {total}',
+                previousRange: 'Previous: sessions {from}–{to} of {total}',
+                nextRange: 'Next: sessions {from}–{to} of {total}',
+                seats: '{taken}/{max} seats',
+                actionsColumn: 'Actions',
+                states: {
+                    going: 'Going',
+                    absent: 'Absent',
+                    waiting: 'Waiting',
+                    none: 'Not registered',
+                },
+                actions: {
+                    markAbsence: 'Mark absence',
+                    clearAbsence: 'Register again',
+                },
+                blocked: {
+                    notFromRoster: 'Registered on their own: not changed from the roster',
+                    closed: 'The session no longer accepts registrations',
+                    full: 'The session is full',
+                },
+                blockedShort: {
+                    notFromRoster: 'On their own',
+                    closed: 'Closed',
+                    full: 'Full',
+                },
+                confirm: {
+                    markAbsence: '{name} will be marked absent from the session of {date}. They will be told by email.',
+                    clearAbsence: '{name} will get a seat again in the session of {date} and receive the registration confirmation by email.',
+                },
+                // Read by screen readers: the visible text first, then the player, the full date and the action
+                accessibleName: '{label} — {name}, {date}. {action}',
             },
-            footnote: 'Pressing a session switches that player between «going» and «not going»; the player receives an email. They stay in the roster.',
+            footnote: 'Each cell is a player\'s attendance to a session. Press it to mark their absence or register them again; the player receives an email.',
         },
         // The join box of the campaign page
         join: {
