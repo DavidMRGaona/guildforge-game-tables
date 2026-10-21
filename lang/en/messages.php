@@ -913,6 +913,7 @@ return [
         'my_tables_title' => 'My game tables',
         'cancel_registration_title' => 'Cancel registration',
         'confirm_registration_title' => 'Confirm registration',
+        'campaign_invitation_title' => 'Campaign invitation',
         'create_campaign_title' => 'Create campaign',
         'edit_campaign_title' => 'Edit campaign',
         'my_campaigns_title' => 'My campaigns',

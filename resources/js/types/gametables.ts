@@ -589,3 +589,15 @@ export interface JoinBox {
     // For the direction, the requests awaiting an answer (0 for anyone else)
     pending_requests: number;
 }
+
+export type CampaignInvitationState = 'invalid' | 'guest' | 'match' | 'mismatch' | 'must_verify';
+
+/** What the invitation page gets: the invited email and the expiry only when the state needs them */
+export interface CampaignInvitationView {
+    campaign_title: string;
+    campaign_slug: string;
+    inviter_name: string;
+    email?: string;
+    // ISO 8601
+    expires_at?: string;
+}

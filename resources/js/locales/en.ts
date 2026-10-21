@@ -511,6 +511,25 @@ export default {
             roster: 'Roster',
             addSession: 'Add session',
         },
+        // The page behind the link of the invitation email
+        invitation: {
+            title: 'Invitation to «{campaign}»',
+            intro: '{inviter} invites you to join this campaign.',
+            expires: 'Expires on {date}.',
+            useEmail: 'Use the email {email} to sign in or create your account.',
+            login: 'Sign in',
+            register: 'Create account',
+            accept: 'Accept',
+            reject: 'Decline',
+            rejectTitle: 'Decline the invitation',
+            rejectMessage: 'Your email will be deleted from this invitation and you will get no more emails from it.',
+            mismatch: 'This invitation is for another email. Sign out and sign in with the right account.',
+            mustVerify: 'Verify your email to accept',
+            verifyLink: 'Go to verification',
+            invalidTitle: 'Invalid invitation',
+            invalid: 'This invitation is not valid or has expired.',
+            viewCampaigns: 'View campaigns',
+        },
         // The direction's roster page
         roster: {
             back: 'My campaigns',

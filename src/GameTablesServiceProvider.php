@@ -70,6 +70,7 @@ use Modules\GameTables\Console\Commands\ExpireGuestRegistrationsCommand;
 use Modules\GameTables\Console\Commands\GenerateSlugsCommand;
 use Modules\GameTables\Console\Commands\SendTableRemindersCommand;
 use Modules\GameTables\Console\Commands\UpdateTableStatusesCommand;
+use Modules\GameTables\Http\Controllers\CampaignInvitationController;
 use Modules\GameTables\Http\Controllers\GuestConfirmationController;
 use Modules\GameTables\Domain\Events\CampaignModerationApproved;
 use Modules\GameTables\Domain\Events\CampaignModerationRejected;
@@ -469,6 +470,29 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
      */
     private function registerRateLimiters(): void
     {
+        // The invitation page and its actions: the token is the credential, so guessing is limited per IP
+        RateLimiter::for('game-tables-campaign-invitation', static function (Request $request): Limit {
+            return Limit::perMinute(30)->by('gt-invitation:'.($request->ip() ?? 'unknown'))->response(
+                static function (Request $request, array $headers): HttpResponse {
+                    $message = (string) __('game-tables::messages.errors.too_many_confirmation_attempts');
+
+                    if ($request->expectsJson()) {
+                        return response()->json(['message' => $message], 429, $headers);
+                    }
+
+                    // The page with the message, still 429: a plain 429 would land in Inertia's raw error modal
+                    $token = $request->route('token');
+                    $response = app(CampaignInvitationController::class)
+                        ->limitedPage($message, is_string($token) ? $token : '')
+                        ->toResponse($request);
+                    $response->setStatusCode(429);
+                    $response->headers->add($headers);
+
+                    return $response;
+                },
+            );
+        });
+
         RateLimiter::for('game-tables-guest-confirmation', static function (Request $request): array {
             $ip = $request->ip() ?? 'unknown';
             $tooMany = static function (Request $request, array $headers): HttpResponse {

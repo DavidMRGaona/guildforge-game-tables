@@ -990,6 +990,7 @@ return [
         'my_tables_title' => 'Mis mesas de juego',
         'cancel_registration_title' => 'Cancelar inscripción',
         'confirm_registration_title' => 'Confirmar inscripción',
+        'campaign_invitation_title' => 'Invitación a una campaña',
         'create_campaign_title' => 'Crear campaña',
         'edit_campaign_title' => 'Editar campaña',
         'my_campaigns_title' => 'Mis campañas',

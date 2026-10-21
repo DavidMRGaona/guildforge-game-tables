@@ -537,6 +537,25 @@ export default {
             roster: 'Plantilla',
             addSession: 'Añadir sesión',
         },
+        // The page behind the link of the invitation email
+        invitation: {
+            title: 'Invitación a «{campaign}»',
+            intro: '{inviter} te invita a unirte a esta campaña.',
+            expires: 'Caduca el {date}.',
+            useEmail: 'Usa el email {email} para iniciar sesión o crear tu cuenta.',
+            login: 'Iniciar sesión',
+            register: 'Crear cuenta',
+            accept: 'Aceptar',
+            reject: 'Rechazar',
+            rejectTitle: 'Rechazar la invitación',
+            rejectMessage: 'Se borrará tu email de esta invitación y no recibirás más correos de ella.',
+            mismatch: 'Esta invitación es para otro email. Cierra sesión y entra con la cuenta correcta.',
+            mustVerify: 'Verifica tu email para aceptar',
+            verifyLink: 'Ir a la verificación',
+            invalidTitle: 'Invitación no válida',
+            invalid: 'Esta invitación no es válida o ha caducado.',
+            viewCampaigns: 'Ver las campañas',
+        },
         // The direction's roster page
         roster: {
             back: 'Mis campañas',
