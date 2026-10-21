@@ -115,6 +115,21 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
             ->all();
     }
 
+    public function getByGameTables(array $gameTableIds): array
+    {
+        if ($gameTableIds === []) {
+            return [];
+        }
+
+        return ParticipantModel::query()
+            ->whereIn('game_table_id', array_map(fn (GameTableId $id): string => $id->value, $gameTableIds))
+            ->orderBy('created_at', 'asc')
+            ->get()
+            ->map(fn (ParticipantModel $model): Participant => $this->toEntity($model))
+            ->values()
+            ->all();
+    }
+
     /**
      * @return array<Participant>
      */

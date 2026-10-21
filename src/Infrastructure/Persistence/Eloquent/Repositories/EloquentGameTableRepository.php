@@ -112,6 +112,7 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
     {
         return GameTableModel::query()
             ->where('campaign_id', $campaignId->value)
+            ->with('contentWarnings')
             ->orderBy('starts_at', 'asc')
             ->get()
             ->map(fn (GameTableModel $model): GameTable => $this->toEntity($model))
@@ -249,8 +250,10 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
 
     public function toEntity(GameTableModel $model): GameTable
     {
-        // Load content warning IDs
-        $contentWarningIds = $model->contentWarnings()->pluck('id')->all();
+        // Content warning ids: from the loaded relation when a list eager-loaded it (one query for every table)
+        $contentWarningIds = $model->relationLoaded('contentWarnings')
+            ? $model->contentWarnings->pluck('id')->all()
+            : $model->contentWarnings()->pluck('id')->all();
 
         return new GameTable(
             id: new GameTableId($model->id),

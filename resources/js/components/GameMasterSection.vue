@@ -370,7 +370,7 @@ function cancelRemoveGm(): void {
                         type="button"
                         :disabled="disabled"
                         :aria-label="t('gameTables.create.gameMasters.removeGmLabel', { n: index + 1 })"
-                        class="rounded-full p-1.5 text-base-muted transition-colors hover:bg-error-light hover:text-error disabled:opacity-50"
+                        class="rounded-full p-1.5 text-base-muted transition-colors hover:bg-error-bg hover:text-error disabled:opacity-50"
                         @click="requestRemoveGm(index)"
                     >
                         <svg

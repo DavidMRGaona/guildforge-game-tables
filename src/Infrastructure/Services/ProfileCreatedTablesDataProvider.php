@@ -46,7 +46,7 @@ final readonly class ProfileCreatedTablesDataProvider
 
         foreach ($tables as $table) {
             $dto = GameTableResponseDTO::fromEntity($table);
-            $data = $this->formatTableForProfile($dto, $this->seatCounter->takenPlayerSeats($table));
+            $data = $this->formatTableForProfile($dto, $this->seatCounter->takenPlayerSeats($table), $table->canBeChangedByAuthor());
 
             if ($table->isPublished) {
                 $published[] = $data;
@@ -68,18 +68,24 @@ final readonly class ProfileCreatedTablesDataProvider
      *
      * @return array<string, mixed>
      */
-    private function formatTableForProfile(GameTableResponseDTO $dto, int $takenPlayerSeats): array
+    private function formatTableForProfile(GameTableResponseDTO $dto, int $takenPlayerSeats, bool $canEdit): array
     {
+        // An unpublished web table shows where it stands in the review, as «Mis mesas» does
+        $reviewStatus = $dto->isPublished ? null : $dto->frontendCreationStatus;
+
         return [
             'id' => $dto->id,
             'title' => $dto->title,
             'slug' => $dto->slug,
             'gameSystemName' => $dto->gameSystemName,
             'startsAt' => $dto->startsAt?->format('c'),
-            'status' => $dto->status->value,
-            'statusLabel' => $dto->status->label(),
-            'statusColor' => $dto->status->color(),
+            'status' => $reviewStatus->value ?? $dto->status->value,
+            'statusLabel' => $reviewStatus?->label() ?? $dto->status->label(),
+            'statusColor' => $reviewStatus?->color() ?? $dto->status->color(),
             'isPublished' => $dto->isPublished,
+            'canEdit' => $canEdit,
+            // Why it was rejected, while the author may still change it
+            'rejectionReason' => $dto->rejectionReason,
             'tableFormat' => $dto->tableFormat->value,
             'tableFormatLabel' => $dto->tableFormat->label(),
             'eventId' => $dto->eventId,

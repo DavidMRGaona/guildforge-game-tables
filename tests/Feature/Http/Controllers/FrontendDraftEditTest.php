@@ -14,8 +14,8 @@ use Tests\Support\Modules\ModuleTestCase;
 
 /**
  * The web edit pages save drafts to the URL written in their Vue source, and the profile's
- * draft cards link to the edit pages with the URL written in theirs: each URL, filled in the way
- * the page fills it, must reach the route that edits that draft.
+ * draft cards open the edit pages through the shared draft actions with the URL written there:
+ * each URL, filled in the way the page fills it, must reach the route that edits that draft.
  */
 final class FrontendDraftEditTest extends ModuleTestCase
 {
@@ -73,7 +73,7 @@ final class FrontendDraftEditTest extends ModuleTestCase
         $campaign = $this->campaignDraft();
 
         $this->actingAs($this->author)
-            ->get($this->pageUrl('components/profile/ProfileCreatedCampaignCard.vue', 'const editUrl = computed(() =>', $this->campaignPlaceholders($campaign)))
+            ->get($this->draftEditUrl('ProfileCreatedCampaignCard.vue', ':route-key="campaign.id"', 'campanas/mis-campanas', $campaign->id))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Campaigns/Edit', false)
@@ -109,7 +109,7 @@ final class FrontendDraftEditTest extends ModuleTestCase
         $table = $this->tableDraft();
 
         $this->actingAs($this->author)
-            ->get($this->pageUrl('components/profile/ProfileCreatedTableCard.vue', 'const editUrl = computed(() =>', $this->tablePlaceholders($table)))
+            ->get($this->draftEditUrl('ProfileCreatedTableCard.vue', ':route-key="table.slug"', 'mesas/mis-mesas', (string) $table->slug))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('GameTables/Edit', false)
@@ -210,6 +210,24 @@ final class FrontendDraftEditTest extends ModuleTestCase
 
             return $values[$expression];
         }, $match[1]);
+    }
+
+    /**
+     * The edit URL the shared draft actions open from a profile card: the card hands them the
+     * route key (`$cardBinding`), DraftActions builds the author route of its kind and adds the
+     * edit suffix written in `handleEdit`.
+     */
+    private function draftEditUrl(string $card, string $cardBinding, string $routePrefix, string $routeKey): string
+    {
+        $cardSource = (string) file_get_contents(dirname(__DIR__, 4).'/resources/js/components/profile/'.$card);
+        $this->assertStringContainsString('<DraftActions', $cardSource, $card);
+        $this->assertStringContainsString($cardBinding, $cardSource, $card);
+
+        $source = (string) file_get_contents(dirname(__DIR__, 4).'/resources/js/components/DraftActions.vue');
+        $found = preg_match('/`\/'.preg_quote($routePrefix, '/').'\/\$\{props\.routeKey\}`/', $source);
+        $this->assertSame(1, $found, "No /{$routePrefix}/\${props.routeKey} in DraftActions.vue");
+
+        return $this->pageUrl('components/DraftActions.vue', 'function handleEdit', ['baseUrl.value' => "/{$routePrefix}/{$routeKey}"]);
     }
 
     /**

@@ -27,6 +27,7 @@ use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
 final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
 {
@@ -48,11 +49,9 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
         $rosterCount = $this->roster->count($campaign->id);
         $sessions = $this->upcomingSessions($campaign->id, $now);
 
-        // Each session's rows by user, read once for every player
-        $rowsBySession = [];
-        foreach ($sessions as $session) {
-            $rowsBySession[$session->id->value] = $this->rowsByUser($session);
-        }
+        // Every session's rows and taken seats in one read each, however many sessions there are
+        $rowsBySession = $this->rowsByUser($sessions);
+        $takenSeats = $this->takenSeats($sessions);
 
         $players = [];
         foreach ($this->members($campaign->id) as $member) {
@@ -86,11 +85,17 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
                 'game_table_id' => $session->id->value,
                 'title' => $session->title,
                 'slug' => $session->slug,
+                'starts_at' => $session->timeSlot->startsAt->format('c'),
                 'date_short' => $session->timeSlot->startsAt->format('d/m'),
                 'date' => $session->timeSlot->startsAt->format('d/m/Y H:i'),
+                'seats_taken' => $takenSeats[$session->id->value] ?? 0,
+                'max_players' => $session->maxPlayers,
+                // As the server checks it when an absence is cleared
+                'has_room' => $session->hasCapacity($takenSeats[$session->id->value] ?? 0),
             ], $sessions),
             players: $players,
             canAdd: ! $campaign->isFinished() && $campaign->hasRoomFor($rosterCount),
+            removalNotice: $this->settings->isCampaignNotificationEnabled('roster_removed'),
         );
     }
 
@@ -99,8 +104,14 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
         $campaign = $this->campaigns->findOrFail(new CampaignId($campaignId));
 
         if ($userId !== null) {
+            // The campaign page shows published campaigns only, whose roster their directors may
+            // open (CampaignPolicy::manageRoster); the requests awaiting an answer are theirs alone
             if ($this->direction->isDirector($campaignId, $userId)) {
-                return new JoinBoxDTO('director', rosterUrl: route('campaigns.roster', $campaignId));
+                return new JoinBoxDTO(
+                    'director',
+                    rosterUrl: route('campaigns.roster', $campaignId),
+                    pendingRequests: $this->requests->pendingCountsFor([$campaign->id])[$campaignId] ?? 0,
+                );
             }
 
             if ($this->roster->contains($campaign->id, $userId)) {
@@ -190,18 +201,43 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
     }
 
     /**
-     * @return array<string, Participant>
+     * The sessions' rows by session and user, in one read.
+     *
+     * @param  list<GameTable>  $sessions
+     * @return array<string, array<string, Participant>>
      */
-    private function rowsByUser(GameTable $session): array
+    private function rowsByUser(array $sessions): array
     {
         $rows = [];
-        foreach ($this->participants->getByGameTable($session->id) as $row) {
+        $ids = array_map(fn (GameTable $session): GameTableId => $session->id, $sessions);
+        foreach ($this->participants->getByGameTables($ids) as $row) {
             if ($row->userId !== null) {
-                $rows[$row->userId] = $row;
+                $rows[$row->gameTableId->value][$row->userId] = $row;
             }
         }
 
         return $rows;
+    }
+
+    /**
+     * The taken player seats of each session, counted in one query (SeatCounter's list counts).
+     *
+     * @param  list<GameTable>  $sessions
+     * @return array<string, int>
+     */
+    private function takenSeats(array $sessions): array
+    {
+        if ($sessions === []) {
+            return [];
+        }
+
+        $ids = array_map(fn (GameTable $session): string => $session->id->value, $sessions);
+        $taken = [];
+        foreach (SeatCounter::withPlayerSeatCounts(GameTableModel::query()->whereIn('id', $ids))->get() as $model) {
+            $taken[(string) $model->id] = $this->seats->takenPlayerSeatsOf($model);
+        }
+
+        return $taken;
     }
 
     /**

@@ -3,29 +3,34 @@ import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useVerificationGate } from '@/composables/useVerificationGate';
+import VerificationBlockedButton from '../VerificationBlockedButton.vue';
+import DraftActions from '../DraftActions.vue';
+import DraftRejectionReason from '../DraftRejectionReason.vue';
 import type { ProfileCreatedCampaign } from '../../types/gametables';
 
 interface Props {
     campaign: ProfileCreatedCampaign;
-    showEditLink?: boolean;
-    /** Id of the section's line saying why editing is disabled (shown once per drafts list) */
-    editReasonId?: string | null;
+    /** A draft's actions and the moderator's reason (the drafts list) */
+    showActions?: boolean;
+    /** Id of the section's line saying why the actions are disabled (shown once per drafts list) */
+    actionsReasonId?: string | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-    showEditLink: false,
-    editReasonId: null,
+    showActions: false,
+    actionsReasonId: null,
 });
 
 const { t } = useI18n();
-// The edit form's routes are closed to accounts that must verify their email
+// The roster page is closed to accounts that must verify their email
 const gate = useVerificationGate();
+
+// The look of BaseButton (secondary, size sm) on a link
+const rosterLinkClass = 'inline-flex min-h-[44px] w-full items-center justify-center rounded-md bg-muted px-4 py-2 text-sm font-medium text-base-primary transition-colors hover:bg-base-secondary/20 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface sm:w-auto';
 
 const campaignUrl = computed(() =>
     props.campaign.slug ? `/campanas/${props.campaign.slug}` : null
 );
-
-const editUrl = computed(() => `/campanas/mis-campanas/${props.campaign.id}/editar`);
 
 const statusColorClasses = computed(() => {
     const colorMap: Record<string, string> = {
@@ -101,34 +106,59 @@ const playersText = computed(() => {
                 </div>
             </div>
 
-            <!-- Status badge and actions -->
-            <div class="flex shrink-0 flex-col items-end gap-2">
-                <span
-                    :class="['rounded-full px-2.5 py-0.5 text-xs font-medium', statusColorClasses]"
-                >
-                    {{ campaign.statusLabel }}
-                </span>
-
-                <!-- Edit link for drafts -->
-                <template v-if="showEditLink && !campaign.isPublished">
-                    <button
-                        v-if="gate.blocked.value"
-                        type="button"
-                        disabled
-                        :aria-describedby="editReasonId ?? undefined"
-                        class="cursor-not-allowed text-sm text-primary opacity-60"
-                    >
-                        {{ t('campaigns.profile.edit') }}
-                    </button>
-                    <Link
-                        v-else
-                        :href="editUrl"
-                        class="text-sm text-primary hover:underline"
-                    >
-                        {{ t('campaigns.profile.edit') }}
-                    </Link>
-                </template>
-            </div>
+            <!-- Status badge -->
+            <span
+                :class="['shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium', statusColorClasses]"
+            >
+                {{ campaign.statusLabel }}
+            </span>
         </div>
+
+        <!-- A published campaign the user directs: its roster, with the requests awaiting an answer -->
+        <div
+            v-if="!showActions && campaign.rosterUrl"
+            class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end"
+        >
+            <span
+                v-if="campaign.pendingRequests > 0"
+                class="inline-flex self-start rounded-full bg-warning-light px-2 py-0.5 text-xs font-medium text-base-primary sm:self-auto"
+            >
+                {{ t('campaigns.myCampaigns.pendingRequests', { count: campaign.pendingRequests }, campaign.pendingRequests) }}
+            </span>
+            <VerificationBlockedButton
+                v-if="gate.blocked.value"
+                :reason="gate.reason('form')"
+                align="end"
+                :button-class="rosterLinkClass"
+            >
+                {{ t('campaigns.myCampaigns.roster') }}
+            </VerificationBlockedButton>
+            <Link
+                v-else
+                :href="campaign.rosterUrl"
+                :class="rosterLinkClass"
+            >
+                {{ t('campaigns.myCampaigns.roster') }}
+            </Link>
+        </div>
+
+        <!-- Rejected in review: the reason, addressed to the author, while it is back in their hands -->
+        <DraftRejectionReason
+            v-if="showActions && campaign.canEdit && campaign.rejectionReason"
+            kind="campaign"
+            :reason="campaign.rejectionReason"
+            class="mt-3"
+        />
+
+        <!-- The same actions as «Mis campañas», while the author may still change it (not once sent to review) -->
+        <DraftActions
+            v-if="showActions && campaign.canEdit"
+            kind="campaign"
+            :route-key="campaign.id"
+            :title="campaign.title"
+            return-to="profile"
+            :disabled-reason-id="actionsReasonId"
+            class="mt-3"
+        />
     </div>
 </template>

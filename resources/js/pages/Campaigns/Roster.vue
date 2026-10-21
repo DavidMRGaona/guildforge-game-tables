@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, useId, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from 'vue';
 import { Link, router, useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
@@ -7,6 +7,8 @@ import BaseButton from '@/components/ui/BaseButton.vue';
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
 import { FormCheckbox } from '@/components/form';
 import { useFlashMessages } from '@/composables/useFlashMessages';
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue';
+import { VENUE_TIMEZONE } from '@/utils/datetime';
 import type {
     RosterAccessValue,
     RosterPage,
@@ -19,7 +21,7 @@ import type {
 
 const props = defineProps<RosterPage>();
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { success: flashSuccess, error: flashError } = useFlashMessages();
 
 const baseUrl = computed(() => `/campanas/mis-campanas/${props.campaign.id}/plantilla`);
@@ -160,54 +162,210 @@ function addPlayer(): void {
     });
 }
 
-// Players and their upcoming sessions
-const sessionsById = computed(
-    () => new Map<string, RosterSession>(props.sessions.map((session) => [session.game_table_id, session])),
+// Attendance: players × upcoming sessions. A window of sessions is shown at a time (a director may
+// publish a whole season): 4 columns from sm up, 2 below, always starting at the nearest session
+const smQuery = typeof window !== 'undefined' ? window.matchMedia('(min-width: 640px)') : null;
+const isSmUp = ref(smQuery?.matches ?? true);
+// eslint-disable-next-line no-undef
+function onBreakpointChange(event: MediaQueryListEvent): void {
+    isSmUp.value = event.matches;
+}
+smQuery?.addEventListener('change', onBreakpointChange);
+onBeforeUnmount(() => smQuery?.removeEventListener('change', onBreakpointChange));
+
+const pageSize = computed(() => (isSmUp.value ? 4 : 2));
+const windowStart = ref(0);
+
+// Keep the window inside the list when the page size or the sessions change
+watch([pageSize, () => props.sessions.length], () => {
+    const lastStart = Math.max(0, props.sessions.length - pageSize.value);
+    windowStart.value = Math.min(windowStart.value, lastStart);
+});
+
+const visibleSessions = computed(() => props.sessions.slice(windowStart.value, windowStart.value + pageSize.value));
+const windowEnd = computed(() => Math.min(windowStart.value + pageSize.value, props.sessions.length));
+const hasPrevious = computed(() => windowStart.value > 0);
+const hasNext = computed(() => windowEnd.value < props.sessions.length);
+
+const rangeLabel = computed(() =>
+    t('campaigns.roster.attendance.range', { from: windowStart.value + 1, to: windowEnd.value, total: props.sessions.length })
 );
 
-const chipKeys: Record<RosterSessionState, string> = {
-    going: 'campaigns.roster.chips.going',
-    absent: 'campaigns.roster.chips.absent',
-    waiting: 'campaigns.roster.chips.waiting',
-    none: 'campaigns.roster.chips.none',
+// «Anteriores: sesiones 1–4 de 20»: the visible text first, then the range it leads to
+const previousLabel = computed(() =>
+    t('campaigns.roster.attendance.previousRange', {
+        from: Math.max(1, windowStart.value - pageSize.value + 1),
+        to: windowStart.value,
+        total: props.sessions.length,
+    })
+);
+const nextLabel = computed(() =>
+    t('campaigns.roster.attendance.nextRange', {
+        from: windowEnd.value + 1,
+        to: Math.min(windowEnd.value + pageSize.value, props.sessions.length),
+        total: props.sessions.length,
+    })
+);
+
+function showPrevious(): void {
+    windowStart.value = Math.max(0, windowStart.value - pageSize.value);
+}
+
+function showNext(): void {
+    if (hasNext.value) windowStart.value += pageSize.value;
+}
+
+// «sáb 25/10» in the venue's time zone
+function weekday(session: RosterSession): string {
+    return new Date(session.starts_at).toLocaleDateString(locale.value, { timeZone: VENUE_TIMEZONE, weekday: 'short' });
+}
+
+function sessionLabel(session: RosterSession): string {
+    return `${weekday(session)} ${session.date_short}`;
+}
+
+function sessionLongLabel(session: RosterSession): string {
+    return `${weekday(session)} ${session.date}`;
+}
+
+function cellOf(player: RosterPlayer, session: RosterSession): RosterPlayerSession | null {
+    return player.sessions.find((cell) => cell.game_table_id === session.game_table_id) ?? null;
+}
+
+// No cell for a session (none expected: the query sends one per session) reads as not registered
+function stateOf(player: RosterPlayer, session: RosterSession): RosterSessionState {
+    return cellOf(player, session)?.state ?? 'none';
+}
+
+// What a cell lets the direction do, from what the roster query returns: an absence is marked on a
+// roster row (going or waiting, can_toggle) and cleared while the session admits roster enrolment
+// (can_toggle) and has a free seat (as the server checks it)
+type CellAction =
+    | { kind: 'markAbsence' }
+    | { kind: 'clearAbsence' }
+    | { kind: 'blocked'; reason: 'notFromRoster' | 'closed' | 'full' }
+    | null;
+
+function cellAction(cell: RosterPlayerSession | null, session: RosterSession): CellAction {
+    if (cell === null) return null;
+
+    switch (cell.state) {
+        case 'going':
+        case 'waiting':
+            return cell.can_toggle ? { kind: 'markAbsence' } : { kind: 'blocked', reason: 'notFromRoster' };
+        case 'absent':
+            if (!cell.can_toggle) return { kind: 'blocked', reason: 'closed' };
+            return session.has_room ? { kind: 'clearAbsence' } : { kind: 'blocked', reason: 'full' };
+        default:
+            return null;
+    }
+}
+
+function isActionable(cell: RosterPlayerSession | null, session: RosterSession): boolean {
+    const action = cellAction(cell, session);
+
+    return action !== null && action.kind !== 'blocked';
+}
+
+// Why a cell offers no change, in a word or two under its state
+function blockedShort(cell: RosterPlayerSession | null, session: RosterSession): string | null {
+    const action = cellAction(cell, session);
+
+    return action?.kind === 'blocked' ? t(`campaigns.roster.attendance.blockedShort.${action.reason}`) : null;
+}
+
+const stateKeys: Record<RosterSessionState, string> = {
+    going: 'campaigns.roster.attendance.states.going',
+    absent: 'campaigns.roster.attendance.states.absent',
+    waiting: 'campaigns.roster.attendance.states.waiting',
+    none: 'campaigns.roster.attendance.states.none',
 };
 
-const chipColors: Record<RosterSessionState, string> = {
+const stateIcons: Record<RosterSessionState, string> = {
+    going: '✓',
+    absent: '✕',
+    waiting: '…',
+    none: '—',
+};
+
+// Theme tokens: their value flips with the theme (module styles load below the core's)
+const cellTones: Record<RosterSessionState, string> = {
     going: 'border-success/40 bg-success-light text-base-primary',
     absent: 'border-error/40 bg-error-light text-base-primary',
     waiting: 'border-warning/40 bg-warning-light text-base-primary',
     none: 'border-default bg-base-secondary/10 text-base-secondary',
 };
 
-function chipLabel(cell: RosterPlayerSession): string {
-    return t(chipKeys[cell.state], { date: sessionsById.value.get(cell.game_table_id)?.date_short ?? '' });
+function stateLabel(state: RosterSessionState): string {
+    return t(stateKeys[state]);
 }
 
-function chipTitle(cell: RosterPlayerSession): string {
-    return sessionsById.value.get(cell.game_table_id)?.date ?? '';
-}
+// «✓ Va — Jane Doe, sáb 09/11/2026 18:00. Marcar ausencia»: starts with the visible text (so voice
+// control finds the cell by what it shows), then the player, the full date and the action
+function cellAccessibleName(player: RosterPlayer, session: RosterSession, cell: RosterPlayerSession | null): string {
+    const state: RosterSessionState = cell?.state ?? 'none';
+    const action = cellAction(cell, session);
+    const after = action === null
+        ? ''
+        : action.kind === 'blocked'
+            ? t(`campaigns.roster.attendance.blocked.${action.reason}`)
+            : t(`campaigns.roster.attendance.actions.${action.kind}`);
 
-// «08/11 ✓ va — Jane Doe, 08/11/2026 18:00»: starts with the visible text (so voice control
-// finds the chip by what it shows), then the player and the full date it leaves out
-function chipAccessibleName(player: RosterPlayer, cell: RosterPlayerSession): string {
-    return t('campaigns.roster.chips.accessibleName', {
-        label: chipLabel(cell),
+    return t('campaigns.roster.attendance.accessibleName', {
+        label: `${stateIcons[state]} ${stateLabel(state)}`,
         name: player.name,
-        date: chipTitle(cell),
-    });
+        date: sessionLongLabel(session),
+        action: after,
+    }).trim();
 }
 
-function toggleAbsence(player: RosterPlayer, cell: RosterPlayerSession): void {
+const cellKey = (player: RosterPlayer, session: RosterSession): string => `${player.user_id}:${session.game_table_id}`;
+
+// The cell whose change is on its way: it shows a spinner until the answer
+const busyCell = ref<string | null>(null);
+
+const pendingChange = ref<{ player: RosterPlayer; session: RosterSession; kind: 'markAbsence' | 'clearAbsence' } | null>(null);
+const showChangeDialog = ref(false);
+
+function askChange(player: RosterPlayer, session: RosterSession): void {
     if (processing.value) return;
 
+    const action = cellAction(cellOf(player, session), session);
+    if (action === null || action.kind === 'blocked') return;
+
+    pendingChange.value = { player, session, kind: action.kind };
+    showChangeDialog.value = true;
+}
+
+const changeTitle = computed(() =>
+    pendingChange.value ? t(`campaigns.roster.attendance.actions.${pendingChange.value.kind}`) : ''
+);
+
+const changeMessage = computed(() => {
+    const change = pendingChange.value;
+    if (change === null) return '';
+
+    return t(`campaigns.roster.attendance.confirm.${change.kind}`, {
+        name: change.player.name,
+        date: sessionLongLabel(change.session),
+    });
+});
+
+function confirmChange(): void {
+    const change = pendingChange.value;
+    if (change === null || processing.value) return;
+
+    busyCell.value = cellKey(change.player, change.session);
     router.post(
         `${baseUrl.value}/ausencias`,
         {
-            game_table_id: cell.game_table_id,
-            user_id: player.user_id,
-            absent: cell.state !== 'absent',
+            game_table_id: change.session.game_table_id,
+            user_id: change.player.user_id,
+            absent: change.kind === 'markAbsence',
         },
-        visitOptions(),
+        visitOptions(() => {
+            busyCell.value = null;
+        }),
     );
 }
 
@@ -233,6 +391,17 @@ function confirmRemove(): void {
         }),
     );
 }
+
+// What the server does on removal (CampaignRosterService::removeMember): out of the roster, out of
+// the sessions that have not started, and an email only while the roster_removed notice is on
+const removeMessage = computed(() =>
+    t(props.removal_notice ? 'campaigns.roster.players.removeMessage' : 'campaigns.roster.players.removeMessageNoEmail', {
+        name: removing.value?.name ?? '',
+    })
+);
+
+// A danger action that does not shout: BaseButton's size sm, outlined in the error tone
+const dangerOutlineClass = 'inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center gap-2 rounded-md border border-error/60 bg-transparent px-4 py-2 text-sm font-medium text-error transition-colors hover:bg-error/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-error focus-visible:ring-offset-2 focus-visible:ring-offset-surface aria-disabled:cursor-not-allowed aria-disabled:opacity-50';
 
 const inputClass = 'mt-1 block w-full rounded-lg border border-default bg-surface px-4 py-2.5 text-base-primary placeholder-base-muted hover:border-strong focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500';
 const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
@@ -382,12 +551,13 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                                 {{ t('campaigns.roster.requests.noMessage') }}
                             </p>
                         </div>
-                        <div class="flex flex-shrink-0 gap-2">
+                        <!-- Below sm a full-width row of equal buttons -->
+                        <div class="grid flex-shrink-0 grid-cols-2 gap-2 sm:flex">
                             <BaseButton
                                 variant="primary"
                                 size="sm"
                                 :aria-disabled="processing ? 'true' : undefined"
-                                class="aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+                                class="w-full aria-disabled:cursor-not-allowed aria-disabled:opacity-50 sm:w-auto"
                                 @click="acceptRequest(request)"
                             >
                                 {{ t('campaigns.roster.requests.accept') }}
@@ -396,7 +566,7 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                                 variant="secondary"
                                 size="sm"
                                 :aria-disabled="processing ? 'true' : undefined"
-                                class="aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+                                class="w-full aria-disabled:cursor-not-allowed aria-disabled:opacity-50 sm:w-auto"
                                 @click="openReject(request)"
                             >
                                 {{ t('campaigns.roster.requests.reject') }}
@@ -431,17 +601,20 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                             {{ addForm.errors.email }}
                         </p>
                     </div>
-                    <BaseButton type="submit" variant="primary" :loading="addForm.processing">
+                    <BaseButton type="submit" variant="primary" class="w-full sm:w-auto" :loading="addForm.processing">
                         {{ t('campaigns.roster.add.submit') }}
                     </BaseButton>
                 </form>
             </section>
 
-            <!-- Players -->
+            <!-- Players and their attendance to the upcoming sessions -->
             <section :class="sectionClass" aria-labelledby="roster-players-title">
                 <h2 id="roster-players-title" class="text-lg font-semibold text-base-primary">
                     {{ t('campaigns.roster.players.title', { count: players.length }) }}
                 </h2>
+                <p v-if="players.length > 0 && sessions.length > 0" class="mt-1 text-sm text-base-secondary">
+                    {{ t('campaigns.roster.footnote') }}
+                </p>
 
                 <p v-if="players.length === 0" class="mt-3 text-sm text-base-secondary">
                     {{ t('campaigns.roster.players.empty') }}
@@ -452,85 +625,134 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                         {{ t('campaigns.roster.players.noSessions') }}
                     </p>
 
-                    <!-- A table from sm up; on phones each player stacks its cells -->
-                    <table class="mt-4 block w-full text-left text-sm sm:table">
-                        <thead class="sr-only sm:not-sr-only">
-                            <tr class="border-b border-default">
-                                <th scope="col" class="py-2 pr-4 font-medium text-base-secondary">
-                                    {{ t('campaigns.roster.players.name') }}
-                                </th>
-                                <th scope="col" class="py-2 pr-4 font-medium text-base-secondary">
-                                    {{ t('campaigns.roster.players.sessions') }}
-                                </th>
-                                <th scope="col" class="py-2">
-                                    <span class="sr-only">{{ t('campaigns.roster.players.remove') }}</span>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody class="block sm:table-row-group">
-                            <tr
-                                v-for="player in players"
-                                :key="player.user_id"
-                                class="block border-b border-default py-3 last:border-b-0 sm:table-row sm:py-0"
-                            >
-                                <th
-                                    scope="row"
-                                    class="block break-words pb-2 font-medium text-base-primary sm:table-cell sm:py-3 sm:pr-4 sm:align-top"
-                                >
-                                    {{ player.name }}
-                                </th>
-                                <td class="block pb-2 sm:table-cell sm:py-3 sm:pr-4 sm:align-top">
-                                    <div class="flex flex-wrap gap-1.5">
-                                        <template v-for="cell in player.sessions" :key="cell.game_table_id">
-                                            <button
-                                                v-if="cell.can_toggle"
-                                                type="button"
-                                                :aria-pressed="cell.state !== 'absent'"
-                                                :title="chipTitle(cell)"
-                                                :aria-label="chipAccessibleName(player, cell)"
-                                                :aria-disabled="processing ? 'true' : undefined"
-                                                :class="[
-                                                    'inline-flex min-h-[32px] items-center whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
-                                                    'hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface',
-                                                    'aria-disabled:cursor-not-allowed aria-disabled:opacity-50',
-                                                    chipColors[cell.state],
-                                                ]"
-                                                @click="toggleAbsence(player, cell)"
-                                            >
-                                                {{ chipLabel(cell) }}
-                                            </button>
-                                            <span
-                                                v-else
-                                                :title="chipTitle(cell)"
-                                                :class="[
-                                                    'inline-flex min-h-[32px] items-center whitespace-nowrap rounded-full border border-dashed px-2.5 py-1 text-xs font-medium',
-                                                    chipColors[cell.state],
-                                                ]"
-                                            >
-                                                <span aria-hidden="true">{{ chipLabel(cell) }}</span>
-                                                <span class="sr-only">{{ chipAccessibleName(player, cell) }}</span>
-                                            </span>
-                                        </template>
-                                    </div>
-                                </td>
-                                <td class="block sm:table-cell sm:py-3 sm:text-right sm:align-top">
-                                    <BaseButton
-                                        variant="ghost"
-                                        size="sm"
-                                        :aria-disabled="processing ? 'true' : undefined"
-                                        class="aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
-                                        @click="askRemove(player)"
-                                    >
-                                        {{ t('campaigns.roster.players.remove') }}
-                                    </BaseButton>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <!-- A window of sessions; the players and «Quitar» stay while paging -->
+                    <div
+                        v-if="sessions.length > pageSize"
+                        class="mt-4 flex items-center justify-between gap-2"
+                    >
+                        <BaseButton
+                            variant="secondary"
+                            size="sm"
+                            :disabled="!hasPrevious"
+                            :aria-label="hasPrevious ? previousLabel : undefined"
+                            @click="showPrevious"
+                        >
+                            <span aria-hidden="true">‹</span>
+                            {{ t('campaigns.roster.attendance.previous') }}
+                        </BaseButton>
+                        <p aria-live="polite" class="text-center text-sm text-base-secondary">
+                            {{ rangeLabel }}
+                        </p>
+                        <BaseButton
+                            variant="secondary"
+                            size="sm"
+                            :disabled="!hasNext"
+                            :aria-label="hasNext ? nextLabel : undefined"
+                            @click="showNext"
+                        >
+                            {{ t('campaigns.roster.attendance.next') }}
+                            <span aria-hidden="true">›</span>
+                        </BaseButton>
+                    </div>
 
-                    <p v-if="sessions.length > 0" class="mt-4 text-sm text-base-muted">
-                        {{ t('campaigns.roster.footnote') }}
-                    </p>
+                    <!-- Scrolls inside the card on narrow screens; the player column stays -->
+                    <div class="-mx-4 mt-4 overflow-x-auto sm:mx-0">
+                        <table class="w-full border-separate border-spacing-0 text-left text-sm">
+                            <caption class="sr-only">{{ t('campaigns.roster.attendance.caption') }}</caption>
+                            <thead>
+                                <tr>
+                                    <th
+                                        scope="col"
+                                        class="sticky left-0 z-10 border-b border-default bg-surface py-2 pl-4 pr-3 font-medium text-base-secondary sm:pl-0"
+                                    >
+                                        {{ t('campaigns.roster.players.name') }}
+                                    </th>
+                                    <th
+                                        v-for="session in visibleSessions"
+                                        :key="session.game_table_id"
+                                        scope="col"
+                                        class="border-b border-default px-1 py-2 text-center align-bottom font-medium text-base-primary"
+                                    >
+                                        <span class="block whitespace-nowrap">{{ sessionLabel(session) }}</span>
+                                        <span class="block whitespace-nowrap text-xs font-normal text-base-muted">
+                                            {{ t('campaigns.roster.attendance.seats', { taken: session.seats_taken, max: session.max_players }) }}
+                                        </span>
+                                    </th>
+                                    <th scope="col" class="border-b border-default py-2 pl-2 pr-4 sm:pr-0">
+                                        <span class="sr-only">{{ t('campaigns.roster.attendance.actionsColumn') }}</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="player in players" :key="player.user_id">
+                                    <th
+                                        scope="row"
+                                        class="sticky left-0 z-10 border-b border-default bg-surface py-2 pl-4 pr-3 align-middle font-medium text-base-primary sm:pl-0"
+                                    >
+                                        <span class="block max-w-[10rem] break-words sm:max-w-none">{{ player.name }}</span>
+                                        <span v-if="player.joined_at" class="block text-xs font-normal text-base-muted">
+                                            {{ t('campaigns.roster.players.since', { date: player.joined_at }) }}
+                                        </span>
+                                    </th>
+                                    <td
+                                        v-for="session in visibleSessions"
+                                        :key="session.game_table_id"
+                                        class="border-b border-default px-1 py-2 text-center align-middle"
+                                    >
+                                        <button
+                                            v-if="isActionable(cellOf(player, session), session)"
+                                            type="button"
+                                            aria-haspopup="dialog"
+                                            :aria-label="cellAccessibleName(player, session, cellOf(player, session))"
+                                            :aria-busy="busyCell === cellKey(player, session) ? 'true' : undefined"
+                                            :aria-disabled="processing ? 'true' : undefined"
+                                            :class="[
+                                                'inline-flex min-h-[44px] w-full min-w-[5.5rem] cursor-pointer items-center justify-center gap-1 rounded-md border px-2 py-1 text-xs font-medium transition-colors',
+                                                'hover:border-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-surface',
+                                                'aria-disabled:cursor-not-allowed aria-disabled:opacity-60',
+                                                cellTones[stateOf(player, session)],
+                                            ]"
+                                            @click="askChange(player, session)"
+                                        >
+                                            <LoadingSpinner v-if="busyCell === cellKey(player, session)" size="sm" />
+                                            <span v-else aria-hidden="true">{{ stateIcons[stateOf(player, session)] }}</span>
+                                            {{ stateLabel(stateOf(player, session)) }}
+                                        </button>
+                                        <span
+                                            v-else
+                                            :class="[
+                                                'inline-flex min-h-[44px] w-full min-w-[5.5rem] flex-col items-center justify-center rounded-md border border-dashed px-2 py-1 text-xs font-medium',
+                                                cellTones[stateOf(player, session)],
+                                            ]"
+                                        >
+                                            <span aria-hidden="true">
+                                                {{ stateIcons[stateOf(player, session)] }} {{ stateLabel(stateOf(player, session)) }}
+                                            </span>
+                                            <span
+                                                v-if="blockedShort(cellOf(player, session), session)"
+                                                aria-hidden="true"
+                                                class="text-[11px] font-normal text-base-secondary"
+                                            >
+                                                {{ blockedShort(cellOf(player, session), session) }}
+                                            </span>
+                                            <span class="sr-only">{{ cellAccessibleName(player, session, cellOf(player, session)) }}</span>
+                                        </span>
+                                    </td>
+                                    <td class="border-b border-default py-2 pl-2 pr-4 text-right align-middle sm:pr-0">
+                                        <button
+                                            type="button"
+                                            :aria-disabled="processing ? 'true' : undefined"
+                                            :aria-label="t('campaigns.roster.players.removeNamed', { name: player.name })"
+                                            :class="dangerOutlineClass"
+                                            @click="askRemove(player)"
+                                        >
+                                            {{ t('campaigns.roster.players.remove') }}
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </template>
             </section>
         </main>
@@ -578,11 +800,22 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
             </dialog>
         </Teleport>
 
+        <!-- Mark an absence or enrol again: the player gets an email -->
+        <ConfirmDialog
+            v-model="showChangeDialog"
+            :title="changeTitle"
+            :message="changeMessage"
+            :confirm-label="changeTitle"
+            :cancel-label="t('common.cancel')"
+            :confirm-variant="pendingChange?.kind === 'markAbsence' ? 'danger' : 'primary'"
+            @confirm="confirmChange"
+        />
+
         <!-- Remove a player -->
         <ConfirmDialog
             v-model="showRemoveDialog"
             :title="t('campaigns.roster.players.removeTitle')"
-            :message="t('campaigns.roster.players.removeMessage', { name: removing?.name ?? '' })"
+            :message="removeMessage"
             :confirm-label="t('campaigns.roster.players.remove')"
             :cancel-label="t('common.cancel')"
             confirm-variant="danger"

@@ -14,7 +14,15 @@ export default {
         tables: 'mesas',
         // Reason next to an action closed until the account verifies its email (the core has the others)
         verificationGate: {
-            edit: 'Para editar, verifica tu email.',
+            edit: 'Para editar, enviar a revisión o eliminar, verifica tu email.',
+        },
+        // «Mis mesas» / «Mis campañas» back to their profile tab
+        backToProfile: 'Volver a mi perfil',
+        // A draft's actions (DraftActions) and the moderator's reason on the drafts
+        draftActions: {
+            groupLabel: 'Acciones de «{title}»',
+            showMore: 'Ver más',
+            showLess: 'Ver menos',
         },
         eventActions: {
             createTable: 'Crear partida',
@@ -106,6 +114,7 @@ export default {
             resultsCount: '{count} mesa encontrada | {count} mesas encontradas',
             listView: 'Vista de lista',
             calendarView: 'Vista de calendario',
+            viewSwitch: 'Vista de las mesas',
         },
         details: {
             gameSystem: 'Sistema de juego',
@@ -259,8 +268,9 @@ export default {
                 noTables: 'Sin mesas creadas',
                 noTablesDescription: 'Aún no has creado ninguna mesa de juego.',
                 createNew: 'Crear nueva mesa',
+                // Link to «Mis mesas», where every table the user created is managed
+                manage: 'Gestionar mis mesas',
                 createFirst: 'Crear tu primera mesa',
-                edit: 'Editar',
                 players: 'jugadores',
             },
         },
@@ -496,8 +506,9 @@ export default {
             noCampaigns: 'Sin campañas creadas',
             noCampaignsDescription: 'Aún no has creado ninguna campaña.',
             createNew: 'Crear nueva campaña',
+            // Link to «Mis campañas», where every campaign the user created is managed
+            manage: 'Gestionar mis campañas',
             createFirst: 'Crear tu primera campaña',
-            edit: 'Editar',
             players: 'jugadores',
             recruiting: 'Reclutando',
         },
@@ -562,19 +573,52 @@ export default {
                 sessions: 'Próximas sesiones',
                 remove: 'Quitar',
                 removeTitle: 'Quitar de la plantilla',
-                removeMessage: '¿Quitar a {name} de la plantilla? Perderá sus plazas en las próximas sesiones y recibirá un correo.',
+                // Starts with the visible «Quitar», so voice control finds it
+                removeNamed: 'Quitar a {name}',
+                removeMessage: '{name} dejará la plantilla y perderá sus plazas en las sesiones que aún no han empezado. Se le avisará por correo.',
+                removeMessageNoEmail: '{name} dejará la plantilla y perderá sus plazas en las sesiones que aún no han empezado.',
+                since: 'Desde el {date}',
                 empty: 'La plantilla está vacía.',
                 noSessions: 'No hay sesiones próximas.',
             },
-            chips: {
-                going: '{date} ✓ va',
-                absent: '{date} ✗ no va',
-                waiting: '{date} · en espera',
-                none: '{date} —',
-                // Read by screen readers: the visible text first, then the player and the full date
-                accessibleName: '{label} — {name}, {date}',
+            // Players × upcoming sessions
+            attendance: {
+                caption: 'Asistencia de la plantilla a las próximas sesiones',
+                previous: 'Anteriores',
+                next: 'Siguientes',
+                range: 'Sesiones {from}–{to} de {total}',
+                previousRange: 'Anteriores: sesiones {from}–{to} de {total}',
+                nextRange: 'Siguientes: sesiones {from}–{to} de {total}',
+                seats: '{taken}/{max} plazas',
+                actionsColumn: 'Acciones',
+                states: {
+                    going: 'Va',
+                    absent: 'Ausente',
+                    waiting: 'En espera',
+                    none: 'No inscrito',
+                },
+                actions: {
+                    markAbsence: 'Marcar ausencia',
+                    clearAbsence: 'Volver a inscribir',
+                },
+                blocked: {
+                    notFromRoster: 'Se inscribió por su cuenta: no se cambia desde la plantilla',
+                    closed: 'La sesión ya no admite inscripciones',
+                    full: 'La sesión está completa',
+                },
+                blockedShort: {
+                    notFromRoster: 'Por su cuenta',
+                    closed: 'Cerrada',
+                    full: 'Completa',
+                },
+                confirm: {
+                    markAbsence: '{name} quedará ausente de la sesión del {date}. Se le avisará por correo.',
+                    clearAbsence: '{name} volverá a tener plaza en la sesión del {date} y recibirá la confirmación por correo.',
+                },
+                // Read by screen readers: the visible text first, then the player, the full date and the action
+                accessibleName: '{label} — {name}, {date}. {action}',
             },
-            footnote: 'Pulsar una sesión cambia entre «va» y «no va» para ese jugador; el jugador recibe un correo. Sigue en la plantilla.',
+            footnote: 'Cada casilla es la asistencia de un jugador a una sesión. Púlsala para marcar su ausencia o volver a inscribirlo; el jugador recibe un correo.',
         },
         // The join box of the campaign page
         join: {
@@ -586,6 +630,13 @@ export default {
             pendingSince: 'Solicitud enviada el {date}',
             pendingHint: 'La dirección te avisará por correo.',
             withdraw: 'Retirar solicitud',
+            withdrawTitle: 'Retirar solicitud',
+            withdrawMessage: '¿Retirar tu solicitud para unirte a «{title}»?',
+            withdrawConfirm: 'Retirar',
+            // The request dialog
+            dialogTitle: 'Solicitar unirse a {title}',
+            send: 'Enviar solicitud',
+            counter: '{count}/{max} caracteres',
             memberTitle: 'Formas parte de esta campaña',
             memberHint: 'Estás inscrito en sus próximas sesiones. Si no puedes ir a una, date de baja desde la ficha de esa sesión.',
             leave: 'Salir de la campaña',

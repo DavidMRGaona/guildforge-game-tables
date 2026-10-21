@@ -14,9 +14,12 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel
  * published) goes back to «Mis mesas» / «Mis campañas» with the reason instead of a bare 403.
  * Anyone else gets null and still meets the usual policy. The controllers ask before acting and
  * the form requests before validating, so a stale edit form gets the reason, not field errors.
+ * An action sent from the profile's drafts goes back to the profile instead (AuthorReturnTarget).
  */
 final class AuthorLockRedirect
 {
+    public function __construct(private readonly AuthorReturnTarget $returnTarget) {}
+
     public function forTable(?GameTableModel $table, ?string $userId): ?RedirectResponse
     {
         if ($table === null
@@ -32,8 +35,8 @@ final class AuthorLockRedirect
             default => 'game-tables::messages.errors.table_locked',
         };
 
-        return redirect()
-            ->route('gametables.my-tables')
+        return $this->returnTarget
+            ->redirect('gametables.my-tables', AuthorReturnTarget::TABLES_TAB)
             ->with('error', __($reason));
     }
 
@@ -52,8 +55,8 @@ final class AuthorLockRedirect
             default => 'game-tables::messages.errors.campaign_locked',
         };
 
-        return redirect()
-            ->route('campaigns.my-campaigns')
+        return $this->returnTarget
+            ->redirect('campaigns.my-campaigns', AuthorReturnTarget::CAMPAIGNS_TAB)
             ->with('error', __($reason));
     }
 }

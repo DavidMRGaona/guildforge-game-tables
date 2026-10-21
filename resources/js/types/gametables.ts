@@ -264,6 +264,10 @@ export interface ProfileCreatedTable {
     statusLabel: string;
     statusColor: string;
     isPublished: boolean;
+    /** Whether the author may still edit it: a draft not sent to review */
+    canEdit: boolean;
+    /** Why the moderators rejected it, while the author may still change it */
+    rejectionReason: string | null;
     tableFormat: string;
     tableFormatLabel: string;
     eventId: string | null;
@@ -378,6 +382,14 @@ export interface ProfileCreatedCampaign {
     frequency: string | null;
     frequencyLabel: string | null;
     isPublished: boolean;
+    /** Whether the author may still edit it: a draft not sent to review */
+    canEdit: boolean;
+    /** Why the moderators rejected it, while the author may still change it */
+    rejectionReason: string | null;
+    /** The roster page, on a published campaign the user directs; null otherwise */
+    rosterUrl: string | null;
+    /** Requests awaiting an answer, with a rosterUrl (0 otherwise) */
+    pendingRequests: number;
     isRecruiting: boolean;
     maxPlayers: number | null;
     currentPlayers: number;
@@ -507,6 +519,12 @@ export interface RosterSession {
     date_short: string;
     // d/m/Y H:i
     date: string;
+    // ISO 8601, for the weekday
+    starts_at: string;
+    seats_taken: number;
+    max_players: number;
+    // Whether an absence can be cleared (a seat is free)
+    has_room: boolean;
 }
 
 export interface RosterPlayerSession {
@@ -533,6 +551,8 @@ export interface RosterPage {
     sessions: RosterSession[];
     players: RosterPlayer[];
     can_add: boolean;
+    // Whether removing a player emails them
+    removal_notice: boolean;
 }
 
 /** What the viewer of a campaign page can do with its roster (JoinBoxDTO). */
@@ -553,4 +573,6 @@ export interface JoinBox {
     requested_at: string | null;
     // For the direction, the roster page
     roster_url: string | null;
+    // For the direction, the requests awaiting an answer (0 for anyone else)
+    pending_requests: number;
 }

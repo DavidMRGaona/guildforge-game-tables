@@ -18,10 +18,10 @@ final class RosterPageSourceTest extends TestCase
     }
 
     /**
-     * Module stylesheets load in a cascade layer below the core utilities, so the chips use theme
-     * tokens (their value flips with the theme) instead of a light/dark colour pair.
+     * Module stylesheets load in a cascade layer below the core utilities, so the attendance cells
+     * use theme tokens (their value flips with the theme) instead of a light/dark colour pair.
      */
-    public function test_the_going_chip_uses_theme_tokens(): void
+    public function test_the_going_cell_uses_theme_tokens(): void
     {
         $source = $this->source();
 
@@ -45,15 +45,15 @@ final class RosterPageSourceTest extends TestCase
     }
 
     /**
-     * WCAG 2.5.3: the chip's accessible name starts with its visible text («08/11 ✓ va»).
+     * WCAG 2.5.3: a cell's accessible name starts with its visible text («✓ Va»).
      */
-    public function test_the_chip_name_starts_with_its_visible_text(): void
+    public function test_the_cell_name_starts_with_its_visible_text(): void
     {
         $source = $this->source();
         $root = dirname(__DIR__, 4).'/resources/js/locales/';
 
-        $this->assertStringContainsString("t('campaigns.roster.chips.accessibleName', {\n        label: chipLabel(cell),", $source);
-        $this->assertStringContainsString("accessibleName: '{label} — {name}, {date}',", (string) file_get_contents($root.'es.ts'));
-        $this->assertStringContainsString("accessibleName: '{label} — {name}, {date}',", (string) file_get_contents($root.'en.ts'));
+        $this->assertStringContainsString("t('campaigns.roster.attendance.accessibleName', {\n".'        label: `${stateIcons[state]} ${stateLabel(state)}`,', $source);
+        $this->assertStringContainsString("accessibleName: '{label} — {name}, {date}. {action}',", (string) file_get_contents($root.'es.ts'));
+        $this->assertStringContainsString("accessibleName: '{label} — {name}, {date}. {action}',", (string) file_get_contents($root.'en.ts'));
     }
 }

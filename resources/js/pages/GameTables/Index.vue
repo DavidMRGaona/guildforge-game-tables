@@ -8,6 +8,7 @@ import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import GameTableCard from '../../components/GameTableCard.vue';
 import GameTableCardSkeleton from '../../components/GameTableCardSkeleton.vue';
 import GameTableFilters from '../../components/GameTableFilters.vue';
+import TablesViewToggle from '../../components/TablesViewToggle.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import EmptyState from '@/components/ui/EmptyState.vue';
 import { usePagination } from '@/composables/usePagination';
@@ -53,41 +54,26 @@ function handleNext(): void {
     <DefaultLayout>
         <div class="bg-surface shadow">
             <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                <div class="flex items-center justify-between">
-                    <div>
+                <div class="flex items-start justify-between gap-4">
+                    <div class="min-w-0">
                         <h1 class="text-3xl font-bold tracking-tight text-base-primary">
                             {{ t('gameTables.title') }}
                         </h1>
                         <p class="mt-2 text-lg text-base-secondary">
                             {{ t('gameTables.description') }}
                         </p>
+                        <!-- The campaigns, the other list of the module -->
+                        <Link
+                            href="/campanas"
+                            class="mt-2 inline-flex min-h-[44px] items-center gap-1 text-sm font-medium text-primary underline-offset-2 hover:underline"
+                        >
+                            {{ t('campaigns.viewAll') }}
+                            <span aria-hidden="true">→</span>
+                        </Link>
                     </div>
 
-                    <!-- List / Calendar toggle -->
-                    <div role="tablist" class="hidden items-center sm:flex">
-                        <Link
-                            href="/mesas"
-                            role="tab"
-                            :aria-selected="true"
-                            :aria-label="t('gameTables.filters.listView')"
-                            class="rounded-l-lg border border-primary-600 bg-primary px-3 py-2 text-white"
-                        >
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                            </svg>
-                        </Link>
-                        <Link
-                            href="/mesas/calendario"
-                            role="tab"
-                            :aria-selected="false"
-                            :aria-label="t('gameTables.filters.calendarView')"
-                            class="rounded-r-lg border border-default bg-transparent px-3 py-2 text-base-secondary transition-colors hover:bg-muted"
-                        >
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                        </Link>
-                    </div>
+                    <!-- List / calendar toggle, also on phones -->
+                    <TablesViewToggle current="list" />
                 </div>
             </div>
         </div>

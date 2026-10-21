@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import EmptyState from '@/components/ui/EmptyState.vue';
-import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
 import StatusBadge from '../../components/StatusBadge.vue';
+import DraftActions from '../../components/DraftActions.vue';
+import DraftRejectionReason from '../../components/DraftRejectionReason.vue';
 import { useFlashMessages } from '@/composables/useFlashMessages';
 import type { CampaignResponseDTO } from '../../types/gametables';
 
@@ -27,27 +28,6 @@ const { success: flashSuccess, error: flashError } = useFlashMessages();
 const { t } = useI18n();
 
 const hasCampaigns = computed(() => props.campaigns.length > 0);
-
-// Confirmation dialog state
-const showSubmitDialog = ref(false);
-const showDeleteDialog = ref(false);
-const pendingCampaignId = ref<string | null>(null);
-const pendingCampaignTitle = ref<string>('');
-
-function canEdit(campaign: CampaignResponseDTO): boolean {
-    return campaign.can_edit && !campaign.is_published;
-}
-
-// 'rejected' only on rows rejected before 2.10.0: rejecting now returns the campaign to a draft
-function canSubmitForReview(campaign: CampaignResponseDTO): boolean {
-    const status = campaign.frontend_creation_status;
-    return !campaign.is_published && (status === 'draft' || status === 'rejected');
-}
-
-function canDelete(campaign: CampaignResponseDTO): boolean {
-    const status = campaign.frontend_creation_status;
-    return !campaign.is_published && (status === 'draft' || status === 'rejected');
-}
 
 function isApproved(campaign: CampaignResponseDTO): boolean {
     return campaign.is_published;
@@ -73,42 +53,6 @@ function getStatusColor(campaign: CampaignResponseDTO): string {
 
 function getStatusLabel(campaign: CampaignResponseDTO): string {
     return campaign.frontend_creation_status_label ?? campaign.status_label;
-}
-
-function handleEdit(campaignId: string): void {
-    router.visit(`/campanas/mis-campanas/${campaignId}/editar`);
-}
-
-function handleSubmitForReview(campaignId: string): void {
-    pendingCampaignId.value = campaignId;
-    showSubmitDialog.value = true;
-}
-
-function confirmSubmitForReview(): void {
-    if (pendingCampaignId.value) {
-        router.post(`/campanas/mis-campanas/${pendingCampaignId.value}/enviar-revision`, {}, {
-            preserveScroll: true,
-            onSuccess: () => {
-                pendingCampaignId.value = null;
-            },
-        });
-    } else {
-        pendingCampaignId.value = null;
-    }
-}
-
-function handleDelete(campaignId: string, campaignTitle: string): void {
-    pendingCampaignId.value = campaignId;
-    pendingCampaignTitle.value = campaignTitle;
-    showDeleteDialog.value = true;
-}
-
-function confirmDelete(): void {
-    if (pendingCampaignId.value) {
-        router.delete(`/campanas/mis-campanas/${pendingCampaignId.value}`);
-    }
-    pendingCampaignId.value = null;
-    pendingCampaignTitle.value = '';
 }
 
 function handleCreate(): void {
@@ -155,6 +99,14 @@ function getCampaignLink(campaign: CampaignResponseDTO): string {
             <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between">
                     <div>
+                        <!-- Back to the profile tab that links here -->
+                        <Link
+                            href="/perfil?tab=gametables-campaigns"
+                            class="mb-2 inline-flex min-h-[44px] items-center gap-1 text-sm font-medium text-primary underline-offset-2 hover:underline"
+                        >
+                            <span aria-hidden="true">←</span>
+                            {{ t('gameTables.backToProfile') }}
+                        </Link>
                         <h1 class="text-3xl font-bold tracking-tight text-base-primary">
                             {{ t('campaigns.myCampaigns.title') }}
                         </h1>
@@ -309,15 +261,12 @@ function getCampaignLink(campaign: CampaignResponseDTO): string {
                                 </div>
 
                                 <!-- Rejected in review: back to a draft until it is sent again -->
-                                <div v-if="campaign.rejection_reason" class="mt-3 rounded-md bg-danger-bg p-3">
-                                    <p class="text-sm text-danger">
-                                        <strong>{{ t('campaigns.myCampaigns.rejectionReason') }}:</strong>
-                                        {{ campaign.rejection_reason }}
-                                    </p>
-                                    <p class="mt-1 text-sm text-danger">
-                                        {{ t('campaigns.myCampaigns.rejectionHint') }}
-                                    </p>
-                                </div>
+                                <DraftRejectionReason
+                                    v-if="campaign.rejection_reason"
+                                    kind="campaign"
+                                    :reason="campaign.rejection_reason"
+                                    class="mt-3"
+                                />
                             </div>
 
                             <div class="flex flex-shrink-0 flex-wrap gap-2">
@@ -352,61 +301,18 @@ function getCampaignLink(campaign: CampaignResponseDTO): string {
                                     </Link>
                                 </template>
 
-                                <template v-else>
-                                    <BaseButton
-                                        v-if="canEdit(campaign)"
-                                        variant="secondary"
-                                        size="sm"
-                                        @click="handleEdit(campaign.id)"
-                                    >
-                                        {{ t('common.edit') }}
-                                    </BaseButton>
-
-                                    <BaseButton
-                                        v-if="canSubmitForReview(campaign)"
-                                        variant="primary"
-                                        size="sm"
-                                        @click="handleSubmitForReview(campaign.id)"
-                                    >
-                                        {{ t('campaigns.myCampaigns.submitForReview') }}
-                                    </BaseButton>
-
-                                    <BaseButton
-                                        v-if="canDelete(campaign)"
-                                        variant="danger"
-                                        size="sm"
-                                        @click="handleDelete(campaign.id, campaign.title)"
-                                    >
-                                        {{ t('common.delete') }}
-                                    </BaseButton>
-                                </template>
+                                <!-- While the author may still change it: can_edit, the rule the server enforces -->
+                                <DraftActions
+                                    v-else-if="campaign.can_edit"
+                                    kind="campaign"
+                                    :route-key="campaign.id"
+                                    :title="campaign.title"
+                                />
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </main>
-
-        <!-- Submit for review confirmation dialog -->
-        <ConfirmDialog
-            v-model="showSubmitDialog"
-            :title="t('campaigns.myCampaigns.submitForReviewTitle')"
-            :message="t('campaigns.myCampaigns.confirmSubmit')"
-            :confirm-label="t('campaigns.myCampaigns.submitForReview')"
-            :cancel-label="t('common.cancel')"
-            confirm-variant="primary"
-            @confirm="confirmSubmitForReview"
-        />
-
-        <!-- Delete confirmation dialog -->
-        <ConfirmDialog
-            v-model="showDeleteDialog"
-            :title="t('campaigns.myCampaigns.deleteTitle')"
-            :message="t('campaigns.myCampaigns.confirmDelete', { title: pendingCampaignTitle })"
-            :confirm-label="t('common.delete')"
-            :cancel-label="t('common.cancel')"
-            confirm-variant="danger"
-            @confirm="confirmDelete"
-        />
     </DefaultLayout>
 </template>

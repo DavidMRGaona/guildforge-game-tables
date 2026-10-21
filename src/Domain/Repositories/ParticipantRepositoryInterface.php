@@ -29,6 +29,14 @@ interface ParticipantRepositoryInterface
     public function getByGameTable(GameTableId $gameTableId): array;
 
     /**
+     * The rows of several tables in one read (e.g. every upcoming session of a campaign).
+     *
+     * @param  list<GameTableId>  $gameTableIds
+     * @return list<Participant>
+     */
+    public function getByGameTables(array $gameTableIds): array;
+
+    /**
      * @return array<Participant>
      */
     public function getByGameTableAndStatus(GameTableId $gameTableId, ParticipantStatus $status): array;
