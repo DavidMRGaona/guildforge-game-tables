@@ -109,8 +109,8 @@ const playersText = computed(() => {
                     {{ campaign.statusLabel }}
                 </span>
 
-                <!-- Edit link for drafts -->
-                <template v-if="showEditLink && !campaign.isPublished">
+                <!-- Edit link while the author may still change it (not once sent to review) -->
+                <template v-if="showEditLink && campaign.canEdit">
                     <button
                         v-if="gate.blocked.value"
                         type="button"

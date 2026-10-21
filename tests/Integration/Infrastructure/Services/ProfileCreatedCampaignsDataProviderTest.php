@@ -43,6 +43,22 @@ final class ProfileCreatedCampaignsDataProviderTest extends ModuleTestCase
         $this->assertSame(0, $data['campaigns'][0]['currentPlayers']);
     }
 
+    public function test_an_unpublished_campaign_shows_its_review_state_and_is_editable_only_as_a_draft(): void
+    {
+        $creator = $this->user();
+        $this->campaign($creator, ['is_published' => false, 'frontend_creation_status' => 'pending_review', 'title' => 'En revisión']);
+        $this->campaign($creator, ['is_published' => false, 'frontend_creation_status' => 'draft', 'title' => 'Borrador']);
+
+        $drafts = collect(app(ProfileCreatedCampaignsDataProvider::class)->getDataForUser((string) $creator->id)['drafts'])->keyBy('title');
+
+        // As «Mis campañas»: a campaign sent to review is waiting for the moderators, not editable
+        $this->assertSame('pending_review', $drafts['En revisión']['status']);
+        $this->assertSame(__('game-tables::messages.enums.frontend_creation_status.pending_review'), $drafts['En revisión']['statusLabel']);
+        $this->assertFalse($drafts['En revisión']['canEdit']);
+        $this->assertSame('draft', $drafts['Borrador']['status']);
+        $this->assertTrue($drafts['Borrador']['canEdit']);
+    }
+
     private function joinRoster(CampaignModel $campaign, UserModel $user): void
     {
         DB::table('gametables_campaign_players')->insert([
@@ -64,7 +80,10 @@ final class ProfileCreatedCampaignsDataProviderTest extends ModuleTestCase
         ]);
     }
 
-    private function campaign(UserModel $creator): CampaignModel
+    /**
+     * @param  array<string, mixed>  $overrides
+     */
+    private function campaign(UserModel $creator, array $overrides = []): CampaignModel
     {
         $system = GameSystemModel::create([
             'id' => (string) Str::uuid(),
@@ -83,6 +102,7 @@ final class ProfileCreatedCampaignsDataProviderTest extends ModuleTestCase
             'status' => 'active',
             'max_players' => 4,
             'is_published' => true,
+            ...$overrides,
         ]);
     }
 }

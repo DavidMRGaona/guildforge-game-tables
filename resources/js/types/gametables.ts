@@ -264,6 +264,8 @@ export interface ProfileCreatedTable {
     statusLabel: string;
     statusColor: string;
     isPublished: boolean;
+    /** Whether the author may still edit it: a draft not sent to review */
+    canEdit: boolean;
     tableFormat: string;
     tableFormatLabel: string;
     eventId: string | null;
@@ -378,6 +380,8 @@ export interface ProfileCreatedCampaign {
     frequency: string | null;
     frequencyLabel: string | null;
     isPublished: boolean;
+    /** Whether the author may still edit it: a draft not sent to review */
+    canEdit: boolean;
     isRecruiting: boolean;
     maxPlayers: number | null;
     currentPlayers: number;

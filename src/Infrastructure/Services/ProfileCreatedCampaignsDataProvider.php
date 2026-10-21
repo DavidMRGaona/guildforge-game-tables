@@ -53,7 +53,7 @@ final readonly class ProfileCreatedCampaignsDataProvider
 
         foreach ($campaigns as $campaign) {
             $dto = CampaignResponseDTO::fromEntity($campaign, currentPlayers: $players[$campaign->id->value] ?? 0);
-            $data = $this->formatCampaignForProfile($dto);
+            $data = $this->formatCampaignForProfile($dto, $campaign->canBeChangedByAuthor());
 
             if ($campaign->isPublished) {
                 $published[] = $data;
@@ -75,19 +75,23 @@ final readonly class ProfileCreatedCampaignsDataProvider
      *
      * @return array<string, mixed>
      */
-    private function formatCampaignForProfile(CampaignResponseDTO $dto): array
+    private function formatCampaignForProfile(CampaignResponseDTO $dto, bool $canEdit): array
     {
+        // An unpublished web campaign shows where it stands in the review, as «Mis campañas» does
+        $reviewStatus = $dto->isPublished ? null : $dto->frontendCreationStatus;
+
         return [
             'id' => $dto->id,
             'title' => $dto->title,
             'slug' => $dto->slug,
             'gameSystemName' => $dto->gameSystemName,
-            'status' => $dto->status->value,
-            'statusLabel' => $dto->status->label(),
-            'statusColor' => $dto->status->color(),
+            'status' => $reviewStatus->value ?? $dto->status->value,
+            'statusLabel' => $reviewStatus?->label() ?? $dto->status->label(),
+            'statusColor' => $reviewStatus?->color() ?? $dto->status->color(),
             'frequency' => $dto->frequency?->value,
             'frequencyLabel' => $dto->frequency?->label(),
             'isPublished' => $dto->isPublished,
+            'canEdit' => $canEdit,
             'isRecruiting' => $dto->isRecruiting,
             'maxPlayers' => $dto->maxPlayers,
             'currentPlayers' => $dto->currentPlayers,

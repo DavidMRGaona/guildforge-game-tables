@@ -121,8 +121,8 @@ const playersText = computed(() => {
                     {{ table.statusLabel }}
                 </span>
 
-                <!-- Edit link for drafts -->
-                <template v-if="showEditLink && !table.isPublished && editUrl">
+                <!-- Edit link while the author may still change it (not once sent to review) -->
+                <template v-if="showEditLink && table.canEdit && editUrl">
                     <button
                         v-if="gate.blocked.value"
                         type="button"

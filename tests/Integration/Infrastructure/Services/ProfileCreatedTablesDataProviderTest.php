@@ -40,6 +40,23 @@ final class ProfileCreatedTablesDataProviderTest extends ModuleTestCase
         $this->assertSame(2, $data['tables'][0]['currentPlayers']);
     }
 
+    public function test_an_unpublished_table_shows_its_review_state_and_is_editable_only_as_a_draft(): void
+    {
+        $creator = $this->creator();
+        $this->table($creator, ['is_published' => false, 'published_at' => null, 'frontend_creation_status' => 'pending_review', 'title' => 'En revisión']);
+        $this->table($creator, ['is_published' => false, 'published_at' => null, 'frontend_creation_status' => 'draft', 'title' => 'Borrador']);
+
+        $drafts = collect(app(ProfileCreatedTablesDataProvider::class)->getDataForUser((string) $creator->id)['drafts'])->keyBy('title');
+
+        // As «Mis mesas»: a table sent to review is waiting for the moderators, not editable
+        $this->assertSame('pending_review', $drafts['En revisión']['status']);
+        $this->assertSame(__('game-tables::messages.enums.frontend_creation_status.pending_review'), $drafts['En revisión']['statusLabel']);
+        $this->assertSame('warning', $drafts['En revisión']['statusColor']);
+        $this->assertFalse($drafts['En revisión']['canEdit']);
+        $this->assertSame('draft', $drafts['Borrador']['status']);
+        $this->assertTrue($drafts['Borrador']['canEdit']);
+    }
+
     private function participant(GameTableModel $table, ParticipantRole $role, ParticipantStatus $status): void
     {
         ParticipantModel::create([
@@ -61,7 +78,10 @@ final class ProfileCreatedTablesDataProviderTest extends ModuleTestCase
         ]);
     }
 
-    private function table(UserModel $creator): GameTableModel
+    /**
+     * @param  array<string, mixed>  $overrides
+     */
+    private function table(UserModel $creator, array $overrides = []): GameTableModel
     {
         $system = GameSystemModel::create([
             'id' => (string) Str::uuid(),
@@ -87,6 +107,7 @@ final class ProfileCreatedTablesDataProviderTest extends ModuleTestCase
             'auto_confirm' => true,
             'is_published' => true,
             'published_at' => now(),
+            ...$overrides,
         ]);
     }
 }
