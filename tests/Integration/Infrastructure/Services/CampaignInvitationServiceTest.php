@@ -11,13 +11,20 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
 use Modules\GameTables\Application\Services\CampaignInvitationSendLogInterface;
 use Modules\GameTables\Application\Services\CampaignInvitationServiceInterface;
+use Modules\GameTables\Application\Services\CampaignRosterServiceInterface;
 use Modules\GameTables\Domain\Entities\CampaignInvitation;
+use Modules\GameTables\Domain\Enums\RosterAccess;
+use Modules\GameTables\Domain\Events\CampaignInvitationAccepted;
 use Modules\GameTables\Domain\Events\CampaignInvitationSent;
+use Modules\GameTables\Domain\Events\CampaignRosterMemberAdded;
 use Modules\GameTables\Domain\Exceptions\CampaignNotFoundException;
 use Modules\GameTables\Domain\Exceptions\RosterActionRefusedException;
 use Modules\GameTables\Domain\Repositories\CampaignInvitationRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
+use Modules\GameTables\Domain\ValueObjects\CampaignInvitationId;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignInvitationModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignJoinRequestModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Tests\Support\Modules\ModuleTestCase;
@@ -46,7 +53,7 @@ final class CampaignInvitationServiceTest extends ModuleTestCase
     {
         parent::setUp();
 
-        Event::fake([CampaignInvitationSent::class]);
+        Event::fake([CampaignInvitationSent::class, CampaignInvitationAccepted::class, CampaignRosterMemberAdded::class]);
         config()->set('modules.settings.game-tables', []);
         $this->travelTo(CarbonImmutable::parse('2026-11-02 10:00:00'));
 
@@ -375,5 +382,223 @@ final class CampaignInvitationServiceTest extends ModuleTestCase
         // Expired invitations are left out
         $this->travel(15)->days();
         $this->assertSame([], $this->service()->pendingFor($this->campaign->id, CarbonImmutable::now()->toDateTimeImmutable()));
+    }
+
+    /**
+     * Invites the email and returns the plain token the email would carry.
+     */
+    private function tokenFor(string $email): string
+    {
+        $this->invite($email);
+
+        $tokens = Event::dispatched(CampaignInvitationSent::class)
+            ->map(fn (array $args): CampaignInvitationSent => $args[0])
+            ->filter(fn (CampaignInvitationSent $event): bool => $event->email === mb_strtolower(trim($email)));
+
+        $last = $tokens->last();
+        $this->assertNotNull($last);
+
+        return $last->token;
+    }
+
+    private function isMember(UserModel $user): bool
+    {
+        return $this->app->make(CampaignRosterRepositoryInterface::class)->contains($this->campaignId, $user->id);
+    }
+
+    public function test_accept_adds_to_the_roster_and_deletes(): void
+    {
+        $token = $this->tokenFor('john@example.com');
+
+        $this->service()->accept($token, $this->john->id);
+
+        $this->assertTrue($this->isMember($this->john));
+        $this->assertNull($this->invitations()->findPending($this->campaignId, 'john@example.com'));
+        Event::assertDispatched(CampaignInvitationAccepted::class, fn (CampaignInvitationAccepted $e): bool => $e->campaignId === $this->campaign->id && $e->userId === $this->john->id);
+        Event::assertDispatched(CampaignRosterMemberAdded::class);
+    }
+
+    public function test_accept_matches_the_account_email_case_insensitively(): void
+    {
+        $ana = UserModel::factory()->create(['email' => 'Ana@Example.com']);
+        $token = $this->tokenFor('ana@example.com');
+
+        $this->service()->accept($token, $ana->id);
+
+        $this->assertTrue($this->isMember($ana));
+    }
+
+    public function test_accept_with_another_account_refuses(): void
+    {
+        $token = $this->tokenFor('john@example.com');
+
+        $this->assertRefused('invitation_other_account', fn () => $this->service()->accept($token, $this->jane->id));
+
+        $this->assertNotNull($this->invitations()->findPending($this->campaignId, 'john@example.com'));
+        $this->assertFalse($this->isMember($this->jane));
+        Event::assertNotDispatched(CampaignInvitationAccepted::class);
+    }
+
+    public function test_accept_with_an_expired_token_refuses(): void
+    {
+        $token = $this->tokenFor('john@example.com');
+        $this->travel(15)->days();
+
+        $this->assertRefused('invitation_not_found', fn () => $this->service()->accept($token, $this->john->id));
+
+        $this->assertFalse($this->isMember($this->john));
+    }
+
+    public function test_accept_with_an_unknown_or_malformed_token_refuses(): void
+    {
+        $this->assertRefused('invitation_not_found', fn () => $this->service()->accept(Str::random(64), $this->john->id));
+        $this->assertRefused('invitation_not_found', fn () => $this->service()->accept("x' OR 1=1 --", $this->john->id));
+        $this->assertRefused('invitation_not_found', fn () => $this->service()->reject(''));
+        $this->assertNull($this->service()->viewByToken('!!', CarbonImmutable::now()->toDateTimeImmutable()));
+    }
+
+    public function test_accepting_twice_answers_not_found_the_second_time(): void
+    {
+        $token = $this->tokenFor('john@example.com');
+        $this->service()->accept($token, $this->john->id);
+
+        $this->assertRefused('invitation_not_found', fn () => $this->service()->accept($token, $this->john->id));
+    }
+
+    public function test_accept_with_a_full_roster_keeps_the_invitation(): void
+    {
+        $token = $this->tokenFor('john@example.com');
+        $roster = $this->app->make(CampaignRosterRepositoryInterface::class);
+        foreach ([$this->jane, UserModel::factory()->create(), UserModel::factory()->create()] as $member) {
+            $roster->add($this->campaignId, $member->id, CarbonImmutable::now());
+        }
+
+        $this->assertRefused('roster_full', fn () => $this->service()->accept($token, $this->john->id));
+
+        $this->assertNotNull($this->invitations()->findPending($this->campaignId, 'john@example.com'));
+        $this->assertFalse($this->isMember($this->john));
+    }
+
+    public function test_accepting_for_a_finished_campaign_refuses_and_deletes(): void
+    {
+        $token = $this->tokenFor('john@example.com');
+        $this->campaign->update(['status' => 'completed']);
+
+        $this->assertRefused('finished', fn () => $this->service()->accept($token, $this->john->id));
+
+        $this->assertNull($this->invitations()->findPending($this->campaignId, 'john@example.com'));
+    }
+
+    public function test_accepting_when_already_a_member_refuses_and_deletes(): void
+    {
+        $token = $this->tokenFor('john@example.com');
+        $this->app->make(CampaignRosterRepositoryInterface::class)->add($this->campaignId, $this->john->id, CarbonImmutable::now());
+
+        $this->assertRefused('account_already_member', fn () => $this->service()->accept($token, $this->john->id));
+
+        $this->assertNull($this->invitations()->findPending($this->campaignId, 'john@example.com'));
+    }
+
+    public function test_accept_skips_members_only(): void
+    {
+        $this->campaign->update(['roster_access' => RosterAccess::MembersOnly->value]);
+        $token = $this->tokenFor('john@example.com');
+
+        $this->service()->accept($token, $this->john->id);
+
+        $this->assertTrue($this->isMember($this->john));
+    }
+
+    public function test_accept_uses_the_account_when_the_inviter_is_gone(): void
+    {
+        $this->app->make(CampaignRosterServiceInterface::class)
+            ->requestToJoin($this->campaign->id, $this->john->id, null);
+        $token = $this->tokenFor('john@example.com');
+        CampaignInvitationModel::query()->update(['invited_by_user_id' => null]);
+
+        $this->service()->accept($token, $this->john->id);
+
+        $this->assertTrue($this->isMember($this->john));
+        $request = CampaignJoinRequestModel::query()->where('user_id', $this->john->id)->firstOrFail();
+        $this->assertSame('accepted', $request->status->value);
+        $this->assertSame($this->john->id, $request->decided_by);
+    }
+
+    public function test_reject_deletes_and_records(): void
+    {
+        $token = $this->tokenFor('john@example.com');
+
+        $this->service()->reject($token);
+
+        $this->assertNull($this->invitations()->findPending($this->campaignId, 'john@example.com'));
+        $this->assertTrue($this->sendLog()->rejectedSince($this->campaign->id, 'john@example.com', CarbonImmutable::now()->subDay()->toDateTimeImmutable()));
+        $this->assertRefused('invitation_not_found', fn () => $this->service()->reject($token));
+        $this->assertFalse($this->isMember($this->john));
+    }
+
+    public function test_accept_by_id_adds_a_verified_account(): void
+    {
+        $this->tokenFor('john@example.com');
+        $id = $this->pending('john@example.com')->id->value;
+
+        $this->service()->acceptById($id, $this->john->id);
+
+        $this->assertTrue($this->isMember($this->john));
+        $this->assertNull($this->invitations()->find(new CampaignInvitationId($id)));
+    }
+
+    public function test_accept_by_id_requires_a_verified_email(): void
+    {
+        $this->john->forceFill(['email_verified_at' => null])->save();
+        $this->tokenFor('john@example.com');
+        $id = $this->pending('john@example.com')->id->value;
+
+        $this->assertRefused('email_not_verified', fn () => $this->service()->acceptById($id, $this->john->id));
+
+        $this->assertNotNull($this->invitations()->findPending($this->campaignId, 'john@example.com'));
+    }
+
+    public function test_accept_by_id_for_another_email_answers_not_found(): void
+    {
+        $this->tokenFor('john@example.com');
+        $id = $this->pending('john@example.com')->id->value;
+
+        $this->assertRefused('invitation_not_found', fn () => $this->service()->acceptById($id, $this->jane->id));
+        $this->assertRefused('invitation_not_found', fn () => $this->service()->acceptById('not-a-uuid', $this->jane->id));
+
+        $this->assertNotNull($this->invitations()->findPending($this->campaignId, 'john@example.com'));
+    }
+
+    public function test_reject_by_id_applies_the_same_ownership_rule(): void
+    {
+        $this->tokenFor('john@example.com');
+        $id = $this->pending('john@example.com')->id->value;
+
+        $this->assertRefused('invitation_not_found', fn () => $this->service()->rejectById($id, $this->jane->id));
+        $this->john->forceFill(['email_verified_at' => null])->save();
+        $this->assertRefused('email_not_verified', fn () => $this->service()->rejectById($id, $this->john->id));
+        $this->assertNotNull($this->invitations()->findPending($this->campaignId, 'john@example.com'));
+
+        $this->john->forceFill(['email_verified_at' => now()])->save();
+        $this->service()->rejectById($id, $this->john->id);
+
+        $this->assertNull($this->invitations()->findPending($this->campaignId, 'john@example.com'));
+        $this->assertTrue($this->sendLog()->rejectedSince($this->campaign->id, 'john@example.com', CarbonImmutable::now()->subDay()->toDateTimeImmutable()));
+    }
+
+    public function test_view_by_token_shows_the_live_invitation_only(): void
+    {
+        $token = $this->tokenFor('john@example.com');
+        $now = CarbonImmutable::now()->toDateTimeImmutable();
+
+        $view = $this->service()->viewByToken($token, $now);
+
+        $this->assertNotNull($view);
+        $this->assertSame('john@example.com', $view->email);
+        $this->assertSame('La cripta olvidada', $view->campaignTitle);
+        $this->assertSame('Mary Major', $view->inviterName);
+
+        $this->assertNull($this->service()->viewByToken(Str::random(64), $now));
+        $this->assertNull($this->service()->viewByToken($token, CarbonImmutable::now()->addDays(15)->toDateTimeImmutable()));
     }
 }

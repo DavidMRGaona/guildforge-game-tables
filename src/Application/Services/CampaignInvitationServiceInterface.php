@@ -38,4 +38,36 @@ interface CampaignInvitationServiceInterface
      * @throws CampaignNotFoundException
      */
     public function pendingFor(string $campaignId, DateTimeImmutable $now): array;
+
+    /**
+     * The invitation behind an emailed token, or null when the token is unknown or has expired.
+     */
+    public function viewByToken(string $token, DateTimeImmutable $now): ?CampaignInvitationViewDTO;
+
+    /**
+     * Joins the campaign with the emailed token. The account must hold the invited email.
+     *
+     * @throws RosterActionRefusedException invitation_not_found, invitation_other_account, or the roster's own refusals
+     */
+    public function accept(string $token, string $userId): void;
+
+    /**
+     * Declines with the emailed token, which needs no account: the email is blocked for 30 days.
+     *
+     * @throws RosterActionRefusedException invitation_not_found
+     */
+    public function reject(string $token): void;
+
+    /**
+     * Like accept() for an invitation picked from the profile: the account email must be verified.
+     * Another account's invitation answers invitation_not_found.
+     *
+     * @throws RosterActionRefusedException email_not_verified, invitation_not_found, or the roster's own refusals
+     */
+    public function acceptById(string $invitationId, string $userId): void;
+
+    /**
+     * @throws RosterActionRefusedException email_not_verified, invitation_not_found
+     */
+    public function rejectById(string $invitationId, string $userId): void;
 }

@@ -12,8 +12,10 @@ use Modules\GameTables\Application\Services\AccountLookupInterface;
 use Modules\GameTables\Application\Services\CampaignDirectionInterface;
 use Modules\GameTables\Application\Services\CampaignInvitationSendLogInterface;
 use Modules\GameTables\Application\Services\CampaignInvitationServiceInterface;
+use Modules\GameTables\Application\Services\CampaignRosterServiceInterface;
 use Modules\GameTables\Application\Services\RegistrationLockInterface;
 use Modules\GameTables\Domain\Entities\CampaignInvitation;
+use Modules\GameTables\Domain\Events\CampaignInvitationAccepted;
 use Modules\GameTables\Domain\Events\CampaignInvitationSent;
 use Modules\GameTables\Domain\Exceptions\RosterActionRefusedException;
 use Modules\GameTables\Domain\Repositories\CampaignInvitationRepositoryInterface;
@@ -41,6 +43,7 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
         private CampaignDirectionInterface $direction,
         private AccountLookupInterface $accounts,
         private RegistrationLockInterface $lock,
+        private CampaignRosterServiceInterface $rosterService,
     ) {}
 
     public function invite(string $campaignId, string $email, string $actorUserId): void
@@ -150,20 +153,140 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
                 continue;
             }
 
-            $views[] = new CampaignInvitationViewDTO(
-                id: $invitation->id->value,
-                campaignId: $campaignId,
-                campaignTitle: $campaign->title,
-                campaignSlug: $campaign->slug,
-                inviterName: $invitation->inviterName,
-                email: $invitation->email,
-                expiresAt: CarbonImmutable::instance($invitation->expiresAt)->toIso8601String(),
-                sendCount: $invitation->sendCount,
-                canResend: $this->sendLimitsAllow($campaignId, $invitation->email, $now),
-            );
+            $views[] = $this->viewOf($invitation, $campaign->title, $campaign->slug, $this->sendLimitsAllow($campaignId, $invitation->email, $now));
         }
 
         return $views;
+    }
+
+    public function viewByToken(string $token, DateTimeImmutable $now): ?CampaignInvitationViewDTO
+    {
+        $invitation = $this->liveByToken($token, $now);
+        if ($invitation === null) {
+            return null;
+        }
+
+        $campaign = $this->campaigns->findOrFail($invitation->campaignId);
+
+        return $this->viewOf($invitation, $campaign->title, $campaign->slug, false);
+    }
+
+    public function accept(string $token, string $userId): void
+    {
+        $invitation = $this->liveByToken($token, CarbonImmutable::now()->toDateTimeImmutable())
+            ?? throw RosterActionRefusedException::because('invitation_not_found');
+
+        $account = $this->accounts->findActiveById($userId)
+            ?? throw RosterActionRefusedException::because('invitation_not_found');
+
+        if ($this->normalise($account->email) !== $invitation->email) {
+            throw RosterActionRefusedException::because('invitation_other_account');
+        }
+
+        $this->join($invitation, $userId);
+    }
+
+    public function reject(string $token): void
+    {
+        $invitation = $this->liveByToken($token, CarbonImmutable::now()->toDateTimeImmutable())
+            ?? throw RosterActionRefusedException::because('invitation_not_found');
+
+        $this->decline($invitation);
+    }
+
+    public function acceptById(string $invitationId, string $userId): void
+    {
+        $this->join($this->ownInvitation($invitationId, $userId), $userId);
+    }
+
+    public function rejectById(string $invitationId, string $userId): void
+    {
+        $this->decline($this->ownInvitation($invitationId, $userId));
+    }
+
+    /**
+     * The roster takes its own campaign lock, so none is held here: a second call that already read the
+     * row meets the roster's account_already_member, and one that comes later finds no row.
+     *
+     * @throws RosterActionRefusedException
+     */
+    private function join(CampaignInvitation $invitation, string $userId): void
+    {
+        $campaignId = $invitation->campaignId->value;
+
+        try {
+            $this->rosterService->addUser($campaignId, $userId, $invitation->invitedBy ?? $userId);
+        } catch (RosterActionRefusedException $e) {
+            // A full roster may have room later; these will not change
+            if (in_array($e->reason, ['unavailable', 'finished', 'account_already_member'], true)) {
+                $this->invitations->delete($invitation->id);
+            }
+
+            throw $e;
+        }
+
+        $this->invitations->delete($invitation->id);
+
+        CampaignInvitationAccepted::dispatch($campaignId, $userId);
+    }
+
+    private function decline(CampaignInvitation $invitation): void
+    {
+        $this->invitations->delete($invitation->id);
+        $this->sendLog->recordRejection($invitation->campaignId->value, $invitation->email, CarbonImmutable::now()->toDateTimeImmutable());
+    }
+
+    /**
+     * The live invitation addressed to the account's verified email; anything else answers
+     * invitation_not_found so nobody learns that another email has one.
+     *
+     * @throws RosterActionRefusedException
+     */
+    private function ownInvitation(string $invitationId, string $userId): CampaignInvitation
+    {
+        $account = $this->accounts->findActiveById($userId)
+            ?? throw RosterActionRefusedException::because('invitation_not_found');
+
+        if (! $account->emailVerified) {
+            throw RosterActionRefusedException::because('email_not_verified');
+        }
+
+        $invitation = $this->invitations->find($this->idOf($invitationId));
+
+        if ($invitation === null
+            || $invitation->isExpired(CarbonImmutable::now()->toDateTimeImmutable())
+            || $this->normalise($account->email) !== $invitation->email) {
+            throw RosterActionRefusedException::because('invitation_not_found');
+        }
+
+        return $invitation;
+    }
+
+    private function liveByToken(string $token, DateTimeImmutable $now): ?CampaignInvitation
+    {
+        // Tokens are 64 alphanumerics: anything else cannot exist, so it is not even looked up
+        if (preg_match('/\A[A-Za-z0-9]{64}\z/', $token) !== 1) {
+            return null;
+        }
+
+        $invitation = $this->invitations->findByTokenHash(hash('sha256', $token));
+
+        return $invitation === null || $invitation->isExpired($now) ? null : $invitation;
+    }
+
+    private function viewOf(CampaignInvitation $invitation, string $title, string $slug, bool $canResend): CampaignInvitationViewDTO
+    {
+        return new CampaignInvitationViewDTO(
+            id: $invitation->id->value,
+            campaignId: $invitation->campaignId->value,
+            campaignTitle: $title,
+            campaignSlug: $slug,
+            inviterName: $invitation->inviterName,
+            email: $invitation->email,
+            expiresAt: CarbonImmutable::instance($invitation->expiresAt)->toIso8601String(),
+            sendCount: $invitation->sendCount,
+            canResend: $canResend,
+        );
     }
 
     /**
