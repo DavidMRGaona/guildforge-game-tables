@@ -280,6 +280,10 @@ export default {
             deleteTitle: 'Delete table',
             confirmDelete: 'Are you sure you want to delete "{title}"? This action cannot be undone.',
         },
+        // Name of the tab list of the table and campaign forms
+        formTabs: {
+            label: 'Form sections',
+        },
         // Summary of the errors of a failed save, above the tabs of the table and campaign forms
         formErrors: {
             title: 'Could not save',

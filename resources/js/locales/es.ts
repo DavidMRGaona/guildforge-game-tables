@@ -280,6 +280,10 @@ export default {
             deleteTitle: 'Eliminar mesa',
             confirmDelete: '¿Estás seguro de que quieres eliminar "{title}"? Esta acción no se puede deshacer.',
         },
+        // Name of the tab list of the table and campaign forms
+        formTabs: {
+            label: 'Secciones del formulario',
+        },
         // Summary of the errors of a failed save, above the tabs of the table and campaign forms
         formErrors: {
             title: 'No se ha podido guardar',
