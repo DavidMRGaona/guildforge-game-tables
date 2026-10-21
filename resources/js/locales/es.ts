@@ -271,7 +271,6 @@ export default {
                 // Link to «Mis mesas», where every table the user created is managed
                 manage: 'Gestionar mis mesas',
                 createFirst: 'Crear tu primera mesa',
-                edit: 'Editar',
                 players: 'jugadores',
             },
         },
@@ -510,7 +509,6 @@ export default {
             // Link to «Mis campañas», where every campaign the user created is managed
             manage: 'Gestionar mis campañas',
             createFirst: 'Crear tu primera campaña',
-            edit: 'Editar',
             players: 'jugadores',
             recruiting: 'Reclutando',
         },

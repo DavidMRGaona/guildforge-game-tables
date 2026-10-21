@@ -71,7 +71,7 @@ watch(
                 />
             </svg>
             <div class="min-w-0 flex-1 text-sm">
-                <p :id="headingId" class="font-semibold text-error">{{ t(`${keys}.rejectionReason`) }}</p>
+                <p :id="headingId" class="font-semibold text-base-primary">{{ t(`${keys}.rejectionReason`) }}</p>
                 <p
                     :id="reasonId"
                     ref="reasonElement"

@@ -271,7 +271,6 @@ export default {
                 // Link to «Mis mesas», where every table the user created is managed
                 manage: 'Manage my tables',
                 createFirst: 'Create your first table',
-                edit: 'Edit',
                 players: 'players',
             },
         },

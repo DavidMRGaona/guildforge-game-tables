@@ -104,7 +104,8 @@ final class DraftActionsSourceTest extends TestCase
         $this->assertStringContainsString('role="note"', $reason);
         $this->assertStringContainsString('rounded-lg border border-l-4 border-error/40 border-l-error bg-error-light p-4', $reason);
         $this->assertStringContainsString('class="h-5 w-5 shrink-0 text-error"', $reason);
-        $this->assertStringContainsString('class="font-semibold text-error"', $reason);
+        // The icon carries the colour: text-error on bg-error-light is below 4.5:1, so the heading is not red
+        $this->assertStringContainsString('class="font-semibold text-base-primary"', $reason);
     }
 
     public function test_the_my_pages_show_the_rejection_reason_with_the_same_note(): void
