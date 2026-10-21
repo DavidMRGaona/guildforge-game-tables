@@ -36,6 +36,7 @@ final readonly class CampaignRosterService implements CampaignRosterServiceInter
     public function __construct(
         private CampaignRepositoryInterface $campaigns,
         private CampaignRosterRepositoryInterface $roster,
+        private CampaignRosterGuard $guard,
         private CampaignJoinRequestRepositoryInterface $requests,
         private CampaignDirectionInterface $direction,
         private MembershipCheckerInterface $membership,
@@ -51,7 +52,7 @@ final readonly class CampaignRosterService implements CampaignRosterServiceInter
         $request = $this->lock->forCampaign($campaignId, function () use ($campaignId, $userId, $message): CampaignJoinRequest {
             $campaign = $this->campaigns->findOrFail(new CampaignId($campaignId));
 
-            $this->ensureRosterCanChange($campaign);
+            $this->guard->ensureCanChange($campaign);
 
             if ($this->direction->isDirector($campaignId, $userId)) {
                 throw RosterActionRefusedException::because('is_director');
@@ -69,7 +70,7 @@ final readonly class CampaignRosterService implements CampaignRosterServiceInter
                 throw RosterActionRefusedException::because('not_accepting');
             }
 
-            $this->ensureRoomIn($campaign);
+            $this->guard->ensureRoomIn($campaign);
 
             if ($campaign->rosterAccess === RosterAccess::MembersOnly && ! $this->membership->isActiveMember($userId)) {
                 throw RosterActionRefusedException::because('members_only');
@@ -110,7 +111,7 @@ final readonly class CampaignRosterService implements CampaignRosterServiceInter
             $request = $this->pendingRequest($requestId);
             $campaign = $this->campaigns->findOrFail(new CampaignId($campaignId));
 
-            $this->ensureRosterCanChange($campaign);
+            $this->guard->ensureCanChange($campaign);
 
             if ($this->direction->isDirector($campaignId, $request->userId)) {
                 throw RosterActionRefusedException::because('is_director');
@@ -120,7 +121,7 @@ final readonly class CampaignRosterService implements CampaignRosterServiceInter
                 throw RosterActionRefusedException::because('already_member');
             }
 
-            $this->ensureRoomIn($campaign);
+            $this->guard->ensureRoomIn($campaign);
 
             $now = CarbonImmutable::now();
             $this->roster->add($campaign->id, $request->userId, $now);
@@ -156,8 +157,8 @@ final readonly class CampaignRosterService implements CampaignRosterServiceInter
         // «completa» or «terminada» where an unknown email gets the generic message. addUser()
         // checks them again under the lock
         $campaign = $this->campaigns->findOrFail(new CampaignId($campaignId));
-        $this->ensureRosterCanChange($campaign);
-        $this->ensureRoomIn($campaign);
+        $this->guard->ensureCanChange($campaign);
+        $this->guard->ensureRoomIn($campaign);
 
         // Unknown, anonymized or deleted: the same answer, so nobody can probe for accounts
         $account = $this->accounts->findByEmail($email)
@@ -171,7 +172,7 @@ final readonly class CampaignRosterService implements CampaignRosterServiceInter
         $this->lock->forCampaign($campaignId, function () use ($campaignId, $userId, $actorUserId): void {
             $campaign = $this->campaigns->findOrFail(new CampaignId($campaignId));
 
-            $this->ensureRosterCanChange($campaign);
+            $this->guard->ensureCanChange($campaign);
 
             // Same answer as an unknown email: an anonymized account would be a dead roster row
             if ($this->accounts->findActiveById($userId) === null) {
@@ -186,7 +187,7 @@ final readonly class CampaignRosterService implements CampaignRosterServiceInter
                 throw RosterActionRefusedException::because('account_already_member');
             }
 
-            $this->ensureRoomIn($campaign);
+            $this->guard->ensureRoomIn($campaign);
 
             $now = CarbonImmutable::now();
             $this->roster->add($campaign->id, $userId, $now);
@@ -220,7 +221,7 @@ final readonly class CampaignRosterService implements CampaignRosterServiceInter
         $this->lock->forCampaign($campaignId, function () use ($campaignId, $acceptsNewPlayers, $access, $maxPlayers): void {
             $campaign = $this->campaigns->findOrFail(new CampaignId($campaignId));
 
-            $this->ensureRosterCanChange($campaign);
+            $this->guard->ensureCanChange($campaign);
 
             // Counted under the lock, so a join meanwhile never leaves the roster above the maximum
             $campaign->changeRosterSettings($acceptsNewPlayers, $access, $maxPlayers, $this->roster->count($campaign->id));
@@ -295,26 +296,5 @@ final readonly class CampaignRosterService implements CampaignRosterServiceInter
         }
 
         return $request;
-    }
-
-    private function ensureRosterCanChange(Campaign $campaign): void
-    {
-        if (! $campaign->isApprovedOrPublished()) {
-            throw RosterActionRefusedException::because('unavailable');
-        }
-
-        if ($campaign->isFinished()) {
-            throw RosterActionRefusedException::because('finished');
-        }
-    }
-
-    /**
-     * Counted under the campaign lock, so two changes never take the last place.
-     */
-    private function ensureRoomIn(Campaign $campaign): void
-    {
-        if (! $campaign->hasRoomFor($this->roster->count($campaign->id))) {
-            throw RosterActionRefusedException::because('roster_full');
-        }
     }
 }
