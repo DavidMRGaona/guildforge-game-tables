@@ -16,7 +16,7 @@ final class DraftActionsSourceTest extends TestCase
 {
     private const SHARED = 'resources/js/components/DraftActions.vue';
 
-    private const REASON = 'resources/js/components/profile/DraftRejectionReason.vue';
+    private const REASON = 'resources/js/components/DraftRejectionReason.vue';
 
     private const PAGES = [
         'resources/js/pages/GameTables/MyTables.vue' => 'table',
@@ -87,7 +87,7 @@ final class DraftActionsSourceTest extends TestCase
         foreach (self::CARDS as $file => $kind) {
             $source = $this->source($file);
 
-            $this->assertStringContainsString("import DraftRejectionReason from './DraftRejectionReason.vue';", $source, $file);
+            $this->assertStringContainsString("import DraftRejectionReason from '../DraftRejectionReason.vue';", $source, $file);
             $this->assertMatchesRegularExpression(
                 "/<DraftRejectionReason\s+v-if=\"showActions && {$kind}\.canEdit && {$kind}\.rejectionReason\"/",
                 $source,
@@ -100,7 +100,36 @@ final class DraftActionsSourceTest extends TestCase
         $this->assertStringContainsString('line-clamp-3', $reason);
         $this->assertStringContainsString(':aria-expanded="expanded"', $reason);
         $this->assertStringContainsString('v-if="overflows"', $reason);
-        $this->assertStringContainsString('bg-danger-bg', $reason);
+        // A note (present on load, not a live change) that stands out: error tokens, thick left border, icon
+        $this->assertStringContainsString('role="note"', $reason);
+        $this->assertStringContainsString('rounded-lg border border-l-4 border-error/40 border-l-error bg-error-light p-4', $reason);
+        $this->assertStringContainsString('class="h-5 w-5 shrink-0 text-error"', $reason);
+        $this->assertStringContainsString('class="font-semibold text-error"', $reason);
+    }
+
+    public function test_the_my_pages_show_the_rejection_reason_with_the_same_note(): void
+    {
+        foreach (self::PAGES as $file => $kind) {
+            $source = $this->source($file);
+            $var = $kind;
+
+            $this->assertStringContainsString("import DraftRejectionReason from '../../components/DraftRejectionReason.vue';", $source, $file);
+            $this->assertMatchesRegularExpression("/<DraftRejectionReason\s+v-if=\"{$var}\.rejection_reason\"\s+kind=\"{$kind}\"/", $source, $file);
+        }
+    }
+
+    public function test_the_my_pages_lead_back_to_their_profile_tab(): void
+    {
+        $tabs = [
+            'resources/js/pages/GameTables/MyTables.vue' => 'gametables-created',
+            'resources/js/pages/Campaigns/MyCampaigns.vue' => 'gametables-campaigns',
+        ];
+
+        foreach ($tabs as $file => $tab) {
+            $source = $this->source($file);
+            $this->assertStringContainsString("href=\"/perfil?tab={$tab}\"", $source, $file);
+            $this->assertStringContainsString("t('gameTables.backToProfile')", $source, $file);
+        }
     }
 
     public function test_the_shared_actions_confirm_and_keep_the_profile_tab(): void

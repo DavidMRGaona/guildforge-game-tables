@@ -3,7 +3,7 @@ import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import DraftActions from '../DraftActions.vue';
-import DraftRejectionReason from './DraftRejectionReason.vue';
+import DraftRejectionReason from '../DraftRejectionReason.vue';
 import type { ProfileCreatedTable } from '../../types/gametables';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 

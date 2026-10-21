@@ -11,11 +11,16 @@ use Illuminate\Http\Request;
  * Where the author lands after acting on a draft (send to review, delete): «Mis mesas» /
  * «Mis campañas» by default, or the profile when the action came from its drafts list. Only the
  * whitelisted `return_to=profile` is honoured, never a URL, so it cannot become an open redirect.
- * The profile keeps its active tab on the client (the visit preserves the page's state).
+ * The profile opens on the tab of the item's kind (`/perfil?tab=…`).
  */
 final class AuthorReturnTarget
 {
     public const PROFILE = 'profile';
+
+    /** Profile tabs of the module (GameTablesServiceProvider's profile sections) */
+    public const TABLES_TAB = 'gametables-created';
+
+    public const CAMPAIGNS_TAB = 'gametables-campaigns';
 
     private const PROFILE_ROUTE = 'profile.show';
 
@@ -26,16 +31,21 @@ final class AuthorReturnTarget
         return $this->request->input('return_to') === self::PROFILE;
     }
 
-    public function redirect(string $defaultRoute): RedirectResponse
+    public function redirect(string $defaultRoute, string $profileTab): RedirectResponse
     {
-        return redirect()->route($this->toProfile() ? self::PROFILE_ROUTE : $defaultRoute);
+        return $this->toProfile() ? $this->profile($profileTab) : redirect()->route($defaultRoute);
     }
 
     /**
      * The profile when asked for, otherwise the previous page.
      */
-    public function back(): RedirectResponse
+    public function back(string $profileTab): RedirectResponse
     {
-        return $this->toProfile() ? redirect()->route(self::PROFILE_ROUTE) : back();
+        return $this->toProfile() ? $this->profile($profileTab) : back();
+    }
+
+    private function profile(string $tab): RedirectResponse
+    {
+        return redirect()->route(self::PROFILE_ROUTE, ['tab' => $tab]);
     }
 }

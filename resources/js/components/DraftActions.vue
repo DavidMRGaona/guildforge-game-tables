@@ -44,7 +44,7 @@ const baseUrl = computed(() =>
 
 const returnQuery = computed(() => (props.returnTo === 'profile' ? '?return_to=profile' : ''));
 
-// The profile keeps its active tab in component state: landing back on it must not remount the page
+// Landing back on the profile (the server adds the tab to the URL) keeps the page's state: no remount
 const visitOptions = computed(() => (props.returnTo === 'profile' ? { preserveState: true, preserveScroll: true } : {}));
 
 function handleEdit(): void {

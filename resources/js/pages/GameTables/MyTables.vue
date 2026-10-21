@@ -8,6 +8,7 @@ import EmptyState from '@/components/ui/EmptyState.vue';
 import StatusBadge from '../../components/StatusBadge.vue';
 import FormatBadge from '../../components/FormatBadge.vue';
 import DraftActions from '../../components/DraftActions.vue';
+import DraftRejectionReason from '../../components/DraftRejectionReason.vue';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 import { useFlashMessages } from '@/composables/useFlashMessages';
 
@@ -105,6 +106,14 @@ function getTableLink(table: GameTableResponseDTO): string {
             <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between">
                     <div>
+                        <!-- Back to the profile tab that links here -->
+                        <Link
+                            href="/perfil?tab=gametables-created"
+                            class="mb-2 inline-flex min-h-[44px] items-center gap-1 text-sm font-medium text-primary underline-offset-2 hover:underline"
+                        >
+                            <span aria-hidden="true">←</span>
+                            {{ t('gameTables.backToProfile') }}
+                        </Link>
                         <h1 class="text-3xl font-bold tracking-tight text-base-primary">
                             {{ t('gameTables.myTables.title') }}
                         </h1>
@@ -231,15 +240,12 @@ function getTableLink(table: GameTableResponseDTO): string {
                                 </div>
 
                                 <!-- Rejected in review: back to a draft until it is sent again -->
-                                <div v-if="table.rejection_reason" class="mt-3 rounded-md bg-danger-bg p-3">
-                                    <p class="text-sm text-danger">
-                                        <strong>{{ t('gameTables.myTables.rejectionReason') }}:</strong>
-                                        {{ table.rejection_reason }}
-                                    </p>
-                                    <p class="mt-1 text-sm text-danger">
-                                        {{ t('gameTables.myTables.rejectionHint') }}
-                                    </p>
-                                </div>
+                                <DraftRejectionReason
+                                    v-if="table.rejection_reason"
+                                    kind="table"
+                                    :reason="table.rejection_reason"
+                                    class="mt-3"
+                                />
                             </div>
 
                             <div class="flex flex-shrink-0 flex-wrap gap-2">

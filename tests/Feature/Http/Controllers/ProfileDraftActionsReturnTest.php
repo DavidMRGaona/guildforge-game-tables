@@ -15,7 +15,7 @@ use Tests\Support\Modules\ModuleTestCase;
 
 /**
  * The profile's drafts offer the same actions as «Mis mesas» / «Mis campañas». Sending a draft to
- * review or deleting it from there lands back on the profile (the page keeps its tab) with the
+ * review or deleting it from there lands back on the profile, on the tab of its kind, with the
  * flash message; only the whitelisted `return_to=profile` does so, anything else keeps the usual
  * redirect.
  */
@@ -24,6 +24,10 @@ final class ProfileDraftActionsReturnTest extends ModuleTestCase
     protected ?string $moduleName = 'game-tables';
 
     protected bool $autoEnableModule = true;
+
+    private const TABLES_TAB = ['tab' => 'gametables-created'];
+
+    private const CAMPAIGNS_TAB = ['tab' => 'gametables-campaigns'];
 
     private UserModel $author;
 
@@ -58,10 +62,13 @@ final class ProfileDraftActionsReturnTest extends ModuleTestCase
 
         $this->actingAs($this->author)
             ->post("/mesas/mis-mesas/{$table->slug}/enviar-revision?return_to=profile")
-            ->assertRedirect(route('profile.show'))
+            ->assertRedirect(route('profile.show', self::TABLES_TAB))
             ->assertSessionHas('success', 'Mesa enviada para revisión');
 
         $this->assertSame('pending_review', $table->refresh()->frontend_creation_status?->value);
+        // The profile reads its tab from the URL
+        $this->assertStringEndsWith('/perfil?tab=gametables-created', route('profile.show', self::TABLES_TAB));
+        $this->assertStringEndsWith('/perfil?tab=gametables-campaigns', route('profile.show', self::CAMPAIGNS_TAB));
     }
 
     public function test_the_return_target_may_also_come_in_the_body(): void
@@ -70,7 +77,7 @@ final class ProfileDraftActionsReturnTest extends ModuleTestCase
 
         $this->actingAs($this->author)
             ->post("/mesas/mis-mesas/{$table->slug}/enviar-revision", ['return_to' => 'profile'])
-            ->assertRedirect(route('profile.show'));
+            ->assertRedirect(route('profile.show', self::TABLES_TAB));
     }
 
     public function test_a_table_deleted_from_the_profile_returns_to_the_profile(): void
@@ -79,7 +86,7 @@ final class ProfileDraftActionsReturnTest extends ModuleTestCase
 
         $this->actingAs($this->author)
             ->delete("/mesas/mis-mesas/{$table->slug}?return_to=profile")
-            ->assertRedirect(route('profile.show'))
+            ->assertRedirect(route('profile.show', self::TABLES_TAB))
             ->assertSessionHas('success', 'Mesa eliminada correctamente');
 
         $this->assertNull(GameTableModel::query()->find($table->id));
@@ -91,7 +98,7 @@ final class ProfileDraftActionsReturnTest extends ModuleTestCase
 
         $this->actingAs($this->author)
             ->post("/campanas/mis-campanas/{$campaign->id}/enviar-revision?return_to=profile")
-            ->assertRedirect(route('profile.show'))
+            ->assertRedirect(route('profile.show', self::CAMPAIGNS_TAB))
             ->assertSessionHas('success', 'Campaña enviada para revisión');
 
         $this->assertSame('pending_review', $campaign->refresh()->frontend_creation_status?->value);
@@ -103,7 +110,7 @@ final class ProfileDraftActionsReturnTest extends ModuleTestCase
 
         $this->actingAs($this->author)
             ->delete("/campanas/mis-campanas/{$campaign->id}?return_to=profile")
-            ->assertRedirect(route('profile.show'))
+            ->assertRedirect(route('profile.show', self::CAMPAIGNS_TAB))
             ->assertSessionHas('success', 'Campaña eliminada correctamente');
 
         $this->assertNull(CampaignModel::query()->find($campaign->id));
@@ -154,7 +161,7 @@ final class ProfileDraftActionsReturnTest extends ModuleTestCase
         ];
         foreach ($responses as $action => $response) {
             $this->assertSame(302, $response->getStatusCode(), $action);
-            $response->assertRedirect(route('profile.show'));
+            $response->assertRedirect(route('profile.show', self::TABLES_TAB));
             $response->assertSessionHas('error', 'Esta mesa ya se ha enviado a revisión y ya no se puede modificar.');
         }
 
@@ -164,7 +171,7 @@ final class ProfileDraftActionsReturnTest extends ModuleTestCase
         ];
         foreach ($responses as $action => $response) {
             $this->assertSame(302, $response->getStatusCode(), $action);
-            $response->assertRedirect(route('profile.show'));
+            $response->assertRedirect(route('profile.show', self::CAMPAIGNS_TAB));
             $response->assertSessionHas('error', 'Esta campaña ya se ha enviado a revisión y ya no se puede modificar.');
         }
 
@@ -193,7 +200,7 @@ final class ProfileDraftActionsReturnTest extends ModuleTestCase
         $this->actingAs($this->author)
             ->from(route('gametables.my-tables'))
             ->post("/mesas/mis-mesas/{$table->slug}/enviar-revision?return_to=profile")
-            ->assertRedirect(route('profile.show'))
+            ->assertRedirect(route('profile.show', self::TABLES_TAB))
             ->assertSessionHas('error', $exception->getMessage());
     }
 

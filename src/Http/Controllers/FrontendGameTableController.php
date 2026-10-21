@@ -284,14 +284,14 @@ final class FrontendGameTableController extends Controller
             abort(403);
         } catch (SessionBelowRosterException $e) {
             // Published at once (automatic mode) but with fewer seats than the roster
-            return $this->returnTarget->back()->with('error', $e->getMessage());
+            return $this->returnTarget->back(AuthorReturnTarget::TABLES_TAB)->with('error', $e->getMessage());
         }
 
         // Without review (automatic mode, or an author who may publish directly) it is already published
         $published = (bool) $gameTable->refresh()->is_published;
 
         return $this->returnTarget
-            ->redirect('gametables.my-tables')
+            ->redirect('gametables.my-tables', AuthorReturnTarget::TABLES_TAB)
             ->with('success', __($published
                 ? 'game-tables::messages.frontend.table_published'
                 : 'game-tables::messages.frontend.submitted_for_review'));
@@ -318,7 +318,7 @@ final class FrontendGameTableController extends Controller
         }
 
         return $this->returnTarget
-            ->redirect('gametables.my-tables')
+            ->redirect('gametables.my-tables', AuthorReturnTarget::TABLES_TAB)
             ->with('success', __('game-tables::messages.frontend.table_deleted'));
     }
 

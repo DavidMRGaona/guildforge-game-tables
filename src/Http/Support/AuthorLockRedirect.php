@@ -36,7 +36,7 @@ final class AuthorLockRedirect
         };
 
         return $this->returnTarget
-            ->redirect('gametables.my-tables')
+            ->redirect('gametables.my-tables', AuthorReturnTarget::TABLES_TAB)
             ->with('error', __($reason));
     }
 
@@ -56,7 +56,7 @@ final class AuthorLockRedirect
         };
 
         return $this->returnTarget
-            ->redirect('campaigns.my-campaigns')
+            ->redirect('campaigns.my-campaigns', AuthorReturnTarget::CAMPAIGNS_TAB)
             ->with('error', __($reason));
     }
 }

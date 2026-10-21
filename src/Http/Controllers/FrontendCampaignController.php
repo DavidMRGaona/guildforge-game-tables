@@ -207,7 +207,7 @@ final class FrontendCampaignController extends Controller
         $published = (bool) CampaignModel::query()->find($id)?->is_published;
 
         return $this->returnTarget
-            ->redirect('campaigns.my-campaigns')
+            ->redirect('campaigns.my-campaigns', AuthorReturnTarget::CAMPAIGNS_TAB)
             ->with('success', __($published
                 ? 'game-tables::messages.frontend.campaign_published'
                 : 'game-tables::messages.frontend.campaign_submitted_for_review'));
@@ -235,7 +235,7 @@ final class FrontendCampaignController extends Controller
         }
 
         return $this->returnTarget
-            ->redirect('campaigns.my-campaigns')
+            ->redirect('campaigns.my-campaigns', AuthorReturnTarget::CAMPAIGNS_TAB)
             ->with('success', __('game-tables::messages.frontend.campaign_deleted'));
     }
 

@@ -16,7 +16,9 @@ export default {
         verificationGate: {
             edit: 'To edit, send for review or delete, verify your email.',
         },
-        // A draft's actions (DraftActions) and the moderator's reason on the profile drafts
+        // «Mis mesas» / «Mis campañas» back to their profile tab
+        backToProfile: 'Back to my profile',
+        // A draft's actions (DraftActions) and the moderator's reason on the drafts
         draftActions: {
             groupLabel: 'Actions for “{title}”',
             showMore: 'Show more',

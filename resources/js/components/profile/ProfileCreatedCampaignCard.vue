@@ -5,7 +5,7 @@ import { Link } from '@inertiajs/vue3';
 import { useVerificationGate } from '@/composables/useVerificationGate';
 import VerificationBlockedButton from '../VerificationBlockedButton.vue';
 import DraftActions from '../DraftActions.vue';
-import DraftRejectionReason from './DraftRejectionReason.vue';
+import DraftRejectionReason from '../DraftRejectionReason.vue';
 import type { ProfileCreatedCampaign } from '../../types/gametables';
 
 interface Props {
