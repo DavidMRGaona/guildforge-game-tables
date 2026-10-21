@@ -26,7 +26,7 @@ final class RosterAttendanceGridSourceTest extends TestCase
         $this->assertStringContainsString('v-for="session in visibleSessions"', $source);
         $this->assertStringContainsString('{{ sessionLabel(session) }}', $source);
         $this->assertStringContainsString("t('campaigns.roster.attendance.seats', { taken: session.seats_taken, max: session.max_players })", $source);
-        $this->assertSame(1, preg_match_all('/<th\s+scope="row"\s+class="sticky left-0 z-10 border-b border-default bg-surface/', $source));
+        $this->assertSame(1, preg_match_all('/<th\s+scope="row"\s+class="sticky left-0 z-10 w-full border-b border-default bg-surface/', $source));
         $this->assertStringContainsString('class="-mx-4 mt-4 overflow-x-auto sm:mx-0"', $source);
         // The chips are gone
         $this->assertStringNotContainsString('chipLabel', $source);
@@ -64,7 +64,7 @@ final class RosterAttendanceGridSourceTest extends TestCase
 
         $this->assertStringContainsString('v-if="isActionable(cellOf(player, session), session)"', $source);
         $this->assertStringContainsString('aria-haspopup="dialog"', $source);
-        $this->assertStringContainsString("'inline-flex min-h-[44px] w-full min-w-[5.5rem] cursor-pointer", $source);
+        $this->assertStringContainsString("'inline-flex min-h-[44px] w-full min-w-[4.5rem] cursor-pointer", $source);
         $this->assertStringContainsString(':aria-busy="busyCell === cellKey(player, session) ? \'true\' : undefined"', $source);
         $this->assertStringContainsString('<LoadingSpinner v-if="busyCell === cellKey(player, session)" size="sm" />', $source);
         $this->assertStringContainsString('v-model="showChangeDialog"', $source);
@@ -72,5 +72,22 @@ final class RosterAttendanceGridSourceTest extends TestCase
         // Clearing an absence needs a free seat, as the server checks it
         $this->assertStringContainsString("return session.has_room ? { kind: 'clearAbsence' } : { kind: 'blocked', reason: 'full' };", $source);
         $this->assertStringNotContainsString('dark:', $source);
+    }
+
+    public function test_two_sessions_fit_a_phone_with_the_remove_button_under_the_name(): void
+    {
+        $source = $this->source();
+
+        // Phones: «Quitar» under the name, the actions column hidden
+        // Hidden through a wrapper with no display utility: the core's own (inline-flex, hidden) sit in a later layer and win
+        $this->assertStringContainsString('<div class="mt-2 sm:hidden">', $source);
+        $this->assertStringNotContainsString('sm:table-cell', $source);
+        $this->assertStringContainsString('<th scope="col" class="border-b border-default py-2 pl-2 pr-4 max-sm:hidden sm:pr-0">', $source);
+        $this->assertStringContainsString('<td class="border-b border-default py-2 pl-2 pr-4 text-right align-middle max-sm:hidden sm:pr-0">', $source);
+        // Wide screens: the name column takes the spare width, sessions keep theirs beside the actions
+        $this->assertSame(2, substr_count($source, 'class="sticky left-0 z-10 w-full border-b border-default bg-surface'));
+        $this->assertStringContainsString('text-center align-bottom font-medium text-base-primary sm:min-w-[8rem]"', $source);
+        // The way back is a touch target too, without moving the heading
+        $this->assertStringContainsString('class="-my-3 inline-flex min-h-[44px] items-center gap-1 text-sm text-base-secondary', $source);
     }
 }
