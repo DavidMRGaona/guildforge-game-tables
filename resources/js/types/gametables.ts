@@ -605,7 +605,7 @@ export interface JoinBox {
     pending_requests: number;
 }
 
-export type CampaignInvitationState = 'invalid' | 'guest' | 'match' | 'mismatch' | 'must_verify';
+export type CampaignInvitationState = 'invalid' | 'rejected' | 'guest' | 'match' | 'mismatch' | 'must_verify';
 
 /** What the invitation page gets: the invited email and the expiry only when the state needs them */
 export interface CampaignInvitationView {

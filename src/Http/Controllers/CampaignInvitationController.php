@@ -25,6 +25,9 @@ use Modules\GameTables\Domain\Exceptions\RosterActionRefusedException;
  */
 final class CampaignInvitationController extends Controller
 {
+    /** Flashed by reject(): the page it redirects to shows the rejected state */
+    private const string REJECTED_FLASH = 'game_tables_invitation_rejected';
+
     public function __construct(
         private readonly CampaignInvitationServiceInterface $invitations,
         private readonly EmailVerificationPolicyInterface $verification,
@@ -36,7 +39,8 @@ final class CampaignInvitationController extends Controller
         $invitation = $this->invitations->viewByToken($token, now()->toDateTimeImmutable());
 
         if ($invitation === null) {
-            return $this->page('invalid', null, $token);
+            // Right after rejecting, the page says so instead of calling the invitation invalid
+            return $this->page(session()->get(self::REJECTED_FLASH) === true ? 'rejected' : 'invalid', null, $token);
         }
 
         $user = auth()->user();
@@ -64,6 +68,14 @@ final class CampaignInvitationController extends Controller
     public function register(string $token): RedirectResponse
     {
         return $this->viaAuthPage($token, 'register');
+    }
+
+    /**
+     * The account must verify before accepting: the core comes back to the invitation once verified.
+     */
+    public function verify(string $token): RedirectResponse
+    {
+        return $this->viaAuthPage($token, 'verification.notice');
     }
 
     public function accept(string $token): RedirectResponse
@@ -99,7 +111,8 @@ final class CampaignInvitationController extends Controller
         }
 
         return redirect()->route('campaigns.invitation.show', $token)
-            ->with('success', __('game-tables::messages.roster.success.invitation_rejected'));
+            ->with('success', __('game-tables::messages.roster.success.invitation_rejected'))
+            ->with(self::REJECTED_FLASH, true);
     }
 
     /**
@@ -161,7 +174,7 @@ final class CampaignInvitationController extends Controller
      * Only what each state needs: another account gets no email, and nobody gets the invitation's
      * id or its send count.
      *
-     * @param  'invalid'|'guest'|'match'|'mismatch'|'must_verify'  $state
+     * @param  'invalid'|'rejected'|'guest'|'match'|'mismatch'|'must_verify'  $state
      */
     private function page(string $state, ?CampaignInvitationViewDTO $invitation, string $token): Response
     {
@@ -181,7 +194,7 @@ final class CampaignInvitationController extends Controller
      */
     private function props(string $state, ?CampaignInvitationViewDTO $invitation): ?array
     {
-        if ($invitation === null || $state === 'invalid') {
+        if ($invitation === null || in_array($state, ['invalid', 'rejected'], true)) {
             return null;
         }
 

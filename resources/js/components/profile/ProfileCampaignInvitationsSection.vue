@@ -9,6 +9,9 @@ import type { ProfileCampaignInvitation, ProfileCampaignInvitationsData } from '
 
 interface Props {
     profileCampaignInvitations: ProfileCampaignInvitationsData | null;
+    // The tab's badgeKey and visibleKey reach the section too: declared so they are not rendered as attributes
+    profileCampaignInvitationsTotal?: number;
+    profileCampaignInvitationsVisible?: boolean;
 }
 
 const props = defineProps<Props>();

@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
+import { useAuth } from '@/composables/useAuth';
 import { useFlashMessages } from '@/composables/useFlashMessages';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 import type { CampaignInvitationState, CampaignInvitationView } from '../../types/gametables';
@@ -19,6 +20,7 @@ const props = defineProps<Props>();
 
 const { t, locale } = useI18n();
 const { success: flashSuccess, error: flashError } = useFlashMessages();
+const { logout } = useAuth();
 
 const isAccepting = ref(false);
 const isRejecting = ref(false);
@@ -74,8 +76,9 @@ function handleReject(): void {
         <div class="mx-auto max-w-2xl px-4 py-12">
             <div class="rounded-xl bg-surface p-8 shadow-lg">
                 <!-- The server's answer to the last action -->
+                <!-- After rejecting, the rejected state already says it -->
                 <div
-                    v-if="flashSuccess"
+                    v-if="flashSuccess && state !== 'rejected'"
                     role="status"
                     class="mb-6 rounded-lg bg-success-light p-4 text-center text-sm text-base-primary"
                 >
@@ -89,8 +92,24 @@ function handleReject(): void {
                     {{ flashError }}
                 </div>
 
+                <!-- Just rejected here: no "invalid" wording for what the person has just done -->
+                <template v-if="state === 'rejected'">
+                    <h1 class="mb-4 text-center text-2xl font-bold text-base-primary">
+                        {{ t('campaigns.invitation.rejectedTitle') }}
+                    </h1>
+                    <p class="mb-6 text-center text-base-secondary">
+                        {{ t('campaigns.invitation.rejected') }}
+                    </p>
+                    <Link
+                        href="/campanas"
+                        :class="primaryLinkClass"
+                    >
+                        {{ t('campaigns.invitation.viewCampaigns') }}
+                    </Link>
+                </template>
+
                 <!-- No valid invitation: expired, used, cancelled, rejected or unknown, all alike -->
-                <template v-if="state === 'invalid' || !invitation">
+                <template v-else-if="state === 'invalid' || !invitation">
                     <h1 class="mb-4 text-center text-2xl font-bold text-base-primary">
                         {{ t('campaigns.invitation.invalidTitle') }}
                     </h1>
@@ -147,6 +166,14 @@ function handleReject(): void {
                         <p class="text-sm text-base-primary">
                             {{ t('campaigns.invitation.mismatch') }}
                         </p>
+                        <BaseButton
+                            variant="secondary"
+                            size="sm"
+                            class="mt-3"
+                            @click="logout"
+                        >
+                            {{ t('campaigns.invitation.logout') }}
+                        </BaseButton>
                     </div>
 
                     <!-- No session: sign in or register with the invited email, then come back here -->
@@ -180,8 +207,9 @@ function handleReject(): void {
                             <p class="text-sm text-base-primary">
                                 {{ t('campaigns.invitation.mustVerify') }}
                             </p>
+                            <!-- Through the module, which remembers the invitation to come back to it -->
                             <a
-                                href="/verificar-email"
+                                :href="`${baseUrl}/verificar`"
                                 class="mt-2 inline-block text-sm font-medium text-primary underline"
                             >
                                 {{ t('campaigns.invitation.verifyLink') }}

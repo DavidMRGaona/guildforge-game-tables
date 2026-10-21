@@ -186,6 +186,25 @@ final class CampaignInvitationControllerTest extends ModuleTestCase
         $this->assertFalse($this->isMember($unverified));
     }
 
+    public function test_the_verification_link_comes_back_to_the_invitation(): void
+    {
+        $this->requireVerification();
+        $unverified = UserModel::factory()->unverified()->create(['email' => 'ana@example.com']);
+        $token = $this->tokenFor('ana@example.com');
+        $show = route('campaigns.invitation.show', $token);
+
+        $this->actingAs($unverified)
+            ->get('/campanas/invitaciones/'.$token.'/verificar')
+            ->assertRedirect(route('verification.notice'))
+            ->assertSessionHas('url.intended', $show);
+
+        // Once verified, the core sends the account back to the page it was asked for
+        $unverified->markEmailAsVerified();
+        $this->actingAs($unverified)
+            ->get(route('verification.notice'))
+            ->assertRedirect($show);
+    }
+
     public function test_unverified_account_accepts_when_not_required(): void
     {
         app(SettingsServiceInterface::class)->set('auth_email_verification_required', '0');
@@ -212,9 +231,30 @@ final class CampaignInvitationControllerTest extends ModuleTestCase
             ->assertSessionHas('success', __('game-tables::messages.roster.success.invitation_rejected'));
 
         $this->assertSame(0, CampaignInvitationModel::query()->count());
+    }
 
+    public function test_after_rejecting_the_page_shows_the_rejected_state_once(): void
+    {
+        $token = $this->tokenFor('nobody@example.com');
+
+        $this->followingRedirects()
+            ->post('/campanas/invitaciones/'.$token.'/rechazar')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('state', 'rejected')
+                ->where('invitation', null));
+
+        // Only right after rejecting: the link opened later is just no longer valid
         $this->get('/campanas/invitaciones/'.$token)
             ->assertInertia(fn (Assert $page) => $page->where('state', 'invalid')->where('invitation', null));
+    }
+
+    public function test_a_failed_rejection_does_not_show_the_rejected_state(): void
+    {
+        $this->followingRedirects()
+            ->post('/campanas/invitaciones/'.Str::random(64).'/rechazar')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('state', 'invalid'));
     }
 
     public function test_an_expired_or_unknown_token_shows_the_generic_message(): void

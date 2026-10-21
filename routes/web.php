@@ -129,6 +129,7 @@ Route::prefix('campanas')->name('campaigns.')->group(function (): void {
             Route::get('/', [CampaignInvitationController::class, 'show'])->name('show');
             Route::get('/iniciar-sesion', [CampaignInvitationController::class, 'login'])->name('login');
             Route::get('/crear-cuenta', [CampaignInvitationController::class, 'register'])->name('register');
+            Route::get('/verificar', [CampaignInvitationController::class, 'verify'])->name('verify');
             Route::post('/aceptar', [CampaignInvitationController::class, 'accept'])
                 ->middleware(['auth', 'email.verified-if-required'])
                 ->name('accept');
