@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Tests\Feature\Listeners;
 
+use App\Application\Legal\Services\LegalMailNoticeServiceInterface;
+use App\Application\Services\SettingsServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use DateTimeImmutable;
 use Illuminate\Notifications\AnonymousNotifiable;
@@ -130,6 +132,88 @@ final class CampaignInvitationMailsTest extends ModuleTestCase
                 && str_contains($text, 'Rechazar')
                 && str_contains($mail->actionUrl, self::TOKEN);
         });
+    }
+
+    private function invitationText(): string
+    {
+        $mail = (new CampaignInvitationNotification('John <b>Doe</b>', 'Campaña de prueba', 'campana-de-prueba', 'guest@example.com', self::TOKEN, '04/11/2026'))
+            ->toMail(new AnonymousNotifiable);
+
+        return implode("\n", array_map('strval', $mail->introLines))."\n".implode("\n", array_map('strval', $mail->outroLines));
+    }
+
+    private function requireLegalNotices(): void
+    {
+        if (! interface_exists(LegalMailNoticeServiceInterface::class)) {
+            $this->markTestSkipped('The core has no legal mail notices.');
+        }
+    }
+
+    public function test_the_email_uses_the_saved_text_with_placeholders(): void
+    {
+        $this->requireLegalNotices();
+        app(SettingsServiceInterface::class)->set(
+            'legal_mail_notice:game-tables.campaign_invitation',
+            "Invita :inviter a :campaign.\n\nSitio :site, :days días.",
+        );
+
+        $text = $this->invitationText();
+
+        $this->assertStringContainsString('Invita John &lt;b&gt;Doe&lt;/b&gt; a Campaña de prueba.', $text);
+        $this->assertStringContainsString('Sitio Gremio de prueba, 14 días.', $text);
+        $this->assertStringNotContainsString('Finalidad', $text);
+        $this->assertStringContainsString(url('/politica-de-privacidad'), $text);
+    }
+
+    public function test_the_email_falls_back_to_the_default_text(): void
+    {
+        $this->requireLegalNotices();
+
+        $text = $this->invitationText();
+
+        $this->assertStringContainsString('Finalidad: invitarte a esta campaña.', $text);
+        $this->assertStringContainsString('Origen: te lo facilitó John &lt;b&gt;Doe&lt;/b&gt;.', $text);
+        $this->assertStringContainsString('como máximo 14 días', $text);
+        $this->assertStringContainsString('Derechos:', $text);
+    }
+
+    public function test_the_controller_comes_from_the_legal_entity(): void
+    {
+        $this->requireLegalNotices();
+        $settings = app(SettingsServiceInterface::class);
+        $settings->set('legal_entity_name', 'Asociación Ejemplo');
+        $settings->set('legal_entity_email', 'info@example.com');
+        $settings->set('legal_entity_dpo_email', 'dpo@example.com');
+
+        $text = $this->invitationText();
+
+        $this->assertStringContainsString('Responsable: Asociación Ejemplo', $text);
+        $this->assertStringContainsString('Contacto: info@example.com', $text);
+        $this->assertStringContainsString('Delegado de protección de datos: dpo@example.com', $text);
+        $this->assertStringNotContainsString('Responsable: Gremio de prueba', $text);
+    }
+
+    public function test_user_values_in_placeholders_are_escaped(): void
+    {
+        $this->requireLegalNotices();
+        app(SettingsServiceInterface::class)->set('legal_mail_notice:game-tables.campaign_invitation', 'De :inviter');
+
+        $text = $this->invitationText();
+
+        $this->assertStringContainsString('De John &lt;b&gt;Doe&lt;/b&gt;', $text);
+        $this->assertStringNotContainsString('<b>Doe', $text);
+        $this->assertStringNotContainsString('&amp;lt;', $text);
+    }
+
+    public function test_the_email_keeps_the_default_lines_without_the_core_service(): void
+    {
+        $this->requireLegalNotices();
+        unset($this->app[LegalMailNoticeServiceInterface::class]);
+
+        $text = $this->invitationText();
+
+        $this->assertStringContainsString('Responsable: Gremio de prueba', $text);
+        $this->assertStringContainsString('Origen: te lo facilitó John &lt;b&gt;Doe&lt;/b&gt;.', $text);
     }
 
     public function test_a_resend_in_the_meantime_skips_the_stale_email(): void

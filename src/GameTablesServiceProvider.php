@@ -37,9 +37,14 @@ use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use App\Modules\ModuleServiceProvider;
 use Illuminate\Cache\RateLimiting\Limit;
+use App\Application\Legal\DTOs\LegalMailNoticeDTO;
+use App\Application\Legal\Services\LegalMailNoticeRegistryInterface;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\AnonymousNotifiable;
+use Modules\GameTables\Notifications\CampaignInvitationNotification;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use Inertia\Inertia;
 use Livewire\Livewire;
@@ -237,6 +242,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         $this->registerSchedule();
         $this->registerRateLimiters();
         $this->registerCookieDeclaration();
+        $this->registerLegalMailNotice();
         $this->shareGameTableCount();
         $this->shareProfileGameTables();
         $this->shareProfileCreatedTables();
@@ -503,6 +509,37 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                 provider: (string) config('app.name'),
                 purpose: (string) __('game-tables::messages.cookies.guest_registrations.purpose'),
                 duration: (string) __('game-tables::messages.cookies.guest_registrations.duration'),
+            ));
+        });
+    }
+
+    /**
+     * The legal block of the campaign invitation email, editable from the core's legal pages when
+     * the core offers them (an older core keeps the fixed lines).
+     */
+    private function registerLegalMailNotice(): void
+    {
+        if (! interface_exists(LegalMailNoticeRegistryInterface::class)) {
+            return;
+        }
+
+        $this->callAfterResolving(LegalMailNoticeRegistryInterface::class, function (LegalMailNoticeRegistryInterface $registry): void {
+            $registry->register(new LegalMailNoticeDTO(
+                key: CampaignInvitationNotification::NOTICE_KEY,
+                module: 'game-tables',
+                label: (string) __('game-tables::emails.campaign_invitation.notice_label'),
+                help: (string) __('game-tables::emails.campaign_invitation.notice_help'),
+                defaultContent: (string) __('game-tables::emails.campaign_invitation.privacy_default'),
+                placeholders: [':inviter', ':campaign', ':site', ':days'],
+                preview: static fn (string $content): string => (string) (new CampaignInvitationNotification(
+                    inviterName: 'John Doe',
+                    campaignTitle: (string) __('game-tables::emails.campaign_invitation.preview_campaign'),
+                    campaignSlug: 'campana-de-ejemplo',
+                    email: 'john@example.com',
+                    token: Str::random(64),
+                    expiresAt: now()->addDays(CampaignInvitationNotification::EXPIRY_DAYS)->format('d/m/Y'),
+                    legalText: $content,
+                ))->toMail(new AnonymousNotifiable)->render(),
             ));
         });
     }

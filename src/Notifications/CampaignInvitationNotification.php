@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Notifications;
 
+use App\Application\Legal\Services\LegalMailNoticeServiceInterface;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\HtmlString;
 use Modules\GameTables\Notifications\Concerns\EscapesUserText;
 
 /**
@@ -16,6 +18,10 @@ use Modules\GameTables\Notifications\Concerns\EscapesUserText;
  */
 final class CampaignInvitationNotification extends Notification implements ShouldQueue
 {
+    public const string NOTICE_KEY = 'game-tables.campaign_invitation';
+
+    public const int EXPIRY_DAYS = 14;
+
     use EscapesUserText;
     use Queueable;
 
@@ -26,6 +32,7 @@ final class CampaignInvitationNotification extends Notification implements Shoul
         private readonly string $email,
         private readonly string $token,
         private readonly string $expiresAt,
+        private readonly ?string $legalText = null,
     ) {}
 
     /**
@@ -38,10 +45,9 @@ final class CampaignInvitationNotification extends Notification implements Shoul
 
     public function toMail(object $notifiable): MailMessage
     {
-        $siteName = (string) config('app.name');
         $params = ['inviter' => $this->inviterName, 'campaignTitle' => $this->campaignTitle];
 
-        return (new MailMessage)
+        $message = (new MailMessage)
             ->subject(__('game-tables::emails.campaign_invitation.subject', $params))
             ->greeting(__('game-tables::emails.campaign_invitation.greeting'))
             ->line($this->plainLine(__('game-tables::emails.campaign_invitation.intro', $params)))
@@ -52,11 +58,82 @@ final class CampaignInvitationNotification extends Notification implements Shoul
             )
             ->line(__('game-tables::emails.campaign_invitation.reject'))
             ->line(__('game-tables::emails.campaign_invitation.expires', ['date' => $this->expiresAt]))
-            ->line(__('game-tables::emails.campaign_invitation.privacy_title'))
-            ->line($this->plainLine(__('game-tables::emails.campaign_invitation.privacy_controller', ['site' => $siteName])))
-            ->line(__('game-tables::emails.campaign_invitation.privacy_purpose'))
-            ->line($this->plainLine(__('game-tables::emails.campaign_invitation.privacy_origin', ['inviter' => $this->inviterName])))
-            ->line(__('game-tables::emails.campaign_invitation.privacy_retention'))
-            ->line(__('game-tables::emails.campaign_invitation.privacy_rights', ['url' => url('/politica-de-privacidad')]));
+            ->line(__('game-tables::emails.campaign_invitation.privacy_title'));
+
+        foreach ($this->controllerLines() as $line) {
+            $message->line($line);
+        }
+
+        foreach ($this->legalParagraphs() as $paragraph) {
+            $message->line($this->plainLine($paragraph));
+        }
+
+        return $message->line(__('game-tables::emails.campaign_invitation.privacy_policy', ['url' => url('/politica-de-privacidad')]));
+    }
+
+    /**
+     * The controller and its contacts: always the legal entity, never part of the editable text.
+     *
+     * @return list<HtmlString>
+     */
+    private function controllerLines(): array
+    {
+        $entity = $this->noticeService()?->entity();
+        $lines = [$this->plainLine((string) __('game-tables::emails.campaign_invitation.privacy_controller', [
+            'name' => $entity->name ?? (string) config('app.name'),
+        ]))];
+
+        if ($entity?->email !== null) {
+            $lines[] = $this->plainLine((string) __('game-tables::emails.campaign_invitation.privacy_contact', ['email' => $entity->email]));
+        }
+
+        if ($entity?->dpoEmail !== null) {
+            $lines[] = $this->plainLine((string) __('game-tables::emails.campaign_invitation.privacy_dpo', ['dpo' => $entity->dpoEmail]));
+        }
+
+        return $lines;
+    }
+
+    /**
+     * The legal paragraphs as plain text, values not yet escaped (plainLine() does it once).
+     *
+     * @return list<string>
+     */
+    private function legalParagraphs(): array
+    {
+        $service = $this->noticeService();
+        $replacements = [
+            ':inviter' => $this->inviterName,
+            ':campaign' => $this->campaignTitle,
+            ':site' => $service?->entity()->name ?? (string) config('app.name'),
+            ':days' => (string) self::EXPIRY_DAYS,
+        ];
+
+        if ($this->legalText === null && $service !== null) {
+            return $service->paragraphs(self::NOTICE_KEY, $replacements);
+        }
+
+        $text = $this->legalText ?? (string) __('game-tables::emails.campaign_invitation.privacy_default');
+        $paragraphs = [];
+
+        foreach (preg_split('/\n\s*\n/', str_replace(["\r\n", "\r"], "\n", $text)) ?: [] as $paragraph) {
+            if (trim($paragraph) !== '') {
+                $paragraphs[] = strtr(trim($paragraph), $replacements);
+            }
+        }
+
+        return $paragraphs;
+    }
+
+    /**
+     * Absent in a core without editable legal notices; the email then keeps the default lines.
+     */
+    private function noticeService(): ?LegalMailNoticeServiceInterface
+    {
+        if (! interface_exists(LegalMailNoticeServiceInterface::class) || ! app()->bound(LegalMailNoticeServiceInterface::class)) {
+            return null;
+        }
+
+        return app(LegalMailNoticeServiceInterface::class);
     }
 }
