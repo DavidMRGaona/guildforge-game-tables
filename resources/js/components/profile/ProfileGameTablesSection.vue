@@ -134,7 +134,7 @@ function loadMore(): void {
 
                 <p
                     v-else
-                    class="rounded-lg border border-dashed border-default bg-muted p-6 text-center text-sm text-base-muted"
+                    class="rounded-lg border border-dashed border-default bg-muted p-6 text-center text-sm text-base-secondary"
                 >
                     {{ hasActiveFilters ? t('gameTables.profile.filters.noUpcomingMatch') : t('gameTables.profile.noUpcoming') }}
                 </p>

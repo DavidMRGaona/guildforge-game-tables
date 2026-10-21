@@ -78,7 +78,7 @@ function toggleDraftsSection(): void {
 
             <p
                 v-else
-                class="rounded-lg border border-dashed border-default bg-muted p-6 text-center text-sm text-base-muted"
+                class="rounded-lg border border-dashed border-default bg-muted p-6 text-center text-sm text-base-secondary"
             >
                 {{ t('campaigns.profile.noPublished') }}
             </p>

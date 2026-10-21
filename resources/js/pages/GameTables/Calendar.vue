@@ -121,7 +121,7 @@ function goToNextMonth(): void {
                             role="tab"
                             :aria-selected="false"
                             :aria-label="t('gameTables.filters.listView')"
-                            class="rounded-l-lg border border-default bg-transparent px-3 py-2 text-base-secondary transition-colors hover:bg-muted"
+                            class="rounded-l-lg border border-default bg-transparent px-3 py-2 text-base-secondary transition-colors hover:bg-base-secondary/10"
                         >
                             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
