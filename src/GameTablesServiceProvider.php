@@ -69,6 +69,7 @@ use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Illuminate\Console\Scheduling\Schedule;
 use Modules\GameTables\Console\Commands\ExpireGuestRegistrationsCommand;
 use Modules\GameTables\Console\Commands\GenerateSlugsCommand;
+use Modules\GameTables\Console\Commands\PruneCampaignInvitationsCommand;
 use Modules\GameTables\Console\Commands\SendTableRemindersCommand;
 use Modules\GameTables\Console\Commands\UpdateTableStatusesCommand;
 use Modules\GameTables\Http\Controllers\CampaignInvitationController;
@@ -451,6 +452,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
             $this->commands([
                 ExpireGuestRegistrationsCommand::class,
                 GenerateSlugsCommand::class,
+                PruneCampaignInvitationsCommand::class,
                 UpdateTableStatusesCommand::class,
                 SendTableRemindersCommand::class,
             ]);
@@ -471,6 +473,10 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
 
             $schedule->command('game-tables:expire-guest-registrations')
                 ->everyFiveMinutes()
+                ->withoutOverlapping(10);
+
+            $schedule->command('game-tables:prune-campaign-invitations')
+                ->daily()
                 ->withoutOverlapping(10);
 
             // Does nothing until the reminder is enabled in the module settings
