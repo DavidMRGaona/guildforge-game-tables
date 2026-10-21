@@ -19,6 +19,7 @@ use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Http\Requests\FrontendCreateCampaignRequest;
 use Modules\GameTables\Http\Support\AuthorLockRedirect;
+use Modules\GameTables\Http\Support\AuthorReturnTarget;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 
 final class FrontendCampaignController extends Controller
@@ -28,6 +29,7 @@ final class FrontendCampaignController extends Controller
         private readonly CreationEligibilityServiceInterface $eligibilityService,
         private readonly SeoMetadataFactoryInterface $seo,
         private readonly AuthorLockRedirect $authorLock,
+        private readonly AuthorReturnTarget $returnTarget,
     ) {}
 
     /**
@@ -204,8 +206,8 @@ final class FrontendCampaignController extends Controller
         // Without review (automatic mode, or an author who may publish directly) it is already published
         $published = (bool) CampaignModel::query()->find($id)?->is_published;
 
-        return redirect()
-            ->route('campaigns.my-campaigns')
+        return $this->returnTarget
+            ->redirect('campaigns.my-campaigns')
             ->with('success', __($published
                 ? 'game-tables::messages.frontend.campaign_published'
                 : 'game-tables::messages.frontend.campaign_submitted_for_review'));
@@ -232,8 +234,8 @@ final class FrontendCampaignController extends Controller
             abort(403);
         }
 
-        return redirect()
-            ->route('campaigns.my-campaigns')
+        return $this->returnTarget
+            ->redirect('campaigns.my-campaigns')
             ->with('success', __('game-tables::messages.frontend.campaign_deleted'));
     }
 

@@ -52,7 +52,12 @@ final readonly class ProfileCreatedCampaignsDataProvider
         $drafts = [];
 
         foreach ($campaigns as $campaign) {
-            $dto = CampaignResponseDTO::fromEntity($campaign, currentPlayers: $players[$campaign->id->value] ?? 0);
+            $dto = CampaignResponseDTO::fromEntity(
+                $campaign,
+                currentPlayers: $players[$campaign->id->value] ?? 0,
+                // Moderator feedback is addressed to the author, as in «Mis campañas»
+                showModeratorFeedback: $campaign->createdBy === $userId,
+            );
             $data = $this->formatCampaignForProfile($dto, $campaign->canBeChangedByAuthor());
 
             if ($campaign->isPublished) {
@@ -92,6 +97,7 @@ final readonly class ProfileCreatedCampaignsDataProvider
             'frequencyLabel' => $dto->frequency?->label(),
             'isPublished' => $dto->isPublished,
             'canEdit' => $canEdit,
+            'rejectionReason' => $dto->rejectionReason,
             'isRecruiting' => $dto->isRecruiting,
             'maxPlayers' => $dto->maxPlayers,
             'currentPlayers' => $dto->currentPlayers,

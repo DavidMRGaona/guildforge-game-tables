@@ -29,6 +29,7 @@ use Modules\GameTables\Domain\Exceptions\NotEligibleToCreateException;
 use Modules\GameTables\Domain\Exceptions\SessionBelowRosterException;
 use Modules\GameTables\Http\Requests\FrontendCreateGameTableRequest;
 use Modules\GameTables\Http\Support\AuthorLockRedirect;
+use Modules\GameTables\Http\Support\AuthorReturnTarget;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Services\CampaignSessionCreationGate;
 
@@ -43,6 +44,7 @@ final class FrontendGameTableController extends Controller
         private readonly SeoMetadataFactoryInterface $seo,
         private readonly CampaignSessionCreationGate $sessionGate,
         private readonly AuthorLockRedirect $authorLock,
+        private readonly AuthorReturnTarget $returnTarget,
     ) {}
 
     /**
@@ -282,14 +284,14 @@ final class FrontendGameTableController extends Controller
             abort(403);
         } catch (SessionBelowRosterException $e) {
             // Published at once (automatic mode) but with fewer seats than the roster
-            return back()->with('error', $e->getMessage());
+            return $this->returnTarget->back()->with('error', $e->getMessage());
         }
 
         // Without review (automatic mode, or an author who may publish directly) it is already published
         $published = (bool) $gameTable->refresh()->is_published;
 
-        return redirect()
-            ->route('gametables.my-tables')
+        return $this->returnTarget
+            ->redirect('gametables.my-tables')
             ->with('success', __($published
                 ? 'game-tables::messages.frontend.table_published'
                 : 'game-tables::messages.frontend.submitted_for_review'));
@@ -315,8 +317,8 @@ final class FrontendGameTableController extends Controller
             abort(403);
         }
 
-        return redirect()
-            ->route('gametables.my-tables')
+        return $this->returnTarget
+            ->redirect('gametables.my-tables')
             ->with('success', __('game-tables::messages.frontend.table_deleted'));
     }
 

@@ -59,6 +59,21 @@ final class ProfileCreatedCampaignsDataProviderTest extends ModuleTestCase
         $this->assertTrue($drafts['Borrador']['canEdit']);
     }
 
+    public function test_a_rejected_draft_shows_the_moderators_reason_while_the_author_may_change_it(): void
+    {
+        $creator = $this->user();
+        $this->campaign($creator, ['is_published' => false, 'frontend_creation_status' => 'draft', 'title' => 'Rechazada', 'moderation_notes' => "Falta la sinopsis.\nRevisa el sistema."]);
+        $this->campaign($creator, ['is_published' => false, 'frontend_creation_status' => 'pending_review', 'title' => 'En revisión', 'moderation_notes' => 'Nota antigua']);
+        $this->campaign($creator, ['is_published' => false, 'frontend_creation_status' => 'draft', 'title' => 'Borrador']);
+
+        $drafts = collect(app(ProfileCreatedCampaignsDataProvider::class)->getDataForUser((string) $creator->id)['drafts'])->keyBy('title');
+
+        // As «Mis campañas»: the reason only while the draft is back in the author's hands
+        $this->assertSame("Falta la sinopsis.\nRevisa el sistema.", $drafts['Rechazada']['rejectionReason']);
+        $this->assertNull($drafts['En revisión']['rejectionReason']);
+        $this->assertNull($drafts['Borrador']['rejectionReason']);
+    }
+
     private function joinRoster(CampaignModel $campaign, UserModel $user): void
     {
         DB::table('gametables_campaign_players')->insert([

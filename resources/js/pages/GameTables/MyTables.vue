@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import EmptyState from '@/components/ui/EmptyState.vue';
-import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
 import StatusBadge from '../../components/StatusBadge.vue';
 import FormatBadge from '../../components/FormatBadge.vue';
+import DraftActions from '../../components/DraftActions.vue';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 import { useFlashMessages } from '@/composables/useFlashMessages';
 
@@ -28,6 +28,8 @@ interface GameTableResponseDTO {
     frontend_creation_status_label: string | null;
     frontend_creation_status_color: string | null;
     is_published: boolean;
+    // Whether the author may still change it (edit, send to review, delete): the server's rule
+    can_edit: boolean;
     // Why it was rejected, while the author may still change it
     rejection_reason: string | null;
     created_at: string | null;
@@ -50,12 +52,6 @@ const { success: flashSuccess, error: flashError } = useFlashMessages();
 const { t, locale } = useI18n();
 
 const hasTables = computed(() => props.tables.length > 0);
-
-// Confirmation dialog state
-const showSubmitDialog = ref(false);
-const showDeleteDialog = ref(false);
-const pendingTableSlug = ref<string | null>(null);
-const pendingTableTitle = ref<string>('');
 
 function formatDate(dateString: string | null): string {
     if (!dateString) return '-';
@@ -83,64 +79,12 @@ function formatDuration(minutes: number): string {
     }
 }
 
-// 'rejected' only on rows rejected before 2.10.0: rejecting now returns the table to a draft
-function canEdit(table: GameTableResponseDTO): boolean {
-    const status = table.frontend_creation_status;
-    return !table.is_published && (status === 'draft' || status === 'rejected');
-}
-
-function canSubmitForReview(table: GameTableResponseDTO): boolean {
-    const status = table.frontend_creation_status;
-    return !table.is_published && (status === 'draft' || status === 'rejected');
-}
-
-function canDelete(table: GameTableResponseDTO): boolean {
-    const status = table.frontend_creation_status;
-    return !table.is_published && (status === 'draft' || status === 'rejected');
-}
-
 function isApproved(table: GameTableResponseDTO): boolean {
     return table.is_published;
 }
 
 function isPendingReview(table: GameTableResponseDTO): boolean {
     return !table.is_published && table.frontend_creation_status === 'pending_review';
-}
-
-function handleEdit(tableSlug: string): void {
-    router.visit(`/mesas/mis-mesas/${tableSlug}/editar`);
-}
-
-function handleSubmitForReview(tableSlug: string): void {
-    pendingTableSlug.value = tableSlug;
-    showSubmitDialog.value = true;
-}
-
-function confirmSubmitForReview(): void {
-    if (pendingTableSlug.value) {
-        router.post(`/mesas/mis-mesas/${pendingTableSlug.value}/enviar-revision`, {}, {
-            preserveScroll: true,
-            onSuccess: () => {
-                pendingTableSlug.value = null;
-            },
-        });
-    } else {
-        pendingTableSlug.value = null;
-    }
-}
-
-function handleDelete(tableSlug: string, tableTitle: string): void {
-    pendingTableSlug.value = tableSlug;
-    pendingTableTitle.value = tableTitle;
-    showDeleteDialog.value = true;
-}
-
-function confirmDelete(): void {
-    if (pendingTableSlug.value) {
-        router.delete(`/mesas/mis-mesas/${pendingTableSlug.value}`);
-    }
-    pendingTableSlug.value = null;
-    pendingTableTitle.value = '';
 }
 
 function handleCreate(): void {
@@ -218,7 +162,7 @@ function getTableLink(table: GameTableResponseDTO): string {
                     class="overflow-hidden rounded-lg bg-surface shadow transition-shadow hover:shadow-md"
                 >
                     <div class="p-6">
-                        <div class="flex items-start justify-between gap-4">
+                        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                             <div class="min-w-0 flex-1">
                                 <div class="mb-2 flex items-center gap-2">
                                     <h2 class="truncate text-xl font-semibold text-base-primary">
@@ -298,7 +242,7 @@ function getTableLink(table: GameTableResponseDTO): string {
                                 </div>
                             </div>
 
-                            <div class="flex flex-shrink-0 flex-col gap-2 sm:flex-row">
+                            <div class="flex flex-shrink-0 flex-wrap gap-2">
                                 <template v-if="isPendingReview(table)">
                                     <span class="text-sm text-base-muted">
                                         {{ t('gameTables.myTables.pendingReviewMessage') }}
@@ -314,61 +258,18 @@ function getTableLink(table: GameTableResponseDTO): string {
                                     </Link>
                                 </template>
 
-                                <template v-else>
-                                    <BaseButton
-                                        v-if="canEdit(table)"
-                                        variant="secondary"
-                                        size="sm"
-                                        @click="handleEdit(table.slug!)"
-                                    >
-                                        {{ t('common.edit') }}
-                                    </BaseButton>
-
-                                    <BaseButton
-                                        v-if="canSubmitForReview(table)"
-                                        variant="primary"
-                                        size="sm"
-                                        @click="handleSubmitForReview(table.slug!)"
-                                    >
-                                        {{ t('gameTables.myTables.submitForReview') }}
-                                    </BaseButton>
-
-                                    <BaseButton
-                                        v-if="canDelete(table)"
-                                        variant="danger"
-                                        size="sm"
-                                        @click="handleDelete(table.slug!, table.title)"
-                                    >
-                                        {{ t('common.delete') }}
-                                    </BaseButton>
-                                </template>
+                                <!-- While the author may still change it: can_edit, the rule the server enforces -->
+                                <DraftActions
+                                    v-else-if="table.can_edit"
+                                    kind="table"
+                                    :route-key="table.slug!"
+                                    :title="table.title"
+                                />
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </main>
-
-        <!-- Submit for review confirmation dialog -->
-        <ConfirmDialog
-            v-model="showSubmitDialog"
-            :title="t('gameTables.myTables.submitForReviewTitle')"
-            :message="t('gameTables.myTables.confirmSubmit')"
-            :confirm-label="t('gameTables.myTables.submitForReview')"
-            :cancel-label="t('common.cancel')"
-            confirm-variant="primary"
-            @confirm="confirmSubmitForReview"
-        />
-
-        <!-- Delete confirmation dialog -->
-        <ConfirmDialog
-            v-model="showDeleteDialog"
-            :title="t('gameTables.myTables.deleteTitle')"
-            :message="t('gameTables.myTables.confirmDelete', { title: pendingTableTitle })"
-            :confirm-label="t('common.delete')"
-            :cancel-label="t('common.cancel')"
-            confirm-variant="danger"
-            @confirm="confirmDelete"
-        />
     </DefaultLayout>
 </template>

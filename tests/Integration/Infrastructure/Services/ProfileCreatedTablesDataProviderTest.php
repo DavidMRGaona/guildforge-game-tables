@@ -57,6 +57,21 @@ final class ProfileCreatedTablesDataProviderTest extends ModuleTestCase
         $this->assertTrue($drafts['Borrador']['canEdit']);
     }
 
+    public function test_a_rejected_draft_shows_the_moderators_reason_while_the_author_may_change_it(): void
+    {
+        $creator = $this->creator();
+        $this->table($creator, ['is_published' => false, 'published_at' => null, 'frontend_creation_status' => 'draft', 'title' => 'Rechazada', 'moderation_notes' => "Falta la sinopsis.\nRevisa el sistema."]);
+        $this->table($creator, ['is_published' => false, 'published_at' => null, 'frontend_creation_status' => 'pending_review', 'title' => 'En revisión', 'moderation_notes' => 'Nota antigua']);
+        $this->table($creator, ['is_published' => false, 'published_at' => null, 'frontend_creation_status' => 'draft', 'title' => 'Borrador']);
+
+        $drafts = collect(app(ProfileCreatedTablesDataProvider::class)->getDataForUser((string) $creator->id)['drafts'])->keyBy('title');
+
+        // As «Mis mesas»: the reason only while the draft is back in the author's hands
+        $this->assertSame("Falta la sinopsis.\nRevisa el sistema.", $drafts['Rechazada']['rejectionReason']);
+        $this->assertNull($drafts['En revisión']['rejectionReason']);
+        $this->assertNull($drafts['Borrador']['rejectionReason']);
+    }
+
     private function participant(GameTableModel $table, ParticipantRole $role, ParticipantStatus $status): void
     {
         ParticipantModel::create([

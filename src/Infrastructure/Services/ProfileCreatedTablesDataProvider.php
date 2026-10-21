@@ -84,6 +84,8 @@ final readonly class ProfileCreatedTablesDataProvider
             'statusColor' => $reviewStatus?->color() ?? $dto->status->color(),
             'isPublished' => $dto->isPublished,
             'canEdit' => $canEdit,
+            // Why it was rejected, while the author may still change it
+            'rejectionReason' => $dto->rejectionReason,
             'tableFormat' => $dto->tableFormat->value,
             'tableFormatLabel' => $dto->tableFormat->label(),
             'eventId' => $dto->eventId,

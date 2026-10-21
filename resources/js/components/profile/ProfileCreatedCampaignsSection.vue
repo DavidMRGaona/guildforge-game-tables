@@ -15,8 +15,8 @@ const props = defineProps<Props>();
 const { t } = useI18n();
 // The creation form's routes are closed to accounts that must verify their email
 const gate = useVerificationGate();
-// One reason for every draft's disabled «Editar» (aria-describedby), not one per card
-const editReasonId = useId();
+// One reason for every draft's disabled actions (aria-describedby), not one per card
+const actionsReasonId = useId();
 
 const showDraftsSection = ref(true);
 
@@ -112,7 +112,7 @@ function toggleDraftsSection(): void {
             <div v-if="showDraftsSection" class="space-y-3">
                 <p
                     v-if="gate.blocked.value"
-                    :id="editReasonId"
+                    :id="actionsReasonId"
                     class="rounded-md bg-warning-bg px-3 py-2 text-sm text-base-primary"
                 >
                     {{ t('gameTables.verificationGate.edit') }}
@@ -128,8 +128,8 @@ function toggleDraftsSection(): void {
                     v-for="campaign in draftCampaigns"
                     :key="campaign.id"
                     :campaign="campaign"
-                    :show-edit-link="true"
-                    :edit-reason-id="editReasonId"
+                    :show-actions="true"
+                    :actions-reason-id="actionsReasonId"
                 />
             </div>
         </section>

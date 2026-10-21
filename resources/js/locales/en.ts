@@ -14,7 +14,13 @@ export default {
         tables: 'tables',
         // Reason next to an action closed until the account verifies its email (the core has the others)
         verificationGate: {
-            edit: 'To edit, verify your email.',
+            edit: 'To edit, send for review or delete, verify your email.',
+        },
+        // A draft's actions (DraftActions) and the moderator's reason on the profile drafts
+        draftActions: {
+            groupLabel: 'Actions for “{title}”',
+            showMore: 'Show more',
+            showLess: 'Show less',
         },
         eventActions: {
             createTable: 'Create game table',

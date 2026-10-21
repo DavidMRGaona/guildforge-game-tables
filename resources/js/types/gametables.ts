@@ -266,6 +266,8 @@ export interface ProfileCreatedTable {
     isPublished: boolean;
     /** Whether the author may still edit it: a draft not sent to review */
     canEdit: boolean;
+    /** Why the moderators rejected it, while the author may still change it */
+    rejectionReason: string | null;
     tableFormat: string;
     tableFormatLabel: string;
     eventId: string | null;
@@ -382,6 +384,8 @@ export interface ProfileCreatedCampaign {
     isPublished: boolean;
     /** Whether the author may still edit it: a draft not sent to review */
     canEdit: boolean;
+    /** Why the moderators rejected it, while the author may still change it */
+    rejectionReason: string | null;
     isRecruiting: boolean;
     maxPlayers: number | null;
     currentPlayers: number;

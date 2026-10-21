@@ -14,7 +14,13 @@ export default {
         tables: 'mesas',
         // Reason next to an action closed until the account verifies its email (the core has the others)
         verificationGate: {
-            edit: 'Para editar, verifica tu email.',
+            edit: 'Para editar, enviar a revisión o eliminar, verifica tu email.',
+        },
+        // A draft's actions (DraftActions) and the moderator's reason on the profile drafts
+        draftActions: {
+            groupLabel: 'Acciones de «{title}»',
+            showMore: 'Ver más',
+            showLess: 'Ver menos',
         },
         eventActions: {
             createTable: 'Crear partida',
