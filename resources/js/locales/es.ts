@@ -452,6 +452,7 @@ export default {
         description: 'Explora las campañas de rol en curso',
         campaigns: 'campañas',
         noCampaigns: 'No hay campañas disponibles',
+        found: '{count} campaña encontrada | {count} campañas encontradas',
         viewAll: 'Ver todas las campañas',
         viewCampaign: 'Ver campaña',
         tables: 'Mesas de la campaña',

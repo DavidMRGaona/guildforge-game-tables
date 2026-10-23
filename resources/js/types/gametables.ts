@@ -204,9 +204,9 @@ export interface Campaign {
     safetyTools: string[];
     contentWarnings: string[];
     minimumAge: number | null;
-    language: string;
-    experienceLevel: string;
-    experienceLevelLabel: string;
+    language: string | null;
+    experienceLevel: string | null;
+    experienceLevelLabel: string | null;
     totalSessions: number;
     imagePublicId: string | null;
     gameMasters: CampaignGameMaster[];

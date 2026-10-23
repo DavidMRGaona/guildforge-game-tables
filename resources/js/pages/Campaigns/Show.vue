@@ -10,6 +10,7 @@ import SafetyToolBadge from '../../components/SafetyToolBadge.vue';
 import ContentWarningBadge from '../../components/ContentWarningBadge.vue';
 import GameTableCard from '../../components/GameTableCard.vue';
 import CampaignJoinBox from '../../components/campaigns/CampaignJoinBox.vue';
+import CapacityBar from '../../components/CapacityBar.vue';
 import ModuleSlot from '@/components/layout/ModuleSlot.vue';
 import { buildHeroImageUrl } from '@/utils/cloudinary';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
@@ -66,13 +67,6 @@ const totalSessionsLabel = computed(() => {
         return t('campaigns.totalSessionsUndetermined');
     }
     return String(props.campaign.totalSessions);
-});
-
-const sessionProgress = computed(() => {
-    if (props.campaign.sessionCount === null || props.campaign.sessionCount === 0) {
-        return null;
-    }
-    return (props.campaign.currentSession / props.campaign.sessionCount) * 100;
 });
 
 const mainGameMasters = computed(() => {
@@ -134,7 +128,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                             size="md"
                         />
                         <span
-                            v-if="campaign.acceptsNewPlayers"
+                            v-if="campaign.acceptsNewPlayers && campaign.status !== 'recruiting'"
                             class="inline-flex items-center rounded-full bg-success-light px-3 py-1 text-sm font-medium text-base-primary"
                         >
                             {{ t('campaigns.lookingForPlayers') }}
@@ -161,7 +155,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
 
                     <!-- Key Information Grid -->
                     <div
-                        class="mb-6 grid grid-cols-1 gap-4 rounded-lg bg-page p-4 sm:grid-cols-2"
+                        class="mb-6 grid grid-cols-1 gap-4 rounded-lg bg-muted p-4 sm:grid-cols-2"
                     >
                         <!-- Frequency -->
                         <div v-if="campaign.frequencyLabel">
@@ -236,16 +230,14 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                             </h3>
                             <div class="text-base-secondary">
                                 <p>{{ sessionProgressLabel }}</p>
-                                <div v-if="sessionProgress !== null" class="mt-2">
-                                    <div
-                                        class="h-2 w-full overflow-hidden rounded-full bg-muted"
-                                    >
-                                        <div
-                                            class="h-full bg-primary transition-all"
-                                            :style="{ width: `${sessionProgress}%` }"
-                                        />
-                                    </div>
-                                </div>
+                                <CapacityBar
+                                    v-if="campaign.sessionCount !== null && campaign.sessionCount > 0"
+                                    class="mt-2"
+                                    :current="campaign.currentSession"
+                                    :max="campaign.sessionCount"
+                                    :label="t('campaigns.details.currentSession')"
+                                    tone="primary"
+                                />
                             </div>
                         </div>
 
@@ -332,28 +324,28 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                             </div>
                         </div>
 
-                        <!-- Capacity and the join box -->
-                        <div>
-                            <template v-if="campaign.maxPlayers !== null">
-                                <h3 class="mb-1 text-sm font-semibold text-base-primary">
-                                    {{ t('campaigns.capacity') }}
-                                </h3>
-                                <div class="mb-3 text-base-secondary">
-                                    <p>
-                                        {{ t('campaigns.playersCount', {
-                                            current: campaign.currentPlayers,
-                                            max: campaign.maxPlayers,
-                                        }) }}
-                                    </p>
-                                    <p v-if="spotsAvailable !== null" class="text-sm">
-                                        {{ spotsAvailable }} {{ t('campaigns.spotsAvailable') }}
-                                    </p>
-                                </div>
-                            </template>
-                            <CampaignJoinBox
-                                :join-box="joinBox"
-                                :campaign-title="campaign.title"
-                                :campaign-slug="campaign.slug"
+                        <!-- Capacity -->
+                        <div v-if="campaign.maxPlayers !== null">
+                            <h3 class="mb-1 text-sm font-semibold text-base-primary">
+                                {{ t('campaigns.capacity') }}
+                            </h3>
+                            <div class="text-base-secondary">
+                                <p>
+                                    {{ t('campaigns.playersCount', {
+                                        current: campaign.currentPlayers,
+                                        max: campaign.maxPlayers,
+                                    }) }}
+                                </p>
+                                <p v-if="spotsAvailable !== null" class="text-sm">
+                                    {{ spotsAvailable }} {{ t('campaigns.spotsAvailable') }}
+                                </p>
+                            </div>
+                            <CapacityBar
+                                class="mt-2"
+                                :current="campaign.currentPlayers"
+                                :max="campaign.maxPlayers"
+                                :label="t('campaigns.capacity')"
+                                size="md"
                             />
                         </div>
 
@@ -376,6 +368,15 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                                 {{ campaign.experienceLevelLabel }}
                             </p>
                         </div>
+                    </div>
+
+                    <!-- Join box, full width: inside the grid it stretched one cell -->
+                    <div class="mb-6">
+                        <CampaignJoinBox
+                            :join-box="joinBox"
+                            :campaign-title="campaign.title"
+                            :campaign-slug="campaign.slug"
+                        />
                     </div>
 
                     <!-- Additional Details -->
@@ -473,7 +474,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                     <div class="border-t border-default pt-6">
                         <Link href="/campanas">
                             <BaseButton variant="primary">
-                                {{ t('common.viewAll') }} {{ t('campaigns.campaigns').toLowerCase() }}
+                                {{ t('campaigns.viewAll') }}
                             </BaseButton>
                         </Link>
                     </div>
@@ -507,7 +508,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
 
             <!-- Empty state when no tables -->
             <section v-else class="mt-8">
-                <div class="rounded-lg border border-default bg-page p-8 text-center">
+                <div class="rounded-lg border border-default bg-muted p-8 text-center">
                     <p class="text-base-secondary">
                         {{ t('campaigns.noTables') }}
                     </p>
