@@ -540,7 +540,7 @@ export default {
             rejectedTitle: 'Invitation declined',
             rejected: 'We have deleted your email from this invitation and you will get no more emails from it.',
             invalidTitle: 'Invalid invitation',
-            invalid: 'This invitation is not valid or has expired.',
+            invalid: 'This invitation is no longer available: it may have expired, been rejected or been accepted.',
             viewCampaigns: 'View campaigns',
         },
         // The direction's roster page

@@ -414,4 +414,17 @@ final class CampaignRosterCopyTest extends TestCase
             $this->assertSame(0, preg_match('/\b\p{Lu}\p{Ll}+ \p{Lu}\p{Ll}+\b/u', $text), "{$name} names a person: {$text}");
         }
     }
+
+    public function test_the_generic_invitation_message_says_why_it_may_be_unavailable(): void
+    {
+        $expected = [
+            'es' => 'Esta invitación ya no está disponible: puede haber caducado, haberse rechazado o haberse aceptado.',
+            'en' => 'This invitation is no longer available: it may have expired, been rejected or been accepted.',
+        ];
+
+        foreach ($expected as $locale => $text) {
+            $this->assertSame($text, $this->lang($locale, 'messages')['roster.errors.invitation_not_found'], "{$locale} messages");
+            $this->assertSame("'{$text}',", $this->locale($locale)['invitation.invalid'], "{$locale}.ts");
+        }
+    }
 }

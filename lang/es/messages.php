@@ -953,7 +953,7 @@ return [
             'invitation_pending' => 'Ya hay una invitación pendiente para ese email.',
             'invitation_limit' => 'Ya no se pueden enviar más invitaciones a este email en esta campaña por ahora.',
             'invitation_too_soon' => 'Han de pasar 24 horas desde el último envío para volver a enviarla.',
-            'invitation_not_found' => 'Esta invitación no es válida o ha caducado.',
+            'invitation_not_found' => 'Esta invitación ya no está disponible: puede haber caducado, haberse rechazado o haberse aceptado.',
             'invitation_other_account' => 'Esta invitación es para otro email.',
             'email_not_verified' => 'Verifica tu email para ver y aceptar tus invitaciones.',
             'is_director' => 'Quien dirige la campaña no puede entrar en la plantilla como jugador.',
