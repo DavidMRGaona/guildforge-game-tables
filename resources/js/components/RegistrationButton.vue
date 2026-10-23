@@ -309,6 +309,15 @@ const guestRegistrationClosed = computed(() => {
     return guest.reason !== null && CLOSED_REASONS.includes(guest.reason);
 });
 
+// Closed for everyone (invitation only, roster only, started, ended…): there is nothing to press,
+// so the reason is shown as a notice instead of a disabled button
+const showsClosedNotice = computed(() => {
+    if (loading.value) return false;
+    if (!isAuthenticated.value) return guestRegistrationClosed.value;
+    // No eligibility (failed request) is not a known reason: keep the plain disabled button
+    return !hasActiveRegistration.value && !!eligibility.value && isRegistrationClosed.value;
+});
+
 // Button text and styling
 const buttonText = computed(() => {
     // For unauthenticated users on open tables, show guest registration option
@@ -732,9 +741,31 @@ function cancelRoleSelect(): void {
                 </Transition>
             </Teleport>
 
+            <!-- Why nobody can register from the web -->
+            <p
+                v-if="showsClosedNotice"
+                class="flex items-start gap-2 rounded-lg border border-default bg-muted px-4 py-3 text-left text-sm text-base-primary"
+            >
+                <svg
+                    class="mt-0.5 h-4 w-4 flex-shrink-0 text-base-secondary"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                    />
+                </svg>
+                <span>{{ buttonText }}</span>
+            </p>
+
             <!-- Main action button -->
             <button
-                v-if="!showRoleSelect"
+                v-else-if="!showRoleSelect"
                 ref="triggerButton"
                 type="button"
                 :disabled="buttonDisabled"

@@ -61,9 +61,9 @@ final class CampaignResource extends JsonResource
             'safetyTools' => [],
             'contentWarnings' => [],
             'minimumAge' => null,
-            'language' => 'es',
-            'experienceLevel' => 'none',
-            'experienceLevelLabel' => __('game-tables::messages.enums.experience_level.none'),
+            'language' => null,
+            'experienceLevel' => null,
+            'experienceLevelLabel' => null,
             'createdAt' => $this->createdAt?->format('c'),
             'updatedAt' => $this->updatedAt?->format('c'),
         ];

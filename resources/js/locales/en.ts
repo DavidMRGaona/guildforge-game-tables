@@ -452,6 +452,7 @@ export default {
         description: 'Explore ongoing role-playing campaigns',
         campaigns: 'campaigns',
         noCampaigns: 'No campaigns available',
+        found: '{count} campaign found | {count} campaigns found',
         viewAll: 'View all campaigns',
         viewCampaign: 'View campaign',
         tables: 'Campaign tables',

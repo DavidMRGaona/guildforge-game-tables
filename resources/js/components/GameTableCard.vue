@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import type { GameTableListItem } from '../types/gametables';
+import CapacityBar from './CapacityBar.vue';
 import FormatBadge from './FormatBadge.vue';
 import StatusBadge from './StatusBadge.vue';
 import { buildCardImageUrl } from '@/utils/cloudinary';
@@ -58,32 +59,6 @@ const formattedDuration = computed(() => {
     }
 });
 
-const capacityPercentage = computed(() => {
-    if (props.table.maxPlayers === 0) return 0;
-    return (props.table.currentPlayers / props.table.maxPlayers) * 100;
-});
-
-const capacityColor = computed(() => {
-    const percentage = capacityPercentage.value;
-    if (percentage >= 100) return 'bg-error';
-    if (percentage >= 75) return 'bg-warning';
-    return 'bg-success';
-});
-
-const headerGradient = computed(() => {
-    const format = props.table.tableFormat.value;
-    switch (format) {
-        case 'in_person':
-            return 'from-primary to-black/70';
-        case 'online':
-            return 'from-blue-600 to-black/70';
-        case 'hybrid':
-            return 'from-purple-600 to-black/70';
-        default:
-            return 'from-black/60 to-black/80';
-    }
-});
-
 const availabilityBadge = computed(() => {
     if (props.table.isFull) {
         return {
@@ -102,14 +77,14 @@ const availabilityBadge = computed(() => {
     <Link
         :href="`/mesas/${table.slug}`"
         :aria-label="t('aria.viewGameTable', { title: table.title })"
-        class="group block overflow-hidden rounded-lg bg-surface shadow-sm transition-all duration-200 hover:scale-[1.02] hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
+        class="group flex h-full flex-col overflow-hidden rounded-lg bg-surface shadow-sm transition-all duration-200 hover:scale-[1.02] hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
     >
         <!-- Image with overlay badges (if image exists) -->
         <div v-if="imageUrl" class="relative">
             <img
                 :src="imageUrl"
                 :alt="table.title"
-                class="h-32 w-full object-cover"
+                class="h-36 w-full object-cover"
             />
             <!-- Overlay gradient for better badge visibility -->
             <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30" />
@@ -141,10 +116,10 @@ const availabilityBadge = computed(() => {
             </div>
         </div>
 
-        <!-- Header band with gradient (only if no image) -->
+        <!-- Neutral header band (only if no image); the format badge below names the format -->
         <div
             v-else
-            :class="['relative flex items-center justify-between bg-gradient-to-r px-4 py-3', headerGradient]"
+            class="flex min-h-16 items-center justify-between bg-muted px-4 py-3"
         >
             <!-- Date badge (top-left) -->
             <div
@@ -174,7 +149,7 @@ const availabilityBadge = computed(() => {
         </div>
 
         <!-- Card body -->
-        <div class="p-4">
+        <div class="flex flex-1 flex-col p-4">
             <!-- Zone 1: Identity -->
             <div class="mb-3">
                 <h3
@@ -214,25 +189,17 @@ const availabilityBadge = computed(() => {
                         <span>{{ t('gameTables.capacity') }}</span>
                         <span class="font-medium">{{ table.currentPlayers }} / {{ table.maxPlayers }}</span>
                     </div>
-                    <div
-                        class="h-2.5 w-full overflow-hidden rounded-full bg-muted"
-                        role="progressbar"
-                        :aria-valuenow="table.currentPlayers"
-                        :aria-valuemin="0"
-                        :aria-valuemax="table.maxPlayers"
-                        :aria-label="t('gameTables.capacity')"
-                    >
-                        <div
-                            :class="capacityColor"
-                            :style="{ width: `${Math.min(capacityPercentage, 100)}%` }"
-                            class="h-full rounded-full transition-all"
-                        />
-                    </div>
+                    <CapacityBar
+                        :current="table.currentPlayers"
+                        :max="table.maxPlayers"
+                        :label="t('gameTables.capacity')"
+                        size="md"
+                    />
                 </div>
             </div>
 
-            <!-- Zone 3: Meta -->
-            <div class="flex items-center justify-between">
+            <!-- Zone 3: Meta (pinned to the bottom so footers line up across a grid row) -->
+            <div class="mt-auto flex items-center justify-between">
                 <!-- GM with avatar pill -->
                 <div class="flex items-center gap-2 text-sm text-base-secondary">
                     <span class="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1">

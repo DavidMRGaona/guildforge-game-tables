@@ -6,6 +6,7 @@ import type { GameTable, GameMaster } from '../../types/gametables';
 import type { CampaignSessionInfo } from '../../types/registration';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
+import CapacityBar from '../../components/CapacityBar.vue';
 import FormatBadge from '../../components/FormatBadge.vue';
 import StatusBadge from '../../components/StatusBadge.vue';
 import ContentWarningBadge from '../../components/ContentWarningBadge.vue';
@@ -143,16 +144,6 @@ const formattedAllGameMasters = computed(() => {
         ...gm,
         formattedName: formatGameMasterName(gm, props.table.gameMasters),
     }));
-});
-
-const playerCapacityPercentage = computed(() => {
-    if (props.table.maxPlayers === 0) return 0;
-    return Math.min((props.table.currentPlayers / props.table.maxPlayers) * 100, 100);
-});
-
-const spectatorCapacityPercentage = computed(() => {
-    if (props.table.maxSpectators === 0) return 0;
-    return Math.min((props.table.currentSpectators / props.table.maxSpectators) * 100, 100);
 });
 
 const formatRegistrationDate = (dateString: string | null): string => {
@@ -354,6 +345,27 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                                     <!-- When all GMs have the same role, show as a single list -->
                                     <template v-if="allSameRole">
                                         <ul class="space-y-1">
+                                            <!-- No game master rows: the table's main GM name (the creator by default) -->
+                                            <li
+                                                v-if="formattedAllGameMasters.length === 0"
+                                                class="flex items-center"
+                                            >
+                                                <svg
+                                                    class="mr-2 h-5 w-5 text-primary"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                    aria-hidden="true"
+                                                >
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                                    />
+                                                </svg>
+                                                <span>{{ table.mainGameMasterName }}</span>
+                                            </li>
                                             <li
                                                 v-for="gm in formattedAllGameMasters"
                                                 :key="gm.id"
@@ -462,16 +474,12 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                                     {{ table.currentPlayers }} / {{ table.maxPlayers }}
                                 </span>
                             </div>
-                            <div class="h-2.5 w-full overflow-hidden rounded-full bg-muted">
-                                <div
-                                    class="h-full transition-all"
-                                    :class="[
-                                        playerCapacityPercentage >= 100 ? 'bg-error' :
-                                        playerCapacityPercentage >= 75 ? 'bg-warning' : 'bg-success'
-                                    ]"
-                                    :style="{ width: `${playerCapacityPercentage}%` }"
-                                />
-                            </div>
+                            <CapacityBar
+                                :current="table.currentPlayers"
+                                :max="table.maxPlayers"
+                                :label="t('gameTables.roles.players')"
+                                size="md"
+                            />
                             <p v-if="table.spotsAvailable > 0" class="mt-1 text-sm text-success">
                                 {{ table.spotsAvailable }} {{ t('gameTables.spotsAvailable') }}
                             </p>
@@ -490,12 +498,13 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                                     {{ table.currentSpectators }} / {{ table.maxSpectators }}
                                 </span>
                             </div>
-                            <div class="h-2.5 w-full overflow-hidden rounded-full bg-muted">
-                                <div
-                                    class="h-full bg-info transition-all"
-                                    :style="{ width: `${spectatorCapacityPercentage}%` }"
-                                />
-                            </div>
+                            <CapacityBar
+                                :current="table.currentSpectators"
+                                :max="table.maxSpectators"
+                                :label="t('gameTables.roles.spectators')"
+                                tone="info"
+                                size="md"
+                            />
                             <p v-if="table.spectatorSpotsAvailable > 0" class="mt-1 text-sm text-info">
                                 {{ table.spectatorSpotsAvailable }} {{ t('gameTables.spotsAvailable') }}
                             </p>
@@ -505,14 +514,14 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                         </div>
                     </div>
 
-                    <!-- Section 4: Registration Info (highlighted blue) -->
+                    <!-- Section 4: Registration Info (info box; only the icons take the info colour) -->
                     <div
                         v-if="hasRegistrationInfo"
                         class="mb-6 rounded-lg border border-info bg-info-light p-4"
                     >
-                        <h2 class="mb-3 flex items-center text-lg font-semibold text-info">
+                        <h2 class="mb-3 flex items-center text-lg font-semibold text-base-primary">
                             <svg
-                                class="mr-2 h-5 w-5"
+                                class="mr-2 h-5 w-5 text-info"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -528,7 +537,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                             {{ t('gameTables.registration.title') }}
                         </h2>
 
-                        <div class="space-y-2 text-sm text-info">
+                        <div class="space-y-2 text-sm text-base-primary">
                             <p>
                                 <span class="font-medium">{{ t('gameTables.registrationTypeLabel') || 'Tipo' }}:</span>
                                 {{ registrationTypeText }}
@@ -546,10 +555,10 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
 
                             <p
                                 v-if="table.membersEarlyAccessDays > 0"
-                                class="flex items-center font-medium text-info"
+                                class="flex items-center font-medium text-base-primary"
                             >
                                 <svg
-                                    class="mr-1 h-4 w-4"
+                                    class="mr-1 h-4 w-4 text-info"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
