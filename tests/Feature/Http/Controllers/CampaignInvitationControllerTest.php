@@ -109,6 +109,36 @@ final class CampaignInvitationControllerTest extends ModuleTestCase
             ->assertSessionHas('url.intended', route('campaigns.invitation.show', $token));
     }
 
+    public function test_signing_out_from_the_invitation_returns_to_it(): void
+    {
+        $token = $this->tokenFor('john@example.com');
+
+        $this->actingAs($this->jane)
+            ->post('/campanas/invitaciones/'.$token.'/cerrar-sesion')
+            ->assertRedirect(route('campaigns.invitation.show', $token));
+
+        $this->assertGuest();
+    }
+
+    public function test_signing_out_as_a_guest_is_harmless(): void
+    {
+        $token = $this->tokenFor('john@example.com');
+
+        $this->post('/campanas/invitaciones/'.$token.'/cerrar-sesion')
+            ->assertRedirect(route('campaigns.invitation.show', $token));
+
+        $this->assertGuest();
+    }
+
+    public function test_signing_out_with_a_malformed_token_is_not_found(): void
+    {
+        $this->actingAs($this->jane)
+            ->post('/campanas/invitaciones/not-a-token/cerrar-sesion')
+            ->assertNotFound();
+
+        $this->assertAuthenticatedAs($this->jane);
+    }
+
     public function test_matching_account_accepts(): void
     {
         $token = $this->tokenFor('john@example.com');

@@ -5,7 +5,6 @@ import { useI18n } from 'vue-i18n';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
-import { useAuth } from '@/composables/useAuth';
 import { useFlashMessages } from '@/composables/useFlashMessages';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 import type { CampaignInvitationState, CampaignInvitationView } from '../../types/gametables';
@@ -20,13 +19,17 @@ const props = defineProps<Props>();
 
 const { t, locale } = useI18n();
 const { success: flashSuccess, error: flashError } = useFlashMessages();
-const { logout } = useAuth();
 
 const isAccepting = ref(false);
 const isRejecting = ref(false);
 const showRejectDialog = ref(false);
 
 const baseUrl = computed(() => `/campanas/invitaciones/${props.token}`);
+
+// Signs out and lands back on this invitation (the core's logout would go to the home page)
+const logout = (): void => {
+    router.post(`${baseUrl.value}/cerrar-sesion`);
+};
 
 const expiresAt = computed(() => {
     if (!props.invitation?.expires_at) {
