@@ -566,7 +566,7 @@ export default {
             rejectedTitle: 'Invitación rechazada',
             rejected: 'Hemos borrado tu email de esta invitación y no recibirás más correos de ella.',
             invalidTitle: 'Invitación no válida',
-            invalid: 'Esta invitación no es válida o ha caducado.',
+            invalid: 'Esta invitación ya no está disponible: puede haber caducado, haberse rechazado o haberse aceptado.',
             viewCampaigns: 'Ver las campañas',
         },
         // The direction's roster page

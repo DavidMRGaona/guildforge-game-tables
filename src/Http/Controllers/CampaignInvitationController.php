@@ -6,10 +6,12 @@ namespace Modules\GameTables\Http\Controllers;
 
 use App\Application\Seo\DTOs\SeoPageDTO;
 use App\Application\Seo\Services\SeoMetadataFactoryInterface;
+use App\Application\Services\AuthServiceInterface;
 use App\Application\Services\EmailVerificationPolicyInterface;
 use App\Http\Controllers\Controller;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\GameTables\Application\DTOs\CampaignInvitationViewDTO;
@@ -32,6 +34,7 @@ final class CampaignInvitationController extends Controller
         private readonly CampaignInvitationServiceInterface $invitations,
         private readonly EmailVerificationPolicyInterface $verification,
         private readonly SeoMetadataFactoryInterface $seo,
+        private readonly AuthServiceInterface $auth,
     ) {}
 
     public function show(string $token): Response
@@ -98,6 +101,20 @@ final class CampaignInvitationController extends Controller
                 ->with('success', __('game-tables::messages.roster.success.invitation_accepted'))
             : redirect()->route('campaigns.index')
                 ->with('success', __('game-tables::messages.roster.success.invitation_accepted'));
+    }
+
+    /**
+     * Signs out like the core does, but comes back to the invitation instead of the home page, so
+     * the invitee can sign in with the invited account right away.
+     */
+    public function logout(Request $request, string $token): RedirectResponse
+    {
+        $this->auth->logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('campaigns.invitation.show', $token);
     }
 
     public function reject(string $token): RedirectResponse

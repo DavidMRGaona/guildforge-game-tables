@@ -876,7 +876,7 @@ return [
             'invitation_pending' => 'There is already a pending invitation for that email.',
             'invitation_limit' => 'No more invitations can be sent to this email for this campaign for now.',
             'invitation_too_soon' => 'At least 24 hours must pass since the last send before sending it again.',
-            'invitation_not_found' => 'This invitation is not valid or has expired.',
+            'invitation_not_found' => 'This invitation is no longer available: it may have expired, been rejected or been accepted.',
             'invitation_other_account' => 'This invitation is for another email.',
             'email_not_verified' => 'Verify your email to see and accept your invitations.',
             'is_director' => 'Whoever runs the campaign cannot join the roster as a player.',

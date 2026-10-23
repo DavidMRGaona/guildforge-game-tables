@@ -134,6 +134,7 @@ Route::prefix('campanas')->name('campaigns.')->group(function (): void {
                 ->middleware(['auth', 'email.verified-if-required'])
                 ->name('accept');
             Route::post('/rechazar', [CampaignInvitationController::class, 'reject'])->name('reject');
+            Route::post('/cerrar-sesion', [CampaignInvitationController::class, 'logout'])->name('logout');
         });
 
     Route::get('/{slug}', [CampaignController::class, 'show'])
