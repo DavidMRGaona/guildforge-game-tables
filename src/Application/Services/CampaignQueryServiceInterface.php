@@ -40,4 +40,11 @@ interface CampaignQueryServiceInterface
      * Find a published campaign by slug.
      */
     public function findPublishedBySlug(string $slug): ?CampaignResponseDTO;
+
+    /**
+     * Get game systems with campaigns in the public listing.
+     *
+     * @return array<array{id: string, name: string, count: int}>
+     */
+    public function getGameSystemsWithCampaigns(): array;
 }

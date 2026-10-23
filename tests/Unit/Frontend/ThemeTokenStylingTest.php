@@ -18,6 +18,8 @@ final class ThemeTokenStylingTest extends TestCase
         'dark: variant' => '/(?<![\w-])(?:[\w-]+:)*dark:[\w\/\[\]\.%-]+/',
         'neutral palette colour' => '/(?<![\w-])(?:[\w-]+:)*(?:bg|text|border|divide|ring|ring-offset|from|to|via)-(?:gray|stone|neutral|slate|zinc)-\d+/',
         'bg-white without opacity' => '/(?<![\w-])(?:[\w-]+:)*bg-white(?![\w\/-])/',
+        // Fixed hues ignore the site palette and the dark theme; status colours have tokens (error, info…)
+        'fixed hue palette colour' => '/(?<![\w-])(?:[\w-]+:)*(?:bg|text|border|divide|ring|ring-offset|from|to|via)-(?:red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d+/',
     ];
 
     public function test_no_vue_or_ts_file_uses_dark_pairs_or_neutral_palette_colours(): void

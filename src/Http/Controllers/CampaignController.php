@@ -15,7 +15,6 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Modules\GameTables\Application\Services\CampaignQueryServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterQueryInterface;
-use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use App\Application\Services\SlugRedirectServiceInterface;
 use Modules\GameTables\Http\Concerns\ReadsListFilters;
 use Modules\GameTables\Http\Resources\CampaignResource;
@@ -29,7 +28,6 @@ final class CampaignController extends Controller
 
     public function __construct(
         private readonly CampaignQueryServiceInterface $queryService,
-        private readonly GameTableQueryServiceInterface $tableQueryService,
         private readonly SlugRedirectServiceInterface $slugRedirectService,
         private readonly SeoMetadataFactoryInterface $seo,
         private readonly CampaignRosterQueryInterface $rosterQuery,
@@ -56,7 +54,7 @@ final class CampaignController extends Controller
             status: $status,
         );
 
-        $gameSystems = $this->tableQueryService->getGameSystemsWithTables();
+        $gameSystems = $this->queryService->getGameSystemsWithCampaigns();
 
         return Inertia::render('Campaigns/Index', [
             'campaigns' => $this->buildPaginatedResponse(

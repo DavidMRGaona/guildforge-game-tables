@@ -218,6 +218,11 @@ export interface Campaign {
     updatedAt: string;
 }
 
+export interface FilterOption {
+    value: string;
+    label: string;
+}
+
 export interface GameTableFilters {
     systems?: string[];
     format?: string;

@@ -774,9 +774,12 @@ function cancelRoleSelect(): void {
                 :class="{
                     'bg-primary text-white hover:bg-primary-700 focus:ring-primary-500':
                         (isAuthenticated && canRegister && !canJoinWaitingList && !verificationBlocked) || (canRegisterAsGuest && !guestJoinsWaitingList),
-                    'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500':
+                    // Theme tokens: fixed hues ignored the site palette. The core's semantic backgrounds win over
+                    // module hover variants, so the hover cue is a shadow (waiting list) or a tint on no base (cancel)
+                    'border border-info bg-info-light text-base-primary hover:shadow-md focus:ring-info':
                         (isAuthenticated && canJoinWaitingList && !verificationBlocked) || (canRegisterAsGuest && guestJoinsWaitingList),
-                    'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500': canCancel && !verificationBlocked,
+                    // Destructive but secondary: outlined so it does not compete with the main action
+                    'border border-error text-error hover:bg-error/10 focus:ring-error': canCancel && !verificationBlocked,
                     'bg-base-secondary text-base-inverted hover:bg-base-secondary/90 focus:ring-base-secondary':
                         !isAuthenticated && !canRegisterAsGuest,
                     'cursor-not-allowed bg-base-secondary/10 text-base-secondary':
@@ -934,7 +937,7 @@ function cancelRoleSelect(): void {
                                     </button>
                                     <button
                                         type="button"
-                                        class="flex-1 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                                        class="flex-1 rounded-lg bg-error px-4 py-2.5 text-sm font-medium text-base-inverted transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-error"
                                         @click="handleCancel"
                                     >
                                         {{ $t('buttons.confirm') }}
