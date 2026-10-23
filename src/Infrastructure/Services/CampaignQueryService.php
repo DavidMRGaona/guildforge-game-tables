@@ -12,6 +12,7 @@ use Modules\GameTables\Application\Services\CampaignQueryServiceInterface;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
+use Modules\GameTables\Domain\Repositories\GameSystemRepositoryInterface;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
@@ -20,6 +21,7 @@ final class CampaignQueryService implements CampaignQueryServiceInterface
 {
     public function __construct(
         private readonly CampaignRepositoryInterface $campaignRepository,
+        private readonly GameSystemRepositoryInterface $gameSystemRepository,
         private readonly SeatCounter $seatCounter,
     ) {}
 
@@ -69,6 +71,11 @@ final class CampaignQueryService implements CampaignQueryServiceInterface
 
         /** @var CampaignModel $campaign */
         return $this->toDetailDTO($campaign);
+    }
+
+    public function getGameSystemsWithCampaigns(): array
+    {
+        return $this->gameSystemRepository->getActiveWithPublishedCampaignCount();
     }
 
     /**

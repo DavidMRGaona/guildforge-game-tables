@@ -63,4 +63,12 @@ interface GameSystemRepositoryInterface
      * @return array<array{id: string, name: string, count: int}>
      */
     public function getActiveWithPublishedTableCount(): array;
+
+    /**
+     * Get active game systems with count of the campaigns the public listing shows.
+     * Returns array of arrays with 'id', 'name', and 'count' keys.
+     *
+     * @return array<array{id: string, name: string, count: int}>
+     */
+    public function getActiveWithPublishedCampaignCount(): array;
 }

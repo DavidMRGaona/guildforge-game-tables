@@ -3,18 +3,19 @@ import { ref, computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import type { PaginatedResponse } from '@/types';
-import type { CampaignListItem, GameSystem, GameTableFilters } from '../../types/gametables';
+import type { CampaignListItem, FilterOption, GameSystem, GameTableFilters as GameTableFiltersType } from '../../types/gametables';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import EmptyState from '@/components/ui/EmptyState.vue';
 import CampaignCard from '../../components/CampaignCard.vue';
+import GameTableFilters from '../../components/GameTableFilters.vue';
 import { usePagination } from '@/composables/usePagination';
 import { useGridLayout, type GridColumns } from '@/composables/useGridLayout';
 
 interface Props {
     campaigns: PaginatedResponse<CampaignListItem>;
-    gameSystems: GameSystem[];
-    currentFilters: GameTableFilters;
+    gameSystems?: GameSystem[];
+    currentFilters?: GameTableFiltersType;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -33,6 +34,14 @@ const { firstItemNumber, lastItemNumber, hasPagination, goToPrev, goToNext, canG
     usePagination(() => props.campaigns);
 
 const totalResults = computed(() => props.campaigns.meta.total);
+
+// The statuses the public listing can show: cancelled campaigns are left out
+const campaignStatuses: FilterOption[] = [
+    { value: 'recruiting', label: t('campaigns.status.recruiting') },
+    { value: 'active', label: t('campaigns.status.active') },
+    { value: 'on_hold', label: t('campaigns.status.onHold') },
+    { value: 'completed', label: t('campaigns.status.completed') },
+];
 
 function handlePrev(): void {
     isNavigating.value = true;
@@ -67,6 +76,16 @@ function handleNext(): void {
         </div>
 
         <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+            <GameTableFilters
+                :game-systems="props.gameSystems"
+                :current-filters="props.currentFilters"
+                :statuses="campaignStatuses"
+                :show-format="false"
+                :show-event="false"
+                base-path="/campanas"
+                class="mb-6"
+            />
+
             <!-- Results counter -->
             <p
                 aria-live="polite"

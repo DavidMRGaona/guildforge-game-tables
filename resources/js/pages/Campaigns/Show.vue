@@ -368,6 +368,14 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                                 {{ campaign.experienceLevelLabel }}
                             </p>
                         </div>
+
+                        <!-- Language -->
+                        <div v-if="campaign.languageLabel">
+                            <h3 class="mb-1 text-sm font-semibold text-base-primary">
+                                {{ t('campaigns.language') }}
+                            </h3>
+                            <p class="text-base-secondary">{{ campaign.languageLabel }}</p>
+                        </div>
                     </div>
 
                     <!-- Join box, full width: inside the grid it stretched one cell -->
@@ -381,14 +389,6 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
 
                     <!-- Additional Details -->
                     <div class="mb-6 space-y-4">
-                        <!-- Language -->
-                        <div v-if="campaign.languageLabel">
-                            <h3 class="mb-2 text-sm font-semibold text-base-primary">
-                                {{ t('campaigns.language') }}
-                            </h3>
-                            <p class="text-base-secondary">{{ campaign.languageLabel }}</p>
-                        </div>
-
                         <!-- Settings -->
                         <div v-if="campaign.settings">
                             <h3 class="mb-2 text-sm font-semibold text-base-primary">

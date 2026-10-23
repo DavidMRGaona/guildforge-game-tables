@@ -6,6 +6,7 @@ namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories;
 
 use DateTimeImmutable;
 use Modules\GameTables\Domain\Entities\GameSystem;
+use Modules\GameTables\Domain\Enums\CampaignStatus;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Exceptions\GameSystemNotFoundException;
 use Modules\GameTables\Domain\Repositories\GameSystemRepositoryInterface;
@@ -108,6 +109,26 @@ final readonly class EloquentGameSystemRepository implements GameSystemRepositor
                 'id' => $system->id,
                 'name' => $system->name,
                 'count' => $system->game_tables_count,
+            ])
+            ->values()
+            ->all();
+    }
+
+    public function getActiveWithPublishedCampaignCount(): array
+    {
+        return GameSystemModel::query()
+            ->where('is_active', true)
+            ->withCount(['campaigns' => function ($query): void {
+                $query->where('is_published', true)
+                    ->whereNotIn('status', [CampaignStatus::Cancelled->value]);
+            }])
+            ->orderBy('name')
+            ->get()
+            ->filter(fn (GameSystemModel $system): bool => $system->campaigns_count > 0)
+            ->map(fn (GameSystemModel $system): array => [
+                'id' => $system->id,
+                'name' => $system->name,
+                'count' => $system->campaigns_count,
             ])
             ->values()
             ->all();

@@ -2,17 +2,25 @@
 import { ref, watch, computed, nextTick } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import type { GameSystem, GameTableFilters, EventFilter } from '../types/gametables';
+import type { GameSystem, GameTableFilters, EventFilter, FilterOption } from '../types/gametables';
 
 interface Props {
     gameSystems: GameSystem[];
     events?: EventFilter[];
     currentFilters: GameTableFilters;
     basePath: string;
+    // Status choices without the "all" entry; the table statuses when empty
+    statuses?: FilterOption[];
+    // The campaigns list has neither a format nor an event filter
+    showFormat?: boolean;
+    showEvent?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
     events: () => [],
+    statuses: () => [],
+    showFormat: true,
+    showEvent: true,
 });
 
 const { t } = useI18n();
@@ -29,13 +37,17 @@ const formatOptions = [
     { value: 'hybrid', label: t('gameTables.formats.hybrid') },
 ];
 
-const statusOptions = [
-    { value: '', label: t('gameTables.filters.allStatuses') },
+const tableStatuses: FilterOption[] = [
     { value: 'scheduled', label: t('gameTables.statuses.scheduled') },
     { value: 'in_progress', label: t('gameTables.statuses.inProgress') },
     { value: 'full', label: t('gameTables.statuses.full') },
     { value: 'completed', label: t('gameTables.statuses.completed') },
     { value: 'cancelled', label: t('gameTables.statuses.cancelled') },
+];
+
+const statusOptions: FilterOption[] = [
+    { value: '', label: t('gameTables.filters.allStatuses') },
+    ...(props.statuses.length > 0 ? props.statuses : tableStatuses),
 ];
 
 function applyFilters(): void {
@@ -238,7 +250,7 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
         <!-- Dropdown filters row -->
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <!-- Format Filter -->
-            <div>
+            <div v-if="showFormat">
                 <label
                     for="format-filter"
                     class="mb-1.5 block text-sm font-medium text-base-secondary"
@@ -297,8 +309,8 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
                 </div>
             </div>
 
-            <!-- Event Filter (always visible) -->
-            <div>
+            <!-- Event Filter (always visible where events apply) -->
+            <div v-if="showEvent">
                 <label
                     for="event-filter"
                     class="mb-1.5 block text-sm font-medium text-base-secondary"
