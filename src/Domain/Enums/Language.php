@@ -12,6 +12,50 @@ enum Language: string
     case Basque = 'eu';
     case Galician = 'gl';
 
+    /**
+     * Each language in its own tongue, the same whatever the site locale. It also names codes
+     * outside the selectable cases, since the web forms only check the length of the code.
+     */
+    private const NATIVE_NAMES = [
+        'es' => 'Español',
+        'en' => 'English',
+        'ca' => 'Català',
+        'eu' => 'Euskara',
+        'gl' => 'Galego',
+        'fr' => 'Français',
+        'de' => 'Deutsch',
+        'it' => 'Italiano',
+        'pt' => 'Português',
+    ];
+
+    public function nativeName(): string
+    {
+        return self::NATIVE_NAMES[$this->value];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function nativeOptions(): array
+    {
+        return array_combine(
+            array_column(self::cases(), 'value'),
+            array_map(fn (self $case): string => $case->nativeName(), self::cases()),
+        );
+    }
+
+    /**
+     * The native name of a stored code; an unknown code is returned as it is.
+     */
+    public static function nativeNameOf(?string $code): ?string
+    {
+        if ($code === null) {
+            return null;
+        }
+
+        return self::NATIVE_NAMES[$code] ?? $code;
+    }
+
     public function label(): string
     {
         return match ($this) {

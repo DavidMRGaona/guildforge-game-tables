@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
+use Modules\GameTables\Domain\Enums\ExperienceLevel;
 use Modules\GameTables\Domain\Enums\JoinRequestStatus;
 use Modules\GameTables\Domain\Events\CampaignJoinRequestAccepted;
 use Modules\GameTables\Domain\Events\CampaignJoinRequestRejected;
@@ -75,6 +76,21 @@ final class CampaignRosterPanelTest extends ModuleTestCase
             ->assertHasNoFormErrors();
 
         $this->assertSame('members_only', $campaign->refresh()->roster_access->value);
+    }
+
+    public function test_the_language_and_experience_level_fields_save(): void
+    {
+        $campaign = $this->campaign();
+
+        $this->edit($campaign)
+            ->assertFormSet(['language' => null, 'experience_level' => null])
+            ->fillForm(['language' => 'en', 'experience_level' => 'advanced'])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $campaign->refresh();
+        $this->assertSame('en', $campaign->language);
+        $this->assertSame(ExperienceLevel::Advanced, $campaign->experience_level);
     }
 
     public function test_a_maximum_below_the_roster_is_refused(): void

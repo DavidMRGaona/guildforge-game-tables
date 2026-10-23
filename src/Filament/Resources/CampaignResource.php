@@ -36,6 +36,8 @@ use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Modules\GameTables\Domain\Enums\CampaignFrequency;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
+use Modules\GameTables\Domain\Enums\ExperienceLevel;
+use Modules\GameTables\Domain\Enums\Language;
 use Modules\GameTables\Domain\Enums\RosterAccess;
 use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
@@ -115,6 +117,18 @@ final class CampaignResource extends BaseResource
                                     ->default(CampaignStatus::Recruiting->value)
                                     ->native(false)
                                     ->required(),
+
+                                // Optional: campaigns created before these were stored have no value
+                                Select::make('language')
+                                    ->label(__('game-tables::messages.fields.language'))
+                                    ->options(Language::nativeOptions())
+                                    ->default(Language::Spanish->value)
+                                    ->native(false),
+
+                                Select::make('experience_level')
+                                    ->label(__('game-tables::messages.fields.experience_level'))
+                                    ->options(ExperienceLevel::options())
+                                    ->native(false),
 
                                 Textarea::make('description')
                                     ->label(__('game-tables::messages.fields.description'))

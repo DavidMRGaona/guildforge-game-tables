@@ -8,6 +8,7 @@ use DateTimeInterface;
 use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Enums\CampaignFrequency;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
+use Modules\GameTables\Domain\Enums\ExperienceLevel;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\RosterAccess;
 
@@ -50,6 +51,8 @@ final readonly class CampaignResponseDTO
         public bool $directedByViewer = false,
         public bool $acceptsSessions = false,
         public RosterAccess $rosterAccess = RosterAccess::Anyone,
+        public ?string $language = null,
+        public ?ExperienceLevel $experienceLevel = null,
     ) {}
 
     /**
@@ -101,6 +104,8 @@ final readonly class CampaignResponseDTO
             directedByViewer: $directedByViewer,
             acceptsSessions: $acceptsSessions,
             rosterAccess: $campaign->rosterAccess,
+            language: $campaign->language,
+            experienceLevel: $campaign->experienceLevel,
         );
     }
 
@@ -145,6 +150,8 @@ final readonly class CampaignResponseDTO
             'can_add_session' => $this->acceptsSessions,
             'roster_access' => $this->rosterAccess->value,
             'roster_access_label' => $this->rosterAccess->label(),
+            'language' => $this->language,
+            'experience_level' => $this->experienceLevel?->value,
             'created_at' => $this->createdAt?->format('c'),
             'updated_at' => $this->updatedAt?->format('c'),
         ];

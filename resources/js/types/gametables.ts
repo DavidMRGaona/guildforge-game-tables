@@ -205,6 +205,7 @@ export interface Campaign {
     contentWarnings: string[];
     minimumAge: number | null;
     language: string | null;
+    languageLabel: string | null;
     experienceLevel: string | null;
     experienceLevelLabel: string | null;
     totalSessions: number;
