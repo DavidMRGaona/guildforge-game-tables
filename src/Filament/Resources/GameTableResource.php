@@ -33,6 +33,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Filament\Notifications\Notification;
@@ -522,7 +523,8 @@ final class GameTableResource extends BaseResource
                     ->label(__('game-tables::messages.fields.is_published')),
                 SelectFilter::make('frontend_creation_status')
                     ->label(__('game-tables::messages.fields.frontend_creation_status'))
-                    ->options(FrontendCreationStatus::options()),
+                    // Rejected is no longer written (the enum case stays for old code paths that may still read it)
+                    ->options(Arr::except(FrontendCreationStatus::options(), [FrontendCreationStatus::Rejected->value])),
             ])
             ->recordActions([
                 Action::make('approve')

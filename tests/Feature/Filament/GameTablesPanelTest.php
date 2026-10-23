@@ -114,6 +114,20 @@ final class GameTablesPanelTest extends ModuleTestCase
             ->assertFormSet(['title' => 'La llamada']);
     }
 
+    public function test_the_creation_status_filter_does_not_offer_the_unused_rejected_status(): void
+    {
+        $this->gameTable();
+
+        $options = Livewire::test(ListGameTables::class)
+            ->instance()
+            ->getTable()
+            ->getFilter('frontend_creation_status')
+            ->getOptions();
+
+        $this->assertArrayNotHasKey('rejected', $options);
+        $this->assertSame(['draft', 'pending_review', 'approved'], array_keys($options));
+    }
+
     public function test_game_table_pages_render(): void
     {
         $table = $this->gameTable();
