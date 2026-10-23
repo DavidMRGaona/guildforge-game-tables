@@ -7,6 +7,7 @@ namespace Modules\GameTables\Domain\Entities;
 use DateTimeImmutable;
 use Modules\GameTables\Domain\Enums\CampaignFrequency;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
+use Modules\GameTables\Domain\Enums\ExperienceLevel;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\RosterAccess;
 use Modules\GameTables\Domain\Exceptions\RosterActionRefusedException;
@@ -35,6 +36,9 @@ final class Campaign
         public ?DateTimeImmutable $createdAt = null,
         public ?DateTimeImmutable $updatedAt = null,
         public RosterAccess $rosterAccess = RosterAccess::Anyone,
+        // Null when the creator was never asked (campaigns created before they were stored)
+        public ?string $language = null,
+        public ?ExperienceLevel $experienceLevel = null,
     ) {
     }
 

@@ -382,11 +382,11 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                     <!-- Additional Details -->
                     <div class="mb-6 space-y-4">
                         <!-- Language -->
-                        <div v-if="campaign.language">
+                        <div v-if="campaign.languageLabel">
                             <h3 class="mb-2 text-sm font-semibold text-base-primary">
                                 {{ t('campaigns.language') }}
                             </h3>
-                            <p class="text-base-secondary">{{ campaign.language }}</p>
+                            <p class="text-base-secondary">{{ campaign.languageLabel }}</p>
                         </div>
 
                         <!-- Settings -->

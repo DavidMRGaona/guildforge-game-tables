@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Modules\GameTables\Domain\Enums\CampaignFrequency;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
+use Modules\GameTables\Domain\Enums\ExperienceLevel;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\RosterAccess;
 use App\Infrastructure\Persistence\Eloquent\Concerns\HasSlug;
@@ -35,6 +36,8 @@ use App\Infrastructure\Persistence\Eloquent\Concerns\HasSlug;
  * @property FrontendCreationStatus|null $frontend_creation_status
  * @property string|null $moderation_notes
  * @property RosterAccess $roster_access
+ * @property string|null $language
+ * @property ExperienceLevel|null $experience_level
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
@@ -76,6 +79,8 @@ final class CampaignModel extends Model
         'frontend_creation_status',
         'moderation_notes',
         'roster_access',
+        'language',
+        'experience_level',
     ];
 
     /**
@@ -93,6 +98,7 @@ final class CampaignModel extends Model
             'is_published' => 'boolean',
             'frontend_creation_status' => FrontendCreationStatus::class,
             'roster_access' => RosterAccess::class,
+            'experience_level' => ExperienceLevel::class,
         ];
     }
 

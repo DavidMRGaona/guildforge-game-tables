@@ -9,6 +9,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\GameTables\Application\DTOs\GameMasterResponseDTO;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
 use Modules\GameTables\Application\DTOs\TableSeatsDTO;
+use Modules\GameTables\Domain\Enums\Language;
 
 /**
  * The seats come counted by the server (SeatCounter), with the rule it applies on registration.
@@ -61,7 +62,7 @@ final class GameTableResource extends JsonResource
             'maxSpectators' => $this->maxSpectators,
             'minimumAge' => $this->minimumAge,
             'language' => $this->language,
-            'languageLabel' => $this->getLanguageLabel($this->language),
+            'languageLabel' => Language::nativeNameOf($this->language),
             'experienceLevel' => $this->experienceLevel?->value,
             'experienceLevelLabel' => $this->experienceLevel?->label(),
             'characterCreation' => $this->characterCreation?->value,
@@ -94,26 +95,5 @@ final class GameTableResource extends JsonResource
             'createdAt' => $this->createdAt?->format('c'),
             'updatedAt' => $this->updatedAt?->format('c'),
         ];
-    }
-
-    private function getLanguageLabel(?string $language): ?string
-    {
-        if ($language === null) {
-            return null;
-        }
-
-        $languages = [
-            'es' => 'Español',
-            'en' => 'English',
-            'ca' => 'Català',
-            'eu' => 'Euskara',
-            'gl' => 'Galego',
-            'fr' => 'Français',
-            'de' => 'Deutsch',
-            'it' => 'Italiano',
-            'pt' => 'Português',
-        ];
-
-        return $languages[$language] ?? $language;
     }
 }

@@ -48,6 +48,7 @@ use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\Genre;
+use Modules\GameTables\Domain\Enums\Language;
 use Modules\GameTables\Filament\Forms\Components\GameMasterRepeater;
 use Modules\GameTables\Domain\Enums\RegistrationType;
 use Modules\GameTables\Domain\Enums\SafetyTool;
@@ -311,13 +312,7 @@ final class GameTableResource extends BaseResource
 
                                 Select::make('language')
                                     ->label(__('game-tables::messages.fields.language'))
-                                    ->options([
-                                        'es' => 'Español',
-                                        'en' => 'English',
-                                        'ca' => 'Català',
-                                        'eu' => 'Euskara',
-                                        'gl' => 'Galego',
-                                    ])
+                                    ->options(Language::nativeOptions())
                                     ->default('es')
                                     ->native(false)
                                     ->required(),

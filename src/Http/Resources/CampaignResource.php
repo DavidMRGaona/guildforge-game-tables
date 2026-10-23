@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\GameTables\Application\DTOs\CampaignGameMasterResponseDTO;
 use Modules\GameTables\Application\DTOs\CampaignResponseDTO;
+use Modules\GameTables\Domain\Enums\Language;
 
 /**
  * @mixin CampaignResponseDTO
@@ -61,9 +62,10 @@ final class CampaignResource extends JsonResource
             'safetyTools' => [],
             'contentWarnings' => [],
             'minimumAge' => null,
-            'language' => null,
-            'experienceLevel' => null,
-            'experienceLevelLabel' => null,
+            'language' => $this->language,
+            'languageLabel' => Language::nativeNameOf($this->language),
+            'experienceLevel' => $this->experienceLevel?->value,
+            'experienceLevelLabel' => $this->experienceLevel?->label(),
             'createdAt' => $this->createdAt?->format('c'),
             'updatedAt' => $this->updatedAt?->format('c'),
         ];

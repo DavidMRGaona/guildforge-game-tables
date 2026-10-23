@@ -221,6 +221,8 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             maxPlayers: $dto->maxPlayers,
             isPublished: $creationStatus === FrontendCreationStatus::Approved,
             frontendCreationStatus: $creationStatus,
+            language: $dto->language,
+            experienceLevel: $dto->experienceLevel,
         );
 
         // 4. Persist the campaign
@@ -707,6 +709,8 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         $campaign->description = $dto->synopsis;
         $campaign->frequency = $dto->frequency;
         $campaign->maxPlayers = $dto->maxPlayers;
+        $campaign->language = $dto->language;
+        $campaign->experienceLevel = $dto->experienceLevel;
 
         // A campaign rejected before 2.10.0 (legacy status) becomes a draft on edit, keeping the reason
         if ($campaign->frontendCreationStatus === FrontendCreationStatus::Rejected) {

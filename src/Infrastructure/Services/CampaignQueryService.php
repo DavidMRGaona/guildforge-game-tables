@@ -129,6 +129,8 @@ final class CampaignQueryService implements CampaignQueryServiceInterface
             hasActiveOrUpcomingTables: false,
             createdAt: $campaign->created_at,
             updatedAt: $campaign->updated_at,
+            language: $campaign->language,
+            experienceLevel: $campaign->experience_level,
         );
     }
 
@@ -169,6 +171,8 @@ final class CampaignQueryService implements CampaignQueryServiceInterface
             hasActiveOrUpcomingTables: $hasActiveOrUpcoming,
             createdAt: $campaign->created_at,
             updatedAt: $campaign->updated_at,
+            language: $campaign->language,
+            experienceLevel: $campaign->experience_level,
         );
     }
 

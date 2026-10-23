@@ -52,6 +52,9 @@ interface CampaignData {
     game_system_name: string;
     frequency: string | null;
     max_players: number | null;
+    // Null for campaigns created before these were stored
+    language: string | null;
+    experience_level: string | null;
     frontend_creation_status: string | null;
     frontend_creation_status_label: string | null;
     moderation_notes: string | null;
@@ -142,8 +145,8 @@ const form = useForm({
     table_format: 'in_person',
     location: '',
     online_url: '',
-    language: 'es',
-    experience_level: null as string | null,
+    language: props.campaign.language ?? 'es',
+    experience_level: props.campaign.experience_level as string | null,
     character_creation: null as string | null,
     genres: [] as string[],
     tone: null as string | null,
