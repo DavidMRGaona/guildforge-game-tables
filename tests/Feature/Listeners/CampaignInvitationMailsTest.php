@@ -126,7 +126,7 @@ final class CampaignInvitationMailsTest extends ModuleTestCase
             $text = implode("\n", array_map('strval', $mail->introLines))."\n".implode("\n", array_map('strval', $mail->outroLines));
 
             return str_contains($text, 'Gremio de prueba')
-                && str_contains($text, 'te lo facilitó John Doe')
+                && str_contains($text, 'tu email nos lo ha facilitado John Doe')
                 && str_contains($text, 'Caduca el 04/11/2026.')
                 && str_contains($text, url('/politica-de-privacidad'))
                 && str_contains($text, 'Rechazar')
@@ -172,7 +172,7 @@ final class CampaignInvitationMailsTest extends ModuleTestCase
         $text = $this->invitationText();
 
         $this->assertStringContainsString('Finalidad: invitarte a esta campaña.', $text);
-        $this->assertStringContainsString('Origen: te lo facilitó John &lt;b&gt;Doe&lt;/b&gt;.', $text);
+        $this->assertStringContainsString('Origen: tu email nos lo ha facilitado John &lt;b&gt;Doe&lt;/b&gt;.', $text);
         $this->assertStringContainsString('como máximo 14 días', $text);
         $this->assertStringContainsString('Derechos:', $text);
     }
@@ -213,7 +213,7 @@ final class CampaignInvitationMailsTest extends ModuleTestCase
         $text = $this->invitationText();
 
         $this->assertStringContainsString('Responsable: Gremio de prueba', $text);
-        $this->assertStringContainsString('Origen: te lo facilitó John &lt;b&gt;Doe&lt;/b&gt;.', $text);
+        $this->assertStringContainsString('Origen: tu email nos lo ha facilitado John &lt;b&gt;Doe&lt;/b&gt;.', $text);
     }
 
     public function test_a_resend_in_the_meantime_skips_the_stale_email(): void
