@@ -65,6 +65,7 @@ use Modules\CookieConsent\Application\Services\CookieDeclarationRegistryInterfac
 use Modules\GameTables\Application\Services\CampaignDirectionInterface;
 use Modules\GameTables\Application\Services\TableDirectionInterface;
 use Modules\GameTables\Application\Services\CampaignRosterQueryInterface;
+use Modules\GameTables\Application\Services\TableRegistrationsQueryInterface;
 use Modules\GameTables\Application\Services\CampaignInvitationServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterSessionSyncInterface;
@@ -149,6 +150,7 @@ use Modules\GameTables\Infrastructure\Services\CampaignDirection;
 use Modules\GameTables\Infrastructure\Services\TableDirection;
 use Modules\GameTables\Infrastructure\Services\DatabaseCampaignInvitationSendLog;
 use Modules\GameTables\Infrastructure\Services\CampaignRosterQuery;
+use Modules\GameTables\Infrastructure\Services\TableRegistrationsQuery;
 use Modules\GameTables\Infrastructure\Services\CampaignInvitationService;
 use Modules\GameTables\Infrastructure\Services\CampaignRosterService;
 use Modules\GameTables\Infrastructure\Services\CampaignRosterSessionSync;
@@ -233,6 +235,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         $this->app->bind(CampaignRosterServiceInterface::class, CampaignRosterService::class);
         $this->app->bind(CampaignInvitationServiceInterface::class, CampaignInvitationService::class);
         $this->app->bind(CampaignRosterQueryInterface::class, CampaignRosterQuery::class);
+        $this->app->bind(TableRegistrationsQueryInterface::class, TableRegistrationsQuery::class);
 
         // Query service bindings
         $this->app->bind(GameTableQueryServiceInterface::class, GameTableQueryService::class);
@@ -665,6 +668,21 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                 $message = (string) __('game-tables::messages.roster.errors.too_many_additions');
 
                 // As the refusals of the roster page: a flash, not Inertia's raw 429
+                return $request->expectsJson()
+                    ? response()->json(['message' => $message], 429, $headers)
+                    : back()->with('error', $message);
+            });
+        });
+
+        // Approvals and rejections from the «Gestionar inscritos» page, per user, as the roster
+        // additions: enough to answer a table's requests, not to hammer the service
+        RateLimiter::for('game-tables-table-registrations', static function (Request $request): Limit {
+            $userId = (string) ($request->user()?->getAuthIdentifier() ?? $request->ip() ?? 'unknown');
+
+            return Limit::perMinute(20)->by('gt-table-registrations:'.$userId)->response(static function (Request $request, array $headers): HttpResponse {
+                $message = (string) __('game-tables::messages.registrations.errors.too_many_actions');
+
+                // As the refusals of the page: a flash, not Inertia's raw 429
                 return $request->expectsJson()
                     ? response()->json(['message' => $message], 429, $headers)
                     : back()->with('error', $message);

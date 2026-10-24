@@ -928,6 +928,18 @@ return [
         ],
     ],
 
+    // The «Gestionar inscritos» page of a table's directors (errors.not_pending is the general one)
+    'registrations' => [
+        'errors' => [
+            'awaiting_email' => 'This person has not confirmed their email yet; you can approve them once they do.',
+            'too_many_actions' => 'You made too many changes in a row. Wait a minute and try again.',
+        ],
+        'success' => [
+            'approved' => "You approved :name's registration.",
+            'rejected' => "You rejected :name's request.",
+        ],
+    ],
+
     // Server-rendered page metadata (link previews and search engines)
     'seo' => [
         'tables_title' => 'Game tables',
@@ -945,6 +957,7 @@ return [
         'edit_campaign_title' => 'Edit campaign',
         'my_campaigns_title' => 'My campaigns',
         'roster_title' => 'Roster · :title',
+        'registrations_title' => 'Registrations for :title',
     ],
 
     /*

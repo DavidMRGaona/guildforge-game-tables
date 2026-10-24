@@ -300,6 +300,25 @@ export default {
             deleteTitle: 'Delete table',
             confirmDelete: 'Are you sure you want to delete "{title}"? This action cannot be undone.',
         },
+        // «Gestionar inscritos»: the directors of a table that delegates its registrations
+        registrations: {
+            title: 'Manage registrations',
+            back: 'My tables',
+            pending: 'Pending requests',
+            others: 'Other registrations',
+            empty: 'No registrations yet.',
+            noPending: 'There are no pending requests.',
+            awaitingEmail: 'Waiting for them to confirm their email',
+            guest: 'Guest',
+            approve: 'Approve',
+            reject: 'Reject',
+            approveNamed: "Approve {name}'s request",
+            rejectTitle: "Reject {name}'s request",
+            rejectReason: 'Reason (optional; it will be emailed to them)',
+            rejectConfirm: 'Reject request',
+            autoConfirmNotice: 'This table confirms registrations automatically; you will have no requests to approve.',
+            seats: '{confirmed} of {max} seats taken',
+        },
         // Name of the tab list of the table and campaign forms
         formTabs: {
             label: 'Form sections',

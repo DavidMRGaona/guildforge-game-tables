@@ -1005,6 +1005,18 @@ return [
         ],
     ],
 
+    // The «Gestionar inscritos» page of a table's directors (errors.not_pending is the general one)
+    'registrations' => [
+        'errors' => [
+            'awaiting_email' => 'Esta persona aún no ha confirmado su email; podrás aprobarla cuando lo haga.',
+            'too_many_actions' => 'Has hecho demasiados cambios seguidos. Espera un minuto y vuelve a intentarlo.',
+        ],
+        'success' => [
+            'approved' => 'Has aprobado la inscripción de :name.',
+            'rejected' => 'Has rechazado la solicitud de :name.',
+        ],
+    ],
+
     // Server-rendered page metadata (link previews and search engines)
     'seo' => [
         'tables_title' => 'Mesas de rol',
@@ -1022,6 +1034,7 @@ return [
         'edit_campaign_title' => 'Editar campaña',
         'my_campaigns_title' => 'Mis campañas',
         'roster_title' => 'Plantilla · :title',
+        'registrations_title' => 'Inscritos de :title',
     ],
 
     /*

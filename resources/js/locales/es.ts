@@ -300,6 +300,25 @@ export default {
             deleteTitle: 'Eliminar mesa',
             confirmDelete: '¿Estás seguro de que quieres eliminar "{title}"? Esta acción no se puede deshacer.',
         },
+        // «Gestionar inscritos»: the directors of a table that delegates its registrations
+        registrations: {
+            title: 'Gestionar inscritos',
+            back: 'Mis mesas',
+            pending: 'Solicitudes pendientes',
+            others: 'Resto de inscripciones',
+            empty: 'Aún no hay inscripciones.',
+            noPending: 'No hay solicitudes pendientes.',
+            awaitingEmail: 'Esperando a que confirme su email',
+            guest: 'Invitado',
+            approve: 'Aprobar',
+            reject: 'Rechazar',
+            approveNamed: 'Aprobar la solicitud de {name}',
+            rejectTitle: 'Rechazar la solicitud de {name}',
+            rejectReason: 'Motivo (opcional; se le enviará por correo)',
+            rejectConfirm: 'Rechazar solicitud',
+            autoConfirmNotice: 'Esta partida confirma las inscripciones automáticamente; no tendrás solicitudes que aprobar.',
+            seats: '{confirmed} de {max} plazas ocupadas',
+        },
         // Name of the tab list of the table and campaign forms
         formTabs: {
             label: 'Secciones del formulario',
