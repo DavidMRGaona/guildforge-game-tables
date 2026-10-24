@@ -105,6 +105,7 @@ interface RegistrationServiceInterface
      *
      * @throws \Modules\GameTables\Domain\Exceptions\ParticipantNotPendingException when the registration is no longer pending (nothing changes)
      * @throws \Modules\GameTables\Domain\Exceptions\ParticipantAwaitingEmailException for a guest whose email is not confirmed (nothing changes)
+     * @throws \Modules\GameTables\Domain\Exceptions\TableClosedException when the table has ended or been cancelled (nothing changes)
      * @throws \Modules\GameTables\Domain\Exceptions\TableFullException when no player or spectator seat is free (nothing changes)
      */
     public function approveAsDirector(string $participantId): ParticipantResponseDTO;

@@ -31,6 +31,7 @@ final class TableRegistrationsCopyTest extends TestCase
         'relation_managers.status_log.deleted_account',
         'relation_managers.status_log.registered',
         'registrations.errors.awaiting_email',
+        'registrations.errors.table_closed',
         'registrations.errors.too_many_actions',
         'registrations.success.approved',
         'registrations.success.rejected',

@@ -302,6 +302,20 @@ final class TableRegistrationsControllerTest extends ModuleTestCase
         Notification::assertNothingSent();
     }
 
+    public function test_approving_on_a_completed_table_is_refused(): void
+    {
+        $jane = $this->userRow($this->table, $this->jane, 'pending', CarbonImmutable::parse('2026-10-30 12:00:00'));
+        $this->table->forceFill(['status' => 'completed'])->save();
+
+        $this->asDirector()
+            ->post($this->actionUrl($jane, 'aprobar'))
+            ->assertRedirect($this->pageUrl())
+            ->assertSessionHas('error', 'Esta partida ya ha terminado o se ha cancelado.');
+
+        $this->assertSame('pending', $jane->refresh()->status->value);
+        Notification::assertNothingSent();
+    }
+
     // Approving
 
     public function test_approving_a_pending_user(): void

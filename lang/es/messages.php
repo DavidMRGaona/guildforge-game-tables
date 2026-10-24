@@ -1021,6 +1021,7 @@ return [
         'errors' => [
             'awaiting_email' => 'Esta persona aún no ha confirmado su email; podrás aprobarla cuando lo haga.',
             'too_many_actions' => 'Has hecho demasiados cambios seguidos. Espera un minuto y vuelve a intentarlo.',
+            'table_closed' => 'Esta partida ya ha terminado o se ha cancelado.',
         ],
         'success' => [
             'approved' => 'Has aprobado la inscripción de :name.',

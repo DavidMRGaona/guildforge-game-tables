@@ -42,6 +42,7 @@ use Modules\GameTables\Domain\Exceptions\ParticipantNotFoundException;
 use Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException;
 use Modules\GameTables\Domain\Exceptions\ParticipantAwaitingEmailException;
 use Modules\GameTables\Domain\Exceptions\ParticipantNotPendingException;
+use Modules\GameTables\Domain\Exceptions\TableClosedException;
 use Modules\GameTables\Domain\Exceptions\TableFullException;
 use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
@@ -1177,7 +1178,14 @@ final readonly class RegistrationService implements RegistrationServiceInterface
                 throw ParticipantAwaitingEmailException::forParticipant($participantId);
             }
 
-            $this->ensureSeatForDirector($participant);
+            // Also read under the lock: the table may have ended or been cancelled meanwhile
+            $gameTable = $this->gameTableRepository->findOrFail($participant->gameTableId);
+
+            if ($gameTable->isFinal()) {
+                throw TableClosedException::forTable($gameTable->id->value);
+            }
+
+            $this->ensureSeatForDirector($participant, $gameTable);
 
             $participant->confirm();
             $this->participantRepository->save($participant);
@@ -1200,10 +1208,8 @@ final readonly class RegistrationService implements RegistrationServiceInterface
      *
      * @throws TableFullException
      */
-    private function ensureSeatForDirector(Participant $participant): void
+    private function ensureSeatForDirector(Participant $participant, GameTable $gameTable): void
     {
-        $gameTable = $this->gameTableRepository->findOrFail($participant->gameTableId);
-
         if ($participant->isPlayer() && ! $gameTable->hasCapacity($this->participantRepository->countConfirmedPlayers($gameTable->id))) {
             throw TableFullException::forTable($gameTable->id->value);
         }

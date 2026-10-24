@@ -20,6 +20,7 @@ use Modules\GameTables\Application\Services\TableRegistrationsQueryInterface;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
 use Modules\GameTables\Domain\Exceptions\ParticipantAwaitingEmailException;
 use Modules\GameTables\Domain\Exceptions\ParticipantNotPendingException;
+use Modules\GameTables\Domain\Exceptions\TableClosedException;
 use Modules\GameTables\Domain\Exceptions\TableFullException;
 use Modules\GameTables\Http\Requests\RejectTableRegistrationRequest;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
@@ -125,6 +126,8 @@ final class TableRegistrationsController extends Controller
             return $this->awaitingEmail();
         } catch (TableFullException $e) {
             return back()->with('error', __('game-tables::messages.errors.'.$e->reason));
+        } catch (TableClosedException $e) {
+            return back()->with('error', __('game-tables::messages.registrations.errors.'.$e->reason));
         }
 
         return back()->with('success', $success);

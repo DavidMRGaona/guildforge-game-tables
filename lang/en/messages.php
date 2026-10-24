@@ -947,6 +947,7 @@ return [
         'errors' => [
             'awaiting_email' => 'This person has not confirmed their email yet; you can approve them once they do.',
             'too_many_actions' => 'You made too many changes in a row. Wait a minute and try again.',
+            'table_closed' => 'This table has already ended or been cancelled.',
         ],
         'success' => [
             'approved' => "You approved :name's registration.",

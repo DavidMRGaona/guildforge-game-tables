@@ -13,6 +13,7 @@ use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Modules\GameTables\Domain\Events\ParticipantConfirmed;
 use Modules\GameTables\Domain\Exceptions\ParticipantAwaitingEmailException;
 use Modules\GameTables\Domain\Exceptions\ParticipantNotPendingException;
+use Modules\GameTables\Domain\Exceptions\TableClosedException;
 use Modules\GameTables\Domain\Exceptions\TableFullException;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
@@ -113,6 +114,33 @@ final class DirectorRegistrationServiceTest extends ModuleTestCase
         }
 
         $this->assertSame($status, $row->refresh()->status->value);
+        $this->assertSame([], $this->participantConfirmed);
+        Notification::assertNothingSent();
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function closedTables(): array
+    {
+        return ['completed' => ['completed'], 'cancelled' => ['cancelled']];
+    }
+
+    // Read under the lock: the table may have ended since the page was loaded
+    #[DataProvider('closedTables')]
+    public function test_approving_on_a_table_that_has_ended_or_been_cancelled_is_refused(string $status): void
+    {
+        $row = $this->row('pending');
+        $this->table->forceFill(['status' => $status])->save();
+
+        try {
+            $this->service()->approveAsDirector($row->id);
+            $this->fail('A director never approves on a table that has ended or been cancelled.');
+        } catch (TableClosedException $exception) {
+            $this->assertSame('table_closed', $exception->reason);
+        }
+
+        $this->assertSame('pending', $row->refresh()->status->value);
         $this->assertSame([], $this->participantConfirmed);
         Notification::assertNothingSent();
     }
