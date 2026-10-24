@@ -11,6 +11,7 @@ use Modules\GameTables\Application\Services\GameTableServiceInterface;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Enums\TableType;
+use Modules\GameTables\Domain\Events\GameTableCancelled;
 use Modules\GameTables\Domain\Events\GameTableCompleted;
 use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
@@ -66,6 +67,40 @@ final class GameTableServiceStatusTest extends ModuleTestCase
 
         $this->assertSame(TableStatus::Cancelled, $table->refresh()->status);
         Event::assertNotDispatched(GameTableCompleted::class);
+    }
+
+    public function test_a_completed_table_is_not_cancelled_nor_announced(): void
+    {
+        Event::fake([GameTableCancelled::class]);
+        $table = $this->table(TableStatus::Completed);
+
+        try {
+            app(GameTableServiceInterface::class)->cancel($table->id);
+            $this->fail('A completed table was cancelled');
+        } catch (InvalidStatusTransitionException) {
+            // expected
+        }
+
+        $this->assertSame(TableStatus::Completed, $table->refresh()->status);
+        Event::assertNotDispatched(GameTableCancelled::class);
+    }
+
+    public function test_changing_the_status_by_hand_follows_the_allowed_transitions(): void
+    {
+        $table = $this->table(TableStatus::Scheduled);
+        $service = app(GameTableServiceInterface::class);
+
+        $this->assertSame(TableStatus::Full, $service->changeStatus($table->id, TableStatus::Full)->status);
+        $this->assertSame(TableStatus::Full, $table->refresh()->status);
+
+        $cancelled = $this->table(TableStatus::Cancelled);
+        $this->expectException(InvalidStatusTransitionException::class);
+
+        try {
+            $service->changeStatus($cancelled->id, TableStatus::Scheduled);
+        } finally {
+            $this->assertSame(TableStatus::Cancelled, $cancelled->refresh()->status);
+        }
     }
 
     private function table(TableStatus $status): GameTableModel

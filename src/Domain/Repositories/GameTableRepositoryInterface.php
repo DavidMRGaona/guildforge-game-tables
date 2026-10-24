@@ -7,6 +7,8 @@ namespace Modules\GameTables\Domain\Repositories;
 use DateTimeImmutable;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\TableStatus;
+use Modules\GameTables\Domain\Exceptions\GameTableNotFoundException;
+use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\GameSystemId;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
@@ -14,6 +16,15 @@ use Modules\GameTables\Domain\ValueObjects\GameTableId;
 interface GameTableRepositoryInterface
 {
     public function save(GameTable $gameTable): void;
+
+    /**
+     * Saves $gameTable only while its stored status is still $expected, so a change made since it
+     * was read (the automatic update, another user) is never overwritten.
+     *
+     * @throws InvalidStatusTransitionException from the stored status when it is no longer $expected
+     * @throws GameTableNotFoundException when the table was deleted meanwhile
+     */
+    public function saveIfStatusIs(GameTable $gameTable, TableStatus $expected): void;
 
     public function find(GameTableId $id): ?GameTable;
 

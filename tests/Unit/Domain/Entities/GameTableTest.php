@@ -233,6 +233,68 @@ final class GameTableTest extends TestCase
         $this->assertEquals(TableStatus::Cancelled, $gameTable->status);
     }
 
+    /**
+     * @return array<string, array{TableStatus}>
+     */
+    public static function finalStatuses(): array
+    {
+        return [
+            'completed' => [TableStatus::Completed],
+            'cancelled' => [TableStatus::Cancelled],
+        ];
+    }
+
+    #[DataProvider('finalStatuses')]
+    public function test_a_completed_or_cancelled_table_cannot_be_cancelled(TableStatus $status): void
+    {
+        $gameTable = $this->createGameTable(status: $status);
+
+        try {
+            $gameTable->cancel();
+            $this->fail("A {$status->value} table was cancelled");
+        } catch (InvalidStatusTransitionException $e) {
+            $this->assertSame($status->value, $e->from);
+            $this->assertSame('cancelled', $e->to);
+        }
+
+        $this->assertSame($status, $gameTable->status);
+    }
+
+    #[DataProvider('finalStatuses')]
+    public function test_a_completed_or_cancelled_table_never_changes_status(TableStatus $status): void
+    {
+        $gameTable = $this->createGameTable(status: $status);
+
+        $this->expectException(InvalidStatusTransitionException::class);
+
+        $gameTable->changeStatus(TableStatus::Scheduled);
+    }
+
+    public function test_changing_the_status_follows_the_allowed_transitions(): void
+    {
+        $gameTable = $this->createGameTable(status: TableStatus::Scheduled);
+
+        $gameTable->changeStatus(TableStatus::Full);
+        $this->assertSame(TableStatus::Full, $gameTable->status);
+
+        $gameTable->changeStatus(TableStatus::Scheduled);
+        $this->assertSame(TableStatus::Scheduled, $gameTable->status);
+
+        // A draft is published, not started
+        $draft = $this->createGameTable(status: TableStatus::Draft);
+        $this->expectException(InvalidStatusTransitionException::class);
+        $draft->changeStatus(TableStatus::InProgress);
+    }
+
+    public function test_only_a_scheduled_table_is_marked_as_full(): void
+    {
+        $gameTable = $this->createGameTable(status: TableStatus::InProgress);
+
+        $this->expectException(InvalidStatusTransitionException::class);
+
+        $gameTable->markAsFull();
+    }
+
     public function test_it_checks_registration_availability_based_on_status(): void
     {
         $scheduledTable = $this->createGameTable(status: TableStatus::Scheduled);

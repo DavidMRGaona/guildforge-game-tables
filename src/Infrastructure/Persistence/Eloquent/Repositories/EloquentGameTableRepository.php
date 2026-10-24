@@ -8,12 +8,14 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Exceptions\GameTableNotFoundException;
+use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\GameSystemId;
@@ -37,6 +39,25 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
         } else {
             $model->contentWarnings()->detach();
         }
+    }
+
+    public function saveIfStatusIs(GameTable $gameTable, TableStatus $expected): void
+    {
+        DB::transaction(function () use ($gameTable, $expected): void {
+            // The row stays locked until the save: no other writer moves it in between. Saved
+            // through the model, so the observers see the change
+            $stored = GameTableModel::query()->whereKey($gameTable->id->value)->lockForUpdate()->first();
+
+            if ($stored === null) {
+                throw GameTableNotFoundException::withId($gameTable->id->value);
+            }
+
+            if ($stored->status !== $expected) {
+                throw InvalidStatusTransitionException::fromTo($stored->status->value, $gameTable->status->value);
+            }
+
+            $this->save($gameTable);
+        });
     }
 
     public function find(GameTableId $id): ?GameTable
@@ -179,6 +200,8 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
             ->whereIn('status', array_map(static fn (TableStatus $status): string => $status->value, $statuses))
             ->where('starts_at', '<=', $localNow->format('Y-m-d H:i:s'))
             ->orderBy('starts_at')
+            // Tables starting at the same time come in the same order on every run
+            ->orderBy('id')
             ->pluck('id')
             ->all();
 

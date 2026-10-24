@@ -9,6 +9,7 @@ use Modules\GameTables\Application\DTOs\GameTableListDTO;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
 use Modules\GameTables\Application\DTOs\UpdateGameTableDTO;
 use Modules\GameTables\Domain\Enums\TableStatus;
+use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
 use Modules\GameTables\Domain\Exceptions\SessionBelowRosterException;
 
 interface GameTableServiceInterface
@@ -38,12 +39,27 @@ interface GameTableServiceInterface
 
     public function unpublish(string $id): GameTableResponseDTO;
 
+    /**
+     * The status changes follow TableStatus::canTransitionTo() and are saved only while the table
+     * still has the status they read.
+     *
+     * @throws InvalidStatusTransitionException when the change is not allowed or the table moved meanwhile
+     */
     public function start(string $id): GameTableResponseDTO;
 
+    /**
+     * @throws InvalidStatusTransitionException
+     */
     public function complete(string $id): GameTableResponseDTO;
 
+    /**
+     * @throws InvalidStatusTransitionException
+     */
     public function cancel(string $id): GameTableResponseDTO;
 
+    /**
+     * @throws InvalidStatusTransitionException
+     */
     public function changeStatus(string $id, TableStatus $status): GameTableResponseDTO;
 
     /**
