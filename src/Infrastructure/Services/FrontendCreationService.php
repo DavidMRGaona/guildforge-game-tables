@@ -248,13 +248,13 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
      *     genres: array<string, string>,
      *     languages: array<string, string>,
      *     campaign_frequencies: array<string, string>,
-     *     events: array<array{id: string, name: string}>,
+     *     events: list<array{id: string, name: string, start_date: string}>,
      *     campaigns: list<array{id: string, name: string, game_system_id: string, max_players: int|null, roster_count: int}>,
      *     defaults: array{duration_minutes: int, min_players: int, max_players: int, max_spectators: int},
      *     limits: array{max_players: int, max_spectators: int, max_duration_minutes: int}
      * }
      */
-    public function getCreateFormData(?string $keepCampaignId = null): array
+    public function getCreateFormData(?string $keepCampaignId = null, ?string $keepEventId = null): array
     {
         // Get game systems
         $gameSystems = $this->gameSystemRepository->getActive();
@@ -262,7 +262,17 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         // Get content warnings
         $contentWarnings = $this->contentWarningRepository->getActive();
 
+        // Open events, plus the one an edited table keeps: the server accepts it on save even
+        // once it has closed, so the selector must not come up empty
         $events = $this->selectableEvents();
+
+        if ($keepEventId !== null && ! $events->contains(static fn (Event $event): bool => $event->id()->value === $keepEventId)) {
+            $kept = $this->eventRepository->findById(new \App\Domain\ValueObjects\EventId($keepEventId));
+
+            if ($kept !== null) {
+                $events->push($kept);
+            }
+        }
 
         // Campaigns the current user may create sessions of, plus the one an edited table keeps
         $userId = auth()->id();

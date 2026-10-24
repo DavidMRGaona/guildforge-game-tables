@@ -161,6 +161,30 @@ final class FrontendTableEventLinkTest extends ModuleTestCase
     }
 
     /**
+     * As the server keeps the stored event, the edit form offers it after the open ones, so the
+     * selector does not come up empty; no other closed event is offered.
+     */
+    public function test_the_edit_form_offers_the_stored_event_even_once_it_has_closed(): void
+    {
+        $open = $this->openEvent();
+        $closed = $this->closedEvents();
+        $draft = $this->tableDraft($closed['ended']->id);
+
+        $this->actingAs($this->author)
+            ->get(route('gametables.edit', $draft->slug))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('GameTables/Edit', false)
+                ->where('formData.events', fn ($events): bool => collect($events)->pluck('id')->all() === [$open->id, $closed['ended']->id]));
+
+        // The create form still offers the open events only
+        $this->actingAs($this->author)
+            ->get(route('gametables.create'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('GameTables/Create', false)
+                ->where('formData.events', fn ($events): bool => collect($events)->pluck('id')->all() === [$open->id]));
+    }
+
+    /**
      * The stored-event exception only applies to someone who may edit the table, so a PUT to
      * another user's draft is refused for its closed event like any other closed one.
      */

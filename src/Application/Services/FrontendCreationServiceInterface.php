@@ -33,22 +33,28 @@ interface FrontendCreationServiceInterface
     /**
      * Get data needed to render the creation form (game systems, formats, etc.). The campaigns are
      * the ones the current user may create sessions of, plus $keepCampaignId (the campaign stored on
-     * a table being edited) when it is not among them.
+     * a table being edited) when it is not among them. The events are the open ones, plus
+     * $keepEventId (the event stored on a table being edited, which may have closed since).
      *
      * @return array{
-     *     game_systems: array,
-     *     table_types: array,
-     *     table_formats: array,
-     *     experience_levels: array,
-     *     tones: array,
-     *     character_creation: array,
-     *     safety_tools: array,
-     *     content_warnings: array,
-     *     genres: array,
-     *     campaigns: list<array{id: string, name: string, game_system_id: string, max_players: int|null, roster_count: int}>
+     *     game_systems: array<array{id: string, name: string}>,
+     *     table_types: array<string, string>,
+     *     table_formats: array<string, string>,
+     *     experience_levels: array<string, string>,
+     *     tones: array<string, string>,
+     *     character_creation: array<string, string>,
+     *     safety_tools: array<string, string>,
+     *     content_warnings: array<array{id: string, name: string, description: string|null, severity: string}>,
+     *     genres: array<string, string>,
+     *     languages: array<string, string>,
+     *     campaign_frequencies: array<string, string>,
+     *     events: list<array{id: string, name: string, start_date: string}>,
+     *     campaigns: list<array{id: string, name: string, game_system_id: string, max_players: int|null, roster_count: int}>,
+     *     defaults: array{duration_minutes: int, min_players: int, max_players: int, max_spectators: int},
+     *     limits: array{max_players: int, max_spectators: int, max_duration_minutes: int}
      * }
      */
-    public function getCreateFormData(?string $keepCampaignId = null): array;
+    public function getCreateFormData(?string $keepCampaignId = null, ?string $keepEventId = null): array;
 
     /**
      * Ids of the events a table created or edited from the web may be linked to: the ones the

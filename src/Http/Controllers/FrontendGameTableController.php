@@ -193,8 +193,8 @@ final class FrontendGameTableController extends Controller
         // Get the table DTO using the service (consistent with architecture)
         $table = $this->gameTableService->findOrFail($gameTable->id);
 
-        // Get form data for the edit form, keeping the campaign stored on the table
-        $formData = $this->creationService->getCreateFormData($gameTable->campaign_id);
+        // Get form data for the edit form, keeping the campaign and the event stored on the table
+        $formData = $this->creationService->getCreateFormData($gameTable->campaign_id, $gameTable->event_id);
 
         // Get event context if a table is associated with an event
         $eventContext = null;
