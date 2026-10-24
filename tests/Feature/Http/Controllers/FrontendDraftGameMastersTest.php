@@ -185,6 +185,32 @@ final class FrontendDraftGameMastersTest extends ModuleTestCase
         $this->assertSame(['600 000 001', 'Narrador', $this->author->id], [$authorRecord->phone, $authorRecord->custom_title, $authorRecord->user_id]);
     }
 
+    public function test_an_author_cannot_add_an_external_co_director_to_a_delegated_draft(): void
+    {
+        $this->table->update(['delegates_registrations' => true]);
+        $rows = $this->rowsOnTheEditPage();
+        $rows[] = $this->coRow('Mary', 'Major', 'mary@example.com', '600 000 009');
+
+        $response = $this->actingAs($this->author)
+            ->putJson("/mesas/mis-mesas/{$this->table->slug}", [
+                ...$this->tableData('Mesa corregida'),
+                'gm_gdpr_consent' => true,
+                'game_masters' => $rows,
+            ]);
+
+        $response->assertStatus(422)->assertJsonValidationErrors(['game_masters']);
+        $this->assertStringContainsString(
+            __('game-tables::messages.validation.delegated_directors_need_accounts', ['name' => 'Mary Major']),
+            $response->json('errors.game_masters.0'),
+        );
+        $this->assertNotSame('Mesa corregida', $this->table->refresh()->title);
+        $this->assertSame([$this->authorRecord->id, $this->jane->id, $this->richard->id], $this->linkedIds($this->table));
+        $this->assertSame(0, GameMasterModel::query()->where('email', 'mary@example.com')->count());
+
+        // Keeping the co-directors already stored is not refused
+        $this->save($this->rowsOnTheEditPage());
+    }
+
     public function test_a_co_director_changed_on_the_form_keeps_its_record(): void
     {
         $rows = $this->rowsOnTheEditPage();

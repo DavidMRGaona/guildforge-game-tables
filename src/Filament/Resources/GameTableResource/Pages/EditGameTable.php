@@ -22,6 +22,7 @@ use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
 use Modules\GameTables\Domain\Exceptions\NotEditableException;
 use Modules\GameTables\Domain\Exceptions\SessionBelowRosterException;
 use Modules\GameTables\Filament\Resources\GameTableResource;
+use Modules\GameTables\Filament\Support\DelegatedDirectors;
 use Modules\GameTables\Filament\Support\PublicationLock;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
@@ -104,6 +105,9 @@ final class EditGameTable extends EditRecord
      */
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        // Refused before the table or its directors are written
+        DelegatedDirectors::ensureLinked($data);
+
         // A web-created table is published by approving it, even against a forged payload
         return PublicationLock::guardFormData($this->getRecord(), $data);
     }

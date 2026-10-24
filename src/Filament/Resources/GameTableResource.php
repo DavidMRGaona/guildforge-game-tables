@@ -407,6 +407,12 @@ final class GameTableResource extends BaseResource
                                     ->default(false)
                                     ->helperText(__('game-tables::messages.fields.accepts_registrations_in_progress_help')),
 
+                                Toggle::make('delegates_registrations')
+                                    ->label(__('game-tables::messages.fields.delegates_registrations'))
+                                    ->default(false)
+                                    ->helperText(__('game-tables::messages.fields.delegates_registrations_help'))
+                                    ->visible(fn (Get $get): bool => blank($get('campaign_id'))),
+
                                 TextInput::make('notification_email')
                                     ->label(__('game-tables::messages.fields.notification_email'))
                                     ->email()

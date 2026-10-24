@@ -10,6 +10,7 @@ use App\Domain\Repositories\EventRepositoryInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Modules\GameTables\Application\DTOs\CampaignResponseDTO;
 use Modules\GameTables\Application\DTOs\FrontendCreateCampaignDTO;
 use Modules\GameTables\Application\DTOs\FrontendCreateGameTableDTO;
@@ -460,6 +461,11 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             );
         }
 
+        // Refused before anything is saved
+        if ($table->delegatesRegistrations && $dto->gameMasters !== null && count($dto->gameMasters) > 0) {
+            $this->ensureNoNewDirectorsWithoutAccount($tableId, $dto->gameMasters, $dto->createdBy);
+        }
+
         // Update the table via the service
         $updateDto = new \Modules\GameTables\Application\DTOs\UpdateGameTableDTO(
             id: $tableId,
@@ -852,6 +858,32 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         $this->gameMasterService->syncTableGameMasters($tableId, $safeRows);
 
         $this->saveAuthorProfile($tableId, $safeRows[0], $authorId);
+    }
+
+    /**
+     * A table whose directors manage its registrations needs them linked to an account, which only
+     * staff can do: the author may keep the co-directors already on it but not add another.
+     *
+     * @param  array<int, array<string, mixed>>  $rows
+     *
+     * @throws ValidationException
+     */
+    private function ensureNoNewDirectorsWithoutAccount(string $tableId, array $rows, string $authorId): void
+    {
+        $safeRows = $this->authorOwnedRows($rows, $authorId, $tableId);
+
+        // Rows kept or added back carry their id; a row without one would create a director
+        foreach (array_slice($safeRows, 1) as $row) {
+            if (! isset($row['id'])) {
+                $name = trim(((string) ($row['first_name'] ?? '')).' '.((string) ($row['last_name'] ?? '')));
+
+                throw ValidationException::withMessages([
+                    'game_masters' => __('game-tables::messages.validation.delegated_directors_need_accounts', [
+                        'name' => $name !== '' ? $name : (string) ($row['email'] ?? ''),
+                    ]),
+                ]);
+            }
+        }
     }
 
     /**
