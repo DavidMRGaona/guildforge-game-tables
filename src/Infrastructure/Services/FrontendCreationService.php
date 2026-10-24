@@ -248,7 +248,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
      *     genres: array<string, string>,
      *     languages: array<string, string>,
      *     campaign_frequencies: array<string, string>,
-     *     events: array<array{id: string, name: string}>,
+     *     events: list<array{id: string, name: string, start_date: string}>,
      *     campaigns: list<array{id: string, name: string, game_system_id: string, max_players: int|null, roster_count: int}>,
      *     defaults: array{duration_minutes: int, min_players: int, max_players: int, max_spectators: int},
      *     limits: array{max_players: int, max_spectators: int, max_duration_minutes: int}
