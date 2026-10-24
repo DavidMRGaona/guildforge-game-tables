@@ -62,6 +62,7 @@ final class GameTable
         public ?DateTimeImmutable $registrationClosesAt = null,
         public bool $autoConfirm = true,
         public bool $acceptsRegistrationsInProgress = false,
+        public bool $delegatesRegistrations = false,
         public bool $isPublished = false,
         public ?DateTimeImmutable $publishedAt = null,
         public ?string $notes = null,

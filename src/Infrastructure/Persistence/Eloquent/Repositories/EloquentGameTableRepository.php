@@ -299,6 +299,7 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
                 : null,
             autoConfirm: $model->auto_confirm,
             acceptsRegistrationsInProgress: $model->accepts_registrations_in_progress ?? false,
+            delegatesRegistrations: $model->delegates_registrations ?? false,
             isPublished: $model->is_published,
             publishedAt: $model->published_at !== null
                 ? new DateTimeImmutable($model->published_at->toDateTimeString())
@@ -358,6 +359,7 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
             'registration_closes_at' => $gameTable->registrationClosesAt,
             'auto_confirm' => $gameTable->autoConfirm,
             'accepts_registrations_in_progress' => $gameTable->acceptsRegistrationsInProgress,
+            'delegates_registrations' => $gameTable->delegatesRegistrations,
             'is_published' => $gameTable->isPublished,
             'published_at' => $gameTable->publishedAt,
             'notes' => $gameTable->notes,

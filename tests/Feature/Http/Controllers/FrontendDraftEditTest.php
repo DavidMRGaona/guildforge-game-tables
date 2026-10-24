@@ -150,6 +150,31 @@ final class FrontendDraftEditTest extends ModuleTestCase
         $this->assertSame('Mesa corregida por id', GameTableModel::query()->findOrFail($table->id)->title);
     }
 
+    public function test_an_author_saving_a_draft_keeps_the_registration_settings_the_staff_set(): void
+    {
+        $table = $this->tableDraft();
+        $table->update([
+            'auto_confirm' => false,
+            'delegates_registrations' => true,
+            'registration_type' => 'members_only',
+            'members_early_access_days' => 3,
+            'accepts_registrations_in_progress' => true,
+        ]);
+
+        $this->actingAs($this->author)
+            ->put("/mesas/mis-mesas/{$table->slug}", $this->tableData('Mesa guardada por la autora'))
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('gametables.my-tables'));
+
+        $saved = GameTableModel::query()->findOrFail($table->id);
+        $this->assertSame('Mesa guardada por la autora', $saved->title);
+        $this->assertFalse($saved->auto_confirm);
+        $this->assertTrue($saved->delegates_registrations);
+        $this->assertSame('members_only', $saved->registration_type->value);
+        $this->assertSame(3, $saved->members_early_access_days);
+        $this->assertTrue($saved->accepts_registrations_in_progress);
+    }
+
     public function test_a_draft_keeps_the_genres_chosen_on_the_edit_page(): void
     {
         $table = $this->tableDraft();
