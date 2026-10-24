@@ -104,6 +104,40 @@ final class FrontendTableEventLinkTest extends ModuleTestCase
         $this->assertSame($open->id, GameTableModel::query()->where('title', 'Mesa desde el evento')->value('event_id'));
     }
 
+    /**
+     * Opening the create form for a closed event explains why before the form, instead of letting
+     * the author fill it in to be refused on sending it.
+     */
+    public function test_the_create_page_of_a_closed_event_says_why_before_the_form(): void
+    {
+        $closed = $this->closedEvents();
+        $expected = [
+            'unpublished' => 'event_not_open',
+            'ended' => 'event_not_open',
+            'disabled' => 'tables_not_enabled_for_event',
+            'not_enabled' => 'tables_not_enabled_for_event',
+        ];
+
+        foreach ($expected as $key => $reason) {
+            $this->actingAs($this->author)
+                ->get(route('gametables.create', ['event' => $closed[$key]->slug]))
+                ->assertInertia(fn (Assert $page) => $page
+                    ->component('GameTables/CreateNotEligible', false)
+                    ->where('reason', $reason));
+        }
+    }
+
+    public function test_the_closed_event_reason_is_translated_in_both_languages(): void
+    {
+        $es = (string) file_get_contents(__DIR__.'/../../../../resources/js/locales/es.ts');
+        $en = (string) file_get_contents(__DIR__.'/../../../../resources/js/locales/en.ts');
+        $page = (string) file_get_contents(__DIR__.'/../../../../resources/js/pages/GameTables/CreateNotEligible.vue');
+
+        $this->assertStringContainsString("reasonEventNotOpen: 'Este evento no está abierto a nuevas mesas'", $es);
+        $this->assertStringContainsString("reasonEventNotOpen: 'This event is not open to new tables'", $en);
+        $this->assertStringContainsString("event_not_open: t('gameTables.createNotEligible.reasonEventNotOpen')", $page);
+    }
+
     public function test_editing_a_draft_into_an_event_the_form_does_not_offer_is_refused(): void
     {
         $draft = $this->tableDraft();

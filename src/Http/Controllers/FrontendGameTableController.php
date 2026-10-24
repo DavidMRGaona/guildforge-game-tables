@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\GameTables\Application\DTOs\CreationEligibilityDTO;
 use Modules\GameTables\Application\DTOs\FrontendCreateGameTableDTO;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
@@ -65,6 +66,13 @@ final class FrontendGameTableController extends Controller
         // Check eligibility - use event-specific if event ID provided
         if ($eventId !== null) {
             $eligibility = $this->eventEligibilityService->canCreateTableForEvent($eventId, $user?->id);
+
+            // The form only offers open events (published, not ended) and saving refuses any other:
+            // say so before the form. Only here: editing still keeps an event that closed since
+            if ($eligibility->reason !== 'tables_not_enabled_for_event'
+                && ! in_array($eventId, $this->creationService->selectableEventIds(), true)) {
+                $eligibility = CreationEligibilityDTO::notEligible('event_not_open');
+            }
         } else {
             $eligibility = $this->eligibilityService->canCreateTable($user?->id);
         }

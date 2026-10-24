@@ -57,7 +57,8 @@ final class EventTableCreationAccessTest extends ModuleTestCase
 
     public function test_an_event_with_tables_enabled_allows_table_creation(): void
     {
-        $event = EventModel::factory()->create();
+        // Open: the create page refuses an unpublished or ended event before the form
+        $event = EventModel::factory()->published()->upcoming()->create();
         $this->enableTablesFor((string) $event->id);
 
         $this->actingAs($this->user)

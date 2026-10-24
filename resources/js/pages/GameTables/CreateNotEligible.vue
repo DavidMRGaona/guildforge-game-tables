@@ -20,6 +20,7 @@ const reasonMessage = computed((): string => {
         role_required: t('gameTables.createNotEligible.reasonRoleRequired'),
         frontend_creation_disabled: t('gameTables.createNotEligible.reasonFrontendCreationDisabled'),
         tables_not_enabled_for_event: t('gameTables.createNotEligible.reasonTablesNotEnabledForEvent'),
+        event_not_open: t('gameTables.createNotEligible.reasonEventNotOpen'),
     };
 
     return reasonMap[props.reason] ?? t('gameTables.createNotEligible.reasonDefault');
