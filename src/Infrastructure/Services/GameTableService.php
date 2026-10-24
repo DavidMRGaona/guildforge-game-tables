@@ -116,6 +116,7 @@ final readonly class GameTableService implements GameTableServiceInterface
             registrationOpensAt: $dto->registrationOpensAt,
             registrationClosesAt: $dto->registrationClosesAt,
             autoConfirm: $dto->autoConfirm,
+            acceptsRegistrationsInProgress: $dto->acceptsRegistrationsInProgress,
         );
 
         $gameTable->linkToEvent($dto->eventId);

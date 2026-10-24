@@ -485,7 +485,13 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             safetyTools: $dto->safetyTools,
             contentWarningIds: $dto->contentWarningIds,
             customWarnings: $dto->customWarnings,
+            // Registration settings belong to the staff: a web save keeps what the table has
+            registrationType: $table->registrationType,
+            membersEarlyAccessDays: $table->membersEarlyAccessDays,
+            registrationOpensAt: $table->registrationOpensAt,
             registrationClosesAt: $registrationClosesAt,
+            autoConfirm: $table->autoConfirm,
+            acceptsRegistrationsInProgress: $table->acceptsRegistrationsInProgress,
             notes: $dto->notes,
         );
 
