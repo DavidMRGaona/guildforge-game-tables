@@ -232,11 +232,11 @@ final class GameTableController extends Controller
             'eligibility' => $eligibility,
             'guestEligibility' => $guestEligibility,
             'userRegistration' => $userRegistration,
-            // A campaign session: whether it is closed to outsiders and where a roster member stands
             // «Gestionar inscritos»: a director of a table that delegates its registrations
             'canManageRegistrations' => $user instanceof UserModel
                 && $table->campaignId === null
                 && Gate::forUser($user)->allows('manageRegistrations', GameTableModel::query()->findOrFail($table->id)),
+            // A campaign session: whether it is closed to outsiders and where a roster member stands
             'campaignSession' => $this->rosterQuery->sessionBox($table->id, $user !== null ? (string) $user->id : null, $now)?->toArray(),
             'seo' => $this->tableSeo($table),
         ]);
