@@ -17,12 +17,14 @@ use Modules\GameTables\Application\DTOs\FrontendCreateCampaignDTO;
 use Modules\GameTables\Application\DTOs\FrontendCreateGameTableDTO;
 use Modules\GameTables\Application\DTOs\GameMasterResponseDTO;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
+use Modules\GameTables\Application\DTOs\MyPublishedTableDTO;
 use Modules\GameTables\Application\Services\CampaignDirectionInterface;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
 use Modules\GameTables\Application\Services\EventCreationEligibilityServiceInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Application\Services\GameMasterServiceInterface;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
+use Modules\GameTables\Application\Services\TableDirectionInterface;
 use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Enums\CampaignFrequency;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
@@ -35,6 +37,7 @@ use Modules\GameTables\Domain\Enums\Language;
 use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableType;
+use Modules\GameTables\Domain\Enums\ParticipantStatus;
 use Modules\GameTables\Domain\Enums\Tone;
 use Modules\GameTables\Domain\Events\GameTableModerationApproved;
 use Modules\GameTables\Domain\Events\GameTableModerationRejected;
@@ -60,6 +63,7 @@ use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 
 final readonly class FrontendCreationService implements FrontendCreationServiceInterface
 {
@@ -80,6 +84,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         private CampaignRosterRepositoryInterface $roster,
         private CampaignDirectionInterface $direction,
         private CampaignJoinRequestRepositoryInterface $joinRequests,
+        private TableDirectionInterface $tableDirection,
     ) {}
 
     /**
@@ -400,6 +405,52 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
 
             return GameTableResponseDTO::fromEntity($table, gameMasters: $gameMasters);
         })->all();
+    }
+
+    public function getMyTables(string $userId): array
+    {
+        $directed = $this->tableDirection->tableIdsDirectedBy($userId);
+
+        $models = GameTableModel::query()
+            ->whereNull('campaign_id')
+            ->where('is_published', true)
+            ->where('starts_at', '>=', now()->subDays(30))
+            ->where(static function ($query) use ($userId, $directed): void {
+                $query->where('created_by', $userId)->orWhereIn('id', $directed);
+            })
+            ->orderBy('starts_at')
+            ->get();
+
+        // Only the tables whose registrations the person manages need a count: one grouped query
+        $managed = $models
+            ->filter(static fn (GameTableModel $model): bool => $model->delegates_registrations && in_array($model->id, $directed, true))
+            ->pluck('id')
+            ->all();
+        $pending = $managed === [] ? [] : ParticipantModel::query()
+            ->whereIn('game_table_id', $managed)
+            ->where('status', ParticipantStatus::Pending->value)
+            ->selectRaw('game_table_id, count(*) as total')
+            ->groupBy('game_table_id')
+            ->pluck('total', 'game_table_id')
+            ->all();
+
+        $published = $models->map(static function (GameTableModel $model) use ($managed, $pending): MyPublishedTableDTO {
+            $manages = in_array($model->id, $managed, true);
+
+            return new MyPublishedTableDTO(
+                id: $model->id,
+                title: $model->title,
+                slug: (string) $model->slug,
+                startsAt: $model->starts_at?->format('c'),
+                status: $model->status->value,
+                statusLabel: $model->status->label(),
+                statusColor: $model->status->color(),
+                managesRegistrations: $manages,
+                pendingRegistrations: $manages ? (int) ($pending[$model->id] ?? 0) : null,
+            );
+        })->values()->all();
+
+        return ['drafts' => $this->getUserDrafts($userId), 'published' => $published];
     }
 
     public function submitForReview(string $tableId, string $userId): void

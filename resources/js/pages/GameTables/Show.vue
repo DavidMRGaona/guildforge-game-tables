@@ -19,6 +19,8 @@ interface Props {
     table: GameTable;
     /** Set on a campaign session: whether the campaign is closed to people outside its roster */
     campaignSession?: CampaignSessionInfo | null;
+    /** A director of a table that delegates its registrations: offers «Gestionar inscritos» */
+    canManageRegistrations?: boolean;
 }
 
 const props = defineProps<Props>();
@@ -253,6 +255,14 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                         <p class="text-xl font-medium text-primary">
                             {{ table.gameSystemName }}
                         </p>
+
+                        <Link
+                            v-if="canManageRegistrations"
+                            :href="`/mesas/mis-mesas/${table.slug}/inscritos`"
+                            class="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-md border border-default px-4 py-2 text-sm font-medium text-base-primary transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
+                        >
+                            {{ t('gameTables.myTables.manageRegistrations') }}
+                        </Link>
                     </div>
 
                     <!-- Section 2: Key Information -->
