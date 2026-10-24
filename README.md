@@ -400,7 +400,7 @@ Widget del dashboard: `PendingModerationWidget` (mesas y campañas pendientes de
 | `GET` | `/mesas/mis-mesas/{gameTable}/editar` | `gametables.edit` | Autor |
 | `PUT` / `DELETE` | `/mesas/mis-mesas/{gameTable}` | `gametables.update` / `gametables.destroy` | Autor |
 | `POST` | `/mesas/mis-mesas/{gameTable}/enviar-revision` | `gametables.submit-review` | Autor |
-| `GET` | `/mesas/mis-mesas/{gameTable}/inscritos` | `gametables.registrations` | Directores de la mesa con la gestión delegada y la organización |
+| `GET` | `/mesas/mis-mesas/{gameTable}/inscritos` | `gametables.registrations` | Directores de la mesa con la gestión delegada |
 | `POST` | `/mesas/mis-mesas/{gameTable}/inscritos/{participantId}/aprobar` y `…/rechazar` | `gametables.registrations.approve` / `gametables.registrations.reject` | Igual que la anterior |
 | `GET` | `/campanas` | `campaigns.index` | Público |
 | `GET` | `/campanas/{slug}` | `campaigns.show` | Público |
