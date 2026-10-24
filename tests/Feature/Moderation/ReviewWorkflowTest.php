@@ -407,6 +407,14 @@ final class ReviewWorkflowTest extends ModuleTestCase
             ->assertNotified('La mesa ya no está en un estado que permita este cambio')
             ->callTableBulkAction('reject', [$table], ['reason' => 'Motivo'])
             ->assertNotified('La mesa ya no está en un estado que permita este cambio');
+
+        // Every selected table skipped: the warning alone, never a "0 approved" success. Each
+        // assertion pulls the notifications from the session, hence one action per assertion
+        Livewire::test(ListGameTables::class)
+            ->callTableBulkAction('approve', [$table])
+            ->assertNotNotified('0 mesa(s) aprobada(s)')
+            ->callTableBulkAction('reject', [$table], ['reason' => 'Motivo'])
+            ->assertNotNotified('0 mesa(s) rechazada(s)');
     }
 
     public function test_approving_or_rejecting_a_campaign_that_is_no_longer_in_review_warns_instead_of_failing(): void
