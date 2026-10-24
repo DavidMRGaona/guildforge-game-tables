@@ -36,13 +36,29 @@ interface GameTableResponseDTO {
     created_at: string | null;
 }
 
+interface PublishedTable {
+    id: string;
+    title: string;
+    slug: string;
+    starts_at: string | null;
+    status: string;
+    status_label: string;
+    status_color: string;
+    // Whether the person directs it and the table delegates its registrations
+    manages_registrations: boolean;
+    // Pending requests; null when the person does not manage the registrations
+    pending_registrations: number | null;
+}
+
 interface Props {
-    tables: GameTableResponseDTO[];
+    drafts: GameTableResponseDTO[];
+    published: PublishedTable[];
     canCreate: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-    tables: () => [],
+    drafts: () => [],
+    published: () => [],
     canCreate: false,
 });
 
@@ -52,7 +68,7 @@ const { success: flashSuccess, error: flashError } = useFlashMessages();
 
 const { t, locale } = useI18n();
 
-const hasTables = computed(() => props.tables.length > 0);
+const hasTables = computed(() => props.drafts.length > 0 || props.published.length > 0);
 
 function formatDate(dateString: string | null): string {
     if (!dateString) return '-';
@@ -165,9 +181,16 @@ function getTableLink(table: GameTableResponseDTO): string {
                 </BaseButton>
             </EmptyState>
 
+            <section v-if="hasTables" aria-labelledby="my-tables-drafts">
+                <h2 id="my-tables-drafts" class="mb-4 text-xl font-semibold text-base-primary">
+                    {{ t('gameTables.myTables.drafts') }}
+                </h2>
+                <p v-if="props.drafts.length === 0" class="text-sm text-base-secondary">
+                    {{ t('gameTables.myTables.emptyDrafts') }}
+                </p>
             <div v-else class="space-y-4">
                 <div
-                    v-for="table in props.tables"
+                    v-for="table in props.drafts"
                     :key="table.id"
                     class="overflow-hidden rounded-lg bg-surface shadow transition-shadow hover:shadow-md"
                 >
@@ -175,7 +198,7 @@ function getTableLink(table: GameTableResponseDTO): string {
                         <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                             <div class="min-w-0 flex-1">
                                 <div class="mb-2 flex items-center gap-2">
-                                    <h2 class="truncate text-xl font-semibold text-base-primary">
+                                    <h3 class="truncate text-xl font-semibold text-base-primary">
                                         <Link
                                             v-if="isApproved(table)"
                                             :href="getTableLink(table)"
@@ -184,7 +207,7 @@ function getTableLink(table: GameTableResponseDTO): string {
                                             {{ table.title }}
                                         </Link>
                                         <span v-else>{{ table.title }}</span>
-                                    </h2>
+                                    </h3>
                                     <StatusBadge
                                         :status="table.frontend_creation_status ?? table.status"
                                         :label="table.frontend_creation_status_label ?? table.status_label"
@@ -277,6 +300,60 @@ function getTableLink(table: GameTableResponseDTO): string {
                     </div>
                 </div>
             </div>
+            </section>
+
+            <!-- Published single tables the person created or directs -->
+            <section v-if="hasTables" class="mt-10" aria-labelledby="my-tables-published">
+                <h2 id="my-tables-published" class="mb-4 text-xl font-semibold text-base-primary">
+                    {{ t('gameTables.myTables.published') }}
+                </h2>
+                <p v-if="props.published.length === 0" class="text-sm text-base-secondary">
+                    {{ t('gameTables.myTables.emptyPublished') }}
+                </p>
+                <div v-else class="space-y-4">
+                    <div
+                        v-for="table in props.published"
+                        :key="table.id"
+                        class="overflow-hidden rounded-lg bg-surface p-6 shadow transition-shadow hover:shadow-md"
+                    >
+                        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                            <div class="min-w-0 flex-1">
+                                <div class="mb-2 flex items-center gap-2">
+                                    <h3 class="truncate text-xl font-semibold text-base-primary">
+                                        <Link :href="`/mesas/${table.slug}`" class="hover:text-primary">
+                                            {{ table.title }}
+                                        </Link>
+                                    </h3>
+                                    <StatusBadge :status="table.status" :label="table.status_label" :color="table.status_color" />
+                                </div>
+                                <p class="text-sm text-base-secondary">{{ formatDate(table.starts_at) }}</p>
+                                <span
+                                    v-if="table.manages_registrations && (table.pending_registrations ?? 0) > 0"
+                                    class="mt-2 inline-flex items-center rounded-full bg-warning-light px-2 py-0.5 text-xs font-medium text-base-primary"
+                                >
+                                    {{ t('gameTables.myTables.pendingCount', { count: table.pending_registrations }, table.pending_registrations ?? 0) }}
+                                </span>
+                            </div>
+
+                            <div class="flex flex-shrink-0 flex-wrap gap-2">
+                                <Link
+                                    :href="`/mesas/${table.slug}`"
+                                    class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
+                                >
+                                    {{ t('gameTables.myTables.viewPublic') }}
+                                </Link>
+                                <Link
+                                    v-if="table.manages_registrations"
+                                    :href="`/mesas/mis-mesas/${table.slug}/inscritos`"
+                                    class="inline-flex items-center justify-center gap-2 rounded-md border border-default px-4 py-2 text-sm font-medium text-base-primary transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
+                                >
+                                    {{ t('gameTables.myTables.manageRegistrations') }}
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </main>
     </DefaultLayout>
 </template>

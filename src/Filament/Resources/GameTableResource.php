@@ -62,6 +62,7 @@ use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Filament\Resources\GameTableResource\Pages;
 use Modules\GameTables\Filament\Resources\GameTableResource\RelationManagers\ParticipantsRelationManager;
+use Modules\GameTables\Filament\Resources\GameTableResource\RelationManagers\StatusLogRelationManager;
 use Modules\GameTables\Filament\Support\PublicationLock;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
@@ -407,6 +408,12 @@ final class GameTableResource extends BaseResource
                                     ->default(false)
                                     ->helperText(__('game-tables::messages.fields.accepts_registrations_in_progress_help')),
 
+                                Toggle::make('delegates_registrations')
+                                    ->label(__('game-tables::messages.fields.delegates_registrations'))
+                                    ->default(false)
+                                    ->helperText(__('game-tables::messages.fields.delegates_registrations_help'))
+                                    ->visible(fn (Get $get): bool => blank($get('campaign_id'))),
+
                                 TextInput::make('notification_email')
                                     ->label(__('game-tables::messages.fields.notification_email'))
                                     ->email()
@@ -690,6 +697,7 @@ final class GameTableResource extends BaseResource
     {
         return [
             ParticipantsRelationManager::class,
+            StatusLogRelationManager::class,
         ];
     }
 

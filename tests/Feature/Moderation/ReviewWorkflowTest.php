@@ -85,8 +85,8 @@ final class ReviewWorkflowTest extends ModuleTestCase
             ->get(route('gametables.my-tables'))
             ->assertInertia(fn (Assert $page) => $page
                 ->component('GameTables/MyTables', false)
-                ->where('tables.0.rejection_reason', 'Falta la sinopsis')
-                ->where('tables.0.can_edit', true));
+                ->where('drafts.0.rejection_reason', 'Falta la sinopsis')
+                ->where('drafts.0.can_edit', true));
 
         $this->actingAs($this->author)
             ->put("/mesas/mis-mesas/{$table->slug}", $this->tableData('Mesa corregida'))
@@ -104,7 +104,7 @@ final class ReviewWorkflowTest extends ModuleTestCase
 
         $this->actingAs($this->author)
             ->get(route('gametables.my-tables'))
-            ->assertInertia(fn (Assert $page) => $page->where('tables.0.rejection_reason', null));
+            ->assertInertia(fn (Assert $page) => $page->where('drafts.0.rejection_reason', null));
     }
 
     public function test_a_rejected_campaign_goes_back_to_draft_with_the_reason_until_the_author_sends_it_again(): void
@@ -149,7 +149,7 @@ final class ReviewWorkflowTest extends ModuleTestCase
 
         $this->actingAs($this->author)
             ->get(route('gametables.my-tables'))
-            ->assertInertia(fn (Assert $page) => $page->where('tables.0.rejection_reason', 'Fecha incorrecta'));
+            ->assertInertia(fn (Assert $page) => $page->where('drafts.0.rejection_reason', 'Fecha incorrecta'));
         $this->actingAs($this->author)
             ->get(route('campaigns.my-campaigns'))
             ->assertInertia(fn (Assert $page) => $page->where('campaigns.0.rejection_reason', 'Sin sistema'));

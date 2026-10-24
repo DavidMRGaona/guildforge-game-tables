@@ -20,6 +20,7 @@ final class ParticipantRegisteredNotification extends Notification implements Sh
         private readonly ?string $tableDate,
         private readonly ?string $tableLocation,
         private readonly string $role,
+        private readonly ?string $manageUrl = null,
     ) {}
 
     /**
@@ -53,6 +54,12 @@ final class ParticipantRegisteredNotification extends Notification implements Sh
 
         if ($this->tableLocation !== null) {
             $message->line('**' . __('game-tables::emails.registration.table_location') . ':** ' . $this->tableLocation);
+        }
+
+        if ($this->manageUrl !== null) {
+            return $message
+                ->line(__('game-tables::emails.registration.pending_intro'))
+                ->action(__('game-tables::emails.registration.manage'), $this->manageUrl);
         }
 
         $tableUrl = url("/mesas/{$this->tableId}");

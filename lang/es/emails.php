@@ -64,6 +64,8 @@ return [
         'table_date' => 'Fecha',
         'table_location' => 'Ubicación',
         'view_table' => 'Ver mesa',
+        'manage' => 'Gestionar inscritos',
+        'pending_intro' => 'La inscripción está pendiente: puedes aprobarla o rechazarla desde la página de inscritos.',
     ],
 
     'cancellation' => [
@@ -154,6 +156,7 @@ return [
         'table_title' => 'Mesa',
         'table_date' => 'Fecha',
         'table_location' => 'Ubicación',
+        'reason' => 'Motivo: :reason',
         'outro' => 'Esperamos verte en futuras partidas.',
     ],
 

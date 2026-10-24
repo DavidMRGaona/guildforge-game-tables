@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables;
 
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Modules\GameTables\Filament\Resources\GameSystemResource;
 use Modules\GameTables\Filament\Resources\PublisherResource;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\PublisherModel;
@@ -62,19 +63,23 @@ use Modules\GameTables\Application\Services\MembershipCheckerInterface;
 use Modules\CookieConsent\Application\DTOs\DeclaredCookieDTO;
 use Modules\CookieConsent\Application\Services\CookieDeclarationRegistryInterface;
 use Modules\GameTables\Application\Services\CampaignDirectionInterface;
+use Modules\GameTables\Application\Services\TableDirectionInterface;
 use Modules\GameTables\Application\Services\CampaignRosterQueryInterface;
+use Modules\GameTables\Application\Services\TableRegistrationsQueryInterface;
 use Modules\GameTables\Application\Services\CampaignInvitationServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterSessionSyncInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
+use Modules\GameTables\Application\Services\ParticipantActorContextInterface;
 use Modules\GameTables\Application\Services\RegistrationLockInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Illuminate\Console\Scheduling\Schedule;
 use Modules\GameTables\Console\Commands\ExpireGuestRegistrationsCommand;
 use Modules\GameTables\Console\Commands\GenerateSlugsCommand;
 use Modules\GameTables\Console\Commands\PruneCampaignInvitationsCommand;
+use Modules\GameTables\Console\Commands\PruneParticipantStatusLogCommand;
 use Modules\GameTables\Console\Commands\SendTableRemindersCommand;
 use Modules\GameTables\Console\Commands\UpdateTableStatusesCommand;
 use Modules\GameTables\Http\Controllers\CampaignInvitationController;
@@ -119,6 +124,7 @@ use Modules\GameTables\Infrastructure\Listeners\NotifyOnGuestRegistration;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnRegistration;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnWaitingListPromotion;
 use Modules\GameTables\Infrastructure\Observers\GameTableObserver;
+use Modules\GameTables\Infrastructure\Observers\ParticipantStatusObserver;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\EventGameTableConfigModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentCampaignInvitationRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentCampaignJoinRequestRepository;
@@ -141,8 +147,10 @@ use Modules\GameTables\Infrastructure\Services\GameMasterService;
 use Modules\GameTables\Infrastructure\Services\GameTableQueryService;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 use Modules\GameTables\Infrastructure\Services\CampaignDirection;
+use Modules\GameTables\Infrastructure\Services\TableDirection;
 use Modules\GameTables\Infrastructure\Services\DatabaseCampaignInvitationSendLog;
 use Modules\GameTables\Infrastructure\Services\CampaignRosterQuery;
+use Modules\GameTables\Infrastructure\Services\TableRegistrationsQuery;
 use Modules\GameTables\Infrastructure\Services\CampaignInvitationService;
 use Modules\GameTables\Infrastructure\Services\CampaignRosterService;
 use Modules\GameTables\Infrastructure\Services\CampaignRosterSessionSync;
@@ -154,6 +162,7 @@ use Modules\GameTables\Infrastructure\Services\ProfileCreatedCampaignsDataProvid
 use Modules\GameTables\Infrastructure\Services\ProfileCreatedTablesDataProvider;
 use Modules\GameTables\Infrastructure\Services\ProfileGameTablesDataProvider;
 use Modules\GameTables\Infrastructure\Services\DatabaseRegistrationLock;
+use Modules\GameTables\Infrastructure\Services\ParticipantActorContext;
 use Modules\GameTables\Infrastructure\Services\RegistrationService;
 use Modules\GameTables\Listeners\NotifyAdminsOnCampaignModerationSubmission;
 use Modules\GameTables\Listeners\NotifyAdminsOnModerationSubmission;
@@ -213,16 +222,20 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         $this->app->bind(FrontendCreationServiceInterface::class, FrontendCreationService::class);
         $this->app->bind(RegistrationServiceInterface::class, RegistrationService::class);
         $this->app->bind(RegistrationLockInterface::class, DatabaseRegistrationLock::class);
+        // One per request or queue job: a scope never reaches the next one
+        $this->app->scoped(ParticipantActorContextInterface::class, ParticipantActorContext::class);
         $this->app->bind(EventWithTablesQueryInterface::class, EventWithTablesQuery::class);
         $this->app->bind(GameMasterServiceInterface::class, GameMasterService::class);
         $this->app->bind(EventGameTableConfigServiceInterface::class, EventGameTableConfigService::class);
         $this->app->bind(EventCreationEligibilityServiceInterface::class, EventCreationEligibilityService::class);
         $this->app->bind(NotificationRecipientResolverInterface::class, NotificationRecipientResolver::class);
         $this->app->bind(CampaignDirectionInterface::class, CampaignDirection::class);
+        $this->app->bind(TableDirectionInterface::class, TableDirection::class);
         $this->app->bind(CampaignRosterSessionSyncInterface::class, CampaignRosterSessionSync::class);
         $this->app->bind(CampaignRosterServiceInterface::class, CampaignRosterService::class);
         $this->app->bind(CampaignInvitationServiceInterface::class, CampaignInvitationService::class);
         $this->app->bind(CampaignRosterQueryInterface::class, CampaignRosterQuery::class);
+        $this->app->bind(TableRegistrationsQueryInterface::class, TableRegistrationsQuery::class);
 
         // Query service bindings
         $this->app->bind(GameTableQueryServiceInterface::class, GameTableQueryService::class);
@@ -459,6 +472,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                 ExpireGuestRegistrationsCommand::class,
                 GenerateSlugsCommand::class,
                 PruneCampaignInvitationsCommand::class,
+                PruneParticipantStatusLogCommand::class,
                 UpdateTableStatusesCommand::class,
                 SendTableRemindersCommand::class,
             ]);
@@ -482,6 +496,10 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                 ->withoutOverlapping(10);
 
             $schedule->command('game-tables:prune-campaign-invitations')
+                ->daily()
+                ->withoutOverlapping(10);
+
+            $schedule->command('game-tables:prune-participant-status-log')
                 ->daily()
                 ->withoutOverlapping(10);
 
@@ -655,6 +673,21 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                     : back()->with('error', $message);
             });
         });
+
+        // Approvals and rejections from the «Gestionar inscritos» page, per user, as the roster
+        // additions: enough to answer a table's requests, not to hammer the service
+        RateLimiter::for('game-tables-table-registrations', static function (Request $request): Limit {
+            $userId = (string) ($request->user()?->getAuthIdentifier() ?? $request->ip() ?? 'unknown');
+
+            return Limit::perMinute(20)->by('gt-table-registrations:'.$userId)->response(static function (Request $request, array $headers): HttpResponse {
+                $message = (string) __('game-tables::messages.registrations.errors.too_many_actions');
+
+                // As the refusals of the page: a flash, not Inertia's raw 429
+                return $request->expectsJson()
+                    ? response()->json(['message' => $message], 429, $headers)
+                    : back()->with('error', $message);
+            });
+        });
     }
 
     /**
@@ -664,6 +697,10 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     {
         GameTableModel::observe(
             GameTableObserver::class
+        );
+
+        ParticipantModel::observe(
+            ParticipantStatusObserver::class
         );
     }
 

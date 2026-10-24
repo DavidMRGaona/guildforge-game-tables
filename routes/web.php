@@ -12,6 +12,7 @@ use Modules\GameTables\Http\Controllers\FrontendGameTableController;
 use Modules\GameTables\Http\Controllers\GameTableController;
 use Modules\GameTables\Http\Controllers\GuestConfirmationController;
 use Modules\GameTables\Http\Controllers\RegistrationController;
+use Modules\GameTables\Http\Controllers\TableRegistrationsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -47,6 +48,17 @@ Route::prefix('mesas')->name('gametables.')->group(function (): void {
         Route::put('/mis-mesas/{gameTable}', [FrontendGameTableController::class, 'update'])->name('update');
         Route::post('/mis-mesas/{gameTable}/enviar-revision', [FrontendGameTableController::class, 'submitForReview'])->name('submit-review');
         Route::delete('/mis-mesas/{gameTable}', [FrontendGameTableController::class, 'destroy'])->name('destroy');
+
+        // «Gestionar inscritos»: the directors of a table that delegates its registrations
+        Route::get('/mis-mesas/{gameTable}/inscritos', [TableRegistrationsController::class, 'show'])->name('registrations');
+        Route::post('/mis-mesas/{gameTable}/inscritos/{participantId}/aprobar', [TableRegistrationsController::class, 'approve'])
+            ->whereUuid('participantId')
+            ->middleware('throttle:game-tables-table-registrations')
+            ->name('registrations.approve');
+        Route::post('/mis-mesas/{gameTable}/inscritos/{participantId}/rechazar', [TableRegistrationsController::class, 'reject'])
+            ->whereUuid('participantId')
+            ->middleware('throttle:game-tables-table-registrations')
+            ->name('registrations.reject');
     });
 
     // Guest registration (no auth required), limited per IP

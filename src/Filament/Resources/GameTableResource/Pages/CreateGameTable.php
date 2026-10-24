@@ -9,6 +9,7 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Auth;
 use Modules\GameTables\Application\Services\GameMasterServiceInterface;
 use Modules\GameTables\Filament\Resources\GameTableResource;
+use Modules\GameTables\Filament\Support\DelegatedDirectors;
 
 final class CreateGameTable extends CreateRecord
 {
@@ -29,6 +30,10 @@ final class CreateGameTable extends CreateRecord
      */
     protected function mutateFormDataBeforeCreate(array $data): array
     {
+        // Refused before anything is written
+        DelegatedDirectors::ensureLinked($data);
+        $data = DelegatedDirectors::dropForCampaign($data);
+
         $data['created_by'] = Auth::id();
 
         // Extract game masters data to process after creation

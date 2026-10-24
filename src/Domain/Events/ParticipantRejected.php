@@ -16,5 +16,6 @@ final class ParticipantRejected
         public readonly string $participantId,
         public readonly string $gameTableId,
         public readonly ?string $userId,
+        public readonly ?string $reason = null,
     ) {}
 }

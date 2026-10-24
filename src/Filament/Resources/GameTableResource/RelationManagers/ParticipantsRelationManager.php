@@ -36,6 +36,7 @@ use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
 use Modules\GameTables\Domain\Exceptions\CannotCancelException;
 use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
+use Modules\GameTables\Domain\Exceptions\ParticipantNotPendingException;
 use Modules\GameTables\Domain\Exceptions\TableFullException;
 use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
@@ -284,7 +285,8 @@ final class ParticipantsRelationManager extends RelationManager
     /**
      * Deletes the row only if it is still cancelled, rejected or expired when the DELETE runs: a
      * re-registration (placeUser/placeGuest) reactivates the same row, and it may land after the
-     * row was read. Participants have no model events, so a query delete loses nothing.
+     * row was read. Nothing listens to participant deletes (the status history keeps its rows,
+     * unlinked, by its foreign key), so a query delete loses nothing.
      */
     private static function deleteIfCancelledOrRejected(Model $record): bool
     {
@@ -520,9 +522,23 @@ final class ParticipantsRelationManager extends RelationManager
                     ->visible(fn (ParticipantModel $record): bool => $record->status === ParticipantStatus::Pending)
                     ->authorize(fn (): bool => $this->canManageParticipants())
                     ->requiresConfirmation()
-                    ->action(function (ParticipantModel $record): void {
+                    ->schema([
+                        Textarea::make('reason')
+                            ->label(__('game-tables::messages.relation_managers.participants.reject_reason'))
+                            ->maxLength(500),
+                    ])
+                    ->action(function (ParticipantModel $record, array $data): void {
                         $registrationService = app(RegistrationServiceInterface::class);
-                        $registrationService->reject($record->id);
+
+                        try {
+                            $registrationService->reject($record->id, isset($data['reason']) ? (string) $data['reason'] : null);
+                        } catch (ParticipantNotPendingException $exception) {
+                            // Someone else already decided it: nothing changes
+                            Notification::make()
+                                ->title(__('game-tables::messages.errors.'.$exception->reason))
+                                ->danger()
+                                ->send();
+                        }
                     }),
 
                 Action::make('promote')

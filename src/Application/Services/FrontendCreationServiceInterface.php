@@ -9,6 +9,7 @@ use Modules\GameTables\Application\DTOs\CreationEligibilityDTO;
 use Modules\GameTables\Application\DTOs\FrontendCreateCampaignDTO;
 use Modules\GameTables\Application\DTOs\FrontendCreateGameTableDTO;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
+use Modules\GameTables\Application\DTOs\MyPublishedTableDTO;
 
 interface FrontendCreationServiceInterface
 {
@@ -79,6 +80,14 @@ interface FrontendCreationServiceInterface
      * @return array<GameTableResponseDTO>
      */
     public function getUserDrafts(string $userId): array;
+
+    /**
+     * What «Mis mesas» lists: the person's drafts, and the published single tables (from 30 days ago
+     * onwards) they created or direct, by start date.
+     *
+     * @return array{drafts: list<GameTableResponseDTO>, published: list<MyPublishedTableDTO>}
+     */
+    public function getMyTables(string $userId): array;
 
     /**
      * Submit a draft table for review.

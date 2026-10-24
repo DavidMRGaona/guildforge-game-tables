@@ -8,7 +8,7 @@ Módulo de GuildForge para gestionar mesas de rol y campañas: inscripciones de 
 - **Campañas**: agrupan sesiones, con estado (reclutando, activa, en pausa, completada, cancelada) y frecuencia.
 - **Directores de juego**: director principal y co-directores, propios de la mesa o heredados de la campaña.
 - **Plantilla de la campaña**: los jugadores fijos de una campaña. Se inscriben solos en cada sesión que se publica, solicitan entrar desde la web o aceptan una invitación por email de la dirección. Ver [Plantillas de campaña](#plantillas-de-campaña) e [Invitaciones](#invitaciones).
-- **Inscripciones**: como jugador o espectador, con confirmación automática o manual por mesa.
+- **Inscripciones**: como jugador o espectador, con confirmación automática o manual por mesa. Los directores pueden gestionarlas desde la web si la mesa lo permite. Ver [Gestión de inscripciones por los directores](#gestión-de-inscripciones-por-los-directores).
 - **Invitados**: quien no tiene cuenta se inscribe con nombre y email en las mesas abiertas a todos, y cancela con un enlace con token.
 - **Lista de espera** (ajuste, desactivada por defecto): con las plazas de jugador completas, los jugadores se apuntan a la lista y cada plaza liberada pasa al primero mientras las inscripciones sigan abiertas. Ver [Lista de espera](#lista-de-espera).
 - **Tipos de inscripción**: abierta a todos, solo socios (con acceso anticipado opcional) o solo por invitación.
@@ -112,6 +112,22 @@ La página de la mesa y el servidor usan el mismo cálculo: el servidor cuenta l
 - **Borrar** (en una fila o en bloque) solo es para inscripciones canceladas, rechazadas o caducadas, que ya no ocupan ni esperan plaza; para dar de baja a alguien se usa **Cancelar inscripción**, que libera la plaza y avisa a la lista de espera. En bloque se borran solo las seleccionadas que estén canceladas, rechazadas o caducadas, las demás se quedan, y el aviso dice cuántas se han borrado y cuántas hay que cancelar antes. El estado se comprueba al borrar: una inscripción que se reactiva mientras tanto (la persona vuelve a inscribirse) no se borra. Lo ve quien puede editar la mesa, igual que las acciones de estado.
 
 En el panel, la cabecera de la mesa tiene las acciones **Publicar**, **Despublicar**, **Iniciar**, **Completar** y **Cancelar mesa**. **Iniciar** (mesas programadas o completas) y **Completar** (mesas en progreso) pasan por el mismo servicio que el cambio automático: **Completar** emite `GameTableCompleted`, y si la mesa ya ha cambiado de estado entretanto avisan («La mesa ya no está en un estado que permita este cambio») sin cambiar nada. Ninguna mesa en borrador, cancelada o completada se puede iniciar ni completar.
+
+### Gestión de inscripciones por los directores
+
+Cada mesa suelta tiene en el panel la casilla **El director gestiona las inscripciones** (desactivada por defecto). Con ella activada, los directores de la mesa ven y resuelven las inscripciones desde la web, sin pasar por el panel:
+
+- Solo existe para mesas sueltas: las sesiones de una campaña no la ofrecen, y si una mesa con la casilla activada se une a una campaña, la casilla se desactiva sola.
+- Exige que todos los directores estén vinculados a una cuenta del sitio; si alguno no lo está, el panel no deja guardarla y dice a quién falta vincular.
+- El modo de confirmación (automática o manual) sigue siendo una decisión de la organización: los directores no lo cambian.
+- **Mis mesas** (`/mesas/mis-mesas`) separa los borradores de las mesas publicadas y, en las que el usuario dirige con la casilla activada, enlaza a **Gestionar inscritos** (`/mesas/mis-mesas/{slug}/inscritos`) con el número de solicitudes pendientes.
+- En **Gestionar inscritos** los directores ven las inscripciones solo con el nombre y el estado (nunca el email ni el teléfono) y pueden aprobar o rechazar las pendientes. Siempre dentro de las plazas de la mesa, también con la lista de espera desactivada, y nunca aprueban a un invitado que no ha confirmado su email ni en una partida terminada o cancelada. Aprobar o rechazar una inscripción que ya no está pendiente avisa y no cambia nada. La organización conserva todos sus permisos en el panel.
+- Al rechazar, el motivo es opcional (en el panel y en la web) y, si se escribe, aparece en el correo de rechazo que recibe el participante.
+- El correo de nueva inscripción que reciben los directores enlaza a **Gestionar inscritos** cuando la inscripción está pendiente.
+
+#### Historial de inscripciones
+
+La pestaña **Historial de inscripciones** de la mesa en el panel (solo para la organización, no para los directores) registra cada cambio de estado: quién lo hizo (una cuenta, el propio inscrito o el sistema, como en las promociones desde la lista de espera y las caducidades), cuándo y con qué motivo. Los nombres se leen en el momento de mostrarlos, así que una cuenta anonimizada aparece como anonimizada; los de los invitados se conservan tal cual. El comando `game-tables:prune-participant-status-log`, programado a diario, borra el historial 12 meses después del inicio de la mesa.
 
 ### Cambio de estado automático
 
@@ -384,6 +400,8 @@ Widget del dashboard: `PendingModerationWidget` (mesas y campañas pendientes de
 | `GET` | `/mesas/mis-mesas/{gameTable}/editar` | `gametables.edit` | Autor |
 | `PUT` / `DELETE` | `/mesas/mis-mesas/{gameTable}` | `gametables.update` / `gametables.destroy` | Autor |
 | `POST` | `/mesas/mis-mesas/{gameTable}/enviar-revision` | `gametables.submit-review` | Autor |
+| `GET` | `/mesas/mis-mesas/{gameTable}/inscritos` | `gametables.registrations` | Directores de la mesa con la gestión delegada |
+| `POST` | `/mesas/mis-mesas/{gameTable}/inscritos/{participantId}/aprobar` y `…/rechazar` | `gametables.registrations.approve` / `gametables.registrations.reject` | Igual que la anterior |
 | `GET` | `/campanas` | `campaigns.index` | Público |
 | `GET` | `/campanas/{slug}` | `campaigns.show` | Público |
 | `GET` / `POST` | `/campanas/crear` | `campaigns.frontend-create` / `campaigns.frontend-store` | Usuarios autenticados |
@@ -419,6 +437,7 @@ Widget del dashboard: `PendingModerationWidget` (mesas y campañas pendientes de
 | `GameTables/Create`, `GameTables/CreateNotEligible` | `/mesas/crear` |
 | `GameTables/Edit` | `/mesas/mis-mesas/{gameTable}/editar` |
 | `GameTables/MyTables` | `/mesas/mis-mesas` |
+| `GameTables/Registrations` | `/mesas/mis-mesas/{gameTable}/inscritos` |
 | `Campaigns/Index` | `/campanas` |
 | `Campaigns/Show` | `/campanas/{slug}` |
 | `Campaigns/Create`, `Campaigns/CreateNotEligible` | `/campanas/crear` |
@@ -451,7 +470,7 @@ Widget del dashboard: `PendingModerationWidget` (mesas y campañas pendientes de
 | Inscripción (usuario o invitado) | Participante; directores y email de la mesa si **Notificaciones** lo permite |
 | Inscripción de invitado sin confirmar | Invitado, con el enlace para confirmar el email (y el plazo, si reserva plaza); los avisos de inscripción a la organización salen al confirmar el invitado, no al inscribirse |
 | Inscripción de invitado caducada | Invitado, solo si la inscripción retenía plaza |
-| Confirmación o rechazo de la inscripción | Participante |
+| Confirmación o rechazo de la inscripción | Participante (el rechazo incluye el motivo, si se escribió) |
 | Cancelación de la inscripción por el participante | Participante; directores y email de la mesa si **Notificaciones** lo permite |
 | Cancelación de la inscripción por la organización (panel) | Participante, con su propio correo; los directores y el email de la mesa no reciben el aviso de cancelación (sí el de promoción si alguien sale de la lista de espera) |
 | Promoción desde la lista de espera | Participante siempre; directores y email de la mesa si **Notificaciones** lo permite; en las mesas con confirmación manual indican que la inscripción queda pendiente |
@@ -520,6 +539,7 @@ php artisan gametables:generate-slugs --force    # regenera también los existen
 php artisan game-tables:update-statuses          # inicia y completa las mesas según su hora (programado cada cinco minutos)
 php artisan game-tables:expire-guest-registrations  # caduca invitados sin confirmar y borra huellas de mesas terminadas (programado cada cinco minutos)
 php artisan game-tables:prune-campaign-invitations  # borra las invitaciones caducadas o de campañas que ya no están abiertas y los registros de envíos de más de 30 días (programado a diario)
+php artisan game-tables:prune-participant-status-log  # borra el historial de inscripciones 12 meses después del inicio de la mesa (programado a diario)
 ```
 
 ## Limitaciones actuales

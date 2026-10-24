@@ -14,10 +14,13 @@ use Carbon\CarbonImmutable;
 use DateTimeImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
+use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
 use Modules\GameTables\Application\Services\CampaignRosterQueryInterface;
 use Modules\GameTables\Application\Services\EligibilityServiceInterface;
@@ -229,6 +232,10 @@ final class GameTableController extends Controller
             'eligibility' => $eligibility,
             'guestEligibility' => $guestEligibility,
             'userRegistration' => $userRegistration,
+            // «Gestionar inscritos»: a director of a table that delegates its registrations
+            'canManageRegistrations' => $user instanceof UserModel
+                && $table->campaignId === null
+                && Gate::forUser($user)->allows('manageRegistrations', GameTableModel::query()->findOrFail($table->id)),
             // A campaign session: whether it is closed to outsiders and where a roster member stands
             'campaignSession' => $this->rosterQuery->sessionBox($table->id, $user !== null ? (string) $user->id : null, $now)?->toArray(),
             'seo' => $this->tableSeo($table),

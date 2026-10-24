@@ -242,6 +242,7 @@ final class GameTableQueryService implements GameTableQueryServiceInterface
             ),
             autoConfirm: $table->auto_confirm,
             acceptsRegistrationsInProgress: $table->accepts_registrations_in_progress ?? false,
+            delegatesRegistrations: $table->delegates_registrations ?? false,
             isPublished: $table->is_published,
             publishedAt: $table->published_at,
             frontendCreationStatus: $table->frontend_creation_status,

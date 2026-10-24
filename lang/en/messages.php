@@ -130,6 +130,8 @@ return [
         'registration_closes_at_help' => 'At the latest, the start of the table (or its end, if it admits registrations in play). Participants can always cancel only until the start.',
         'accepts_registrations_in_progress' => 'Allow registrations during the session',
         'accepts_registrations_in_progress_help' => 'Admits registrations from the start to the end of the session, even if «Start» was not pressed, only with free seats: no waiting list and no cancellations',
+        'delegates_registrations' => 'The director manages registrations',
+        'delegates_registrations_help' => 'Directors with an account can see who registered and approve or reject pending requests on the website. Staff keep all their permissions.',
         'auto_confirm' => 'Auto confirm',
         'is_published' => 'Published',
         'is_published_help' => 'Controls the public visibility of the table. Registrations open automatically based on configured dates.',
@@ -624,6 +626,7 @@ return [
     |--------------------------------------------------------------------------
     */
     'errors' => [
+        'not_pending' => 'This registration is no longer pending.',
         'table_locked_published' => 'This table is already published and can no longer be changed.',
         'table_locked_in_review' => 'This table has already been sent for review and can no longer be changed.',
         'table_locked' => 'This table has already been sent for review or published and can no longer be changed.',
@@ -722,6 +725,7 @@ return [
         'max_players_below_roster' => 'The maximum number of players cannot be lower than the campaign roster (:count).',
         'join_message_max' => 'The message may not be longer than 500 characters.',
         'rejection_reason_max' => 'The reason may not be longer than 500 characters.',
+        'delegated_directors_need_accounts' => 'For the director to manage registrations, every director must be linked to an account on the site. Choose :name\'s account.',
         'event_not_open' => 'You can only link the table to an event open to new tables',
         'registration_closes_after_start' => 'Registrations cannot close after the table starts (:date)',
         'registration_closes_after_end' => 'Registrations cannot close after the session ends (:date)',
@@ -769,6 +773,7 @@ return [
             'add' => 'Add participant',
             'confirm' => 'Confirm',
             'reject' => 'Reject',
+            'reject_reason' => 'Reason (optional)',
             'promote' => 'Promote',
             'cancel_registration' => 'Cancel registration',
             'cancel_registration_description' => 'Their seat is freed (and, where it applies, the first person on the waiting list takes it). They will be told by email that the organizers have cancelled their registration.',
@@ -794,6 +799,18 @@ return [
         ],
         'sessions' => [
             'title' => 'Sessions',
+        ],
+        'status_log' => [
+            'title' => 'Registration history',
+            'when' => 'Date',
+            'participant' => 'Participant',
+            'change' => 'Change',
+            'actor' => 'Done by',
+            'reason' => 'Reason',
+            'system' => 'System',
+            'by_participant' => 'The participant themselves',
+            'deleted_account' => 'Deleted account',
+            'registered' => 'Registration',
         ],
     ],
 
@@ -925,6 +942,19 @@ return [
         ],
     ],
 
+    // The «Gestionar inscritos» page of a table's directors (errors.not_pending is the general one)
+    'registrations' => [
+        'errors' => [
+            'awaiting_email' => 'This person has not confirmed their email yet; you can approve them once they do.',
+            'too_many_actions' => 'You made too many changes in a row. Wait a minute and try again.',
+            'table_closed' => 'This table has already ended or been cancelled.',
+        ],
+        'success' => [
+            'approved' => "You approved :name's registration.",
+            'rejected' => "You rejected :name's request.",
+        ],
+    ],
+
     // Server-rendered page metadata (link previews and search engines)
     'seo' => [
         'tables_title' => 'Game tables',
@@ -942,6 +972,7 @@ return [
         'edit_campaign_title' => 'Edit campaign',
         'my_campaigns_title' => 'My campaigns',
         'roster_title' => 'Roster · :title',
+        'registrations_title' => 'Registrations for :title',
     ],
 
     /*

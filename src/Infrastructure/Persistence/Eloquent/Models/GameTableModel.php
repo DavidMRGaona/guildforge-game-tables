@@ -58,6 +58,7 @@ use App\Infrastructure\Persistence\Eloquent\Concerns\HasSlug;
  * @property Carbon|null $registration_closes_at
  * @property bool $auto_confirm
  * @property bool $accepts_registrations_in_progress
+ * @property bool $delegates_registrations
  * @property bool $is_published
  * @property Carbon|null $published_at
  * @property string|null $notes
@@ -121,6 +122,7 @@ final class GameTableModel extends Model
         'registration_closes_at',
         'auto_confirm',
         'accepts_registrations_in_progress',
+        'delegates_registrations',
         'is_published',
         'published_at',
         'notes',
@@ -157,6 +159,7 @@ final class GameTableModel extends Model
             'registration_closes_at' => 'datetime',
             'auto_confirm' => 'boolean',
             'accepts_registrations_in_progress' => 'boolean',
+            'delegates_registrations' => 'boolean',
             'is_published' => 'boolean',
             'published_at' => 'datetime',
             'frontend_creation_status' => FrontendCreationStatus::class,
@@ -214,6 +217,14 @@ final class GameTableModel extends Model
     public function participants(): HasMany
     {
         return $this->hasMany(ParticipantModel::class, 'game_table_id');
+    }
+
+    /**
+     * @return HasMany<ParticipantStatusLogModel, $this>
+     */
+    public function statusLog(): HasMany
+    {
+        return $this->hasMany(ParticipantStatusLogModel::class, 'game_table_id');
     }
 
     /**

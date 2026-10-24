@@ -10,18 +10,21 @@ use App\Domain\Repositories\EventRepositoryInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Modules\GameTables\Application\DTOs\CampaignResponseDTO;
 use Modules\GameTables\Application\DTOs\CreationEligibilityDTO;
 use Modules\GameTables\Application\DTOs\FrontendCreateCampaignDTO;
 use Modules\GameTables\Application\DTOs\FrontendCreateGameTableDTO;
 use Modules\GameTables\Application\DTOs\GameMasterResponseDTO;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
+use Modules\GameTables\Application\DTOs\MyPublishedTableDTO;
 use Modules\GameTables\Application\Services\CampaignDirectionInterface;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
 use Modules\GameTables\Application\Services\EventCreationEligibilityServiceInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Application\Services\GameMasterServiceInterface;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
+use Modules\GameTables\Application\Services\TableDirectionInterface;
 use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Enums\CampaignFrequency;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
@@ -34,6 +37,7 @@ use Modules\GameTables\Domain\Enums\Language;
 use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableType;
+use Modules\GameTables\Domain\Enums\ParticipantStatus;
 use Modules\GameTables\Domain\Enums\Tone;
 use Modules\GameTables\Domain\Events\GameTableModerationApproved;
 use Modules\GameTables\Domain\Events\GameTableModerationRejected;
@@ -59,6 +63,7 @@ use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 
 final readonly class FrontendCreationService implements FrontendCreationServiceInterface
 {
@@ -79,6 +84,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         private CampaignRosterRepositoryInterface $roster,
         private CampaignDirectionInterface $direction,
         private CampaignJoinRequestRepositoryInterface $joinRequests,
+        private TableDirectionInterface $tableDirection,
     ) {}
 
     /**
@@ -401,6 +407,52 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         })->all();
     }
 
+    public function getMyTables(string $userId): array
+    {
+        $directed = $this->tableDirection->tableIdsDirectedBy($userId);
+
+        $models = GameTableModel::query()
+            ->whereNull('campaign_id')
+            ->where('is_published', true)
+            ->where('starts_at', '>=', now()->subDays(30))
+            ->where(static function ($query) use ($userId, $directed): void {
+                $query->where('created_by', $userId)->orWhereIn('id', $directed);
+            })
+            ->orderBy('starts_at')
+            ->get();
+
+        // Only the tables whose registrations the person manages need a count: one grouped query
+        $managed = $models
+            ->filter(static fn (GameTableModel $model): bool => $model->delegates_registrations && in_array($model->id, $directed, true))
+            ->pluck('id')
+            ->all();
+        $pending = $managed === [] ? [] : ParticipantModel::query()
+            ->whereIn('game_table_id', $managed)
+            ->where('status', ParticipantStatus::Pending->value)
+            ->selectRaw('game_table_id, count(*) as total')
+            ->groupBy('game_table_id')
+            ->pluck('total', 'game_table_id')
+            ->all();
+
+        $published = $models->map(static function (GameTableModel $model) use ($managed, $pending): MyPublishedTableDTO {
+            $manages = in_array($model->id, $managed, true);
+
+            return new MyPublishedTableDTO(
+                id: $model->id,
+                title: $model->title,
+                slug: (string) $model->slug,
+                startsAt: $model->starts_at?->format('c'),
+                status: $model->status->value,
+                statusLabel: $model->status->label(),
+                statusColor: $model->status->color(),
+                managesRegistrations: $manages,
+                pendingRegistrations: $manages ? (int) ($pending[$model->id] ?? 0) : null,
+            );
+        })->values()->all();
+
+        return ['drafts' => $this->getUserDrafts($userId), 'published' => $published];
+    }
+
     public function submitForReview(string $tableId, string $userId): void
     {
         $table = $this->gameTableRepository->find(new GameTableId($tableId));
@@ -483,6 +535,11 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             );
         }
 
+        // Refused before anything is saved
+        if ($table->delegatesRegistrations && $dto->gameMasters !== null && count($dto->gameMasters) > 0) {
+            $this->ensureNoNewDirectorsWithoutAccount($tableId, $dto->gameMasters, $dto->createdBy);
+        }
+
         // Update the table via the service
         $updateDto = new \Modules\GameTables\Application\DTOs\UpdateGameTableDTO(
             id: $tableId,
@@ -508,7 +565,13 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             safetyTools: $dto->safetyTools,
             contentWarningIds: $dto->contentWarningIds,
             customWarnings: $dto->customWarnings,
+            // Registration settings belong to the staff: a web save keeps what the table has
+            registrationType: $table->registrationType,
+            membersEarlyAccessDays: $table->membersEarlyAccessDays,
+            registrationOpensAt: $table->registrationOpensAt,
             registrationClosesAt: $registrationClosesAt,
+            autoConfirm: $table->autoConfirm,
+            acceptsRegistrationsInProgress: $table->acceptsRegistrationsInProgress,
             notes: $dto->notes,
         );
 
@@ -869,6 +932,32 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         $this->gameMasterService->syncTableGameMasters($tableId, $safeRows);
 
         $this->saveAuthorProfile($tableId, $safeRows[0], $authorId);
+    }
+
+    /**
+     * A table whose directors manage its registrations needs them linked to an account, which only
+     * staff can do: the author may keep the co-directors already on it but not add another.
+     *
+     * @param  array<int, array<string, mixed>>  $rows
+     *
+     * @throws ValidationException
+     */
+    private function ensureNoNewDirectorsWithoutAccount(string $tableId, array $rows, string $authorId): void
+    {
+        $safeRows = $this->authorOwnedRows($rows, $authorId, $tableId);
+
+        // Rows kept or added back carry their id; a row without one would create a director
+        foreach (array_slice($safeRows, 1) as $row) {
+            if (! isset($row['id'])) {
+                $name = trim(((string) ($row['first_name'] ?? '')).' '.((string) ($row['last_name'] ?? '')));
+
+                throw ValidationException::withMessages([
+                    'game_masters' => __('game-tables::messages.validation.delegated_directors_need_accounts', [
+                        'name' => $name !== '' ? $name : (string) ($row['email'] ?? ''),
+                    ]),
+                ]);
+            }
+        }
     }
 
     /**

@@ -31,6 +31,13 @@ interface NotificationRecipientResolverInterface
     public function getGameMasterEmails(string $gameTableId): array;
 
     /**
+     * Get the account emails of the linked directors that have notify_by_email enabled.
+     *
+     * @return list<string>
+     */
+    public function getDirectorEmails(string $gameTableId): array;
+
+    /**
      * Get the table's notification email address.
      */
     public function getTableNotificationEmail(string $gameTableId): ?string;

@@ -91,9 +91,32 @@ interface RegistrationServiceInterface
 
     /**
      * Where pending players hold seats (waiting list on, manual confirmation), rejecting a pending
-     * player promotes the first waiting one.
+     * player promotes the first waiting one. The optional reason (blank counts as none) goes in the email.
+     *
+     * @throws \Modules\GameTables\Domain\Exceptions\ParticipantNotPendingException when the participant is neither pending nor on the waiting list (nothing changes)
      */
-    public function reject(string $participantId): ParticipantResponseDTO;
+    public function reject(string $participantId, ?string $reason = null): ParticipantResponseDTO;
+
+    /**
+     * A director approves a pending request from the website («Gestionar inscritos»). Unlike
+     * confirm(), under the table lock it requires a pending registration, never vouches for a
+     * guest's email and always checks the seats, whatever the waiting list setting: only confirmed
+     * registrations count, the one being approved needs a free seat among them.
+     *
+     * @throws \Modules\GameTables\Domain\Exceptions\ParticipantNotPendingException when the registration is no longer pending (nothing changes)
+     * @throws \Modules\GameTables\Domain\Exceptions\ParticipantAwaitingEmailException for a guest whose email is not confirmed (nothing changes)
+     * @throws \Modules\GameTables\Domain\Exceptions\TableClosedException when the table has ended or been cancelled (nothing changes)
+     * @throws \Modules\GameTables\Domain\Exceptions\TableFullException when no player or spectator seat is free (nothing changes)
+     */
+    public function approveAsDirector(string $participantId): ParticipantResponseDTO;
+
+    /**
+     * A director rejects a pending request from the website: reject(), but only a pending
+     * registration, checked under the table lock (the waiting list is the organisation's).
+     *
+     * @throws \Modules\GameTables\Domain\Exceptions\ParticipantNotPendingException when the registration is no longer pending (nothing changes)
+     */
+    public function rejectAsDirector(string $participantId, ?string $reason = null): ParticipantResponseDTO;
 
     public function promoteFromWaitingList(string $gameTableId): ?ParticipantResponseDTO;
 

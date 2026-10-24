@@ -18,6 +18,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Modules\GameTables\Application\DTOs\FrontendCreateGameTableDTO;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
+use Modules\GameTables\Application\DTOs\MyPublishedTableDTO;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
 use Modules\GameTables\Application\Services\EventGameTableConfigServiceInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
@@ -150,20 +151,24 @@ final class FrontendGameTableController extends Controller
     }
 
     /**
-     * Show user's tables (drafts, pending review, rejected).
+     * Show user's tables: drafts (pending review, rejected) and published tables they create or direct.
      */
     public function myTables(): Response
     {
         /** @var UserModel $user */
         $user = auth()->user();
-        $tables = $this->creationService->getUserDrafts((string) $user->id);
+        $tables = $this->creationService->getMyTables((string) $user->id);
 
         $eligibility = $this->eligibilityService->canCreateTable((string) $user->id);
 
         return Inertia::render('GameTables/MyTables', [
-            'tables' => array_map(
+            'drafts' => array_map(
                 static fn (GameTableResponseDTO $dto) => $dto->toArray(),
-                $tables
+                $tables['drafts']
+            ),
+            'published' => array_map(
+                static fn (MyPublishedTableDTO $dto) => $dto->toArray(),
+                $tables['published']
             ),
             'canCreate' => $eligibility->eligible,
             'seo' => $this->seo->forPage(new SeoPageDTO(

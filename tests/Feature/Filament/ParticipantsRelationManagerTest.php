@@ -7,15 +7,19 @@ namespace Modules\GameTables\Tests\Feature\Filament;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Exceptions;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
+use Modules\GameTables\Application\Services\RegistrationServiceInterface;
+use Modules\GameTables\Domain\Exceptions\ParticipantNotPendingException;
 use Modules\GameTables\Filament\Resources\GameTableResource;
 use Modules\GameTables\Filament\Resources\GameTableResource\Pages\EditGameTable;
 use Modules\GameTables\Filament\Resources\GameTableResource\RelationManagers\ParticipantsRelationManager;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
+use Modules\GameTables\Notifications\ParticipantRejectedNotification;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\Modules\InteractsWithModulePanel;
 use Tests\Support\Modules\ModuleTestCase;
@@ -117,6 +121,65 @@ final class ParticipantsRelationManagerTest extends ModuleTestCase
         $this->assertSame('confirmed', $toConfirm->refresh()->status->value);
         $this->assertSame('rejected', $toReject->refresh()->status->value);
         $this->assertSame('confirmed', $toPromote->refresh()->status->value);
+    }
+
+    public function test_rejecting_with_a_reason_sends_it_in_the_email(): void
+    {
+        Notification::fake();
+        $table = $this->table(['max_players' => 5, 'auto_confirm' => false]);
+        $row = $this->participant($table, 'pending');
+
+        $this->participants($table)
+            ->callTableAction('reject', $row, data: ['reason' => 'Ya no quedan plazas para principiantes'])
+            ->assertHasNoTableActionErrors();
+
+        $this->assertSame('rejected', $row->refresh()->status->value);
+        Notification::assertSentOnDemand(
+            ParticipantRejectedNotification::class,
+            fn (ParticipantRejectedNotification $n): bool => $n->reason === 'Ya no quedan plazas para principiantes',
+        );
+    }
+
+    public function test_rejecting_without_a_reason_sends_none(): void
+    {
+        Notification::fake();
+        $table = $this->table(['max_players' => 5, 'auto_confirm' => false]);
+        $row = $this->participant($table, 'pending');
+
+        $this->participants($table)->callTableAction('reject', $row, data: ['reason' => '   ']);
+
+        $this->assertSame('rejected', $row->refresh()->status->value);
+        Notification::assertSentOnDemand(
+            ParticipantRejectedNotification::class,
+            fn (ParticipantRejectedNotification $n): bool => $n->reason === null,
+        );
+    }
+
+    public function test_a_reason_over_500_characters_is_refused(): void
+    {
+        $table = $this->table(['max_players' => 5, 'auto_confirm' => false]);
+        $row = $this->participant($table, 'pending');
+
+        $this->participants($table)
+            ->callTableAction('reject', $row, data: ['reason' => str_repeat('a', 501)])
+            ->assertHasTableActionErrors(['reason']);
+
+        $this->assertSame('pending', $row->refresh()->status->value);
+    }
+
+    public function test_the_service_refuses_to_reject_a_confirmed_participant(): void
+    {
+        $table = $this->table(['max_players' => 5]);
+        $row = $this->participant($table, 'confirmed');
+
+        try {
+            app(RegistrationServiceInterface::class)->reject($row->id);
+            $this->fail('A confirmed participant must not be rejected.');
+        } catch (ParticipantNotPendingException $exception) {
+            $this->assertSame('not_pending', $exception->reason);
+        }
+
+        $this->assertSame('confirmed', $row->refresh()->status->value);
     }
 
     #[DataProvider('waitingListSetting')]

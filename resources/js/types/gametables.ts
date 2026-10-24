@@ -622,3 +622,48 @@ export interface CampaignInvitationView {
     // ISO 8601
     expires_at?: string;
 }
+
+export type TableRegistrationStatus =
+    | 'pending'
+    | 'confirmed'
+    | 'waiting_list'
+    | 'cancelled'
+    | 'rejected'
+    | 'no_show'
+    | 'expired';
+
+/** One registration on the «Gestionar inscritos» page (TableRegistrationRowDTO): no contact details. */
+export interface TableRegistrationRow {
+    id: string;
+    // The account name, or a guest's first and last name
+    name: string;
+    is_guest: boolean;
+    role: 'player' | 'spectator';
+    role_label: string;
+    status: TableRegistrationStatus;
+    status_label: string;
+    // ISO 8601
+    requested_at: string | null;
+    // A guest who has not confirmed their email yet: only the organisation may approve them
+    awaiting_email_confirmation: boolean;
+    can_approve: boolean;
+    can_reject: boolean;
+}
+
+export interface TableRegistrationsTable {
+    title: string;
+    slug: string;
+    // ISO 8601
+    starts_at: string;
+    auto_confirm: boolean;
+    max_players: number;
+    confirmed_players: number;
+}
+
+/** Props of the GameTables/Registrations page (TableRegistrationsPageDTO::toArray()). */
+export interface TableRegistrationsPage {
+    table: TableRegistrationsTable;
+    // Pending first (oldest first), then confirmed, the waiting list in order, then the rest
+    rows: TableRegistrationRow[];
+    pending_count: number;
+}

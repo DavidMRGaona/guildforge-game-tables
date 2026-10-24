@@ -154,6 +154,8 @@ return [
         'auto_confirm' => 'Confirmar automáticamente',
         'accepts_registrations_in_progress' => 'Permitir inscripciones durante la partida',
         'accepts_registrations_in_progress_help' => 'Admite inscripciones desde el inicio hasta el final de la partida, aunque no se haya pulsado «Iniciar», solo con plazas libres: sin lista de espera ni bajas',
+        'delegates_registrations' => 'El director gestiona las inscripciones',
+        'delegates_registrations_help' => 'Los directores con cuenta podrán ver los inscritos y aprobar o rechazar las solicitudes pendientes desde la web. La administración conserva todos sus permisos.',
         'notification_email' => 'Email de notificaciones',
         'notification_email_help' => 'Dirección de correo donde se enviarán las notificaciones de inscripciones y bajas',
         'is_published' => 'Publicado',
@@ -697,6 +699,7 @@ return [
     |--------------------------------------------------------------------------
     */
     'errors' => [
+        'not_pending' => 'Esta inscripción ya no está pendiente.',
         'table_locked_published' => 'Esta mesa ya está publicada y ya no se puede modificar.',
         'table_locked_in_review' => 'Esta mesa ya se ha enviado a revisión y ya no se puede modificar.',
         'table_locked' => 'Esta mesa ya se ha enviado a revisión o está publicada y ya no se puede modificar.',
@@ -796,6 +799,7 @@ return [
         'max_players_below_roster' => 'El máximo de jugadores no puede ser menor que la plantilla de la campaña (:count).',
         'join_message_max' => 'El mensaje no puede superar los 500 caracteres.',
         'rejection_reason_max' => 'El motivo no puede superar los 500 caracteres.',
+        'delegated_directors_need_accounts' => 'Para que el director gestione las inscripciones, cada director tiene que estar vinculado a una cuenta del sitio. Elige la cuenta de :name.',
         'event_not_open' => 'Solo puedes vincular la mesa a un evento abierto a nuevas mesas',
         'registration_closes_after_start' => 'El cierre de inscripciones no puede ser posterior al inicio de la mesa (:date)',
         'registration_closes_after_end' => 'El cierre de inscripciones no puede ser posterior al final de la partida (:date)',
@@ -843,6 +847,7 @@ return [
             'add' => 'Añadir participante',
             'confirm' => 'Confirmar',
             'reject' => 'Rechazar',
+            'reject_reason' => 'Motivo (opcional)',
             'promote' => 'Promover',
             'cancel_registration' => 'Cancelar inscripción',
             'cancel_registration_description' => 'Se libera su plaza (y, si corresponde, pasa a ocuparla el primero de la lista de espera). Se le avisará por email de que la organización ha cancelado su inscripción.',
@@ -868,6 +873,18 @@ return [
         ],
         'sessions' => [
             'title' => 'Sesiones',
+        ],
+        'status_log' => [
+            'title' => 'Historial de inscripciones',
+            'when' => 'Fecha',
+            'participant' => 'Inscrito',
+            'change' => 'Cambio',
+            'actor' => 'Hecho por',
+            'reason' => 'Motivo',
+            'system' => 'Sistema',
+            'by_participant' => 'El propio inscrito',
+            'deleted_account' => 'Cuenta eliminada',
+            'registered' => 'Inscripción',
         ],
     ],
 
@@ -999,6 +1016,19 @@ return [
         ],
     ],
 
+    // The «Gestionar inscritos» page of a table's directors (errors.not_pending is the general one)
+    'registrations' => [
+        'errors' => [
+            'awaiting_email' => 'Esta persona aún no ha confirmado su email; podrás aprobarla cuando lo haga.',
+            'too_many_actions' => 'Has hecho demasiados cambios seguidos. Espera un minuto y vuelve a intentarlo.',
+            'table_closed' => 'Esta partida ya ha terminado o se ha cancelado.',
+        ],
+        'success' => [
+            'approved' => 'Has aprobado la inscripción de :name.',
+            'rejected' => 'Has rechazado la solicitud de :name.',
+        ],
+    ],
+
     // Server-rendered page metadata (link previews and search engines)
     'seo' => [
         'tables_title' => 'Mesas de rol',
@@ -1016,6 +1046,7 @@ return [
         'edit_campaign_title' => 'Editar campaña',
         'my_campaigns_title' => 'Mis campañas',
         'roster_title' => 'Plantilla · :title',
+        'registrations_title' => 'Inscritos de :title',
     ],
 
     /*
