@@ -40,6 +40,7 @@ use Modules\GameTables\Domain\Exceptions\CannotCancelException;
 use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
 use Modules\GameTables\Domain\Exceptions\ParticipantNotFoundException;
 use Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException;
+use Modules\GameTables\Domain\Exceptions\ParticipantAwaitingEmailException;
 use Modules\GameTables\Domain\Exceptions\ParticipantNotPendingException;
 use Modules\GameTables\Domain\Exceptions\TableFullException;
 use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
@@ -1144,13 +1145,77 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
     public function reject(string $participantId, ?string $reason = null): ParticipantResponseDTO
     {
+        return $this->rejectParticipant($participantId, $reason, pendingOnly: false);
+    }
+
+    public function rejectAsDirector(string $participantId, ?string $reason = null): ParticipantResponseDTO
+    {
+        return $this->rejectParticipant($participantId, $reason, pendingOnly: true);
+    }
+
+    public function approveAsDirector(string $participantId): ParticipantResponseDTO
+    {
+        $participant = $this->lock->forParticipant($participantId, function () use ($participantId): Participant {
+            $participant = $this->participantRepository->findOrFail(new ParticipantId($participantId));
+
+            // Read again under the lock: a cancellation or the panel may have answered first
+            if (! $participant->isPending()) {
+                throw ParticipantNotPendingException::forParticipant($participantId);
+            }
+
+            // confirm() would vouch for the email; only the organisation may
+            if ($participant->isAwaitingEmailConfirmation()) {
+                throw ParticipantAwaitingEmailException::forParticipant($participantId);
+            }
+
+            $this->ensureSeatForDirector($participant);
+
+            $participant->confirm();
+            $this->participantRepository->save($participant);
+
+            return $participant;
+        });
+
+        ParticipantConfirmed::dispatch(
+            $participant->id->value,
+            $participant->gameTableId->value,
+            $participant->userId,
+        );
+
+        return $this->toResponse($participant);
+    }
+
+    /**
+     * A director never takes a table over its seats, waiting list or not: only confirmed
+     * registrations count (pending ones that hold seats hold the one being approved).
+     *
+     * @throws TableFullException
+     */
+    private function ensureSeatForDirector(Participant $participant): void
+    {
+        $gameTable = $this->gameTableRepository->findOrFail($participant->gameTableId);
+
+        if ($participant->isPlayer() && ! $gameTable->hasCapacity($this->participantRepository->countConfirmedPlayers($gameTable->id))) {
+            throw TableFullException::forTable($gameTable->id->value);
+        }
+
+        if ($participant->isSpectator() && $gameTable->availableSpectatorSlots($this->participantRepository->countConfirmedSpectators($gameTable->id)) === 0) {
+            throw TableFullException::forSpectators($gameTable->id->value);
+        }
+    }
+
+    /**
+     * @param  bool  $pendingOnly  The director's rejection: the waiting list is not theirs to answer
+     */
+    private function rejectParticipant(string $participantId, ?string $reason, bool $pendingOnly): ParticipantResponseDTO
+    {
         $reason = $reason === null || trim($reason) === '' ? null : trim($reason);
 
-        [$participant, $promoted] = $this->asCurrentActor($reason ?? $this->actor->reason(), fn (): array => $this->lock->forParticipant($participantId, function () use ($participantId): array {
+        [$participant, $promoted] = $this->asCurrentActor($reason ?? $this->actor->reason(), fn (): array => $this->lock->forParticipant($participantId, function () use ($participantId, $pendingOnly): array {
             $participant = $this->participantRepository->findOrFail(new ParticipantId($participantId));
             $wasPendingPlayer = $participant->isPending() && $participant->isPlayer();
 
-            if (! $participant->isPending() && $participant->status !== ParticipantStatus::WaitingList) {
+            if (! $participant->isPending() && ($pendingOnly || $participant->status !== ParticipantStatus::WaitingList)) {
                 throw ParticipantNotPendingException::forParticipant($participantId);
             }
 

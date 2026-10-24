@@ -18,6 +18,7 @@ use Modules\GameTables\Application\Services\ParticipantActorContextInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Modules\GameTables\Application\Services\TableRegistrationsQueryInterface;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
+use Modules\GameTables\Domain\Exceptions\ParticipantAwaitingEmailException;
 use Modules\GameTables\Domain\Exceptions\ParticipantNotPendingException;
 use Modules\GameTables\Domain\Exceptions\TableFullException;
 use Modules\GameTables\Http\Requests\RejectTableRegistrationRequest;
@@ -26,9 +27,10 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel
 /**
  * The «Gestionar inscritos» page of a table that delegates its registrations, and its two
  * actions. Every route asks the policy (manageRegistrations, 403) and every action loads the
- * participant from the table of the URL (404). A director only answers pending requests, and never
- * approves a guest whose email is unconfirmed: the registration service would vouch for it, which
- * only the organisation may do.
+ * participant from the table of the URL (404). A director only answers pending requests, never
+ * approves a guest whose email is unconfirmed (only the organisation vouches for it) and never
+ * takes the table over its seats: the service's director methods check all of it under the lock;
+ * the checks here only spare the visit.
  */
 final class TableRegistrationsController extends Controller
 {
@@ -61,11 +63,11 @@ final class TableRegistrationsController extends Controller
         }
 
         if ($row->awaitingEmailConfirmation) {
-            return back()->with('error', __('game-tables::messages.registrations.errors.awaiting_email'));
+            return $this->awaitingEmail();
         }
 
         return $this->attempt(
-            fn () => $this->registrations->confirm($row->id),
+            fn () => $this->registrations->approveAsDirector($row->id),
             null,
             (string) __('game-tables::messages.registrations.success.approved', ['name' => $row->name]),
         );
@@ -80,11 +82,12 @@ final class TableRegistrationsController extends Controller
             return $this->notPending();
         }
 
+        // Blank is no reason, also in the status history
         $reason = $request->validated('reason');
-        $reason = is_string($reason) ? $reason : null;
+        $reason = is_string($reason) && trim($reason) !== '' ? trim($reason) : null;
 
         return $this->attempt(
-            fn () => $this->registrations->reject($row->id, $reason),
+            fn () => $this->registrations->rejectAsDirector($row->id, $reason),
             $reason,
             (string) __('game-tables::messages.registrations.success.rejected', ['name' => $row->name]),
         );
@@ -118,6 +121,8 @@ final class TableRegistrationsController extends Controller
             $this->actor->run($this->actorId(), $reason, $action);
         } catch (ParticipantNotPendingException) {
             return $this->notPending();
+        } catch (ParticipantAwaitingEmailException) {
+            return $this->awaitingEmail();
         } catch (TableFullException $e) {
             return back()->with('error', __('game-tables::messages.errors.'.$e->reason));
         }
@@ -128,6 +133,11 @@ final class TableRegistrationsController extends Controller
     private function notPending(): RedirectResponse
     {
         return back()->with('error', __('game-tables::messages.errors.not_pending'));
+    }
+
+    private function awaitingEmail(): RedirectResponse
+    {
+        return back()->with('error', __('game-tables::messages.registrations.errors.awaiting_email'));
     }
 
     private function actorId(): string

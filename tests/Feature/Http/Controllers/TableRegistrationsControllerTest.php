@@ -20,6 +20,7 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantMod
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantStatusLogModel;
 use Modules\GameTables\Notifications\ParticipantConfirmedNotification;
 use Modules\GameTables\Notifications\ParticipantRejectedNotification;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\Modules\ModuleTestCase;
 
 /**
@@ -274,9 +275,19 @@ final class TableRegistrationsControllerTest extends ModuleTestCase
 
     // Review focus 3: approving never takes the table over its seats
 
-    public function test_approving_on_a_full_table_is_refused(): void
+    /**
+     * @return array<string, array{bool}>
+     */
+    public static function waitingList(): array
     {
-        config()->set('modules.settings.game-tables.registration.waiting_list_enabled', true);
+        // Off is the default: pending requests hold no seat then, so only the check stops an overfill
+        return ['waiting list off' => [false], 'waiting list on' => [true]];
+    }
+
+    #[DataProvider('waitingList')]
+    public function test_approving_on_a_full_table_is_refused(bool $waitingList): void
+    {
+        config()->set('modules.settings.game-tables.registration.waiting_list_enabled', $waitingList);
         $this->table->forceFill(['max_players' => 1])->save();
         $this->userRow($this->table, $this->richard, 'confirmed', CarbonImmutable::parse('2026-10-29 12:00:00'));
         $jane = $this->userRow($this->table, $this->jane, 'pending', CarbonImmutable::parse('2026-10-30 12:00:00'));
@@ -366,6 +377,26 @@ final class TableRegistrationsControllerTest extends ModuleTestCase
             ParticipantRejectedNotification::class,
             fn (ParticipantRejectedNotification $n): bool => $n->reason === null,
         );
+    }
+
+    public function test_a_blank_reason_is_no_reason_in_the_email_or_the_history(): void
+    {
+        $jane = $this->userRow($this->table, $this->jane, 'pending', CarbonImmutable::now());
+
+        $this->asDirector()
+            ->post($this->actionUrl($jane, 'rechazar'), ['reason' => '   '])
+            ->assertSessionHas('success', 'Has rechazado la solicitud de Jane Doe.');
+
+        Notification::assertSentOnDemand(
+            ParticipantRejectedNotification::class,
+            fn (ParticipantRejectedNotification $n): bool => $n->reason === null,
+        );
+        $log = ParticipantStatusLogModel::query()
+            ->where('participant_id', $jane->id)
+            ->where('to_status', 'rejected')
+            ->sole();
+        $this->assertNull($log->reason);
+        $this->assertSame($this->john->id, $log->actor_user_id);
     }
 
     public function test_a_reason_over_500_characters_is_refused(): void
