@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { router } from '@inertiajs/vue3';
 import { useRoutes } from '@/composables/useRoutes';
@@ -40,6 +40,23 @@ const emit = defineEmits<{
 const { t, locale } = useI18n();
 const routes = useRoutes();
 
+// Native modal dialog: showModal() gives it the dialog role, keeps focus inside, makes the page
+// behind inert and turns Escape into a cancel event
+// eslint-disable-next-line no-undef
+const dialogRef = ref<HTMLDialogElement | null>(null);
+const titleId = useId();
+
+function syncDialog(): void {
+    const dialog = dialogRef.value;
+    if (!dialog) return;
+
+    if (props.isOpen && !dialog.open) {
+        dialog.showModal();
+    } else if (!props.isOpen && dialog.open) {
+        dialog.close();
+    }
+}
+
 const confirmationNotice = computed(() => {
     const confirmation = props.confirmation;
     if (!confirmation) return null;
@@ -70,6 +87,7 @@ function checkBrowserHint(): void {
 }
 
 onMounted(() => {
+    syncDialog();
     checkBrowserHint();
     window.addEventListener('guildforge:cookie-consent-changed', checkBrowserHint);
 });
@@ -126,6 +144,8 @@ watch(
         }
     }
 );
+
+watch(() => props.isOpen, syncDialog, { flush: 'post' });
 
 const isFormValid = computed(() => {
     return (
@@ -191,6 +211,20 @@ function handleClose(): void {
     }
 }
 
+// A click on the backdrop lands on the dialog element itself, outside its panel
+function handleBackdropClick(event: MouseEvent): void {
+    if (event.target === dialogRef.value) {
+        handleClose();
+    }
+}
+
+// The browser may close the dialog on its own (a repeated Escape skips the cancel event): keep the parent in step
+function handleNativeClose(): void {
+    if (props.isOpen) {
+        emit('close');
+    }
+}
+
 function goBack(): void {
     step.value = 'form';
 }
@@ -198,258 +232,240 @@ function goBack(): void {
 
 <template>
     <Teleport to="body">
-        <Transition
-            enter-active-class="transition-opacity duration-200"
-            enter-from-class="opacity-0"
-            enter-to-class="opacity-100"
-            leave-active-class="transition-opacity duration-150"
-            leave-from-class="opacity-100"
-            leave-to-class="opacity-0"
+        <dialog
+            ref="dialogRef"
+            :aria-labelledby="titleId"
+            class="fixed inset-0 m-auto w-full max-w-md border-0 bg-transparent p-4 backdrop:bg-black/50"
+            @click="handleBackdropClick"
+            @cancel.prevent="handleClose"
+            @close="handleNativeClose"
         >
-            <div
-                v-if="isOpen"
-                class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-                @click.self="handleClose"
-            >
-                <Transition
-                    enter-active-class="transition-all duration-200"
-                    enter-from-class="scale-95 opacity-0"
-                    enter-to-class="scale-100 opacity-100"
-                    leave-active-class="transition-all duration-150"
-                    leave-from-class="scale-100 opacity-100"
-                    leave-to-class="scale-95 opacity-0"
+            <div class="w-full max-w-md rounded-xl bg-surface p-6 shadow-2xl">
+                <!-- Header -->
+                <h3 :id="titleId" class="mb-4 text-center text-lg font-semibold text-base-primary">
+                    {{ step === 'form' ? t('guestRegistration.title') : t('gameTables.registration.selectRole') }}
+                </h3>
+
+                <!-- Error message -->
+                <div
+                    v-if="error"
+                    class="mb-4 rounded-lg bg-error-light p-3 text-sm text-base-primary"
                 >
-                    <div
-                        v-if="isOpen"
-                        class="w-full max-w-md rounded-xl bg-surface p-6 shadow-2xl"
+                    {{ error }}
+                    <a
+                        v-if="accountError"
+                        :href="routes.auth.login"
+                        class="ml-1 font-medium underline"
                     >
-                        <!-- Header -->
-                        <h3 class="mb-4 text-center text-lg font-semibold text-base-primary">
-                            {{ step === 'form' ? t('guestRegistration.title') : t('gameTables.registration.selectRole') }}
-                        </h3>
+                        {{ t('guestRegistration.logIn') }}
+                    </a>
+                </div>
 
-                        <!-- Error message -->
-                        <div
-                            v-if="error"
-                            class="mb-4 rounded-lg bg-error-light p-3 text-sm text-base-primary"
+                <!-- Browser hint: a sign-up from this browser already exists -->
+                <p
+                    v-if="step === 'form' && alreadyFromBrowser"
+                    class="mb-4 rounded-lg bg-info-light p-3 text-sm text-base-primary"
+                >
+                    {{ t('guestRegistration.alreadyFromBrowser') }}
+                </p>
+
+                <!-- Spectator notice (when it is the only option) -->
+                <p
+                    v-if="step === 'form' && spectatorOnly"
+                    class="mb-4 rounded-lg bg-info-light p-3 text-sm text-base-primary"
+                >
+                    {{ t('gameTables.registration.spectatorOnly') }}
+                </p>
+
+                <!-- Waiting list notice (when it is the only option) -->
+                <p
+                    v-if="step === 'form' && waitingList && playerAvailable && !choosesRole && waitingListHelp"
+                    class="mb-4 rounded-lg bg-info-light p-3 text-sm text-base-primary"
+                >
+                    {{ waitingListHelp }}
+                </p>
+
+                <!-- Form step -->
+                <form v-if="step === 'form'" class="space-y-4" @submit.prevent="handleFormSubmit">
+                    <!-- Name -->
+                    <div>
+                        <label
+                            for="guest-first-name"
+                            class="mb-1 block text-sm font-medium text-base-secondary"
                         >
-                            {{ error }}
-                            <a
-                                v-if="accountError"
-                                :href="routes.auth.login"
-                                class="ml-1 font-medium underline"
-                            >
-                                {{ t('guestRegistration.logIn') }}
-                            </a>
-                        </div>
-
-                        <!-- Browser hint: a sign-up from this browser already exists -->
-                        <p
-                            v-if="step === 'form' && alreadyFromBrowser"
-                            class="mb-4 rounded-lg bg-info-light p-3 text-sm text-base-primary"
-                        >
-                            {{ t('guestRegistration.alreadyFromBrowser') }}
-                        </p>
-
-                        <!-- Spectator notice (when it is the only option) -->
-                        <p
-                            v-if="step === 'form' && spectatorOnly"
-                            class="mb-4 rounded-lg bg-info-light p-3 text-sm text-base-primary"
-                        >
-                            {{ t('gameTables.registration.spectatorOnly') }}
-                        </p>
-
-                        <!-- Waiting list notice (when it is the only option) -->
-                        <p
-                            v-if="step === 'form' && waitingList && playerAvailable && !choosesRole && waitingListHelp"
-                            class="mb-4 rounded-lg bg-info-light p-3 text-sm text-base-primary"
-                        >
-                            {{ waitingListHelp }}
-                        </p>
-
-                        <!-- Form step -->
-                        <form v-if="step === 'form'" class="space-y-4" @submit.prevent="handleFormSubmit">
-                            <!-- Name -->
-                            <div>
-                                <label
-                                    for="guest-first-name"
-                                    class="mb-1 block text-sm font-medium text-base-secondary"
-                                >
-                                    {{ t('guestRegistration.firstName') }} *
-                                </label>
-                                <input
-                                    id="guest-first-name"
-                                    v-model="form.first_name"
-                                    type="text"
-                                    required
-                                    class="w-full rounded-lg border border-strong bg-surface px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 text-base-primary"
-                                    :placeholder="t('guestRegistration.firstNamePlaceholder')"
-                                />
-                            </div>
-
-                            <!-- Email -->
-                            <div>
-                                <label
-                                    for="guest-email"
-                                    class="mb-1 block text-sm font-medium text-base-secondary"
-                                >
-                                    {{ t('guestRegistration.email') }} *
-                                </label>
-                                <input
-                                    id="guest-email"
-                                    v-model="form.email"
-                                    type="email"
-                                    required
-                                    class="w-full rounded-lg border border-strong bg-surface px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 text-base-primary"
-                                    :placeholder="t('guestRegistration.emailPlaceholder')"
-                                />
-                            </div>
-
-                            <!-- Phone -->
-                            <div>
-                                <label
-                                    for="guest-phone"
-                                    class="mb-1 block text-sm font-medium text-base-secondary"
-                                >
-                                    {{ t('guestRegistration.phone') }}
-                                </label>
-                                <input
-                                    id="guest-phone"
-                                    v-model="form.phone"
-                                    type="tel"
-                                    class="w-full rounded-lg border border-strong bg-surface px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 text-base-primary"
-                                    :placeholder="t('guestRegistration.phonePlaceholder')"
-                                />
-                            </div>
-
-                            <!-- Notes -->
-                            <div>
-                                <label
-                                    for="guest-notes"
-                                    class="mb-1 block text-sm font-medium text-base-secondary"
-                                >
-                                    {{ t('gameTables.registration.notesLabel') }}
-                                </label>
-                                <textarea
-                                    id="guest-notes"
-                                    v-model="form.notes"
-                                    rows="2"
-                                    class="w-full rounded-lg border border-strong bg-surface px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 text-base-primary"
-                                    :placeholder="t('gameTables.registration.notesPlaceholder')"
-                                ></textarea>
-                            </div>
-
-                            <!-- GDPR Consent -->
-                            <div class="flex items-start gap-2">
-                                <input
-                                    id="guest-gdpr"
-                                    v-model="form.gdpr_consent"
-                                    type="checkbox"
-                                    required
-                                    class="mt-1 h-4 w-4 rounded border-strong bg-surface text-primary focus:ring-primary-500"
-                                />
-                                <label
-                                    for="guest-gdpr"
-                                    class="text-sm text-base-secondary"
-                                >
-                                    {{ t('guestRegistration.gdprConsent') }}
-                                    <a
-                                        href="/privacidad"
-                                        target="_blank"
-                                        class="text-primary underline"
-                                    >
-                                        {{ t('guestRegistration.privacyPolicy') }}
-                                    </a>
-                                </label>
-                            </div>
-
-                            <!-- What happens after sending -->
-                            <p
-                                v-if="confirmationNotice"
-                                class="rounded-lg bg-muted p-3 text-sm text-base-secondary"
-                            >
-                                {{ confirmationNotice }}
-                            </p>
-
-                            <!-- Buttons -->
-                            <div class="flex gap-3 pt-2">
-                                <button
-                                    type="button"
-                                    class="flex-1 rounded-lg border border-default px-4 py-2.5 text-sm font-medium text-base-secondary transition-colors hover:bg-muted"
-                                    @click="handleClose"
-                                >
-                                    {{ $t('common.cancel') }}
-                                </button>
-                                <button
-                                    type="submit"
-                                    :disabled="!isFormValid || loading"
-                                    class="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                    <span v-if="loading" class="flex items-center justify-center">
-                                        <svg
-                                            class="mr-2 h-4 w-4 animate-spin"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <circle
-                                                class="opacity-25"
-                                                cx="12"
-                                                cy="12"
-                                                r="10"
-                                                stroke="currentColor"
-                                                stroke-width="4"
-                                            ></circle>
-                                            <path
-                                                class="opacity-75"
-                                                fill="currentColor"
-                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                            ></path>
-                                        </svg>
-                                    </span>
-                                    <span v-else>{{ submitText }}</span>
-                                </button>
-                            </div>
-                        </form>
-
-                        <!-- Role selection step -->
-                        <div v-else-if="step === 'role'" class="space-y-3">
-                            <button
-                                type="button"
-                                :disabled="loading"
-                                class="w-full rounded-lg bg-primary-500/10 px-4 py-3 text-left transition-colors hover:bg-primary-500/20 disabled:cursor-not-allowed disabled:opacity-50"
-                                @click="selectRole('player')"
-                            >
-                                <div class="font-medium text-base-primary">
-                                    {{ waitingList ? t('gameTables.registration.joinWaitingList') : t('gameTables.registration.registerAsPlayer') }}
-                                </div>
-                                <div v-if="waitingList && waitingListHelp" class="mt-1 text-sm text-base-secondary">
-                                    {{ waitingListHelp }}
-                                </div>
-                            </button>
-
-                            <button
-                                type="button"
-                                :disabled="loading"
-                                class="w-full rounded-lg bg-base-secondary/10 px-4 py-3 text-left transition-colors hover:bg-base-secondary/20 disabled:cursor-not-allowed disabled:opacity-50"
-                                @click="selectRole('spectator')"
-                            >
-                                <div class="font-medium text-base-primary">
-                                    {{ t('gameTables.registration.registerAsSpectator') }}
-                                </div>
-                            </button>
-
-                            <button
-                                type="button"
-                                :disabled="loading"
-                                class="mt-2 w-full rounded-lg border border-default px-4 py-2.5 text-sm font-medium text-base-secondary transition-colors hover:bg-muted"
-                                @click="goBack"
-                            >
-                                {{ $t('common.back') }}
-                            </button>
-                        </div>
+                            {{ t('guestRegistration.firstName') }} *
+                        </label>
+                        <input
+                            id="guest-first-name"
+                            v-model="form.first_name"
+                            type="text"
+                            required
+                            class="w-full rounded-lg border border-strong bg-surface px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 text-base-primary"
+                            :placeholder="t('guestRegistration.firstNamePlaceholder')"
+                        />
                     </div>
-                </Transition>
+
+                    <!-- Email -->
+                    <div>
+                        <label
+                            for="guest-email"
+                            class="mb-1 block text-sm font-medium text-base-secondary"
+                        >
+                            {{ t('guestRegistration.email') }} *
+                        </label>
+                        <input
+                            id="guest-email"
+                            v-model="form.email"
+                            type="email"
+                            required
+                            class="w-full rounded-lg border border-strong bg-surface px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 text-base-primary"
+                            :placeholder="t('guestRegistration.emailPlaceholder')"
+                        />
+                    </div>
+
+                    <!-- Phone -->
+                    <div>
+                        <label
+                            for="guest-phone"
+                            class="mb-1 block text-sm font-medium text-base-secondary"
+                        >
+                            {{ t('guestRegistration.phone') }}
+                        </label>
+                        <input
+                            id="guest-phone"
+                            v-model="form.phone"
+                            type="tel"
+                            class="w-full rounded-lg border border-strong bg-surface px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 text-base-primary"
+                            :placeholder="t('guestRegistration.phonePlaceholder')"
+                        />
+                    </div>
+
+                    <!-- Notes -->
+                    <div>
+                        <label
+                            for="guest-notes"
+                            class="mb-1 block text-sm font-medium text-base-secondary"
+                        >
+                            {{ t('gameTables.registration.notesLabel') }}
+                        </label>
+                        <textarea
+                            id="guest-notes"
+                            v-model="form.notes"
+                            rows="2"
+                            class="w-full rounded-lg border border-strong bg-surface px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 text-base-primary"
+                            :placeholder="t('gameTables.registration.notesPlaceholder')"
+                        ></textarea>
+                    </div>
+
+                    <!-- GDPR Consent -->
+                    <div class="flex items-start gap-2">
+                        <input
+                            id="guest-gdpr"
+                            v-model="form.gdpr_consent"
+                            type="checkbox"
+                            required
+                            class="mt-1 h-4 w-4 rounded border-strong bg-surface text-primary focus:ring-primary-500"
+                        />
+                        <label
+                            for="guest-gdpr"
+                            class="text-sm text-base-secondary"
+                        >
+                            {{ t('guestRegistration.gdprConsent') }}
+                            <a
+                                href="/politica-de-privacidad"
+                                target="_blank"
+                                class="text-primary underline"
+                            >
+                                {{ t('guestRegistration.privacyPolicy') }}
+                            </a>
+                        </label>
+                    </div>
+
+                    <!-- What happens after sending -->
+                    <p
+                        v-if="confirmationNotice"
+                        class="rounded-lg bg-muted p-3 text-sm text-base-secondary"
+                    >
+                        {{ confirmationNotice }}
+                    </p>
+
+                    <!-- Buttons -->
+                    <div class="flex gap-3 pt-2">
+                        <button
+                            type="button"
+                            class="flex-1 rounded-lg border border-default px-4 py-2.5 text-sm font-medium text-base-secondary transition-colors hover:bg-muted"
+                            @click="handleClose"
+                        >
+                            {{ $t('common.cancel') }}
+                        </button>
+                        <button
+                            type="submit"
+                            :disabled="!isFormValid || loading"
+                            class="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            <span v-if="loading" class="flex items-center justify-center">
+                                <svg
+                                    class="mr-2 h-4 w-4 animate-spin"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <circle
+                                        class="opacity-25"
+                                        cx="12"
+                                        cy="12"
+                                        r="10"
+                                        stroke="currentColor"
+                                        stroke-width="4"
+                                    ></circle>
+                                    <path
+                                        class="opacity-75"
+                                        fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                    ></path>
+                                </svg>
+                            </span>
+                            <span v-else>{{ submitText }}</span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Role selection step -->
+                <div v-else-if="step === 'role'" class="space-y-3">
+                    <button
+                        type="button"
+                        :disabled="loading"
+                        class="w-full rounded-lg bg-primary-500/10 px-4 py-3 text-left transition-colors hover:bg-primary-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                        @click="selectRole('player')"
+                    >
+                        <div class="font-medium text-base-primary">
+                            {{ waitingList ? t('gameTables.registration.joinWaitingList') : t('gameTables.registration.registerAsPlayer') }}
+                        </div>
+                        <div v-if="waitingList && waitingListHelp" class="mt-1 text-sm text-base-secondary">
+                            {{ waitingListHelp }}
+                        </div>
+                    </button>
+
+                    <button
+                        type="button"
+                        :disabled="loading"
+                        class="w-full rounded-lg bg-base-secondary/10 px-4 py-3 text-left transition-colors hover:bg-base-secondary/20 disabled:cursor-not-allowed disabled:opacity-50"
+                        @click="selectRole('spectator')"
+                    >
+                        <div class="font-medium text-base-primary">
+                            {{ t('gameTables.registration.registerAsSpectator') }}
+                        </div>
+                    </button>
+
+                    <button
+                        type="button"
+                        :disabled="loading"
+                        class="mt-2 w-full rounded-lg border border-default px-4 py-2.5 text-sm font-medium text-base-secondary transition-colors hover:bg-muted"
+                        @click="goBack"
+                    >
+                        {{ $t('common.back') }}
+                    </button>
+                </div>
             </div>
-        </Transition>
+        </dialog>
     </Teleport>
 </template>
