@@ -12,6 +12,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
+use Livewire\Attributes\Locked;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Application\Services\GameMasterServiceInterface;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
@@ -30,6 +31,13 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel
 final class EditGameTable extends EditRecord
 {
     protected static string $resource = GameTableResource::class;
+
+    /**
+     * The status the form shows, as loaded: the automatic update (or another user) may move the
+     * table while the form is open, and saving must not write the old status back.
+     */
+    #[Locked]
+    public ?string $loadedStatus = null;
 
     public function getTitle(): string|Htmlable
     {
@@ -97,6 +105,48 @@ final class EditGameTable extends EditRecord
         $data['gameMasters'] = $gameMastersData;
 
         return $data;
+    }
+
+    protected function afterFill(): void
+    {
+        $this->loadedStatus = $this->getRecord()->status->value;
+    }
+
+    /**
+     * @param  array<string>  $statePaths
+     */
+    public function refreshFormData(array $statePaths): void
+    {
+        parent::refreshFormData($statePaths);
+
+        // The actions show the status they set: the form is current again
+        if (in_array('status', $statePaths, true)) {
+            $this->loadedStatus = $this->getRecord()->status->value;
+        }
+    }
+
+    /**
+     * A status that moved since the form was filled wins over the one on the form, before the
+     * validation (an old «Borrador» is no longer an option). Saving the current status leaves the
+     * column clean, so a move that lands right after this check is not overwritten either.
+     */
+    protected function beforeValidate(): void
+    {
+        $current = $this->getRecord()->status->value;
+
+        if ($this->loadedStatus === null || $current === $this->loadedStatus) {
+            return;
+        }
+
+        if (($this->data['status'] ?? null) !== $current) {
+            Notification::make()
+                ->title(__('game-tables::messages.notifications.status_already_changed'))
+                ->warning()
+                ->send();
+        }
+
+        $this->data['status'] = $current;
+        $this->loadedStatus = $current;
     }
 
     /**

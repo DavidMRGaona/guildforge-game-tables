@@ -186,12 +186,14 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     }
 
     /**
-     * @throws RegistrationNotAllowedException registration_closed
+     * @throws RegistrationNotAllowedException registration_closed, table_started or table_ended
      */
     private function ensureAdmitsRoster(GameTable $gameTable, DateTimeImmutable $now): void
     {
-        if (! $gameTable->admitsRosterEnrollment($now)) {
-            throw RegistrationNotAllowedException::because('registration_closed', __('game-tables::messages.errors.registration_closed'));
+        $refusal = $gameTable->rosterEnrollmentRefusal($now);
+
+        if ($refusal !== null) {
+            throw RegistrationNotAllowedException::because($refusal, __('game-tables::messages.errors.'.$refusal));
         }
     }
 

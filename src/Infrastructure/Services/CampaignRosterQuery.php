@@ -179,8 +179,9 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
         $refusal = null;
         $canRejoin = false;
         if ($row === null || $row->isCancelled()) {
+            $closedReason = $session->rosterEnrollmentRefusal($now);
             $refusal = match (true) {
-                ! $session->admitsRosterEnrollment($now) => (string) __('game-tables::messages.errors.registration_closed'),
+                $closedReason !== null => (string) __('game-tables::messages.errors.'.$closedReason),
                 ! $session->hasCapacity($this->seats->takenPlayerSeats($session)) => (string) __('game-tables::messages.errors.table_full'),
                 default => null,
             };

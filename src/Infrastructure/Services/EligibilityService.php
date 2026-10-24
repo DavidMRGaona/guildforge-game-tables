@@ -69,7 +69,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
 
         // Check if registration is open
         if (! $gameTable->canRegister()) {
-            throw RegistrationClosedException::forTable($gameTable->id->value);
+            throw $this->closedByStatus($gameTable);
         }
 
         // Invite tables are filled by the organisation from the panel: nobody signs up by themselves,
@@ -155,6 +155,22 @@ final readonly class EligibilityService implements EligibilityServiceInterface
         throw $gameTable->acceptsRegistrationsInProgress
             ? RegistrationClosedException::tableEnded($gameTable->id->value)
             : RegistrationClosedException::tableStarted($gameTable->id->value);
+    }
+
+    /**
+     * Why a table whose status admits no registrations is closed (GameTable::closedStatusReason()):
+     * a published table in play or finished says it has started or ended, as the time says once
+     * the start has passed.
+     */
+    private function closedByStatus(GameTable $gameTable): RegistrationClosedException
+    {
+        $id = $gameTable->id->value;
+
+        return match ($gameTable->closedStatusReason()) {
+            'table_started' => RegistrationClosedException::tableStarted($id),
+            'table_ended' => RegistrationClosedException::tableEnded($id),
+            default => RegistrationClosedException::forTable($id),
+        };
     }
 
     /**
@@ -366,7 +382,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
 
         // Check if registration is open
         if (! $gameTable->canRegister()) {
-            return $this->guestRefusal('registration_closed');
+            return $this->guestRefusal($this->closedByStatus($gameTable)->reason);
         }
 
         // The clock RegistrationService sets the guest's confirmation deadline with

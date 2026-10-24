@@ -305,6 +305,22 @@ final class RosterEnrollmentTest extends ModuleTestCase
         Event::assertNotDispatched(ParticipantRegistered::class);
     }
 
+    public function test_rejoining_after_the_start_says_the_session_has_started(): void
+    {
+        $this->row($this->jane, 'cancelled', fromRoster: true, reason: 'session_absence');
+        $this->table->update(['starts_at' => now()->subMinutes(30)]);
+
+        try {
+            $this->register($this->jane, ParticipantRole::Player);
+            $this->fail('A started session must refuse the rejoin');
+        } catch (RegistrationNotAllowedException $e) {
+            $this->assertSame('table_started', $e->reason);
+            $this->assertSame('La partida ya ha comenzado', $e->getMessage());
+        }
+
+        $this->assertSame('cancelled', $this->rowOf($this->jane)->status->value);
+    }
+
     public function test_a_member_already_registered_is_refused(): void
     {
         $this->service()->enrollRoster($this->table->id);

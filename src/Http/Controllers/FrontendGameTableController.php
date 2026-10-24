@@ -19,7 +19,6 @@ use Inertia\Response;
 use Modules\GameTables\Application\DTOs\FrontendCreateGameTableDTO;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
-use Modules\GameTables\Application\Services\EventCreationEligibilityServiceInterface;
 use Modules\GameTables\Application\Services\EventGameTableConfigServiceInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
@@ -38,7 +37,6 @@ final class FrontendGameTableController extends Controller
     public function __construct(
         private readonly FrontendCreationServiceInterface $creationService,
         private readonly CreationEligibilityServiceInterface $eligibilityService,
-        private readonly EventCreationEligibilityServiceInterface $eventEligibilityService,
         private readonly EventGameTableConfigServiceInterface $eventConfigService,
         private readonly GameTableServiceInterface $gameTableService,
         private readonly SeoMetadataFactoryInterface $seo,
@@ -62,12 +60,11 @@ final class FrontendGameTableController extends Controller
         }
         $eventId = $event?->id;
 
-        // Check eligibility - use event-specific if event ID provided
-        if ($eventId !== null) {
-            $eligibility = $this->eventEligibilityService->canCreateTableForEvent($eventId, $user?->id);
-        } else {
-            $eligibility = $this->eligibilityService->canCreateTable($user?->id);
-        }
+        // Check eligibility - use event-specific if event ID provided (a closed event says so
+        // before the form)
+        $eligibility = $eventId !== null
+            ? $this->creationService->eventCreationEligibility($eventId, $user?->id)
+            : $this->eligibilityService->canCreateTable($user?->id);
 
         // Someone the general rules refuse may still create sessions of the campaigns they direct
         $sessionOnly = ! $eligibility->eligible
@@ -193,8 +190,8 @@ final class FrontendGameTableController extends Controller
         // Get the table DTO using the service (consistent with architecture)
         $table = $this->gameTableService->findOrFail($gameTable->id);
 
-        // Get form data for the edit form, keeping the campaign stored on the table
-        $formData = $this->creationService->getCreateFormData($gameTable->campaign_id);
+        // Get form data for the edit form, keeping the campaign and the event stored on the table
+        $formData = $this->creationService->getCreateFormData($gameTable->campaign_id, $gameTable->event_id);
 
         // Get event context if a table is associated with an event
         $eventContext = null;

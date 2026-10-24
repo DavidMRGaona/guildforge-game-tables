@@ -620,8 +620,8 @@ final class GameTableResource extends BaseResource
                                 }
                             }
 
-                            // Nothing approved and a refusal shown: the refusal says it all
-                            if ($approvedCount > 0 || ! $refused) {
+                            // Nothing approved and a refusal or a warning shown: they say it all
+                            if ($approvedCount > 0 || (! $refused && ! $skipped)) {
                                 Notification::make()
                                     ->title(__('game-tables::messages.bulk_actions.approved_count', ['count' => $approvedCount]))
                                     ->success()
@@ -660,10 +660,13 @@ final class GameTableResource extends BaseResource
                                 }
                             }
 
-                            Notification::make()
-                                ->title(__('game-tables::messages.bulk_actions.rejected_count', ['count' => $rejectedCount]))
-                                ->success()
-                                ->send();
+                            // Nothing rejected and a warning shown: the warning says it all
+                            if ($rejectedCount > 0 || ! $skipped) {
+                                Notification::make()
+                                    ->title(__('game-tables::messages.bulk_actions.rejected_count', ['count' => $rejectedCount]))
+                                    ->success()
+                                    ->send();
+                            }
 
                             if ($skipped) {
                                 self::warnStatusAlreadyChanged();

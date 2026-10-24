@@ -104,6 +104,78 @@ final class GameTableStatusActionsTest extends ModuleTestCase
         $this->assertSame(TableStatus::InProgress, $table->refresh()->status);
     }
 
+    // The automatic update moves the table while the form is open: saving keeps the new status
+    public function test_saving_a_form_opened_before_the_automatic_update_keeps_the_new_status(): void
+    {
+        $table = $this->table(TableStatus::Scheduled);
+
+        $page = Livewire::test(EditGameTable::class, ['record' => $table->getRouteKey()])
+            ->assertFormSet(['status' => TableStatus::Scheduled->value]);
+
+        GameTableModel::query()->whereKey($table->id)->update(['status' => TableStatus::InProgress->value]);
+
+        $page->fillForm(['title' => 'Mesa retocada'])
+            ->call('save')
+            ->assertHasNoFormErrors()
+            ->assertNotified('La mesa ya no está en un estado que permita este cambio');
+
+        $table->refresh();
+        $this->assertSame(TableStatus::InProgress, $table->status);
+        $this->assertSame('Mesa retocada', $table->title);
+    }
+
+    // «Borrador» is only an option while the table is a draft: a form loaded then still saves
+    public function test_saving_a_form_loaded_as_a_draft_after_the_table_left_draft_is_not_refused(): void
+    {
+        $table = $this->table(TableStatus::Draft, published: false);
+
+        $page = Livewire::test(EditGameTable::class, ['record' => $table->getRouteKey()])
+            ->assertFormSet(['status' => TableStatus::Draft->value]);
+
+        GameTableModel::query()->whereKey($table->id)->update(['status' => TableStatus::Scheduled->value]);
+
+        $page->fillForm(['title' => 'Mesa retocada'])
+            ->call('save')
+            ->assertHasNoFormErrors()
+            ->assertNotified('La mesa ya no está en un estado que permita este cambio');
+
+        $table->refresh();
+        $this->assertSame(TableStatus::Scheduled, $table->status);
+        $this->assertSame('Mesa retocada', $table->title);
+    }
+
+    // A status picked by hand on a form that is still current is saved, without any warning
+    public function test_a_status_chosen_in_a_current_form_is_saved(): void
+    {
+        $table = $this->table(TableStatus::Scheduled);
+
+        Livewire::test(EditGameTable::class, ['record' => $table->getRouteKey()])
+            ->fillForm(['status' => TableStatus::Full->value])
+            ->call('save')
+            ->assertHasNoFormErrors()
+            ->assertNotNotified('La mesa ya no está en un estado que permita este cambio');
+
+        $this->assertSame(TableStatus::Full, $table->refresh()->status);
+    }
+
+    // «Iniciar» refreshes the status on the form: saving afterwards is not a stale form
+    public function test_saving_after_starting_the_table_from_the_panel_is_not_stale(): void
+    {
+        $table = $this->table(TableStatus::Scheduled);
+
+        $page = Livewire::test(EditGameTable::class, ['record' => $table->getRouteKey()])
+            ->callAction('start');
+
+        $page->fillForm(['title' => 'Mesa iniciada'])
+            ->call('save')
+            ->assertHasNoFormErrors()
+            ->assertNotNotified('La mesa ya no está en un estado que permita este cambio');
+
+        $table->refresh();
+        $this->assertSame(TableStatus::InProgress, $table->status);
+        $this->assertSame('Mesa iniciada', $table->title);
+    }
+
     public function test_the_warning_is_translated_in_both_languages(): void
     {
         $this->assertSame('La mesa ya no está en un estado que permita este cambio', trans('game-tables::messages.notifications.status_already_changed', [], 'es'));
@@ -133,6 +205,8 @@ final class GameTableStatusActionsTest extends ModuleTestCase
             'min_players' => 2,
             'max_players' => 5,
             'language' => 'es',
+            'experience_level' => 'none',
+            'character_creation' => 'pre_generated',
             'is_published' => $published,
         ]);
     }

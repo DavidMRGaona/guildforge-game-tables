@@ -65,11 +65,6 @@ final class RegistrationEligibilityTest extends ModuleTestCase
         $this->assertRefused($this->table(['status' => 'cancelled']), 'registration_closed');
     }
 
-    public function test_a_completed_table_refuses_registrations(): void
-    {
-        $this->assertRefused($this->table(['status' => 'completed']), 'registration_closed');
-    }
-
     public function test_a_full_status_table_with_free_seats_accepts_registrations(): void
     {
         $table = $this->table(['status' => 'full']);
@@ -350,14 +345,27 @@ final class RegistrationEligibilityTest extends ModuleTestCase
         $this->assertSame(2, $this->registrations($table));
     }
 
-    public function test_a_table_in_progress_refuses_users_and_guests_by_default(): void
+    // The status says why, as the time does once the start has passed: never a bare «closed»
+    public function test_a_table_in_progress_refuses_users_and_guests_by_default_because_it_has_started(): void
     {
         $table = $this->table(['status' => 'in_progress']);
 
-        $this->assertRefused($table, 'registration_closed');
+        $this->assertRefused($table, 'table_started', message: 'La partida ya ha comenzado');
         $this->registerGuest($table)
             ->assertStatus(422)
-            ->assertJsonPath('errors.registration.0', __('game-tables::messages.errors.registration_closed'));
+            ->assertJsonPath('errors.registration.0', 'La partida ya ha comenzado');
+
+        $this->assertSame(0, $this->registrations($table));
+    }
+
+    public function test_a_completed_table_refuses_users_and_guests_because_it_has_ended(): void
+    {
+        $table = $this->table(['status' => 'completed']);
+
+        $this->assertRefused($table, 'table_ended', message: 'La partida ya ha terminado');
+        $this->registerGuest($table)
+            ->assertStatus(422)
+            ->assertJsonPath('errors.registration.0', 'La partida ya ha terminado');
 
         $this->assertSame(0, $this->registrations($table));
     }

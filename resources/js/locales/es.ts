@@ -460,6 +460,7 @@ export default {
             reasonRoleRequired: 'Solo los socios pueden crear mesas',
             reasonFrontendCreationDisabled: 'La creación de mesas está deshabilitada',
             reasonTablesNotEnabledForEvent: 'Este evento no admite la creación de mesas',
+            reasonEventNotOpen: 'Este evento no está abierto a nuevas mesas',
             reasonDefault: 'No tienes permiso para crear mesas',
             canCreateAt: 'Podrás crear mesas a partir del {date}',
             backToTables: 'Volver a las mesas',

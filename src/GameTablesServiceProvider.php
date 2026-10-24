@@ -947,9 +947,9 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                 return null;
             }
 
-            $eligibilityService = app(EventCreationEligibilityServiceInterface::class);
+            // The same rule as the create page: an ended event offers no button
             $userId = auth()->id();
-            $eligibility = $eligibilityService->canCreateTableForEvent(
+            $eligibility = app(FrontendCreationServiceInterface::class)->eventCreationEligibility(
                 $event->id,
                 $userId !== null ? (string) $userId : null,
             );

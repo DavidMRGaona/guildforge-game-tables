@@ -104,6 +104,68 @@ final class FrontendTableEventLinkTest extends ModuleTestCase
         $this->assertSame($open->id, GameTableModel::query()->where('title', 'Mesa desde el evento')->value('event_id'));
     }
 
+    /**
+     * Opening the create form for a closed event explains why before the form, instead of letting
+     * the author fill it in to be refused on sending it.
+     */
+    public function test_the_create_page_of_a_closed_event_says_why_before_the_form(): void
+    {
+        $closed = $this->closedEvents();
+        $expected = [
+            'unpublished' => 'event_not_open',
+            'ended' => 'event_not_open',
+            'disabled' => 'tables_not_enabled_for_event',
+            'not_enabled' => 'tables_not_enabled_for_event',
+        ];
+
+        foreach ($expected as $key => $reason) {
+            $this->actingAs($this->author)
+                ->get(route('gametables.create', ['event' => $closed[$key]->slug]))
+                ->assertInertia(fn (Assert $page) => $page
+                    ->component('GameTables/CreateNotEligible', false)
+                    ->where('reason', $reason));
+        }
+    }
+
+    public function test_the_closed_event_reason_is_translated_in_both_languages(): void
+    {
+        $es = (string) file_get_contents(__DIR__.'/../../../../resources/js/locales/es.ts');
+        $en = (string) file_get_contents(__DIR__.'/../../../../resources/js/locales/en.ts');
+        $page = (string) file_get_contents(__DIR__.'/../../../../resources/js/pages/GameTables/CreateNotEligible.vue');
+
+        $this->assertStringContainsString("reasonEventNotOpen: 'Este evento no está abierto a nuevas mesas'", $es);
+        $this->assertStringContainsString("reasonEventNotOpen: 'This event is not open to new tables'", $en);
+        $this->assertStringContainsString("event_not_open: t('gameTables.createNotEligible.reasonEventNotOpen')", $page);
+    }
+
+    /**
+     * The event page offers to create a table only while the form takes the event: an ended
+     * event shows no button, nor a «sign in to create» to visitors.
+     */
+    public function test_the_event_page_offers_no_creation_once_the_event_has_ended(): void
+    {
+        $open = $this->openEvent();
+        $ended = $this->closedEvents()['ended'];
+
+        $this->get(route('events.show', $ended->slug))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('eventCreationEligibility.eligible', false)
+                ->where('eventCreationEligibility.reason', 'event_not_open')
+                ->where('eventCreationEligibility.requires_authentication', false));
+
+        $this->actingAs($this->author)
+            ->get(route('events.show', $ended->slug))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('eventCreationEligibility.eligible', false)
+                ->where('eventCreationEligibility.reason', 'event_not_open'));
+
+        $this->actingAs($this->author)
+            ->get(route('events.show', $open->slug))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('eventCreationEligibility.eligible', true)
+                ->where('eventCreationEligibility.can_create_tables', true));
+    }
+
     public function test_editing_a_draft_into_an_event_the_form_does_not_offer_is_refused(): void
     {
         $draft = $this->tableDraft();
@@ -158,6 +220,30 @@ final class FrontendTableEventLinkTest extends ModuleTestCase
         $draft->refresh();
         $this->assertSame($closed['unpublished']->id, $draft->event_id);
         $this->assertSame('Mesa corregida', $draft->title);
+    }
+
+    /**
+     * As the server keeps the stored event, the edit form offers it after the open ones, so the
+     * selector does not come up empty; no other closed event is offered.
+     */
+    public function test_the_edit_form_offers_the_stored_event_even_once_it_has_closed(): void
+    {
+        $open = $this->openEvent();
+        $closed = $this->closedEvents();
+        $draft = $this->tableDraft($closed['ended']->id);
+
+        $this->actingAs($this->author)
+            ->get(route('gametables.edit', $draft->slug))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('GameTables/Edit', false)
+                ->where('formData.events', fn ($events): bool => collect($events)->pluck('id')->all() === [$open->id, $closed['ended']->id]));
+
+        // The create form still offers the open events only
+        $this->actingAs($this->author)
+            ->get(route('gametables.create'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('GameTables/Create', false)
+                ->where('formData.events', fn ($events): bool => collect($events)->pluck('id')->all() === [$open->id]));
     }
 
     /**

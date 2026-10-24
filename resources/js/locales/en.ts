@@ -460,6 +460,7 @@ export default {
             reasonRoleRequired: 'Only members can create tables',
             reasonFrontendCreationDisabled: 'Table creation is disabled',
             reasonTablesNotEnabledForEvent: 'This event does not allow creating tables',
+            reasonEventNotOpen: 'This event is not open to new tables',
             reasonDefault: 'You do not have permission to create tables',
             canCreateAt: 'You can create tables from {date}',
             backToTables: 'Back to tables',
