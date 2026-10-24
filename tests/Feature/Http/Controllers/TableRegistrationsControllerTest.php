@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\GameTables\Domain\Enums\GameMasterRole;
+use Modules\GameTables\Domain\Enums\StatusLogActorKind;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
@@ -320,7 +321,7 @@ final class TableRegistrationsControllerTest extends ModuleTestCase
             ->where('to_status', 'confirmed')
             ->sole();
         $this->assertSame($this->john->id, $log->actor_user_id);
-        $this->assertFalse((bool) $log->actor_is_system);
+        $this->assertSame(StatusLogActorKind::Account, $log->actor_kind);
     }
 
     public function test_approving_a_guest_awaiting_their_email_confirmation_is_refused(): void

@@ -92,7 +92,7 @@ final class PruneParticipantStatusLogCommandTest extends ModuleTestCase
     {
         return ParticipantStatusLogModel::query()->create([
             'game_table_id' => $table->id,
-            'actor_is_system' => true,
+            'actor_kind' => 'system',
             'from_status' => null,
             'to_status' => 'confirmed',
         ]);

@@ -21,7 +21,8 @@ return new class extends Migration
             $table->uuid('participant_user_id')->nullable();
             $table->string('guest_name')->nullable();
             $table->uuid('actor_user_id')->nullable();
-            $table->boolean('actor_is_system');
+            // account, participant (their own registration; a guest has no account) or system
+            $table->string('actor_kind');
             $table->string('from_status')->nullable();
             $table->string('to_status');
             $table->text('reason')->nullable();

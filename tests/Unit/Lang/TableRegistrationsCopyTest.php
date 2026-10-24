@@ -27,6 +27,7 @@ final class TableRegistrationsCopyTest extends TestCase
         'relation_managers.status_log.actor',
         'relation_managers.status_log.reason',
         'relation_managers.status_log.system',
+        'relation_managers.status_log.by_participant',
         'relation_managers.status_log.deleted_account',
         'relation_managers.status_log.registered',
         'registrations.errors.awaiting_email',

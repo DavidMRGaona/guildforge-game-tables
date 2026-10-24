@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
+use Modules\GameTables\Domain\Enums\StatusLogActorKind;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantStatusLogModel;
 
 /**
@@ -75,9 +76,12 @@ final class StatusLogRelationManager extends RelationManager
 
                 TextColumn::make('actor')
                     ->label(__('game-tables::messages.relation_managers.status_log.actor'))
-                    ->state(fn (ParticipantStatusLogModel $record): string => $record->actor_is_system
-                        ? __('game-tables::messages.relation_managers.status_log.system')
-                        : $record->actor->name ?? __('game-tables::messages.relation_managers.status_log.deleted_account')),
+                    ->state(fn (ParticipantStatusLogModel $record): string => match ($record->actor_kind) {
+                        StatusLogActorKind::System => __('game-tables::messages.relation_managers.status_log.system'),
+                        // The participant column already names them; a guest has no account
+                        StatusLogActorKind::Participant => __('game-tables::messages.relation_managers.status_log.by_participant'),
+                        StatusLogActorKind::Account => $record->actor->name ?? __('game-tables::messages.relation_managers.status_log.deleted_account'),
+                    }),
 
                 TextColumn::make('reason')
                     ->label(__('game-tables::messages.relation_managers.status_log.reason'))

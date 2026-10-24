@@ -86,7 +86,8 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         $userId = $this->requireUserId($dto);
         $now = CarbonImmutable::now()->toDateTimeImmutable();
 
-        [$participant, $rank, $announce, $promoted, $linked] = $this->lock->forTable($dto->gameTableId, function () use ($dto, $userId, $now): array {
+        // The user's own registration: the history names them as the participant
+        [$participant, $rank, $announce, $promoted, $linked] = $this->actor->asParticipant($userId, fn (): array => $this->lock->forTable($dto->gameTableId, function () use ($dto, $userId, $now): array {
             [$guest, $account, $promoted] = $this->guestOfAccount($dto->gameTableId, $userId, $now);
 
             if ($guest !== null && $account !== null) {
@@ -106,7 +107,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             $this->eligibilityService->ensureUserCanRegister($dto->gameTableId, $userId, $dto->role);
 
             return [...$this->withRank($this->placeUser($dto, $userId, $now, recordFingerprint: true)), true, $promoted, false];
-        });
+        }));
 
         if ($promoted !== null) {
             $this->announcePromotion($promoted);
@@ -844,7 +845,10 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             $this->ensureTableNotStarted($participant);
         }
 
-        return $this->cancelById($participantId, byOrganization: false);
+        return $this->actor->asParticipant(
+            $participant?->userId,
+            fn (): ParticipantResponseDTO => $this->cancelById($participantId, byOrganization: false),
+        );
     }
 
     /**
@@ -1031,7 +1035,10 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
         $this->ensureTableNotStarted($participant);
 
-        return $this->cancelById($participant->id->value, byOrganization: false);
+        return $this->actor->asParticipant(
+            $userId,
+            fn (): ParticipantResponseDTO => $this->cancelById($participant->id->value, byOrganization: false),
+        );
     }
 
     public function confirm(string $participantId): ParticipantResponseDTO
@@ -1367,7 +1374,8 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     {
         $now = CarbonImmutable::now()->toDateTimeImmutable();
 
-        [$participant, $rank, $resent, $send, $promoted] = $this->lock->forTable($dto->gameTableId, function () use ($dto, $now): array {
+        // The guest's own registration: no account, yet never the system's
+        [$participant, $rank, $resent, $send, $promoted] = $this->actor->asParticipant(null, fn (): array => $this->lock->forTable($dto->gameTableId, function () use ($dto, $now): array {
             $existing = $this->findGuest($dto);
 
             // Past its deadline the row has lapsed, even if the expiry command has not run yet: the
@@ -1401,7 +1409,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             }
 
             return [...$this->withRank($this->placeGuest($dto, $existing, requireConfirmation: true, now: $now)), false, true, $promoted];
-        });
+        }));
 
         if ($promoted !== null) {
             $this->announcePromotion($promoted);
@@ -1429,8 +1437,11 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             && ($wasConfirmed || $participant->isPending())
             && ! $this->waitsWithoutSeat($participant);
 
-        $participant->expire($now);
-        $this->participantRepository->save($participant);
+        // The clock's doing, also when found during the guest's own request
+        $this->actor->system(function () use ($participant, $now): void {
+            $participant->expire($now);
+            $this->participantRepository->save($participant);
+        });
 
         return $heldSeat ? $this->promoteNext($participant->gameTableId, freedByPending: ! $wasConfirmed) : null;
     }
@@ -1574,7 +1585,8 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
         $now = CarbonImmutable::now()->toDateTimeImmutable();
 
-        [$outcome, $participant, $rank, $promoted, $expired] = $this->lock->forParticipant(
+        // The guest confirming their own email; a lapse found on the way is the system's (expireLocked())
+        [$outcome, $participant, $rank, $promoted, $expired] = $this->actor->asParticipant(null, fn (): array => $this->lock->forParticipant(
             $found->id->value,
             function () use ($token, $now): array {
                 // Read under the lock: a link followed twice at once confirms once
@@ -1609,7 +1621,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
                 return [GuestConfirmationOutcome::Confirmed, $participant, $this->rankOf($participant), $promoted, false];
             },
-        );
+        ));
 
         // The promotion first: an expiry email that fails never costs the promoted player theirs
         if ($promoted !== null) {
@@ -1752,7 +1764,8 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
         $this->ensureTableNotStarted($participant);
 
-        [$participant, $wasConfirmed, $promoted] = $this->lock->forCancellationToken($token, function () use ($token): array {
+        // The participant's own cancellation (the link's holder: a guest, or the account of the row)
+        [$participant, $wasConfirmed, $promoted] = $this->actor->asParticipant($participant->userId, fn (): array => $this->lock->forCancellationToken($token, function () use ($token): array {
             // Read under the lock: a link followed twice at once frees one seat
             $participant = $this->participantRepository->findByCancellationToken($token);
 
@@ -1761,7 +1774,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             }
 
             return $this->cancelLocked($participant);
-        });
+        }));
 
         $this->announceCancellation($participant, null, $wasConfirmed, $promoted);
 

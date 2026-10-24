@@ -882,6 +882,7 @@ return [
             'actor' => 'Hecho por',
             'reason' => 'Motivo',
             'system' => 'Sistema',
+            'by_participant' => 'El propio inscrito',
             'deleted_account' => 'Cuenta eliminada',
             'registered' => 'Inscripción',
         ],

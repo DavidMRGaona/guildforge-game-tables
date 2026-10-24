@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Modules\GameTables\Domain\Enums\StatusLogActorKind;
 
 /**
  * One change to a registration's status (ParticipantStatusObserver). Rows are only ever inserted,
@@ -20,7 +21,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $participant_user_id
  * @property string|null $guest_name
  * @property string|null $actor_user_id
- * @property bool $actor_is_system
+ * @property StatusLogActorKind $actor_kind
  * @property string|null $from_status
  * @property string $to_status
  * @property string|null $reason
@@ -52,7 +53,7 @@ final class ParticipantStatusLogModel extends Model
         'participant_user_id',
         'guest_name',
         'actor_user_id',
-        'actor_is_system',
+        'actor_kind',
         'from_status',
         'to_status',
         'reason',
@@ -64,7 +65,7 @@ final class ParticipantStatusLogModel extends Model
     protected function casts(): array
     {
         return [
-            'actor_is_system' => 'boolean',
+            'actor_kind' => StatusLogActorKind::class,
             'created_at' => 'datetime',
         ];
     }

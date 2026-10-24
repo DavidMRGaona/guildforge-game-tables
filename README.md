@@ -127,7 +127,7 @@ Cada mesa suelta tiene en el panel la casilla **El director gestiona las inscrip
 
 #### Historial de inscripciones
 
-La pestaña **Historial de inscripciones** de la mesa en el panel (solo para la organización, no para los directores) registra cada cambio de estado: quién lo hizo, cuándo y con qué motivo. Los nombres se leen en el momento de mostrarlos, así que una cuenta anonimizada aparece como anonimizada; los de los invitados se conservan tal cual. El comando `game-tables:prune-participant-status-log`, programado a diario, borra el historial 12 meses después del inicio de la mesa.
+La pestaña **Historial de inscripciones** de la mesa en el panel (solo para la organización, no para los directores) registra cada cambio de estado: quién lo hizo (una cuenta, el propio inscrito o el sistema, como en las promociones desde la lista de espera y las caducidades), cuándo y con qué motivo. Los nombres se leen en el momento de mostrarlos, así que una cuenta anonimizada aparece como anonimizada; los de los invitados se conservan tal cual. El comando `game-tables:prune-participant-status-log`, programado a diario, borra el historial 12 meses después del inicio de la mesa.
 
 ### Cambio de estado automático
 

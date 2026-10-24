@@ -808,6 +808,7 @@ return [
             'actor' => 'Done by',
             'reason' => 'Reason',
             'system' => 'System',
+            'by_participant' => 'The participant themselves',
             'deleted_account' => 'Deleted account',
             'registered' => 'Registration',
         ],

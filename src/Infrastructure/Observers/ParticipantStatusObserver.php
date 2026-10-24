@@ -80,7 +80,7 @@ final readonly class ParticipantStatusObserver
                     ? trim($participant->first_name.' '.$participant->last_name)
                     : null,
                 'actor_user_id' => $this->actor->actorUserId(),
-                'actor_is_system' => $this->actor->isSystem(),
+                'actor_kind' => $this->actor->actorKind(),
                 'from_status' => $fromStatus,
                 'to_status' => $participant->status->value,
                 'reason' => $this->actor->reason(),

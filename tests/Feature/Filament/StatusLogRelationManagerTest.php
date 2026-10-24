@@ -15,6 +15,7 @@ use Livewire\Livewire;
 use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
+use Modules\GameTables\Domain\Enums\StatusLogActorKind;
 use Modules\GameTables\Filament\Resources\GameTableResource;
 use Modules\GameTables\Filament\Resources\GameTableResource\Pages\EditGameTable;
 use Modules\GameTables\Filament\Resources\GameTableResource\RelationManagers\ParticipantsRelationManager;
@@ -76,7 +77,7 @@ final class StatusLogRelationManagerTest extends ModuleTestCase
         $row = ParticipantStatusLogModel::query()->where('to_status', 'rejected')->sole();
         $this->assertSame('pending', $row->from_status);
         $this->assertSame($this->admin->id, $row->actor_user_id);
-        $this->assertFalse($row->actor_is_system);
+        $this->assertSame(StatusLogActorKind::Account, $row->actor_kind);
         $this->assertSame('Mesa completa', $row->reason);
     }
 
@@ -165,14 +166,29 @@ final class StatusLogRelationManagerTest extends ModuleTestCase
     public function test_system_guest_and_deleted_account_rows(): void
     {
         $table = $this->table();
-        $system = $this->logRow($table, ['actor_is_system' => true, 'guest_name' => 'Jane Roe']);
-        $deleted = $this->logRow($table, ['actor_is_system' => false]);
+        $system = $this->logRow($table, ['actor_kind' => 'system', 'guest_name' => 'Jane Roe']);
+        $deleted = $this->logRow($table, ['actor_kind' => 'account']);
 
         $this->history($table)
             ->assertTableColumnStateSet('actor', 'Sistema', $system)
             ->assertTableColumnStateSet('participant', 'Jane Roe', $system)
             ->assertTableColumnStateSet('actor', 'Cuenta eliminada', $deleted)
             ->assertTableColumnStateSet('participant', 'Cuenta eliminada', $deleted);
+    }
+
+    // A guest's own change has no account behind it, yet it is never the system's
+    public function test_the_participants_own_changes_read_as_the_participant_themselves(): void
+    {
+        $table = $this->table();
+        $john = UserModel::factory()->create(['name' => 'John Doe']);
+        $guest = $this->logRow($table, ['actor_kind' => 'participant', 'guest_name' => 'Jane Roe']);
+        $account = $this->logRow($table, ['actor_kind' => 'participant', 'participant_user_id' => $john->id, 'actor_user_id' => $john->id]);
+
+        $this->history($table)
+            ->assertTableColumnStateSet('actor', 'El propio inscrito', $guest)
+            ->assertTableColumnStateSet('participant', 'Jane Roe', $guest)
+            ->assertTableColumnStateSet('actor', 'El propio inscrito', $account)
+            ->assertTableColumnStateSet('participant', 'John Doe', $account);
     }
 
     /**
