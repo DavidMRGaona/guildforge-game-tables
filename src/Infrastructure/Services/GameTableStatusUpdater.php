@@ -51,7 +51,7 @@ final readonly class GameTableStatusUpdater
                 self::CHANGED => $started++,
                 self::SKIPPED => $skipped++,
                 self::FAILED => $failed++,
-                default => null,
+                self::NOT_DUE => null,
             };
         }
 
@@ -62,13 +62,16 @@ final readonly class GameTableStatusUpdater
                 self::CHANGED => $completed++,
                 self::SKIPPED => $skipped++,
                 self::FAILED => $failed++,
-                default => null,
+                self::NOT_DUE => null,
             };
         }
 
         return ['started' => $started, 'completed' => $completed, 'skipped' => $skipped, 'failed' => $failed];
     }
 
+    /**
+     * @return self::CHANGED|self::NOT_DUE|self::SKIPPED|self::FAILED
+     */
     private function move(string $id, TableStatus $to, DateTimeImmutable $now): string
     {
         try {

@@ -82,6 +82,23 @@ enum TableStatus: string
     }
 
     /**
+     * The statuses a table can be given by hand from $current (null for a new table): its own one
+     * and the allowed moves between scheduled and full. Starting, completing and cancelling have
+     * effects (events, emails) and only happen through their own actions.
+     *
+     * @return list<self>
+     */
+    public static function manualChoicesFrom(?self $current): array
+    {
+        return array_values(array_filter(
+            self::cases(),
+            static fn (self $status): bool => $status === $current
+                || (in_array($status, [self::Scheduled, self::Full], true)
+                    && ($current === null || $current->canTransitionTo($status))),
+        ));
+    }
+
+    /**
      * @return array<string, string>
      */
     public static function options(): array
