@@ -6,6 +6,7 @@ namespace Modules\GameTables\Policies;
 
 use App\Infrastructure\Authorization\Policies\AuthorizesWithPermissions;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Modules\GameTables\Application\Services\TableDirectionInterface;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
@@ -63,6 +64,18 @@ final class GameTablePolicy
     public function forceDelete(UserModel $user, GameTableModel $gameTable): bool
     {
         return $this->authorize($user, 'gametables:gametables.delete');
+    }
+
+    /**
+     * A director of a published single table that delegates its registrations manages them from the website.
+     * Admin permissions do not grant it: staff use the panel.
+     */
+    public function manageRegistrations(UserModel $user, GameTableModel $gameTable): bool
+    {
+        return $gameTable->campaign_id === null
+            && (bool) $gameTable->delegates_registrations
+            && (bool) $gameTable->is_published
+            && app(TableDirectionInterface::class)->isDirector($gameTable->id, $user->id);
     }
 
     /**
