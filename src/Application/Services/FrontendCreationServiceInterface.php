@@ -33,7 +33,8 @@ interface FrontendCreationServiceInterface
     /**
      * Get data needed to render the creation form (game systems, formats, etc.). The campaigns are
      * the ones the current user may create sessions of, plus $keepCampaignId (the campaign stored on
-     * a table being edited) when it is not among them.
+     * a table being edited) when it is not among them. The events are the open ones, plus
+     * $keepEventId (the event stored on a table being edited, which may have closed since).
      *
      * @return array{
      *     game_systems: array,
@@ -48,7 +49,7 @@ interface FrontendCreationServiceInterface
      *     campaigns: list<array{id: string, name: string, game_system_id: string, max_players: int|null, roster_count: int}>
      * }
      */
-    public function getCreateFormData(?string $keepCampaignId = null): array;
+    public function getCreateFormData(?string $keepCampaignId = null, ?string $keepEventId = null): array;
 
     /**
      * Ids of the events a table created or edited from the web may be linked to: the ones the
