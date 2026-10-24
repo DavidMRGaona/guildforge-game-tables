@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Listeners;
 
-use Illuminate\Support\Facades\Notification;
 use Modules\GameTables\Domain\Events\ParticipantRegistered;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
@@ -14,6 +13,8 @@ use Modules\GameTables\Notifications\ParticipantRegisteredNotification;
 
 final readonly class NotifyOnRegistration
 {
+    use NotifiesRegistrationRecipients;
+
     public function __construct(
         private GameTableSettingsReader $settingsReader,
         private NotificationRecipientResolverInterface $recipientResolver,
@@ -36,26 +37,14 @@ final readonly class NotifyOnRegistration
         $tableDate = $gameTable->timeSlot->startsAt->format('d/m/Y H:i');
         $tableLocation = $gameTable->location;
 
-        $notification = new ParticipantRegisteredNotification(
+        $this->notifyRecipients($gameTable, $event->status, fn (?string $manageUrl): ParticipantRegisteredNotification => new ParticipantRegisteredNotification(
             participantName: $participantName,
             tableId: $event->gameTableId,
             tableTitle: $gameTable->title,
             tableDate: $tableDate,
             tableLocation: $tableLocation,
             role: $event->role,
-        );
-
-        $emails = $this->recipientResolver->getGameMasterEmails($event->gameTableId);
-        $tableEmail = $this->recipientResolver->getTableNotificationEmail($event->gameTableId);
-
-        if ($tableEmail !== null) {
-            $emails[] = $tableEmail;
-        }
-
-        $emails = array_unique($emails);
-
-        foreach ($emails as $email) {
-            Notification::route('mail', $email)->notify($notification);
-        }
+            manageUrl: $manageUrl,
+        ));
     }
 }

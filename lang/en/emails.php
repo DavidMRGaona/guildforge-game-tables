@@ -64,6 +64,8 @@ return [
         'table_date' => 'Date',
         'table_location' => 'Location',
         'view_table' => 'View table',
+        'manage' => 'Manage registrations',
+        'pending_intro' => 'The registration is pending: you can approve or reject it from the registrations page.',
     ],
 
     'cancellation' => [

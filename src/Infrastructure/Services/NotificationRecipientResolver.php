@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Services;
 
+use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
+use Modules\GameTables\Application\Services\TableDirectionInterface;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
@@ -67,6 +69,44 @@ final readonly class NotificationRecipientResolver implements NotificationRecipi
             ->unique()
             ->values()
             ->all();
+    }
+
+    /**
+     * Get the account emails of the linked directors that have notify_by_email enabled.
+     *
+     * @return list<string>
+     */
+    public function getDirectorEmails(string $gameTableId): array
+    {
+        $userIds = app(TableDirectionInterface::class)->directorUserIds($gameTableId);
+
+        if ($userIds === []) {
+            return [];
+        }
+
+        $gameTable = GameTableModel::query()->find($gameTableId);
+
+        if ($gameTable === null) {
+            return [];
+        }
+
+        $notifiable = $gameTable->effective_game_masters
+            ->filter(fn (GameMasterModel $gm): bool => $gm->notify_by_email && in_array((string) $gm->user_id, $userIds, true))
+            ->map(fn (GameMasterModel $gm): string => (string) $gm->user_id)
+            ->unique()
+            ->values()
+            ->all();
+
+        /** @var list<string> $emails */
+        $emails = UserModel::query()
+            ->whereIn('id', $notifiable)
+            ->pluck('email')
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        return $emails;
     }
 
     /**
