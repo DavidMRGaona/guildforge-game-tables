@@ -138,6 +138,34 @@ final class FrontendTableEventLinkTest extends ModuleTestCase
         $this->assertStringContainsString("event_not_open: t('gameTables.createNotEligible.reasonEventNotOpen')", $page);
     }
 
+    /**
+     * The event page offers to create a table only while the form takes the event: an ended
+     * event shows no button, nor a «sign in to create» to visitors.
+     */
+    public function test_the_event_page_offers_no_creation_once_the_event_has_ended(): void
+    {
+        $open = $this->openEvent();
+        $ended = $this->closedEvents()['ended'];
+
+        $this->get(route('events.show', $ended->slug))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('eventCreationEligibility.eligible', false)
+                ->where('eventCreationEligibility.reason', 'event_not_open')
+                ->where('eventCreationEligibility.requires_authentication', false));
+
+        $this->actingAs($this->author)
+            ->get(route('events.show', $ended->slug))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('eventCreationEligibility.eligible', false)
+                ->where('eventCreationEligibility.reason', 'event_not_open'));
+
+        $this->actingAs($this->author)
+            ->get(route('events.show', $open->slug))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('eventCreationEligibility.eligible', true)
+                ->where('eventCreationEligibility.can_create_tables', true));
+    }
+
     public function test_editing_a_draft_into_an_event_the_form_does_not_offer_is_refused(): void
     {
         $draft = $this->tableDraft();

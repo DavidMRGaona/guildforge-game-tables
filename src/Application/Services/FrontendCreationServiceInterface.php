@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Application\Services;
 
 use Modules\GameTables\Application\DTOs\CampaignResponseDTO;
+use Modules\GameTables\Application\DTOs\CreationEligibilityDTO;
 use Modules\GameTables\Application\DTOs\FrontendCreateCampaignDTO;
 use Modules\GameTables\Application\DTOs\FrontendCreateGameTableDTO;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
@@ -63,6 +64,14 @@ interface FrontendCreationServiceInterface
      * @return list<string>
      */
     public function selectableEventIds(): array;
+
+    /**
+     * Whether the user may create a new table for the event, for the create page and the event
+     * page: the event's creation rules, and the event must be one the form offers (published, not
+     * ended); otherwise event_not_open (an event without tables keeps tables_not_enabled_for_event).
+     * Editing does not use it: a table keeps an event that closed after it was linked.
+     */
+    public function eventCreationEligibility(string $eventId, ?string $userId): CreationEligibilityDTO;
 
     /**
      * Get all drafts created by a user.

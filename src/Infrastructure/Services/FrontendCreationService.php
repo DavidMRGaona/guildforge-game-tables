@@ -11,6 +11,7 @@ use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Modules\GameTables\Application\DTOs\CampaignResponseDTO;
+use Modules\GameTables\Application\DTOs\CreationEligibilityDTO;
 use Modules\GameTables\Application\DTOs\FrontendCreateCampaignDTO;
 use Modules\GameTables\Application\DTOs\FrontendCreateGameTableDTO;
 use Modules\GameTables\Application\DTOs\GameMasterResponseDTO;
@@ -342,6 +343,18 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             ->map(static fn (Event $event): string => $event->id()->value)
             ->values()
             ->all();
+    }
+
+    public function eventCreationEligibility(string $eventId, ?string $userId): CreationEligibilityDTO
+    {
+        $eligibility = $this->eventEligibilityService->canCreateTableForEvent($eventId, $userId);
+
+        if ($eligibility->reason !== 'tables_not_enabled_for_event'
+            && ! in_array($eventId, $this->selectableEventIds(), true)) {
+            return CreationEligibilityDTO::notEligible('event_not_open');
+        }
+
+        return $eligibility;
     }
 
     /**
