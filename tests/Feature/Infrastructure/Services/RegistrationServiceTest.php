@@ -36,6 +36,7 @@ use Modules\GameTables\Domain\ValueObjects\GameSystemId;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Domain\ValueObjects\ParticipantId;
 use Modules\GameTables\Domain\ValueObjects\TimeSlot;
+use Modules\GameTables\Infrastructure\Services\ParticipantActorContext;
 use Modules\GameTables\Infrastructure\Services\RegistrationService;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -86,6 +87,7 @@ final class RegistrationServiceTest extends TestCase
                     return $callback();
                 }
             },
+            new ParticipantActorContext(),
         );
 
         Event::fake();
@@ -981,6 +983,7 @@ final class RegistrationServiceTest extends TestCase
                     throw new LogicException('The lock must not be taken');
                 }
             },
+            new ParticipantActorContext(),
         );
     }
 
@@ -1075,6 +1078,7 @@ final class RegistrationServiceTest extends TestCase
                     return $callback();
                 }
             },
+            new ParticipantActorContext(),
         );
 
         try {

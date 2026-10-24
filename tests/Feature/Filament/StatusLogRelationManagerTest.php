@@ -12,6 +12,9 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
+use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
+use Modules\GameTables\Application\Services\RegistrationServiceInterface;
+use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Filament\Resources\GameTableResource;
 use Modules\GameTables\Filament\Resources\GameTableResource\Pages\EditGameTable;
 use Modules\GameTables\Filament\Resources\GameTableResource\RelationManagers\ParticipantsRelationManager;
@@ -130,6 +133,33 @@ final class StatusLogRelationManagerTest extends ModuleTestCase
             ->assertTableColumnStateSet('actor', 'Anónimo', $row)
             ->assertTableColumnStateSet('participant', 'Anónimo', $row)
             ->assertDontSee('John Doe');
+    }
+
+    public function test_a_taken_over_guest_reads_as_the_anonymized_account(): void
+    {
+        $table = $this->table();
+        app(RegistrationServiceInterface::class)->registerGuestByAdmin(new RegisterParticipantDTO(
+            gameTableId: $table->id,
+            userId: null,
+            role: ParticipantRole::Player,
+            firstName: 'Jane',
+            lastName: 'Roe',
+            email: 'john@example.test',
+        ));
+        $john = UserModel::factory()->create(['name' => 'John Doe', 'email' => 'john@example.test']);
+        app(RegistrationServiceInterface::class)->register(new RegisterParticipantDTO(
+            gameTableId: $table->id,
+            userId: $john->id,
+            role: ParticipantRole::Player,
+        ));
+
+        $john->update(['name' => 'Anónimo', 'anonymized_at' => now()]);
+
+        $history = $this->history($table);
+        foreach (ParticipantStatusLogModel::query()->get() as $row) {
+            $history->assertTableColumnStateSet('participant', 'Anónimo', $row);
+        }
+        $history->assertDontSee('Jane Roe')->assertDontSee('John Doe');
     }
 
     public function test_system_guest_and_deleted_account_rows(): void

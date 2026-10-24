@@ -64,13 +64,13 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         private GameTableRepositoryInterface $gameTableRepository,
         private EligibilityServiceInterface $eligibilityService,
         private RegistrationLockInterface $lock,
+        // Who the status history names: the one the observer reads (bound scoped), never a copy
+        private ParticipantActorContextInterface $actor,
         private GameTableSettingsReader $settings = new GameTableSettingsReader(),
         // Without it, guest emails are not checked against accounts
         private ?AccountLookupInterface $accounts = null,
         // Without it, nobody is enrolled from a roster and register() never takes the roster path
         private ?CampaignRosterRepositoryInterface $roster = null,
-        // Who the status history names; the container gives the shared, scoped one
-        private ParticipantActorContextInterface $actor = new ParticipantActorContext(),
     ) {
         $this->seats = new SeatCounter($participantRepository, $settings);
         $this->confirmationPolicy = new GuestConfirmationPolicy($participantRepository, $settings);
@@ -893,6 +893,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
      */
     public function cancelByAdmin(string $participantId): ParticipantResponseDTO
     {
+        // No reason, not even an outer scope's: the panel's cancellation never asks for one
         return $this->asCurrentActor(null, fn (): ParticipantResponseDTO => $this->cancelById($participantId, byOrganization: true));
     }
 
@@ -953,7 +954,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
     /**
      * Pins the history's actor for an organisation's action: the one an outer scope named (a
-     * director's request), otherwise the signed-in user. The reason falls back to the outer one.
+     * director's request), otherwise the signed-in user, with exactly the reason given.
      *
      * @template T
      *
@@ -962,7 +963,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
      */
     private function asCurrentActor(?string $reason, Closure $callback): mixed
     {
-        return $this->actor->run($this->actor->actorUserId(), $reason ?? $this->actor->reason(), $callback);
+        return $this->actor->run($this->actor->actorUserId(), $reason, $callback);
     }
 
     /**
@@ -1145,7 +1146,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     {
         $reason = $reason === null || trim($reason) === '' ? null : trim($reason);
 
-        [$participant, $promoted] = $this->asCurrentActor($reason, fn (): array => $this->lock->forParticipant($participantId, function () use ($participantId): array {
+        [$participant, $promoted] = $this->asCurrentActor($reason ?? $this->actor->reason(), fn (): array => $this->lock->forParticipant($participantId, function () use ($participantId): array {
             $participant = $this->participantRepository->findOrFail(new ParticipantId($participantId));
             $wasPendingPlayer = $participant->isPending() && $participant->isPlayer();
 

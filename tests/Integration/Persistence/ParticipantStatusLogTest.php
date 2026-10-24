@@ -175,6 +175,52 @@ final class ParticipantStatusLogTest extends ModuleTestCase
         $this->assertNull($expiry->reason);
     }
 
+    // The guest's name must not outlive the account's anonymization in the history
+    public function test_a_guest_row_taken_over_by_an_account_hands_its_history_to_the_account(): void
+    {
+        $this->table->update(['max_players' => 5]);
+        $guest = $this->service()->registerGuestByAdmin(new RegisterParticipantDTO(
+            gameTableId: $this->table->id,
+            userId: null,
+            role: ParticipantRole::Player,
+            firstName: 'Jane',
+            lastName: 'Roe',
+            email: 'john@example.test',
+        ));
+        $this->assertSame('Jane Roe', $this->rows()->sole()->guest_name);
+        $john = UserModel::factory()->create(['name' => 'John Doe', 'email' => 'john@example.test']);
+
+        $taken = $this->service()->register(new RegisterParticipantDTO(
+            gameTableId: $this->table->id,
+            userId: $john->id,
+            role: ParticipantRole::Player,
+        ));
+
+        $this->assertSame($guest->id, $taken->id);
+        $rows = ParticipantStatusLogModel::query()->where('participant_id', $guest->id)->get();
+        $this->assertNotEmpty($rows);
+        foreach ($rows as $row) {
+            $this->assertSame($john->id, $row->participant_user_id);
+            $this->assertNull($row->guest_name);
+        }
+    }
+
+    // The panel's cancellation never carries a reason, not even an outer scope's
+    public function test_a_panel_cancellation_logs_the_admin_without_a_reason(): void
+    {
+        $row = $this->participant(UserModel::factory()->create(), 'confirmed');
+        $admin = UserModel::factory()->create();
+        $this->actingAs($admin);
+
+        $this->context()->run($admin->id, 'Motivo de otra cosa', fn () => $this->service()->cancelByAdmin($row->id));
+
+        $cancellation = $this->rows()->firstWhere('to_status', 'cancelled');
+        $this->assertNotNull($cancellation);
+        $this->assertSame($admin->id, $cancellation->actor_user_id);
+        $this->assertFalse($cancellation->actor_is_system);
+        $this->assertNull($cancellation->reason);
+    }
+
     public function test_a_query_delete_of_the_participant_keeps_its_rows(): void
     {
         $row = $this->participant(UserModel::factory()->create(), 'cancelled');

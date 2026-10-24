@@ -11,7 +11,8 @@ use Throwable;
 
 /**
  * Writes the status history: every registration (created) and every change of status (updated),
- * whatever saved it, with the actor and reason of the current scope (ParticipantActorContextInterface).
+ * whatever saved it, with the actor and reason of the current scope (ParticipantActorContextInterface),
+ * and hands a guest's rows to the account that takes the registration over.
  * It runs inside the registration's transaction, so a rolled back change leaves no row.
  */
 final readonly class ParticipantStatusObserver
@@ -27,6 +28,10 @@ final readonly class ParticipantStatusObserver
 
     public function updated(ParticipantModel $participant): void
     {
+        if ($this->wasTakenOverByAnAccount($participant)) {
+            $this->linkHistoryToAccount($participant);
+        }
+
         if (! $participant->wasChanged('status')) {
             return;
         }
@@ -34,6 +39,31 @@ final readonly class ParticipantStatusObserver
         $from = $participant->getRawOriginal('status');
 
         $this->record($participant, is_string($from) ? $from : null);
+    }
+
+    /**
+     * A guest row that an account takes over (attachToAccount, or the panel form).
+     */
+    private function wasTakenOverByAnAccount(ParticipantModel $participant): bool
+    {
+        return $participant->wasChanged('user_id')
+            && $participant->getRawOriginal('user_id') === null
+            && $participant->user_id !== null;
+    }
+
+    /**
+     * The guest's earlier rows become the account's: the copied guest name goes, so anonymizing
+     * the account later reaches them too.
+     */
+    private function linkHistoryToAccount(ParticipantModel $participant): void
+    {
+        try {
+            $participant->getConnection()->transaction(fn (): int => ParticipantStatusLogModel::query()
+                ->where('participant_id', $participant->id)
+                ->update(['participant_user_id' => $participant->user_id, 'guest_name' => null]));
+        } catch (Throwable $e) {
+            report($e);
+        }
     }
 
     private function record(ParticipantModel $participant, ?string $fromStatus): void
