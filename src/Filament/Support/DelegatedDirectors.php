@@ -34,6 +34,22 @@ final class DelegatedDirectors
     }
 
     /**
+     * A session of a campaign never delegates: the toggle is hidden for it and would otherwise
+     * leave a stored flag nobody can see or correct.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    public static function dropForCampaign(array $data): array
+    {
+        if (filled($data['campaign_id'] ?? null)) {
+            $data['delegates_registrations'] = false;
+        }
+
+        return $data;
+    }
+
+    /**
      * The display name of the first director without an account, or null when all are linked.
      * The type selector is not part of the saved data, so a row counts by its `user_id`; excluded
      * and inherited rows belong to the campaign and are skipped.

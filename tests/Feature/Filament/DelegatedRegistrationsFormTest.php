@@ -99,6 +99,30 @@ final class DelegatedRegistrationsFormTest extends ModuleTestCase
         $this->assertTrue($table->refresh()->delegates_registrations);
     }
 
+    public function test_joining_a_campaign_drops_the_delegation(): void
+    {
+        $campaign = CampaignModel::create([
+            'id' => (string) Str::uuid(),
+            'game_system_id' => $this->gameSystem->id,
+            'created_by' => $this->admin->id,
+            'title' => 'La llamada',
+            'slug' => 'la-llamada',
+            'status' => 'recruiting',
+        ]);
+        $table = $this->gameTable(['delegates_registrations' => true]);
+        $user = UserModel::factory()->create(['name' => 'John Doe', 'email' => 'john@example.com']);
+        $this->director($table, ['user_id' => $user->id, 'first_name' => 'John', 'last_name' => 'Doe', 'email' => 'john@example.com']);
+
+        Livewire::test(EditGameTable::class, ['record' => $table->getRouteKey()])
+            ->fillForm(['campaign_id' => $campaign->id])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $table->refresh();
+        $this->assertSame($campaign->id, $table->campaign_id);
+        $this->assertFalse($table->delegates_registrations);
+    }
+
     public function test_the_flag_off_keeps_accepting_external_directors(): void
     {
         $table = $this->gameTable();

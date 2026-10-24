@@ -107,6 +107,7 @@ final class EditGameTable extends EditRecord
     {
         // Refused before the table or its directors are written
         DelegatedDirectors::ensureLinked($data);
+        $data = DelegatedDirectors::dropForCampaign($data);
 
         // A web-created table is published by approving it, even against a forged payload
         return PublicationLock::guardFormData($this->getRecord(), $data);

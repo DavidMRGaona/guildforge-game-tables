@@ -32,6 +32,7 @@ final class CreateGameTable extends CreateRecord
     {
         // Refused before anything is written
         DelegatedDirectors::ensureLinked($data);
+        $data = DelegatedDirectors::dropForCampaign($data);
 
         $data['created_by'] = Auth::id();
 
