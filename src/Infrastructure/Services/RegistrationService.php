@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Infrastructure\Services;
 
 use Carbon\CarbonImmutable;
+use Closure;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use Modules\GameTables\Application\DTOs\AccountDTO;
@@ -14,6 +15,7 @@ use Modules\GameTables\Application\DTOs\ProfileParticipationDTO;
 use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
 use Modules\GameTables\Application\Services\AccountLookupInterface;
 use Modules\GameTables\Application\Services\EligibilityServiceInterface;
+use Modules\GameTables\Application\Services\ParticipantActorContextInterface;
 use Modules\GameTables\Application\Services\RegistrationLockInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Modules\GameTables\Domain\Entities\GameTable;
@@ -67,6 +69,8 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         private ?AccountLookupInterface $accounts = null,
         // Without it, nobody is enrolled from a roster and register() never takes the roster path
         private ?CampaignRosterRepositoryInterface $roster = null,
+        // Who the status history names; the container gives the shared, scoped one
+        private ParticipantActorContextInterface $actor = new ParticipantActorContext(),
     ) {
         $this->seats = new SeatCounter($participantRepository, $settings);
         $this->confirmationPolicy = new GuestConfirmationPolicy($participantRepository, $settings);
@@ -889,7 +893,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
      */
     public function cancelByAdmin(string $participantId): ParticipantResponseDTO
     {
-        return $this->cancelById($participantId, byOrganization: true);
+        return $this->asCurrentActor(null, fn (): ParticipantResponseDTO => $this->cancelById($participantId, byOrganization: true));
     }
 
     private function cancelById(string $participantId, bool $byOrganization): ParticipantResponseDTO
@@ -948,6 +952,20 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     }
 
     /**
+     * Pins the history's actor for an organisation's action: the one an outer scope named (a
+     * director's request), otherwise the signed-in user. The reason falls back to the outer one.
+     *
+     * @template T
+     *
+     * @param  Closure(): T  $callback
+     * @return T
+     */
+    private function asCurrentActor(?string $reason, Closure $callback): mixed
+    {
+        return $this->actor->run($this->actor->actorUserId(), $reason ?? $this->actor->reason(), $callback);
+    }
+
+    /**
      * Moves the first waiting player into a freed seat, while the waiting list is open and a
      * player seat is free. Runs under the table lock.
      */
@@ -976,9 +994,12 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         }
 
         // A table with manual confirmation keeps the director's say: the promoted player waits as
-        // pending, except a roster member, who is always confirmed
-        $participant->promoteFromWaitingList($participant->fromRoster || $gameTable->autoConfirm);
-        $this->participantRepository->save($participant);
+        // pending, except a roster member, who is always confirmed. Whoever freed the seat, the
+        // history names the system: the promotion is the module's own doing
+        $this->actor->system(function () use ($participant, $gameTable): void {
+            $participant->promoteFromWaitingList($participant->fromRoster || $gameTable->autoConfirm);
+            $this->participantRepository->save($participant);
+        });
 
         return $participant;
     }
@@ -1124,7 +1145,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     {
         $reason = $reason === null || trim($reason) === '' ? null : trim($reason);
 
-        [$participant, $promoted] = $this->lock->forParticipant($participantId, function () use ($participantId): array {
+        [$participant, $promoted] = $this->asCurrentActor($reason, fn (): array => $this->lock->forParticipant($participantId, function () use ($participantId): array {
             $participant = $this->participantRepository->findOrFail(new ParticipantId($participantId));
             $wasPendingPlayer = $participant->isPending() && $participant->isPlayer();
 
@@ -1141,7 +1162,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
                 : null;
 
             return [$participant, $promoted];
-        });
+        }));
 
         ParticipantRejected::dispatch(
             $participant->id->value,
@@ -1350,7 +1371,8 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     {
         $now ??= CarbonImmutable::now()->toDateTimeImmutable();
 
-        [$participant, $promoted] = $this->lock->forParticipant($participantId, function () use ($participantId, $now): array {
+        // A lapse is the clock's doing, whoever happens to trigger the check
+        [$participant, $promoted] = $this->actor->system(fn (): array => $this->lock->forParticipant($participantId, function () use ($participantId, $now): array {
             // Read under the lock: confirmed, cancelled or sent again as a new registration meanwhile
             $participant = $this->participantRepository->find(new ParticipantId($participantId));
 
@@ -1359,7 +1381,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             }
 
             return [$participant, $this->expireLocked($participant, $now)];
-        });
+        }));
 
         if ($participant === null) {
             return false;

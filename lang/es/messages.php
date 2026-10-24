@@ -864,6 +864,17 @@ return [
         'sessions' => [
             'title' => 'Sesiones',
         ],
+        'status_log' => [
+            'title' => 'Historial de inscripciones',
+            'when' => 'Fecha',
+            'participant' => 'Inscrito',
+            'change' => 'Cambio',
+            'actor' => 'Hecho por',
+            'reason' => 'Motivo',
+            'system' => 'Sistema',
+            'deleted_account' => 'Cuenta eliminada',
+            'registered' => 'Inscripción',
+        ],
     ],
 
     /*

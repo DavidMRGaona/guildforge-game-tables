@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables;
 
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Modules\GameTables\Filament\Resources\GameSystemResource;
 use Modules\GameTables\Filament\Resources\PublisherResource;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\PublisherModel;
@@ -70,12 +71,14 @@ use Modules\GameTables\Application\Services\CampaignRosterSessionSyncInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
+use Modules\GameTables\Application\Services\ParticipantActorContextInterface;
 use Modules\GameTables\Application\Services\RegistrationLockInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Illuminate\Console\Scheduling\Schedule;
 use Modules\GameTables\Console\Commands\ExpireGuestRegistrationsCommand;
 use Modules\GameTables\Console\Commands\GenerateSlugsCommand;
 use Modules\GameTables\Console\Commands\PruneCampaignInvitationsCommand;
+use Modules\GameTables\Console\Commands\PruneParticipantStatusLogCommand;
 use Modules\GameTables\Console\Commands\SendTableRemindersCommand;
 use Modules\GameTables\Console\Commands\UpdateTableStatusesCommand;
 use Modules\GameTables\Http\Controllers\CampaignInvitationController;
@@ -120,6 +123,7 @@ use Modules\GameTables\Infrastructure\Listeners\NotifyOnGuestRegistration;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnRegistration;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnWaitingListPromotion;
 use Modules\GameTables\Infrastructure\Observers\GameTableObserver;
+use Modules\GameTables\Infrastructure\Observers\ParticipantStatusObserver;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\EventGameTableConfigModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentCampaignInvitationRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentCampaignJoinRequestRepository;
@@ -156,6 +160,7 @@ use Modules\GameTables\Infrastructure\Services\ProfileCreatedCampaignsDataProvid
 use Modules\GameTables\Infrastructure\Services\ProfileCreatedTablesDataProvider;
 use Modules\GameTables\Infrastructure\Services\ProfileGameTablesDataProvider;
 use Modules\GameTables\Infrastructure\Services\DatabaseRegistrationLock;
+use Modules\GameTables\Infrastructure\Services\ParticipantActorContext;
 use Modules\GameTables\Infrastructure\Services\RegistrationService;
 use Modules\GameTables\Listeners\NotifyAdminsOnCampaignModerationSubmission;
 use Modules\GameTables\Listeners\NotifyAdminsOnModerationSubmission;
@@ -215,6 +220,8 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         $this->app->bind(FrontendCreationServiceInterface::class, FrontendCreationService::class);
         $this->app->bind(RegistrationServiceInterface::class, RegistrationService::class);
         $this->app->bind(RegistrationLockInterface::class, DatabaseRegistrationLock::class);
+        // One per request or queue job: a scope never reaches the next one
+        $this->app->scoped(ParticipantActorContextInterface::class, ParticipantActorContext::class);
         $this->app->bind(EventWithTablesQueryInterface::class, EventWithTablesQuery::class);
         $this->app->bind(GameMasterServiceInterface::class, GameMasterService::class);
         $this->app->bind(EventGameTableConfigServiceInterface::class, EventGameTableConfigService::class);
@@ -462,6 +469,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                 ExpireGuestRegistrationsCommand::class,
                 GenerateSlugsCommand::class,
                 PruneCampaignInvitationsCommand::class,
+                PruneParticipantStatusLogCommand::class,
                 UpdateTableStatusesCommand::class,
                 SendTableRemindersCommand::class,
             ]);
@@ -485,6 +493,10 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                 ->withoutOverlapping(10);
 
             $schedule->command('game-tables:prune-campaign-invitations')
+                ->daily()
+                ->withoutOverlapping(10);
+
+            $schedule->command('game-tables:prune-participant-status-log')
                 ->daily()
                 ->withoutOverlapping(10);
 
@@ -667,6 +679,10 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     {
         GameTableModel::observe(
             GameTableObserver::class
+        );
+
+        ParticipantModel::observe(
+            ParticipantStatusObserver::class
         );
     }
 

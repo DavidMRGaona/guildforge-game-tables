@@ -62,6 +62,7 @@ use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Filament\Resources\GameTableResource\Pages;
 use Modules\GameTables\Filament\Resources\GameTableResource\RelationManagers\ParticipantsRelationManager;
+use Modules\GameTables\Filament\Resources\GameTableResource\RelationManagers\StatusLogRelationManager;
 use Modules\GameTables\Filament\Support\PublicationLock;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
@@ -694,6 +695,7 @@ final class GameTableResource extends BaseResource
     {
         return [
             ParticipantsRelationManager::class,
+            StatusLogRelationManager::class,
         ];
     }
 

@@ -787,6 +787,17 @@ return [
         'sessions' => [
             'title' => 'Sessions',
         ],
+        'status_log' => [
+            'title' => 'Registration history',
+            'when' => 'Date',
+            'participant' => 'Participant',
+            'change' => 'Change',
+            'actor' => 'Done by',
+            'reason' => 'Reason',
+            'system' => 'System',
+            'deleted_account' => 'Deleted account',
+            'registered' => 'Registration',
+        ],
     ],
 
     /*

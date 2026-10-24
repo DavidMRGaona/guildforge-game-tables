@@ -220,6 +220,14 @@ final class GameTableModel extends Model
     }
 
     /**
+     * @return HasMany<ParticipantStatusLogModel, $this>
+     */
+    public function statusLog(): HasMany
+    {
+        return $this->hasMany(ParticipantStatusLogModel::class, 'game_table_id');
+    }
+
+    /**
      * Get all game masters directly associated with this table (both inherited and local).
      *
      * @return BelongsToMany<GameMasterModel, $this>

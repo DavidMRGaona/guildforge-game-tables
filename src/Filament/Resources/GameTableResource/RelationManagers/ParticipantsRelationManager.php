@@ -285,7 +285,8 @@ final class ParticipantsRelationManager extends RelationManager
     /**
      * Deletes the row only if it is still cancelled, rejected or expired when the DELETE runs: a
      * re-registration (placeUser/placeGuest) reactivates the same row, and it may land after the
-     * row was read. Participants have no model events, so a query delete loses nothing.
+     * row was read. Nothing listens to participant deletes (the status history keeps its rows,
+     * unlinked, by its foreign key), so a query delete loses nothing.
      */
     private static function deleteIfCancelledOrRejected(Model $record): bool
     {
