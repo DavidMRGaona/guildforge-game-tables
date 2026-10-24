@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Calendar, TriangleAlert } from '@lucide/vue';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
@@ -467,9 +468,7 @@ function submit(): void {
         <div v-if="!props.eligibility.eligible && !props.sessionOnly" class="mb-6 rounded-lg border border-warning/30 bg-warning-bg p-4">
             <div class="flex">
                 <div class="flex-shrink-0">
-                    <svg class="h-5 w-5 text-warning" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
-                    </svg>
+                    <TriangleAlert class="h-5 w-5 text-warning" aria-hidden="true" />
                 </div>
                 <div class="ml-3">
                     <p class="text-sm text-warning">
@@ -489,12 +488,7 @@ function submit(): void {
         >
             <div class="flex items-center gap-3">
                 <div class="flex-shrink-0">
-                    <svg class="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                        <line x1="16" y1="2" x2="16" y2="6" />
-                        <line x1="8" y1="2" x2="8" y2="6" />
-                        <line x1="3" y1="10" x2="21" y2="10" />
-                    </svg>
+                    <Calendar class="h-5 w-5 text-primary" aria-hidden="true" />
                 </div>
                 <div>
                     <p class="text-sm font-medium text-primary">

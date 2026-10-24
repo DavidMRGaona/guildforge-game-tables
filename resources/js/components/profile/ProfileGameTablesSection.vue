@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Box, ChevronDown, Plus, Search } from '@lucide/vue';
 import { useI18n } from 'vue-i18n';
 import { ref, computed, watch } from 'vue';
 import ProfileParticipationCard from './ProfileParticipationCard.vue';
@@ -95,20 +96,7 @@ function loadMore(): void {
             v-if="hasActiveFilters && filteredUpcoming.length === 0 && filteredPast.length === 0"
             class="rounded-lg border border-dashed border-default bg-muted p-6 text-center"
         >
-            <svg
-                class="mx-auto h-10 w-10 text-base-secondary"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-            >
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-            </svg>
+            <Search class="mx-auto h-10 w-10 text-base-secondary" aria-hidden="true" />
             <p class="mt-3 text-sm text-base-muted">
                 {{ t('gameTables.profile.filters.noResults') }}
             </p>
@@ -154,15 +142,10 @@ function loadMore(): void {
                         </span>
                         {{ t('gameTables.profile.past') }}
                     </span>
-                    <svg
+                    <ChevronDown
                         :class="['h-5 w-5 text-base-muted transition-transform', showPastSection ? 'rotate-180' : '']"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
                         aria-hidden="true"
-                    >
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
+                    />
                 </button>
 
                 <div v-if="showPastSection" class="space-y-3">
@@ -179,9 +162,7 @@ function loadMore(): void {
                         class="flex w-full items-center justify-center gap-2 rounded-lg border border-default bg-transparent py-3 text-sm font-medium text-base-secondary transition-colors hover:bg-base-secondary/10"
                         @click="loadMore"
                     >
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
+                        <Plus class="h-4 w-4" aria-hidden="true" />
                         {{ t('gameTables.profile.loadMore', { count: remainingPastCount }) }}
                     </button>
                 </div>
@@ -194,20 +175,7 @@ function loadMore(): void {
         v-else
         class="rounded-lg border border-dashed border-default bg-muted p-12 text-center"
     >
-        <svg
-            class="mx-auto h-12 w-12 text-base-secondary"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-        >
-            <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-            />
-        </svg>
+        <Box class="mx-auto h-12 w-12 text-base-secondary" aria-hidden="true" />
         <h3 class="mt-4 text-lg font-medium text-base-primary">
             {{ t('gameTables.profile.noTables') }}
         </h3>

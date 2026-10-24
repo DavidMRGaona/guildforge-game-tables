@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ChevronRight, Dice5 } from '@lucide/vue';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 
@@ -22,18 +23,9 @@ const { t } = useI18n();
         class="inline-flex items-center gap-2 rounded-lg border border-primary-500/30 bg-primary-500/10 px-4 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary-500/20 hover:underline"
     >
         <!-- Dice icon (SVG) -->
-        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="2" width="20" height="20" rx="3" />
-            <circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none" />
-            <circle cx="16" cy="8" r="1.5" fill="currentColor" stroke="none" />
-            <circle cx="8" cy="16" r="1.5" fill="currentColor" stroke="none" />
-            <circle cx="16" cy="16" r="1.5" fill="currentColor" stroke="none" />
-            <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
-        </svg>
+        <Dice5 class="h-4 w-4" aria-hidden="true" />
         <span>{{ t('gameTables.viewEventTablesCount', { count: gameTableCount }) }}</span>
         <!-- Right arrow -->
-        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 18l6-6-6-6" />
-        </svg>
+        <ChevronRight class="h-4 w-4" aria-hidden="true" />
     </Link>
 </template>

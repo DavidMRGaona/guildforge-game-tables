@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Mail } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import { router, Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
@@ -128,20 +129,7 @@ function handleReject(): void {
             <template v-else>
                 <div class="mb-6 text-center">
                     <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary-light">
-                        <svg
-                            class="h-8 w-8 text-primary"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                            />
-                        </svg>
+                        <Mail class="h-8 w-8 text-primary" aria-hidden="true" />
                     </div>
                     <h1 class="text-2xl font-bold text-base-primary">
                         {{ t('campaigns.invitation.title', { campaign: invitation.campaign_title }) }}

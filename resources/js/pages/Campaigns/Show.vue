@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Calendar, ChevronLeft, Clock, User } from '@lucide/vue';
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
@@ -86,20 +87,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                 href="/campanas"
                 class="inline-flex items-center text-sm text-base-secondary hover:underline focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
             >
-                <svg
-                    class="mr-1 h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M15 19l-7-7 7-7"
-                    />
-                </svg>
+                <ChevronLeft class="mr-1 h-4 w-4" aria-hidden="true" />
                 {{ t('common.back') }}
             </Link>
         </div>
@@ -161,20 +149,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                             {{ t('campaigns.frequency') }}
                         </h3>
                         <div class="flex items-center text-base-secondary">
-                            <svg
-                                class="mr-2 h-5 w-5 text-primary"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                                aria-hidden="true"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                />
-                            </svg>
+                            <Calendar class="mr-2 h-5 w-5 text-primary" aria-hidden="true" />
                             <span>{{ campaign.frequencyLabel }}</span>
                         </div>
                     </div>
@@ -185,20 +160,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                             {{ t('campaigns.expectedDuration') }}
                         </h3>
                         <div class="flex items-center text-base-secondary">
-                            <svg
-                                class="mr-2 h-5 w-5 text-primary"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                                aria-hidden="true"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                />
-                            </svg>
+                            <Clock class="mr-2 h-5 w-5 text-primary" aria-hidden="true" />
                             <span>
                                 {{ t('campaigns.monthsCount', { count: campaign.expectedDurationMonths }) }}
                             </span>
@@ -251,40 +213,14 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                                     :key="gm.id"
                                     class="flex items-center text-base-secondary"
                                 >
-                                    <svg
-                                        class="mr-2 h-5 w-5 text-primary"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                        aria-hidden="true"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                        />
-                                    </svg>
+                                    <User class="mr-2 h-5 w-5 text-primary" aria-hidden="true" />
                                     <span>{{ gm.isNamePublic ? gm.displayName : t('campaigns.anonymousGm') }}</span>
                                     <span v-if="gm.customTitle" class="ml-1 text-sm text-base-secondary">({{ gm.customTitle }})</span>
                                 </div>
                             </template>
                             <template v-else>
                                 <div class="flex items-center text-base-secondary">
-                                    <svg
-                                        class="mr-2 h-5 w-5 text-primary"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                        aria-hidden="true"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                        />
-                                    </svg>
+                                    <User class="mr-2 h-5 w-5 text-primary" aria-hidden="true" />
                                     <span>{{ campaign.creatorName }}</span>
                                 </div>
                             </template>
@@ -302,20 +238,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                                 :key="gm.id"
                                 class="flex items-center text-base-secondary"
                             >
-                                <svg
-                                    class="mr-2 h-5 w-5 text-primary"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    aria-hidden="true"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                    />
-                                </svg>
+                                <User class="mr-2 h-5 w-5 text-primary" aria-hidden="true" />
                                 <span>{{ gm.isNamePublic ? gm.displayName : t('campaigns.anonymousGm') }}</span>
                                 <span v-if="gm.customTitle" class="ml-1 text-sm text-base-secondary">({{ gm.customTitle }})</span>
                             </div>

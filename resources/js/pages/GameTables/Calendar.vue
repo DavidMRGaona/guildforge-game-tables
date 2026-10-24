@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Calendar, ChevronLeft, ChevronRight } from '@lucide/vue';
 import { ref, computed } from 'vue';
 import { router, Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
@@ -135,20 +136,7 @@ function goToNextMonth(): void {
                 :loading="isNavigating"
                 @click="goToPreviousMonth"
             >
-                <svg
-                    class="h-5 w-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M15 19l-7-7 7-7"
-                    />
-                </svg>
+                <ChevronLeft class="h-5 w-5" aria-hidden="true" />
                 {{ t('common.previous') }}
             </BaseButton>
 
@@ -158,20 +146,7 @@ function goToNextMonth(): void {
 
             <BaseButton variant="secondary" :loading="isNavigating" @click="goToNextMonth">
                 {{ t('common.next') }}
-                <svg
-                    class="h-5 w-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M9 5l7 7-7 7"
-                    />
-                </svg>
+                <ChevronRight class="h-5 w-5" aria-hidden="true" />
             </BaseButton>
         </div>
 
@@ -201,20 +176,7 @@ function goToNextMonth(): void {
             v-else
             class="rounded-lg border border-dashed border-default p-12 text-center"
         >
-            <svg
-                class="mx-auto h-16 w-16 text-base-muted"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-            >
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-            </svg>
+            <Calendar class="mx-auto h-16 w-16 text-base-muted" aria-hidden="true" />
             <h3 class="mt-4 text-lg font-medium text-base-primary">
                 {{ t('gameTables.noTablesThisMonth') }}
             </h3>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ChevronDown, Clipboard, Plus } from '@lucide/vue';
 import { useI18n } from 'vue-i18n';
 import { ref, computed, useId } from 'vue';
 import { Link } from '@inertiajs/vue3';
@@ -63,9 +64,7 @@ function toggleDraftsSection(): void {
                 align="end"
                 button-class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm"
             >
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
+                <Plus class="h-4 w-4" aria-hidden="true" />
                 {{ t('gameTables.profile.created.createNew') }}
             </VerificationBlockedButton>
             <Link
@@ -73,9 +72,7 @@ function toggleDraftsSection(): void {
                 :href="createUrl"
                 class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
             >
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
+                <Plus class="h-4 w-4" aria-hidden="true" />
                 {{ t('gameTables.profile.created.createNew') }}
             </Link>
         </div>
@@ -119,15 +116,10 @@ function toggleDraftsSection(): void {
                     </span>
                     {{ t('gameTables.profile.created.drafts') }}
                 </span>
-                <svg
+                <ChevronDown
                     :class="['h-5 w-5 text-base-muted transition-transform', showDraftsSection ? 'rotate-180' : '']"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
                     aria-hidden="true"
-                >
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                </svg>
+                />
             </button>
 
             <div v-if="showDraftsSection" class="space-y-3">
@@ -162,9 +154,7 @@ function toggleDraftsSection(): void {
                 :href="createUrl"
                 class="inline-flex items-center gap-2 rounded-lg border-2 border-primary px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary-light"
             >
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
+                <Plus class="h-4 w-4" aria-hidden="true" />
                 {{ t('gameTables.profile.created.createNew') }}
             </Link>
         </div>
@@ -175,20 +165,7 @@ function toggleDraftsSection(): void {
         v-else
         class="rounded-lg border border-dashed border-default bg-muted p-12 text-center"
     >
-        <svg
-            class="mx-auto h-12 w-12 text-base-secondary"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-        >
-            <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-            />
-        </svg>
+        <Clipboard class="mx-auto h-12 w-12 text-base-secondary" aria-hidden="true" />
         <h3 class="mt-4 text-lg font-medium text-base-primary">
             {{ t('gameTables.profile.created.noTables') }}
         </h3>
@@ -202,9 +179,7 @@ function toggleDraftsSection(): void {
                 align="center"
                 button-class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white"
             >
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
+                <Plus class="h-4 w-4" aria-hidden="true" />
                 {{ t('gameTables.profile.created.createFirst') }}
             </VerificationBlockedButton>
             <Link
@@ -212,9 +187,7 @@ function toggleDraftsSection(): void {
                 :href="createUrl"
                 class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700"
             >
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
+                <Plus class="h-4 w-4" aria-hidden="true" />
                 {{ t('gameTables.profile.created.createFirst') }}
             </Link>
             <!-- While blocked the create button above already says why -->

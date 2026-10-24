@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Star, Trash, UserPlus } from '@lucide/vue';
 import { computed, ref, watch, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
@@ -240,18 +241,7 @@ function cancelRemoveGm(): void {
                     <div
                         class="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-sm"
                     >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="h-6 w-6"
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                        >
-                            <path
-                                fill-rule="evenodd"
-                                d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z"
-                                clip-rule="evenodd"
-                            />
-                        </svg>
+                        <Star class="h-6 w-6" aria-hidden="true" />
                     </div>
                     <div>
                         <div class="font-medium text-base-primary">
@@ -348,20 +338,7 @@ function cancelRemoveGm(): void {
             >
                 <div class="flex items-start justify-between gap-4 mb-4">
                     <div class="flex items-center gap-2">
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="h-5 w-5 text-base-muted"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-                            />
-                        </svg>
+                        <UserPlus class="h-5 w-5 text-base-muted" aria-hidden="true" />
                         <span class="text-sm font-medium text-base-secondary">
                             {{ t('gameTables.create.gameMasters.cogmNumber', { n: index + 1 }) }}
                         </span>
@@ -373,20 +350,7 @@ function cancelRemoveGm(): void {
                         class="rounded-full p-1.5 text-base-muted transition-colors hover:bg-error-bg hover:text-error disabled:opacity-50"
                         @click="requestRemoveGm(index)"
                     >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="h-5 w-5"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
-                        </svg>
+                        <Trash class="h-5 w-5" aria-hidden="true" />
                     </button>
                 </div>
 
@@ -560,20 +524,7 @@ function cancelRemoveGm(): void {
             class="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-default py-3 text-sm font-medium text-base-secondary transition-colors hover:border-primary-500/50 hover:bg-primary-500/10 hover:text-[color:var(--color-primary-link)] focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-50"
             @click="addGm"
         >
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-            >
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-                />
-            </svg>
+            <UserPlus class="h-5 w-5" aria-hidden="true" />
             {{ t('gameTables.create.gameMasters.addGmLong') }}
         </button>
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Calendar, ChevronLeft, Clipboard, Clock, MapPin, TriangleAlert, User } from '@lucide/vue';
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
@@ -191,20 +192,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                 href="/mesas"
                 class="inline-flex items-center text-sm text-base-secondary hover:underline focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
             >
-                <svg
-                    class="mr-1 h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M15 19l-7-7 7-7"
-                    />
-                </svg>
+                <ChevronLeft class="mr-1 h-4 w-4" aria-hidden="true" />
                 {{ t('common.back') }}
             </Link>
         </div>
@@ -275,20 +263,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                                 {{ t('gameTables.dateAndTime') }}
                             </h3>
                             <div class="flex items-center text-base-secondary">
-                                <svg
-                                    class="mr-2 h-5 w-5 text-primary"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    aria-hidden="true"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                    />
-                                </svg>
+                                <Calendar class="mr-2 h-5 w-5 text-primary" aria-hidden="true" />
                                 <div>
                                     <p>{{ formattedDate }}</p>
                                     <p class="text-sm">{{ formattedTime }}</p>
@@ -302,20 +277,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                                 {{ t('gameTables.duration') }}
                             </h3>
                             <div class="flex items-center text-base-secondary">
-                                <svg
-                                    class="mr-2 h-5 w-5 text-primary"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    aria-hidden="true"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                    />
-                                </svg>
+                                <Clock class="mr-2 h-5 w-5 text-primary" aria-hidden="true" />
                                 <span>{{ formattedDuration }}</span>
                             </div>
                         </div>
@@ -326,20 +288,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                                 {{ t('gameTables.location') }}
                             </h3>
                             <div class="flex items-center text-base-secondary">
-                                <svg
-                                    class="mr-2 h-5 w-5 text-primary"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    aria-hidden="true"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                                    />
-                                </svg>
+                                <MapPin class="mr-2 h-5 w-5 text-primary" aria-hidden="true" />
                                 <span>{{ table.location || t('gameTables.online') }}</span>
                             </div>
                         </div>
@@ -358,20 +307,10 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                                             v-if="formattedAllGameMasters.length === 0"
                                             class="flex items-center"
                                         >
-                                            <svg
+                                            <User
                                                 class="mr-2 h-5 w-5 text-primary"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
                                                 aria-hidden="true"
-                                            >
-                                                <path
-                                                    stroke-linecap="round"
-                                                    stroke-linejoin="round"
-                                                    stroke-width="2"
-                                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                                />
-                                            </svg>
+                                            />
                                             <span>{{ table.mainGameMasterName }}</span>
                                         </li>
                                         <li
@@ -379,20 +318,10 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                                             :key="gm.id"
                                             class="flex items-center"
                                         >
-                                            <svg
+                                            <User
                                                 class="mr-2 h-5 w-5 text-primary"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
                                                 aria-hidden="true"
-                                            >
-                                                <path
-                                                    stroke-linecap="round"
-                                                    stroke-linejoin="round"
-                                                    stroke-width="2"
-                                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                                />
-                                            </svg>
+                                            />
                                             <span>{{ gm.formattedName }}</span>
                                         </li>
                                     </ul>
@@ -407,20 +336,10 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                                             :key="gm.id"
                                             class="flex items-center"
                                         >
-                                            <svg
+                                            <User
                                                 class="mr-2 h-5 w-5 text-primary"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
                                                 aria-hidden="true"
-                                            >
-                                                <path
-                                                    stroke-linecap="round"
-                                                    stroke-linejoin="round"
-                                                    stroke-width="2"
-                                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                                />
-                                            </svg>
+                                            />
                                             <span>{{ gm.formattedName }}</span>
                                         </li>
                                     </ul>
@@ -528,20 +447,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                     class="mb-6 rounded-lg border border-info bg-info-light p-4"
                 >
                     <h2 class="mb-3 flex items-center text-lg font-semibold text-base-primary">
-                        <svg
-                            class="mr-2 h-5 w-5 text-info"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                            />
-                        </svg>
+                        <Clipboard class="mr-2 h-5 w-5 text-info" aria-hidden="true" />
                         {{ t('gameTables.registration.title') }}
                     </h2>
 
@@ -565,20 +471,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                             v-if="table.membersEarlyAccessDays > 0"
                             class="flex items-center font-medium text-base-primary"
                         >
-                            <svg
-                                class="mr-1 h-4 w-4 text-info"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                                aria-hidden="true"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                />
-                            </svg>
+                            <Clock class="mr-1 h-4 w-4 text-info" aria-hidden="true" />
                             {{ t('gameTables.registration.earlyAccessDays', { days: table.membersEarlyAccessDays }) }}
                         </p>
                     </div>
@@ -702,20 +595,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                         class="rounded-lg border border-warning bg-warning-light p-4"
                     >
                         <h3 class="mb-2 flex items-center text-sm font-semibold text-warning">
-                            <svg
-                                class="mr-2 h-5 w-5 text-warning"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                                aria-hidden="true"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                                />
-                            </svg>
+                            <TriangleAlert class="mr-2 h-5 w-5 text-warning" aria-hidden="true" />
                             {{ t('gameTables.customWarningsTitle') }}
                         </h3>
                         <ul class="list-inside list-disc space-y-1 text-sm text-warning">

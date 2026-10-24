@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Check, ChevronDown, X } from '@lucide/vue';
 import { ref, watch, computed, nextTick } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
@@ -227,21 +228,12 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
                     ]"
                     @click="toggleSystem(system.id)"
                 >
-                    <svg
+                    <Check
                         v-if="isSystemSelected(system.id)"
                         class="h-3.5 w-3.5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                        :stroke-width="3"
                         aria-hidden="true"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="3"
-                            d="M5 13l4 4L19 7"
-                        />
-                    </svg>
+                    />
                     {{ system.name }}
                 </button>
             </div>
@@ -267,15 +259,10 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
                             {{ option.label }}
                         </option>
                     </select>
-                    <svg
+                    <ChevronDown
                         class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-base-muted"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
                         aria-hidden="true"
-                    >
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
+                    />
                 </div>
             </div>
 
@@ -297,15 +284,10 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
                             {{ option.label }}
                         </option>
                     </select>
-                    <svg
+                    <ChevronDown
                         class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-base-muted"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
                         aria-hidden="true"
-                    >
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
+                    />
                 </div>
             </div>
 
@@ -336,15 +318,10 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
                             {{ event.title }}
                         </option>
                     </select>
-                    <svg
+                    <ChevronDown
                         class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-base-muted"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
                         aria-hidden="true"
-                    >
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
+                    />
                 </div>
             </div>
         </div>
@@ -363,9 +340,7 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
                     class="ml-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full transition-colors hover:bg-primary-500/20"
                     @click.prevent="pill.remove()"
                 >
-                    <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <X class="h-3 w-3" aria-hidden="true" />
                 </button>
             </span>
 

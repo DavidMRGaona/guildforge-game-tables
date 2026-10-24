@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Calendar, Users } from '@lucide/vue';
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
@@ -82,17 +83,13 @@ const playersText = computed(() => {
                 <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-base-muted">
                     <!-- Date -->
                     <span v-if="formattedDate" class="flex items-center gap-1">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
+                        <Calendar class="h-4 w-4" aria-hidden="true" />
                         {{ formattedDate }}
                     </span>
 
                     <!-- Players -->
                     <span class="flex items-center gap-1">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                        </svg>
+                        <Users class="h-4 w-4" aria-hidden="true" />
                         {{ playersText }} {{ t('gameTables.profile.created.players') }}
                     </span>
 
