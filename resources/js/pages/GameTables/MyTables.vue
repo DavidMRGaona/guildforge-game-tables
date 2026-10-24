@@ -186,7 +186,7 @@ function getTableLink(table: GameTableResponseDTO): string {
                     {{ t('gameTables.myTables.drafts') }}
                 </h2>
                 <p v-if="props.drafts.length === 0" class="text-sm text-base-secondary">
-                    {{ t('gameTables.myTables.noTables') }}
+                    {{ t('gameTables.myTables.emptyDrafts') }}
                 </p>
             <div v-else class="space-y-4">
                 <div

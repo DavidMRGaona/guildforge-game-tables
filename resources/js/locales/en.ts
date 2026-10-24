@@ -298,6 +298,7 @@ export default {
             manageRegistrations: 'Manage registrations',
             pendingCount: '{count} pending | {count} pending',
             emptyPublished: 'You have no published tables.',
+            emptyDrafts: 'You have no drafts.',
             pendingReviewMessage: 'Under review',
             rejectionReason: 'Rejection reason',
             rejectionHint: 'Fix it and send it to review again.',

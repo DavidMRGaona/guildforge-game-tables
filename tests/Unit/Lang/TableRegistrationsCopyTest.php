@@ -56,6 +56,7 @@ final class TableRegistrationsCopyTest extends TestCase
         'myTables.manageRegistrations',
         'myTables.pendingCount',
         'myTables.emptyPublished',
+        'myTables.emptyDrafts',
         'registrations.title',
         'registrations.back',
         'registrations.pending',
@@ -182,6 +183,19 @@ final class TableRegistrationsCopyTest extends TestCase
 
         $this->assertSame('Historial de inscripciones', $es['relation_managers.status_log.title']);
         $this->assertSame('Registration history', $en['relation_managers.status_log.title']);
+    }
+
+    // With published tables but no drafts, the drafts list must not claim there are no tables
+    public function test_my_tables_tells_an_empty_drafts_list_apart_from_no_tables(): void
+    {
+        $page = (string) file_get_contents(dirname(__DIR__, 3).'/resources/js/pages/GameTables/MyTables.vue');
+
+        $this->assertMatchesRegularExpression(
+            "/<p v-if=\"props\.drafts\.length === 0\"[^>]*>\s*\{\{ t\('gameTables\.myTables\.emptyDrafts'\) \}\}/",
+            $page,
+        );
+        $this->assertSame("'No tienes borradores.',", $this->locale('es')['myTables.emptyDrafts']);
+        $this->assertSame("'You have no drafts.',", $this->locale('en')['myTables.emptyDrafts']);
     }
 
     public function test_the_rejection_email_carries_the_optional_reason(): void

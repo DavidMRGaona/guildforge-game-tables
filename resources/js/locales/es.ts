@@ -298,6 +298,7 @@ export default {
             manageRegistrations: 'Gestionar inscritos',
             pendingCount: '{count} pendiente | {count} pendientes',
             emptyPublished: 'No tienes partidas publicadas.',
+            emptyDrafts: 'No tienes borradores.',
             pendingReviewMessage: 'En revisión',
             rejectionReason: 'Motivo del rechazo',
             rejectionHint: 'Corrígela y vuelve a enviarla a revisión.',
