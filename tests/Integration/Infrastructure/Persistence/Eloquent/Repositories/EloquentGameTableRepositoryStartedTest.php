@@ -54,6 +54,22 @@ final class EloquentGameTableRepositoryStartedTest extends ModuleTestCase
         $this->assertSame([$earlier->id, $later->id], $ids);
     }
 
+    // Tables starting at the same time come in the same order on every run
+    public function test_tables_starting_at_the_same_time_are_listed_by_id(): void
+    {
+        $startsAt = '2030-03-10 18:00:00';
+        $last = $this->table(TableStatus::Scheduled, $startsAt, 'ffffffff-0000-4000-8000-000000000000');
+        $middle = $this->table(TableStatus::Scheduled, $startsAt, 'aaaaaaaa-0000-4000-8000-000000000000');
+        $first = $this->table(TableStatus::Scheduled, $startsAt, '55555555-0000-4000-8000-000000000000');
+
+        $ids = app(GameTableRepositoryInterface::class)->idsStartedInStatuses(
+            [TableStatus::Scheduled],
+            new DateTimeImmutable($startsAt),
+        );
+
+        $this->assertSame([$first->id, $middle->id, $last->id], $ids);
+    }
+
     // starts_at is the wall-clock time of the application: a moment given in another zone is converted
     public function test_a_moment_in_another_timezone_is_compared_in_the_application_timezone(): void
     {
@@ -78,10 +94,10 @@ final class EloquentGameTableRepositoryStartedTest extends ModuleTestCase
         }
     }
 
-    private function table(TableStatus $status, string $startsAt): GameTableModel
+    private function table(TableStatus $status, string $startsAt, ?string $id = null): GameTableModel
     {
         return GameTableModel::create([
-            'id' => (string) Str::uuid(),
+            'id' => $id ?? (string) Str::uuid(),
             'game_system_id' => $this->system->id,
             'created_by' => $this->creator->id,
             'title' => 'La cripta olvidada',

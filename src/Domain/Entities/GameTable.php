@@ -88,9 +88,12 @@ final class GameTable
         $this->publishedAt = null;
     }
 
+    /**
+     * @throws InvalidStatusTransitionException unless the table is scheduled
+     */
     public function markAsFull(): void
     {
-        $this->status = TableStatus::Full;
+        $this->transitionTo(TableStatus::Full);
     }
 
     /**
@@ -110,8 +113,8 @@ final class GameTable
     }
 
     /**
-     * Drafts, cancelled and completed tables never start nor complete, whoever asks (the panel or
-     * the automatic update).
+     * Every status change follows TableStatus::canTransitionTo(), whoever asks (the panel or the
+     * automatic update): drafts never start, and cancelled or completed tables never move again.
      *
      * @throws InvalidStatusTransitionException
      */
@@ -124,14 +127,20 @@ final class GameTable
         $this->status = $status;
     }
 
+    /**
+     * @throws InvalidStatusTransitionException when the table is already cancelled or completed
+     */
     public function cancel(): void
     {
-        $this->status = TableStatus::Cancelled;
+        $this->transitionTo(TableStatus::Cancelled);
     }
 
+    /**
+     * @throws InvalidStatusTransitionException
+     */
     public function changeStatus(TableStatus $status): void
     {
-        $this->status = $status;
+        $this->transitionTo($status);
     }
 
     public function isActive(): bool

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources\GameTableResource\Pages;
 
-use DateTimeImmutable;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
+use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
@@ -18,7 +18,6 @@ use Modules\GameTables\Application\Services\GameMasterServiceInterface;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\TableStatus;
-use Modules\GameTables\Domain\Events\GameTableCancelled;
 use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
 use Modules\GameTables\Domain\Exceptions\NotEditableException;
 use Modules\GameTables\Domain\Exceptions\SessionBelowRosterException;
@@ -139,10 +138,7 @@ final class EditGameTable extends EditRecord
         }
 
         if (($this->data['status'] ?? null) !== $current) {
-            Notification::make()
-                ->title(__('game-tables::messages.notifications.status_already_changed'))
-                ->warning()
-                ->send();
+            $this->warnStatusChangeRefused();
         }
 
         $this->data['status'] = $current;
@@ -169,8 +165,24 @@ final class EditGameTable extends EditRecord
         $gameMastersData = $data['gameMasters'] ?? [];
         unset($data['gameMasters']);
 
+        // The status goes through the service: the transitions apply and it is saved only while the
+        // table still has the status read, so a move landing meanwhile is not overwritten
+        $status = isset($data['status']) ? TableStatus::tryFrom((string) $data['status']) : null;
+        unset($data['status']);
+
         // Update the record
         $record->update($data);
+
+        if ($status !== null && $status !== $record->getAttribute('status')) {
+            try {
+                app(GameTableServiceInterface::class)->changeStatus((string) $record->getKey(), $status);
+            } catch (InvalidStatusTransitionException) {
+                $this->warnStatusChangeRefused();
+            }
+
+            // The service saved through its own model instance
+            $record->refresh();
+        }
 
         // Sync game masters using the service
         /** @var GameMasterServiceInterface $gameMasterService */
@@ -295,10 +307,16 @@ final class EditGameTable extends EditRecord
                     $this->refreshFormData(['is_published', 'status', 'published_at']);
                 }),
 
+            // Starting, completing, cancelling and deleting cannot be undone: each asks twice
             Action::make('start')
                 ->label(__('game-tables::messages.actions.start'))
                 ->icon('heroicon-o-play')
                 ->color('primary')
+                ->requiresConfirmation()
+                ->modalHeading(__('game-tables::messages.actions.start_confirmation_title'))
+                ->modalDescription(__('game-tables::messages.actions.start_confirmation_description'))
+                ->modalSubmitActionLabel(__('game-tables::messages.actions.start_confirm'))
+                ->schema([self::secondConfirmation('start')])
                 ->visible(fn (): bool => in_array($this->record->status, [TableStatus::Scheduled, TableStatus::Full], true))
                 ->action(function (): void {
                     $this->moveTable(TableStatus::InProgress);
@@ -308,6 +326,11 @@ final class EditGameTable extends EditRecord
                 ->label(__('game-tables::messages.actions.complete'))
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
+                ->requiresConfirmation()
+                ->modalHeading(__('game-tables::messages.actions.complete_confirmation_title'))
+                ->modalDescription(__('game-tables::messages.actions.complete_confirmation_description'))
+                ->modalSubmitActionLabel(__('game-tables::messages.actions.complete_confirm'))
+                ->schema([self::secondConfirmation('complete')])
                 ->visible(fn (): bool => $this->record->status === TableStatus::InProgress)
                 ->action(function (): void {
                     $this->moveTable(TableStatus::Completed);
@@ -321,15 +344,20 @@ final class EditGameTable extends EditRecord
                 ->modalHeading(__('game-tables::messages.actions.cancel_confirmation_title'))
                 ->modalDescription(__('game-tables::messages.actions.cancel_confirmation_description'))
                 ->modalSubmitActionLabel(__('game-tables::messages.actions.cancel_confirm'))
+                ->schema([self::secondConfirmation('cancel')])
                 ->visible(fn (): bool => ! $this->record->status->isFinal())
                 ->action(function (): void {
-                    $this->record->update(['status' => TableStatus::Cancelled->value]);
+                    try {
+                        // Through the service: it guards the transition and announces
+                        // GameTableCancelled, which cancels and notifies the participants
+                        app(GameTableServiceInterface::class)->cancel((string) $this->getRecord()->getKey());
+                    } catch (InvalidStatusTransitionException) {
+                        $this->warnStatusChangeRefused();
+                        $this->getRecord()->refresh();
+                        $this->refreshFormData(['status']);
 
-                    GameTableCancelled::dispatch(
-                        $this->record->id,
-                        $this->record->title,
-                        new DateTimeImmutable($this->record->starts_at->toDateTimeString()),
-                    );
+                        return;
+                    }
 
                     Notification::make()
                         ->title(__('game-tables::messages.notifications.table_cancelled'))
@@ -339,8 +367,20 @@ final class EditGameTable extends EditRecord
                     $this->redirect($this->getResource()::getUrl('edit', ['record' => $this->record]));
                 }),
 
-            DeleteAction::make(),
+            DeleteAction::make()
+                ->schema([self::secondConfirmation('delete')]),
         ];
+    }
+
+    /**
+     * The box to tick, on top of the confirmation modal, before an action that cannot be undone.
+     */
+    private static function secondConfirmation(string $action): Checkbox
+    {
+        return Checkbox::make('confirmation')
+            ->label(__("game-tables::messages.actions.{$action}_confirmation_check"))
+            ->accepted()
+            ->required();
     }
 
     private function refuseBelowRoster(SessionBelowRosterException $e): void
@@ -351,12 +391,17 @@ final class EditGameTable extends EditRecord
             ->send();
     }
 
-    private function warnStatusAlreadyChanged(): void
+    private function warnStatusChangeRefused(): void
     {
         Notification::make()
             ->title(__('game-tables::messages.notifications.status_already_changed'))
             ->warning()
             ->send();
+    }
+
+    private function warnStatusAlreadyChanged(): void
+    {
+        $this->warnStatusChangeRefused();
 
         // Show what the table is now, so the moderation buttons follow it
         $this->getRecord()->refresh();
@@ -382,10 +427,7 @@ final class EditGameTable extends EditRecord
             }
         } catch (InvalidStatusTransitionException) {
             // The automatic update or another user changed it first
-            Notification::make()
-                ->title(__('game-tables::messages.notifications.status_already_changed'))
-                ->warning()
-                ->send();
+            $this->warnStatusChangeRefused();
         }
 
         // The service saved through its own model instance

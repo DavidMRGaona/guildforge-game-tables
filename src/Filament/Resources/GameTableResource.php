@@ -434,11 +434,10 @@ final class GameTableResource extends BaseResource
 
                                 Select::make('status')
                                     ->label(__('game-tables::messages.fields.table_status'))
-                                    // «Borrador» only for a table that already is one (a web table not yet published)
+                                    // Its own status and the moves between «Programada» and «Completa»;
+                                    // starting, completing and cancelling have their own actions
                                     ->options(
-                                        fn (?Model $record): array => collect(TableStatus::cases())
-                                            ->reject(fn (TableStatus $status): bool => $status === TableStatus::Draft
-                                                && $record?->getAttribute('status') !== TableStatus::Draft)
+                                        fn (?Model $record): array => collect(TableStatus::manualChoicesFrom($record?->getAttribute('status')))
                                             ->mapWithKeys(fn (TableStatus $status): array => [$status->value => $status->label()])
                                             ->toArray()
                                     )

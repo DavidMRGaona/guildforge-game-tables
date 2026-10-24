@@ -183,9 +183,10 @@ final readonly class GameTableService implements GameTableServiceInterface
     public function start(string $id): GameTableResponseDTO
     {
         $gameTable = $this->gameTableRepository->findOrFail(new GameTableId($id));
+        $readStatus = $gameTable->status;
 
         $gameTable->start();
-        $this->gameTableRepository->save($gameTable);
+        $this->gameTableRepository->saveIfStatusIs($gameTable, $readStatus);
 
         return GameTableResponseDTO::fromEntity($gameTable);
     }
@@ -193,9 +194,10 @@ final readonly class GameTableService implements GameTableServiceInterface
     public function complete(string $id): GameTableResponseDTO
     {
         $gameTable = $this->gameTableRepository->findOrFail(new GameTableId($id));
+        $readStatus = $gameTable->status;
 
         $gameTable->complete();
-        $this->gameTableRepository->save($gameTable);
+        $this->gameTableRepository->saveIfStatusIs($gameTable, $readStatus);
 
         GameTableCompleted::dispatch($gameTable->id->value, $gameTable->title);
 
@@ -205,9 +207,10 @@ final readonly class GameTableService implements GameTableServiceInterface
     public function cancel(string $id): GameTableResponseDTO
     {
         $gameTable = $this->gameTableRepository->findOrFail(new GameTableId($id));
+        $readStatus = $gameTable->status;
 
         $gameTable->cancel();
-        $this->gameTableRepository->save($gameTable);
+        $this->gameTableRepository->saveIfStatusIs($gameTable, $readStatus);
 
         GameTableCancelled::dispatch($gameTable->id->value, $gameTable->title, $gameTable->timeSlot->startsAt);
 
@@ -217,9 +220,10 @@ final readonly class GameTableService implements GameTableServiceInterface
     public function changeStatus(string $id, TableStatus $status): GameTableResponseDTO
     {
         $gameTable = $this->gameTableRepository->findOrFail(new GameTableId($id));
+        $readStatus = $gameTable->status;
 
         $gameTable->changeStatus($status);
-        $this->gameTableRepository->save($gameTable);
+        $this->gameTableRepository->saveIfStatusIs($gameTable, $readStatus);
 
         return GameTableResponseDTO::fromEntity($gameTable);
     }
