@@ -130,6 +130,17 @@ return [
     | Moderation Emails
     |--------------------------------------------------------------------------
     */
+    'rejection' => [
+        'subject' => 'Registration rejected: :tableTitle',
+        'greeting' => 'Hello, :name!',
+        'intro' => 'We are sorry to tell you that your registration for the table ":tableTitle" has been rejected.',
+        'table_title' => 'Table',
+        'table_date' => 'Date',
+        'table_location' => 'Location',
+        'reason' => 'Reason: :reason',
+        'outro' => 'We hope to see you at future games.',
+    ],
+
     'moderation_submitted' => [
         'subject' => 'New table pending moderation: :tableTitle',
         'greeting' => 'Hello,',

@@ -613,6 +613,7 @@ return [
     |--------------------------------------------------------------------------
     */
     'errors' => [
+        'not_pending' => 'This registration is no longer pending.',
         'table_locked_published' => 'This table is already published and can no longer be changed.',
         'table_locked_in_review' => 'This table has already been sent for review and can no longer be changed.',
         'table_locked' => 'This table has already been sent for review or published and can no longer be changed.',
@@ -759,6 +760,7 @@ return [
             'add' => 'Add participant',
             'confirm' => 'Confirm',
             'reject' => 'Reject',
+            'reject_reason' => 'Reason (optional)',
             'promote' => 'Promote',
             'cancel_registration' => 'Cancel registration',
             'cancel_registration_description' => 'Their seat is freed (and, where it applies, the first person on the waiting list takes it). They will be told by email that the organizers have cancelled their registration.',

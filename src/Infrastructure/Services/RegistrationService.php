@@ -38,6 +38,7 @@ use Modules\GameTables\Domain\Exceptions\CannotCancelException;
 use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
 use Modules\GameTables\Domain\Exceptions\ParticipantNotFoundException;
 use Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException;
+use Modules\GameTables\Domain\Exceptions\ParticipantNotPendingException;
 use Modules\GameTables\Domain\Exceptions\TableFullException;
 use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
@@ -1119,11 +1120,17 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         }
     }
 
-    public function reject(string $participantId): ParticipantResponseDTO
+    public function reject(string $participantId, ?string $reason = null): ParticipantResponseDTO
     {
+        $reason = $reason === null || trim($reason) === '' ? null : trim($reason);
+
         [$participant, $promoted] = $this->lock->forParticipant($participantId, function () use ($participantId): array {
             $participant = $this->participantRepository->findOrFail(new ParticipantId($participantId));
             $wasPendingPlayer = $participant->isPending() && $participant->isPlayer();
+
+            if (! $participant->isPending() && $participant->status !== ParticipantStatus::WaitingList) {
+                throw ParticipantNotPendingException::forParticipant($participantId);
+            }
 
             $participant->reject();
             $this->participantRepository->save($participant);
@@ -1140,6 +1147,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             $participant->id->value,
             $participant->gameTableId->value,
             $participant->userId,
+            $reason,
         );
 
         if ($promoted !== null) {

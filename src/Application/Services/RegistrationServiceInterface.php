@@ -91,9 +91,11 @@ interface RegistrationServiceInterface
 
     /**
      * Where pending players hold seats (waiting list on, manual confirmation), rejecting a pending
-     * player promotes the first waiting one.
+     * player promotes the first waiting one. The optional reason (blank counts as none) goes in the email.
+     *
+     * @throws \Modules\GameTables\Domain\Exceptions\ParticipantNotPendingException when the participant is neither pending nor on the waiting list (nothing changes)
      */
-    public function reject(string $participantId): ParticipantResponseDTO;
+    public function reject(string $participantId, ?string $reason = null): ParticipantResponseDTO;
 
     public function promoteFromWaitingList(string $gameTableId): ?ParticipantResponseDTO;
 

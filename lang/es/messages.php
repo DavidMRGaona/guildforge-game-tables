@@ -689,6 +689,7 @@ return [
     |--------------------------------------------------------------------------
     */
     'errors' => [
+        'not_pending' => 'Esta inscripción ya no está pendiente.',
         'table_locked_published' => 'Esta mesa ya está publicada y ya no se puede modificar.',
         'table_locked_in_review' => 'Esta mesa ya se ha enviado a revisión y ya no se puede modificar.',
         'table_locked' => 'Esta mesa ya se ha enviado a revisión o está publicada y ya no se puede modificar.',
@@ -836,6 +837,7 @@ return [
             'add' => 'Añadir participante',
             'confirm' => 'Confirmar',
             'reject' => 'Rechazar',
+            'reject_reason' => 'Motivo (opcional)',
             'promote' => 'Promover',
             'cancel_registration' => 'Cancelar inscripción',
             'cancel_registration_description' => 'Se libera su plaza (y, si corresponde, pasa a ocuparla el primero de la lista de espera). Se le avisará por email de que la organización ha cancelado su inscripción.',

@@ -154,6 +154,7 @@ return [
         'table_title' => 'Mesa',
         'table_date' => 'Fecha',
         'table_location' => 'Ubicación',
+        'reason' => 'Motivo: :reason',
         'outro' => 'Esperamos verte en futuras partidas.',
     ],
 

@@ -8,9 +8,11 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Modules\GameTables\Notifications\Concerns\EscapesUserText;
 
 final class ParticipantRejectedNotification extends Notification implements ShouldQueue
 {
+    use EscapesUserText;
     use Queueable;
 
     public function __construct(
@@ -18,6 +20,7 @@ final class ParticipantRejectedNotification extends Notification implements Shou
         private readonly string $tableTitle,
         private readonly ?string $tableDate,
         private readonly ?string $tableLocation,
+        public readonly ?string $reason = null,
     ) {}
 
     /**
@@ -43,6 +46,10 @@ final class ParticipantRejectedNotification extends Notification implements Shou
 
         if ($this->tableLocation !== null) {
             $message->line('**'.__('game-tables::emails.rejection.table_location').':** '.$this->tableLocation);
+        }
+
+        if ($this->reason !== null && $this->reason !== '') {
+            $message->line($this->plainLine(__('game-tables::emails.rejection.reason', ['reason' => $this->reason])));
         }
 
         return $message

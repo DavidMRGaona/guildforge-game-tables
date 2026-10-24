@@ -303,6 +303,8 @@ final class GuestTakeoverTest extends ModuleTestCase
     {
         $user = UserModel::factory()->create(['email' => 'cuenta@example.test']);
         $own = $this->register($user);
+        // Only a pending row can be rejected, and this table confirms on its own
+        ParticipantModel::query()->whereKey($own->id)->update(['status' => 'pending', 'confirmed_at' => null]);
         $this->service()->reject($own->id);
         $guest = $this->guestByAdmin('cuenta@example.test');
 
