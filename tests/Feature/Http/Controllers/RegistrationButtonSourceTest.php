@@ -135,8 +135,8 @@ final class RegistrationButtonSourceTest extends TestCase
             $source = $this->source($page);
 
             $this->assertStringContainsString('sessionOnly?: boolean;', $source, $page);
-            $this->assertStringContainsString(":options=\"objectToOptions(props.formData.table_types)\"\n                                        :disabled=\"props.sessionOnly\"", $source, $page);
-            $this->assertStringContainsString("<p v-if=\"props.sessionOnly\" class=\"mt-1 text-xs text-base-muted\">\n                                        {{ t('gameTables.create.campaign.sessionOnly') }}", $source, $page);
+            $this->assertStringContainsString(":options=\"objectToOptions(props.formData.table_types)\"\n                                    :disabled=\"props.sessionOnly\"", $source, $page);
+            $this->assertStringContainsString("<p v-if=\"props.sessionOnly\" class=\"mt-1 text-xs text-base-muted\">\n                                    {{ t('gameTables.create.campaign.sessionOnly') }}", $source, $page);
         }
     }
 

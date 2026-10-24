@@ -128,7 +128,7 @@ final class TableFormErrorsSourceTest extends TestCase
             $source = $this->source('resources/js/'.$page);
 
             $this->assertStringContainsString('const { tabErrors, gameMasterErrors, errorItems, revealErrors, focusError, removeGameMasterRowErrors } = useFormErrorSummary({', $source, $page);
-            $this->assertStringContainsString(":error=\"form.errors.game_masters\"\n                                    :errors=\"gameMasterErrors\"", $source, $page);
+            $this->assertStringContainsString(":error=\"form.errors.game_masters\"\n                                :errors=\"gameMasterErrors\"", $source, $page);
         }
     }
 
@@ -161,9 +161,9 @@ final class TableFormErrorsSourceTest extends TestCase
 
             $this->assertStringContainsString('const { success: flashSuccess, error: flashError } = useFlashMessages();', $source, $page);
             // What was done (created, saved, sent, deleted) and why an action was refused
-            $this->assertStringContainsString("<div\n                v-if=\"flashSuccess\"\n                role=\"status\"", $source, $page);
+            $this->assertStringContainsString("<div\n            v-if=\"flashSuccess\"\n            role=\"status\"", $source, $page);
             $this->assertStringContainsString('{{ flashSuccess }}', $source, $page);
-            $this->assertStringContainsString("<div\n                v-if=\"flashError\"\n                role=\"alert\"", $source, $page);
+            $this->assertStringContainsString("<div\n            v-if=\"flashError\"\n            role=\"alert\"", $source, $page);
             $this->assertStringContainsString('{{ flashError }}', $source, $page);
         }
     }

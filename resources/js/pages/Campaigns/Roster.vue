@@ -2,7 +2,6 @@
 import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from 'vue';
 import { Link, router, useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
 import { FormCheckbox } from '@/components/form';
@@ -447,415 +446,358 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
 </script>
 
 <template>
-    <DefaultLayout>
-        <div class="bg-surface shadow">
-            <div class="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-                <Link
-                    href="/campanas/mis-campanas"
-                    class="-my-3 inline-flex min-h-[44px] items-center gap-1 text-sm text-base-secondary hover:underline focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
-                >
-                    <span aria-hidden="true">←</span>
-                    {{ t('campaigns.roster.back') }}
-                </Link>
-                <h1 class="mt-3 break-words text-3xl font-bold tracking-tight text-base-primary">
-                    {{ t('campaigns.roster.title', { title: campaign.title }) }}
-                </h1>
-                <p class="mt-2 text-base text-base-secondary">
-                    {{ subtitle }}
-                </p>
-            </div>
+    <div class="bg-surface shadow">
+        <div class="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+            <Link
+                href="/campanas/mis-campanas"
+                class="-my-3 inline-flex min-h-[44px] items-center gap-1 text-sm text-base-secondary hover:underline focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
+            >
+                <span aria-hidden="true">←</span>
+                {{ t('campaigns.roster.back') }}
+            </Link>
+            <h1 class="mt-3 break-words text-3xl font-bold tracking-tight text-base-primary">
+                {{ t('campaigns.roster.title', { title: campaign.title }) }}
+            </h1>
+            <p class="mt-2 text-base text-base-secondary">
+                {{ subtitle }}
+            </p>
+        </div>
+    </div>
+
+    <main class="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+        <!-- The server's answer to the last action -->
+        <div
+            v-if="flashSuccess"
+            role="status"
+            class="rounded-lg bg-success-light p-4 text-sm text-base-primary"
+        >
+            {{ flashSuccess }}
+        </div>
+        <div
+            v-if="flashError"
+            role="alert"
+            class="rounded-lg bg-error-light p-4 text-sm text-base-primary"
+        >
+            {{ flashError }}
         </div>
 
-        <main class="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
-            <!-- The server's answer to the last action -->
-            <div
-                v-if="flashSuccess"
-                role="status"
-                class="rounded-lg bg-success-light p-4 text-sm text-base-primary"
-            >
-                {{ flashSuccess }}
-            </div>
-            <div
-                v-if="flashError"
-                role="alert"
-                class="rounded-lg bg-error-light p-4 text-sm text-base-primary"
-            >
-                {{ flashError }}
-            </div>
+        <!-- Settings -->
+        <section :class="sectionClass" aria-labelledby="roster-settings-title">
+            <h2 id="roster-settings-title" class="text-lg font-semibold text-base-primary">
+                {{ t('campaigns.roster.settings.title') }}
+            </h2>
 
-            <!-- Settings -->
-            <section :class="sectionClass" aria-labelledby="roster-settings-title">
-                <h2 id="roster-settings-title" class="text-lg font-semibold text-base-primary">
-                    {{ t('campaigns.roster.settings.title') }}
-                </h2>
+            <p v-if="campaign.is_finished" class="mt-3 text-sm text-base-secondary">
+                {{ t('campaigns.roster.settings.finished') }}
+            </p>
 
-                <p v-if="campaign.is_finished" class="mt-3 text-sm text-base-secondary">
-                    {{ t('campaigns.roster.settings.finished') }}
-                </p>
+            <form v-else class="mt-4 space-y-4" @submit.prevent="saveSettings">
+                <div>
+                    <FormCheckbox
+                        v-model="settingsForm.accepts_new_players"
+                        :label="t('campaigns.roster.settings.acceptsNewPlayers')"
+                        name="accepts_new_players"
+                    />
+                    <p v-if="settingsForm.errors.accepts_new_players" class="mt-1 text-sm text-error">
+                        {{ settingsForm.errors.accepts_new_players }}
+                    </p>
+                </div>
 
-                <form v-else class="mt-4 space-y-4" @submit.prevent="saveSettings">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
-                        <FormCheckbox
-                            v-model="settingsForm.accepts_new_players"
-                            :label="t('campaigns.roster.settings.acceptsNewPlayers')"
-                            name="accepts_new_players"
-                        />
-                        <p v-if="settingsForm.errors.accepts_new_players" class="mt-1 text-sm text-error">
-                            {{ settingsForm.errors.accepts_new_players }}
+                        <label :for="settingsIds.access" class="block text-sm font-medium text-base-secondary">
+                            {{ t('campaigns.roster.settings.rosterAccess') }}
+                        </label>
+                        <select
+                            :id="settingsIds.access"
+                            v-model="settingsForm.roster_access"
+                            name="roster_access"
+                            :class="inputClass"
+                        >
+                            <option v-for="[value, label] in accessOptions" :key="value" :value="value">
+                                {{ label }}
+                            </option>
+                        </select>
+                        <p v-if="settingsForm.errors.roster_access" class="mt-1 text-sm text-error">
+                            {{ settingsForm.errors.roster_access }}
                         </p>
                     </div>
 
-                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <div>
-                            <label :for="settingsIds.access" class="block text-sm font-medium text-base-secondary">
-                                {{ t('campaigns.roster.settings.rosterAccess') }}
-                            </label>
-                            <select
-                                :id="settingsIds.access"
-                                v-model="settingsForm.roster_access"
-                                name="roster_access"
-                                :class="inputClass"
-                            >
-                                <option v-for="[value, label] in accessOptions" :key="value" :value="value">
-                                    {{ label }}
-                                </option>
-                            </select>
-                            <p v-if="settingsForm.errors.roster_access" class="mt-1 text-sm text-error">
-                                {{ settingsForm.errors.roster_access }}
-                            </p>
-                        </div>
-
-                        <div>
-                            <label :for="settingsIds.max" class="block text-sm font-medium text-base-secondary">
-                                {{ t('campaigns.roster.settings.maxPlayers') }}
-                            </label>
-                            <input
-                                :id="settingsIds.max"
-                                type="number"
-                                name="max_players"
-                                inputmode="numeric"
-                                :value="settingsForm.max_players ?? ''"
-                                :min="Math.max(1, campaign.roster_count)"
-                                :max="max_players_limit"
-                                step="1"
-                                :aria-invalid="!!settingsForm.errors.max_players"
-                                :aria-describedby="settingsForm.errors.max_players ? `${settingsIds.maxHelp} ${settingsIds.maxError}` : settingsIds.maxHelp"
-                                :class="inputClass"
-                                @input="onMaxPlayersInput"
-                            />
-                            <p :id="settingsIds.maxHelp" class="mt-1 text-sm text-base-muted">
-                                {{ t('campaigns.roster.settings.maxPlayersHelp', { count: campaign.roster_count }) }}
-                            </p>
-                            <p v-if="settingsForm.errors.max_players" :id="settingsIds.maxError" class="mt-1 text-sm text-error">
-                                {{ settingsForm.errors.max_players }}
-                            </p>
-                        </div>
-                    </div>
-
                     <div>
-                        <BaseButton type="submit" variant="primary" size="sm" :loading="settingsForm.processing">
-                            {{ t('campaigns.roster.settings.save') }}
+                        <label :for="settingsIds.max" class="block text-sm font-medium text-base-secondary">
+                            {{ t('campaigns.roster.settings.maxPlayers') }}
+                        </label>
+                        <input
+                            :id="settingsIds.max"
+                            type="number"
+                            name="max_players"
+                            inputmode="numeric"
+                            :value="settingsForm.max_players ?? ''"
+                            :min="Math.max(1, campaign.roster_count)"
+                            :max="max_players_limit"
+                            step="1"
+                            :aria-invalid="!!settingsForm.errors.max_players"
+                            :aria-describedby="settingsForm.errors.max_players ? `${settingsIds.maxHelp} ${settingsIds.maxError}` : settingsIds.maxHelp"
+                            :class="inputClass"
+                            @input="onMaxPlayersInput"
+                        />
+                        <p :id="settingsIds.maxHelp" class="mt-1 text-sm text-base-muted">
+                            {{ t('campaigns.roster.settings.maxPlayersHelp', { count: campaign.roster_count }) }}
+                        </p>
+                        <p v-if="settingsForm.errors.max_players" :id="settingsIds.maxError" class="mt-1 text-sm text-error">
+                            {{ settingsForm.errors.max_players }}
+                        </p>
+                    </div>
+                </div>
+
+                <div>
+                    <BaseButton type="submit" variant="primary" size="sm" :loading="settingsForm.processing">
+                        {{ t('campaigns.roster.settings.save') }}
+                    </BaseButton>
+                </div>
+            </form>
+        </section>
+
+        <!-- Pending requests -->
+        <section :class="sectionClass" aria-labelledby="roster-requests-title">
+            <h2 id="roster-requests-title" class="text-lg font-semibold text-base-primary">
+                {{ t('campaigns.roster.requests.title', { count: requests.length }) }}
+            </h2>
+
+            <p v-if="requests.length === 0" class="mt-3 text-sm text-base-secondary">
+                {{ t('campaigns.roster.requests.empty') }}
+            </p>
+
+            <ul v-else class="mt-4 divide-y divide-default" role="list">
+                <li
+                    v-for="request in requests"
+                    :key="request.id"
+                    class="flex flex-col gap-3 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-start sm:justify-between"
+                >
+                    <div class="min-w-0">
+                        <p class="text-sm text-base-primary">
+                            <span class="font-medium">{{ request.user_name }}</span>
+                            <template v-if="request.created_at">
+                                <span class="text-base-muted"> · {{ request.created_at }}</span>
+                            </template>
+                        </p>
+                        <p v-if="request.message" class="mt-1 whitespace-pre-line break-words text-sm text-base-secondary">
+                            «{{ request.message }}»
+                        </p>
+                        <p v-else class="mt-1 text-sm italic text-base-muted">
+                            {{ t('campaigns.roster.requests.noMessage') }}
+                        </p>
+                    </div>
+                    <!-- Below sm a full-width row of equal buttons -->
+                    <div class="grid flex-shrink-0 grid-cols-2 gap-2 sm:flex">
+                        <BaseButton
+                            variant="primary"
+                            size="sm"
+                            :aria-disabled="processing ? 'true' : undefined"
+                            class="w-full aria-disabled:cursor-not-allowed aria-disabled:opacity-50 sm:w-auto"
+                            @click="acceptRequest(request)"
+                        >
+                            {{ t('campaigns.roster.requests.accept') }}
+                        </BaseButton>
+                        <BaseButton
+                            variant="secondary"
+                            size="sm"
+                            :aria-disabled="processing ? 'true' : undefined"
+                            class="w-full aria-disabled:cursor-not-allowed aria-disabled:opacity-50 sm:w-auto"
+                            @click="openReject(request)"
+                        >
+                            {{ t('campaigns.roster.requests.reject') }}
                         </BaseButton>
                     </div>
-                </form>
-            </section>
+                </li>
+            </ul>
+        </section>
 
-            <!-- Pending requests -->
-            <section :class="sectionClass" aria-labelledby="roster-requests-title">
-                <h2 id="roster-requests-title" class="text-lg font-semibold text-base-primary">
-                    {{ t('campaigns.roster.requests.title', { count: requests.length }) }}
+        <!-- Invite a player -->
+        <section v-if="can_add" :class="sectionClass" aria-labelledby="roster-invite-title">
+            <h2 id="roster-invite-title" class="text-lg font-semibold text-base-primary">
+                {{ t('campaigns.roster.invite.title') }}
+            </h2>
+            <form class="mt-4 flex flex-col gap-3" @submit.prevent="invitePlayer">
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-start">
+                    <div class="min-w-0 flex-1">
+                        <label :for="inviteEmailId" class="sr-only">{{ t('campaigns.roster.invite.email') }}</label>
+                        <input
+                            :id="inviteEmailId"
+                            v-model="inviteForm.email"
+                            type="email"
+                            name="email"
+                            required
+                            maxlength="255"
+                            autocomplete="off"
+                            :placeholder="t('campaigns.roster.invite.email')"
+                            :aria-invalid="!!inviteForm.errors.email"
+                            :aria-describedby="inviteForm.errors.email ? inviteErrorId : undefined"
+                            :class="[inputClass, 'mt-0']"
+                        />
+                        <p v-if="inviteForm.errors.email" :id="inviteErrorId" class="mt-1 text-sm text-error">
+                            {{ inviteForm.errors.email }}
+                        </p>
+                    </div>
+                    <BaseButton type="submit" variant="primary" class="w-full sm:w-auto" :loading="inviteForm.processing">
+                        {{ t('campaigns.roster.invite.submit') }}
+                    </BaseButton>
+                </div>
+                <div>
+                    <FormCheckbox
+                        :id="inviteConsentId"
+                        v-model="inviteForm.consent"
+                        name="consent"
+                        :label="t('campaigns.roster.invite.consent')"
+                    />
+                    <p v-if="inviteForm.errors.consent" class="mt-1 text-sm text-error">
+                        {{ inviteForm.errors.consent }}
+                    </p>
+                </div>
+                <p class="text-sm text-base-secondary">{{ t('campaigns.roster.invite.note') }}</p>
+            </form>
+        </section>
+
+        <!-- Pending invitations: listed even when the roster is full or the campaign has finished -->
+        <section v-if="invitations.length > 0" :class="sectionClass" aria-labelledby="roster-invitations-title">
+            <div>
+                <h2 id="roster-invitations-title" class="text-lg font-semibold text-base-primary">
+                    {{ t('campaigns.roster.invitations.title', { count: invitations.length }) }}
                 </h2>
-
-                <p v-if="requests.length === 0" class="mt-3 text-sm text-base-secondary">
-                    {{ t('campaigns.roster.requests.empty') }}
+                <p v-if="more_invitations_than_seats" class="mt-2 text-sm text-warning" role="status">
+                    {{ t('campaigns.roster.invitations.tooManyPending') }}
                 </p>
-
-                <ul v-else class="mt-4 divide-y divide-default" role="list">
+                <ul class="mt-3 divide-y divide-default">
                     <li
-                        v-for="request in requests"
-                        :key="request.id"
-                        class="flex flex-col gap-3 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-start sm:justify-between"
+                        v-for="invitation in invitations"
+                        :key="invitation.id"
+                        class="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
                     >
                         <div class="min-w-0">
-                            <p class="text-sm text-base-primary">
-                                <span class="font-medium">{{ request.user_name }}</span>
-                                <template v-if="request.created_at">
-                                    <span class="text-base-muted"> · {{ request.created_at }}</span>
-                                </template>
-                            </p>
-                            <p v-if="request.message" class="mt-1 whitespace-pre-line break-words text-sm text-base-secondary">
-                                «{{ request.message }}»
-                            </p>
-                            <p v-else class="mt-1 text-sm italic text-base-muted">
-                                {{ t('campaigns.roster.requests.noMessage') }}
+                            <p class="break-all font-medium text-base-primary">{{ invitation.email }}</p>
+                            <p class="text-sm text-base-secondary">
+                                {{ t('campaigns.roster.invitations.invitedBy', { name: invitation.inviter_name }) }}
+                                ·
+                                {{ t('campaigns.roster.invitations.expires', { date: formatExpiry(invitation) }) }}
+                                ·
+                                {{ t('campaigns.roster.invitations.sends', { count: invitation.send_count }) }}
                             </p>
                         </div>
-                        <!-- Below sm a full-width row of equal buttons -->
-                        <div class="grid flex-shrink-0 grid-cols-2 gap-2 sm:flex">
+                        <div class="flex flex-col gap-2 sm:flex-row">
                             <BaseButton
-                                variant="primary"
+                                variant="secondary"
                                 size="sm"
+                                :disabled="!invitation.can_resend"
                                 :aria-disabled="processing ? 'true' : undefined"
                                 class="w-full aria-disabled:cursor-not-allowed aria-disabled:opacity-50 sm:w-auto"
-                                @click="acceptRequest(request)"
+                                @click="resendInvitation(invitation)"
                             >
-                                {{ t('campaigns.roster.requests.accept') }}
+                                {{ t('campaigns.roster.invitations.resend') }}
                             </BaseButton>
                             <BaseButton
                                 variant="secondary"
                                 size="sm"
                                 :aria-disabled="processing ? 'true' : undefined"
                                 class="w-full aria-disabled:cursor-not-allowed aria-disabled:opacity-50 sm:w-auto"
-                                @click="openReject(request)"
+                                @click="askCancel(invitation)"
                             >
-                                {{ t('campaigns.roster.requests.reject') }}
+                                {{ t('campaigns.roster.invitations.cancel') }}
                             </BaseButton>
                         </div>
                     </li>
                 </ul>
-            </section>
+            </div>
+        </section>
 
-            <!-- Invite a player -->
-            <section v-if="can_add" :class="sectionClass" aria-labelledby="roster-invite-title">
-                <h2 id="roster-invite-title" class="text-lg font-semibold text-base-primary">
-                    {{ t('campaigns.roster.invite.title') }}
-                </h2>
-                <form class="mt-4 flex flex-col gap-3" @submit.prevent="invitePlayer">
-                    <div class="flex flex-col gap-2 sm:flex-row sm:items-start">
-                        <div class="min-w-0 flex-1">
-                            <label :for="inviteEmailId" class="sr-only">{{ t('campaigns.roster.invite.email') }}</label>
-                            <input
-                                :id="inviteEmailId"
-                                v-model="inviteForm.email"
-                                type="email"
-                                name="email"
-                                required
-                                maxlength="255"
-                                autocomplete="off"
-                                :placeholder="t('campaigns.roster.invite.email')"
-                                :aria-invalid="!!inviteForm.errors.email"
-                                :aria-describedby="inviteForm.errors.email ? inviteErrorId : undefined"
-                                :class="[inputClass, 'mt-0']"
-                            />
-                            <p v-if="inviteForm.errors.email" :id="inviteErrorId" class="mt-1 text-sm text-error">
-                                {{ inviteForm.errors.email }}
-                            </p>
-                        </div>
-                        <BaseButton type="submit" variant="primary" class="w-full sm:w-auto" :loading="inviteForm.processing">
-                            {{ t('campaigns.roster.invite.submit') }}
-                        </BaseButton>
-                    </div>
-                    <div>
-                        <FormCheckbox
-                            :id="inviteConsentId"
-                            v-model="inviteForm.consent"
-                            name="consent"
-                            :label="t('campaigns.roster.invite.consent')"
-                        />
-                        <p v-if="inviteForm.errors.consent" class="mt-1 text-sm text-error">
-                            {{ inviteForm.errors.consent }}
-                        </p>
-                    </div>
-                    <p class="text-sm text-base-secondary">{{ t('campaigns.roster.invite.note') }}</p>
-                </form>
-            </section>
+        <!-- Players and their attendance to the upcoming sessions -->
+        <section :class="sectionClass" aria-labelledby="roster-players-title">
+            <h2 id="roster-players-title" class="text-lg font-semibold text-base-primary">
+                {{ t('campaigns.roster.players.title', { count: players.length }) }}
+            </h2>
+            <p v-if="players.length > 0 && sessions.length > 0" class="mt-1 text-sm text-base-secondary">
+                {{ t('campaigns.roster.footnote') }}
+            </p>
 
-            <!-- Pending invitations: listed even when the roster is full or the campaign has finished -->
-            <section v-if="invitations.length > 0" :class="sectionClass" aria-labelledby="roster-invitations-title">
-                <div>
-                    <h2 id="roster-invitations-title" class="text-lg font-semibold text-base-primary">
-                        {{ t('campaigns.roster.invitations.title', { count: invitations.length }) }}
-                    </h2>
-                    <p v-if="more_invitations_than_seats" class="mt-2 text-sm text-warning" role="status">
-                        {{ t('campaigns.roster.invitations.tooManyPending') }}
-                    </p>
-                    <ul class="mt-3 divide-y divide-default">
-                        <li
-                            v-for="invitation in invitations"
-                            :key="invitation.id"
-                            class="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
-                        >
-                            <div class="min-w-0">
-                                <p class="break-all font-medium text-base-primary">{{ invitation.email }}</p>
-                                <p class="text-sm text-base-secondary">
-                                    {{ t('campaigns.roster.invitations.invitedBy', { name: invitation.inviter_name }) }}
-                                    ·
-                                    {{ t('campaigns.roster.invitations.expires', { date: formatExpiry(invitation) }) }}
-                                    ·
-                                    {{ t('campaigns.roster.invitations.sends', { count: invitation.send_count }) }}
-                                </p>
-                            </div>
-                            <div class="flex flex-col gap-2 sm:flex-row">
-                                <BaseButton
-                                    variant="secondary"
-                                    size="sm"
-                                    :disabled="!invitation.can_resend"
-                                    :aria-disabled="processing ? 'true' : undefined"
-                                    class="w-full aria-disabled:cursor-not-allowed aria-disabled:opacity-50 sm:w-auto"
-                                    @click="resendInvitation(invitation)"
-                                >
-                                    {{ t('campaigns.roster.invitations.resend') }}
-                                </BaseButton>
-                                <BaseButton
-                                    variant="secondary"
-                                    size="sm"
-                                    :aria-disabled="processing ? 'true' : undefined"
-                                    class="w-full aria-disabled:cursor-not-allowed aria-disabled:opacity-50 sm:w-auto"
-                                    @click="askCancel(invitation)"
-                                >
-                                    {{ t('campaigns.roster.invitations.cancel') }}
-                                </BaseButton>
-                            </div>
-                        </li>
-                    </ul>
-                </div>
-            </section>
+            <p v-if="players.length === 0" class="mt-3 text-sm text-base-secondary">
+                {{ t('campaigns.roster.players.empty') }}
+            </p>
 
-            <!-- Players and their attendance to the upcoming sessions -->
-            <section :class="sectionClass" aria-labelledby="roster-players-title">
-                <h2 id="roster-players-title" class="text-lg font-semibold text-base-primary">
-                    {{ t('campaigns.roster.players.title', { count: players.length }) }}
-                </h2>
-                <p v-if="players.length > 0 && sessions.length > 0" class="mt-1 text-sm text-base-secondary">
-                    {{ t('campaigns.roster.footnote') }}
+            <template v-else>
+                <p v-if="sessions.length === 0" class="mt-3 text-sm text-base-secondary">
+                    {{ t('campaigns.roster.players.noSessions') }}
                 </p>
 
-                <p v-if="players.length === 0" class="mt-3 text-sm text-base-secondary">
-                    {{ t('campaigns.roster.players.empty') }}
-                </p>
-
-                <template v-else>
-                    <p v-if="sessions.length === 0" class="mt-3 text-sm text-base-secondary">
-                        {{ t('campaigns.roster.players.noSessions') }}
-                    </p>
-
-                    <!-- A window of sessions; the players and «Quitar» stay while paging -->
-                    <div
-                        v-if="sessions.length > pageSize"
-                        class="mt-4 flex items-center justify-between gap-2"
+                <!-- A window of sessions; the players and «Quitar» stay while paging -->
+                <div
+                    v-if="sessions.length > pageSize"
+                    class="mt-4 flex items-center justify-between gap-2"
+                >
+                    <BaseButton
+                        variant="secondary"
+                        size="sm"
+                        :disabled="!hasPrevious"
+                        :aria-label="hasPrevious ? previousLabel : undefined"
+                        @click="showPrevious"
                     >
-                        <BaseButton
-                            variant="secondary"
-                            size="sm"
-                            :disabled="!hasPrevious"
-                            :aria-label="hasPrevious ? previousLabel : undefined"
-                            @click="showPrevious"
-                        >
-                            <span aria-hidden="true">‹</span>
-                            {{ t('campaigns.roster.attendance.previous') }}
-                        </BaseButton>
-                        <p aria-live="polite" class="text-center text-sm text-base-secondary">
-                            {{ rangeLabel }}
-                        </p>
-                        <BaseButton
-                            variant="secondary"
-                            size="sm"
-                            :disabled="!hasNext"
-                            :aria-label="hasNext ? nextLabel : undefined"
-                            @click="showNext"
-                        >
-                            {{ t('campaigns.roster.attendance.next') }}
-                            <span aria-hidden="true">›</span>
-                        </BaseButton>
-                    </div>
+                        <span aria-hidden="true">‹</span>
+                        {{ t('campaigns.roster.attendance.previous') }}
+                    </BaseButton>
+                    <p aria-live="polite" class="text-center text-sm text-base-secondary">
+                        {{ rangeLabel }}
+                    </p>
+                    <BaseButton
+                        variant="secondary"
+                        size="sm"
+                        :disabled="!hasNext"
+                        :aria-label="hasNext ? nextLabel : undefined"
+                        @click="showNext"
+                    >
+                        {{ t('campaigns.roster.attendance.next') }}
+                        <span aria-hidden="true">›</span>
+                    </BaseButton>
+                </div>
 
-                    <!-- Scrolls inside the card on narrow screens; the player column stays -->
-                    <div class="-mx-4 mt-4 overflow-x-auto sm:mx-0">
-                        <table class="w-full border-separate border-spacing-0 text-left text-sm">
-                            <caption class="sr-only">{{ t('campaigns.roster.attendance.caption') }}</caption>
-                            <thead>
-                                <tr>
-                                    <th
-                                        scope="col"
-                                        class="sticky left-0 z-10 w-full border-b border-default bg-surface py-2 pl-4 pr-3 font-medium text-base-secondary sm:pl-0"
-                                    >
-                                        {{ t('campaigns.roster.players.name') }}
-                                    </th>
-                                    <th
-                                        v-for="session in visibleSessions"
-                                        :key="session.game_table_id"
-                                        scope="col"
-                                        class="border-b border-default px-1 py-2 text-center align-bottom font-medium text-base-primary sm:min-w-[8rem]"
-                                    >
-                                        <span class="block whitespace-nowrap">{{ sessionLabel(session) }}</span>
-                                        <span class="block whitespace-nowrap text-xs font-normal text-base-muted">
-                                            {{ t('campaigns.roster.attendance.seats', { taken: session.seats_taken, max: session.max_players }) }}
-                                        </span>
-                                    </th>
-                                    <th scope="col" class="border-b border-default py-2 pl-2 pr-4 max-sm:hidden sm:pr-0">
-                                        <span class="sr-only">{{ t('campaigns.roster.attendance.actionsColumn') }}</span>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="player in players" :key="player.user_id">
-                                    <th
-                                        scope="row"
-                                        class="sticky left-0 z-10 w-full border-b border-default bg-surface py-2 pl-4 pr-3 align-middle font-medium text-base-primary sm:pl-0"
-                                    >
-                                        <span class="block max-w-[10rem] break-words sm:max-w-none">{{ player.name }}</span>
-                                        <span v-if="player.joined_at" class="block text-xs font-normal text-base-muted">
-                                            {{ t('campaigns.roster.players.since', { date: player.joined_at }) }}
-                                        </span>
-                                        <!-- On phones «Quitar» sits under the name, so two sessions fit without scrolling.
-                                             The wrapper hides it: the core's display utilities outrank the module's variants -->
-                                        <div class="mt-2 sm:hidden">
-                                            <button
-                                                type="button"
-                                                :aria-disabled="processing ? 'true' : undefined"
-                                                :aria-label="t('campaigns.roster.players.removeNamed', { name: player.name })"
-                                                :class="dangerOutlineClass"
-                                                @click="askRemove(player)"
-                                            >
-                                                {{ t('campaigns.roster.players.remove') }}
-                                            </button>
-                                        </div>
-                                    </th>
-                                    <td
-                                        v-for="session in visibleSessions"
-                                        :key="session.game_table_id"
-                                        class="border-b border-default px-1 py-2 text-center align-middle"
-                                    >
-                                        <button
-                                            v-if="isActionable(cellOf(player, session), session)"
-                                            type="button"
-                                            aria-haspopup="dialog"
-                                            :aria-label="cellAccessibleName(player, session, cellOf(player, session))"
-                                            :aria-busy="busyCell === cellKey(player, session) ? 'true' : undefined"
-                                            :aria-disabled="processing ? 'true' : undefined"
-                                            :class="[
-                                                'inline-flex min-h-[44px] w-full min-w-[4.5rem] cursor-pointer items-center justify-center gap-1 rounded-md border px-2 py-1 text-xs font-medium transition-colors',
-                                                'hover:border-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-surface',
-                                                'aria-disabled:cursor-not-allowed aria-disabled:opacity-60',
-                                                cellTones[stateOf(player, session)],
-                                            ]"
-                                            @click="askChange(player, session)"
-                                        >
-                                            <LoadingSpinner v-if="busyCell === cellKey(player, session)" size="sm" />
-                                            <span v-else aria-hidden="true">{{ stateIcons[stateOf(player, session)] }}</span>
-                                            {{ stateLabel(stateOf(player, session)) }}
-                                        </button>
-                                        <span
-                                            v-else
-                                            :class="[
-                                                'inline-flex min-h-[44px] w-full min-w-[4.5rem] flex-col items-center justify-center rounded-md border border-dashed px-2 py-1 text-xs font-medium',
-                                                cellTones[stateOf(player, session)],
-                                            ]"
-                                        >
-                                            <span aria-hidden="true">
-                                                {{ stateIcons[stateOf(player, session)] }} {{ stateLabel(stateOf(player, session)) }}
-                                            </span>
-                                            <span
-                                                v-if="blockedShort(cellOf(player, session), session)"
-                                                aria-hidden="true"
-                                                class="text-[11px] font-normal text-base-secondary"
-                                            >
-                                                {{ blockedShort(cellOf(player, session), session) }}
-                                            </span>
-                                            <span class="sr-only">{{ cellAccessibleName(player, session, cellOf(player, session)) }}</span>
-                                        </span>
-                                    </td>
-                                    <td class="border-b border-default py-2 pl-2 pr-4 text-right align-middle max-sm:hidden sm:pr-0">
+                <!-- Scrolls inside the card on narrow screens; the player column stays -->
+                <div class="-mx-4 mt-4 overflow-x-auto sm:mx-0">
+                    <table class="w-full border-separate border-spacing-0 text-left text-sm">
+                        <caption class="sr-only">{{ t('campaigns.roster.attendance.caption') }}</caption>
+                        <thead>
+                            <tr>
+                                <th
+                                    scope="col"
+                                    class="sticky left-0 z-10 w-full border-b border-default bg-surface py-2 pl-4 pr-3 font-medium text-base-secondary sm:pl-0"
+                                >
+                                    {{ t('campaigns.roster.players.name') }}
+                                </th>
+                                <th
+                                    v-for="session in visibleSessions"
+                                    :key="session.game_table_id"
+                                    scope="col"
+                                    class="border-b border-default px-1 py-2 text-center align-bottom font-medium text-base-primary sm:min-w-[8rem]"
+                                >
+                                    <span class="block whitespace-nowrap">{{ sessionLabel(session) }}</span>
+                                    <span class="block whitespace-nowrap text-xs font-normal text-base-muted">
+                                        {{ t('campaigns.roster.attendance.seats', { taken: session.seats_taken, max: session.max_players }) }}
+                                    </span>
+                                </th>
+                                <th scope="col" class="border-b border-default py-2 pl-2 pr-4 max-sm:hidden sm:pr-0">
+                                    <span class="sr-only">{{ t('campaigns.roster.attendance.actionsColumn') }}</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="player in players" :key="player.user_id">
+                                <th
+                                    scope="row"
+                                    class="sticky left-0 z-10 w-full border-b border-default bg-surface py-2 pl-4 pr-3 align-middle font-medium text-base-primary sm:pl-0"
+                                >
+                                    <span class="block max-w-[10rem] break-words sm:max-w-none">{{ player.name }}</span>
+                                    <span v-if="player.joined_at" class="block text-xs font-normal text-base-muted">
+                                        {{ t('campaigns.roster.players.since', { date: player.joined_at }) }}
+                                    </span>
+                                    <!-- On phones «Quitar» sits under the name, so two sessions fit without scrolling.
+                                         The wrapper hides it: the core's display utilities outrank the module's variants -->
+                                    <div class="mt-2 sm:hidden">
                                         <button
                                             type="button"
                                             :aria-disabled="processing ? 'true' : undefined"
@@ -865,89 +807,144 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                                         >
                                             {{ t('campaigns.roster.players.remove') }}
                                         </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </template>
-            </section>
-        </main>
+                                    </div>
+                                </th>
+                                <td
+                                    v-for="session in visibleSessions"
+                                    :key="session.game_table_id"
+                                    class="border-b border-default px-1 py-2 text-center align-middle"
+                                >
+                                    <button
+                                        v-if="isActionable(cellOf(player, session), session)"
+                                        type="button"
+                                        aria-haspopup="dialog"
+                                        :aria-label="cellAccessibleName(player, session, cellOf(player, session))"
+                                        :aria-busy="busyCell === cellKey(player, session) ? 'true' : undefined"
+                                        :aria-disabled="processing ? 'true' : undefined"
+                                        :class="[
+                                            'inline-flex min-h-[44px] w-full min-w-[4.5rem] cursor-pointer items-center justify-center gap-1 rounded-md border px-2 py-1 text-xs font-medium transition-colors',
+                                            'hover:border-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-surface',
+                                            'aria-disabled:cursor-not-allowed aria-disabled:opacity-60',
+                                            cellTones[stateOf(player, session)],
+                                        ]"
+                                        @click="askChange(player, session)"
+                                    >
+                                        <LoadingSpinner v-if="busyCell === cellKey(player, session)" size="sm" />
+                                        <span v-else aria-hidden="true">{{ stateIcons[stateOf(player, session)] }}</span>
+                                        {{ stateLabel(stateOf(player, session)) }}
+                                    </button>
+                                    <span
+                                        v-else
+                                        :class="[
+                                            'inline-flex min-h-[44px] w-full min-w-[4.5rem] flex-col items-center justify-center rounded-md border border-dashed px-2 py-1 text-xs font-medium',
+                                            cellTones[stateOf(player, session)],
+                                        ]"
+                                    >
+                                        <span aria-hidden="true">
+                                            {{ stateIcons[stateOf(player, session)] }} {{ stateLabel(stateOf(player, session)) }}
+                                        </span>
+                                        <span
+                                            v-if="blockedShort(cellOf(player, session), session)"
+                                            aria-hidden="true"
+                                            class="text-[11px] font-normal text-base-secondary"
+                                        >
+                                            {{ blockedShort(cellOf(player, session), session) }}
+                                        </span>
+                                        <span class="sr-only">{{ cellAccessibleName(player, session, cellOf(player, session)) }}</span>
+                                    </span>
+                                </td>
+                                <td class="border-b border-default py-2 pl-2 pr-4 text-right align-middle max-sm:hidden sm:pr-0">
+                                    <button
+                                        type="button"
+                                        :aria-disabled="processing ? 'true' : undefined"
+                                        :aria-label="t('campaigns.roster.players.removeNamed', { name: player.name })"
+                                        :class="dangerOutlineClass"
+                                        @click="askRemove(player)"
+                                    >
+                                        {{ t('campaigns.roster.players.remove') }}
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </template>
+        </section>
+    </main>
 
-        <!-- Reject a request, with an optional reason -->
-        <Teleport to="body">
-            <dialog
-                ref="rejectDialog"
-                :aria-labelledby="rejectTitleId"
-                class="fixed inset-0 m-auto w-[calc(100%-2rem)] max-w-md rounded-lg border-0 bg-transparent p-0 backdrop:bg-black/60"
-                @click="onRejectBackdropClick"
-                @cancel.prevent="closeReject"
-                @close="closeReject"
+    <!-- Reject a request, with an optional reason -->
+    <Teleport to="body">
+        <dialog
+            ref="rejectDialog"
+            :aria-labelledby="rejectTitleId"
+            class="fixed inset-0 m-auto w-[calc(100%-2rem)] max-w-md rounded-lg border-0 bg-transparent p-0 backdrop:bg-black/60"
+            @click="onRejectBackdropClick"
+            @cancel.prevent="closeReject"
+            @close="closeReject"
+        >
+            <form
+                class="w-full rounded-lg bg-surface p-6 shadow-xl"
+                @submit.prevent="confirmReject"
             >
-                <form
-                    class="w-full rounded-lg bg-surface p-6 shadow-xl"
-                    @submit.prevent="confirmReject"
-                >
-                    <h3 :id="rejectTitleId" class="text-lg font-semibold text-base-primary">
-                        {{ t('campaigns.roster.requests.rejectTitle') }}
-                    </h3>
-                    <p v-if="rejecting" class="mt-2 text-base-secondary">
-                        {{ rejecting.user_name }}
-                    </p>
-                    <label :for="rejectReasonId" class="mt-4 block text-sm font-medium text-base-secondary">
-                        {{ t('campaigns.roster.requests.rejectReason') }}
-                    </label>
-                    <textarea
-                        :id="rejectReasonId"
-                        v-model="rejectReason"
-                        name="reason"
-                        rows="3"
-                        maxlength="500"
-                        :class="inputClass"
-                    />
-                    <div class="mt-6 flex justify-end gap-3">
-                        <BaseButton variant="secondary" size="sm" @click="closeReject">
-                            {{ t('common.cancel') }}
-                        </BaseButton>
-                        <BaseButton type="submit" variant="danger" size="sm">
-                            {{ t('campaigns.roster.requests.rejectConfirm') }}
-                        </BaseButton>
-                    </div>
-                </form>
-            </dialog>
-        </Teleport>
+                <h3 :id="rejectTitleId" class="text-lg font-semibold text-base-primary">
+                    {{ t('campaigns.roster.requests.rejectTitle') }}
+                </h3>
+                <p v-if="rejecting" class="mt-2 text-base-secondary">
+                    {{ rejecting.user_name }}
+                </p>
+                <label :for="rejectReasonId" class="mt-4 block text-sm font-medium text-base-secondary">
+                    {{ t('campaigns.roster.requests.rejectReason') }}
+                </label>
+                <textarea
+                    :id="rejectReasonId"
+                    v-model="rejectReason"
+                    name="reason"
+                    rows="3"
+                    maxlength="500"
+                    :class="inputClass"
+                />
+                <div class="mt-6 flex justify-end gap-3">
+                    <BaseButton variant="secondary" size="sm" @click="closeReject">
+                        {{ t('common.cancel') }}
+                    </BaseButton>
+                    <BaseButton type="submit" variant="danger" size="sm">
+                        {{ t('campaigns.roster.requests.rejectConfirm') }}
+                    </BaseButton>
+                </div>
+            </form>
+        </dialog>
+    </Teleport>
 
-        <!-- Mark an absence or enrol again: the player gets an email -->
-        <ConfirmDialog
-            v-model="showChangeDialog"
-            :title="changeTitle"
-            :message="changeMessage"
-            :confirm-label="changeTitle"
-            :cancel-label="t('common.cancel')"
-            :confirm-variant="pendingChange?.kind === 'markAbsence' ? 'danger' : 'primary'"
-            @confirm="confirmChange"
-        />
+    <!-- Mark an absence or enrol again: the player gets an email -->
+    <ConfirmDialog
+        v-model="showChangeDialog"
+        :title="changeTitle"
+        :message="changeMessage"
+        :confirm-label="changeTitle"
+        :cancel-label="t('common.cancel')"
+        :confirm-variant="pendingChange?.kind === 'markAbsence' ? 'danger' : 'primary'"
+        @confirm="confirmChange"
+    />
 
-        <!-- Cancel an invitation -->
-        <ConfirmDialog
-            v-model="showCancelDialog"
-            :title="t('campaigns.roster.invitations.cancelTitle')"
-            :message="t('campaigns.roster.invitations.cancelMessage', { email: cancelling?.email ?? '' })"
-            :confirm-label="t('campaigns.roster.invitations.cancel')"
-            :cancel-label="t('common.cancel')"
-            confirm-variant="danger"
-            @confirm="confirmCancel"
-        />
+    <!-- Cancel an invitation -->
+    <ConfirmDialog
+        v-model="showCancelDialog"
+        :title="t('campaigns.roster.invitations.cancelTitle')"
+        :message="t('campaigns.roster.invitations.cancelMessage', { email: cancelling?.email ?? '' })"
+        :confirm-label="t('campaigns.roster.invitations.cancel')"
+        :cancel-label="t('common.cancel')"
+        confirm-variant="danger"
+        @confirm="confirmCancel"
+    />
 
-        <!-- Remove a player -->
-        <ConfirmDialog
-            v-model="showRemoveDialog"
-            :title="t('campaigns.roster.players.removeTitle')"
-            :message="removeMessage"
-            :confirm-label="t('campaigns.roster.players.remove')"
-            :cancel-label="t('common.cancel')"
-            confirm-variant="danger"
-            @confirm="confirmRemove"
-        />
-    </DefaultLayout>
+    <!-- Remove a player -->
+    <ConfirmDialog
+        v-model="showRemoveDialog"
+        :title="t('campaigns.roster.players.removeTitle')"
+        :message="removeMessage"
+        :confirm-label="t('campaigns.roster.players.remove')"
+        :cancel-label="t('common.cancel')"
+        confirm-variant="danger"
+        @confirm="confirmRemove"
+    />
 </template>
