@@ -255,6 +255,34 @@ final class GameTable
     }
 
     /**
+     * Why the roster cannot take a seat now (null when it can), as the table page would say it: a
+     * table that has started or ended says so, anything else is just closed.
+     */
+    public function rosterEnrollmentRefusal(DateTimeImmutable $now): ?string
+    {
+        return match (true) {
+            ! $this->canRegister() => $this->closedStatusReason(),
+            $this->isPastRegistrationDeadline($now) => $this->acceptsRegistrationsInProgress ? 'table_ended' : 'table_started',
+            $now >= $this->effectiveRegistrationClosesAt() => 'registration_closed',
+            default => null,
+        };
+    }
+
+    /**
+     * Why a table whose status admits no registrations is closed: a published table in play or
+     * finished has started or ended; any other is just closed.
+     */
+    public function closedStatusReason(): string
+    {
+        return match (true) {
+            ! $this->isPublished => 'registration_closed',
+            $this->status === TableStatus::InProgress => 'table_started',
+            $this->status === TableStatus::Completed => 'table_ended',
+            default => 'registration_closed',
+        };
+    }
+
+    /**
      * The moment registrations really close: the configured closing date or the limit of the
      * table (its start, or its end when it admits registrations in play), whichever comes first.
      */

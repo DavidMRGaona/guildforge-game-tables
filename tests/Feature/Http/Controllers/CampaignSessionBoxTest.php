@@ -161,6 +161,18 @@ final class CampaignSessionBoxTest extends ModuleTestCase
                 ->where('campaignSession.rejoin_refusal', 'Las inscripciones están cerradas'));
     }
 
+    // A session under way says so, as the table page does, instead of a bare «closed»
+    public function test_an_absent_member_finds_the_session_started(): void
+    {
+        $this->session->forceFill(['starts_at' => CarbonImmutable::now()->subMinutes(30)])->save();
+
+        $this->actingAs($this->jane)
+            ->get('/mesas/'.$this->session->slug)
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('campaignSession.can_rejoin', false)
+                ->where('campaignSession.rejoin_refusal', 'La partida ya ha comenzado'));
+    }
+
     /**
      * The organisation's decision stands: no seat to take back and no reason to show, so the box
      * offers neither the button nor the «vuelve a apuntarte» hint.

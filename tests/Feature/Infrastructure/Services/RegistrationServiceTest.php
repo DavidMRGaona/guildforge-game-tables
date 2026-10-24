@@ -1045,6 +1045,8 @@ final class RegistrationServiceTest extends TestCase
     {
         $id = GameTableId::generate()->value;
         $table = $this->createGameTable($id, startsAt: new DateTimeImmutable($startsAt), registrationType: $type);
+        // Published, so the refusal comes from the case under test and not from the visibility
+        $table->isPublished = true;
         $this->gameTableRepository->method('find')->willReturn($table);
         $this->gameTableRepository->expects($this->never())->method('findOrFail');
         $this->participantRepository->expects($this->never())->method('save');
@@ -1097,7 +1099,7 @@ final class RegistrationServiceTest extends TestCase
     public static function tablesRefusingGuests(): array
     {
         return [
-            'started table' => ['-1 hour', RegistrationType::Everyone, 'registration_closed'],
+            'started table' => ['-1 hour', RegistrationType::Everyone, 'table_started'],
             'invite only table' => ['+1 week', RegistrationType::Invite, 'invitation_only'],
         ];
     }

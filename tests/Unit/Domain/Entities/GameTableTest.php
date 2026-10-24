@@ -510,6 +510,32 @@ final class GameTableTest extends TestCase
         $this->assertFalse($cancelled->admitsRosterEnrollment($now));
     }
 
+    // The roster says why a session takes no one, as the table page does
+    public function test_the_roster_refusal_says_whether_the_table_started_ended_or_is_closed(): void
+    {
+        $beforeStart = new DateTimeImmutable('2026-02-01 17:00:00');
+        $afterStart = new DateTimeImmutable('2026-02-01 18:30:00');
+        $afterEnd = new DateTimeImmutable('2026-02-01 22:30:00');
+
+        $this->assertNull($this->publishedTable()->rosterEnrollmentRefusal($beforeStart));
+        $this->assertSame('table_started', $this->publishedTable()->rosterEnrollmentRefusal($afterStart));
+        $this->assertSame('table_started', $this->publishedTable(status: TableStatus::InProgress)->rosterEnrollmentRefusal($beforeStart));
+        $this->assertSame('table_ended', $this->publishedTable(status: TableStatus::Completed)->rosterEnrollmentRefusal($beforeStart));
+
+        // Admitting registrations in play: open until the end
+        $this->assertNull($this->publishedTable(inPlay: true)->rosterEnrollmentRefusal($afterStart));
+        $this->assertSame('table_ended', $this->publishedTable(inPlay: true)->rosterEnrollmentRefusal($afterEnd));
+
+        // A closing date before the start, a cancelled or an unpublished table: just closed
+        $closedEarly = $this->publishedTable();
+        $closedEarly->registrationClosesAt = new DateTimeImmutable('2026-02-01 12:00:00');
+        $this->assertSame('registration_closed', $closedEarly->rosterEnrollmentRefusal($beforeStart));
+        $this->assertSame('registration_closed', $this->publishedTable(status: TableStatus::Cancelled)->rosterEnrollmentRefusal($afterStart));
+        $unpublished = $this->createGameTable(TableStatus::Scheduled);
+        $unpublished->isPublished = false;
+        $this->assertSame('registration_closed', $unpublished->rosterEnrollmentRefusal($afterStart));
+    }
+
     private function publishedTable(bool $inPlay = false, TableStatus $status = TableStatus::Scheduled): GameTable
     {
         $table = $this->createGameTable($status);

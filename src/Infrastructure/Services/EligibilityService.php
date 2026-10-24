@@ -11,7 +11,6 @@ use Modules\GameTables\Application\Services\EligibilityServiceInterface;
 use Modules\GameTables\Application\Services\MembershipCheckerInterface;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
-use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Exceptions\AlreadyRegisteredException;
 use Modules\GameTables\Domain\Exceptions\MembersOnlyException;
 use Modules\GameTables\Domain\Exceptions\RegistrationClosedException;
@@ -159,17 +158,17 @@ final readonly class EligibilityService implements EligibilityServiceInterface
     }
 
     /**
-     * Why a table whose status admits no registrations is closed: a published table in play or
-     * finished says it has started or ended, as the time says once the start has passed.
+     * Why a table whose status admits no registrations is closed (GameTable::closedStatusReason()):
+     * a published table in play or finished says it has started or ended, as the time says once
+     * the start has passed.
      */
     private function closedByStatus(GameTable $gameTable): RegistrationClosedException
     {
         $id = $gameTable->id->value;
 
-        return match (true) {
-            ! $gameTable->isPublished => RegistrationClosedException::forTable($id),
-            $gameTable->status === TableStatus::InProgress => RegistrationClosedException::tableStarted($id),
-            $gameTable->status === TableStatus::Completed => RegistrationClosedException::tableEnded($id),
+        return match ($gameTable->closedStatusReason()) {
+            'table_started' => RegistrationClosedException::tableStarted($id),
+            'table_ended' => RegistrationClosedException::tableEnded($id),
             default => RegistrationClosedException::forTable($id),
         };
     }
