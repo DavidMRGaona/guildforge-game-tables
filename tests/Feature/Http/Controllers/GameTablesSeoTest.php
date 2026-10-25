@@ -30,7 +30,7 @@ final class GameTablesSeoTest extends ModuleTestCase
     {
         parent::setUp();
         app()->setLocale('es');
-        config(['app.name' => 'Tolerol', 'cloudinary.cloud_name' => 'demo', 'cloudinary.prefix' => 'guildforge']);
+        config(['app.name' => 'Example guild', 'cloudinary.cloud_name' => 'demo', 'cloudinary.prefix' => 'guildforge']);
         Storage::fake('images');
 
         $this->creator = UserModel::create([
@@ -76,7 +76,7 @@ final class GameTablesSeoTest extends ModuleTestCase
         $response = $this->get('/mesas/la-cripta-olvidada');
 
         $response->assertOk();
-        $response->assertSee('<title>La cripta olvidada - Tolerol</title>', false);
+        $response->assertSee('<title>La cripta olvidada - Example guild</title>', false);
         $response->assertSee('content="9 de mayo de 2026, 17:00 · Local de la asociación · Una aventura corta"', false);
         $response->assertSee('/guildforge/gametables/cripta" data-seo-server>', false);
         $response->assertSee('"endDate":"2026-05-09T21:00:00+02:00"', false);
@@ -100,16 +100,16 @@ final class GameTablesSeoTest extends ModuleTestCase
 
         $response = $this->get('/campanas/la-marca-del-este');
 
-        $response->assertSee('<title>La marca del este - Tolerol</title>', false);
+        $response->assertSee('<title>La marca del este - Example guild</title>', false);
         $response->assertSee('<meta name="description" content="Campaña de exploración" data-seo-server>', false);
         $response->assertDontSee('application/ld+json', false);
     }
 
     public function test_section_pages_have_their_titles(): void
     {
-        $this->get('/mesas')->assertSee('<title>Mesas de rol - Tolerol</title>', false);
-        $this->get('/mesas/calendario')->assertSee('<title>Calendario de mesas - Tolerol</title>', false);
-        $this->get('/campanas')->assertSee('<title>Campañas - Tolerol</title>', false);
+        $this->get('/mesas')->assertSee('<title>Mesas de rol - Example guild</title>', false);
+        $this->get('/mesas/calendario')->assertSee('<title>Calendario de mesas - Example guild</title>', false);
+        $this->get('/campanas')->assertSee('<title>Campañas - Example guild</title>', false);
     }
 
     public function test_my_tables_is_noindex(): void

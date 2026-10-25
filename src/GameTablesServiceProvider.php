@@ -35,6 +35,7 @@ use App\Application\Modules\DTOs\PagePrefixDTO;
 use App\Application\Modules\DTOs\PermissionDTO;
 use App\Application\Modules\DTOs\SlotRegistrationDTO;
 use App\Application\Services\EventQueryServiceInterface;
+use App\Application\Services\SiteBrandingServiceInterface;
 use App\Filament\Resources\EventResource;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
@@ -520,7 +521,8 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
             $registry->declare(new DeclaredCookieDTO(
                 name: 'gt_guest_registrations',
                 categorySlug: 'preferences',
-                provider: (string) config('app.name'),
+                // The association's name from the site settings, APP_NAME when it is blank
+                provider: $this->app->make(SiteBrandingServiceInterface::class)->siteName(),
                 purpose: (string) __('game-tables::messages.cookies.guest_registrations.purpose'),
                 duration: (string) __('game-tables::messages.cookies.guest_registrations.duration'),
             ));
