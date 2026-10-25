@@ -866,7 +866,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             return;
         }
 
-        if (! $this->tableAdmitsWithdrawal($participant->gameTableId, new DateTimeImmutable())) {
+        if (! $this->tableAdmitsWithdrawal($participant->gameTableId, CarbonImmutable::now()->toDateTimeImmutable())) {
             throw CannotCancelException::tableStarted($participant->id->value);
         }
     }
@@ -890,7 +890,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             return 'not_allowed';
         }
 
-        return $this->tableAdmitsWithdrawal($participant->gameTableId, $now ?? new DateTimeImmutable())
+        return $this->tableAdmitsWithdrawal($participant->gameTableId, $now ?? CarbonImmutable::now()->toDateTimeImmutable())
             ? null
             : 'table_started';
     }

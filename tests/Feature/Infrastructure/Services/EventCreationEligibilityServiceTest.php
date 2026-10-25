@@ -6,6 +6,7 @@ namespace Modules\GameTables\Tests\Feature\Infrastructure\Services;
 
 use App\Application\Authorization\Services\AuthorizationServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Carbon\CarbonImmutable;
 use DateTimeImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
@@ -35,6 +36,10 @@ final class EventCreationEligibilityServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Far from a clock change: the early access tests open the creation exactly now, and days
+        // counted on the wall clock move that instant in the hour repeated in October
+        $this->travelTo(CarbonImmutable::parse('2026-11-04 18:00:00'));
 
         $this->configRepository = Mockery::mock(EventGameTableConfigRepositoryInterface::class);
         $this->globalEligibilityService = Mockery::mock(CreationEligibilityServiceInterface::class);
@@ -67,7 +72,7 @@ final class EventCreationEligibilityServiceTest extends TestCase
     public function test_returns_eligible_at_for_guest_when_creation_not_yet_open(): void
     {
         $eventId = 'event-123';
-        $openDate = (new DateTimeImmutable())->modify('+7 days');
+        $openDate = CarbonImmutable::now()->toDateTimeImmutable()->modify('+7 days');
         $config = $this->createConfig(
             tablesEnabled: true,
             earlyAccessEnabled: true,
@@ -92,7 +97,7 @@ final class EventCreationEligibilityServiceTest extends TestCase
     {
         $eventId = 'event-123';
         $user = UserModel::factory()->create();
-        $generalOpenDate = (new DateTimeImmutable())->modify('+7 days');
+        $generalOpenDate = CarbonImmutable::now()->toDateTimeImmutable()->modify('+7 days');
         $earlyAccessTier = EarlyAccessTier::create(
             accessType: CreationAccessLevel::Role,
             allowedRoles: ['vip', 'premium'],
@@ -132,7 +137,7 @@ final class EventCreationEligibilityServiceTest extends TestCase
         $eventId = 'event-123';
         $user = UserModel::factory()->create();
         // General open date is 3 days from now, early access (+3-3=now) is open for VIP users
-        $generalOpenDate = (new DateTimeImmutable())->modify('+3 days');
+        $generalOpenDate = CarbonImmutable::now()->toDateTimeImmutable()->modify('+3 days');
         $earlyAccessTier = EarlyAccessTier::create(
             accessType: CreationAccessLevel::Role,
             allowedRoles: ['vip'],
@@ -176,7 +181,7 @@ final class EventCreationEligibilityServiceTest extends TestCase
         $eventId = 'event-123';
         $user = UserModel::factory()->create();
         // General open date is 5 days from now, early access (5-5=now) is open
-        $generalOpenDate = (new DateTimeImmutable())->modify('+5 days');
+        $generalOpenDate = CarbonImmutable::now()->toDateTimeImmutable()->modify('+5 days');
         $earlyAccessTier = EarlyAccessTier::create(
             accessType: CreationAccessLevel::Permission,
             requiredPermission: 'gametables:early_create',
@@ -220,7 +225,7 @@ final class EventCreationEligibilityServiceTest extends TestCase
         $eventId = 'event-123';
         $user = UserModel::factory()->create();
         // General open date is in the past (creation is open)
-        $generalOpenDate = (new DateTimeImmutable())->modify('-1 day');
+        $generalOpenDate = CarbonImmutable::now()->toDateTimeImmutable()->modify('-1 day');
 
         $config = $this->createConfig(
             tablesEnabled: true,

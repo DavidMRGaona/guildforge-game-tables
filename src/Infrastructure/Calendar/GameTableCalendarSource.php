@@ -7,6 +7,7 @@ namespace Modules\GameTables\Infrastructure\Calendar;
 use App\Application\Calendar\Contracts\CalendarEntrySourceInterface;
 use App\Application\Calendar\DTOs\CalendarEntryDTO;
 use App\Domain\Calendar\Enums\CalendarSourceColor;
+use DateInterval;
 use DateTimeImmutable;
 use Modules\GameTables\Application\DTOs\GameTableListDTO;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
@@ -59,7 +60,7 @@ final readonly class GameTableCalendarSource implements CalendarEntrySourceInter
         }
 
         $start = DateTimeImmutable::createFromInterface($table->startsAt);
-        $end = $start->modify("+{$table->durationMinutes} minutes");
+        $end = $start->add(new DateInterval("PT{$table->durationMinutes}M"));
 
         return new CalendarEntryDTO(
             id: $table->id,

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Domain\ValueObjects;
 
+use DateInterval;
 use DateTimeImmutable;
 use InvalidArgumentException;
 
@@ -25,7 +26,7 @@ final readonly class TimeSlot
 
     public function endsAt(): DateTimeImmutable
     {
-        return $this->startsAt->modify("+{$this->durationMinutes} minutes");
+        return $this->startsAt->add(new DateInterval("PT{$this->durationMinutes}M"));
     }
 
     public function durationHours(): float

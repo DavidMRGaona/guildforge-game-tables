@@ -32,6 +32,10 @@ final class RegistrationSlotPropsTest extends ModuleTestCase
     {
         parent::setUp();
 
+        // Far from a clock change: start times are stored as wall-clock times, ambiguous in the hour
+        // repeated in October (GuildForge#107), and these tests store times minutes or hours from now
+        $this->travelTo(CarbonImmutable::parse('2026-11-04 18:00:00'));
+
         app('router')->getRoutes()->refreshNameLookups();
         config()->set('modules.settings.game-tables', []);
 
@@ -76,7 +80,6 @@ final class RegistrationSlotPropsTest extends ModuleTestCase
     public function test_a_visitor_is_told_the_confirmation_deadline_of_a_held_place(): void
     {
         $now = CarbonImmutable::now();
-        $this->travelTo($now);
 
         $this->get(route('gametables.show', $this->table->slug))
             ->assertOk()

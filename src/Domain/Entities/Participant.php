@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Domain\Entities;
 
 use Carbon\CarbonImmutable;
+use DateInterval;
 use DateTimeImmutable;
 use Modules\GameTables\Domain\Enums\GuestConfirmationMode;
 use Modules\GameTables\Domain\Enums\ParticipantCancellationReason;
@@ -280,7 +281,7 @@ final class Participant
     public function canResendConfirmation(DateTimeImmutable $now): bool
     {
         return $this->confirmationSentAt === null
-            || $this->confirmationSentAt <= $now->modify('-'.self::RESEND_MARGIN_MINUTES.' minutes');
+            || $this->confirmationSentAt <= $now->sub(new DateInterval('PT'.self::RESEND_MARGIN_MINUTES.'M'));
     }
 
     public function markConfirmationSent(DateTimeImmutable $now): void

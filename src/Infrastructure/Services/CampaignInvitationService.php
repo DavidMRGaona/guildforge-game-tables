@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Infrastructure\Services;
 
 use Carbon\CarbonImmutable;
+use DateInterval;
 use DateTimeImmutable;
 use Illuminate\Support\Str;
 use Modules\GameTables\Application\DTOs\CampaignInvitationViewDTO;
@@ -342,7 +343,7 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
     {
         $last = $this->sendLog->lastSendAt($campaignId, $email);
 
-        return $last === null || $last <= $now->modify('-'.self::MIN_HOURS_BETWEEN_SENDS.' hours');
+        return $last === null || $last <= $now->sub(new DateInterval('PT'.self::MIN_HOURS_BETWEEN_SENDS.'H'));
     }
 
     /**

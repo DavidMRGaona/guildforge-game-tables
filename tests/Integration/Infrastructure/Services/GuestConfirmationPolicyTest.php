@@ -16,6 +16,7 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemMode
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Modules\GameTables\Infrastructure\Services\GuestConfirmationPolicy;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\Modules\ModuleTestCase;
 
 final class GuestConfirmationPolicyTest extends ModuleTestCase
@@ -42,6 +43,31 @@ final class GuestConfirmationPolicyTest extends ModuleTestCase
         $deadline = $this->policy()->deadlineFor($this->table($this->model), $now);
 
         $this->assertSame('2026-11-01 12:00:00', $deadline->format('Y-m-d H:i:s'));
+    }
+
+    /**
+     * @return array<string, array{string, string}>
+     */
+    public static function clockChangeNights(): array
+    {
+        return [
+            // 01:00 summer time; the clocks go back at 03:00, so two hours later is 02:00 winter time
+            'october' => ['2026-10-24 23:00:00', '2026-10-25T02:00:00+01:00'],
+            // 01:30 winter time; the clocks go forward at 02:00, so two hours later is 04:30 summer time
+            'march' => ['2026-03-29 00:30:00', '2026-03-29T04:30:00+02:00'],
+        ];
+    }
+
+    // The seat is held for the configured hours of real time, whatever the clocks do that night
+    #[DataProvider('clockChangeNights')]
+    public function test_the_deadline_lasts_the_hold_hours_across_a_clock_change(string $utcNow, string $expected): void
+    {
+        $now = CarbonImmutable::parse($utcNow, 'UTC')->setTimezone('Europe/Madrid');
+
+        $deadline = $this->policy()->deadlineFor($this->table($this->model), $now);
+
+        $this->assertSame($expected, $deadline->format('c'));
+        $this->assertSame(2 * 3600, $deadline->getTimestamp() - $now->getTimestamp());
     }
 
     public function test_the_deadline_never_passes_the_closing(): void

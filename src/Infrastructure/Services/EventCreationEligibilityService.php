@@ -6,6 +6,7 @@ namespace Modules\GameTables\Infrastructure\Services;
 
 use App\Application\Authorization\Services\AuthorizationServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Carbon\CarbonImmutable;
 use DateTimeImmutable;
 use Modules\GameTables\Application\DTOs\CreationEligibilityDTO;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
@@ -68,7 +69,7 @@ final readonly class EventCreationEligibilityService implements EventCreationEli
             return null;
         }
 
-        $now = new DateTimeImmutable();
+        $now = CarbonImmutable::now()->toDateTimeImmutable();
 
         // Check if early access is enabled and configured
         $earlyAccessTier = $config->isEarlyAccessEnabled() ? $config->earlyAccessTier() : null;

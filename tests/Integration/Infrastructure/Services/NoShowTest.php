@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Tests\Integration\Infrastructure\Services;
 
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
@@ -21,6 +22,15 @@ final class NoShowTest extends ModuleTestCase
     protected ?string $moduleName = 'game-tables';
 
     protected bool $autoEnableModule = true;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Far from a clock change: start times are stored as wall-clock times, ambiguous in the hour
+        // repeated in October (GuildForge#107), and these tests store times minutes or hours from now
+        $this->travelTo(CarbonImmutable::parse('2026-11-04 18:00:00'));
+    }
 
     public function test_a_confirmed_participant_is_marked_once_the_table_has_started(): void
     {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories;
 
+use Carbon\CarbonImmutable;
 use DateTimeImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -587,7 +588,7 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
             ->get();
 
         // Sort in PHP to be database-agnostic (works with both PostgreSQL and SQLite)
-        $now = new DateTimeImmutable();
+        $now = CarbonImmutable::now()->toDateTimeImmutable();
         $sorted = $models->sortBy(function (ParticipantModel $model) use ($now): array {
             $startsAt = $model->gameTable?->starts_at;
             if ($startsAt === null) {
