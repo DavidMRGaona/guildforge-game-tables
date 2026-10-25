@@ -121,8 +121,7 @@ final class OrganisationConfirmsGuestTest extends ModuleTestCase
     {
         $this->table->update(['auto_confirm' => false]);
         $guest = $this->registerGuestByAdmin('invitada@example.test');
-        $this->guestRegistered = [];
-        $this->participantConfirmed = [];
+        $this->forgetRecordedEvents();
 
         $this->service()->confirm($guest->id);
 
@@ -184,8 +183,7 @@ final class OrganisationConfirmsGuestTest extends ModuleTestCase
         $guest = $this->submit('invitada@example.test');
         $seated = $this->registerUser();
         $this->service()->confirm($seated->id);
-        $this->guestRegistered = [];
-        $this->participantConfirmed = [];
+        $this->forgetRecordedEvents();
 
         try {
             $this->service()->confirm($guest->id);
@@ -359,8 +357,7 @@ final class OrganisationConfirmsGuestTest extends ModuleTestCase
     {
         $guest = $this->registerGuestByAdmin('invitada@example.test');
         $before = $this->row($guest)->email_confirmed_at;
-        $this->guestRegistered = [];
-        $this->participantConfirmed = [];
+        $this->forgetRecordedEvents();
 
         $this->travelTo(CarbonImmutable::parse('2026-11-02 11:00:00'));
         $result = $this->service()->confirmGuestEmailByAdmin($guest->id);
@@ -369,6 +366,12 @@ final class OrganisationConfirmsGuestTest extends ModuleTestCase
         $this->assertEquals($before, $this->row($guest)->email_confirmed_at);
         $this->assertSame([], $this->guestRegistered);
         $this->assertSame([], $this->participantConfirmed);
+    }
+
+    private function forgetRecordedEvents(): void
+    {
+        $this->guestRegistered = [];
+        $this->participantConfirmed = [];
     }
 
     /**

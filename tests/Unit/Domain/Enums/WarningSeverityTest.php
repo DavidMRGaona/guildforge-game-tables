@@ -28,23 +28,22 @@ final class WarningSeverityTest extends TestCase
 
     public function test_it_returns_label(): void
     {
-        $this->assertIsString(WarningSeverity::Mild->label());
-        $this->assertIsString(WarningSeverity::Moderate->label());
-        $this->assertIsString(WarningSeverity::Severe->label());
+        foreach (WarningSeverity::cases() as $severity) {
+            $this->assertSame(__('game-tables::messages.enums.warning_severity.'.$severity->value), $severity->label());
+        }
     }
 
     public function test_it_returns_color(): void
     {
-        $this->assertIsString(WarningSeverity::Mild->color());
-        $this->assertIsString(WarningSeverity::Moderate->color());
-        $this->assertIsString(WarningSeverity::Severe->color());
+        $this->assertSame('info', WarningSeverity::Mild->color());
+        $this->assertSame('warning', WarningSeverity::Moderate->color());
+        $this->assertSame('danger', WarningSeverity::Severe->color());
     }
 
     public function test_it_returns_options(): void
     {
         $options = WarningSeverity::options();
 
-        $this->assertIsArray($options);
         $this->assertCount(3, $options);
         $this->assertArrayHasKey('mild', $options);
         $this->assertArrayHasKey('moderate', $options);

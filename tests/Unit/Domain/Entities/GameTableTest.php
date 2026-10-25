@@ -718,12 +718,11 @@ final class GameTableTest extends TestCase
         $table = $this->createGameTable();
         $table->moderationNotes = 'Falta la sinopsis';
 
-        $table->frontendCreationStatus = FrontendCreationStatus::Draft;
-        $this->assertSame('Falta la sinopsis', $table->rejectionReason());
-
-        // Rows rejected before 2.10.0, until the deploy converts them
-        $table->frontendCreationStatus = FrontendCreationStatus::Rejected;
-        $this->assertSame('Falta la sinopsis', $table->rejectionReason());
+        // Rejected: rows rejected before 2.10.0, until the deploy converts them
+        foreach ([FrontendCreationStatus::Draft, FrontendCreationStatus::Rejected] as $status) {
+            $table->frontendCreationStatus = $status;
+            $this->assertSame('Falta la sinopsis', $table->rejectionReason(), $status->value);
+        }
 
         // Approval notes are not a rejection
         $table->frontendCreationStatus = FrontendCreationStatus::Approved;

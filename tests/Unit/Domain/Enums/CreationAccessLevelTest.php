@@ -30,17 +30,15 @@ final class CreationAccessLevelTest extends TestCase
 
     public function test_it_returns_label(): void
     {
-        $this->assertIsString(CreationAccessLevel::Everyone->label());
-        $this->assertIsString(CreationAccessLevel::Registered->label());
-        $this->assertIsString(CreationAccessLevel::Role->label());
-        $this->assertIsString(CreationAccessLevel::Permission->label());
+        foreach (CreationAccessLevel::cases() as $level) {
+            $this->assertSame(__('game-tables::messages.enums.creation_access_level.'.$level->value), $level->label());
+        }
     }
 
     public function test_it_returns_options(): void
     {
         $options = CreationAccessLevel::options();
 
-        $this->assertIsArray($options);
         $this->assertCount(4, $options);
         $this->assertArrayHasKey('everyone', $options);
         $this->assertArrayHasKey('registered', $options);
@@ -52,7 +50,6 @@ final class CreationAccessLevelTest extends TestCase
     {
         $values = CreationAccessLevel::values();
 
-        $this->assertIsArray($values);
         $this->assertCount(4, $values);
         $this->assertContains('everyone', $values);
         $this->assertContains('registered', $values);

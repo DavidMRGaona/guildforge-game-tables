@@ -33,7 +33,6 @@ final class WaitingListPromotionNotificationTest extends TestCase
         $notifiable = new AnonymousNotifiable;
         $result = $notification->via($notifiable);
 
-        $this->assertIsArray($result);
         $this->assertContains('mail', $result);
     }
 
