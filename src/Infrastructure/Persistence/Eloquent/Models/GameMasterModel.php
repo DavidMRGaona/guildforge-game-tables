@@ -25,8 +25,8 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\Concerns\HasGa
  * @property bool $notify_by_email
  * @property bool $is_name_public
  * @property string|null $notes
- * @property Carbon $created_at
- * @property Carbon $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property-read UserModel|null $user
  * @property-read Collection<int, CampaignModel> $campaigns
  * @property-read Collection<int, GameTableModel> $gameTables

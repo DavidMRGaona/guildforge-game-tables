@@ -39,8 +39,8 @@ use Modules\GameTables\Domain\Enums\RosterAccess;
  * @property RosterAccess $roster_access
  * @property string|null $language
  * @property ExperienceLevel|null $experience_level
- * @property Carbon $created_at
- * @property Carbon $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 final class CampaignModel extends Model
 {

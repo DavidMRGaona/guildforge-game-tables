@@ -56,7 +56,7 @@ final readonly class EloquentCampaignJoinRequestRepository implements CampaignJo
 
     public function pendingFor(CampaignId $campaignId): array
     {
-        return CampaignJoinRequestModel::query()
+        return array_values(CampaignJoinRequestModel::query()
             ->where('campaign_id', $campaignId->value)
             ->where('status', JoinRequestStatus::Pending->value)
             ->whereHas('user', fn ($user) => $user->whereNull('anonymized_at'))
@@ -64,8 +64,7 @@ final readonly class EloquentCampaignJoinRequestRepository implements CampaignJo
             ->orderBy('id')
             ->get()
             ->map(fn (CampaignJoinRequestModel $model): CampaignJoinRequest => $this->toEntity($model))
-            ->values()
-            ->all();
+            ->all());
     }
 
     public function pendingCountsFor(array $campaignIds): array

@@ -68,27 +68,25 @@ final readonly class EloquentCampaignInvitationRepository implements CampaignInv
 
     public function pendingFor(CampaignId $campaignId): array
     {
-        return CampaignInvitationModel::query()
+        return array_values(CampaignInvitationModel::query()
             ->where('campaign_id', $campaignId->value)
             ->orderBy('created_at')
             ->orderBy('id')
             ->get()
             ->map(fn (CampaignInvitationModel $model): CampaignInvitation => $this->toEntity($model))
-            ->values()
-            ->all();
+            ->all());
     }
 
     public function pendingForEmail(string $email, DateTimeImmutable $now): array
     {
-        return CampaignInvitationModel::query()
+        return array_values(CampaignInvitationModel::query()
             ->where('email', $email)
             ->where('expires_at', '>', $now->format(self::FORMAT))
             ->orderBy('created_at')
             ->orderBy('id')
             ->get()
             ->map(fn (CampaignInvitationModel $model): CampaignInvitation => $this->toEntity($model))
-            ->values()
-            ->all();
+            ->all());
     }
 
     public function delete(CampaignInvitationId $id): void

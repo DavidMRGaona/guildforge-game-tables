@@ -25,7 +25,7 @@ use Modules\GameTables\Domain\Enums\StatusLogActorKind;
  * @property string|null $from_status
  * @property string $to_status
  * @property string|null $reason
- * @property Carbon $created_at
+ * @property Carbon|null $created_at
  * @property-read UserModel|null $participantUser
  * @property-read UserModel|null $actor
  */

@@ -42,14 +42,13 @@ final readonly class EloquentCampaignRosterRepository implements CampaignRosterR
 
     public function memberIds(CampaignId $campaignId): array
     {
-        return $this->activeMembers()
+        return array_values($this->activeMembers()
             ->where('p.campaign_id', $campaignId->value)
             ->orderBy('p.created_at')
             ->orderBy('p.user_id')
             ->pluck('p.user_id')
             ->map(fn (mixed $id): string => (string) $id)
-            ->values()
-            ->all();
+            ->all());
     }
 
     public function count(CampaignId $campaignId): int

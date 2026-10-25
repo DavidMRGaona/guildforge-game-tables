@@ -122,13 +122,12 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
             return [];
         }
 
-        return ParticipantModel::query()
+        return array_values(ParticipantModel::query()
             ->whereIn('game_table_id', array_map(fn (GameTableId $id): string => $id->value, $gameTableIds))
             ->orderBy('created_at', 'asc')
             ->get()
             ->map(fn (ParticipantModel $model): Participant => $this->toEntity($model))
-            ->values()
-            ->all();
+            ->all());
     }
 
     /**
@@ -589,13 +588,9 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
 
         // Sort in PHP to be database-agnostic (works with both PostgreSQL and SQLite)
         $now = CarbonImmutable::now()->toDateTimeImmutable();
+        // game_table_id and starts_at are required columns, and deleting a table deletes its rows
         $sorted = $models->sortBy(function (ParticipantModel $model) use ($now): array {
-            $startsAt = $model->gameTable?->starts_at;
-            if ($startsAt === null) {
-                return [1, PHP_INT_MAX]; // Tables without date go last
-            }
-
-            $tableDate = new DateTimeImmutable($startsAt->toDateTimeString());
+            $tableDate = new DateTimeImmutable($model->gameTable->starts_at->toDateTimeString());
             $isUpcoming = $tableDate > $now;
             $diff = abs($tableDate->getTimestamp() - $now->getTimestamp());
 
@@ -605,17 +600,14 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
 
         return $sorted->map(function (ParticipantModel $model): array {
             $gameTable = $model->gameTable;
-            $gameSystem = $gameTable?->gameSystem;
 
             return [
                 'participant' => $this->toEntity($model),
-                'game_table_id' => $gameTable?->id ?? '',
-                'game_table_title' => $gameTable?->title ?? '',
-                'game_table_slug' => $gameTable?->slug ?? '',
-                'game_table_starts_at' => $gameTable?->starts_at !== null
-                    ? new DateTimeImmutable($gameTable->starts_at->toDateTimeString())
-                    : null,
-                'game_system_name' => $gameSystem?->name ?? '',
+                'game_table_id' => $gameTable->id,
+                'game_table_title' => $gameTable->title,
+                'game_table_slug' => $gameTable->slug ?? '',
+                'game_table_starts_at' => new DateTimeImmutable($gameTable->starts_at->toDateTimeString()),
+                'game_system_name' => $gameTable->gameSystem->name ?? '',
             ];
         })->all();
     }

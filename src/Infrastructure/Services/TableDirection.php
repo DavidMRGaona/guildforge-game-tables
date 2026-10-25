@@ -71,6 +71,6 @@ final readonly class TableDirection implements TableDirectionInterface
             })
             ->pluck('id');
 
-        return $local->merge($inherited)->unique()->values()->map(fn (mixed $id): string => (string) $id)->all();
+        return array_values($local->merge($inherited)->unique()->map(fn (mixed $id): string => (string) $id)->all());
     }
 }

@@ -19,10 +19,10 @@ final readonly class CampaignDirection implements CampaignDirectionInterface
 
     public function directorUserIds(string $campaignId): array
     {
-        return array_values(array_map(
+        return array_map(
             fn (UserModel $user): string => $user->id,
             $this->directors($campaignId, false),
-        ));
+        );
     }
 
     public function campaignIdsDirectedBy(string $userId): array
@@ -42,7 +42,7 @@ final readonly class CampaignDirection implements CampaignDirectionInterface
             ->whereHas('gameMasters', fn ($query) => $query->where('gametables_game_masters.user_id', $userId))
             ->pluck('id');
 
-        return $web->merge($asGm)->unique()->values()->map(fn (mixed $id): string => (string) $id)->all();
+        return array_values($web->merge($asGm)->unique()->map(fn (mixed $id): string => (string) $id)->all());
     }
 
     public function recipients(string $campaignId): array
@@ -75,8 +75,8 @@ final readonly class CampaignDirection implements CampaignDirectionInterface
 
         $ids = [];
 
-        if ($campaign->frontend_creation_status !== null && $campaign->created_by !== null) {
-            $ids[] = (string) $campaign->created_by;
+        if ($campaign->frontend_creation_status !== null) {
+            $ids[] = $campaign->created_by;
         }
 
         $gms = $campaign->gameMasters()->whereNotNull('gametables_game_masters.user_id');
@@ -104,8 +104,10 @@ final readonly class CampaignDirection implements CampaignDirectionInterface
 
         $ordered = [];
         foreach ($ids as $id) {
-            if ($users->has($id)) {
-                $ordered[] = $users->get($id);
+            $user = $users->get($id);
+
+            if ($user !== null) {
+                $ordered[] = $user;
             }
         }
 

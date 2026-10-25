@@ -1639,7 +1639,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             $this->announceExpiry($participant, notifyGuest: $this->heldPlace($participant));
         }
 
-        if ($outcome === GuestConfirmationOutcome::Confirmed) {
+        if ($outcome === GuestConfirmationOutcome::Confirmed && $participant instanceof Participant) {
             $this->announceGuestRegistration($participant, $rank);
         }
 

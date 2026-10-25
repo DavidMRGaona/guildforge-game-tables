@@ -62,9 +62,16 @@ final readonly class GameTableQueryService implements GameTableQueryServiceInter
 
     public function getUpcomingTables(\DateTimeInterface $from, \DateTimeInterface $to): array
     {
-        $tables = $this->gameTableRepository->getPublishedModelsInDateRange($from, $to);
+        // Everything the calendar cards read, loaded with the list (no query per table)
+        $tables = SeatCounter::withPlayerSeatCounts(GameTableModel::query())
+            ->with(['gameSystem', 'creator', 'event', 'gameMasters.user'])
+            ->where('is_published', true)
+            ->whereNotIn('status', [TableStatus::Cancelled->value, TableStatus::Draft->value])
+            ->whereBetween('starts_at', [$from, $to])
+            ->orderBy('starts_at', 'asc')
+            ->get();
 
-        return $tables->map(fn (GameTableModel $table) => $this->toListDTO($table))->all();
+        return $tables->map(fn (GameTableModel $table): GameTableListDTO => $this->toListDTO($table))->all();
     }
 
     public function findPublished(string $id): ?GameTableResponseDTO
@@ -103,6 +110,7 @@ final readonly class GameTableQueryService implements GameTableQueryServiceInter
 
     /**
      * @param  array<string>|null  $gameSystemIds
+     * @return Builder<GameTableModel>
      */
     private function buildPublishedQuery(
         ?array $gameSystemIds = null,
@@ -148,13 +156,13 @@ final readonly class GameTableQueryService implements GameTableQueryServiceInter
     private function toListDTO(GameTableModel $table): GameTableListDTO
     {
         $mainGm = $table->gameMasters->firstWhere('role', GameMasterRole::Main);
-        $mainGameMasterName = $mainGm?->display_name ?? $table->creator?->name ?? '';
+        $mainGameMasterName = $mainGm->display_name ?? $table->creator->name ?? '';
 
         return new GameTableListDTO(
             id: $table->id,
             title: $table->title,
             slug: $table->slug,
-            gameSystemName: $table->gameSystem?->name ?? '',
+            gameSystemName: $table->gameSystem->name ?? '',
             startsAt: $table->starts_at,
             durationMinutes: $table->duration_minutes,
             tableFormat: $table->table_format,
@@ -167,7 +175,7 @@ final readonly class GameTableQueryService implements GameTableQueryServiceInter
             // The taken seats the table page shows
             currentPlayers: $this->seatCounter->takenPlayerSeatsOf($table),
             isPublished: $table->is_published,
-            creatorName: $table->creator?->name ?? '',
+            creatorName: $table->creator->name ?? '',
             mainGameMasterName: $mainGameMasterName,
             eventId: $table->event_id,
             eventTitle: $table->event?->title,
@@ -182,7 +190,7 @@ final readonly class GameTableQueryService implements GameTableQueryServiceInter
             id: $p->id,
             gameTableId: $p->game_table_id,
             userId: $p->user_id,
-            userName: $p->user?->name ?? '',
+            userName: $p->user->name ?? '',
             role: $p->role,
             status: $p->status,
             waitingListPosition: $p->waiting_list_position,
@@ -201,13 +209,13 @@ final readonly class GameTableQueryService implements GameTableQueryServiceInter
             slug: $table->slug,
             synopsis: $table->synopsis,
             gameSystemId: $table->game_system_id,
-            gameSystemName: $table->gameSystem?->name ?? '',
+            gameSystemName: $table->gameSystem->name ?? '',
             campaignId: $table->campaign_id,
             campaignTitle: $table->campaign?->title,
             eventId: $table->event_id,
             eventTitle: $table->event?->title,
             createdBy: $table->created_by,
-            creatorName: $table->creator?->name ?? '',
+            creatorName: $table->creator->name ?? '',
             tableType: $table->table_type,
             tableFormat: $table->table_format,
             status: $table->status,
