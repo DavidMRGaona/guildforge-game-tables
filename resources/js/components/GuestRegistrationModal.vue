@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue';
-import { ref, computed, watch, onMounted, onBeforeUnmount, useId } from 'vue';
+import { ref, computed, watch, onMounted, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { router } from '@inertiajs/vue3';
 import { useRoutes } from '@/composables/useRoutes';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 import type { GuestConfirmationNotice, ParticipantRole } from '../types/registration';
-import { hasGuestRegistration, rememberGuestRegistration } from '../utils/guestRegistrationCookie';
+import {
+    canUseGuestCookie,
+    hasGuestRegistration,
+    rememberGuestRegistration,
+} from '../utils/guestRegistrationCookie';
 
 interface Props {
     isOpen: boolean;
@@ -90,12 +94,10 @@ function checkBrowserHint(): void {
 onMounted(() => {
     syncDialog();
     checkBrowserHint();
-    window.addEventListener('guildforge:cookie-consent-changed', checkBrowserHint);
 });
 
-onBeforeUnmount(() => {
-    window.removeEventListener('guildforge:cookie-consent-changed', checkBrowserHint);
-});
+// The visitor can accept or withdraw the preferences cookies while the dialog is open
+watch(canUseGuestCookie, checkBrowserHint);
 
 // The role step is only needed when both roles are admitted
 const choosesRole = computed(() => props.hasSpectatorSlots && props.playerAvailable);
@@ -106,7 +108,8 @@ const spectatorOnly = computed(() => props.hasSpectatorSlots && !props.playerAva
 const submitText = computed(() => {
     if (choosesRole.value) return t('common.next');
     if (spectatorOnly.value) return t('gameTables.registration.registerAsSpectator');
-    if (props.playerAvailable && props.waitingList) return t('gameTables.registration.joinWaitingList');
+    if (props.playerAvailable && props.waitingList)
+        return t('gameTables.registration.joinWaitingList');
     return t('guestRegistration.submit');
 });
 
@@ -196,7 +199,9 @@ function submitRegistration(role: ParticipantRole): void {
             },
             onError: (errors) => {
                 accountError.value = typeof errors.account === 'string' && errors.account !== '';
-                error.value = (accountError.value ? errors.account : Object.values(errors)[0] as string) || t('guestRegistration.error');
+                error.value =
+                    (accountError.value ? errors.account : (Object.values(errors)[0] as string)) ||
+                    t('guestRegistration.error');
                 step.value = 'form';
             },
             onFinish: () => {
@@ -244,7 +249,11 @@ function goBack(): void {
             <div class="w-full max-w-md rounded-xl bg-surface p-6 shadow-2xl">
                 <!-- Header -->
                 <h3 :id="titleId" class="mb-4 text-center text-lg font-semibold text-base-primary">
-                    {{ step === 'form' ? t('guestRegistration.title') : t('gameTables.registration.selectRole') }}
+                    {{
+                        step === 'form'
+                            ? t('guestRegistration.title')
+                            : t('gameTables.registration.selectRole')
+                    }}
                 </h3>
 
                 <!-- Error message -->
@@ -280,7 +289,13 @@ function goBack(): void {
 
                 <!-- Waiting list notice (when it is the only option) -->
                 <p
-                    v-if="step === 'form' && waitingList && playerAvailable && !choosesRole && waitingListHelp"
+                    v-if="
+                        step === 'form' &&
+                        waitingList &&
+                        playerAvailable &&
+                        !choosesRole &&
+                        waitingListHelp
+                    "
                     class="mb-4 rounded-lg bg-info-light p-3 text-sm text-base-primary"
                 >
                     {{ waitingListHelp }}
@@ -367,10 +382,7 @@ function goBack(): void {
                             required
                             class="mt-1 h-4 w-4 rounded border-strong bg-surface text-primary focus:ring-primary-500"
                         />
-                        <label
-                            for="guest-gdpr"
-                            class="text-sm text-base-secondary"
-                        >
+                        <label for="guest-gdpr" class="text-sm text-base-secondary">
                             {{ t('guestRegistration.gdprConsent') }}
                             <a
                                 :href="routes.legal.privacy"
@@ -421,9 +433,16 @@ function goBack(): void {
                         @click="selectRole('player')"
                     >
                         <div class="font-medium text-base-primary">
-                            {{ waitingList ? t('gameTables.registration.joinWaitingList') : t('gameTables.registration.registerAsPlayer') }}
+                            {{
+                                waitingList
+                                    ? t('gameTables.registration.joinWaitingList')
+                                    : t('gameTables.registration.registerAsPlayer')
+                            }}
                         </div>
-                        <div v-if="waitingList && waitingListHelp" class="mt-1 text-sm text-base-secondary">
+                        <div
+                            v-if="waitingList && waitingListHelp"
+                            class="mt-1 text-sm text-base-secondary"
+                        >
                             {{ waitingListHelp }}
                         </div>
                     </button>

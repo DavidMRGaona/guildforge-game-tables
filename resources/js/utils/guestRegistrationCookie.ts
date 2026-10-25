@@ -1,7 +1,10 @@
+import { hasCookieConsent } from '@/contracts/cookieConsent';
+
 /**
  * Browser hint of the tables the visitor signed up to as a guest: entries `slug:startsAtEpoch`
  * (seconds) joined by commas. It only warns before a second sign-up; the server is the authority.
  * It is a preferences cookie: nothing is read or written without the visitor's consent.
+ * The consent check is reactive, so a computed value or watcher that reads the cookie follows it.
  */
 export const GUEST_REGISTRATIONS_COOKIE = 'gt_guest_registrations';
 
@@ -14,7 +17,7 @@ interface Entry {
 }
 
 export function canUseGuestCookie(): boolean {
-    return globalThis.GuildForgeCookieConsent?.hasConsent('preferences') === true;
+    return hasCookieConsent('preferences');
 }
 
 function readRaw(): string {
