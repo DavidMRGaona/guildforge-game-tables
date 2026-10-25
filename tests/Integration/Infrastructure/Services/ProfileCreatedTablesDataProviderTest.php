@@ -34,7 +34,7 @@ final class ProfileCreatedTablesDataProviderTest extends ModuleTestCase
         $this->participant($table, ParticipantRole::Player, ParticipantStatus::WaitingList);
         $this->participant($table, ParticipantRole::Player, ParticipantStatus::Cancelled);
 
-        $data = app(ProfileCreatedTablesDataProvider::class)->getDataForUser((string) $creator->id);
+        $data = $this->dataFor($creator);
 
         // Same count as the table's capacity check: confirmed players only (pending, waiting list and GMs do not take a seat)
         $this->assertSame(2, $data['tables'][0]['currentPlayers']);
@@ -46,7 +46,7 @@ final class ProfileCreatedTablesDataProviderTest extends ModuleTestCase
         $this->table($creator, ['is_published' => false, 'published_at' => null, 'frontend_creation_status' => 'pending_review', 'title' => 'En revisión']);
         $this->table($creator, ['is_published' => false, 'published_at' => null, 'frontend_creation_status' => 'draft', 'title' => 'Borrador']);
 
-        $drafts = collect(app(ProfileCreatedTablesDataProvider::class)->getDataForUser((string) $creator->id)['drafts'])->keyBy('title');
+        $drafts = collect($this->dataFor($creator)['drafts'])->keyBy('title')->all();
 
         // As «Mis mesas»: a table sent to review is waiting for the moderators, not editable
         $this->assertSame('pending_review', $drafts['En revisión']['status']);
@@ -64,12 +64,23 @@ final class ProfileCreatedTablesDataProviderTest extends ModuleTestCase
         $this->table($creator, ['is_published' => false, 'published_at' => null, 'frontend_creation_status' => 'pending_review', 'title' => 'En revisión', 'moderation_notes' => 'Nota antigua']);
         $this->table($creator, ['is_published' => false, 'published_at' => null, 'frontend_creation_status' => 'draft', 'title' => 'Borrador']);
 
-        $drafts = collect(app(ProfileCreatedTablesDataProvider::class)->getDataForUser((string) $creator->id)['drafts'])->keyBy('title');
+        $drafts = collect($this->dataFor($creator)['drafts'])->keyBy('title')->all();
 
         // As «Mis mesas»: the reason only while the draft is back in the author's hands
         $this->assertSame("Falta la sinopsis.\nRevisa el sistema.", $drafts['Rechazada']['rejectionReason']);
         $this->assertNull($drafts['En revisión']['rejectionReason']);
         $this->assertNull($drafts['Borrador']['rejectionReason']);
+    }
+
+    /**
+     * @return array{tables: array<array<string, mixed>>, drafts: array<array<string, mixed>>, total: int, canCreate: bool}
+     */
+    private function dataFor(UserModel $creator): array
+    {
+        $data = app(ProfileCreatedTablesDataProvider::class)->getDataForUser((string) $creator->id);
+        $this->assertNotNull($data);
+
+        return $data;
     }
 
     private function participant(GameTableModel $table, ParticipantRole $role, ParticipantStatus $status): void

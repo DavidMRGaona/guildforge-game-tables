@@ -48,6 +48,7 @@ final class CampaignInvitationLegalNoticeTest extends ModuleTestCase
     public function test_the_preview_renders_the_invitation_email(): void
     {
         $notice = app(LegalMailNoticeRegistryInterface::class)->find('game-tables.campaign_invitation');
+        $this->assertNotNull($notice);
 
         $html = ($notice->preview)("Aviso sin guardar para :inviter en :campaign.\n\nSegundo párrafo.");
 
@@ -74,7 +75,7 @@ final class CampaignInvitationLegalNoticeTest extends ModuleTestCase
             ->getMountedActionModalHtml();
 
         $this->assertSame(1, preg_match('/srcdoc="([^"]*)"/', $html, $match));
-        $email = html_entity_decode($match[1], ENT_QUOTES | ENT_HTML5);
+        $email = html_entity_decode($match[1] ?? '', ENT_QUOTES | ENT_HTML5);
 
         $this->assertMatchesRegularExpression('/<h1[^>]*>¡Hola!<\/h1>/u', $email);
         $this->assertStringNotContainsString('# ¡Hola!', $email);

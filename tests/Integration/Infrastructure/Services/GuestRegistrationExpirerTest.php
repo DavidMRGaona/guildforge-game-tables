@@ -227,7 +227,7 @@ final class GuestRegistrationExpirerTest extends ModuleTestCase
         Event::fake([GuestRegistrationExpired::class]);
         $failing = $this->submit('falla@example.test');
         $other = $this->submit('otra@example.test');
-        Log::spy();
+        $log = Log::spy();
 
         $real = $this->service();
         $registrations = $this->createStub(RegistrationServiceInterface::class);
@@ -248,7 +248,7 @@ final class GuestRegistrationExpirerTest extends ModuleTestCase
         $this->assertSame(['expired' => 1, 'closed' => 0, 'fingerprintsCleared' => 0, 'failed' => 1], $counts);
         $this->assertSame('expired', ParticipantModel::query()->findOrFail($other->id)->status->value);
         $this->assertSame('confirmed', ParticipantModel::query()->findOrFail($failing->id)->status->value);
-        Log::shouldHaveReceived('error')->once()->with(
+        $log->shouldHaveReceived('error')->once()->with(
             'game-tables: guest registration expiry failed',
             Mockery::on(fn (array $context): bool => $context['participant_id'] === $failing->id && $context['exception'] instanceof RuntimeException),
         );

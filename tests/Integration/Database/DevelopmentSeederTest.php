@@ -155,8 +155,10 @@ final class DevelopmentSeederTest extends ModuleTestCase
 
         $requests = CampaignJoinRequestModel::query()->where('campaign_id', $campaign->id)->get();
         $this->assertCount(1, $requests);
-        $this->assertSame(JoinRequestStatus::Pending, $requests->first()?->status);
-        $this->assertSame($this->userId('mary.major'), $requests->first()?->user_id);
+        $request = $requests->first();
+        $this->assertNotNull($request);
+        $this->assertSame(JoinRequestStatus::Pending, $request->status);
+        $this->assertSame($this->userId('mary.major'), $request->user_id);
     }
 
     public function test_the_closed_campaign_sessions_have_roster_registrations_and_an_absence(): void
@@ -167,10 +169,11 @@ final class DevelopmentSeederTest extends ModuleTestCase
         $sessions = GameTableModel::query()->where('campaign_id', $campaign->id)->orderBy('starts_at')->get();
 
         $this->assertCount(3, $sessions);
-        $this->assertSame(TableStatus::Completed, $sessions[0]->status);
-        $this->assertTrue($sessions[0]->starts_at->isPast());
+        [$played, $next, $later] = $sessions->all();
+        $this->assertSame(TableStatus::Completed, $played->status);
+        $this->assertTrue($played->starts_at->isPast());
 
-        foreach ([$sessions[1], $sessions[2]] as $upcoming) {
+        foreach ([$next, $later] as $upcoming) {
             $this->assertSame(TableStatus::Scheduled, $upcoming->status);
             $this->assertTrue($upcoming->is_published);
             $this->assertTrue($upcoming->starts_at->isFuture());
@@ -182,10 +185,11 @@ final class DevelopmentSeederTest extends ModuleTestCase
         $absences = $rows->where('status', ParticipantStatus::Cancelled);
         $this->assertCount(1, $absences);
         $absence = $absences->first();
-        $this->assertSame($this->userId('richard.roe'), $absence?->user_id);
-        $this->assertSame(ParticipantCancellationReason::SessionAbsence, $absence?->cancellation_reason);
-        $this->assertNotNull($absence?->cancelled_at);
-        $this->assertTrue($sessions[1]->is($absence?->gameTable) || $sessions[2]->is($absence?->gameTable));
+        $this->assertNotNull($absence);
+        $this->assertSame($this->userId('richard.roe'), $absence->user_id);
+        $this->assertSame(ParticipantCancellationReason::SessionAbsence, $absence->cancellation_reason);
+        $this->assertNotNull($absence->cancelled_at);
+        $this->assertTrue($next->is($absence->gameTable) || $later->is($absence->gameTable));
 
         $this->assertSame(5, $rows->where('status', ParticipantStatus::Confirmed)->count());
     }
@@ -243,8 +247,9 @@ final class DevelopmentSeederTest extends ModuleTestCase
         $rows = ParticipantModel::query()->where('game_table_id', $full->id)->get();
         $this->assertSame($full->max_players, $rows->where('status', ParticipantStatus::Confirmed)->count());
         $waiting = $rows->firstWhere('status', ParticipantStatus::WaitingList);
-        $this->assertSame($this->userId('mary.major'), $waiting?->user_id);
-        $this->assertSame(1, $waiting?->waiting_list_position);
+        $this->assertNotNull($waiting);
+        $this->assertSame($this->userId('mary.major'), $waiting->user_id);
+        $this->assertSame(1, $waiting->waiting_list_position);
 
         $inProgress = $this->table('asalto-al-tren-blindado');
         $this->assertSame(TableStatus::InProgress, $inProgress->status);
@@ -269,9 +274,10 @@ final class DevelopmentSeederTest extends ModuleTestCase
             ->get();
         $this->assertCount(2, $guests);
         $awaiting = $guests->firstWhere('email_confirmed_at', null);
-        $this->assertSame(GuestConfirmationMode::Wait, $awaiting?->confirmation_mode);
-        $this->assertNotNull($awaiting?->confirmation_token);
-        $this->assertNotNull($awaiting?->cancellation_token);
+        $this->assertNotNull($awaiting);
+        $this->assertSame(GuestConfirmationMode::Wait, $awaiting->confirmation_mode);
+        $this->assertNotNull($awaiting->confirmation_token);
+        $this->assertNotNull($awaiting->cancellation_token);
         $confirmed = $guests->first(fn (ParticipantModel $row): bool => $row->email_confirmed_at !== null);
         $this->assertSame(ParticipantStatus::Confirmed, $confirmed?->status);
     }

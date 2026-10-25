@@ -11,6 +11,7 @@ use DateTimeImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
+use Illuminate\Support\Testing\Fakes\EventFake;
 use Modules\GameTables\Application\Services\CampaignInvitationSendLogInterface;
 use Modules\GameTables\Application\Services\CampaignInvitationServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterServiceInterface;
@@ -412,7 +413,9 @@ final class CampaignInvitationServiceTest extends ModuleTestCase
     {
         $this->invite($email);
 
-        $tokens = Event::dispatched(CampaignInvitationSent::class)
+        $events = Event::getFacadeRoot();
+        $this->assertInstanceOf(EventFake::class, $events);
+        $tokens = $events->dispatched(CampaignInvitationSent::class)
             ->map(fn (array $args): CampaignInvitationSent => $args[0])
             ->filter(fn (CampaignInvitationSent $event): bool => $event->email === mb_strtolower(trim($email)));
 

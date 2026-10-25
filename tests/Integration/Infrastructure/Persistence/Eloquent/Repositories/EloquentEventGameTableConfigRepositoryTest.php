@@ -92,6 +92,7 @@ final class EloquentEventGameTableConfigRepositoryTest extends TestCase
 
         $model = EventGameTableConfigModel::query()->find($event->id);
         $this->assertNotNull($model);
+        $this->assertNotNull($model->time_slots);
         $this->assertCount(1, $model->time_slots);
         $this->assertEquals('Morning', $model->time_slots[0]['label']);
     }
@@ -120,7 +121,7 @@ final class EloquentEventGameTableConfigRepositoryTest extends TestCase
         $this->assertNotNull($model);
         $this->assertNotNull($model->eligibility_override);
         $this->assertEquals('role', $model->eligibility_override['access_level']);
-        $this->assertEquals(['editor', 'admin'], $model->eligibility_override['allowed_roles']);
+        $this->assertEquals(['editor', 'admin'], $model->eligibility_override['allowed_roles'] ?? null);
     }
 
     public function test_it_updates_existing_config(): void
@@ -208,7 +209,6 @@ final class EloquentEventGameTableConfigRepositoryTest extends TestCase
         $nonExistentId = (string) Str::uuid();
         $config = $this->repository->findByEventOrDefault($nonExistentId);
 
-        $this->assertNotNull($config);
         $this->assertEquals($nonExistentId, $config->eventId());
         $this->assertFalse($config->isEnabled());
         $this->assertEquals(SchedulingMode::FreeSchedule, $config->schedulingMode());

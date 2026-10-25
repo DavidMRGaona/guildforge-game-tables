@@ -79,24 +79,24 @@ final class FrontendCreationSettingsTest extends ModuleTestCase
     {
         $table = $this->createForAnEvent(eventStart: '2030-02-10 18:00:00', tableStart: '2030-02-09 18:00:00');
 
-        $this->assertSame('2030-02-09 18:00:00', $table->registration_closes_at->format('Y-m-d H:i:s'));
+        $this->assertSame('2030-02-09 18:00:00', $this->closingDateOf($table));
     }
 
     public function test_the_default_closing_date_stays_the_event_start_when_the_table_starts_later(): void
     {
         $table = $this->createForAnEvent(eventStart: '2030-02-10 18:00:00', tableStart: '2030-02-10 20:00:00');
 
-        $this->assertSame('2030-02-10 18:00:00', $table->registration_closes_at->format('Y-m-d H:i:s'));
+        $this->assertSame('2030-02-10 18:00:00', $this->closingDateOf($table));
     }
 
     public function test_moving_a_draft_earlier_caps_its_kept_closing_date_to_the_new_start(): void
     {
         $table = $this->createForAnEvent(eventStart: '2030-02-10 18:00:00', tableStart: '2030-02-10 20:00:00');
-        $this->assertSame('2030-02-10 18:00:00', $table->registration_closes_at->format('Y-m-d H:i:s'));
+        $this->assertSame('2030-02-10 18:00:00', $this->closingDateOf($table));
 
         $this->updateDraftStart($table, new DateTimeImmutable('2030-02-10 12:00:00'));
 
-        $this->assertSame('2030-02-10 12:00:00', $table->fresh()->registration_closes_at->format('Y-m-d H:i:s'));
+        $this->assertSame('2030-02-10 12:00:00', $this->closingDateOf($table->refresh()));
     }
 
     public function test_moving_a_draft_later_keeps_its_closing_date(): void
@@ -105,7 +105,14 @@ final class FrontendCreationSettingsTest extends ModuleTestCase
 
         $this->updateDraftStart($table, new DateTimeImmutable('2030-02-11 20:00:00'));
 
-        $this->assertSame('2030-02-10 18:00:00', $table->fresh()->registration_closes_at->format('Y-m-d H:i:s'));
+        $this->assertSame('2030-02-10 18:00:00', $this->closingDateOf($table->refresh()));
+    }
+
+    private function closingDateOf(GameTableModel $table): string
+    {
+        $this->assertNotNull($table->registration_closes_at);
+
+        return $table->registration_closes_at->format('Y-m-d H:i:s');
     }
 
     private function updateDraftStart(GameTableModel $table, DateTimeImmutable $startsAt): void

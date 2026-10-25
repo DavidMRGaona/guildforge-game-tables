@@ -348,7 +348,7 @@ final class CampaignSessionCreationTest extends ModuleTestCase
 
         $draft->refresh();
         $this->assertSame('Sesión corregida', $draft->title);
-        $this->assertSame('pending_review', $draft->frontend_creation_status->value);
+        $this->assertSame('pending_review', $draft->frontend_creation_status?->value);
     }
 
     public function test_a_session_only_director_cannot_edit_the_draft_into_a_one_shot(): void
@@ -391,7 +391,7 @@ final class CampaignSessionCreationTest extends ModuleTestCase
             ->post(route('gametables.submit-review', $oneShot->slug))
             ->assertForbidden();
 
-        $this->assertSame('draft', $oneShot->refresh()->frontend_creation_status->value);
+        $this->assertSame('draft', $oneShot->refresh()->frontend_creation_status?->value);
     }
 
     public function test_an_eligible_author_keeps_editing_and_sending_any_draft(): void
@@ -413,7 +413,7 @@ final class CampaignSessionCreationTest extends ModuleTestCase
         $draft->refresh();
         $this->assertSame('one_shot', $draft->table_type->value);
         $this->assertNull($draft->campaign_id);
-        $this->assertSame('pending_review', $draft->frontend_creation_status->value);
+        $this->assertSame('pending_review', $draft->frontend_creation_status?->value);
     }
 
     /**

@@ -110,7 +110,7 @@ final class ManageRegistrationsPolicyTest extends ModuleTestCase
         $table = $this->tableDirectedBy($john);
         $john->forceFill(['anonymized_at' => now()])->save();
 
-        $this->assertFalse($john->fresh()->can('manageRegistrations', $table));
+        $this->assertFalse($john->refresh()->can('manageRegistrations', $table));
     }
 
     public function test_an_admin_who_is_not_a_game_master_is_denied(): void

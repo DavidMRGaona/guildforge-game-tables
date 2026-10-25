@@ -62,7 +62,8 @@ final class FrontendCreationSlugTest extends ModuleTestCase
         $tables = GameTableModel::query()->where('title', 'Sesión semanal')->get();
 
         $this->assertCount(2, $tables);
-        $this->assertNotSame($tables[0]->slug, $tables[1]->slug);
+        [$first, $second] = $tables->all();
+        $this->assertNotSame($first->slug, $second->slug);
         foreach ($tables as $table) {
             $this->assertSame('sesion-semanal-'.substr($table->id, 0, 8), $table->slug);
         }
@@ -80,7 +81,8 @@ final class FrontendCreationSlugTest extends ModuleTestCase
         $campaigns = CampaignModel::query()->where('title', 'Campaña semanal')->get();
 
         $this->assertCount(2, $campaigns);
-        $this->assertNotSame($campaigns[0]->slug, $campaigns[1]->slug);
+        [$first, $second] = $campaigns->all();
+        $this->assertNotSame($first->slug, $second->slug);
         foreach ($campaigns as $campaign) {
             $this->assertSame('campana-semanal-'.substr($campaign->id, 0, 8), $campaign->slug);
         }

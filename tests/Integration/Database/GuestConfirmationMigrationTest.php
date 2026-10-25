@@ -22,6 +22,7 @@ final class GuestConfirmationMigrationTest extends ModuleTestCase
     {
         $migration = require dirname(__DIR__, 3).'/database/migrations/2026_10_19_000001_add_guest_confirmation_to_gametables_participants_table.php';
         $this->assertInstanceOf(Migration::class, $migration);
+        $this->assertTrue(method_exists($migration, 'up') && method_exists($migration, 'down'));
 
         $tableId = $this->createTable();
         $migration->down();

@@ -12,6 +12,7 @@ use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
+use Illuminate\Testing\PendingCommand;
 use Modules\GameTables\Console\Commands\SendTableRemindersCommand;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
@@ -57,10 +58,10 @@ final class SendTableRemindersCommandTest extends ModuleTestCase
     {
         $row = $this->participant($this->table($this->now->addHours(10)), ['email' => 'jugadora@example.com', 'email_confirmed_at' => $this->now]);
 
-        $this->artisan('game-tables:send-reminders')->assertSuccessful();
+        $this->sendReminders();
 
         Notification::assertNothingSent();
-        $this->assertNull($row->fresh()?->reminder_sent_at);
+        $this->assertNull($row->refresh()->getAttribute('reminder_sent_at'));
     }
 
     public function test_confirmed_participants_of_a_table_starting_soon_are_reminded_once(): void
@@ -73,8 +74,8 @@ final class SendTableRemindersCommandTest extends ModuleTestCase
         $this->participant($table, ['email' => 'pendiente@example.com', 'email_confirmed_at' => null]);
         $this->participant($table, ['email' => 'espera@example.com', 'email_confirmed_at' => $this->now, 'status' => 'waiting_list', 'waiting_list_position' => 1]);
 
-        $this->artisan('game-tables:send-reminders')->assertSuccessful();
-        $this->artisan('game-tables:send-reminders')->assertSuccessful();
+        $this->sendReminders();
+        $this->sendReminders();
 
         Notification::assertSentToTimes($user, TableReminderNotification::class, 1);
         Notification::assertSentOnDemandTimes(TableReminderNotification::class, 1);
@@ -103,7 +104,7 @@ final class SendTableRemindersCommandTest extends ModuleTestCase
             $this->participant($table, ['user_id' => UserModel::factory()->create()->id]);
         }
 
-        $this->artisan('game-tables:send-reminders')->assertSuccessful();
+        $this->sendReminders();
 
         Notification::assertNothingSent();
     }
@@ -116,7 +117,7 @@ final class SendTableRemindersCommandTest extends ModuleTestCase
         $this->participant($table, ['user_id' => $anonymised->id]);
         $this->participant($table, ['email' => 'sin.nombre@example.com', 'first_name' => null, 'email_confirmed_at' => $this->now]);
 
-        $this->artisan('game-tables:send-reminders')->assertSuccessful();
+        $this->sendReminders();
 
         Notification::assertNotSentTo($anonymised, TableReminderNotification::class);
         Notification::assertSentOnDemand(
@@ -131,7 +132,7 @@ final class SendTableRemindersCommandTest extends ModuleTestCase
         $user = UserModel::factory()->create();
         $this->participant($this->table($this->now->addHours(30)), ['user_id' => $user->id]);
 
-        $this->artisan('game-tables:send-reminders')->assertSuccessful();
+        $this->sendReminders();
 
         Notification::assertSentTo($user, TableReminderNotification::class);
     }
@@ -146,6 +147,13 @@ final class SendTableRemindersCommandTest extends ModuleTestCase
         $this->assertCount(1, $events);
         $this->assertSame('0 * * * *', $events[0]->expression);
         $this->assertTrue($events[0]->withoutOverlapping);
+    }
+
+    private function sendReminders(): void
+    {
+        $command = $this->artisan('game-tables:send-reminders');
+        $this->assertInstanceOf(PendingCommand::class, $command);
+        $command->assertSuccessful()->run();
     }
 
     private function enable(int $hours = 24): void
