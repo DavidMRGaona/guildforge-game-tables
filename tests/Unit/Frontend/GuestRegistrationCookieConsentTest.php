@@ -38,10 +38,12 @@ final class GuestRegistrationCookieConsentTest extends TestCase
         $this->assertStringNotContainsString('guildforge:cookie-consent-changed', $source);
     }
 
-    public function test_the_build_shares_the_core_contracts_instead_of_bundling_them(): void
+    public function test_the_build_shares_the_core_public_api_instead_of_bundling_it(): void
     {
         // A bundled copy of the contract would never hear from the consent provider
-        $this->assertStringContainsString("id.startsWith('@/contracts/')", $this->source('vite.config.ts'));
+        // The core's build keeps its public API, the consent contract included, out of the bundle
+        $this->assertStringContainsString("import { defineModuleConfig } from '../../vite.module.config';", $this->source('vite.config.ts'));
+        $this->assertStringContainsString("defineModuleConfig({ name: 'game-tables', root: __dirname })", $this->source('vite.config.ts'));
     }
 
     private function source(string $file): string
