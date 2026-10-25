@@ -11,6 +11,7 @@ use App\Http\Concerns\BuildsPaginatedResponse;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
+use DateInterval;
 use DateTimeImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -186,7 +187,7 @@ final class GameTableController extends Controller
             $start = DateTimeImmutable::createFromInterface($table->startsAt);
             $schedule = new SeoScheduleDTO(
                 start: $start,
-                end: $start->modify("+{$table->durationMinutes} minutes"),
+                end: $start->add(new DateInterval("PT{$table->durationMinutes}M")),
                 location: $table->location,
             );
         }

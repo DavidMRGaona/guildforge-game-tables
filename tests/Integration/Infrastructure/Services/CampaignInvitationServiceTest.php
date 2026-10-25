@@ -240,6 +240,23 @@ final class CampaignInvitationServiceTest extends ModuleTestCase
         Event::assertDispatchedTimes(CampaignInvitationSent::class, 1);
     }
 
+    // The night the clocks go back lasts 25 hours: 24 hours by the wall clock would be one too many
+    public function test_the_24_hours_between_sends_are_elapsed_time_across_a_clock_change(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-10-24 12:30:00'));
+        $this->invite('ana@example.com');
+
+        // 23 and a half hours later
+        $this->travelTo(CarbonImmutable::parse('2026-10-25 11:00:00'));
+        $this->assertRefused('invitation_too_soon', fn () => $this->service()->resend($this->campaign->id, $this->pending('ana@example.com')->id->value, $this->mary->id));
+
+        // 24 and a half hours later
+        $this->travelTo(CarbonImmutable::parse('2026-10-25 12:00:00'));
+        $this->service()->resend($this->campaign->id, $this->pending('ana@example.com')->id->value, $this->mary->id);
+
+        Event::assertDispatchedTimes(CampaignInvitationSent::class, 2);
+    }
+
     public function test_after_a_rejection_inviting_refuses_for_30_days(): void
     {
         $this->sendLog()->recordSend($this->campaign->id, 'ana@example.com', CarbonImmutable::now()->toDateTimeImmutable());

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Application\DTOs;
 
+use Carbon\CarbonImmutable;
 use DateTimeImmutable;
 use Modules\GameTables\Domain\Entities\GameSystem;
 use Modules\GameTables\Domain\Entities\GameTable;
@@ -33,7 +34,7 @@ final readonly class ProfileParticipationDTO
         GameTable $gameTable,
         GameSystem $gameSystem,
     ): self {
-        $now = new DateTimeImmutable();
+        $now = CarbonImmutable::now()->toDateTimeImmutable();
         $startsAt = $gameTable->timeSlot->startsAt;
         $isUpcoming = $startsAt !== null && $startsAt > $now;
 

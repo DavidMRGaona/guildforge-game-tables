@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Services;
 
-use DateMalformedStringException;
 use Carbon\CarbonImmutable;
+use DateMalformedStringException;
 use DateTimeImmutable;
 use Modules\GameTables\Application\Services\EligibilityServiceInterface;
 use Modules\GameTables\Application\Services\MembershipCheckerInterface;
@@ -65,7 +65,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
         ?DateTimeImmutable $now,
         ParticipantRole $role,
     ): bool {
-        $now ??= new DateTimeImmutable();
+        $now ??= CarbonImmutable::now()->toDateTimeImmutable();
 
         // Check if registration is open
         if (! $gameTable->canRegister()) {
@@ -246,7 +246,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
         $isMember = $this->checkMembership($userId);
         $userAge = null; // Age checking would require user profile data
 
-        $now = new DateTimeImmutable();
+        $now = CarbonImmutable::now()->toDateTimeImmutable();
         // The same calculation as ensureUserCanRegister(), once per role the page offers
         $result = $this->canRegister($gameTable, $userId, $isMember, $userAge, $now);
         $spectator = $this->canRegister($gameTable, $userId, $isMember, $userAge, $now, ParticipantRole::Spectator);

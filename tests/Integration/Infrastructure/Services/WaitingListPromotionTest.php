@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Tests\Integration\Infrastructure\Services;
 
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Carbon\CarbonImmutable;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
@@ -34,6 +35,10 @@ final class WaitingListPromotionTest extends ModuleTestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Far from a clock change: start times are stored as wall-clock times, ambiguous in the hour
+        // repeated in October (GuildForge#107), and these tests store times minutes or hours from now
+        $this->travelTo(CarbonImmutable::parse('2026-11-04 18:00:00'));
 
         Notification::fake();
         $system = GameSystemModel::create(['id' => (string) Str::uuid(), 'name' => 'Sistema', 'slug' => 'sistema', 'is_active' => true]);

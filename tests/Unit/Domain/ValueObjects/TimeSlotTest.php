@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Modules\GameTables\Tests\Unit\Domain\ValueObjects;
 
 use DateTimeImmutable;
+use DateTimeZone;
 use InvalidArgumentException;
 use Modules\GameTables\Domain\ValueObjects\TimeSlot;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class TimeSlotTest extends TestCase
@@ -45,6 +47,29 @@ final class TimeSlotTest extends TestCase
         $endsAt = $timeSlot->endsAt();
 
         $this->assertEquals(new DateTimeImmutable('2026-01-26 22:00:00'), $endsAt);
+    }
+
+    /**
+     * @return array<string, array{string, string}>
+     */
+    public static function clockChangeNights(): array
+    {
+        return [
+            // The clocks go back at 03:00: four hours from 01:00 summer time end at 04:00 winter time
+            'october' => ['2026-10-25 01:00:00', '2026-10-25T04:00:00+01:00'],
+            // The clocks go forward at 02:00: four hours from 00:30 winter time end at 05:30 summer time
+            'march' => ['2026-03-29 00:30:00', '2026-03-29T05:30:00+02:00'],
+        ];
+    }
+
+    #[DataProvider('clockChangeNights')]
+    public function test_the_duration_is_elapsed_time_across_a_clock_change(string $startsAt, string $expected): void
+    {
+        $start = new DateTimeImmutable($startsAt, new DateTimeZone('Europe/Madrid'));
+        $timeSlot = new TimeSlot($start, 240);
+
+        $this->assertSame($expected, $timeSlot->endsAt()->format('c'));
+        $this->assertSame(240 * 60, $timeSlot->endsAt()->getTimestamp() - $start->getTimestamp());
     }
 
     public function test_it_calculates_duration_hours(): void

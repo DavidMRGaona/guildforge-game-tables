@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Tests\Unit\Domain\Entities;
 
 use DateTimeImmutable;
+use DateTimeZone;
 use Modules\GameTables\Domain\Entities\Participant;
 use Modules\GameTables\Domain\Enums\GuestConfirmationMode;
 use Modules\GameTables\Domain\Enums\ParticipantCancellationReason;
@@ -391,6 +392,18 @@ final class ParticipantTest extends TestCase
 
         $this->assertFalse($guest->canResendConfirmation(new DateTimeImmutable('2030-01-01 10:10:59')));
         $this->assertTrue($guest->canResendConfirmation(new DateTimeImmutable('2030-01-01 10:11:00')));
+    }
+
+    // Sent at 02:58 summer time; at 02:04 winter time, six minutes later, the clock reads earlier
+    public function test_resend_waits_five_elapsed_minutes_when_the_clocks_go_back(): void
+    {
+        $madrid = new DateTimeZone('Europe/Madrid');
+        $sentAt = (new DateTimeImmutable('2026-10-25T00:58:00Z'))->setTimezone($madrid);
+        $guest = $this->createGuest();
+        $guest->requireEmailConfirmation(GuestConfirmationMode::Hold, 'token-1', null, $sentAt);
+
+        $this->assertFalse($guest->canResendConfirmation((new DateTimeImmutable('2026-10-25T01:02:59Z'))->setTimezone($madrid)));
+        $this->assertTrue($guest->canResendConfirmation((new DateTimeImmutable('2026-10-25T01:04:00Z'))->setTimezone($madrid)));
     }
 
     public function test_overdue_only_in_hold_mode_at_or_after_the_deadline(): void

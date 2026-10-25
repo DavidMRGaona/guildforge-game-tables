@@ -9,6 +9,7 @@ use App\Application\Authorization\Services\AuthorizationServiceInterface;
 use App\Application\Services\SettingsServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\RoleModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Modules\GameTables\Application\Services\MembershipCheckerInterface;
@@ -33,6 +34,10 @@ final class RegistrationEligibilityTest extends ModuleTestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Far from a clock change: start times are stored as wall-clock times, ambiguous in the hour
+        // repeated in October (GuildForge#107), and these tests store times minutes or hours from now
+        $this->travelTo(CarbonImmutable::parse('2026-11-04 18:00:00'));
 
         app('router')->getRoutes()->refreshNameLookups();
         config()->set('modules.settings.game-tables', []);

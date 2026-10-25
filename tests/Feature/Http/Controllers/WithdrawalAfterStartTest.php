@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Tests\Feature\Http\Controllers;
 
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Carbon\CarbonImmutable;
 use DateTimeInterface;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -28,6 +29,10 @@ final class WithdrawalAfterStartTest extends ModuleTestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Far from a clock change: start times are stored as wall-clock times, ambiguous in the hour
+        // repeated in October (GuildForge#107), and these tests store times minutes or hours from now
+        $this->travelTo(CarbonImmutable::parse('2026-11-04 18:00:00'));
 
         app('router')->getRoutes()->refreshNameLookups();
         config()->set('modules.settings.game-tables', []);

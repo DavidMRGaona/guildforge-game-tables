@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Services;
 
+use DateInterval;
 use DateTimeImmutable;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\GuestConfirmationMode;
@@ -26,7 +27,7 @@ final readonly class GuestConfirmationPolicy
      */
     public function deadlineFor(GameTable $table, DateTimeImmutable $now): DateTimeImmutable
     {
-        $deadline = $now->modify('+'.$this->settings->guestConfirmationHoldHours().' hours');
+        $deadline = $now->add(new DateInterval('PT'.$this->settings->guestConfirmationHoldHours().'H'));
         $closing = $table->effectiveRegistrationClosesAt();
 
         return $closing < $deadline ? $closing : $deadline;

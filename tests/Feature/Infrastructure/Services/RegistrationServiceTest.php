@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Tests\Feature\Infrastructure\Services;
 
+use Carbon\CarbonImmutable;
 use Closure;
 use DateTimeImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -823,30 +824,32 @@ final class RegistrationServiceTest extends TestCase
     }
 
     /**
-     * @return array<string, array{ParticipantStatus, string, string|null}>
+     * Start of the table in minutes from now.
+     *
+     * @return array<string, array{ParticipantStatus, int, string|null}>
      */
     public static function withdrawalCases(): array
     {
         return [
-            'confirmed before the start' => [ParticipantStatus::Confirmed, '+1 hour', null],
-            'pending before the start' => [ParticipantStatus::Pending, '+1 hour', null],
-            'waiting before the start' => [ParticipantStatus::WaitingList, '+1 hour', null],
-            'confirmed after the start' => [ParticipantStatus::Confirmed, '-1 minute', 'table_started'],
-            'waiting after the start' => [ParticipantStatus::WaitingList, '-1 minute', 'table_started'],
-            'cancelled before the start' => [ParticipantStatus::Cancelled, '+1 hour', 'not_allowed'],
-            'cancelled after the start' => [ParticipantStatus::Cancelled, '-1 minute', 'not_allowed'],
+            'confirmed before the start' => [ParticipantStatus::Confirmed, 60, null],
+            'pending before the start' => [ParticipantStatus::Pending, 60, null],
+            'waiting before the start' => [ParticipantStatus::WaitingList, 60, null],
+            'confirmed after the start' => [ParticipantStatus::Confirmed, -1, 'table_started'],
+            'waiting after the start' => [ParticipantStatus::WaitingList, -1, 'table_started'],
+            'cancelled before the start' => [ParticipantStatus::Cancelled, 60, 'not_allowed'],
+            'cancelled after the start' => [ParticipantStatus::Cancelled, -1, 'not_allowed'],
         ];
     }
 
     #[DataProvider('withdrawalCases')]
-    public function test_withdrawal_refusal(ParticipantStatus $status, string $startsAt, ?string $expected): void
+    public function test_withdrawal_refusal(ParticipantStatus $status, int $startsInMinutes, ?string $expected): void
     {
         $participant = $this->participantWith($status);
         $this->participantRepository->expects($this->once())->method('find')->willReturn($participant);
         $this->gameTableRepository
             ->expects($expected === 'not_allowed' ? $this->never() : $this->once())
             ->method('find')
-            ->willReturn($this->createGameTable($participant->gameTableId->value, startsAt: new DateTimeImmutable($startsAt)));
+            ->willReturn($this->createGameTable($participant->gameTableId->value, startsAt: $this->minutesFromNow($startsInMinutes)));
 
         $this->assertSame($expected, $this->service->withdrawalRefusal($participant->id->value));
     }
@@ -949,7 +952,15 @@ final class RegistrationServiceTest extends TestCase
 
     private function startedTable(Participant $participant): GameTable
     {
-        return $this->createGameTable($participant->gameTableId->value, startsAt: new DateTimeImmutable('-1 minute'));
+        return $this->createGameTable($participant->gameTableId->value, startsAt: $this->minutesFromNow(-1));
+    }
+
+    /**
+     * Elapsed minutes: «-1 minute» on the wall clock lands an hour later in the hour repeated in October.
+     */
+    private function minutesFromNow(int $minutes): DateTimeImmutable
+    {
+        return CarbonImmutable::now()->addMinutes($minutes)->toDateTimeImmutable();
     }
 
     /**
