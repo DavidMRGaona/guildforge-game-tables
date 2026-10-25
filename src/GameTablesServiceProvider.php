@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\GameTables;
 
+use App\Application\Cookies\DTOs\DeclaredCookieDTO;
+use App\Application\Cookies\Services\CookieDeclarationRegistryInterface;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Modules\GameTables\Filament\Resources\GameSystemResource;
@@ -60,8 +62,6 @@ use Modules\GameTables\Application\Services\EventWithTablesQueryInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Application\Services\GameMasterServiceInterface;
 use Modules\GameTables\Application\Services\MembershipCheckerInterface;
-use Modules\CookieConsent\Application\DTOs\DeclaredCookieDTO;
-use Modules\CookieConsent\Application\Services\CookieDeclarationRegistryInterface;
 use Modules\GameTables\Application\Services\CampaignDirectionInterface;
 use Modules\GameTables\Application\Services\TableDirectionInterface;
 use Modules\GameTables\Application\Services\CampaignRosterQueryInterface;
@@ -511,15 +511,11 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     }
 
     /**
-     * The browser hint cookie of the guest form, declared to cookie-consent when that module is
-     * installed (this module does not require it).
+     * The browser hint cookie of the guest form, declared in the core's registry: a cookie
+     * consent module, when installed, lists it in its banner.
      */
     private function registerCookieDeclaration(): void
     {
-        if (! interface_exists(CookieDeclarationRegistryInterface::class)) {
-            return;
-        }
-
         $this->callAfterResolving(CookieDeclarationRegistryInterface::class, function (CookieDeclarationRegistryInterface $registry): void {
             $registry->declare(new DeclaredCookieDTO(
                 name: 'gt_guest_registrations',
