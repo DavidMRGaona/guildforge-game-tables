@@ -464,7 +464,7 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
         </div>
     </div>
 
-    <main class="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
         <!-- The server's answer to the last action -->
         <div
             v-if="flashSuccess"
@@ -870,7 +870,7 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                 </div>
             </template>
         </section>
-    </main>
+    </div>
 
     <!-- Reject a request, with an optional reason -->
     <Teleport to="body">
