@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Tests\Feature\Http\Controllers;
 
+use App\Application\Services\TimezoneServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -53,7 +54,7 @@ final class TableRegistrationsControllerTest extends ModuleTestCase
         Notification::fake();
         app('router')->getRoutes()->refreshNameLookups();
         config()->set('modules.settings.game-tables', []);
-        $this->travelTo(CarbonImmutable::parse('2026-11-02 10:00:00'));
+        $this->travelTo(CarbonImmutable::parse('2026-11-02 10:00:00', 'Europe/Madrid'));
 
         $this->john = UserModel::factory()->create(['name' => 'John Doe', 'email' => 'john@example.com']);
         $this->mary = UserModel::factory()->create(['name' => 'Mary Major', 'email' => 'mary@example.com']);
@@ -68,9 +69,9 @@ final class TableRegistrationsControllerTest extends ModuleTestCase
 
     public function test_a_linked_director_sees_the_registrations_page(): void
     {
-        $jane = $this->userRow($this->table, $this->jane, 'pending', CarbonImmutable::parse('2026-10-30 12:00:00'), ['notes' => 'Llevo dados']);
-        $guest = $this->guestRow($this->table, 'pending', CarbonImmutable::parse('2026-10-31 12:00:00'));
-        $this->userRow($this->table, $this->richard, 'confirmed', CarbonImmutable::parse('2026-10-29 12:00:00'));
+        $jane = $this->userRow($this->table, $this->jane, 'pending', CarbonImmutable::parse('2026-10-30 12:00:00', 'Europe/Madrid'), ['notes' => 'Llevo dados']);
+        $guest = $this->guestRow($this->table, 'pending', CarbonImmutable::parse('2026-10-31 12:00:00', 'Europe/Madrid'));
+        $this->userRow($this->table, $this->richard, 'confirmed', CarbonImmutable::parse('2026-10-29 12:00:00', 'Europe/Madrid'));
 
         $this->actingAs($this->john)
             ->get($this->pageUrl())
@@ -118,8 +119,8 @@ final class TableRegistrationsControllerTest extends ModuleTestCase
 
     public function test_the_page_never_carries_contact_details(): void
     {
-        $this->userRow($this->table, $this->jane, 'pending', CarbonImmutable::parse('2026-10-30 12:00:00'), ['notes' => 'Nota privada']);
-        $this->guestRow($this->table, 'pending', CarbonImmutable::parse('2026-10-31 12:00:00'));
+        $this->userRow($this->table, $this->jane, 'pending', CarbonImmutable::parse('2026-10-30 12:00:00', 'Europe/Madrid'), ['notes' => 'Nota privada']);
+        $this->guestRow($this->table, 'pending', CarbonImmutable::parse('2026-10-31 12:00:00', 'Europe/Madrid'));
 
         $content = (string) $this->actingAs($this->john)->get($this->pageUrl())->assertOk()->getContent();
 
@@ -131,7 +132,7 @@ final class TableRegistrationsControllerTest extends ModuleTestCase
 
     public function test_rows_list_pending_then_confirmed_then_the_waiting_list_then_the_rest(): void
     {
-        $at = CarbonImmutable::parse('2026-10-20 12:00:00');
+        $at = CarbonImmutable::parse('2026-10-20 12:00:00', 'Europe/Madrid');
         $cancelled = $this->userRow($this->table, UserModel::factory()->create(), 'cancelled', $at);
         $secondInLine = $this->userRow($this->table, UserModel::factory()->create(), 'waiting_list', $at->addHour(), ['waiting_list_position' => 2]);
         $firstInLine = $this->userRow($this->table, UserModel::factory()->create(), 'waiting_list', $at->addHours(2), ['waiting_list_position' => 1]);
@@ -290,8 +291,8 @@ final class TableRegistrationsControllerTest extends ModuleTestCase
     {
         config()->set('modules.settings.game-tables.registration.waiting_list_enabled', $waitingList);
         $this->table->forceFill(['max_players' => 1])->save();
-        $this->userRow($this->table, $this->richard, 'confirmed', CarbonImmutable::parse('2026-10-29 12:00:00'));
-        $jane = $this->userRow($this->table, $this->jane, 'pending', CarbonImmutable::parse('2026-10-30 12:00:00'));
+        $this->userRow($this->table, $this->richard, 'confirmed', CarbonImmutable::parse('2026-10-29 12:00:00', 'Europe/Madrid'));
+        $jane = $this->userRow($this->table, $this->jane, 'pending', CarbonImmutable::parse('2026-10-30 12:00:00', 'Europe/Madrid'));
 
         $this->asDirector()
             ->post($this->actionUrl($jane, 'aprobar'))
@@ -304,7 +305,7 @@ final class TableRegistrationsControllerTest extends ModuleTestCase
 
     public function test_approving_on_a_completed_table_is_refused(): void
     {
-        $jane = $this->userRow($this->table, $this->jane, 'pending', CarbonImmutable::parse('2026-10-30 12:00:00'));
+        $jane = $this->userRow($this->table, $this->jane, 'pending', CarbonImmutable::parse('2026-10-30 12:00:00', 'Europe/Madrid'));
         $this->table->forceFill(['status' => 'completed'])->save();
 
         $this->asDirector()
@@ -320,7 +321,7 @@ final class TableRegistrationsControllerTest extends ModuleTestCase
 
     public function test_approving_a_pending_user(): void
     {
-        $jane = $this->userRow($this->table, $this->jane, 'pending', CarbonImmutable::parse('2026-10-30 12:00:00'));
+        $jane = $this->userRow($this->table, $this->jane, 'pending', CarbonImmutable::parse('2026-10-30 12:00:00', 'Europe/Madrid'));
 
         $this->asDirector()
             ->post($this->actionUrl($jane, 'aprobar'))
@@ -340,7 +341,7 @@ final class TableRegistrationsControllerTest extends ModuleTestCase
 
     public function test_approving_a_guest_awaiting_their_email_confirmation_is_refused(): void
     {
-        $guest = $this->guestRow($this->table, 'pending', CarbonImmutable::parse('2026-10-31 12:00:00'));
+        $guest = $this->guestRow($this->table, 'pending', CarbonImmutable::parse('2026-10-31 12:00:00', 'Europe/Madrid'));
 
         $this->asDirector()
             ->post($this->actionUrl($guest, 'aprobar'))
@@ -358,7 +359,7 @@ final class TableRegistrationsControllerTest extends ModuleTestCase
 
     public function test_rejecting_a_guest_with_a_reason_emails_it(): void
     {
-        $guest = $this->guestRow($this->table, 'pending', CarbonImmutable::parse('2026-10-31 12:00:00'));
+        $guest = $this->guestRow($this->table, 'pending', CarbonImmutable::parse('2026-10-31 12:00:00', 'Europe/Madrid'));
 
         $this->asDirector()
             ->post($this->actionUrl($guest, 'rechazar'), ['reason' => 'La partida es para jugadores con experiencia'])
@@ -456,7 +457,7 @@ final class TableRegistrationsControllerTest extends ModuleTestCase
             'created_by' => $this->mary->id,
             'title' => $title,
             'slug' => Str::slug($title),
-            'starts_at' => CarbonImmutable::parse('2026-11-09 18:00:00'),
+            'starts_at' => CarbonImmutable::parse('2026-11-09 18:00:00', 'Europe/Madrid'),
             'duration_minutes' => 240,
             'table_type' => 'one_shot',
             'table_format' => 'in_person',
@@ -529,8 +530,9 @@ final class TableRegistrationsControllerTest extends ModuleTestCase
 
     private function requestedAt(ParticipantModel $row, CarbonImmutable $at): ParticipantModel
     {
-        // A query update: the status log observer only cares about statuses
-        ParticipantModel::query()->whereKey($row->id)->update(['created_at' => $at]);
+        // A query update: the status log observer only cares about statuses (and the binding is
+        // written in the storage zone by hand)
+        ParticipantModel::query()->whereKey($row->id)->update(['created_at' => app(TimezoneServiceInterface::class)->toStorage($at)]);
 
         return $row->refresh();
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Services;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Carbon\CarbonImmutable;
 use Closure;
 use DateTimeImmutable;
@@ -834,7 +835,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             $participant->firstName ?? '',
             $participant->confirmationToken ?? '',
             $participant->holdsPlaceWhileUnconfirmed(),
-            $participant->holdsPlaceWhileUnconfirmed() ? $participant->confirmationExpiresAt?->format('d/m/Y H:i') : null,
+            $participant->holdsPlaceWhileUnconfirmed() && $participant->confirmationExpiresAt instanceof DateTimeImmutable ? app(TimezoneServiceInterface::class)->format($participant->confirmationExpiresAt) : null,
         );
     }
 

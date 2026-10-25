@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Application\DTOs;
 
+use App\Application\Services\TimezoneServiceInterface;
 use DateTimeImmutable;
 use Modules\GameTables\Domain\Enums\CreationAccessLevel;
 use Modules\GameTables\Domain\Enums\LocationMode;
@@ -136,6 +137,8 @@ final readonly class UpdateEventGameTableConfigDTO
      */
     public function toArray(): array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         return [
             'event_id' => $this->eventId,
             'tables_enabled' => $this->tablesEnabled,
@@ -148,7 +151,7 @@ final readonly class UpdateEventGameTableConfigDTO
             'fixed_location' => $this->fixedLocation,
             'eligibility_override' => $this->eligibilityOverride?->toArray(),
             'early_access_enabled' => $this->earlyAccessEnabled,
-            'creation_opens_at' => $this->creationOpensAt?->format('c'),
+            'creation_opens_at' => $timezone->iso($this->creationOpensAt),
             'early_access_tier' => $this->earlyAccessTier?->toArray(),
         ];
     }

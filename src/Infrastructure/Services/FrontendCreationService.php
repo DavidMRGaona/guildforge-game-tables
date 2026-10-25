@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Infrastructure\Services;
 
 use App\Application\Authorization\Services\AuthorizationServiceInterface;
+use App\Application\Services\TimezoneServiceInterface;
 use App\Domain\Entities\Event;
 use App\Domain\Repositories\EventRepositoryInterface;
 use App\Domain\ValueObjects\EventId;
@@ -267,6 +268,8 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
      */
     public function getCreateFormData(?string $keepCampaignId = null, ?string $keepEventId = null): array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         // Get game systems
         $gameSystems = $this->gameSystemRepository->getActive();
 
@@ -326,7 +329,8 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
                 static fn ($event): array => [
                     'id' => $event->id()->value,
                     'name' => $event->title(),
-                    'start_date' => $event->startDate()->format('Y-m-d\TH:i'),
+                    // The value of a datetime-local field: the site's wall time
+                    'start_date' => $timezone->toDisplayWallTime($event->startDate()),
                 ],
             )->all()),
             'campaigns' => $campaigns,
@@ -412,12 +416,14 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
 
     public function getMyTables(string $userId): array
     {
+        $timezone = app(TimezoneServiceInterface::class);
         $directed = $this->tableDirection->tableIdsDirectedBy($userId);
 
         $models = GameTableModel::query()
             ->whereNull('campaign_id')
             ->where('is_published', true)
-            ->where('starts_at', '>=', now()->subDays(30))
+            // Thirty days back on the site's calendar, bound in the storage zone
+            ->where('starts_at', '>=', $timezone->toStorage($timezone->toDisplay(now())->modify('-30 days')))
             ->where(static function ($query) use ($userId, $directed): void {
                 $query->where('created_by', $userId)->orWhereIn('id', $directed);
             })
@@ -437,14 +443,14 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             ->pluck('total', 'game_table_id')
             ->all();
 
-        $published = $models->map(static function (GameTableModel $model) use ($managed, $pending): MyPublishedTableDTO {
+        $published = $models->map(static function (GameTableModel $model) use ($managed, $pending, $timezone): MyPublishedTableDTO {
             $manages = in_array($model->id, $managed, true);
 
             return new MyPublishedTableDTO(
                 id: $model->id,
                 title: $model->title,
                 slug: (string) $model->slug,
-                startsAt: $model->starts_at->format('c'),
+                startsAt: (string) $timezone->iso($model->starts_at),
                 status: $model->status->value,
                 statusLabel: $model->status->label(),
                 statusColor: $model->status->color(),

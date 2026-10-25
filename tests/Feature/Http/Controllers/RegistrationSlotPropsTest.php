@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Tests\Feature\Http\Controllers;
 
 use App\Application\Modules\DTOs\SlotRegistrationDTO;
+use App\Application\Services\TimezoneServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Carbon\CarbonImmutable;
 use Illuminate\Routing\Route;
@@ -34,7 +35,7 @@ final class RegistrationSlotPropsTest extends ModuleTestCase
 
         // Far from a clock change: start times are stored as wall-clock times, ambiguous in the hour
         // repeated in October (GuildForge#107), and these tests store times minutes or hours from now
-        $this->travelTo(CarbonImmutable::parse('2026-11-04 18:00:00'));
+        $this->travelTo(CarbonImmutable::parse('2026-11-04 18:00:00', 'Europe/Madrid'));
 
         app('router')->getRoutes()->refreshNameLookups();
         config()->set('modules.settings.game-tables', []);
@@ -85,7 +86,7 @@ final class RegistrationSlotPropsTest extends ModuleTestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('guestEligibility.confirmation.mode', 'hold')
-                ->where('guestEligibility.confirmation.deadline', $now->addHours(2)->format('c')));
+                ->where('guestEligibility.confirmation.deadline', app(TimezoneServiceInterface::class)->iso($now->addHours(2))));
     }
 
     public function test_a_visitor_is_told_the_place_is_not_guaranteed_once_the_cap_is_reached(): void

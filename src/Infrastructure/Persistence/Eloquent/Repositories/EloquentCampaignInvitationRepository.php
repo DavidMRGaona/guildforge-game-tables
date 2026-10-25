@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories;
 
+use App\Application\Services\TimezoneServiceInterface;
 use DateTimeImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -19,8 +20,6 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 
 final readonly class EloquentCampaignInvitationRepository implements CampaignInvitationRepositoryInterface
 {
-    private const string FORMAT = 'Y-m-d H:i:s';
-
     public function save(CampaignInvitation $invitation): void
     {
         try {
@@ -32,9 +31,9 @@ final readonly class EloquentCampaignInvitationRepository implements CampaignInv
                     'invited_by_user_id' => $invitation->invitedBy,
                     'inviter_name' => $invitation->inviterName,
                     'token_hash' => $invitation->tokenHash,
-                    'expires_at' => $invitation->expiresAt->format(self::FORMAT),
+                    'expires_at' => $invitation->expiresAt,
                     'send_count' => $invitation->sendCount,
-                    'last_sent_at' => $invitation->lastSentAt->format(self::FORMAT),
+                    'last_sent_at' => $invitation->lastSentAt,
                 ],
             );
         } catch (UniqueConstraintViolationException) {
@@ -81,7 +80,7 @@ final readonly class EloquentCampaignInvitationRepository implements CampaignInv
     {
         return array_values(CampaignInvitationModel::query()
             ->where('email', $email)
-            ->where('expires_at', '>', $now->format(self::FORMAT))
+            ->where('expires_at', '>', app(TimezoneServiceInterface::class)->toStorage($now))
             ->orderBy('created_at')
             ->orderBy('id')
             ->get()
@@ -97,7 +96,7 @@ final readonly class EloquentCampaignInvitationRepository implements CampaignInv
     public function deleteExpired(DateTimeImmutable $now): int
     {
         return CampaignInvitationModel::query()
-            ->where('expires_at', '<=', $now->format(self::FORMAT))
+            ->where('expires_at', '<=', app(TimezoneServiceInterface::class)->toStorage($now))
             ->delete();
     }
 
@@ -134,9 +133,9 @@ final readonly class EloquentCampaignInvitationRepository implements CampaignInv
             invitedBy: $model->invited_by_user_id,
             inviterName: $model->inviter_name,
             tokenHash: $model->token_hash,
-            expiresAt: new DateTimeImmutable($model->expires_at->toDateTimeString()),
+            expiresAt: DateTimeImmutable::createFromInterface($model->expires_at),
             sendCount: $model->send_count,
-            lastSentAt: new DateTimeImmutable($model->last_sent_at->toDateTimeString()),
+            lastSentAt: DateTimeImmutable::createFromInterface($model->last_sent_at),
         );
     }
 }

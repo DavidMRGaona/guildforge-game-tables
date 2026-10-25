@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Listeners;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Illuminate\Support\Facades\Notification;
 use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Domain\Entities\GameTable;
@@ -35,7 +36,7 @@ final readonly class NotifyOnCancellation
         }
 
         $participantName = $this->recipientResolver->getParticipantDisplayName($event->participantId);
-        $tableDate = $gameTable->timeSlot->startsAt->format('d/m/Y H:i');
+        $tableDate = app(TimezoneServiceInterface::class)->format($gameTable->timeSlot->startsAt);
         $tableLocation = $gameTable->location;
 
         $notification = new ParticipantCancelledNotification(

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Application\DTOs;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Modules\GameTables\Domain\Entities\GameSystem;
 
 final readonly class GameSystemDTO
@@ -24,6 +25,8 @@ final readonly class GameSystemDTO
 
     public static function fromEntity(GameSystem $gameSystem): self
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         return new self(
             id: $gameSystem->id->value,
             name: $gameSystem->name,
@@ -35,7 +38,7 @@ final readonly class GameSystemDTO
             year: $gameSystem->year,
             logoUrl: $gameSystem->logoUrl,
             websiteUrl: $gameSystem->websiteUrl,
-            createdAt: $gameSystem->createdAt?->format('c'),
+            createdAt: $timezone->iso($gameSystem->createdAt),
         );
     }
 

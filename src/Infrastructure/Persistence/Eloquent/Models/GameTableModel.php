@@ -6,6 +6,7 @@ namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Models;
 
 use App\Infrastructure\Persistence\Eloquent\Concerns\DeletesCloudinaryImages;
 use App\Infrastructure\Persistence\Eloquent\Concerns\HasSlug;
+use App\Infrastructure\Persistence\Eloquent\Concerns\StoresInstantsInStorageTimezone;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -75,6 +76,7 @@ final class GameTableModel extends Model
     use DeletesCloudinaryImages;
     use HasSlug;
     use HasUuids;
+    use StoresInstantsInStorageTimezone;
 
     /**
      * @var array<string>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Listeners;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Illuminate\Support\Facades\Notification;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Events\ParticipantRejected;
@@ -34,7 +35,7 @@ final readonly class SendRejectionNotification
         }
 
         $participantName = $this->recipientResolver->getParticipantDisplayName($event->participantId);
-        $tableDate = $gameTable->timeSlot->startsAt->format('d/m/Y H:i');
+        $tableDate = app(TimezoneServiceInterface::class)->format($gameTable->timeSlot->startsAt);
         $tableLocation = $gameTable->location;
 
         Notification::route('mail', $participantEmail)

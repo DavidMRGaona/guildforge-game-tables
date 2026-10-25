@@ -55,7 +55,7 @@ final class CampaignRosterControllerTest extends ModuleTestCase
         Notification::fake();
         app('router')->getRoutes()->refreshNameLookups();
         config()->set('modules.settings.game-tables', []);
-        $this->travelTo(CarbonImmutable::parse('2026-11-02 10:00:00'));
+        $this->travelTo(CarbonImmutable::parse('2026-11-02 10:00:00', 'Europe/Madrid'));
 
         $this->mary = UserModel::factory()->create(['name' => 'Mary Major', 'email' => 'mary@example.com']);
         $this->john = UserModel::factory()->create(['name' => 'John Doe', 'email' => 'john@example.com']);
@@ -64,11 +64,11 @@ final class CampaignRosterControllerTest extends ModuleTestCase
 
         $this->system = GameSystemModel::create(['id' => (string) Str::uuid(), 'name' => 'Sistema', 'slug' => 'sistema', 'is_active' => true]);
         $this->campaign = $this->campaign('La cripta olvidada');
-        $this->first = $this->campaignSession($this->campaign, 'Sesión 1', CarbonImmutable::parse('2026-11-09 18:00:00'));
-        $this->second = $this->campaignSession($this->campaign, 'Sesión 2', CarbonImmutable::parse('2026-11-16 18:00:00'));
+        $this->first = $this->campaignSession($this->campaign, 'Sesión 1', CarbonImmutable::parse('2026-11-09 18:00:00', 'Europe/Madrid'));
+        $this->second = $this->campaignSession($this->campaign, 'Sesión 2', CarbonImmutable::parse('2026-11-16 18:00:00', 'Europe/Madrid'));
 
-        $this->addMember($this->john, CarbonImmutable::parse('2026-10-01 12:00:00'));
-        $this->addMember($this->jane, CarbonImmutable::parse('2026-10-05 12:00:00'));
+        $this->addMember($this->john, CarbonImmutable::parse('2026-10-01 12:00:00', 'Europe/Madrid'));
+        $this->addMember($this->jane, CarbonImmutable::parse('2026-10-05 12:00:00', 'Europe/Madrid'));
         foreach ([$this->first, $this->second] as $session) {
             $this->rosterRow($session, $this->john);
         }
@@ -162,7 +162,7 @@ final class CampaignRosterControllerTest extends ModuleTestCase
 
         // A director may publish a whole season at once
         for ($week = 3; $week <= 20; $week++) {
-            $session = $this->campaignSession($this->campaign, "Sesión {$week}", CarbonImmutable::parse('2026-11-02 18:00:00')->addWeeks($week));
+            $session = $this->campaignSession($this->campaign, "Sesión {$week}", CarbonImmutable::parse('2026-11-02 18:00:00', 'Europe/Madrid')->addWeeks($week));
             $this->rosterRow($session, $this->john);
             $this->rosterRow($session, $this->jane);
         }
@@ -190,10 +190,10 @@ final class CampaignRosterControllerTest extends ModuleTestCase
 
     public function test_started_unpublished_and_other_campaign_sessions_are_not_listed(): void
     {
-        $this->campaignSession($this->campaign, 'Sesión pasada', CarbonImmutable::parse('2026-11-01 18:00:00'));
-        $this->campaignSession($this->campaign, 'Sesión oculta', CarbonImmutable::parse('2026-11-20 18:00:00'), ['is_published' => false]);
-        $this->campaignSession($this->campaign, 'Sesión cancelada', CarbonImmutable::parse('2026-11-21 18:00:00'), ['status' => 'cancelled']);
-        $this->campaignSession($this->campaign('La torre del mago'), 'Sesión ajena', CarbonImmutable::parse('2026-11-10 18:00:00'));
+        $this->campaignSession($this->campaign, 'Sesión pasada', CarbonImmutable::parse('2026-11-01 18:00:00', 'Europe/Madrid'));
+        $this->campaignSession($this->campaign, 'Sesión oculta', CarbonImmutable::parse('2026-11-20 18:00:00', 'Europe/Madrid'), ['is_published' => false]);
+        $this->campaignSession($this->campaign, 'Sesión cancelada', CarbonImmutable::parse('2026-11-21 18:00:00', 'Europe/Madrid'), ['status' => 'cancelled']);
+        $this->campaignSession($this->campaign('La torre del mago'), 'Sesión ajena', CarbonImmutable::parse('2026-11-10 18:00:00', 'Europe/Madrid'));
 
         $this->actingAs($this->mary)
             ->get('/campanas/mis-campanas/'.$this->campaign->id.'/plantilla')
@@ -387,7 +387,7 @@ final class CampaignRosterControllerTest extends ModuleTestCase
 
     public function test_resending_and_cancelling_an_invitation(): void
     {
-        $this->travelTo(CarbonImmutable::parse('2026-11-02 10:00:00'));
+        $this->travelTo(CarbonImmutable::parse('2026-11-02 10:00:00', 'Europe/Madrid'));
         $this->invite($this->campaign, 'ana@example.com');
         $id = $this->invitationId($this->campaign, 'ana@example.com');
 
@@ -396,7 +396,7 @@ final class CampaignRosterControllerTest extends ModuleTestCase
             ->post($this->rosterUrl().'/invitaciones/'.$id.'/reenviar')
             ->assertSessionHas('error', 'Han de pasar 24 horas desde el último envío para volver a enviarla.');
 
-        $this->travelTo(CarbonImmutable::parse('2026-11-03 11:00:00'));
+        $this->travelTo(CarbonImmutable::parse('2026-11-03 11:00:00', 'Europe/Madrid'));
         $this->asDirector()
             ->post($this->rosterUrl().'/invitaciones/'.$id.'/reenviar')
             ->assertRedirect($this->rosterUrl())
@@ -442,7 +442,7 @@ final class CampaignRosterControllerTest extends ModuleTestCase
                 ->where('invitations.0.email', 'ana@example.com')
                 ->where('invitations.0.inviter_name', 'Mary Major')
                 ->where('invitations.0.send_count', 1)
-                ->where('invitations.0.expires_at', CarbonImmutable::parse('2026-11-02 10:00:00')->addDays(14)->toIso8601String())
+                ->where('invitations.0.expires_at', CarbonImmutable::parse('2026-11-02 10:00:00', 'Europe/Madrid')->addDays(14)->toIso8601String())
                 ->where('invitations.0.can_resend', false)
                 ->missing('invitations.0.campaign_id')
                 ->where('more_invitations_than_seats', false));
@@ -619,7 +619,7 @@ final class CampaignRosterControllerTest extends ModuleTestCase
 
     public function test_an_absence_in_a_session_of_another_campaign_is_refused(): void
     {
-        $other = $this->campaignSession($this->campaign('La torre del mago'), 'Sesión ajena', CarbonImmutable::parse('2026-11-10 18:00:00'));
+        $other = $this->campaignSession($this->campaign('La torre del mago'), 'Sesión ajena', CarbonImmutable::parse('2026-11-10 18:00:00', 'Europe/Madrid'));
 
         $this->asDirector()
             ->post($this->rosterUrl().'/ausencias', [

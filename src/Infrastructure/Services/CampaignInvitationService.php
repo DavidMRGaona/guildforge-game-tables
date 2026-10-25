@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Services;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Carbon\CarbonImmutable;
 use DateInterval;
 use DateTimeImmutable;
@@ -93,7 +94,7 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
                     invitedBy: $actorUserId,
                     inviterName: $this->nameOf($actorUserId),
                     tokenHash: hash('sha256', $token),
-                    expiresAt: $now->modify('+'.self::EXPIRES_AFTER_DAYS.' days'),
+                    expiresAt: $this->shiftDays($now, self::EXPIRES_AFTER_DAYS),
                     sendCount: 1,
                     lastSentAt: $now,
                 );
@@ -309,7 +310,7 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
             campaignSlug: $slug,
             inviterName: $invitation->inviterName,
             email: $invitation->email,
-            expiresAt: CarbonImmutable::instance($invitation->expiresAt)->toIso8601String(),
+            expiresAt: (string) app(TimezoneServiceInterface::class)->iso($invitation->expiresAt),
             sendCount: $invitation->sendCount,
             canResend: $canResend,
         );
@@ -320,7 +321,7 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
      */
     private function ensureWithinLimits(string $campaignId, string $email, DateTimeImmutable $now): void
     {
-        $window = $now->modify('-'.self::WINDOW_DAYS.' days');
+        $window = $this->shiftDays($now, -self::WINDOW_DAYS);
 
         if ($this->sendLog->rejectedSince($campaignId, $email, $window)
             || $this->sendLog->sendsSince($campaignId, $email, $window) >= self::MAX_SENDS_IN_WINDOW) {
@@ -334,11 +335,21 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
 
     private function sendLimitsAllow(string $campaignId, string $email, DateTimeImmutable $now): bool
     {
-        $window = $now->modify('-'.self::WINDOW_DAYS.' days');
+        $window = $this->shiftDays($now, -self::WINDOW_DAYS);
 
         return ! $this->sendLog->rejectedSince($campaignId, $email, $window)
             && $this->sendLog->sendsSince($campaignId, $email, $window) < self::MAX_SENDS_IN_WINDOW
             && $this->enoughTimeSinceLastSend($campaignId, $email, $now);
+    }
+
+    /**
+     * Whole days on the site's calendar: across a clock change the time of day stays the same.
+     */
+    private function shiftDays(DateTimeImmutable $instant, int $days): DateTimeImmutable
+    {
+        $timezone = app(TimezoneServiceInterface::class);
+
+        return $timezone->toStorage($timezone->toDisplay($instant)->modify(sprintf('%+d days', $days)));
     }
 
     private function enoughTimeSinceLastSend(string $campaignId, string $email, DateTimeImmutable $now): bool

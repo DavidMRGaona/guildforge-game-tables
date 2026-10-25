@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources\GameTableResource\RelationManagers;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Closure;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -150,7 +151,7 @@ final class ParticipantsRelationManager extends RelationManager
 
         // Only hold mode has a deadline
         return $record->confirmation_expires_at !== null
-            ? (string) __($key.'expires_at', ['date' => $record->confirmation_expires_at->format('d/m/Y H:i')])
+            ? (string) __($key.'expires_at', ['date' => app(TimezoneServiceInterface::class)->format($record->confirmation_expires_at)])
             : null;
     }
 

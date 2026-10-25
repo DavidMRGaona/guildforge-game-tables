@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Models;
 
+use App\Infrastructure\Persistence\Eloquent\Concerns\StoresInstantsInStorageTimezone;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -32,6 +33,7 @@ use Modules\GameTables\Domain\Enums\StatusLogActorKind;
 final class ParticipantStatusLogModel extends Model
 {
     use HasUuids;
+    use StoresInstantsInStorageTimezone;
 
     public const UPDATED_AT = null;
 

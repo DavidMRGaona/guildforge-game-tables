@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Application\DTOs;
 
+use App\Application\Services\TimezoneServiceInterface;
 use DateTimeImmutable;
 
 final readonly class CreationEligibilityDTO
@@ -78,15 +79,17 @@ final readonly class CreationEligibilityDTO
      */
     public function toArray(): array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         return [
             'eligible' => $this->eligible,
             'reason' => $this->reason,
             'user_tier' => $this->userTier,
-            'can_create_at' => $this->canCreateAt?->format('c'),
+            'can_create_at' => $timezone->iso($this->canCreateAt),
             'can_create_tables' => $this->canCreateTables,
             'can_create_campaigns' => $this->canCreateCampaigns,
             'has_early_access' => $this->hasEarlyAccess,
-            'public_open_date' => $this->publicOpenDate?->format('c'),
+            'public_open_date' => $timezone->iso($this->publicOpenDate),
             'requires_authentication' => $this->requiresAuthentication,
         ];
     }

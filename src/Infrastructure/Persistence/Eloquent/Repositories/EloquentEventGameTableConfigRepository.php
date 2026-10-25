@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Carbon\Carbon;
 use DateTimeImmutable;
 use Modules\GameTables\Domain\Entities\EventGameTableConfig;
@@ -105,8 +106,15 @@ final readonly class EloquentEventGameTableConfigRepository implements EventGame
      */
     private function timeSlotsToArray(array $timeSlots): array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
+        // With the site's offset: the JSON reads the same whatever the storage zone
         return array_map(
-            fn (TimeSlotDefinition $slot): array => $slot->toArray(),
+            fn (TimeSlotDefinition $slot): array => [
+                ...$slot->toArray(),
+                'start_time' => (string) $timezone->iso($slot->startTime),
+                'end_time' => (string) $timezone->iso($slot->endTime),
+            ],
             $timeSlots
         );
     }
@@ -121,8 +129,18 @@ final readonly class EloquentEventGameTableConfigRepository implements EventGame
             return [];
         }
 
+        $timezone = app(TimezoneServiceInterface::class);
+
+        // A slot saved before slots carried an offset holds the site's wall time
+        $read = fn (string $time): DateTimeImmutable => $timezone->toStorage(new DateTimeImmutable($time, $timezone->displayTimezone()));
+
         return array_map(
-            TimeSlotDefinition::fromArray(...),
+            fn (array $slot): TimeSlotDefinition => TimeSlotDefinition::create(
+                label: $slot['label'],
+                startTime: $read($slot['start_time']),
+                endTime: $read($slot['end_time']),
+                maxTables: $slot['max_tables'] ?? null,
+            ),
             $data
         );
     }

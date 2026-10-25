@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Services;
 
+use App\Application\Services\TimezoneServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Carbon\CarbonImmutable;
 use DateTimeImmutable;
@@ -48,6 +49,8 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
 
     public function rosterPage(string $campaignId, DateTimeImmutable $now): RosterPageDTO
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         $campaign = $this->campaigns->findOrFail(new CampaignId($campaignId));
         $rosterCount = $this->roster->count($campaign->id);
         $sessions = $this->upcomingSessions($campaign->id, $now);
@@ -96,9 +99,9 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
                 'game_table_id' => $session->id->value,
                 'title' => $session->title,
                 'slug' => $session->slug,
-                'starts_at' => $session->timeSlot->startsAt->format('c'),
-                'date_short' => $session->timeSlot->startsAt->format('d/m'),
-                'date' => $session->timeSlot->startsAt->format('d/m/Y H:i'),
+                'starts_at' => $timezone->iso($session->timeSlot->startsAt),
+                'date_short' => $timezone->format($session->timeSlot->startsAt, 'd/m'),
+                'date' => $timezone->format($session->timeSlot->startsAt),
                 'seats_taken' => $takenSeats[$session->id->value] ?? 0,
                 'max_players' => $session->maxPlayers,
                 // As the server checks it when an absence is cleared
@@ -134,7 +137,7 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
 
             $pending = $this->requests->findPending($campaign->id, $userId);
             if ($pending instanceof CampaignJoinRequest) {
-                return new JoinBoxDTO('pending', requestedAt: $pending->createdAt?->format('d/m/Y'));
+                return new JoinBoxDTO('pending', requestedAt: $pending->createdAt instanceof DateTimeImmutable ? app(TimezoneServiceInterface::class)->format($pending->createdAt, 'd/m/Y') : null);
             }
         }
 
@@ -280,6 +283,8 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
      */
     private function members(CampaignId $campaignId): array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         return array_values(DB::table('gametables_campaign_players as p')
             ->join('users', 'users.id', '=', 'p.user_id')
             ->whereNull('users.anonymized_at')
@@ -290,7 +295,8 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
             ->map(fn (object $row): array => [
                 'user_id' => (string) $row->user_id,
                 'name' => (string) $row->name,
-                'joined_at' => $row->created_at !== null ? CarbonImmutable::parse((string) $row->created_at)->format('d/m/Y') : null,
+                // The raw column is a storage-zone wall time
+                'joined_at' => $row->created_at !== null ? $timezone->format(CarbonImmutable::parse((string) $row->created_at), 'd/m/Y') : null,
             ])
             ->all());
     }
@@ -302,6 +308,8 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
      */
     private function pendingRequests(Campaign $campaign): array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         $requests = $this->requests->pendingFor($campaign->id);
         $names = UserModel::query()
             ->whereIn('id', array_map(fn (CampaignJoinRequest $request): string => $request->userId, $requests))
@@ -311,7 +319,7 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
             'id' => $request->id->value,
             'user_name' => (string) ($names[$request->userId] ?? ''),
             'message' => $request->message,
-            'created_at' => $request->createdAt?->format('d/m/Y'),
+            'created_at' => $request->createdAt instanceof DateTimeImmutable ? $timezone->format($request->createdAt, 'd/m/Y') : null,
         ], $requests);
     }
 }

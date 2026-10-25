@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Infrastructure\Services;
 
 use App\Application\Authorization\Services\AuthorizationServiceInterface;
+use App\Application\Services\TimezoneServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use DateTimeImmutable;
 use Modules\GameTables\Application\DTOs\CreationEligibilityDTO;
@@ -104,7 +105,10 @@ final readonly class CreationEligibilityService implements CreationEligibilitySe
         $tiers = $this->settingsReader->getPriorityTiers();
         foreach ($tiers as $tierConfig) {
             if ($tierConfig['tier'] === $tier) {
-                return $eventStartDate->modify("-{$tierConfig['days_before']} days");
+                // Calendar days of the site, whatever the storage zone
+                $timezone = app(TimezoneServiceInterface::class);
+
+                return $timezone->toStorage($timezone->toDisplay($eventStartDate)->modify("-{$tierConfig['days_before']} days"));
             }
         }
 

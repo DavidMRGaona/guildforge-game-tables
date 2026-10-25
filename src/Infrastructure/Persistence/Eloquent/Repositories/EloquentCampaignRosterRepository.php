@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories;
 
+use App\Application\Services\TimezoneServiceInterface;
 use DateTimeImmutable;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
@@ -24,11 +25,14 @@ final readonly class EloquentCampaignRosterRepository implements CampaignRosterR
 
     public function add(CampaignId $campaignId, string $userId, DateTimeImmutable $now): void
     {
+        // A query builder insert: the instant is written in the storage zone by hand
+        $at = app(TimezoneServiceInterface::class)->toStorage($now);
+
         DB::table(self::TABLE)->insertOrIgnore([
             'campaign_id' => $campaignId->value,
             'user_id' => $userId,
-            'created_at' => $now->format('Y-m-d H:i:s'),
-            'updated_at' => $now->format('Y-m-d H:i:s'),
+            'created_at' => $at,
+            'updated_at' => $at,
         ]);
     }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Tests\Feature\Http\Controllers;
 
+use App\Application\Services\TimezoneServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -177,7 +178,7 @@ final class WaitingListRankTest extends ModuleTestCase
             ->assertRedirect()
             ->assertSessionHas(
                 'success',
-                'Te hemos enviado un email para confirmar la inscripción. Confírmala antes del '.now()->addHours(2)->format('d/m/Y H:i').' para conservar tu puesto 2 en la lista de espera.',
+                'Te hemos enviado un email para confirmar la inscripción. Confírmala antes del '.app(TimezoneServiceInterface::class)->format(now()->addHours(2)).' para conservar tu puesto 2 en la lista de espera.',
             );
         Event::assertNotDispatched(GuestRegistered::class);
 

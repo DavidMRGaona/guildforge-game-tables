@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Application\DTOs;
 
+use App\Application\Services\TimezoneServiceInterface;
 use DateTimeImmutable;
 use Modules\GameTables\Domain\Entities\EventGameTableConfig;
 use Modules\GameTables\Domain\ValueObjects\EarlyAccessTier;
+use Modules\GameTables\Domain\ValueObjects\TimeSlotDefinition;
 
 /**
  * DTO providing the context needed for creating a game table within an event.
@@ -39,8 +41,14 @@ final readonly class EventCreationContextDTO
         ?DateTimeImmutable $eventStartDate = null,
         ?DateTimeImmutable $eventEndDate = null,
     ): self {
+        $timezone = app(TimezoneServiceInterface::class);
+
         $availableTimeSlots = array_map(
-            fn ($slot): array => $slot->toArray(),
+            fn (TimeSlotDefinition $slot): array => [
+                ...$slot->toArray(),
+                'start_time' => (string) $timezone->iso($slot->startTime),
+                'end_time' => (string) $timezone->iso($slot->endTime),
+            ],
             $config->timeSlots()
         );
 
@@ -53,7 +61,8 @@ final readonly class EventCreationContextDTO
         $earlyAccessDaysBefore = null;
 
         if ($hasEarlyAccess && $creationOpensAt instanceof DateTimeImmutable && $earlyAccessTier instanceof EarlyAccessTier) {
-            $earlyAccessOpensAt = $earlyAccessTier->getOpenDate($creationOpensAt)->format('c');
+            // Days before the opening, counted on the site's calendar
+            $earlyAccessOpensAt = $timezone->iso($earlyAccessTier->getOpenDate($timezone->toDisplay($creationOpensAt)));
             $earlyAccessDaysBefore = $earlyAccessTier->daysBeforeOpening;
         }
 
@@ -64,11 +73,11 @@ final readonly class EventCreationContextDTO
             availableTimeSlots: $availableTimeSlots,
             requiresLocationInput: $config->requiresLocationInput(),
             effectiveLocation: $config->getEffectiveLocation($eventLocation),
-            eventStartDate: $eventStartDate?->format('c'),
-            eventEndDate: $eventEndDate?->format('c'),
+            eventStartDate: $timezone->iso($eventStartDate),
+            eventEndDate: $timezone->iso($eventEndDate),
             hasEligibilityOverride: $config->hasEligibilityOverride(),
             hasEarlyAccess: $hasEarlyAccess,
-            creationOpensAt: $creationOpensAt?->format('c'),
+            creationOpensAt: $timezone->iso($creationOpensAt),
             earlyAccessOpensAt: $earlyAccessOpensAt,
             earlyAccessDaysBefore: $earlyAccessDaysBefore,
         );

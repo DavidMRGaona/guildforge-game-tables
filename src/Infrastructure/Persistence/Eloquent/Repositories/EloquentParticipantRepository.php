@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Carbon\CarbonImmutable;
 use DateTimeImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -275,7 +276,7 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
             ->where('confirmation_mode', GuestConfirmationMode::Hold->value)
             ->whereIn('status', self::ACTIVE_STATUSES)
             ->whereNotNull('confirmation_expires_at')
-            ->where('confirmation_expires_at', '<=', $now)
+            ->where('confirmation_expires_at', '<=', app(TimezoneServiceInterface::class)->toStorage($now))
             ->orderBy('confirmation_expires_at')
             ->pluck('id')
             ->all();
@@ -467,13 +468,13 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
             waitingListPosition: $model->waiting_list_position,
             notes: $model->notes,
             confirmedAt: $model->confirmed_at !== null
-                ? new DateTimeImmutable($model->confirmed_at->toDateTimeString())
+                ? DateTimeImmutable::createFromInterface($model->confirmed_at)
                 : null,
             cancelledAt: $model->cancelled_at !== null
-                ? new DateTimeImmutable($model->cancelled_at->toDateTimeString())
+                ? DateTimeImmutable::createFromInterface($model->cancelled_at)
                 : null,
             createdAt: $model->created_at !== null
-                ? new DateTimeImmutable($model->created_at->toDateTimeString())
+                ? DateTimeImmutable::createFromInterface($model->created_at)
                 : null,
             firstName: $model->first_name,
             lastName: $model->last_name,
@@ -493,7 +494,7 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
 
     private function immutable(?Carbon $value): ?DateTimeImmutable
     {
-        return $value instanceof Carbon ? new DateTimeImmutable($value->toDateTimeString()) : null;
+        return $value instanceof Carbon ? DateTimeImmutable::createFromInterface($value) : null;
     }
 
     /**
@@ -590,7 +591,7 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
         $now = CarbonImmutable::now()->toDateTimeImmutable();
         // game_table_id and starts_at are required columns, and deleting a table deletes its rows
         $sorted = $models->sortBy(function (ParticipantModel $model) use ($now): array {
-            $tableDate = new DateTimeImmutable($model->gameTable->starts_at->toDateTimeString());
+            $tableDate = DateTimeImmutable::createFromInterface($model->gameTable->starts_at);
             $isUpcoming = $tableDate > $now;
             $diff = abs($tableDate->getTimestamp() - $now->getTimestamp());
 
@@ -606,7 +607,7 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
                 'game_table_id' => $gameTable->id,
                 'game_table_title' => $gameTable->title,
                 'game_table_slug' => $gameTable->slug ?? '',
-                'game_table_starts_at' => new DateTimeImmutable($gameTable->starts_at->toDateTimeString()),
+                'game_table_starts_at' => DateTimeImmutable::createFromInterface($gameTable->starts_at),
                 'game_system_name' => $gameTable->gameSystem->name ?? '',
             ];
         })->all();

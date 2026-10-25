@@ -6,6 +6,7 @@ namespace Modules\GameTables\Http\Controllers;
 
 use App\Application\Seo\DTOs\SeoPageDTO;
 use App\Application\Seo\Services\SeoMetadataFactoryInterface;
+use App\Application\Services\TimezoneServiceInterface;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -177,11 +178,11 @@ final class RegistrationController extends Controller
 
         return (string) ($registration->status === ParticipantStatus::WaitingList
             ? __('game-tables::messages.success.guest_confirmation_sent_waiting_list', [
-                'deadline' => $deadline->format('d/m/Y H:i'),
+                'deadline' => app(TimezoneServiceInterface::class)->format($deadline),
                 // The place among those waiting, not the stored position (which may have gaps)
                 'position' => $registration->waitingListRank,
             ])
-            : __('game-tables::messages.success.guest_confirmation_sent', ['deadline' => $deadline->format('d/m/Y H:i')]));
+            : __('game-tables::messages.success.guest_confirmation_sent', ['deadline' => app(TimezoneServiceInterface::class)->format($deadline)]));
     }
 
     /**

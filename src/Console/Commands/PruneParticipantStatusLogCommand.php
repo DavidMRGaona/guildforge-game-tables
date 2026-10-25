@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Console\Commands;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
@@ -17,7 +18,9 @@ final class PruneParticipantStatusLogCommand extends Command
 
     public function handle(): int
     {
-        $cutoff = CarbonImmutable::now()->subMonthsNoOverflow(12);
+        $timezone = app(TimezoneServiceInterface::class);
+        // Twelve months on the site's calendar, bound in the storage zone
+        $cutoff = $timezone->toStorage(CarbonImmutable::now($timezone->displayTimezone())->subMonthsNoOverflow(12));
 
         // Rows of deleted tables are already gone, by cascade
         $pruned = ParticipantStatusLogModel::query()

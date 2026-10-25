@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Listeners;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Illuminate\Support\Facades\Notification;
 use Modules\GameTables\Domain\Events\GameTableCancelled;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
@@ -42,7 +43,7 @@ final readonly class CancelParticipantsOnTableCancellation
                 new TableCancelledNotification(
                     participantName: $name,
                     tableTitle: $event->title,
-                    tableDate: $event->startsAt->format('d/m/Y H:i'),
+                    tableDate: app(TimezoneServiceInterface::class)->format($event->startsAt),
                     tableLocation: $gameTable?->location,
                 )
             );

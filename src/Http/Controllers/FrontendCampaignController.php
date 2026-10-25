@@ -6,6 +6,7 @@ namespace Modules\GameTables\Http\Controllers;
 
 use App\Application\Seo\DTOs\SeoPageDTO;
 use App\Application\Seo\Services\SeoMetadataFactoryInterface;
+use App\Application\Services\TimezoneServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Http\RedirectResponse;
@@ -37,6 +38,8 @@ final class FrontendCampaignController extends Controller
      */
     public function create(): Response
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         $user = auth()->user();
 
         // Check eligibility
@@ -45,7 +48,7 @@ final class FrontendCampaignController extends Controller
         if (! $eligibility->eligible) {
             return Inertia::render('Campaigns/CreateNotEligible', [
                 'reason' => $eligibility->reason,
-                'canCreateAt' => $eligibility->canCreateAt?->format('c'),
+                'canCreateAt' => $timezone->iso($eligibility->canCreateAt),
                 'seo' => $this->seo->forPage(new SeoPageDTO(
                     title: (string) __('game-tables::messages.seo.create_campaign_title'),
                     noindex: true,

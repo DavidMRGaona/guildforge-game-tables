@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Listeners;
 
+use App\Application\Services\TimezoneServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Facades\Notification;
 use Modules\GameTables\Domain\Entities\GameTable;
@@ -32,7 +33,7 @@ final readonly class SendRegistrationConfirmation
             return;
         }
 
-        $tableDate = $gameTable->timeSlot->startsAt->format('d/m/Y H:i');
+        $tableDate = app(TimezoneServiceInterface::class)->format($gameTable->timeSlot->startsAt);
         $tableLocation = $gameTable->location;
 
         Notification::route('mail', $user->email)

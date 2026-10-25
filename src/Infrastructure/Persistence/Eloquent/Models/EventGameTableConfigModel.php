@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Models;
 
+use App\Infrastructure\Persistence\Eloquent\Concerns\StoresInstantsInStorageTimezone;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
@@ -28,6 +29,8 @@ use Modules\GameTables\Domain\Enums\SchedulingMode;
  */
 final class EventGameTableConfigModel extends Model
 {
+    use StoresInstantsInStorageTimezone;
+
     protected $table = 'game_tables_event_configs';
 
     protected $primaryKey = 'event_id';

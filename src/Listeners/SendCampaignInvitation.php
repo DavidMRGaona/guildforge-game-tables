@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Listeners;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Illuminate\Support\Facades\Notification;
 use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Entities\CampaignInvitation;
@@ -44,9 +45,7 @@ final readonly class SendCampaignInvitation
             campaignTitle: $campaign->title,
             campaignSlug: $campaign->slug,
             token: $event->token,
-            expiresAt: $invitation->expiresAt
-                ->setTimezone(new \DateTimeZone((string) config('app.timezone')))
-                ->format('d/m/Y'),
+            expiresAt: app(TimezoneServiceInterface::class)->format($invitation->expiresAt, 'd/m/Y'),
         ));
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Application\DTOs;
 
+use App\Application\Services\TimezoneServiceInterface;
 use DateTimeInterface;
 use Modules\GameTables\Domain\Entities\Participant;
 use Modules\GameTables\Domain\Enums\GuestConfirmationMode;
@@ -81,6 +82,8 @@ final readonly class ParticipantResponseDTO
      */
     public function toArray(): array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         return [
             'id' => $this->id,
             'game_table_id' => $this->gameTableId,
@@ -95,13 +98,13 @@ final readonly class ParticipantResponseDTO
             'waiting_list_position' => $this->waitingListPosition,
             'waiting_list_rank' => $this->waitingListRank,
             'notes' => $this->notes,
-            'confirmed_at' => $this->confirmedAt?->format('c'),
-            'created_at' => $this->createdAt?->format('c'),
+            'confirmed_at' => $timezone->iso($this->confirmedAt),
+            'created_at' => $timezone->iso($this->createdAt),
             'is_guest' => $this->isGuest,
             'first_name' => $this->firstName,
             'email' => $this->email,
             'awaiting_email_confirmation' => $this->awaitingEmailConfirmation,
-            'confirmation_expires_at' => $this->confirmationExpiresAt?->format('c'),
+            'confirmation_expires_at' => $timezone->iso($this->confirmationExpiresAt),
             'from_roster' => $this->fromRoster,
         ];
     }

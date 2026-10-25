@@ -60,7 +60,7 @@ final class CampaignInvitationServiceTest extends ModuleTestCase
 
         Event::fake([CampaignInvitationSent::class, CampaignInvitationAccepted::class, CampaignRosterMemberAdded::class]);
         config()->set('modules.settings.game-tables', []);
-        $this->travelTo(CarbonImmutable::parse('2026-11-02 10:00:00'));
+        $this->travelTo(CarbonImmutable::parse('2026-11-02 10:00:00', 'Europe/Madrid'));
 
         $this->mary = UserModel::factory()->create(['name' => 'Mary Major', 'email' => 'mary@example.com']);
         $this->john = UserModel::factory()->create(['name' => 'John Doe', 'email' => 'john@example.com']);
@@ -244,15 +244,15 @@ final class CampaignInvitationServiceTest extends ModuleTestCase
     // The night the clocks go back lasts 25 hours: 24 hours by the wall clock would be one too many
     public function test_the_24_hours_between_sends_are_elapsed_time_across_a_clock_change(): void
     {
-        $this->travelTo(CarbonImmutable::parse('2026-10-24 12:30:00'));
+        $this->travelTo(CarbonImmutable::parse('2026-10-24 12:30:00', 'Europe/Madrid'));
         $this->invite('ana@example.com');
 
         // 23 and a half hours later
-        $this->travelTo(CarbonImmutable::parse('2026-10-25 11:00:00'));
+        $this->travelTo(CarbonImmutable::parse('2026-10-25 11:00:00', 'Europe/Madrid'));
         $this->assertRefused('invitation_too_soon', fn () => $this->service()->resend($this->campaign->id, $this->pending('ana@example.com')->id->value, $this->mary->id));
 
         // 24 and a half hours later
-        $this->travelTo(CarbonImmutable::parse('2026-10-25 12:00:00'));
+        $this->travelTo(CarbonImmutable::parse('2026-10-25 12:00:00', 'Europe/Madrid'));
         $this->service()->resend($this->campaign->id, $this->pending('ana@example.com')->id->value, $this->mary->id);
 
         Event::assertDispatchedTimes(CampaignInvitationSent::class, 2);
@@ -390,7 +390,7 @@ final class CampaignInvitationServiceTest extends ModuleTestCase
         $this->assertSame('la-cripta-olvidada', $list[0]->campaignSlug);
         $this->assertSame('Mary Major', $list[0]->inviterName);
         $this->assertSame(1, $list[0]->sendCount);
-        $this->assertSame(CarbonImmutable::parse('2026-11-02 10:00:00')->addDays(14)->toIso8601String(), $list[0]->expiresAt);
+        $this->assertSame(CarbonImmutable::parse('2026-11-02 10:00:00', 'Europe/Madrid')->addDays(14)->toIso8601String(), $list[0]->expiresAt);
         $this->assertArrayHasKey('can_resend', $list[0]->toArray());
 
         // Third send reached: no more resends even after 24 h

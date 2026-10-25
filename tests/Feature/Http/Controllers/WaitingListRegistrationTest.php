@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Tests\Feature\Http\Controllers;
 
+use App\Application\Services\TimezoneServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
@@ -362,7 +363,7 @@ final class WaitingListRegistrationTest extends ModuleTestCase
             'gdpr_consent' => true,
         ])->assertSessionHas(
             'success',
-            'Te hemos enviado un email para confirmar la inscripción. Confírmala antes del '.now()->addHours(2)->format('d/m/Y H:i').' o la plaza se liberará.',
+            'Te hemos enviado un email para confirmar la inscripción. Confírmala antes del '.app(TimezoneServiceInterface::class)->format(now()->addHours(2)).' o la plaza se liberará.',
         );
     }
 

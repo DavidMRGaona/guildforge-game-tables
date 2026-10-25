@@ -8,11 +8,11 @@ use App\Application\Seo\DTOs\SeoPageDTO;
 use App\Application\Seo\DTOs\SeoScheduleDTO;
 use App\Application\Seo\Services\SeoMetadataFactoryInterface;
 use App\Application\Services\SlugRedirectServiceInterface;
+use App\Application\Services\TimezoneServiceInterface;
 use App\Http\Concerns\BuildsPaginatedResponse;
 use App\Http\Controllers\Controller;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
-use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use DateInterval;
 use DateTimeImmutable;
@@ -127,11 +127,16 @@ final class GameTableController extends Controller
 
     public function calendar(Request $request): Response
     {
+        $timezone = app(TimezoneServiceInterface::class);
         $monthParam = $request->query('month');
-        $month = is_string($monthParam) ? Carbon::parse($monthParam)->startOfMonth() : Carbon::now()->startOfMonth();
+        // The month of the site's calendar: a month typed in the URL is read there, and so is today
+        $month = is_string($monthParam)
+            ? CarbonImmutable::parse($monthParam, $timezone->displayTimezone())
+            : $timezone->today();
 
-        $from = $month->copy()->startOfMonth();
-        $to = $month->copy()->endOfMonth();
+        [$from, $next] = $timezone->displayMonthRange($month);
+        // The range is [start, end) and the query includes its bounds
+        $to = $next->sub(new DateInterval('PT1S'));
 
         $tables = $this->queryService->getUpcomingTables($from, $to);
 
@@ -140,7 +145,7 @@ final class GameTableController extends Controller
         return Inertia::render('GameTables/Calendar', [
             'tables' => GameTableListResource::collection($tables)->resolve(),
             'gameSystems' => $gameSystems,
-            'currentMonth' => $month->format('Y-m'),
+            'currentMonth' => $timezone->format($from, 'Y-m'),
             'seo' => $this->seo->forPage(new SeoPageDTO(
                 title: (string) __('game-tables::messages.seo.calendar_title'),
                 description: (string) __('game-tables::messages.seo.tables_description'),
@@ -264,6 +269,8 @@ final class GameTableController extends Controller
      */
     private function formatRegistrationForFrontend(ParticipantResponseDTO $dto): array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         return [
             'id' => $dto->id,
             'gameTableId' => $dto->gameTableId,
@@ -278,8 +285,8 @@ final class GameTableController extends Controller
             // The place among those waiting, not the stored position (which may have gaps)
             'waitingListPosition' => $dto->waitingListRank,
             'notes' => $dto->notes,
-            'confirmedAt' => $dto->confirmedAt?->format('c'),
-            'createdAt' => $dto->createdAt?->format('c'),
+            'confirmedAt' => $timezone->iso($dto->confirmedAt),
+            'createdAt' => $timezone->iso($dto->createdAt),
             'fromRoster' => $dto->fromRoster,
         ];
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Listeners;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Events\GuestRegistered;
@@ -34,7 +35,7 @@ final readonly class NotifyOnGuestRegistration
             return;
         }
 
-        $tableDate = $gameTable->timeSlot->startsAt->format('d/m/Y H:i');
+        $tableDate = app(TimezoneServiceInterface::class)->format($gameTable->timeSlot->startsAt);
         $tableLocation = $gameTable->location;
 
         $this->notifyRecipients($gameTable, $event->status, fn (?string $manageUrl): ParticipantRegisteredNotification => new ParticipantRegisteredNotification(

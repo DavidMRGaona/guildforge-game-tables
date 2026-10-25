@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Http\Requests;
 
+use Carbon\CarbonImmutable;
 use Closure;
+use DateTimeImmutable;
+use Exception;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\Rule;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
+use Modules\GameTables\Application\Support\FormDateTime;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
 use Modules\GameTables\Domain\Enums\GameMasterRole;
@@ -84,7 +88,23 @@ final class FrontendCreateGameTableRequest extends FormRequest
         return [
             'game_system_id' => ['required', 'uuid', 'exists:gametables_game_systems,id'],
             'title' => ['required', 'string', 'min:5', 'max:200'],
-            'starts_at' => ['required', 'date', 'after:now'],
+            'starts_at' => [
+                'required',
+                'date',
+                // The site's wall time (or an instant with its offset), compared as an instant
+                function (string $attribute, mixed $value, Closure $fail): void {
+                    try {
+                        $startsAt = is_string($value) ? FormDateTime::read($value) : null;
+                    } catch (Exception) {
+                        // The date rule reports it
+                        return;
+                    }
+
+                    if ($startsAt instanceof DateTimeImmutable && $startsAt <= CarbonImmutable::now()) {
+                        $fail(__('game-tables::messages.validation.starts_at_future'));
+                    }
+                },
+            ],
             'duration_minutes' => ['required', 'integer', 'min:30', 'max:'.$settings->maxDurationMinutes()],
             'table_type' => ['required', 'string', Rule::in(TableType::values())],
             'table_format' => ['required', 'string', Rule::in(TableFormat::values())],
@@ -181,7 +201,6 @@ final class FrontendCreateGameTableRequest extends FormRequest
         return [
             'title.required' => __('game-tables::messages.validation.title_required'),
             'title.min' => __('game-tables::messages.validation.title_min'),
-            'starts_at.after' => __('game-tables::messages.validation.starts_at_future'),
             'max_players.gte' => __('game-tables::messages.validation.max_players_gte_min'),
             'language.required' => __('game-tables::messages.validation.language_required'),
             'experience_level.required' => __('game-tables::messages.validation.experience_level_required'),

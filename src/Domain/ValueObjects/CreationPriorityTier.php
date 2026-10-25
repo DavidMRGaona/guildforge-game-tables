@@ -72,6 +72,9 @@ final readonly class CreationPriorityTier
             && $this->daysBeforeEventStart === $other->daysBeforeEventStart;
     }
 
+    /**
+     * The days are calendar days of the date's zone: callers pass it in the site's zone.
+     */
     public function getCreationOpenDate(DateTimeImmutable $eventStartDate): DateTimeImmutable
     {
         return $eventStartDate->modify("-{$this->daysBeforeEventStart} days");

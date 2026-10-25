@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Application\DTOs;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Modules\GameTables\Domain\Entities\EventGameTableConfig;
 use Modules\GameTables\Domain\ValueObjects\TimeSlotDefinition;
 
@@ -32,19 +33,25 @@ final readonly class EventGameTableConfigDTO
 
     public static function fromEntity(EventGameTableConfig $config): self
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         return new self(
             eventId: $config->eventId(),
             tablesEnabled: $config->isEnabled(),
             schedulingMode: $config->schedulingMode()->value,
             timeSlots: array_map(
-                fn (TimeSlotDefinition $slot): array => $slot->toArray(),
+                fn (TimeSlotDefinition $slot): array => [
+                    ...$slot->toArray(),
+                    'start_time' => (string) $timezone->iso($slot->startTime),
+                    'end_time' => (string) $timezone->iso($slot->endTime),
+                ],
                 $config->timeSlots()
             ),
             locationMode: $config->locationMode()->value,
             fixedLocation: $config->fixedLocation(),
             eligibilityOverride: $config->eligibilityOverride()?->toArray(),
             earlyAccessEnabled: $config->isEarlyAccessEnabled(),
-            creationOpensAt: $config->creationOpensAt()?->format('c'),
+            creationOpensAt: $timezone->iso($config->creationOpensAt()),
             earlyAccessTier: $config->earlyAccessTier()?->toArray(),
         );
     }

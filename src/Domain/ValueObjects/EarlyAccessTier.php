@@ -52,7 +52,8 @@ final readonly class EarlyAccessTier
     }
 
     /**
-     * Calculate the early access open date based on the general opening date.
+     * Calculate the early access open date based on the general opening date. The days are
+     * calendar days of the date's zone: callers pass it in the site's zone.
      */
     public function getOpenDate(DateTimeImmutable $generalOpenDate): DateTimeImmutable
     {

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\RelationManagers;
 
+use App\Application\Services\TimezoneServiceInterface;
 use App\Filament\Forms\Components\TimePicker;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\RoleModel;
+use DateTimeInterface;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -64,14 +66,16 @@ final class EventGameTableConfigRelationManager extends RelationManager
         $config = $configRepository->findByEventOrDefault($eventId);
 
         $earlyAccessTier = $config->earlyAccessTier();
+        $timezone = app(TimezoneServiceInterface::class);
 
         $this->configForm->fill([
             'tables_enabled' => $config->isEnabled(),
             'scheduling_mode' => $config->schedulingMode()->value,
+            // The hours the admin typed: the site's wall time
             'time_slots' => array_map(fn ($slot): array => [
                 'label' => $slot->label,
-                'start_time' => $slot->startTime->format('H:i'),
-                'end_time' => $slot->endTime->format('H:i'),
+                'start_time' => $timezone->toDisplayWallTime($slot->startTime, 'H:i'),
+                'end_time' => $timezone->toDisplayWallTime($slot->endTime, 'H:i'),
                 'max_tables' => $slot->maxTables,
             ], $config->timeSlots()),
             'location_mode' => $config->locationMode()->value,
@@ -82,7 +86,8 @@ final class EventGameTableConfigRelationManager extends RelationManager
             'eligibility_required_permission' => $config->eligibilityOverride()?->requiredPermission,
             // Early access fields
             'early_access_enabled' => $config->isEarlyAccessEnabled(),
-            'creation_opens_at' => $config->creationOpensAt()?->format('Y-m-d H:i:s'),
+            // The picker reads a storage-zone value and shows it in the site's zone
+            'creation_opens_at' => $config->creationOpensAt() !== null ? $timezone->toStorage($config->creationOpensAt())->format('Y-m-d H:i:s') : null,
             'early_access_type' => $earlyAccessTier?->accessType->value,
             'early_access_roles' => $earlyAccessTier?->allowedRoles,
             'early_access_permission' => $earlyAccessTier?->requiredPermission,
@@ -320,15 +325,21 @@ final class EventGameTableConfigRelationManager extends RelationManager
         // Build time slots with full datetime (using event date as reference)
         $timeSlots = [];
         if ($formData['scheduling_mode'] === SchedulingMode::SlotBased->value && ! empty($formData['time_slots'])) {
-            $eventDate = $event->start_date?->format('Y-m-d') ?? date('Y-m-d');
+            // The hours are the site's wall time on the event's day there, saved as instants with
+            // their offset
+            $timezone = app(TimezoneServiceInterface::class);
+            $eventStart = $event->getAttribute('start_date');
+            $eventDate = $eventStart instanceof DateTimeInterface
+                ? $timezone->toDisplayWallTime($eventStart, 'Y-m-d')
+                : $timezone->today()->format('Y-m-d');
             foreach ($formData['time_slots'] as $slot) {
                 if (empty($slot['label']) || empty($slot['start_time']) || empty($slot['end_time'])) {
                     continue;
                 }
                 $timeSlots[] = [
                     'label' => $slot['label'],
-                    'start_time' => $eventDate.'T'.$slot['start_time'].':00',
-                    'end_time' => $eventDate.'T'.$slot['end_time'].':00',
+                    'start_time' => $timezone->iso($timezone->fromDisplayWallTime($eventDate.' '.$slot['start_time'])),
+                    'end_time' => $timezone->iso($timezone->fromDisplayWallTime($eventDate.' '.$slot['end_time'])),
                     'max_tables' => $slot['max_tables'] ?? null,
                 ];
             }

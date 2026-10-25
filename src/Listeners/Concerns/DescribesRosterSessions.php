@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Listeners\Concerns;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
@@ -29,7 +30,7 @@ trait DescribesRosterSessions
 
             $described[] = [
                 'title' => $table->title,
-                'date' => $table->timeSlot->startsAt->format('d/m/Y H:i'),
+                'date' => app(TimezoneServiceInterface::class)->format($table->timeSlot->startsAt),
                 'waiting' => $session['waiting'],
             ];
         }

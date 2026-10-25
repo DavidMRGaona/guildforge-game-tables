@@ -28,7 +28,7 @@ final readonly class EloquentCampaignJoinRequestRepository implements CampaignJo
                     'message' => $request->message,
                     'decision_reason' => $request->decisionReason,
                     'decided_by' => $request->decidedBy,
-                    'decided_at' => $request->decidedAt?->format('Y-m-d H:i:s'),
+                    'decided_at' => $request->decidedAt,
                 ],
             );
         } catch (UniqueConstraintViolationException) {
@@ -101,8 +101,8 @@ final readonly class EloquentCampaignJoinRequestRepository implements CampaignJo
             message: $model->message,
             decisionReason: $model->decision_reason,
             decidedBy: $model->decided_by,
-            decidedAt: $model->decided_at !== null ? new DateTimeImmutable($model->decided_at->toDateTimeString()) : null,
-            createdAt: $model->created_at !== null ? new DateTimeImmutable($model->created_at->toDateTimeString()) : null,
+            decidedAt: $model->decided_at !== null ? DateTimeImmutable::createFromInterface($model->decided_at) : null,
+            createdAt: $model->created_at !== null ? DateTimeImmutable::createFromInterface($model->created_at) : null,
         );
     }
 }

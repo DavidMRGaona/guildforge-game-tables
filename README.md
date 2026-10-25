@@ -19,10 +19,11 @@ Módulo de GuildForge para gestionar mesas de rol y campañas: inscripciones de 
 - **Calendario**: vista `/mesas/calendario` y mesas en el calendario del core, cuya ficha muestra imagen, sinopsis, lugar, sistema, director, plazas y modalidad.
 - **Perfil**: pestañas con las mesas en las que participa el usuario, las que ha creado y sus campañas.
 - **Correos** de inscripción, confirmación, rechazo, lista de espera, cancelación y moderación.
+- **Zonas horarias**: las fechas se guardan en la zona de almacenamiento del sitio (UTC cuando el sitio lo usa) y todo lo que ve o escribe una persona (correos, panel, web, horas de los turnos de un evento) está en la zona de visualización del sitio (por defecto Europe/Madrid); los días (calendario del mes, acceso anticipado, plazos de invitación) son días de ese calendario.
 
 ## Requisitos
 
-- GuildForge core `^3.14` (pestañas del perfil que se ocultan, avisos legales editables de los correos y si la cuenta debe verificar su email; ver [Verificación de email](#verificación-de-email))
+- GuildForge core `^3.22` (almacenamiento de fechas en UTC y zona horaria de visualización; antes, pestañas del perfil que se ocultan, avisos legales editables de los correos y si la cuenta debe verificar su email; ver [Verificación de email](#verificación-de-email))
 - PHP >= 8.5, Laravel >= 13, Filament 5
 
 El core rechaza el módulo si no se cumplen (`module.json` → `requires`).
@@ -141,7 +142,7 @@ Con **Automatización** → **Actualizar el estado de las mesas automáticamente
 - Las mesas **Programada** o **Completa** cuya hora de inicio ha llegado pasan a **En progreso**.
 - Las mesas **En progreso** cuyo final (inicio más duración) ha llegado pasan a **Completada** y se emite `GameTableCompleted`. Una mesa programada que ya terminó pasa por los dos estados en la misma ejecución.
 - Los borradores y las mesas canceladas o completadas no cambian. Cada mesa se vuelve a leer antes de cambiarla: si alguien la ha cambiado a mano entretanto, se salta; si una falla, se anota en el log y se sigue con las demás. El comando imprime cuántas ha iniciado, completado, saltado y cuántas han fallado.
-- No se envían correos. Las horas se comparan en la zona horaria de la aplicación (`APP_TIMEZONE`), la misma en la que se guardan. Las fechas se guardan como hora de pared sin desplazamiento, así que una hora de inicio dentro de la hora que se repite en octubre (de 02:00 a 02:59) se lee como su segunda pasada; desaparecerá cuando el core guarde los instantes en UTC (DavidMRGaona/GuildForge#107).
+- No se envían correos. Las horas se comparan como instantes en la zona de almacenamiento. Mientras el sitio guarde en Europe/Madrid, las fechas son hora de pared sin desplazamiento y una hora de inicio dentro de la hora que se repite en octubre (de 02:00 a 02:59) se lee como su segunda pasada; con el almacenamiento en UTC (DavidMRGaona/GuildForge#107) cada pasada tiene su instante.
 
 Las inscripciones no cambian: ya se cierran a la hora de inicio, y las mesas que admiten inscripciones durante la partida las siguen admitiendo en **En progreso** hasta el final. Basta con que el planificador de Laravel esté en marcha (`php artisan schedule:work`, o `php artisan schedule:run` cada minuto); `php artisan schedule:list` muestra la tarea. Con el ajuste desactivado, el estado solo cambia con las acciones del panel.
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Application\DTOs;
 
+use App\Application\Services\TimezoneServiceInterface;
 use DateTimeInterface;
 use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Enums\CampaignFrequency;
@@ -114,6 +115,8 @@ final readonly class CampaignResponseDTO
      */
     public function toArray(): array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         return [
             'id' => $this->id,
             'title' => $this->title,
@@ -152,8 +155,8 @@ final readonly class CampaignResponseDTO
             'roster_access_label' => $this->rosterAccess->label(),
             'language' => $this->language,
             'experience_level' => $this->experienceLevel?->value,
-            'created_at' => $this->createdAt?->format('c'),
-            'updated_at' => $this->updatedAt?->format('c'),
+            'created_at' => $timezone->iso($this->createdAt),
+            'updated_at' => $timezone->iso($this->updatedAt),
         ];
     }
 }
