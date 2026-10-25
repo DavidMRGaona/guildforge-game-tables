@@ -46,7 +46,12 @@ Con el repositorio clonado en `src/modules/game-tables`:
 ```bash
 php artisan module:discover
 php artisan module:enable game-tables
-php artisan module:build game-tables   # compila los componentes Vue (--force para recompilar)
+```
+
+Los componentes Vue se compilan con las herramientas del core, desde `src/`:
+
+```bash
+docker exec guildforge_node npm run build:module -- game-tables
 ```
 
 En las releases los assets los compila el CI y van dentro del ZIP.
@@ -586,7 +591,6 @@ src/modules/game-tables/
 │   ├── Integration/
 │   └── Feature/
 ├── module.json
-├── package.json
 ├── phpunit.xml
 └── vite.config.ts
 ```
