@@ -180,7 +180,7 @@ Un invitado se inscribe con nombre, email y consentimiento, y su inscripción qu
 
 **Acciones de la organización.** Las inscripciones que añade la organización desde el panel no pasan por la confirmación del invitado: **Marcar email como confirmado** (como si hubiera pulsado el enlace; si no tenía plaza, la coloca antes bajo el mismo bloqueo y, sin plaza libre, avisa de que la mesa está llena y no cambia nada), **Confirmar** y **Promover** confirman también el email. Confirmar el email de un invitado sin confirmar de cualquiera de estas tres formas no envía a la organización el aviso de inscripción de invitado (es su propia acción) y el invitado recibe un solo correo. Añadir a un invitado desde el panel sigue avisando como siempre.
 
-**Cookie.** El formulario guarda un indicio en el navegador, la cookie `gt_guest_registrations` (categoría preferencias, 90 días), con las mesas en las que se ha inscrito como invitado para avisar si lo intenta otra vez. No se lee ni escribe sin consentimiento. Si el módulo cookie-consent está instalado, el módulo la declara ahí; sin cookie-consent no hay forma de dar ese consentimiento, así que la cookie nunca se escribe.
+**Cookie.** El formulario guarda un indicio en el navegador, la cookie `gt_guest_registrations` (categoría preferencias, 90 días), con las mesas en las que se ha inscrito como invitado para avisar si lo intenta otra vez. No se lee ni escribe sin consentimiento. El módulo la declara en el registro de cookies del core, y si cookie-consent está instalado aparece en su banner; sin cookie-consent no hay forma de dar ese consentimiento, así que la cookie nunca se escribe.
 
 ### Inscripción
 
