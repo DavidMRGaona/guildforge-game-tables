@@ -206,26 +206,6 @@ final readonly class EligibilityService implements EligibilityServiceInterface
         }
     }
 
-    public function hasCapacity(string $gameTableId): bool
-    {
-        $tableId = new GameTableId($gameTableId);
-        $this->participantRepository->countConfirmedPlayers($tableId);
-
-        // We need to get the game table to check max players
-        // For now, we'll return true as this is a helper method
-        // The actual check happens in checkEligibility
-        return true;
-    }
-
-    public function hasSpectatorCapacity(string $gameTableId): bool
-    {
-        $tableId = new GameTableId($gameTableId);
-        $this->participantRepository->countConfirmedSpectators($tableId);
-
-        // Similar to hasCapacity, actual check happens elsewhere
-        return true;
-    }
-
     /**
      * @return array{eligible: bool, reason: string|null, message: string|null, canRegisterAt: string|null, waitingList: bool, spectator: array{eligible: bool, reason: string|null, message: string|null}}
      *

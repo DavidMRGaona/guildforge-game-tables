@@ -50,16 +50,6 @@ interface EligibilityServiceInterface
     ): array;
 
     /**
-     * Check if the table has capacity for more players.
-     */
-    public function hasCapacity(string $gameTableId): bool;
-
-    /**
-     * Check if the table has capacity for more spectators.
-     */
-    public function hasSpectatorCapacity(string $gameTableId): bool;
-
-    /**
      * What the table page offers a user: the player registration (or the waiting list) and the
      * spectator registration, with the same rules as ensureUserCanRegister().
      *
