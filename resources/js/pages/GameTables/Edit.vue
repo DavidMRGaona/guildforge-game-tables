@@ -474,7 +474,7 @@ function cancel(): void {
         </div>
     </div>
 
-    <main class="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         <!-- Event Context Banner -->
         <div
             v-if="isEventContextMode && selectedEventName"
@@ -970,13 +970,18 @@ function cancel(): void {
 
                             <!-- Custom Warnings -->
                             <div id="custom_warnings">
-                                <label class="block text-sm font-medium text-base-secondary mb-2">
+                                <label
+                                    for="custom_warnings_input"
+                                    class="block text-sm font-medium text-base-secondary mb-2"
+                                >
                                     {{ t('gameTables.create.fields.customWarnings') }}
                                 </label>
                                 <p class="text-xs text-base-muted mb-3">
                                     {{ t('gameTables.create.fields.customWarningsHelp') }}
                                 </p>
                                 <FormTagsInput
+                                    id="custom_warnings_input"
+                                    name="custom_warnings"
                                     v-model="form.custom_warnings"
                                     :placeholder="t('gameTables.create.fields.customWarningsPlaceholder')"
                                     :max-tags="10"
@@ -1106,5 +1111,5 @@ function cancel(): void {
                 </BaseButton>
             </div>
         </form>
-    </main>
+    </div>
 </template>

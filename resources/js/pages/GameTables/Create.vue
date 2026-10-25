@@ -463,7 +463,7 @@ function submit(): void {
         </div>
     </div>
 
-    <main class="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         <!-- Eligibility check -->
         <div v-if="!props.eligibility.eligible && !props.sessionOnly" class="mb-6 rounded-lg border border-warning/30 bg-warning-bg p-4">
             <div class="flex">
@@ -978,13 +978,18 @@ function submit(): void {
 
                             <!-- Custom Warnings -->
                             <div id="custom_warnings">
-                                <label class="block text-sm font-medium text-base-secondary mb-2">
+                                <label
+                                    for="custom_warnings_input"
+                                    class="block text-sm font-medium text-base-secondary mb-2"
+                                >
                                     {{ t('gameTables.create.fields.customWarnings') }}
                                 </label>
                                 <p class="text-xs text-base-muted mb-3">
                                     {{ t('gameTables.create.fields.customWarningsHelp') }}
                                 </p>
                                 <FormTagsInput
+                                    id="custom_warnings_input"
+                                    name="custom_warnings"
                                     v-model="form.custom_warnings"
                                     :placeholder="t('gameTables.create.fields.customWarningsPlaceholder')"
                                     :max-tags="10"
@@ -1107,5 +1112,5 @@ function submit(): void {
                 </BaseButton>
             </div>
         </form>
-    </main>
+    </div>
 </template>
