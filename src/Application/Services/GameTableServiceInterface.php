@@ -37,6 +37,11 @@ interface GameTableServiceInterface
      */
     public function ensureFitsRoster(string $id): void;
 
+    /**
+     * Back to draft, only before the table starts.
+     *
+     * @throws InvalidStatusTransitionException when the table started or ended, also meanwhile
+     */
     public function unpublish(string $id): GameTableResponseDTO;
 
     /**

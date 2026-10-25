@@ -68,6 +68,15 @@ enum TableStatus: string
     }
 
     /**
+     * Whether a published table in this status may go back to draft: only before it starts, since a
+     * draft can never be started or completed.
+     */
+    public function allowsUnpublishing(): bool
+    {
+        return in_array($this, [self::Draft, self::Scheduled, self::Full], true);
+    }
+
+    /**
      * Validates if a transition to the given status is allowed.
      */
     public function canTransitionTo(self $newStatus): bool

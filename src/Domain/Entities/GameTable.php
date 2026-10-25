@@ -81,8 +81,17 @@ final class GameTable
         $this->publishedAt = new DateTimeImmutable();
     }
 
+    /**
+     * Back to draft, only before the table starts.
+     *
+     * @throws InvalidStatusTransitionException once the table is in progress, completed or cancelled
+     */
     public function unpublish(): void
     {
+        if (! $this->status->allowsUnpublishing()) {
+            throw InvalidStatusTransitionException::fromTo($this->status->value, TableStatus::Draft->value);
+        }
+
         $this->status = TableStatus::Draft;
         $this->isPublished = false;
         $this->publishedAt = null;
