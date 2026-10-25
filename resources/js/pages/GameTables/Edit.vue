@@ -102,6 +102,8 @@ interface CurrentUser {
 
 interface Props {
     table: GameTableEditData;
+    /** The start as the datetime-local field takes it: the site's wall time, from the server */
+    startsAtWallTime?: string | null;
     /** The stored directors: the author first, then the co-directors, as the form edits them */
     gameMasters: EditableGameMaster[];
     formData: FormData;
@@ -210,7 +212,7 @@ function extractOptionValues(options: unknown): string[] {
 const form = useForm({
     game_system_id: props.table.game_system_id as string | null,
     title: props.table.title,
-    starts_at: props.table.starts_at?.substring(0, 16) ?? '', // Format for datetime-local input
+    starts_at: props.startsAtWallTime ?? '',
     duration_minutes: props.table.duration_minutes,
     table_type: props.table.table_type,
     table_format: props.table.table_format,
@@ -309,9 +311,10 @@ const isEventContextMode = computed(
 function findInitialTimeSlotIndex(): string | null {
     if (!props.eventContext?.available_time_slots || !props.table.starts_at) return null;
 
-    const tableStartTime = props.table.starts_at;
+    // The same instant, whatever offset each string carries
+    const tableStart = Date.parse(props.table.starts_at);
     const index = props.eventContext.available_time_slots.findIndex(
-        (slot) => slot.start_time === tableStartTime
+        (slot) => Date.parse(slot.start_time) === tableStart
     );
 
     return index >= 0 ? String(index) : null;
