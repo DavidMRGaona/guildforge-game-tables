@@ -113,7 +113,7 @@ final class TableFormErrorsSourceTest extends TestCase
         foreach (self::PAGES as $page) {
             $source = $this->source('resources/js/'.$page);
 
-            $this->assertStringContainsString('<div id="genres">', $source, $page);
+            $this->assertStringContainsString('<fieldset id="genres" class="min-w-0">', $source, $page);
             $this->assertStringContainsString("v-for=\"genre in objectToOptions(props.formData.genres)\"\n", $source, $page);
             $this->assertStringContainsString('v-model="form.genres"', $source, $page);
         }

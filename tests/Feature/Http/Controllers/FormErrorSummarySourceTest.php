@@ -201,7 +201,8 @@ final class FormErrorSummarySourceTest extends TestCase
             $source = $this->source($page);
 
             foreach (['safety_tools', 'content_warning_ids', 'custom_warnings'] as $id) {
-                $this->assertStringContainsString("<div id=\"{$id}\">", $source, "{$page}: {$id}");
+                // A checkbox group is a fieldset (named by its legend), any other field a div
+                $this->assertMatchesRegularExpression("/<(div|fieldset) id=\"{$id}\"[ >]/", $source, "{$page}: {$id}");
             }
             $this->assertStringContainsString('<GameMasterSection
                                 id="game_masters"', $source, $page);
@@ -211,7 +212,8 @@ final class FormErrorSummarySourceTest extends TestCase
             $source = $this->source($page);
 
             foreach (['safety_tools', 'content_warning_ids', 'custom_warnings'] as $id) {
-                $this->assertStringContainsString("<div id=\"{$id}\">", $source, "{$page}: {$id}");
+                // A checkbox group is a fieldset (named by its legend), any other field a div
+                $this->assertMatchesRegularExpression("/<(div|fieldset) id=\"{$id}\"[ >]/", $source, "{$page}: {$id}");
             }
         }
     }
