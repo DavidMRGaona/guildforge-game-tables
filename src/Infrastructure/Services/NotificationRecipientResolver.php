@@ -18,7 +18,7 @@ final readonly class NotificationRecipientResolver implements NotificationRecipi
      */
     public function getCreatorEmail(string $userId): ?string
     {
-        return \App\Infrastructure\Persistence\Eloquent\Models\UserModel::query()
+        return UserModel::query()
             ->where('id', $userId)
             ->value('email');
     }
@@ -28,7 +28,7 @@ final readonly class NotificationRecipientResolver implements NotificationRecipi
      */
     public function getCreatorDisplayName(string $userId): string
     {
-        return \App\Infrastructure\Persistence\Eloquent\Models\UserModel::query()
+        return UserModel::query()
             ->where('id', $userId)
             ->value('name') ?? '';
     }
@@ -40,7 +40,7 @@ final readonly class NotificationRecipientResolver implements NotificationRecipi
      */
     public function getModerationAdminEmails(): array
     {
-        return \App\Infrastructure\Persistence\Eloquent\Models\UserModel::query()
+        return UserModel::query()
             ->whereHas('roles', fn ($query) => $query->whereIn('name', ['admin', 'editor']))
             ->pluck('email')
             ->filter()

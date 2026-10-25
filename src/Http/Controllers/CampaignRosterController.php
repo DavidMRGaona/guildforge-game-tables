@@ -19,6 +19,8 @@ use Modules\GameTables\Application\Services\CampaignInvitationServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterQueryInterface;
 use Modules\GameTables\Application\Services\CampaignRosterServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterSessionSyncInterface;
+use Modules\GameTables\Domain\Entities\CampaignInvitation;
+use Modules\GameTables\Domain\Entities\CampaignJoinRequest;
 use Modules\GameTables\Domain\Enums\RosterAccess;
 use Modules\GameTables\Domain\Exceptions\CampaignNotFoundException;
 use Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException;
@@ -33,6 +35,7 @@ use Modules\GameTables\Http\Requests\RejectJoinRequestRequest;
 use Modules\GameTables\Http\Requests\ToggleRosterAbsenceRequest;
 use Modules\GameTables\Http\Requests\UpdateRosterSettingsRequest;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
  * The direction's roster page and its actions. Every route loads the campaign by id (404) and
@@ -155,7 +158,7 @@ final class CampaignRosterController extends Controller
     }
 
     /**
-     * @throws \Symfony\Component\HttpKernel\Exception\HttpException 404 for an unknown campaign, 403 when the user does not direct it
+     * @throws HttpException 404 for an unknown campaign, 403 when the user does not direct it
      */
     private function authorizedCampaign(string $id): CampaignModel
     {
@@ -178,7 +181,7 @@ final class CampaignRosterController extends Controller
     {
         $request = Str::isUuid($requestId) ? $this->requests->find(new JoinRequestId($requestId)) : null;
 
-        if (!$request instanceof \Modules\GameTables\Domain\Entities\CampaignJoinRequest || $request->campaignId->value !== $campaign->id) {
+        if (! $request instanceof CampaignJoinRequest || $request->campaignId->value !== $campaign->id) {
             abort(404);
         }
     }
@@ -190,7 +193,7 @@ final class CampaignRosterController extends Controller
     {
         $invitation = Str::isUuid($invitationId) ? $this->invitationRows->find(new CampaignInvitationId($invitationId)) : null;
 
-        if (!$invitation instanceof \Modules\GameTables\Domain\Entities\CampaignInvitation || $invitation->campaignId->value !== $campaign->id) {
+        if (! $invitation instanceof CampaignInvitation || $invitation->campaignId->value !== $campaign->id) {
             abort(404);
         }
     }

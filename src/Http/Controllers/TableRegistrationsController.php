@@ -24,6 +24,7 @@ use Modules\GameTables\Domain\Exceptions\TableClosedException;
 use Modules\GameTables\Domain\Exceptions\TableFullException;
 use Modules\GameTables\Http\Requests\RejectTableRegistrationRequest;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
  * The «Gestionar inscritos» page of a table that delegates its registrations, and its two
@@ -95,7 +96,7 @@ final class TableRegistrationsController extends Controller
     }
 
     /**
-     * @throws \Symfony\Component\HttpKernel\Exception\HttpException 403 when the user may not manage the table, 404 for a participant of another table
+     * @throws HttpException 403 when the user may not manage the table, 404 for a participant of another table
      */
     private function authorizedRow(GameTableModel $gameTable, string $participantId): TableRegistrationRowDTO
     {
@@ -103,7 +104,7 @@ final class TableRegistrationsController extends Controller
 
         $row = $this->query->row($gameTable->id, $participantId);
 
-        if (!$row instanceof \Modules\GameTables\Application\DTOs\TableRegistrationRowDTO) {
+        if (! $row instanceof TableRegistrationRowDTO) {
             abort(404);
         }
 

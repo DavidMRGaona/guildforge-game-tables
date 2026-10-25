@@ -32,13 +32,13 @@ final class GuestConfirmationController extends Controller
     public function show(string $token): Response
     {
         $participant = $this->registrationService->findByConfirmationToken($token);
-        $gameTable = $participant instanceof \Modules\GameTables\Application\DTOs\ParticipantResponseDTO && $participant->status->isActive()
+        $gameTable = $participant instanceof ParticipantResponseDTO && $participant->status->isActive()
             ? $this->gameTableQueryService->findPublished($participant->gameTableId)
             : null;
 
         // Expired, cancelled, unknown or taken off the web: the page says so (also on a refresh
         // after the button expired it, since expiring clears the token)
-        if (!$participant instanceof \Modules\GameTables\Application\DTOs\ParticipantResponseDTO || !$gameTable instanceof \Modules\GameTables\Application\DTOs\GameTableResponseDTO) {
+        if (! $participant instanceof ParticipantResponseDTO || ! $gameTable instanceof GameTableResponseDTO) {
             return $this->messagePage($token, (string) __('game-tables::messages.errors.invalid_confirmation'));
         }
 
@@ -53,7 +53,7 @@ final class GuestConfirmationController extends Controller
         // A table taken off the web confirms nothing, as its page shows nothing
         $found = $this->registrationService->findByConfirmationToken($token);
 
-        if ($found instanceof \Modules\GameTables\Application\DTOs\ParticipantResponseDTO && !$this->gameTableQueryService->findPublished($found->gameTableId) instanceof \Modules\GameTables\Application\DTOs\GameTableResponseDTO) {
+        if ($found instanceof ParticipantResponseDTO && ! $this->gameTableQueryService->findPublished($found->gameTableId) instanceof GameTableResponseDTO) {
             return $this->messagePage($token, (string) __('game-tables::messages.errors.invalid_confirmation'));
         }
 
@@ -64,7 +64,7 @@ final class GuestConfirmationController extends Controller
 
         return $this->page(
             $token,
-            $gameTable instanceof \Modules\GameTables\Application\DTOs\GameTableResponseDTO ? $result->participant : null,
+            $gameTable instanceof GameTableResponseDTO ? $result->participant : null,
             $gameTable,
             $this->resultOf($result->outcome, $result->participant),
         );
@@ -85,18 +85,18 @@ final class GuestConfirmationController extends Controller
     private function page(string $token, ?ParticipantResponseDTO $participant, ?GameTableResponseDTO $gameTable, ?array $result): Response
     {
         return Inertia::render('GameTables/ConfirmRegistration', [
-            'participant' => $participant instanceof \Modules\GameTables\Application\DTOs\ParticipantResponseDTO ? [
+            'participant' => $participant instanceof ParticipantResponseDTO ? [
                 'first_name' => $participant->firstName,
                 'role_label' => $participant->role->label(),
                 'status_label' => $this->stateLabel($participant),
             ] : null,
-            'gameTable' => $gameTable instanceof \Modules\GameTables\Application\DTOs\GameTableResponseDTO ? [
+            'gameTable' => $gameTable instanceof GameTableResponseDTO ? [
                 'title' => $gameTable->title,
                 'startsAt' => $gameTable->startsAt,
                 'slug' => $gameTable->slug ?? $gameTable->id,
             ] : null,
             'token' => $token,
-            'alreadyConfirmed' => $participant instanceof \Modules\GameTables\Application\DTOs\ParticipantResponseDTO && ! $participant->awaitingEmailConfirmation,
+            'alreadyConfirmed' => $participant instanceof ParticipantResponseDTO && ! $participant->awaitingEmailConfirmation,
             'result' => $result,
             'seo' => $this->seo->forPage(new SeoPageDTO(
                 title: (string) __('game-tables::messages.seo.confirm_registration_title'),
@@ -124,7 +124,7 @@ final class GuestConfirmationController extends Controller
      */
     private function resultOf(GuestConfirmationOutcome $outcome, ?ParticipantResponseDTO $participant): array
     {
-        if ($outcome === GuestConfirmationOutcome::Confirmed && $participant instanceof \Modules\GameTables\Application\DTOs\ParticipantResponseDTO) {
+        if ($outcome === GuestConfirmationOutcome::Confirmed && $participant instanceof ParticipantResponseDTO) {
             return match ($participant->status) {
                 ParticipantStatus::Pending => ['tone' => 'info', 'message' => (string) __('game-tables::messages.success.guest_email_confirmed_pending')],
                 // The place among those waiting, not the stored position (which may have gaps)

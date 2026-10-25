@@ -160,7 +160,7 @@ interface ParticipantRepositoryInterface
      * Get active participations for a user with their game table and game system data.
      * Excludes Cancelled, Rejected, and NoShow statuses.
      *
-     * @return array<array{participant: Participant, game_table_id: string, game_table_title: string, game_table_slug: string, game_table_starts_at: \DateTimeImmutable|null, game_system_name: string}>
+     * @return array<array{participant: Participant, game_table_id: string, game_table_title: string, game_table_slug: string, game_table_starts_at: DateTimeImmutable|null, game_system_name: string}>
      */
     public function getActiveByUserWithTableData(string $userId): array;
 }

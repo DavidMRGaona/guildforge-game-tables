@@ -92,7 +92,7 @@ final class CampaignModerationTest extends ModuleTestCase
         $campaign = $this->campaign('pending_review');
 
         $mail = (new CampaignModerationSubmittedNotification($campaign->id, $campaign->title, 'John Doe'))
-            ->toMail(new AnonymousNotifiable());
+            ->toMail(new AnonymousNotifiable);
 
         $this->assertSame(CampaignResource::getUrl('edit', ['record' => $campaign]), $mail->actionUrl);
         $this->assertStringContainsString('La llamada', (string) $mail->subject);

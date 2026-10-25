@@ -22,7 +22,7 @@ final readonly class AuthorLockRedirect
 
     public function forTable(?GameTableModel $table, ?string $userId): ?RedirectResponse
     {
-        if (!$table instanceof \Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel
+        if (! $table instanceof GameTableModel
             || $userId === null
             || $table->created_by !== $userId
             || FrontendCreationStatus::allowsAuthorChanges($table->frontend_creation_status, (bool) $table->is_published)) {
@@ -42,7 +42,7 @@ final readonly class AuthorLockRedirect
 
     public function forCampaign(?CampaignModel $campaign, ?string $userId): ?RedirectResponse
     {
-        if (!$campaign instanceof \Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel
+        if (! $campaign instanceof CampaignModel
             || $userId === null
             || $campaign->created_by !== $userId
             || FrontendCreationStatus::allowsAuthorChanges($campaign->frontend_creation_status, (bool) $campaign->is_published)) {

@@ -7,9 +7,11 @@ namespace Modules\GameTables\Infrastructure\Services;
 use App\Application\Authorization\Services\AuthorizationServiceInterface;
 use App\Domain\Entities\Event;
 use App\Domain\Repositories\EventRepositoryInterface;
+use App\Domain\ValueObjects\EventId;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Modules\GameTables\Application\DTOs\CampaignResponseDTO;
 use Modules\GameTables\Application\DTOs\CreationEligibilityDTO;
@@ -18,6 +20,7 @@ use Modules\GameTables\Application\DTOs\FrontendCreateGameTableDTO;
 use Modules\GameTables\Application\DTOs\GameMasterResponseDTO;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
 use Modules\GameTables\Application\DTOs\MyPublishedTableDTO;
+use Modules\GameTables\Application\DTOs\UpdateGameTableDTO;
 use Modules\GameTables\Application\Services\CampaignDirectionInterface;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
 use Modules\GameTables\Application\Services\EventCreationEligibilityServiceInterface;
@@ -26,6 +29,7 @@ use Modules\GameTables\Application\Services\GameMasterServiceInterface;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
 use Modules\GameTables\Application\Services\TableDirectionInterface;
 use Modules\GameTables\Domain\Entities\Campaign;
+use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\CampaignFrequency;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
@@ -34,16 +38,16 @@ use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\GameMasterRole;
 use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\Language;
+use Modules\GameTables\Domain\Enums\ParticipantStatus;
 use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableType;
-use Modules\GameTables\Domain\Enums\ParticipantStatus;
 use Modules\GameTables\Domain\Enums\Tone;
-use Modules\GameTables\Domain\Events\GameTableModerationApproved;
-use Modules\GameTables\Domain\Events\GameTableModerationRejected;
 use Modules\GameTables\Domain\Events\CampaignModerationApproved;
 use Modules\GameTables\Domain\Events\CampaignModerationRejected;
 use Modules\GameTables\Domain\Events\CampaignSubmittedForReview;
+use Modules\GameTables\Domain\Events\GameTableModerationApproved;
+use Modules\GameTables\Domain\Events\GameTableModerationRejected;
 use Modules\GameTables\Domain\Events\GameTableSubmittedForReview;
 use Modules\GameTables\Domain\Exceptions\CampaignNotFoundException;
 use Modules\GameTables\Domain\Exceptions\GameTableNotFoundException;
@@ -54,8 +58,8 @@ use Modules\GameTables\Domain\Repositories\CampaignJoinRequestRepositoryInterfac
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ContentWarningRepositoryInterface;
-use Modules\GameTables\Domain\Repositories\GameSystemRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\EventGameTableConfigRepositoryInterface;
+use Modules\GameTables\Domain\Repositories\GameSystemRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\GameSystemId;
@@ -121,8 +125,8 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         // 2. Get registration closes date from event if applicable
         $registrationClosesAt = null;
         if ($dto->eventId !== null) {
-            $event = $this->eventRepository->findById(new \App\Domain\ValueObjects\EventId($dto->eventId));
-            if ($event instanceof \App\Domain\Entities\Event) {
+            $event = $this->eventRepository->findById(new EventId($dto->eventId));
+            if ($event instanceof Event) {
                 $registrationClosesAt = $this->cappedToTableStart($event->startDate(), $dto->startsAt);
             }
         }
@@ -140,7 +144,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
 
         // 5. Retrieve the entity to update frontend creation status
         $tableEntity = $this->gameTableRepository->find(new GameTableId($gameTable->id));
-        if ($tableEntity instanceof \Modules\GameTables\Domain\Entities\GameTable) {
+        if ($tableEntity instanceof GameTable) {
             $tableEntity->setFrontendCreationStatus($creationStatus);
             $this->gameTableRepository->save($tableEntity);
         }
@@ -214,7 +218,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         $creationStatus = $this->determineInitialStatus($dto->createdBy);
 
         // 3. Create the campaign entity
-        $campaignId = new CampaignId((string) \Illuminate\Support\Str::uuid());
+        $campaignId = new CampaignId((string) Str::uuid());
         $campaign = new Campaign(
             id: $campaignId,
             gameSystemId: new GameSystemId($dto->gameSystemId),
@@ -274,9 +278,9 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         $events = $this->selectableEvents();
 
         if ($keepEventId !== null && ! $events->contains(static fn (Event $event): bool => $event->id()->value === $keepEventId)) {
-            $kept = $this->eventRepository->findById(new \App\Domain\ValueObjects\EventId($keepEventId));
+            $kept = $this->eventRepository->findById(new EventId($keepEventId));
 
-            if ($kept instanceof \App\Domain\Entities\Event) {
+            if ($kept instanceof Event) {
                 $events->push($kept);
             }
         }
@@ -386,7 +390,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
     public function getUserDrafts(string $userId): array
     {
         // Get all tables created by user in draft status, with game masters loaded
-        $tables = \Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel::query()
+        $tables = GameTableModel::query()
             ->with(['gameSystem', 'gameMasters.user'])
             ->where('created_by', $userId)
             ->where('is_published', false)
@@ -399,7 +403,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             )->all();
 
             $table = $this->gameTableRepository->find(new GameTableId($model->id));
-            if (!$table instanceof \Modules\GameTables\Domain\Entities\GameTable) {
+            if (! $table instanceof GameTable) {
                 throw GameTableNotFoundException::withId($model->id);
             }
 
@@ -457,7 +461,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
     {
         $table = $this->gameTableRepository->find(new GameTableId($tableId));
 
-        if (!$table instanceof \Modules\GameTables\Domain\Entities\GameTable) {
+        if (! $table instanceof GameTable) {
             throw GameTableNotFoundException::withId($tableId);
         }
 
@@ -502,7 +506,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
     {
         $table = $this->gameTableRepository->find(new GameTableId($tableId));
 
-        if (!$table instanceof \Modules\GameTables\Domain\Entities\GameTable) {
+        if (! $table instanceof GameTable) {
             throw GameTableNotFoundException::withId($tableId);
         }
 
@@ -520,9 +524,9 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
 
         // Default registration closes at to event start date if event is set and no existing value
         $registrationClosesAt = $table->registrationClosesAt;
-        if ($dto->eventId !== null && !$registrationClosesAt instanceof \DateTimeImmutable) {
-            $event = $this->eventRepository->findById(new \App\Domain\ValueObjects\EventId($dto->eventId));
-            if ($event instanceof \App\Domain\Entities\Event) {
+        if ($dto->eventId !== null && ! $registrationClosesAt instanceof \DateTimeImmutable) {
+            $event = $this->eventRepository->findById(new EventId($dto->eventId));
+            if ($event instanceof Event) {
                 $registrationClosesAt = $this->cappedToTableStart($event->startDate(), $dto->startsAt);
             }
         }
@@ -541,7 +545,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         }
 
         // Update the table via the service
-        $updateDto = new \Modules\GameTables\Application\DTOs\UpdateGameTableDTO(
+        $updateDto = new UpdateGameTableDTO(
             id: $tableId,
             title: $dto->title,
             startsAt: $dto->startsAt,
@@ -616,7 +620,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         return [
             'phone' => $record?->phone ?? '',
             'custom_title' => $record?->custom_title ?? '',
-            'is_name_public' => $record instanceof \Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel ? (bool) $record->is_name_public : true,
+            'is_name_public' => $record instanceof GameMasterModel ? (bool) $record->is_name_public : true,
         ];
     }
 
@@ -624,7 +628,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
     {
         $table = $this->gameTableRepository->find(new GameTableId($tableId));
 
-        if (!$table instanceof \Modules\GameTables\Domain\Entities\GameTable) {
+        if (! $table instanceof GameTable) {
             throw GameTableNotFoundException::withId($tableId);
         }
 
@@ -644,7 +648,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
     {
         $table = $this->gameTableRepository->find(new GameTableId($tableId));
 
-        if (!$table instanceof \Modules\GameTables\Domain\Entities\GameTable) {
+        if (! $table instanceof GameTable) {
             throw GameTableNotFoundException::withId($tableId);
         }
 
@@ -673,7 +677,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
     {
         $table = $this->gameTableRepository->find(new GameTableId($tableId));
 
-        if (!$table instanceof \Modules\GameTables\Domain\Entities\GameTable) {
+        if (! $table instanceof GameTable) {
             throw GameTableNotFoundException::withId($tableId);
         }
 
@@ -703,7 +707,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         // Filter to only include drafts (frontend-created, unpublished campaigns)
         $draftCampaigns = array_filter(
             $campaigns,
-            fn (Campaign $campaign): bool => $campaign->frontendCreationStatus instanceof \Modules\GameTables\Domain\Enums\FrontendCreationStatus && ! $campaign->isPublished,
+            fn (Campaign $campaign): bool => $campaign->frontendCreationStatus instanceof FrontendCreationStatus && ! $campaign->isPublished,
         );
 
         return array_map(
@@ -734,7 +738,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         foreach ($this->direction->campaignIdsDirectedBy($userId) as $campaignId) {
             $campaign = $this->campaignRepository->find(new CampaignId($campaignId));
 
-            if ($campaign instanceof \Modules\GameTables\Domain\Entities\Campaign && $campaign->isApprovedOrPublished()) {
+            if ($campaign instanceof Campaign && $campaign->isApprovedOrPublished()) {
                 $directed[$campaign->id->value] = $campaign;
             }
         }
@@ -776,7 +780,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
     {
         $campaign = $this->campaignRepository->find(new CampaignId($campaignId));
 
-        if (!$campaign instanceof \Modules\GameTables\Domain\Entities\Campaign) {
+        if (! $campaign instanceof Campaign) {
             throw CampaignNotFoundException::withId($campaignId);
         }
 
@@ -814,7 +818,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
     {
         $campaign = $this->campaignRepository->find(new CampaignId($campaignId));
 
-        if (!$campaign instanceof \Modules\GameTables\Domain\Entities\Campaign) {
+        if (! $campaign instanceof Campaign) {
             throw CampaignNotFoundException::withId($campaignId);
         }
 
@@ -855,7 +859,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
     {
         $campaign = $this->campaignRepository->find(new CampaignId($campaignId));
 
-        if (!$campaign instanceof \Modules\GameTables\Domain\Entities\Campaign) {
+        if (! $campaign instanceof Campaign) {
             throw CampaignNotFoundException::withId($campaignId);
         }
 
@@ -879,7 +883,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
     {
         $campaign = $this->campaignRepository->find(new CampaignId($campaignId));
 
-        if (!$campaign instanceof \Modules\GameTables\Domain\Entities\Campaign) {
+        if (! $campaign instanceof Campaign) {
             throw CampaignNotFoundException::withId($campaignId);
         }
 
@@ -902,7 +906,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
     {
         $campaign = $this->campaignRepository->find(new CampaignId($campaignId));
 
-        if (!$campaign instanceof \Modules\GameTables\Domain\Entities\Campaign) {
+        if (! $campaign instanceof Campaign) {
             throw CampaignNotFoundException::withId($campaignId);
         }
 
@@ -1173,6 +1177,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
 
         // Check if user has any of the auto-publish permissions
         $permissions = $this->settingsReader->getAutoPublishPermissions();
+
         return $permissions !== [] && $this->authorizationService->canAny($user, $permissions);
     }
 }

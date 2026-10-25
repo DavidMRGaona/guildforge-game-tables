@@ -19,8 +19,7 @@ final readonly class ContentWarningDTO
         public ?string $description,
         public ?string $icon,
         public ?string $createdAt,
-    ) {
-    }
+    ) {}
 
     public static function fromEntity(ContentWarning $contentWarning): self
     {

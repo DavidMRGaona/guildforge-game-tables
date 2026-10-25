@@ -9,6 +9,5 @@ final readonly class MailRecipientDTO
     public function __construct(
         public string $email,
         public string $name,
-    ) {
-    }
+    ) {}
 }

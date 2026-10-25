@@ -6,6 +6,7 @@ namespace Modules\GameTables\Application\DTOs;
 
 use DateTimeImmutable;
 use Modules\GameTables\Domain\Entities\EventGameTableConfig;
+use Modules\GameTables\Domain\ValueObjects\EarlyAccessTier;
 
 /**
  * DTO providing the context needed for creating a game table within an event.
@@ -51,7 +52,7 @@ final readonly class EventCreationContextDTO
         $earlyAccessOpensAt = null;
         $earlyAccessDaysBefore = null;
 
-        if ($hasEarlyAccess && $creationOpensAt instanceof \DateTimeImmutable && $earlyAccessTier instanceof \Modules\GameTables\Domain\ValueObjects\EarlyAccessTier) {
+        if ($hasEarlyAccess && $creationOpensAt instanceof DateTimeImmutable && $earlyAccessTier instanceof EarlyAccessTier) {
             $earlyAccessOpensAt = $earlyAccessTier->getOpenDate($creationOpensAt)->format('c');
             $earlyAccessDaysBefore = $earlyAccessTier->daysBeforeOpening;
         }

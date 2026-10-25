@@ -263,7 +263,7 @@ final class GameMasterService implements GameMasterServiceInterface
         // Mark inherited GMs as excluded if they were removed from the form data
         foreach ($campaignGmIds as $campaignGmId) {
             if (! in_array($campaignGmId, $includedInheritedIds, true)) {
-                $wasExplicitlyExcluded = array_any($gameMastersData, fn($gmData) => ($gmData['id'] ?? null) === $campaignGmId && ! empty($gmData['excluded']));
+                $wasExplicitlyExcluded = array_any($gameMastersData, fn ($gmData) => ($gmData['id'] ?? null) === $campaignGmId && ! empty($gmData['excluded']));
                 // If not in included list and not explicitly marked, it might have been removed
                 // Only exclude if it was in the original form but removed
                 if (! $wasExplicitlyExcluded) {

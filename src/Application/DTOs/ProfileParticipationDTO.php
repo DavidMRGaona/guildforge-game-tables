@@ -36,7 +36,7 @@ final readonly class ProfileParticipationDTO
     ): self {
         $now = CarbonImmutable::now()->toDateTimeImmutable();
         $startsAt = $gameTable->timeSlot->startsAt;
-        $isUpcoming = $startsAt instanceof \DateTimeImmutable && $startsAt > $now;
+        $isUpcoming = $startsAt instanceof DateTimeImmutable && $startsAt > $now;
 
         return new self(
             id: $participant->id->value,

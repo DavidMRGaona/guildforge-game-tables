@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Models;
 
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\GameTables\Domain\Enums\LocationMode;
@@ -19,10 +20,10 @@ use Modules\GameTables\Domain\Enums\SchedulingMode;
  * @property string|null $fixed_location
  * @property array{access_level: string, allowed_roles?: array<string>|null, required_permission?: string|null}|null $eligibility_override
  * @property bool $early_access_enabled
- * @property \Carbon\Carbon|null $creation_opens_at
+ * @property Carbon|null $creation_opens_at
  * @property array{access_type: string, allowed_roles?: array<string>|null, required_permission?: string|null, days_before_opening: int}|null $early_access_tier
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property-read EventModel $event
  */
 final class EventGameTableConfigModel extends Model

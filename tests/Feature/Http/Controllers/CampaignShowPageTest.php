@@ -69,7 +69,7 @@ final class CampaignShowPageTest extends ModuleTestCase
     }
 
     /**
-     * @param array<string, mixed> $attributes
+     * @param  array<string, mixed>  $attributes
      */
     private function campaign(string $title, string $slug, array $attributes = []): CampaignModel
     {

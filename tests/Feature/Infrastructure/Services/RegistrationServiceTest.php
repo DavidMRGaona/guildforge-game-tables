@@ -31,12 +31,14 @@ use Modules\GameTables\Domain\Events\ParticipantRegistered;
 use Modules\GameTables\Domain\Exceptions\AlreadyRegisteredException;
 use Modules\GameTables\Domain\Exceptions\CannotCancelException;
 use Modules\GameTables\Domain\Exceptions\ParticipantNotFoundException;
+use Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameSystemId;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Domain\ValueObjects\ParticipantId;
 use Modules\GameTables\Domain\ValueObjects\TimeSlot;
+use Modules\GameTables\Infrastructure\Services\EligibilityService;
 use Modules\GameTables\Infrastructure\Services\ParticipantActorContext;
 use Modules\GameTables\Infrastructure\Services\RegistrationService;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
@@ -88,7 +90,7 @@ final class RegistrationServiceTest extends TestCase
                     return $callback();
                 }
             },
-            new ParticipantActorContext(),
+            new ParticipantActorContext,
         );
 
         Event::fake();
@@ -994,7 +996,7 @@ final class RegistrationServiceTest extends TestCase
                     throw new LogicException('The lock must not be taken');
                 }
             },
-            new ParticipantActorContext(),
+            new ParticipantActorContext,
         );
     }
 
@@ -1068,7 +1070,7 @@ final class RegistrationServiceTest extends TestCase
         $service = new RegistrationService(
             $this->participantRepository,
             $this->gameTableRepository,
-            new \Modules\GameTables\Infrastructure\Services\EligibilityService($this->participantRepository, $this->gameTableRepository),
+            new EligibilityService($this->participantRepository, $this->gameTableRepository),
             new class implements RegistrationLockInterface
             {
                 public function forTable(string $gameTableId, Closure $callback): mixed
@@ -1091,7 +1093,7 @@ final class RegistrationServiceTest extends TestCase
                     return $callback();
                 }
             },
-            new ParticipantActorContext(),
+            new ParticipantActorContext,
         );
 
         try {
@@ -1103,7 +1105,7 @@ final class RegistrationServiceTest extends TestCase
                 email: null,
             ));
             $this->fail('A guest without email skipped the eligibility check');
-        } catch (\Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException $e) {
+        } catch (RegistrationNotAllowedException $e) {
             $this->assertSame($reason, $e->reason);
         }
     }

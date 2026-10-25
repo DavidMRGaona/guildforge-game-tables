@@ -4,32 +4,31 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Actions\EditAction;
+use App\Filament\Resources\BaseResource;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
-use Modules\GameTables\Filament\Resources\ContentWarningResource\Pages\ListContentWarnings;
-use Modules\GameTables\Filament\Resources\ContentWarningResource\Pages\CreateContentWarning;
-use Modules\GameTables\Filament\Resources\ContentWarningResource\Pages\EditContentWarning;
+use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use App\Filament\Resources\BaseResource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Modules\GameTables\Domain\Enums\WarningSeverity;
-use Modules\GameTables\Filament\Resources\ContentWarningResource\Pages;
+use Modules\GameTables\Filament\Resources\ContentWarningResource\Pages\CreateContentWarning;
+use Modules\GameTables\Filament\Resources\ContentWarningResource\Pages\EditContentWarning;
+use Modules\GameTables\Filament\Resources\ContentWarningResource\Pages\ListContentWarnings;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ContentWarningModel;
 
 final class ContentWarningResource extends BaseResource
 {
     protected static ?string $model = ContentWarningModel::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-exclamation-triangle';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-exclamation-triangle';
 
     protected static ?int $navigationSort = 3;
 

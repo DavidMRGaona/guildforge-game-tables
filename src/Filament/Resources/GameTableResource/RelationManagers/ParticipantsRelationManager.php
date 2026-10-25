@@ -4,25 +4,24 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources\GameTableResource\RelationManagers;
 
-use Filament\Notifications\Notification;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Utilities\Get;
-use Filament\Schemas\Components\Grid;
-use Filament\Actions\CreateAction;
+use Closure;
 use Filament\Actions\Action;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
-use Closure;
-use Throwable;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -43,6 +42,7 @@ use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
+use Throwable;
 
 final class ParticipantsRelationManager extends RelationManager
 {
@@ -171,7 +171,7 @@ final class ParticipantsRelationManager extends RelationManager
                     // Who the registration belongs to changes only by cancelling it and adding again
                     ->disabled(fn (string $operation): bool => $operation === 'edit')
                     ->afterStateHydrated(function (Select $component, ?string $state, ?ParticipantModel $record): void {
-                        if ($record instanceof \Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel) {
+                        if ($record instanceof ParticipantModel) {
                             $component->state($record->user_id !== null ? 'user' : 'external');
                         }
                     }),
@@ -239,7 +239,7 @@ final class ParticipantsRelationManager extends RelationManager
     private function isGuestForm(Get $get, string $operation, ?ParticipantModel $record): bool
     {
         if ($operation === 'edit') {
-            return $record instanceof \Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel && $record->user_id === null;
+            return $record instanceof ParticipantModel && $record->user_id === null;
         }
 
         return $get('participant_type') === 'external';
@@ -251,7 +251,7 @@ final class ParticipantsRelationManager extends RelationManager
     private function emailFreeAtTable(?ParticipantModel $record): Closure
     {
         return function (string $attribute, mixed $value, Closure $fail) use ($record): void {
-            if (!$record instanceof \Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel || ! is_string($value) || trim($value) === '') {
+            if (! $record instanceof ParticipantModel || ! is_string($value) || trim($value) === '') {
                 return;
             }
 
@@ -373,7 +373,7 @@ final class ParticipantsRelationManager extends RelationManager
                 TextColumn::make('display_name')
                     ->label(__('game-tables::messages.fields.name'))
                     ->getStateUsing(fn (ParticipantModel $record): string => $record->display_name)
-                    ->searchable(query: fn($query, string $search) => $query->where(function ($q) use ($search) {
+                    ->searchable(query: fn ($query, string $search) => $query->where(function ($q) use ($search) {
                         $q->whereHas('user', fn ($userQuery) => $userQuery->where('name', 'like', "%{$search}%"))
                             ->orWhere('first_name', 'like', "%{$search}%")
                             ->orWhere('last_name', 'like', "%{$search}%");

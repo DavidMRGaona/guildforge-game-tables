@@ -4,14 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Pages;
 
-use Closure;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Utilities\Get;
-use Filament\Schemas\Schema;
 use App\Application\Modules\Services\ModuleManagerServiceInterface;
 use App\Domain\Modules\ValueObjects\ModuleName;
 use App\Filament\Concerns\ChecksPermissions;
 use App\Filament\Concerns\SafeModuleNavigation;
+use Closure;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -20,10 +17,14 @@ use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 
 /**
- * @property \Filament\Schemas\Schema $form
+ * @property Schema $form
  */
 final class GameTablesSettings extends Page implements HasForms
 {
@@ -31,7 +32,7 @@ final class GameTablesSettings extends Page implements HasForms
     use InteractsWithForms;
     use SafeModuleNavigation;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-cog-6-tooth';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-cog-6-tooth';
 
     protected static ?int $navigationSort = 99;
 
@@ -72,7 +73,7 @@ final class GameTablesSettings extends Page implements HasForms
     /**
      * Get the form schema components for settings.
      *
-     * @return array<\Filament\Schemas\Components\Component>
+     * @return array<Component>
      */
     public static function getFormSchemaComponents(): array
     {
@@ -335,8 +336,7 @@ final class GameTablesSettings extends Page implements HasForms
                         ->label(__('game-tables::messages.settings.fields.allowed_roles'))
                         ->helperText(__('game-tables::messages.settings.fields.allowed_roles_help'))
                         ->placeholder('socio, colaborador')
-                        ->visible(fn (Get $get): bool =>
-                            (bool) $get('frontend_creation.enabled') &&
+                        ->visible(fn (Get $get): bool => (bool) $get('frontend_creation.enabled') &&
                             $get('frontend_creation.access_level') === 'role'
                         ),
 
@@ -344,8 +344,7 @@ final class GameTablesSettings extends Page implements HasForms
                         ->label(__('game-tables::messages.settings.fields.required_permission'))
                         ->helperText(__('game-tables::messages.settings.fields.required_permission_help'))
                         ->placeholder('gametables:create')
-                        ->visible(fn (Get $get): bool =>
-                            (bool) $get('frontend_creation.enabled') &&
+                        ->visible(fn (Get $get): bool => (bool) $get('frontend_creation.enabled') &&
                             $get('frontend_creation.access_level') === 'permission'
                         ),
 

@@ -369,7 +369,7 @@ final class ParticipantTest extends TestCase
     public function test_a_cancelled_guest_is_not_awaiting(): void
     {
         $guest = $this->createGuest();
-        $guest->requireEmailConfirmation(GuestConfirmationMode::Hold, 'token-1', null, new DateTimeImmutable());
+        $guest->requireEmailConfirmation(GuestConfirmationMode::Hold, 'token-1', null, new DateTimeImmutable);
         $guest->cancel();
 
         $this->assertFalse($guest->isAwaitingEmailConfirmation());

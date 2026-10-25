@@ -19,7 +19,7 @@ final class GameTableSettingsReaderTest extends TestCase
         parent::setUp();
 
         config()->set('modules.settings.game-tables', null);
-        $this->reader = new GameTableSettingsReader();
+        $this->reader = new GameTableSettingsReader;
     }
 
     /**

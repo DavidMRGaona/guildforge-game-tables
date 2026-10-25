@@ -16,6 +16,8 @@ use Modules\GameTables\Application\Services\MembershipCheckerInterface;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
+use PHPUnit\Framework\Attributes\DataProvider;
+use Symfony\Component\HttpFoundation\Response;
 use Tests\Support\Modules\ModuleTestCase;
 
 /**
@@ -320,7 +322,7 @@ final class RegistrationEligibilityTest extends ModuleTestCase
         $this->assertSame(1, $this->registrations($table));
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('directorRoles')]
+    #[DataProvider('directorRoles')]
     public function test_a_user_cannot_register_as_a_director(string $role): void
     {
         $table = $this->table();
@@ -465,7 +467,7 @@ final class RegistrationEligibilityTest extends ModuleTestCase
     }
 
     /**
-     * @return TestResponse<\Symfony\Component\HttpFoundation\Response>
+     * @return TestResponse<Response>
      */
     private function register(GameTableModel $table, string $role = 'player', bool $json = false): TestResponse
     {
@@ -476,7 +478,7 @@ final class RegistrationEligibilityTest extends ModuleTestCase
     }
 
     /**
-     * @return TestResponse<\Symfony\Component\HttpFoundation\Response>
+     * @return TestResponse<Response>
      */
     private function registerGuest(GameTableModel $table, string $role = 'player'): TestResponse
     {
@@ -511,7 +513,8 @@ final class RegistrationEligibilityTest extends ModuleTestCase
     {
         $memberId = $isMember ? $this->user->id : null;
 
-        $this->app->instance(MembershipCheckerInterface::class, new class($memberId) implements MembershipCheckerInterface {
+        $this->app->instance(MembershipCheckerInterface::class, new class($memberId) implements MembershipCheckerInterface
+        {
             public function __construct(private readonly ?string $memberId) {}
 
             public function isActiveMember(string $userId): bool

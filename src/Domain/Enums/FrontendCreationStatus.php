@@ -79,7 +79,7 @@ enum FrontendCreationStatus: string
      */
     public static function allowsAuthorChanges(?self $status, bool $isPublished): bool
     {
-        return ! $isPublished && $status instanceof \Modules\GameTables\Domain\Enums\FrontendCreationStatus && $status->canEdit();
+        return ! $isPublished && $status instanceof FrontendCreationStatus && $status->canEdit();
     }
 
     /**
@@ -90,7 +90,7 @@ enum FrontendCreationStatus: string
      */
     public static function allowsPanelPublishing(?self $status): bool
     {
-        return !$status instanceof \Modules\GameTables\Domain\Enums\FrontendCreationStatus || $status === self::Approved;
+        return ! $status instanceof FrontendCreationStatus || $status === self::Approved;
     }
 
     /**

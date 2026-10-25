@@ -37,13 +37,13 @@ final readonly class EventCreationEligibilityService implements EventCreationEli
         // A missing config means nobody enabled tables for this event. The admin
         // panel renders that same absence as an unchecked toggle, so creation has
         // to stay closed here too instead of falling back to the global settings.
-        if (!$config instanceof \Modules\GameTables\Domain\Entities\EventGameTableConfig || ! $config->isEnabled()) {
+        if (! $config instanceof EventGameTableConfig || ! $config->isEnabled()) {
             return CreationEligibilityDTO::notEligible('tables_not_enabled_for_event');
         }
 
         // Check early access restrictions
         $earlyAccessCheck = $this->checkEarlyAccess($config, $userId);
-        if ($earlyAccessCheck instanceof \Modules\GameTables\Application\DTOs\CreationEligibilityDTO) {
+        if ($earlyAccessCheck instanceof CreationEligibilityDTO) {
             return $earlyAccessCheck;
         }
 
@@ -65,7 +65,7 @@ final readonly class EventCreationEligibilityService implements EventCreationEli
     {
         // Check if there's a general opening date configured
         $generalOpenDate = $config->creationOpensAt();
-        if (!$generalOpenDate instanceof \DateTimeImmutable) {
+        if (! $generalOpenDate instanceof DateTimeImmutable) {
             return null;
         }
 
@@ -73,7 +73,7 @@ final readonly class EventCreationEligibilityService implements EventCreationEli
 
         // Check if early access is enabled and configured
         $earlyAccessTier = $config->isEarlyAccessEnabled() ? $config->earlyAccessTier() : null;
-        $hasEarlyAccessTier = $earlyAccessTier instanceof \Modules\GameTables\Domain\ValueObjects\EarlyAccessTier;
+        $hasEarlyAccessTier = $earlyAccessTier instanceof EarlyAccessTier;
 
         // Calculate the effective open date for this user
         $effectiveOpenDate = $this->getEffectiveOpenDateForUser(
@@ -104,12 +104,12 @@ final readonly class EventCreationEligibilityService implements EventCreationEli
         ?string $userId
     ): DateTimeImmutable {
         // If no early access tier or no user, use general open date
-        if (!$earlyAccessTier instanceof \Modules\GameTables\Domain\ValueObjects\EarlyAccessTier || $userId === null) {
+        if (! $earlyAccessTier instanceof EarlyAccessTier || $userId === null) {
             return $generalOpenDate;
         }
 
         $user = $this->getUser($userId);
-        if (!$user instanceof \App\Infrastructure\Persistence\Eloquent\Models\UserModel) {
+        if (! $user instanceof UserModel) {
             return $generalOpenDate;
         }
 
@@ -162,7 +162,7 @@ final readonly class EventCreationEligibilityService implements EventCreationEli
     private function checkRegisteredAccess(string $userId): CreationEligibilityDTO
     {
         $user = $this->getUser($userId);
-        if (!$user instanceof \App\Infrastructure\Persistence\Eloquent\Models\UserModel) {
+        if (! $user instanceof UserModel) {
             return CreationEligibilityDTO::notEligible('user_not_found');
         }
 
@@ -178,7 +178,7 @@ final readonly class EventCreationEligibilityService implements EventCreationEli
     private function checkRoleAccess(string $userId, array $allowedRoles): CreationEligibilityDTO
     {
         $user = $this->getUser($userId);
-        if (!$user instanceof \App\Infrastructure\Persistence\Eloquent\Models\UserModel) {
+        if (! $user instanceof UserModel) {
             return CreationEligibilityDTO::notEligible('user_not_found');
         }
 
@@ -199,7 +199,7 @@ final readonly class EventCreationEligibilityService implements EventCreationEli
     private function checkPermissionAccess(string $userId, string $requiredPermission): CreationEligibilityDTO
     {
         $user = $this->getUser($userId);
-        if (!$user instanceof \App\Infrastructure\Persistence\Eloquent\Models\UserModel) {
+        if (! $user instanceof UserModel) {
             return CreationEligibilityDTO::notEligible('user_not_found');
         }
 

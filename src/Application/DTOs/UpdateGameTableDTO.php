@@ -17,10 +17,10 @@ use Modules\GameTables\Domain\Enums\Tone;
 final readonly class UpdateGameTableDTO
 {
     /**
-     * @param array<Genre>|null $genres
-     * @param array<SafetyTool>|null $safetyTools
-     * @param array<string>|null $contentWarningIds
-     * @param array<string>|null $customWarnings
+     * @param  array<Genre>|null  $genres
+     * @param  array<SafetyTool>|null  $safetyTools
+     * @param  array<string>|null  $contentWarningIds
+     * @param  array<string>|null  $customWarnings
      */
     public function __construct(
         public string $id,
@@ -56,7 +56,7 @@ final readonly class UpdateGameTableDTO
     ) {}
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public static function fromArray(array $data): self
     {

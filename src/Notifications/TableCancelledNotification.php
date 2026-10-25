@@ -30,17 +30,17 @@ final class TableCancelledNotification extends Notification implements ShouldQue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $message = (new MailMessage())
+        $message = (new MailMessage)
             ->subject(__('game-tables::emails.table_cancelled.subject', ['tableTitle' => $this->tableTitle]))
             ->greeting(__('game-tables::emails.table_cancelled.greeting', ['name' => $this->participantName]))
             ->line(__('game-tables::emails.table_cancelled.intro', ['tableTitle' => $this->tableTitle]))
             ->line(__('game-tables::emails.table_cancelled.details'));
 
-        $message->line('**' . __('game-tables::emails.table_cancelled.table_title') . ':** ' . $this->tableTitle);
-        $message->line('**' . __('game-tables::emails.table_cancelled.table_date') . ':** ' . $this->tableDate);
+        $message->line('**'.__('game-tables::emails.table_cancelled.table_title').':** '.$this->tableTitle);
+        $message->line('**'.__('game-tables::emails.table_cancelled.table_date').':** '.$this->tableDate);
 
         if ($this->tableLocation !== null) {
-            $message->line('**' . __('game-tables::emails.table_cancelled.table_location') . ':** ' . $this->tableLocation);
+            $message->line('**'.__('game-tables::emails.table_cancelled.table_location').':** '.$this->tableLocation);
         }
 
         return $message->line(__('game-tables::emails.table_cancelled.outro'));

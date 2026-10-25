@@ -6,7 +6,6 @@ namespace Modules\GameTables\Filament\Resources\CampaignResource\Pages;
 
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
-use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
 use Modules\GameTables\Application\Services\GameMasterServiceInterface;
 use Modules\GameTables\Filament\Resources\CampaignResource;

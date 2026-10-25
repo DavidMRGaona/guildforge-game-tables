@@ -34,7 +34,7 @@ final readonly class CampaignSessionCreationGate
         foreach ($this->direction->campaignIdsDirectedBy($userId) as $campaignId) {
             $campaign = $this->campaigns->find(new CampaignId($campaignId));
 
-            if ($campaign instanceof \Modules\GameTables\Domain\Entities\Campaign && $campaign->isAvailableForSessions()) {
+            if ($campaign instanceof Campaign && $campaign->isAvailableForSessions()) {
                 $campaigns[] = $campaign;
             }
         }
@@ -84,7 +84,7 @@ final readonly class CampaignSessionCreationGate
     {
         $campaign = $this->campaigns->find(new CampaignId($campaignId));
 
-        return $campaign instanceof \Modules\GameTables\Domain\Entities\Campaign ? self::option($campaign, $this->roster->count($campaign->id)) : null;
+        return $campaign instanceof Campaign ? self::option($campaign, $this->roster->count($campaign->id)) : null;
     }
 
     /**

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Infrastructure\Services;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Modules\GameTables\Application\DTOs\CampaignGameMasterResponseDTO;
 use Modules\GameTables\Application\DTOs\CampaignResponseDTO;
 use Modules\GameTables\Application\DTOs\GameTableListDTO;
@@ -84,7 +85,7 @@ final readonly class CampaignQueryService implements CampaignQueryServiceInterfa
     private function buildQuery(
         ?array $gameSystemIds = null,
         ?string $status = null,
-    ): \Illuminate\Database\Eloquent\Builder {
+    ): Builder {
         $query = CampaignModel::query()
             ->with(['gameSystem', 'creator', 'gameMasters.user'])
             ->withCount([

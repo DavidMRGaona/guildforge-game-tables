@@ -7,6 +7,7 @@ namespace Modules\GameTables\Listeners;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Facades\Notification;
 use Modules\GameTables\Application\Services\CampaignDirectionInterface;
+use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Events\CampaignInvitationAccepted;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
@@ -35,7 +36,7 @@ final readonly class NotifyDirectionOfInvitationAccepted
 
         $campaign = $this->campaigns->find(new CampaignId($event->campaignId));
 
-        if (!$campaign instanceof \Modules\GameTables\Domain\Entities\Campaign) {
+        if (! $campaign instanceof Campaign) {
             return;
         }
 

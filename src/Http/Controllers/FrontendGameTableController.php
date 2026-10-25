@@ -184,7 +184,7 @@ final class FrontendGameTableController extends Controller
     public function edit(string $gameTable): Response|RedirectResponse
     {
         $gameTable = $this->findAuthorTable($gameTable);
-        if (($locked = $this->sendLockedAuthorBack($gameTable)) instanceof \Illuminate\Http\RedirectResponse) {
+        if (($locked = $this->sendLockedAuthorBack($gameTable)) instanceof RedirectResponse) {
             return $locked;
         }
         Gate::authorize('update', $gameTable);
@@ -238,7 +238,7 @@ final class FrontendGameTableController extends Controller
     public function update(string $gameTable, FrontendCreateGameTableRequest $request): RedirectResponse
     {
         $gameTable = $this->findAuthorTable($gameTable);
-        if (($locked = $this->sendLockedAuthorBack($gameTable)) instanceof \Illuminate\Http\RedirectResponse) {
+        if (($locked = $this->sendLockedAuthorBack($gameTable)) instanceof RedirectResponse) {
             return $locked;
         }
         Gate::authorize('update', $gameTable);
@@ -272,7 +272,7 @@ final class FrontendGameTableController extends Controller
     public function submitForReview(string $gameTable): RedirectResponse
     {
         $gameTable = $this->findAuthorTable($gameTable);
-        if (($locked = $this->sendLockedAuthorBack($gameTable)) instanceof \Illuminate\Http\RedirectResponse) {
+        if (($locked = $this->sendLockedAuthorBack($gameTable)) instanceof RedirectResponse) {
             return $locked;
         }
         Gate::authorize('submitForReview', $gameTable);
@@ -305,7 +305,7 @@ final class FrontendGameTableController extends Controller
     public function destroy(string $gameTable): RedirectResponse
     {
         $gameTable = $this->findAuthorTable($gameTable);
-        if (($locked = $this->sendLockedAuthorBack($gameTable)) instanceof \Illuminate\Http\RedirectResponse) {
+        if (($locked = $this->sendLockedAuthorBack($gameTable)) instanceof RedirectResponse) {
             return $locked;
         }
         Gate::authorize('delete', $gameTable);
@@ -342,7 +342,7 @@ final class FrontendGameTableController extends Controller
     {
         $table = GameTableModel::findBySlugOrId($key);
 
-        if (!$table instanceof \Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel) {
+        if (! $table instanceof GameTableModel) {
             throw (new ModelNotFoundException)->setModel(GameTableModel::class, [$key]);
         }
 

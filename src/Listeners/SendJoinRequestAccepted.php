@@ -6,13 +6,14 @@ namespace Modules\GameTables\Listeners;
 
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Facades\Notification;
+use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Events\CampaignJoinRequestAccepted;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
+use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
-use Modules\GameTables\Notifications\CampaignJoinRequestAcceptedNotification;
-use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Listeners\Concerns\DescribesRosterSessions;
+use Modules\GameTables\Notifications\CampaignJoinRequestAcceptedNotification;
 
 final readonly class SendJoinRequestAccepted
 {
@@ -38,7 +39,7 @@ final readonly class SendJoinRequestAccepted
 
         $campaign = $this->campaigns->find(new CampaignId($event->campaignId));
 
-        if (!$campaign instanceof \Modules\GameTables\Domain\Entities\Campaign) {
+        if (! $campaign instanceof Campaign) {
             return;
         }
 

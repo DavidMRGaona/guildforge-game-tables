@@ -33,7 +33,7 @@ final class WaitingListPromotionGmNotification extends Notification implements S
 
     public function toMail(object $notifiable): MailMessage
     {
-        $message = (new MailMessage())
+        $message = (new MailMessage)
             ->subject(__('game-tables::emails.waiting_list_promotion_gm.subject', ['tableTitle' => $this->tableTitle]))
             ->greeting(__('game-tables::emails.waiting_list_promotion_gm.greeting'))
             ->line(__('game-tables::emails.waiting_list_promotion_gm.intro', [
@@ -45,14 +45,14 @@ final class WaitingListPromotionGmNotification extends Notification implements S
             $message->line(__('game-tables::emails.waiting_list_promotion_gm.pending'));
         }
 
-        $message->line('**' . __('game-tables::emails.waiting_list_promotion_gm.table_title') . ':** ' . $this->tableTitle);
+        $message->line('**'.__('game-tables::emails.waiting_list_promotion_gm.table_title').':** '.$this->tableTitle);
 
         if ($this->tableDate !== null) {
-            $message->line('**' . __('game-tables::emails.waiting_list_promotion_gm.table_date') . ':** ' . $this->tableDate);
+            $message->line('**'.__('game-tables::emails.waiting_list_promotion_gm.table_date').':** '.$this->tableDate);
         }
 
         if ($this->tableLocation !== null) {
-            $message->line('**' . __('game-tables::emails.waiting_list_promotion_gm.table_location') . ':** ' . $this->tableLocation);
+            $message->line('**'.__('game-tables::emails.waiting_list_promotion_gm.table_location').':** '.$this->tableLocation);
         }
 
         $tableUrl = url("/mesas/{$this->tableId}");

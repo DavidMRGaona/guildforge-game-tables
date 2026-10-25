@@ -31,7 +31,7 @@ final class ParticipantCancelledNotification extends Notification implements Sho
 
     public function toMail(object $notifiable): MailMessage
     {
-        $message = (new MailMessage())
+        $message = (new MailMessage)
             ->subject(__('game-tables::emails.cancellation.subject', ['tableTitle' => $this->tableTitle]))
             ->greeting(__('game-tables::emails.cancellation.greeting'))
             ->line(__('game-tables::emails.cancellation.intro', [
@@ -39,14 +39,14 @@ final class ParticipantCancelledNotification extends Notification implements Sho
                 'tableTitle' => $this->tableTitle,
             ]));
 
-        $message->line('**' . __('game-tables::emails.cancellation.table_title') . ':** ' . $this->tableTitle);
+        $message->line('**'.__('game-tables::emails.cancellation.table_title').':** '.$this->tableTitle);
 
         if ($this->tableDate !== null) {
-            $message->line('**' . __('game-tables::emails.cancellation.table_date') . ':** ' . $this->tableDate);
+            $message->line('**'.__('game-tables::emails.cancellation.table_date').':** '.$this->tableDate);
         }
 
         if ($this->tableLocation !== null) {
-            $message->line('**' . __('game-tables::emails.cancellation.table_location') . ':** ' . $this->tableLocation);
+            $message->line('**'.__('game-tables::emails.cancellation.table_location').':** '.$this->tableLocation);
         }
 
         $tableUrl = url("/mesas/{$this->tableId}");

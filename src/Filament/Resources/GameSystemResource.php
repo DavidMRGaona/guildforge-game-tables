@@ -4,30 +4,29 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Actions\EditAction;
+use App\Filament\Resources\BaseResource;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
-use Modules\GameTables\Filament\Resources\GameSystemResource\Pages\ListGameSystems;
-use Modules\GameTables\Filament\Resources\GameSystemResource\Pages\CreateGameSystem;
-use Modules\GameTables\Filament\Resources\GameSystemResource\Pages\EditGameSystem;
+use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use App\Filament\Resources\BaseResource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
-use Modules\GameTables\Filament\Resources\GameSystemResource\Pages;
+use Modules\GameTables\Filament\Resources\GameSystemResource\Pages\CreateGameSystem;
+use Modules\GameTables\Filament\Resources\GameSystemResource\Pages\EditGameSystem;
+use Modules\GameTables\Filament\Resources\GameSystemResource\Pages\ListGameSystems;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 
 final class GameSystemResource extends BaseResource
 {
     protected static ?string $model = GameSystemModel::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-puzzle-piece';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-puzzle-piece';
 
     protected static ?int $navigationSort = 2;
 

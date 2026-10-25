@@ -24,8 +24,7 @@ final class CampaignInvitation
         public readonly DateTimeImmutable $expiresAt,
         public int $sendCount,
         public DateTimeImmutable $lastSentAt,
-    ) {
-    }
+    ) {}
 
     public function isExpired(DateTimeImmutable $now): bool
     {

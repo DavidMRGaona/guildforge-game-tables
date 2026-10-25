@@ -6,6 +6,7 @@ namespace Modules\GameTables\Listeners;
 
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Facades\Notification;
+use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Events\ParticipantRegistered;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
@@ -27,7 +28,7 @@ final readonly class SendRegistrationConfirmation
 
         $gameTable = $this->gameTableRepository->find(new GameTableId($event->gameTableId));
 
-        if (!$gameTable instanceof \Modules\GameTables\Domain\Entities\GameTable) {
+        if (! $gameTable instanceof GameTable) {
             return;
         }
 

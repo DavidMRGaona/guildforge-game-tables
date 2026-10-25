@@ -13,6 +13,5 @@ final readonly class CampaignCreated
 
     public function __construct(
         public Campaign $campaign,
-    ) {
-    }
+    ) {}
 }

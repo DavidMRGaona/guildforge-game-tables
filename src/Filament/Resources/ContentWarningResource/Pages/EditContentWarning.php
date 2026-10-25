@@ -6,7 +6,6 @@ namespace Modules\GameTables\Filament\Resources\ContentWarningResource\Pages;
 
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
-use Illuminate\Contracts\Support\Htmlable;
 use Modules\GameTables\Filament\Resources\ContentWarningResource;
 
 final class EditContentWarning extends EditRecord

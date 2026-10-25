@@ -22,9 +22,11 @@ use Tests\Support\Modules\ModuleTestCase;
 final class GameTableQueryServiceTest extends ModuleTestCase
 {
     protected ?string $moduleName = 'game-tables';
+
     protected bool $autoEnableModule = true;
 
     private GameTableQueryService $queryService;
+
     private UserModel $testUser;
 
     protected function setUp(): void

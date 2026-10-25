@@ -7,17 +7,23 @@ namespace Modules\GameTables\Application\Services;
 use DateTimeImmutable;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
+use Modules\GameTables\Domain\Exceptions\AlreadyRegisteredException;
+use Modules\GameTables\Domain\Exceptions\MembersOnlyException;
+use Modules\GameTables\Domain\Exceptions\MinimumAgeException;
+use Modules\GameTables\Domain\Exceptions\RegistrationClosedException;
+use Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException;
+use Modules\GameTables\Domain\Exceptions\TableFullException;
 
 interface EligibilityServiceInterface
 {
     /**
      * Check if a user is eligible to register for a game table.
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\RegistrationClosedException
-     * @throws \Modules\GameTables\Domain\Exceptions\MembersOnlyException
-     * @throws \Modules\GameTables\Domain\Exceptions\MinimumAgeException
-     * @throws \Modules\GameTables\Domain\Exceptions\AlreadyRegisteredException
-     * @throws \Modules\GameTables\Domain\Exceptions\TableFullException
+     * @throws RegistrationClosedException
+     * @throws MembersOnlyException
+     * @throws MinimumAgeException
+     * @throws AlreadyRegisteredException
+     * @throws TableFullException
      */
     public function checkEligibility(
         GameTable $gameTable,
@@ -79,14 +85,14 @@ interface EligibilityServiceInterface
     /**
      * Refuse a user registration the table page would not offer.
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException
+     * @throws RegistrationNotAllowedException
      */
     public function ensureUserCanRegister(string $gameTableId, string $userId, ParticipantRole $role = ParticipantRole::Player): void;
 
     /**
      * Refuse a guest registration the table page would not offer.
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException
+     * @throws RegistrationNotAllowedException
      */
     public function ensureGuestCanRegister(string $gameTableId, ?string $email, ParticipantRole $role = ParticipantRole::Player): void;
 

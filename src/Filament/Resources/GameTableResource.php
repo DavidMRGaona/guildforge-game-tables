@@ -4,26 +4,17 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources;
 
-use Carbon\CarbonImmutable;
-use Closure;
-use DateTimeInterface;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Tabs;
-use Filament\Schemas\Components\Tabs\Tab;
-use Filament\Schemas\Components\Utilities\Set;
-use Filament\Schemas\Components\Utilities\Get;
-use Filament\Schemas\Components\Section;
-use Filament\Actions\Action;
-use Filament\Actions\EditAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\BulkAction;
-use Modules\GameTables\Filament\Resources\GameTableResource\Pages\ListGameTables;
-use Modules\GameTables\Filament\Resources\GameTableResource\Pages\CreateGameTable;
-use Modules\GameTables\Filament\Resources\GameTableResource\Pages\EditGameTable;
 use App\Filament\Concerns\ChecksPermissions;
 use App\Filament\Resources\BaseResource;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
+use Carbon\CarbonImmutable;
+use Closure;
+use DateTimeInterface;
+use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
@@ -32,24 +23,29 @@ use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
-use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\Language;
-use Modules\GameTables\Filament\Forms\Components\GameMasterRepeater;
 use Modules\GameTables\Domain\Enums\RegistrationType;
 use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Enums\TableFormat;
@@ -60,13 +56,16 @@ use Modules\GameTables\Domain\Exceptions\NotEditableException;
 use Modules\GameTables\Domain\Exceptions\SessionBelowRosterException;
 use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
-use Modules\GameTables\Filament\Resources\GameTableResource\Pages;
+use Modules\GameTables\Filament\Forms\Components\GameMasterRepeater;
+use Modules\GameTables\Filament\Resources\GameTableResource\Pages\CreateGameTable;
+use Modules\GameTables\Filament\Resources\GameTableResource\Pages\EditGameTable;
+use Modules\GameTables\Filament\Resources\GameTableResource\Pages\ListGameTables;
 use Modules\GameTables\Filament\Resources\GameTableResource\RelationManagers\ParticipantsRelationManager;
 use Modules\GameTables\Filament\Resources\GameTableResource\RelationManagers\StatusLogRelationManager;
 use Modules\GameTables\Filament\Support\PublicationLock;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
-use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ContentWarningModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
@@ -77,7 +76,7 @@ final class GameTableResource extends BaseResource
 
     protected static ?string $model = GameTableModel::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-table-cells';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-table-cells';
 
     protected static ?int $navigationSort = 1;
 
@@ -215,9 +214,9 @@ final class GameTableResource extends BaseResource
                                     ->label(__('game-tables::messages.fields.image'))
                                     ->image()
                                     ->disk('images')
-                                    ->directory(fn (): string => 'game-tables/' . now()->format('Y/m'))
+                                    ->directory(fn (): string => 'game-tables/'.now()->format('Y/m'))
                                     ->getUploadedFileNameForStorageUsing(
-                                        fn (TemporaryUploadedFile $file): string => Str::uuid()->toString() . '.' . $file->getClientOriginalExtension()
+                                        fn (TemporaryUploadedFile $file): string => Str::uuid()->toString().'.'.$file->getClientOriginalExtension()
                                     )
                                     ->maxSize(2048)
                                     ->columnSpanFull(),
@@ -729,7 +728,7 @@ final class GameTableResource extends BaseResource
                 return;
             }
 
-            if (!$closesAt instanceof \Carbon\CarbonImmutable || !$startsAt instanceof \Carbon\CarbonImmutable) {
+            if (! $closesAt instanceof CarbonImmutable || ! $startsAt instanceof CarbonImmutable) {
                 return;
             }
 
@@ -815,6 +814,7 @@ final class GameTableResource extends BaseResource
         if ($gameMasters === []) {
             return false;
         }
-        return array_any($gameMasters, fn($gm) => ! empty($gm['user_id']) || ! empty($gm['first_name']) || ! empty($gm['email']));
+
+        return array_any($gameMasters, fn ($gm) => ! empty($gm['user_id']) || ! empty($gm['first_name']) || ! empty($gm['email']));
     }
 }

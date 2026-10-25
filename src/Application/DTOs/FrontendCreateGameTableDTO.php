@@ -21,11 +21,11 @@ use Modules\GameTables\Domain\Enums\Tone;
 final readonly class FrontendCreateGameTableDTO
 {
     /**
-     * @param array<Genre>|null $genres
-     * @param array<SafetyTool>|null $safetyTools
-     * @param array<string>|null $contentWarningIds
-     * @param array<string>|null $customWarnings
-     * @param array<int, array<string, mixed>>|null $gameMasters
+     * @param  array<Genre>|null  $genres
+     * @param  array<SafetyTool>|null  $safetyTools
+     * @param  array<string>|null  $contentWarningIds
+     * @param  array<string>|null  $customWarnings
+     * @param  array<int, array<string, mixed>>|null  $gameMasters
      */
     public function __construct(
         public string $createdBy,
@@ -57,7 +57,7 @@ final readonly class FrontendCreateGameTableDTO
     ) {}
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public static function fromArray(array $data): self
     {
@@ -111,10 +111,10 @@ final readonly class FrontendCreateGameTableDTO
      * Convert to full CreateGameTableDTO for service layer.
      * Sets sensible defaults for admin-only fields.
      *
-     * @param DateTimeImmutable|null $registrationClosesAt Default registration close date (e.g., from event)
-     * @param RegistrationType $registrationType Admin-only field: the module's default
-     * @param bool $autoConfirm Admin-only field: the module's default
-     * @param int $membersEarlyAccessDays Admin-only field: the module's default
+     * @param  DateTimeImmutable|null  $registrationClosesAt  Default registration close date (e.g., from event)
+     * @param  RegistrationType  $registrationType  Admin-only field: the module's default
+     * @param  bool  $autoConfirm  Admin-only field: the module's default
+     * @param  int  $membersEarlyAccessDays  Admin-only field: the module's default
      */
     public function toCreateGameTableDTO(
         ?DateTimeImmutable $registrationClosesAt = null,

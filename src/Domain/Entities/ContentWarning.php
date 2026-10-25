@@ -19,8 +19,7 @@ final class ContentWarning
         public ?string $description = null,
         public ?string $icon = null,
         public ?DateTimeImmutable $createdAt = null,
-    ) {
-    }
+    ) {}
 
     public function updateInfo(
         string $name,

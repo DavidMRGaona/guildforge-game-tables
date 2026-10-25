@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources\GameTableResource\Pages;
 
-use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Schemas\Components\Tabs\Tab;
 use Illuminate\Database\Eloquent\Builder;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Filament\Resources\GameTableResource;
@@ -25,7 +25,7 @@ final class ListGameTables extends ListRecords
     }
 
     /**
-     * @return array<string, \Filament\Schemas\Components\Tabs\Tab>
+     * @return array<string, Tab>
      */
     public function getTabs(): array
     {

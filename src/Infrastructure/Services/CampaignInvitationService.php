@@ -8,6 +8,7 @@ use Carbon\CarbonImmutable;
 use DateInterval;
 use DateTimeImmutable;
 use Illuminate\Support\Str;
+use Modules\GameTables\Application\DTOs\AccountDTO;
 use Modules\GameTables\Application\DTOs\CampaignInvitationViewDTO;
 use Modules\GameTables\Application\Services\AccountLookupInterface;
 use Modules\GameTables\Application\Services\CampaignDirectionInterface;
@@ -15,6 +16,7 @@ use Modules\GameTables\Application\Services\CampaignInvitationSendLogInterface;
 use Modules\GameTables\Application\Services\CampaignInvitationServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterServiceInterface;
 use Modules\GameTables\Application\Services\RegistrationLockInterface;
+use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Entities\CampaignInvitation;
 use Modules\GameTables\Domain\Events\CampaignInvitationAccepted;
 use Modules\GameTables\Domain\Events\CampaignInvitationSent;
@@ -58,7 +60,7 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
             $this->guard->ensureRoomIn($campaign);
 
             $account = $this->accounts->findByEmail($email);
-            if ($account instanceof \Modules\GameTables\Application\DTOs\AccountDTO) {
+            if ($account instanceof AccountDTO) {
                 if ($this->direction->isDirector($campaignId, $account->userId)) {
                     throw RosterActionRefusedException::because('is_director');
                 }
@@ -75,12 +77,12 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
             $pending = $this->invitations->findPending($campaign->id, $email);
 
             // The daily cleanup may not have run yet: an expired one is replaced, not revived
-            if ($pending instanceof \Modules\GameTables\Domain\Entities\CampaignInvitation && $pending->isExpired($now)) {
+            if ($pending instanceof CampaignInvitation && $pending->isExpired($now)) {
                 $this->invitations->delete($pending->id);
                 $pending = null;
             }
 
-            if ($pending instanceof \Modules\GameTables\Domain\Entities\CampaignInvitation) {
+            if ($pending instanceof CampaignInvitation) {
                 $pending->resend(hash('sha256', $token), $now);
                 $invitation = $pending;
             } else {
@@ -136,7 +138,7 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
         $this->lock->forCampaign($campaignId, function () use ($campaignId, $invitationId): void {
             $invitation = $this->invitations->find($this->idOf($invitationId));
 
-            if (!$invitation instanceof \Modules\GameTables\Domain\Entities\CampaignInvitation || $invitation->campaignId->value !== $campaignId) {
+            if (! $invitation instanceof CampaignInvitation || $invitation->campaignId->value !== $campaignId) {
                 throw RosterActionRefusedException::because('invitation_not_found');
             }
 
@@ -165,7 +167,7 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
         $views = [];
         foreach ($this->invitations->pendingForEmail($this->normalise($email), $now) as $invitation) {
             $campaign = $this->campaigns->find($invitation->campaignId);
-            if (!$campaign instanceof \Modules\GameTables\Domain\Entities\Campaign) {
+            if (! $campaign instanceof Campaign) {
                 continue;
             }
 
@@ -178,7 +180,7 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
     public function viewByToken(string $token, DateTimeImmutable $now): ?CampaignInvitationViewDTO
     {
         $invitation = $this->liveByToken($token, $now);
-        if (!$invitation instanceof \Modules\GameTables\Domain\Entities\CampaignInvitation) {
+        if (! $invitation instanceof CampaignInvitation) {
             return null;
         }
 
@@ -277,7 +279,7 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
 
         $invitation = $this->invitations->find($this->idOf($invitationId));
 
-        if (!$invitation instanceof \Modules\GameTables\Domain\Entities\CampaignInvitation
+        if (! $invitation instanceof CampaignInvitation
             || $invitation->isExpired(CarbonImmutable::now()->toDateTimeImmutable())
             || $this->normalise($account->email) !== $invitation->email) {
             throw RosterActionRefusedException::because('invitation_not_found');
@@ -295,7 +297,7 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
 
         $invitation = $this->invitations->findByTokenHash(hash('sha256', $token));
 
-        return !$invitation instanceof \Modules\GameTables\Domain\Entities\CampaignInvitation || $invitation->isExpired($now) ? null : $invitation;
+        return ! $invitation instanceof CampaignInvitation || $invitation->isExpired($now) ? null : $invitation;
     }
 
     private function viewOf(CampaignInvitation $invitation, string $title, string $slug, bool $canResend): CampaignInvitationViewDTO
@@ -343,7 +345,7 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
     {
         $last = $this->sendLog->lastSendAt($campaignId, $email);
 
-        return !$last instanceof \DateTimeImmutable || $last <= $now->sub(new DateInterval('PT'.self::MIN_HOURS_BETWEEN_SENDS.'H'));
+        return ! $last instanceof DateTimeImmutable || $last <= $now->sub(new DateInterval('PT'.self::MIN_HOURS_BETWEEN_SENDS.'H'));
     }
 
     /**
@@ -353,7 +355,7 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
     {
         $invitation = $this->invitations->find($this->idOf($invitationId));
 
-        if (!$invitation instanceof \Modules\GameTables\Domain\Entities\CampaignInvitation || $invitation->campaignId->value !== $campaignId || $invitation->isExpired(CarbonImmutable::now()->toDateTimeImmutable())) {
+        if (! $invitation instanceof CampaignInvitation || $invitation->campaignId->value !== $campaignId || $invitation->isExpired(CarbonImmutable::now()->toDateTimeImmutable())) {
             throw RosterActionRefusedException::because('invitation_not_found');
         }
 

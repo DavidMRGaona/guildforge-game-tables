@@ -16,17 +16,16 @@ use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Enums\TableType;
 use Modules\GameTables\Domain\Enums\Tone;
-use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
 
 final readonly class GameTableResponseDTO
 {
     /**
-     * @param array<Genre> $genres
-     * @param array<SafetyTool> $safetyTools
-     * @param array<string> $contentWarnings
-     * @param array<string> $customWarnings
-     * @param array<ParticipantResponseDTO> $participants
-     * @param array<GameMasterResponseDTO> $gameMasters
+     * @param  array<Genre>  $genres
+     * @param  array<SafetyTool>  $safetyTools
+     * @param  array<string>  $contentWarnings
+     * @param  array<string>  $customWarnings
+     * @param  array<ParticipantResponseDTO>  $participants
+     * @param  array<GameMasterResponseDTO>  $gameMasters
      */
     public function __construct(
         public string $id,
@@ -82,8 +81,8 @@ final readonly class GameTableResponseDTO
     ) {}
 
     /**
-     * @param array<ParticipantResponseDTO> $participants
-     * @param array<GameMasterResponseDTO> $gameMasters
+     * @param  array<ParticipantResponseDTO>  $participants
+     * @param  array<GameMasterResponseDTO>  $gameMasters
      */
     public static function fromEntity(
         GameTable $gameTable,

@@ -15,6 +15,7 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemMode
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Symfony\Component\HttpFoundation\Response;
 use Tests\Support\Modules\ModuleTestCase;
 
 /**
@@ -275,7 +276,7 @@ final class TableSeatsTest extends ModuleTestCase
     }
 
     /**
-     * @return TestResponse<\Symfony\Component\HttpFoundation\Response>
+     * @return TestResponse<Response>
      */
     private function register(UserModel $user, GameTableModel $table, string $role = 'player'): TestResponse
     {
@@ -287,7 +288,7 @@ final class TableSeatsTest extends ModuleTestCase
     }
 
     /**
-     * @return TestResponse<\Symfony\Component\HttpFoundation\Response>
+     * @return TestResponse<Response>
      */
     private function registerGuest(GameTableModel $table, string $email, string $role = 'player'): TestResponse
     {

@@ -118,7 +118,7 @@ final class FrontendCampaignLanguageExperienceTest extends ModuleTestCase
     }
 
     /**
-     * @param array<string, mixed> $attributes
+     * @param  array<string, mixed>  $attributes
      */
     private function campaignDraft(array $attributes): CampaignModel
     {

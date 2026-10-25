@@ -6,6 +6,4 @@ namespace Modules\GameTables\Domain\ValueObjects;
 
 use App\Domain\ValueObjects\EntityId;
 
-final readonly class CampaignInvitationId extends EntityId
-{
-}
+final readonly class CampaignInvitationId extends EntityId {}

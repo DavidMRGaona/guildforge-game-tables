@@ -12,7 +12,7 @@ final class CannotCancelException extends DomainException
      * Why: 'already_cancelled', 'not_allowed' (the registration is no longer active) or
      * 'table_started' (participants cannot cancel by themselves once the table has started).
      */
-    public readonly string $reason)
+        public readonly string $reason)
     {
         parent::__construct($message);
     }

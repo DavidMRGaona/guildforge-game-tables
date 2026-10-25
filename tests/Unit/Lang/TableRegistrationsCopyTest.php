@@ -172,7 +172,6 @@ final class TableRegistrationsCopyTest extends TestCase
         }
     }
 
-
     public function test_the_english_copy_is_not_a_copy_of_the_spanish(): void
     {
         $es = $this->lang('es', 'messages');

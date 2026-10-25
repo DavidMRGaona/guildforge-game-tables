@@ -4,29 +4,28 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Actions\EditAction;
+use App\Filament\Resources\BaseResource;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
-use Modules\GameTables\Filament\Resources\PublisherResource\Pages\ListPublishers;
-use Modules\GameTables\Filament\Resources\PublisherResource\Pages\CreatePublisher;
-use Modules\GameTables\Filament\Resources\PublisherResource\Pages\EditPublisher;
+use Filament\Actions\EditAction;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use App\Filament\Resources\BaseResource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
-use Modules\GameTables\Filament\Resources\PublisherResource\Pages;
+use Modules\GameTables\Filament\Resources\PublisherResource\Pages\CreatePublisher;
+use Modules\GameTables\Filament\Resources\PublisherResource\Pages\EditPublisher;
+use Modules\GameTables\Filament\Resources\PublisherResource\Pages\ListPublishers;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\PublisherModel;
 
 final class PublisherResource extends BaseResource
 {
     protected static ?string $model = PublisherModel::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-building-office';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-building-office';
 
     protected static ?int $navigationSort = 1;
 

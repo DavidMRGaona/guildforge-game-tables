@@ -29,7 +29,7 @@ final class NotificationRecipientResolverManyToManyTest extends TestCase
     {
         parent::setUp();
 
-        $this->resolver = new NotificationRecipientResolver();
+        $this->resolver = new NotificationRecipientResolver;
         $this->tableCreator = UserModel::create([
             'id' => (string) Str::uuid(),
             'name' => 'Table Creator',

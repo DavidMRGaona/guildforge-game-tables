@@ -169,8 +169,8 @@ final class NotifyOnRegistrationDelegatedTest extends ModuleTestCase
 
     public function test_mail_shows_the_action_and_pending_line_only_with_the_link(): void
     {
-        $with = (new ParticipantRegisteredNotification('John Doe', 'id', 'Mesa', null, null, 'player', 'https://example.test/mesas/mis-mesas/x/inscritos'))->toMail(new AnonymousNotifiable());
-        $without = (new ParticipantRegisteredNotification('John Doe', 'id', 'Mesa', null, null, 'player'))->toMail(new AnonymousNotifiable());
+        $with = (new ParticipantRegisteredNotification('John Doe', 'id', 'Mesa', null, null, 'player', 'https://example.test/mesas/mis-mesas/x/inscritos'))->toMail(new AnonymousNotifiable);
+        $without = (new ParticipantRegisteredNotification('John Doe', 'id', 'Mesa', null, null, 'player'))->toMail(new AnonymousNotifiable);
 
         $this->assertSame('Gestionar inscritos', $with->actionText);
         $this->assertSame('https://example.test/mesas/mis-mesas/x/inscritos', $with->actionUrl);

@@ -31,7 +31,7 @@ final class ParticipantRegisteredNotificationTest extends TestCase
             role: 'player',
         );
 
-        $notifiable = new AnonymousNotifiable();
+        $notifiable = new AnonymousNotifiable;
         $result = $notification->via($notifiable);
 
         $this->assertIsArray($result);
@@ -49,7 +49,7 @@ final class ParticipantRegisteredNotificationTest extends TestCase
             role: 'player',
         );
 
-        $notifiable = new AnonymousNotifiable();
+        $notifiable = new AnonymousNotifiable;
         $mail = $notification->toMail($notifiable);
 
         $this->assertStringContainsString('La Tumba de la Aniquilacion', $mail->subject);
@@ -66,7 +66,7 @@ final class ParticipantRegisteredNotificationTest extends TestCase
             role: 'player',
         );
 
-        $notifiable = new AnonymousNotifiable();
+        $notifiable = new AnonymousNotifiable;
         $mail = $notification->toMail($notifiable);
 
         $this->assertStringContainsString('John Doe', implode(' ', $mail->introLines));
@@ -83,7 +83,7 @@ final class ParticipantRegisteredNotificationTest extends TestCase
             role: 'player',
         );
 
-        $notifiable = new AnonymousNotifiable();
+        $notifiable = new AnonymousNotifiable;
         $mail = $notification->toMail($notifiable);
 
         $this->assertStringContainsString('15/02/2026 18:00', implode(' ', $mail->introLines));
@@ -100,7 +100,7 @@ final class ParticipantRegisteredNotificationTest extends TestCase
             role: 'player',
         );
 
-        $notifiable = new AnonymousNotifiable();
+        $notifiable = new AnonymousNotifiable;
         $mail = $notification->toMail($notifiable);
 
         $this->assertStringContainsString('Sala de juegos', implode(' ', $mail->introLines));

@@ -6,13 +6,13 @@ namespace Modules\GameTables\Tests\Integration\Infrastructure\Services;
 
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Str;
+use Modules\GameTables\Domain\Enums\ParticipantRole;
+use Modules\GameTables\Domain\Enums\ParticipantStatus;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Enums\TableType;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
-use Modules\GameTables\Domain\Enums\ParticipantRole;
-use Modules\GameTables\Domain\Enums\ParticipantStatus;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Modules\GameTables\Infrastructure\Services\ProfileCreatedTablesDataProvider;
 use Tests\Support\Modules\ModuleTestCase;

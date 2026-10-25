@@ -21,8 +21,7 @@ final class GameSystem
         public ?string $logoUrl = null,
         public ?string $websiteUrl = null,
         public ?DateTimeImmutable $createdAt = null,
-    ) {
-    }
+    ) {}
 
     public function updateInfo(
         string $name,

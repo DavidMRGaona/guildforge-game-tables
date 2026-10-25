@@ -9,6 +9,16 @@ use Modules\GameTables\Application\DTOs\GuestConfirmationResultDTO;
 use Modules\GameTables\Application\DTOs\ParticipantResponseDTO;
 use Modules\GameTables\Application\DTOs\ProfileParticipationDTO;
 use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
+use Modules\GameTables\Domain\Exceptions\AccountEmailRequiresLoginException;
+use Modules\GameTables\Domain\Exceptions\AlreadyRegisteredException;
+use Modules\GameTables\Domain\Exceptions\CannotCancelException;
+use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
+use Modules\GameTables\Domain\Exceptions\ParticipantAwaitingEmailException;
+use Modules\GameTables\Domain\Exceptions\ParticipantNotFoundException;
+use Modules\GameTables\Domain\Exceptions\ParticipantNotPendingException;
+use Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException;
+use Modules\GameTables\Domain\Exceptions\TableClosedException;
+use Modules\GameTables\Domain\Exceptions\TableFullException;
 
 interface RegistrationServiceInterface
 {
@@ -18,9 +28,9 @@ interface RegistrationServiceInterface
      * enrolment and a seat is free, their row is reactivated (or created) confirmed. Anyone else,
      * or a spectator request, follows the table rules.
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException when the table does not admit the user (for a roster member: registration_closed)
-     * @throws \Modules\GameTables\Domain\Exceptions\AlreadyRegisteredException when the user already has an active registration
-     * @throws \Modules\GameTables\Domain\Exceptions\TableFullException when a roster member finds no free seat
+     * @throws RegistrationNotAllowedException when the table does not admit the user (for a roster member: registration_closed)
+     * @throws AlreadyRegisteredException when the user already has an active registration
+     * @throws TableFullException when a roster member finds no free seat
      */
     public function register(RegisterParticipantDTO $dto): ParticipantResponseDTO;
 
@@ -50,24 +60,24 @@ interface RegistrationServiceInterface
      * Clears a member's absence from a session: the same placement as a member rejoining, but the
      * organisation, which did it, is not told; the member gets the usual confirmation.
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\ParticipantNotFoundException when the user has no absence in the session
-     * @throws \Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException when the session no longer admits roster enrolment (registration_closed)
-     * @throws \Modules\GameTables\Domain\Exceptions\TableFullException when no seat is free
+     * @throws ParticipantNotFoundException when the user has no absence in the session
+     * @throws RegistrationNotAllowedException when the session no longer admits roster enrolment (registration_closed)
+     * @throws TableFullException when no seat is free
      */
     public function restoreAbsence(string $gameTableId, string $userId): ParticipantResponseDTO;
 
     /**
      * The participant's own cancellation: refused once the table has started.
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\CannotCancelException when the table has started or the registration is no longer active
+     * @throws CannotCancelException when the table has started or the registration is no longer active
      */
     public function cancel(string $participantId): ParticipantResponseDTO;
 
     /**
      * The signed-in user's own cancellation: refused once the table has started.
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\ParticipantNotFoundException when the user has no registration in the table
-     * @throws \Modules\GameTables\Domain\Exceptions\CannotCancelException when the table has started or the registration is no longer active
+     * @throws ParticipantNotFoundException when the user has no registration in the table
+     * @throws CannotCancelException when the table has started or the registration is no longer active
      */
     public function cancelByUser(string $gameTableId, string $userId): ParticipantResponseDTO;
 
@@ -76,7 +86,7 @@ interface RegistrationServiceInterface
      * promotion), but the participant is told the organisation cancelled it and the directors
      * get nothing.
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\CannotCancelException when the registration is no longer active
+     * @throws CannotCancelException when the registration is no longer active
      */
     public function cancelByAdmin(string $participantId): ParticipantResponseDTO;
 
@@ -85,7 +95,7 @@ interface RegistrationServiceInterface
      * it also vouches for the email: a guest without a seat yet (wait mode) is first placed into a
      * seat, and the guest gets the usual registration email instead of the approval one.
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\TableFullException with the waiting list on, when no player or spectator seat is free; for a guest without a seat yet, whenever none is free (nothing changes)
+     * @throws TableFullException with the waiting list on, when no player or spectator seat is free; for a guest without a seat yet, whenever none is free (nothing changes)
      */
     public function confirm(string $participantId): ParticipantResponseDTO;
 
@@ -93,7 +103,7 @@ interface RegistrationServiceInterface
      * Where pending players hold seats (waiting list on, manual confirmation), rejecting a pending
      * player promotes the first waiting one. The optional reason (blank counts as none) goes in the email.
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\ParticipantNotPendingException when the participant is neither pending nor on the waiting list (nothing changes)
+     * @throws ParticipantNotPendingException when the participant is neither pending nor on the waiting list (nothing changes)
      */
     public function reject(string $participantId, ?string $reason = null): ParticipantResponseDTO;
 
@@ -103,10 +113,10 @@ interface RegistrationServiceInterface
      * guest's email and always checks the seats, whatever the waiting list setting: only confirmed
      * registrations count, the one being approved needs a free seat among them.
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\ParticipantNotPendingException when the registration is no longer pending (nothing changes)
-     * @throws \Modules\GameTables\Domain\Exceptions\ParticipantAwaitingEmailException for a guest whose email is not confirmed (nothing changes)
-     * @throws \Modules\GameTables\Domain\Exceptions\TableClosedException when the table has ended or been cancelled (nothing changes)
-     * @throws \Modules\GameTables\Domain\Exceptions\TableFullException when no player or spectator seat is free (nothing changes)
+     * @throws ParticipantNotPendingException when the registration is no longer pending (nothing changes)
+     * @throws ParticipantAwaitingEmailException for a guest whose email is not confirmed (nothing changes)
+     * @throws TableClosedException when the table has ended or been cancelled (nothing changes)
+     * @throws TableFullException when no player or spectator seat is free (nothing changes)
      */
     public function approveAsDirector(string $participantId): ParticipantResponseDTO;
 
@@ -114,7 +124,7 @@ interface RegistrationServiceInterface
      * A director rejects a pending request from the website: reject(), but only a pending
      * registration, checked under the table lock (the waiting list is the organisation's).
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\ParticipantNotPendingException when the registration is no longer pending (nothing changes)
+     * @throws ParticipantNotPendingException when the registration is no longer pending (nothing changes)
      */
     public function rejectAsDirector(string $participantId, ?string $reason = null): ParticipantResponseDTO;
 
@@ -127,7 +137,7 @@ interface RegistrationServiceInterface
      * gets the usual registration email (it carries the cancellation link) instead of the
      * promotion one, and the directors nothing.
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\TableFullException with the waiting list on, when no player or spectator seat is free
+     * @throws TableFullException with the waiting list on, when no player or spectator seat is free
      */
     public function promoteParticipant(string $participantId): ParticipantResponseDTO;
 
@@ -146,7 +156,7 @@ interface RegistrationServiceInterface
      * A confirmed participant who did not come, once the table has started (no emails, no
      * promotion). An unconfirmed guest's email counts as confirmed, silently.
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException before the start or without a confirmed seat
+     * @throws InvalidStatusTransitionException before the start or without a confirmed seat
      */
     public function markAsNoShow(string $participantId): ParticipantResponseDTO;
 
@@ -175,9 +185,9 @@ interface RegistrationServiceInterface
      * returns the same registration (confirmationResent) and sends the email again at most once
      * every few minutes.
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException when the table does not admit the guest
-     * @throws \Modules\GameTables\Domain\Exceptions\AccountEmailRequiresLoginException when the email belongs to an account that should sign in
-     * @throws \Modules\GameTables\Domain\Exceptions\AlreadyRegisteredException when the email already has a confirmed registration at the table, or its account is registered
+     * @throws RegistrationNotAllowedException when the table does not admit the guest
+     * @throws AccountEmailRequiresLoginException when the email belongs to an account that should sign in
+     * @throws AlreadyRegisteredException when the email already has a confirmed registration at the table, or its account is registered
      */
     public function registerGuest(RegisterParticipantDTO $dto): ParticipantResponseDTO;
 
@@ -185,8 +195,8 @@ interface RegistrationServiceInterface
      * Cancel a registration using a cancellation token (the guest's own cancellation): refused
      * once the table has started.
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\ParticipantNotFoundException when no registration has the token
-     * @throws \Modules\GameTables\Domain\Exceptions\CannotCancelException when the table has started or the registration is no longer active
+     * @throws ParticipantNotFoundException when no registration has the token
+     * @throws CannotCancelException when the table has started or the registration is no longer active
      */
     public function cancelByToken(string $token): ParticipantResponseDTO;
 
@@ -221,7 +231,7 @@ interface RegistrationServiceInterface
      * usual registration email; the organisation nothing. A registration that is not awaiting
      * confirmation is returned unchanged.
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\TableFullException when a guest without a place finds no room (nothing changes)
+     * @throws TableFullException when a guest without a place finds no room (nothing changes)
      */
     public function confirmGuestEmailByAdmin(string $participantId): ParticipantResponseDTO;
 

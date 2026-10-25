@@ -24,7 +24,7 @@ final class GuestRegistrationExpiredNotificationTest extends TestCase
 
     public function test_it_tells_the_guest_the_place_was_released(): void
     {
-        $mail = $this->notification()->toMail(new AnonymousNotifiable());
+        $mail = $this->notification()->toMail(new AnonymousNotifiable);
 
         $this->assertSame('Inscripción caducada: Mesa', $mail->subject);
         $this->assertSame('¡Hola, Invitada!', $mail->greeting);
@@ -38,7 +38,7 @@ final class GuestRegistrationExpiredNotificationTest extends TestCase
     {
         app()->setLocale('en');
 
-        $mail = $this->notification()->toMail(new AnonymousNotifiable());
+        $mail = $this->notification()->toMail(new AnonymousNotifiable);
 
         $this->assertSame('Registration expired: Mesa', $mail->subject);
         $this->assertSame('View table', $mail->actionText);
@@ -49,7 +49,7 @@ final class GuestRegistrationExpiredNotificationTest extends TestCase
         $notification = $this->notification();
 
         $this->assertInstanceOf(ShouldQueue::class, $notification);
-        $this->assertSame(['mail'], $notification->via(new AnonymousNotifiable()));
+        $this->assertSame(['mail'], $notification->via(new AnonymousNotifiable));
     }
 
     private function notification(): GuestRegistrationExpiredNotification

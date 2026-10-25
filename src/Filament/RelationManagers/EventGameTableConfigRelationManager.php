@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\RelationManagers;
 
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Fieldset;
-use Filament\Schemas\Components\Utilities\Get;
+use App\Filament\Forms\Components\TimePicker;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\RoleModel;
 use Filament\Forms\Components\DateTimePicker;
@@ -14,9 +12,12 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use App\Filament\Forms\Components\TimePicker;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\Fieldset;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
 use Modules\GameTables\Application\DTOs\UpdateEventGameTableConfigDTO;
@@ -27,7 +28,7 @@ use Modules\GameTables\Domain\Enums\SchedulingMode;
 use Modules\GameTables\Domain\Repositories\EventGameTableConfigRepositoryInterface;
 
 /**
- * @property \Filament\Schemas\Schema $configForm
+ * @property Schema $configForm
  */
 final class EventGameTableConfigRelationManager extends RelationManager
 {
@@ -97,7 +98,7 @@ final class EventGameTableConfigRelationManager extends RelationManager
     }
 
     /**
-     * @return array<\Filament\Schemas\Components\Component>
+     * @return array<Component>
      */
     protected function getFormSchema(): array
     {
@@ -326,8 +327,8 @@ final class EventGameTableConfigRelationManager extends RelationManager
                 }
                 $timeSlots[] = [
                     'label' => $slot['label'],
-                    'start_time' => $eventDate . 'T' . $slot['start_time'] . ':00',
-                    'end_time' => $eventDate . 'T' . $slot['end_time'] . ':00',
+                    'start_time' => $eventDate.'T'.$slot['start_time'].':00',
+                    'end_time' => $eventDate.'T'.$slot['end_time'].':00',
                     'max_tables' => $slot['max_tables'] ?? null,
                 ];
             }

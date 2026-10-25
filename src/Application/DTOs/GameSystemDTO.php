@@ -20,8 +20,7 @@ final readonly class GameSystemDTO
         public ?string $logoUrl,
         public ?string $websiteUrl,
         public ?string $createdAt,
-    ) {
-    }
+    ) {}
 
     public static function fromEntity(GameSystem $gameSystem): self
     {

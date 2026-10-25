@@ -4,31 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\GameTables;
 
+use App\Application\Calendar\Contracts\CalendarEntrySourceInterface;
 use App\Application\Cookies\DTOs\DeclaredCookieDTO;
 use App\Application\Cookies\Services\CookieDeclarationRegistryInterface;
-use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
-use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
-use Modules\GameTables\Filament\Resources\GameSystemResource;
-use Modules\GameTables\Filament\Resources\PublisherResource;
-use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\PublisherModel;
-use Modules\GameTables\Policies\PublisherPolicy;
-use Modules\GameTables\Filament\Resources\ContentWarningResource;
-use Modules\GameTables\Filament\Resources\CampaignResource;
-use Modules\GameTables\Filament\Resources\GameTableResource;
-use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
-use Modules\GameTables\Policies\GameSystemPolicy;
-use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ContentWarningModel;
-use Modules\GameTables\Policies\ContentWarningPolicy;
-use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
-use Modules\GameTables\Policies\CampaignPolicy;
-use Modules\GameTables\Policies\GameTablePolicy;
-use Modules\GameTables\Infrastructure\Calendar\GameTableCalendarSource;
-use Modules\GameTables\Filament\Pages\GameTablesSettings;
-use Modules\GameTables\Filament\Widgets\PendingModerationWidget;
-use Filament\Resources\Resource;
-use App\Application\Calendar\Contracts\CalendarEntrySourceInterface;
-use Filament\Pages\Page;
-use Filament\Widgets\Widget;
+use App\Application\Legal\DTOs\LegalMailNoticeDTO;
+use App\Application\Legal\Services\LegalMailNoticeRegistryInterface;
 use App\Application\Modules\DTOs\ModuleRouteDTO;
 use App\Application\Modules\DTOs\NavigationItemDTO;
 use App\Application\Modules\DTOs\PagePrefixDTO;
@@ -40,21 +20,27 @@ use App\Filament\Resources\EventResource;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use App\Modules\ModuleServiceProvider;
+use Filament\Pages\Page;
+use Filament\Resources\Resource as FilamentResource;
+use Filament\Schemas\Components\Component;
+use Filament\Widgets\Widget;
 use Illuminate\Cache\RateLimiting\Limit;
-use App\Application\Legal\DTOs\LegalMailNoticeDTO;
-use App\Application\Legal\Services\LegalMailNoticeRegistryInterface;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\AnonymousNotifiable;
-use Modules\GameTables\Notifications\CampaignInvitationNotification;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
-use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use Inertia\Inertia;
 use Livewire\Livewire;
-use Modules\GameTables\Application\Services\CampaignQueryServiceInterface;
 use Modules\GameTables\Application\Services\AccountLookupInterface;
+use Modules\GameTables\Application\Services\CampaignDirectionInterface;
 use Modules\GameTables\Application\Services\CampaignInvitationSendLogInterface;
+use Modules\GameTables\Application\Services\CampaignInvitationServiceInterface;
+use Modules\GameTables\Application\Services\CampaignQueryServiceInterface;
+use Modules\GameTables\Application\Services\CampaignRosterQueryInterface;
+use Modules\GameTables\Application\Services\CampaignRosterServiceInterface;
+use Modules\GameTables\Application\Services\CampaignRosterSessionSyncInterface;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
 use Modules\GameTables\Application\Services\EligibilityServiceInterface;
 use Modules\GameTables\Application\Services\EventCreationEligibilityServiceInterface;
@@ -62,41 +48,32 @@ use Modules\GameTables\Application\Services\EventGameTableConfigServiceInterface
 use Modules\GameTables\Application\Services\EventWithTablesQueryInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Application\Services\GameMasterServiceInterface;
-use Modules\GameTables\Application\Services\MembershipCheckerInterface;
-use Modules\GameTables\Application\Services\CampaignDirectionInterface;
-use Modules\GameTables\Application\Services\TableDirectionInterface;
-use Modules\GameTables\Application\Services\CampaignRosterQueryInterface;
-use Modules\GameTables\Application\Services\TableRegistrationsQueryInterface;
-use Modules\GameTables\Application\Services\CampaignInvitationServiceInterface;
-use Modules\GameTables\Application\Services\CampaignRosterServiceInterface;
-use Modules\GameTables\Application\Services\CampaignRosterSessionSyncInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
-use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
+use Modules\GameTables\Application\Services\MembershipCheckerInterface;
+use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Application\Services\ParticipantActorContextInterface;
 use Modules\GameTables\Application\Services\RegistrationLockInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
-use Illuminate\Console\Scheduling\Schedule;
+use Modules\GameTables\Application\Services\TableDirectionInterface;
+use Modules\GameTables\Application\Services\TableRegistrationsQueryInterface;
 use Modules\GameTables\Console\Commands\ExpireGuestRegistrationsCommand;
 use Modules\GameTables\Console\Commands\GenerateSlugsCommand;
 use Modules\GameTables\Console\Commands\PruneCampaignInvitationsCommand;
 use Modules\GameTables\Console\Commands\PruneParticipantStatusLogCommand;
 use Modules\GameTables\Console\Commands\SendTableRemindersCommand;
 use Modules\GameTables\Console\Commands\UpdateTableStatusesCommand;
-use Modules\GameTables\Http\Controllers\CampaignInvitationController;
-use Modules\GameTables\Http\Controllers\GuestConfirmationController;
-use Modules\GameTables\Domain\Events\CampaignModerationApproved;
-use Modules\GameTables\Domain\Events\CampaignModerationRejected;
-use Modules\GameTables\Domain\Events\CampaignSubmittedForReview;
-use Modules\GameTables\Domain\Events\RosterMemberEnrolledInSession;
 use Modules\GameTables\Domain\Events\CampaignInvitationAccepted;
 use Modules\GameTables\Domain\Events\CampaignInvitationSent;
-use Modules\GameTables\Domain\Events\CampaignJoinRequested;
 use Modules\GameTables\Domain\Events\CampaignJoinRequestAccepted;
+use Modules\GameTables\Domain\Events\CampaignJoinRequested;
 use Modules\GameTables\Domain\Events\CampaignJoinRequestRejected;
+use Modules\GameTables\Domain\Events\CampaignModerationApproved;
+use Modules\GameTables\Domain\Events\CampaignModerationRejected;
 use Modules\GameTables\Domain\Events\CampaignRosterMemberAdded;
-use Modules\GameTables\Domain\Events\CampaignRosterMemberRemoved;
 use Modules\GameTables\Domain\Events\CampaignRosterMemberLeft;
+use Modules\GameTables\Domain\Events\CampaignRosterMemberRemoved;
+use Modules\GameTables\Domain\Events\CampaignSubmittedForReview;
 use Modules\GameTables\Domain\Events\GameTableCancelled;
 use Modules\GameTables\Domain\Events\GameTableModerationApproved;
 use Modules\GameTables\Domain\Events\GameTableModerationRejected;
@@ -109,6 +86,7 @@ use Modules\GameTables\Domain\Events\ParticipantConfirmed;
 use Modules\GameTables\Domain\Events\ParticipantPromotedFromWaitingList;
 use Modules\GameTables\Domain\Events\ParticipantRegistered;
 use Modules\GameTables\Domain\Events\ParticipantRejected;
+use Modules\GameTables\Domain\Events\RosterMemberEnrolledInSession;
 use Modules\GameTables\Domain\Repositories\CampaignInvitationRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\CampaignJoinRequestRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
@@ -118,7 +96,17 @@ use Modules\GameTables\Domain\Repositories\EventGameTableConfigRepositoryInterfa
 use Modules\GameTables\Domain\Repositories\GameSystemRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
+use Modules\GameTables\Filament\Pages\GameTablesSettings;
 use Modules\GameTables\Filament\RelationManagers\EventGameTableConfigRelationManager;
+use Modules\GameTables\Filament\Resources\CampaignResource;
+use Modules\GameTables\Filament\Resources\ContentWarningResource;
+use Modules\GameTables\Filament\Resources\GameSystemResource;
+use Modules\GameTables\Filament\Resources\GameTableResource;
+use Modules\GameTables\Filament\Resources\PublisherResource;
+use Modules\GameTables\Filament\Widgets\PendingModerationWidget;
+use Modules\GameTables\Http\Controllers\CampaignInvitationController;
+use Modules\GameTables\Http\Controllers\GuestConfirmationController;
+use Modules\GameTables\Infrastructure\Calendar\GameTableCalendarSource;
 use Modules\GameTables\Infrastructure\Listeners\CancelParticipantsOnTableCancellation;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnCancellation;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnGuestRegistration;
@@ -126,7 +114,13 @@ use Modules\GameTables\Infrastructure\Listeners\NotifyOnRegistration;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnWaitingListPromotion;
 use Modules\GameTables\Infrastructure\Observers\GameTableObserver;
 use Modules\GameTables\Infrastructure\Observers\ParticipantStatusObserver;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ContentWarningModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\EventGameTableConfigModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\PublisherModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentCampaignInvitationRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentCampaignJoinRequestRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentCampaignRepository;
@@ -136,57 +130,64 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\Eloquent
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentGameSystemRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentGameTableRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentParticipantRepository;
+use Modules\GameTables\Infrastructure\Services\AssociationRoleMembershipChecker;
+use Modules\GameTables\Infrastructure\Services\CampaignDirection;
+use Modules\GameTables\Infrastructure\Services\CampaignInvitationService;
 use Modules\GameTables\Infrastructure\Services\CampaignQueryService;
+use Modules\GameTables\Infrastructure\Services\CampaignRosterQuery;
+use Modules\GameTables\Infrastructure\Services\CampaignRosterService;
+use Modules\GameTables\Infrastructure\Services\CampaignRosterSessionSync;
 use Modules\GameTables\Infrastructure\Services\CreationEligibilityService;
+use Modules\GameTables\Infrastructure\Services\DatabaseCampaignInvitationSendLog;
+use Modules\GameTables\Infrastructure\Services\DatabaseRegistrationLock;
 use Modules\GameTables\Infrastructure\Services\EligibilityService;
-use Modules\GameTables\Infrastructure\Services\UserModelAccountLookup;
 use Modules\GameTables\Infrastructure\Services\EventCreationEligibilityService;
 use Modules\GameTables\Infrastructure\Services\EventGameTableConfigService;
 use Modules\GameTables\Infrastructure\Services\EventWithTablesQuery;
 use Modules\GameTables\Infrastructure\Services\FrontendCreationService;
 use Modules\GameTables\Infrastructure\Services\GameMasterService;
 use Modules\GameTables\Infrastructure\Services\GameTableQueryService;
-use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
-use Modules\GameTables\Infrastructure\Services\CampaignDirection;
-use Modules\GameTables\Infrastructure\Services\TableDirection;
-use Modules\GameTables\Infrastructure\Services\DatabaseCampaignInvitationSendLog;
-use Modules\GameTables\Infrastructure\Services\CampaignRosterQuery;
-use Modules\GameTables\Infrastructure\Services\TableRegistrationsQuery;
-use Modules\GameTables\Infrastructure\Services\CampaignInvitationService;
-use Modules\GameTables\Infrastructure\Services\CampaignRosterService;
-use Modules\GameTables\Infrastructure\Services\CampaignRosterSessionSync;
-use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
 use Modules\GameTables\Infrastructure\Services\GameTableService;
-use Modules\GameTables\Infrastructure\Services\AssociationRoleMembershipChecker;
+use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
+use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
+use Modules\GameTables\Infrastructure\Services\ParticipantActorContext;
 use Modules\GameTables\Infrastructure\Services\ProfileCampaignInvitationsDataProvider;
 use Modules\GameTables\Infrastructure\Services\ProfileCreatedCampaignsDataProvider;
 use Modules\GameTables\Infrastructure\Services\ProfileCreatedTablesDataProvider;
 use Modules\GameTables\Infrastructure\Services\ProfileGameTablesDataProvider;
-use Modules\GameTables\Infrastructure\Services\DatabaseRegistrationLock;
-use Modules\GameTables\Infrastructure\Services\ParticipantActorContext;
 use Modules\GameTables\Infrastructure\Services\RegistrationService;
+use Modules\GameTables\Infrastructure\Services\TableDirection;
+use Modules\GameTables\Infrastructure\Services\TableRegistrationsQuery;
+use Modules\GameTables\Infrastructure\Services\UserModelAccountLookup;
 use Modules\GameTables\Listeners\NotifyAdminsOnCampaignModerationSubmission;
 use Modules\GameTables\Listeners\NotifyAdminsOnModerationSubmission;
+use Modules\GameTables\Listeners\NotifyDirectionOfInvitationAccepted;
+use Modules\GameTables\Listeners\NotifyDirectionOfJoinRequest;
+use Modules\GameTables\Listeners\NotifyDirectionOfPlayerLeft;
 use Modules\GameTables\Listeners\NotifyUserOnCampaignModerationApproved;
 use Modules\GameTables\Listeners\NotifyUserOnCampaignModerationRejected;
 use Modules\GameTables\Listeners\NotifyUserOnModerationApproved;
 use Modules\GameTables\Listeners\NotifyUserOnModerationRejected;
+use Modules\GameTables\Listeners\SendCampaignInvitation;
+use Modules\GameTables\Listeners\SendCampaignSessionScheduled;
 use Modules\GameTables\Listeners\SendCancellationConfirmation;
 use Modules\GameTables\Listeners\SendConfirmationNotification;
 use Modules\GameTables\Listeners\SendGuestEmailConfirmationRequest;
 use Modules\GameTables\Listeners\SendGuestRegistrationConfirmation;
 use Modules\GameTables\Listeners\SendGuestRegistrationExpiredNotification;
-use Modules\GameTables\Listeners\SendRegistrationConfirmation;
-use Modules\GameTables\Listeners\SendRejectionNotification;
-use Modules\GameTables\Listeners\SendCampaignSessionScheduled;
-use Modules\GameTables\Listeners\NotifyDirectionOfInvitationAccepted;
-use Modules\GameTables\Listeners\NotifyDirectionOfJoinRequest;
-use Modules\GameTables\Listeners\SendCampaignInvitation;
 use Modules\GameTables\Listeners\SendJoinRequestAccepted;
 use Modules\GameTables\Listeners\SendJoinRequestRejected;
+use Modules\GameTables\Listeners\SendRegistrationConfirmation;
+use Modules\GameTables\Listeners\SendRejectionNotification;
 use Modules\GameTables\Listeners\SendRosterMemberAdded;
 use Modules\GameTables\Listeners\SendRosterMemberRemoved;
-use Modules\GameTables\Listeners\NotifyDirectionOfPlayerLeft;
+use Modules\GameTables\Notifications\CampaignInvitationNotification;
+use Modules\GameTables\Policies\CampaignPolicy;
+use Modules\GameTables\Policies\ContentWarningPolicy;
+use Modules\GameTables\Policies\GameSystemPolicy;
+use Modules\GameTables\Policies\GameTablePolicy;
+use Modules\GameTables\Policies\PublisherPolicy;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 final class GameTablesServiceProvider extends ModuleServiceProvider
 {
@@ -570,7 +571,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     private function registerRateLimiters(): void
     {
         // The invitation page and its actions: the token is the credential, so guessing is limited per IP
-        RateLimiter::for('game-tables-campaign-invitation', static fn(Request $request): Limit => Limit::perMinute(30)->by('gt-invitation:'.($request->ip() ?? 'unknown'))->response(
+        RateLimiter::for('game-tables-campaign-invitation', static fn (Request $request): Limit => Limit::perMinute(30)->by('gt-invitation:'.($request->ip() ?? 'unknown'))->response(
             static function (Request $request, array $headers): HttpResponse {
                 $message = (string) __('game-tables::messages.errors.too_many_confirmation_attempts');
 
@@ -852,11 +853,11 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     {
         // Add gameTableConfig() relationship to EventModel for configuration form section
         // Note: resolveRelationUsing is idempotent - calling it multiple times is safe
-        EventModel::resolveRelationUsing('gameTableConfig', fn(EventModel $eventModel) => $eventModel->hasOne(EventGameTableConfigModel::class, 'event_id', 'id'));
+        EventModel::resolveRelationUsing('gameTableConfig', fn (EventModel $eventModel) => $eventModel->hasOne(EventGameTableConfigModel::class, 'event_id', 'id'));
 
         // Add gameTables() so the core EventModel does not need to reference this module.
         // While a core still declares the method, the method wins and this is unused.
-        EventModel::resolveRelationUsing('gameTables', fn(EventModel $eventModel) => $eventModel->hasMany(GameTableModel::class, 'event_id'));
+        EventModel::resolveRelationUsing('gameTables', fn (EventModel $eventModel) => $eventModel->hasMany(GameTableModel::class, 'event_id'));
     }
 
     /**
@@ -963,7 +964,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     /**
      * Register Filament resources provided by this module.
      *
-     * @return array<class-string<Resource>>
+     * @return array<class-string<FilamentResource>>
      */
     public function registerFilamentResources(): array
     {
@@ -1336,7 +1337,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     /**
      * Get the Filament form schema for module settings.
      *
-     * @return array<\Filament\Schemas\Components\Component>
+     * @return array<Component>
      */
     public function getSettingsSchema(): array
     {

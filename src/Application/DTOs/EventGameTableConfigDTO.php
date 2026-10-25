@@ -5,9 +5,6 @@ declare(strict_types=1);
 namespace Modules\GameTables\Application\DTOs;
 
 use Modules\GameTables\Domain\Entities\EventGameTableConfig;
-use Modules\GameTables\Domain\Enums\LocationMode;
-use Modules\GameTables\Domain\Enums\SchedulingMode;
-use Modules\GameTables\Domain\ValueObjects\EligibilityOverride;
 use Modules\GameTables\Domain\ValueObjects\TimeSlotDefinition;
 
 /**

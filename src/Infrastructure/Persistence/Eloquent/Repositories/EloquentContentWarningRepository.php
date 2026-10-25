@@ -37,7 +37,7 @@ final readonly class EloquentContentWarningRepository implements ContentWarningR
     {
         $contentWarning = $this->find($id);
 
-        if (!$contentWarning instanceof \Modules\GameTables\Domain\Entities\ContentWarning) {
+        if (! $contentWarning instanceof ContentWarning) {
             throw ContentWarningNotFoundException::withId($id->value);
         }
 
@@ -106,8 +106,7 @@ final readonly class EloquentContentWarningRepository implements ContentWarningR
     }
 
     /**
-     * @param array<ContentWarningId> $ids
-     *
+     * @param  array<ContentWarningId>  $ids
      * @return array<ContentWarning>
      */
     public function findByIds(array $ids): array

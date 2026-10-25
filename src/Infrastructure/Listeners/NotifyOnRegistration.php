@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Listeners;
 
+use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
+use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Events\ParticipantRegistered;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
-use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 use Modules\GameTables\Notifications\ParticipantRegisteredNotification;
 
@@ -29,7 +30,7 @@ final readonly class NotifyOnRegistration
 
         $gameTable = $this->gameTableRepository->find(new GameTableId($event->gameTableId));
 
-        if (!$gameTable instanceof \Modules\GameTables\Domain\Entities\GameTable) {
+        if (! $gameTable instanceof GameTable) {
             return;
         }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories;
 
 use DateTimeImmutable;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
@@ -78,7 +79,7 @@ final readonly class EloquentCampaignRosterRepository implements CampaignRosterR
         return $counts;
     }
 
-    private function activeMembers(): \Illuminate\Database\Query\Builder
+    private function activeMembers(): Builder
     {
         return DB::table(self::TABLE.' as p')
             ->join('users', 'users.id', '=', 'p.user_id')

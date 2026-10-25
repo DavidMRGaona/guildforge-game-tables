@@ -471,7 +471,7 @@ final class WaitingListPromotionTest extends ModuleTestCase
 
     private function mailSays(WaitingListPromotionNotification|WaitingListPromotionGmNotification $notification, string $line): bool
     {
-        $mail = $notification->toMail(new AnonymousNotifiable());
+        $mail = $notification->toMail(new AnonymousNotifiable);
 
         return in_array($line, [...$mail->introLines, ...$mail->outroLines], true);
     }

@@ -10,6 +10,7 @@ use Modules\GameTables\Application\DTOs\EnrolledSessionDTO;
 use Modules\GameTables\Application\Services\CampaignRosterSessionSyncInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Modules\GameTables\Domain\Entities\GameTable;
+use Modules\GameTables\Domain\Entities\Participant;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
 use Modules\GameTables\Domain\Events\RosterMemberEnrolledInSession;
 use Modules\GameTables\Domain\Exceptions\CannotCancelException;
@@ -118,7 +119,7 @@ final readonly class CampaignRosterSessionSync implements CampaignRosterSessionS
 
         $row = $this->participants->findByTableAndUser($session->id, $userId);
 
-        if (!$row instanceof \Modules\GameTables\Domain\Entities\Participant || ! $row->fromRoster || ! $row->canBeCancelled()) {
+        if (! $row instanceof Participant || ! $row->fromRoster || ! $row->canBeCancelled()) {
             throw RosterActionRefusedException::because('nothing_to_change');
         }
 
@@ -147,7 +148,7 @@ final readonly class CampaignRosterSessionSync implements CampaignRosterSessionS
     {
         $session = Str::isUuid($gameTableId) ? $this->gameTables->find(new GameTableId($gameTableId)) : null;
 
-        if (!$session instanceof \Modules\GameTables\Domain\Entities\GameTable || $session->campaignId?->value !== $campaignId) {
+        if (! $session instanceof GameTable || $session->campaignId?->value !== $campaignId) {
             throw RosterActionRefusedException::because('session_not_in_campaign');
         }
 

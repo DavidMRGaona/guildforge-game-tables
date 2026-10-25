@@ -15,8 +15,8 @@ use Modules\GameTables\Domain\Enums\RosterAccess;
 final readonly class CampaignResponseDTO
 {
     /**
-     * @param array<CampaignGameMasterResponseDTO> $gameMasters
-     * @param array<GameTableListDTO> $gameTables
+     * @param  array<CampaignGameMasterResponseDTO>  $gameMasters
+     * @param  array<GameTableListDTO>  $gameTables
      */
     public function __construct(
         public string $id,
@@ -56,8 +56,8 @@ final readonly class CampaignResponseDTO
     ) {}
 
     /**
-     * @param array<CampaignGameMasterResponseDTO> $gameMasters
-     * @param array<GameTableListDTO> $gameTables
+     * @param  array<CampaignGameMasterResponseDTO>  $gameMasters
+     * @param  array<GameTableListDTO>  $gameTables
      */
     public static function fromEntity(
         Campaign $campaign,

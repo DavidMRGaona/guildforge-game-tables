@@ -7,6 +7,7 @@ namespace Modules\GameTables\Listeners;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Facades\Notification;
 use Modules\GameTables\Application\Services\CampaignDirectionInterface;
+use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Events\CampaignJoinRequested;
 use Modules\GameTables\Domain\Repositories\CampaignJoinRequestRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
@@ -38,7 +39,7 @@ final readonly class NotifyDirectionOfJoinRequest
 
         $campaign = $this->campaigns->find(new CampaignId($event->campaignId));
 
-        if (!$campaign instanceof \Modules\GameTables\Domain\Entities\Campaign) {
+        if (! $campaign instanceof Campaign) {
             return;
         }
 

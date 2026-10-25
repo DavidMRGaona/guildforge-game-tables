@@ -47,7 +47,7 @@ final class EventTableCreationAccessTest extends ModuleTestCase
         $event = EventModel::factory()->create();
 
         $this->actingAs($this->user)
-            ->get('/mesas/crear?event=' . $event->slug)
+            ->get('/mesas/crear?event='.$event->slug)
             ->assertInertia(
                 fn (Assert $page) => $page
                     ->component('GameTables/CreateNotEligible', false)
@@ -62,7 +62,7 @@ final class EventTableCreationAccessTest extends ModuleTestCase
         $this->enableTablesFor((string) $event->id);
 
         $this->actingAs($this->user)
-            ->get('/mesas/crear?event=' . $event->slug)
+            ->get('/mesas/crear?event='.$event->slug)
             ->assertInertia(fn (Assert $page) => $page->component('GameTables/Create', false));
     }
 

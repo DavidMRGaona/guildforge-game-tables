@@ -101,7 +101,7 @@ final class Participant
         }
 
         return $this->cancellationReason === ParticipantCancellationReason::SessionAbsence
-            || ($this->fromRoster && !$this->cancellationReason instanceof \Modules\GameTables\Domain\Enums\ParticipantCancellationReason);
+            || ($this->fromRoster && ! $this->cancellationReason instanceof ParticipantCancellationReason);
     }
 
     public function leftRoster(): bool
@@ -225,7 +225,7 @@ final class Participant
     public function getDisplayName(): string
     {
         if ($this->firstName !== null) {
-            return trim($this->firstName . ' ' . ($this->lastName ?? ''));
+            return trim($this->firstName.' '.($this->lastName ?? ''));
         }
 
         return '';
@@ -263,7 +263,7 @@ final class Participant
 
     public function isAwaitingEmailConfirmation(): bool
     {
-        return $this->isGuest() && !$this->emailConfirmedAt instanceof \DateTimeImmutable && $this->isActive();
+        return $this->isGuest() && ! $this->emailConfirmedAt instanceof DateTimeImmutable && $this->isActive();
     }
 
     public function holdsPlaceWhileUnconfirmed(): bool
@@ -274,13 +274,13 @@ final class Participant
     public function isConfirmationOverdue(DateTimeImmutable $now): bool
     {
         return $this->holdsPlaceWhileUnconfirmed()
-            && $this->confirmationExpiresAt instanceof \DateTimeImmutable
+            && $this->confirmationExpiresAt instanceof DateTimeImmutable
             && $this->confirmationExpiresAt <= $now;
     }
 
     public function canResendConfirmation(DateTimeImmutable $now): bool
     {
-        return !$this->confirmationSentAt instanceof \DateTimeImmutable
+        return ! $this->confirmationSentAt instanceof DateTimeImmutable
             || $this->confirmationSentAt <= $now->sub(new DateInterval('PT'.self::RESEND_MARGIN_MINUTES.'M'));
     }
 

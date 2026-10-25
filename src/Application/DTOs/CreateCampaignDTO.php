@@ -15,11 +15,10 @@ final readonly class CreateCampaignDTO
         public ?string $description = null,
         public ?CampaignFrequency $frequency = null,
         public ?int $sessionCount = null,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public static function fromArray(array $data): self
     {

@@ -41,7 +41,7 @@ final class RosterPageSourceTest extends TestCase
         $source = $this->source();
 
         $this->assertStringContainsString("onSuccess: () => {\n            if (!flashError.value) inviteForm.reset();\n        },", $source);
-        $this->assertStringNotContainsString("onSuccess: () => inviteForm.reset(),", $source);
+        $this->assertStringNotContainsString('onSuccess: () => inviteForm.reset(),', $source);
     }
 
     /**

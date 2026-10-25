@@ -56,7 +56,7 @@ final class FrontendCreateGameTableRequest extends FormRequest
 
     protected function failedAuthorization(): void
     {
-        if ($this->lockedAuthorRedirect instanceof \Illuminate\Http\RedirectResponse) {
+        if ($this->lockedAuthorRedirect instanceof RedirectResponse) {
             throw new HttpResponseException($this->lockedAuthorRedirect);
         }
 
@@ -269,7 +269,7 @@ final class FrontendCreateGameTableRequest extends FormRequest
         }
 
         $table = $this->editableTable();
-        $keptIds = $table instanceof \Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel
+        $keptIds = $table instanceof GameTableModel
             ? app(FrontendCreationServiceInterface::class)->editableCoDirectorIds($table->id)
             : [];
         $mainSeen = false;
@@ -303,7 +303,7 @@ final class FrontendCreateGameTableRequest extends FormRequest
     {
         $table = $this->routeTable();
 
-        return $table instanceof \Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel && $this->user()?->can('update', $table) === true ? $table : null;
+        return $table instanceof GameTableModel && $this->user()?->can('update', $table) === true ? $table : null;
     }
 
     /**
