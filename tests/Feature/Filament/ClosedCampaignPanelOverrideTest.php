@@ -130,6 +130,9 @@ final class ClosedCampaignPanelOverrideTest extends ModuleTestCase
         $this->assertSame(ParticipantCancellationReason::SessionAbsence, $row->cancellation_reason);
     }
 
+    /**
+     * @return Testable<ParticipantsRelationManager>
+     */
     private function participants(): Testable
     {
         return Livewire::test(ParticipantsRelationManager::class, ['ownerRecord' => $this->session, 'pageClass' => EditGameTable::class]);

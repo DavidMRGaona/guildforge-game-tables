@@ -14,6 +14,7 @@ use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
+use Symfony\Component\HttpFoundation\Response;
 use Tests\Support\Modules\ModuleTestCase;
 
 /**
@@ -187,6 +188,9 @@ final class GuestRegistrationAnswersTest extends ModuleTestCase
         $this->assertNull(ParticipantModel::query()->where('user_id', $user->id)->value('fingerprint'));
     }
 
+    /**
+     * @return TestResponse<Response>
+     */
     private function submit(string $email): TestResponse
     {
         return $this->from(route('gametables.show', 'la-cripta'))

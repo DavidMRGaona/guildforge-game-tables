@@ -424,14 +424,14 @@ final class WaitingListRegistrationTest extends ModuleTestCase
         return $response;
     }
 
-    /**
-     * @return TestResponse<Response>
-     */
     private function confirmGuestEmails(GameTableModel $table): void
     {
         ParticipantModel::query()->where('game_table_id', $table->id)->whereNull('user_id')->update(['email_confirmed_at' => now()]);
     }
 
+    /**
+     * @return TestResponse<Response>
+     */
     private function registerGuest(GameTableModel $table, string $email, string $role = 'player'): TestResponse
     {
         $this->app['auth']->forgetGuards();

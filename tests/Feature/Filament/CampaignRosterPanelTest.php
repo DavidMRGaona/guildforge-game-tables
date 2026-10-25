@@ -419,11 +419,17 @@ final class CampaignRosterPanelTest extends ModuleTestCase
         return Livewire::test(EditCampaign::class, ['record' => $campaign->getRouteKey()]);
     }
 
+    /**
+     * @return Testable<RosterRelationManager>
+     */
     private function roster(CampaignModel $campaign): Testable
     {
         return Livewire::test(RosterRelationManager::class, ['ownerRecord' => $campaign, 'pageClass' => EditCampaign::class]);
     }
 
+    /**
+     * @return Testable<InvitationsRelationManager>
+     */
     private function invitations(CampaignModel $campaign): Testable
     {
         return Livewire::test(InvitationsRelationManager::class, ['ownerRecord' => $campaign, 'pageClass' => EditCampaign::class]);
@@ -443,6 +449,9 @@ final class CampaignRosterPanelTest extends ModuleTestCase
         ]);
     }
 
+    /**
+     * @return Testable<JoinRequestsRelationManager>
+     */
     private function requests(CampaignModel $campaign): Testable
     {
         return Livewire::test(JoinRequestsRelationManager::class, ['ownerRecord' => $campaign, 'pageClass' => EditCampaign::class]);

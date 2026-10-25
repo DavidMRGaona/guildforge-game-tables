@@ -25,6 +25,7 @@ use Modules\GameTables\Notifications\GuestRegistrationConfirmation;
 use Modules\GameTables\Notifications\ParticipantRegisteredNotification;
 use Modules\GameTables\Notifications\WaitingListPromotionNotification;
 use RuntimeException;
+use Symfony\Component\HttpFoundation\Response;
 use Tests\Support\Modules\ModuleTestCase;
 
 /**
@@ -391,6 +392,9 @@ final class GuestConfirmationControllerTest extends ModuleTestCase
         Notification::assertSentOnDemandTimes(ParticipantRegisteredNotification::class, 1);
     }
 
+    /**
+     * @param  TestResponse<Response>  $response
+     */
     private function assertResult(TestResponse $response, string $tone, string $message, string $statusLabel): void
     {
         $response->assertOk();
@@ -404,6 +408,8 @@ final class GuestConfirmationControllerTest extends ModuleTestCase
 
     /**
      * The confirmation page with only a message: no registration, no table, a link to the list.
+     *
+     * @param  TestResponse<Response>  $response
      */
     private function assertMessagePage(TestResponse $response, int $status, string $message): void
     {

@@ -6,6 +6,7 @@ namespace Modules\GameTables\Tests\Unit\Notifications;
 
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 use Illuminate\Support\HtmlString;
 use Modules\GameTables\Notifications\CampaignJoinRequestAcceptedNotification;
 use Modules\GameTables\Notifications\CampaignJoinRequestReceivedNotification;
@@ -31,7 +32,10 @@ final class CampaignRosterNotificationsTest extends ModuleTestCase
         app()->setLocale('es');
     }
 
-    private function mail(object $notification): MailMessage
+    /**
+     * @param  CampaignSessionScheduledNotification|CampaignJoinRequestReceivedNotification|CampaignJoinRequestAcceptedNotification|CampaignJoinRequestRejectedNotification|CampaignRosterAddedNotification|CampaignRosterRemovedNotification|CampaignPlayerLeftNotification  $notification
+     */
+    private function mail(Notification $notification): MailMessage
     {
         return $notification->toMail(new AnonymousNotifiable);
     }
@@ -41,7 +45,7 @@ final class CampaignRosterNotificationsTest extends ModuleTestCase
      */
     private function lines(MailMessage $mail): array
     {
-        return array_map(static fn (mixed $line): string => $line instanceof HtmlString ? html_entity_decode(strip_tags((string) $line)) : (string) $line, [...$mail->introLines, ...$mail->outroLines]);
+        return array_values(array_map(static fn (mixed $line): string => $line instanceof HtmlString ? html_entity_decode(strip_tags((string) $line)) : (string) $line, [...$mail->introLines, ...$mail->outroLines]));
     }
 
     private function scheduled(bool $waiting = false): CampaignSessionScheduledNotification

@@ -385,7 +385,7 @@ final class FrontendDraftGameMastersTest extends ModuleTestCase
      */
     private function linkedIds(GameTableModel $table): array
     {
-        return $table->gameMasters()->pluck('gametables_game_masters.id')->values()->all();
+        return array_values($table->gameMasters()->get()->map(fn (GameMasterModel $gameMaster): string => $gameMaster->id)->all());
     }
 
     /**

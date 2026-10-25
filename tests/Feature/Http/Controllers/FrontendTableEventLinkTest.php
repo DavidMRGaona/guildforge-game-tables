@@ -6,6 +6,7 @@ namespace Modules\GameTables\Tests\Feature\Http\Controllers;
 
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\GameTables\Domain\Entities\EventGameTableConfig;
@@ -236,14 +237,14 @@ final class FrontendTableEventLinkTest extends ModuleTestCase
             ->get(route('gametables.edit', $draft->slug))
             ->assertInertia(fn (Assert $page) => $page
                 ->component('GameTables/Edit', false)
-                ->where('formData.events', fn ($events): bool => collect($events)->pluck('id')->all() === [$open->id, $closed['ended']->id]));
+                ->where('formData.events', fn (Collection $events): bool => $events->pluck('id')->all() === [$open->id, $closed['ended']->id]));
 
         // The create form still offers the open events only
         $this->actingAs($this->author)
             ->get(route('gametables.create'))
             ->assertInertia(fn (Assert $page) => $page
                 ->component('GameTables/Create', false)
-                ->where('formData.events', fn ($events): bool => collect($events)->pluck('id')->all() === [$open->id]));
+                ->where('formData.events', fn (Collection $events): bool => $events->pluck('id')->all() === [$open->id]));
     }
 
     /**
