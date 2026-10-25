@@ -24,7 +24,6 @@ use Modules\GameTables\Domain\Exceptions\SessionBelowRosterException;
 use Modules\GameTables\Filament\Resources\GameTableResource;
 use Modules\GameTables\Filament\Support\DelegatedDirectors;
 use Modules\GameTables\Filament\Support\PublicationLock;
-use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
 final class EditGameTable extends EditRecord
@@ -296,14 +295,23 @@ final class EditGameTable extends EditRecord
                 ->label(__('game-tables::messages.actions.unpublish'))
                 ->icon('heroicon-o-eye-slash')
                 ->color('gray')
-                ->visible(fn (): bool => $this->record->is_published && ! $this->record->status->isFinal())
+                // A table that started is cancelled, not unpublished: as a draft it could never be completed
+                ->visible(fn (): bool => $this->record->is_published && $this->record->status->allowsUnpublishing())
                 ->requiresConfirmation()
                 ->action(function (): void {
-                    $this->record->update([
-                        'is_published' => false,
-                        'status' => TableStatus::Draft->value,
-                        'published_at' => null,
-                    ]);
+                    /** @var GameTableServiceInterface $service */
+                    $service = app(GameTableServiceInterface::class);
+
+                    try {
+                        $service->unpublish((string) $this->getRecord()->getKey());
+                    } catch (InvalidStatusTransitionException) {
+                        $this->warnStatusAlreadyChanged();
+
+                        return;
+                    }
+
+                    // The service saved through its own model instance
+                    $this->getRecord()->refresh();
                     $this->refreshFormData(['is_published', 'status', 'published_at']);
                 }),
 

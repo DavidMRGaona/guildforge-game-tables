@@ -173,9 +173,11 @@ final readonly class GameTableService implements GameTableServiceInterface
     public function unpublish(string $id): GameTableResponseDTO
     {
         $gameTable = $this->gameTableRepository->findOrFail(new GameTableId($id));
+        $readStatus = $gameTable->status;
 
         $gameTable->unpublish();
-        $this->gameTableRepository->save($gameTable);
+        // Refused if the automatic update started the table meanwhile
+        $this->gameTableRepository->saveIfStatusIs($gameTable, $readStatus);
 
         return GameTableResponseDTO::fromEntity($gameTable);
     }

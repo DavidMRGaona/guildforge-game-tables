@@ -65,6 +65,77 @@ final class GameTableStatusActionsTest extends ModuleTestCase
         Event::assertDispatched(GameTablePublished::class, fn (GameTablePublished $event): bool => $event->gameTableId === $table->id);
     }
 
+    /**
+     * @return array<string, array{TableStatus}>
+     */
+    public static function statusesThatUnpublish(): array
+    {
+        return [
+            'scheduled' => [TableStatus::Scheduled],
+            'full' => [TableStatus::Full],
+        ];
+    }
+
+    #[DataProvider('statusesThatUnpublish')]
+    public function test_unpublishing_a_table_that_has_not_started_takes_it_back_to_draft(TableStatus $status): void
+    {
+        $table = $this->table($status);
+
+        Livewire::test(EditGameTable::class, ['record' => $table->getRouteKey()])
+            ->callAction('unpublish')
+            ->assertFormSet(['is_published' => false, 'status' => TableStatus::Draft->value])
+            ->assertActionHidden('unpublish')
+            ->assertActionVisible('publish');
+
+        $table->refresh();
+        $this->assertFalse($table->is_published);
+        $this->assertSame(TableStatus::Draft, $table->status);
+        $this->assertNull($table->published_at);
+    }
+
+    // Back in draft a table that started could never be completed: it is cancelled instead
+    public function test_a_table_in_progress_does_not_offer_the_unpublishing(): void
+    {
+        $table = $this->table(TableStatus::InProgress);
+
+        Livewire::test(EditGameTable::class, ['record' => $table->getRouteKey()])
+            ->assertActionHidden('unpublish')
+            ->assertActionVisible('complete');
+    }
+
+    // The automatic update starts the table between the click and the save: the service refuses it
+    public function test_an_unpublishing_refused_by_the_service_shows_a_warning(): void
+    {
+        $table = $this->table(TableStatus::Scheduled);
+        $service = $this->createStub(GameTableServiceInterface::class);
+        $service->method('unpublish')->willThrowException(InvalidStatusTransitionException::fromTo('in_progress', 'draft'));
+        $this->app->instance(GameTableServiceInterface::class, $service);
+
+        Livewire::test(EditGameTable::class, ['record' => $table->getRouteKey()])
+            ->callAction('unpublish')
+            ->assertNotified('La mesa ya no está en un estado que permita este cambio');
+
+        $table->refresh();
+        $this->assertTrue($table->is_published);
+        $this->assertSame(TableStatus::Scheduled, $table->status);
+    }
+
+    public function test_the_service_does_not_unpublish_a_table_in_progress(): void
+    {
+        $table = $this->table(TableStatus::InProgress);
+
+        try {
+            app(GameTableServiceInterface::class)->unpublish($table->id);
+            $this->fail('A table in progress was unpublished');
+        } catch (InvalidStatusTransitionException $e) {
+            $this->assertSame('in_progress', $e->from);
+        }
+
+        $table->refresh();
+        $this->assertTrue($table->is_published);
+        $this->assertSame(TableStatus::InProgress, $table->status);
+    }
+
     public function test_starting_a_table_from_the_panel_puts_it_in_progress(): void
     {
         $table = $this->table(TableStatus::Full);

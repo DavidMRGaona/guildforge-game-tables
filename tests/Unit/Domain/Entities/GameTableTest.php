@@ -224,6 +224,61 @@ final class GameTableTest extends TestCase
         $this->assertSame($status, $gameTable->status);
     }
 
+    /**
+     * @return array<string, array{TableStatus}>
+     */
+    public static function statusesThatUnpublish(): array
+    {
+        return [
+            'draft' => [TableStatus::Draft],
+            'scheduled' => [TableStatus::Scheduled],
+            'full' => [TableStatus::Full],
+        ];
+    }
+
+    #[DataProvider('statusesThatUnpublish')]
+    public function test_a_table_that_has_not_started_goes_back_to_draft_when_unpublished(TableStatus $status): void
+    {
+        $gameTable = $this->publishedTable(status: $status);
+        $gameTable->publishedAt = new DateTimeImmutable('2026-01-10 10:00:00');
+
+        $gameTable->unpublish();
+
+        $this->assertSame(TableStatus::Draft, $gameTable->status);
+        $this->assertFalse($gameTable->isPublished);
+        $this->assertNull($gameTable->publishedAt);
+    }
+
+    /**
+     * @return array<string, array{TableStatus}>
+     */
+    public static function statusesThatCannotUnpublish(): array
+    {
+        return [
+            'in progress' => [TableStatus::InProgress],
+            'completed' => [TableStatus::Completed],
+            'cancelled' => [TableStatus::Cancelled],
+        ];
+    }
+
+    // Back in draft a table that started could never be completed
+    #[DataProvider('statusesThatCannotUnpublish')]
+    public function test_a_table_that_started_or_ended_is_not_unpublished(TableStatus $status): void
+    {
+        $gameTable = $this->publishedTable(status: $status);
+
+        try {
+            $gameTable->unpublish();
+            $this->fail("A {$status->value} table was unpublished");
+        } catch (InvalidStatusTransitionException $e) {
+            $this->assertSame($status->value, $e->from);
+            $this->assertSame('draft', $e->to);
+        }
+
+        $this->assertSame($status, $gameTable->status);
+        $this->assertTrue($gameTable->isPublished);
+    }
+
     public function test_it_can_cancel(): void
     {
         $gameTable = $this->createGameTable(status: TableStatus::Scheduled);
