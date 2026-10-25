@@ -50,9 +50,9 @@ final class RegistrationServiceTest extends TestCase
 {
     use RefreshDatabase;
 
-    private ParticipantRepositoryInterface $participantRepository;
+    private ParticipantRepositoryInterface&MockObject $participantRepository;
 
-    private GameTableRepositoryInterface $gameTableRepository;
+    private GameTableRepositoryInterface&MockObject $gameTableRepository;
 
     private RegistrationService $service;
 

@@ -42,9 +42,16 @@ final class EventCreationEligibilityServiceTest extends TestCase
         // counted on the wall clock move that instant in the hour repeated in October
         $this->travelTo(CarbonImmutable::parse('2026-11-04 18:00:00'));
 
-        $this->configRepository = Mockery::mock(EventGameTableConfigRepositoryInterface::class);
-        $this->globalEligibilityService = Mockery::mock(CreationEligibilityServiceInterface::class);
-        $this->authorizationService = Mockery::mock(AuthorizationServiceInterface::class);
+        /** @var EventGameTableConfigRepositoryInterface&MockInterface $configRepository */
+        $configRepository = Mockery::mock(EventGameTableConfigRepositoryInterface::class);
+        /** @var CreationEligibilityServiceInterface&MockInterface $globalEligibilityService */
+        $globalEligibilityService = Mockery::mock(CreationEligibilityServiceInterface::class);
+        /** @var AuthorizationServiceInterface&MockInterface $authorizationService */
+        $authorizationService = Mockery::mock(AuthorizationServiceInterface::class);
+
+        $this->configRepository = $configRepository;
+        $this->globalEligibilityService = $globalEligibilityService;
+        $this->authorizationService = $authorizationService;
 
         $this->service = new EventCreationEligibilityService(
             $this->configRepository,

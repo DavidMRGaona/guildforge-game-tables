@@ -20,13 +20,14 @@ use Modules\GameTables\Domain\ValueObjects\TimeSlot;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnRegistration;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 use Modules\GameTables\Notifications\ParticipantRegisteredNotification;
+use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 
 final class NotifyOnRegistrationTest extends TestCase
 {
-    private NotificationRecipientResolverInterface $recipientResolver;
+    private NotificationRecipientResolverInterface&MockObject $recipientResolver;
 
-    private GameTableRepositoryInterface $gameTableRepository;
+    private GameTableRepositoryInterface&MockObject $gameTableRepository;
 
     private NotifyOnRegistration $listener;
 
