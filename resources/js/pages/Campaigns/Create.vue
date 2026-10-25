@@ -550,10 +550,10 @@ function submit(): void {
                             <hr class="border-default" />
 
                             <!-- Safety Tools with tooltips -->
-                            <div id="safety_tools">
-                                <label class="block text-sm font-medium text-base-secondary mb-3">
+                            <fieldset id="safety_tools" class="min-w-0">
+                                <legend class="block text-sm font-medium text-base-secondary mb-3">
                                     {{ t('campaigns.create.fields.safetyTools') }}
-                                </label>
+                                </legend>
                                 <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                     <FormCheckboxWithTooltip
                                         v-for="tool in safetyToolsWithDescriptions"
@@ -568,20 +568,20 @@ function submit(): void {
                                 <p v-if="form.errors.safety_tools" class="mt-2 text-sm text-error">
                                     {{ form.errors.safety_tools }}
                                 </p>
-                            </div>
+                            </fieldset>
 
                             <!-- Content Warnings with collapsible groups -->
-                            <div id="content_warning_ids">
-                                <label class="block text-sm font-medium text-base-secondary mb-3">
+                            <fieldset id="content_warning_ids" class="min-w-0">
+                                <legend class="block text-sm font-medium text-base-secondary mb-3">
                                     {{ t('campaigns.create.fields.contentWarnings') }}
-                                </label>
+                                </legend>
                                 <FormCheckboxGroup
                                     v-model="form.content_warning_ids"
                                     :groups="contentWarningGroups"
                                     collapsible
                                     :error="form.errors.content_warning_ids"
                                 />
-                            </div>
+                            </fieldset>
 
                             <!-- Custom Warnings -->
                             <div id="custom_warnings">
