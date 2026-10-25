@@ -4,9 +4,24 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import BaseButton from '@/components/ui/BaseButton.vue';
-import { FormCombobox, FormSelect, FormCheckboxGroup, FormCheckboxWithTooltip, FormRadioGroup, FormTagsInput, FormNumberInput } from '@/components/form';
+import {
+    FormCombobox,
+    FormSelect,
+    FormCheckboxGroup,
+    FormCheckboxWithTooltip,
+    FormRadioGroup,
+    FormTagsInput,
+    FormNumberInput,
+} from '@/components/form';
 import type { CheckboxGroup, RadioOption } from '@/components/form';
-import type { EditableGameMaster, GameSystem, GameTableEditData, SessionCampaignOption, TableFormDefaults, TableFormLimits } from '../../types/gametables';
+import type {
+    EditableGameMaster,
+    GameSystem,
+    GameTableEditData,
+    SessionCampaignOption,
+    TableFormDefaults,
+    TableFormLimits,
+} from '../../types/gametables';
 import GameMasterSection from '../../components/GameMasterSection.vue';
 import SessionCampaignField from '../../components/SessionCampaignField.vue';
 import FormTabs from '../../components/FormTabs.vue';
@@ -15,12 +30,11 @@ import FormErrorSummary from '../../components/FormErrorSummary.vue';
 import { useFormErrorSummary } from '../../composables/useFormErrorSummary';
 import { fieldStateClass } from '../../utils/fieldStateClass';
 
-type OptionsInput = Record<string, string> | Array<{ value: string; label: string }> | null | undefined;
+type OptionsInput =
+    Record<string, string> | Array<{ value: string; label: string }> | null | undefined;
 
 // Helper to transform {value: label} objects to [{value, label}] arrays
-function objectToOptions(
-    obj: OptionsInput
-): Array<{ value: string; label: string }> {
+function objectToOptions(obj: OptionsInput): Array<{ value: string; label: string }> {
     if (!obj) return [];
     if (Array.isArray(obj)) return obj;
     return Object.entries(obj).map(([value, label]) => ({ value, label }));
@@ -236,7 +250,14 @@ const form = useForm({
 // Errors per tab (badges), the directors' field errors and the summary shown after a failed save
 // A removed director row takes only its own errors: the later rows' move up with them (adding a
 // row, at the end, keeps every error where it is)
-const { tabErrors, gameMasterErrors, errorItems, revealErrors, focusError, removeGameMasterRowErrors } = useFormErrorSummary({
+const {
+    tabErrors,
+    gameMasterErrors,
+    errorItems,
+    revealErrors,
+    focusError,
+    removeGameMasterRowErrors,
+} = useFormErrorSummary({
     errors: () => form.errors,
     tabs,
     activeTab,
@@ -244,9 +265,9 @@ const { tabErrors, gameMasterErrors, errorItems, revealErrors, focusError, remov
     fieldLabels,
     fieldTargets,
     gameMasters: () => form.game_masters,
-    replaceErrors: (errors) => form.clearErrors().setError(errors as Parameters<typeof form.setError>[0]),
+    replaceErrors: (errors) =>
+        form.clearErrors().setError(errors as Parameters<typeof form.setError>[0]),
 });
-
 
 // Context type for the event association (the campaign goes with the session type)
 type ContextType = 'independent' | 'event';
@@ -263,9 +284,12 @@ const isCampaignSession = computed(() => form.table_type === 'campaign_session')
 const sessionWithoutCampaign = computed(() => isCampaignSession.value && !form.campaign_id);
 
 // Another type takes no campaign: clear it (the field hides)
-watch(() => form.table_type, (type) => {
-    if (type !== 'campaign_session') form.campaign_id = null;
-});
+watch(
+    () => form.table_type,
+    (type) => {
+        if (type !== 'campaign_session') form.campaign_id = null;
+    }
+);
 
 // Choosing the campaign fills what the session takes from it
 function applyCampaign(values: { gameSystemId: string; maxPlayers: number }): void {
@@ -277,7 +301,9 @@ function applyCampaign(values: { gameSystemId: string; maxPlayers: number }): vo
 const selectedTimeSlot = ref<string | null>(null);
 
 // Whether we're editing a table associated with an event (has event context)
-const isEventContextMode = computed(() => props.eventContext !== null && props.eventContext !== undefined);
+const isEventContextMode = computed(
+    () => props.eventContext !== null && props.eventContext !== undefined
+);
 
 // Find the initial time slot index based on the table's starts_at
 function findInitialTimeSlotIndex(): string | null {
@@ -317,7 +343,7 @@ watch(contextType, (newType) => {
 // Get selected event name for display
 const selectedEventName = computed(() => {
     if (!props.eventContext) return null;
-    const event = props.formData.events.find(e => e.id === props.eventContext!.event_id);
+    const event = props.formData.events.find((e) => e.id === props.eventContext!.event_id);
     return event?.name ?? props.table.event_title ?? null;
 });
 
@@ -332,7 +358,11 @@ const timeSlotOptions = computed(() => {
 
 // Whether location field should be disabled (fixed by event config)
 const isLocationDisabled = computed(() => {
-    return props.eventContext !== null && props.eventContext !== undefined && !props.eventContext.requires_location_input;
+    return (
+        props.eventContext !== null &&
+        props.eventContext !== undefined &&
+        !props.eventContext.requires_location_input
+    );
 });
 
 // Filter context options based on available data
@@ -376,10 +406,13 @@ const gameSystemOptions = computed(() =>
 // Safety tool descriptions mapped by enum value (ID)
 const safetyToolDescriptions: Record<string, string> = {
     x_card: 'Permite a cualquier jugador detener una escena o pausar el juego sin necesidad de dar explicaciones. Una herramienta simple pero poderosa para mantener la comodidad de todos.',
-    lines_and_veils: 'Define límites absolutos (líneas) que nunca se cruzarán, y temas que se pueden mencionar pero no explorar en detalle (velos). Se establecen al inicio de la partida.',
-    open_door: 'Los jugadores pueden abandonar la sesión en cualquier momento sin dar explicaciones. Promueve un ambiente seguro donde nadie se siente obligado a quedarse si está incómodo.',
+    lines_and_veils:
+        'Define límites absolutos (líneas) que nunca se cruzarán, y temas que se pueden mencionar pero no explorar en detalle (velos). Se establecen al inicio de la partida.',
+    open_door:
+        'Los jugadores pueden abandonar la sesión en cualquier momento sin dar explicaciones. Promueve un ambiente seguro donde nadie se siente obligado a quedarse si está incómodo.',
     stars: 'Sistema para pedir más o menos de cierto tipo de contenido durante la partida. Permite ajustar el tono y los temas en tiempo real según las preferencias del grupo.',
-    support_flower: 'Método para indicar que necesitas apoyo emocional o un descanso. Especialmente útil en partidas con temas intensos donde los jugadores pueden necesitar un momento.',
+    support_flower:
+        'Método para indicar que necesitas apoyo emocional o un descanso. Especialmente útil en partidas con temas intensos donde los jugadores pueden necesitar un momento.',
     script: 'Permite rebobinar (volver atrás), avanzar rápidamente o pausar una escena, como en una película. Útil para ajustar momentos que no funcionan para el grupo.',
     roses: 'Al final de cada sesión, los jugadores comparten aspectos positivos (rosas) y constructivos (espinas). Fomenta la comunicación y mejora continua del juego.',
     other: 'Otra herramienta de seguridad no listada. Especifica cuál en las notas de la mesa.',
@@ -505,7 +538,10 @@ function cancel(): void {
                         <div class="space-y-6 p-6">
                             <!-- Game System -->
                             <div>
-                                <label for="game_system_id" class="block text-sm font-medium text-base-secondary">
+                                <label
+                                    for="game_system_id"
+                                    class="block text-sm font-medium text-base-secondary"
+                                >
                                     {{ t('gameTables.create.fields.gameSystem') }}
                                 </label>
                                 <FormCombobox
@@ -518,14 +554,20 @@ function cancel(): void {
                                     :error="form.errors.game_system_id"
                                     class="mt-1"
                                 />
-                                <p v-if="form.errors.game_system_id" class="mt-1 text-sm text-error">
+                                <p
+                                    v-if="form.errors.game_system_id"
+                                    class="mt-1 text-sm text-error"
+                                >
                                     {{ form.errors.game_system_id }}
                                 </p>
                             </div>
 
                             <!-- Title -->
                             <div>
-                                <label for="title" class="block text-sm font-medium text-base-secondary">
+                                <label
+                                    for="title"
+                                    class="block text-sm font-medium text-base-secondary"
+                                >
                                     {{ t('gameTables.create.fields.title') }}
                                     <span class="text-error">*</span>
                                 </label>
@@ -536,20 +578,27 @@ function cancel(): void {
                                     name="title"
                                     required
                                     :aria-invalid="!!form.errors.title"
-                                    :aria-describedby="form.errors.title ? 'title-error' : undefined"
+                                    :aria-describedby="
+                                        form.errors.title ? 'title-error' : undefined
+                                    "
                                     :class="fieldStateClass(!!form.errors.title)"
-                                    class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
-                                           text-base-primary placeholder-base-muted
-                                           focus:outline-none focus:ring-2"
+                                    class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5 text-base-primary placeholder-base-muted focus:outline-none focus:ring-2"
                                 />
-                                <p v-if="form.errors.title" id="title-error" class="mt-1 text-sm text-error">
+                                <p
+                                    v-if="form.errors.title"
+                                    id="title-error"
+                                    class="mt-1 text-sm text-error"
+                                >
                                     {{ form.errors.title }}
                                 </p>
                             </div>
 
                             <!-- Starts At - Time Slot selector for slot-based events -->
                             <div v-if="eventContext?.is_slot_based && timeSlotOptions.length > 0">
-                                <label for="time_slot" class="block text-sm font-medium text-base-secondary">
+                                <label
+                                    for="time_slot"
+                                    class="block text-sm font-medium text-base-secondary"
+                                >
                                     {{ t('gameTables.create.fields.timeSlot') }}
                                     <span class="text-error">*</span>
                                 </label>
@@ -571,7 +620,10 @@ function cancel(): void {
 
                             <!-- Starts At - Free datetime picker -->
                             <div v-else>
-                                <label for="starts_at" class="block text-sm font-medium text-base-secondary">
+                                <label
+                                    for="starts_at"
+                                    class="block text-sm font-medium text-base-secondary"
+                                >
                                     {{ t('gameTables.create.fields.startsAt') }}
                                     <span class="text-error">*</span>
                                 </label>
@@ -583,9 +635,7 @@ function cancel(): void {
                                     required
                                     :aria-invalid="!!form.errors.starts_at"
                                     :class="fieldStateClass(!!form.errors.starts_at)"
-                                    class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
-                                           text-base-primary
-                                           focus:outline-none focus:ring-2"
+                                    class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5 text-base-primary focus:outline-none focus:ring-2"
                                 />
                                 <p v-if="form.errors.starts_at" class="mt-1 text-sm text-error">
                                     {{ form.errors.starts_at }}
@@ -594,7 +644,10 @@ function cancel(): void {
 
                             <!-- Duration -->
                             <div>
-                                <label for="duration_minutes" class="block text-sm font-medium text-base-secondary">
+                                <label
+                                    for="duration_minutes"
+                                    class="block text-sm font-medium text-base-secondary"
+                                >
                                     {{ t('gameTables.create.fields.duration') }}
                                     <span class="text-error">*</span>
                                 </label>
@@ -612,14 +665,20 @@ function cancel(): void {
                                 <p class="mt-1 text-xs text-base-muted">
                                     {{ t('gameTables.create.fields.durationHelp') }}
                                 </p>
-                                <p v-if="form.errors.duration_minutes" class="mt-1 text-sm text-error">
+                                <p
+                                    v-if="form.errors.duration_minutes"
+                                    class="mt-1 text-sm text-error"
+                                >
                                     {{ form.errors.duration_minutes }}
                                 </p>
                             </div>
 
                             <!-- Table Type -->
                             <div>
-                                <label for="table_type" class="block text-sm font-medium text-base-secondary">
+                                <label
+                                    for="table_type"
+                                    class="block text-sm font-medium text-base-secondary"
+                                >
                                     {{ t('gameTables.create.fields.tableType') }}
                                 </label>
                                 <FormSelect
@@ -650,7 +709,10 @@ function cancel(): void {
 
                             <!-- Table Format -->
                             <div>
-                                <label for="table_format" class="block text-sm font-medium text-base-secondary">
+                                <label
+                                    for="table_format"
+                                    class="block text-sm font-medium text-base-secondary"
+                                >
                                     {{ t('gameTables.create.fields.tableFormat') }}
                                 </label>
                                 <FormSelect
@@ -667,14 +729,17 @@ function cancel(): void {
 
                             <!-- Language -->
                             <div>
-                                <label for="language" class="block text-sm font-medium text-base-secondary">
+                                <label
+                                    for="language"
+                                    class="block text-sm font-medium text-base-secondary"
+                                >
                                     {{ t('gameTables.create.fields.language') }}
                                     <span class="text-error">*</span>
                                 </label>
                                 <FormSelect
                                     id="language"
-                                    name="language"
                                     v-model="form.language"
+                                    name="language"
                                     :error="form.errors.language ?? ''"
                                     :options="objectToOptions(props.formData.languages)"
                                     class="mt-1"
@@ -686,20 +751,28 @@ function cancel(): void {
 
                             <!-- Experience Level -->
                             <div>
-                                <label for="experience_level" class="block text-sm font-medium text-base-secondary">
+                                <label
+                                    for="experience_level"
+                                    class="block text-sm font-medium text-base-secondary"
+                                >
                                     {{ t('gameTables.create.fields.experienceLevel') }}
                                     <span class="text-error">*</span>
                                 </label>
                                 <FormSelect
                                     id="experience_level"
-                                    name="experience_level"
                                     v-model="form.experience_level"
+                                    name="experience_level"
                                     :error="form.errors.experience_level ?? ''"
                                     :options="objectToOptions(props.formData.experience_levels)"
-                                    :placeholder="t('gameTables.create.fields.selectExperienceLevel')"
+                                    :placeholder="
+                                        t('gameTables.create.fields.selectExperienceLevel')
+                                    "
                                     class="mt-1"
                                 />
-                                <p v-if="form.errors.experience_level" class="mt-1 text-sm text-error">
+                                <p
+                                    v-if="form.errors.experience_level"
+                                    class="mt-1 text-sm text-error"
+                                >
                                     {{ form.errors.experience_level }}
                                 </p>
                             </div>
@@ -722,7 +795,10 @@ function cancel(): void {
 
                                     <!-- Event selector -->
                                     <div v-if="contextType === 'event'">
-                                        <label for="event_id" class="block text-sm font-medium text-base-secondary">
+                                        <label
+                                            for="event_id"
+                                            class="block text-sm font-medium text-base-secondary"
+                                        >
                                             {{ t('gameTables.create.fields.event') }}
                                         </label>
                                         <FormCombobox
@@ -735,7 +811,10 @@ function cancel(): void {
                                             :error="form.errors.event_id"
                                             class="mt-1"
                                         />
-                                        <p v-if="form.errors.event_id" class="mt-1 text-sm text-error">
+                                        <p
+                                            v-if="form.errors.event_id"
+                                            class="mt-1 text-sm text-error"
+                                        >
                                             {{ form.errors.event_id }}
                                         </p>
                                     </div>
@@ -769,7 +848,10 @@ function cancel(): void {
                                 </h3>
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label for="min_players" class="block text-sm font-medium text-base-secondary">
+                                        <label
+                                            for="min_players"
+                                            class="block text-sm font-medium text-base-secondary"
+                                        >
                                             {{ t('gameTables.create.fields.minPlayers') }}
                                             <span class="text-error">*</span>
                                         </label>
@@ -783,12 +865,18 @@ function cancel(): void {
                                             :error="form.errors.min_players"
                                             class="mt-1"
                                         />
-                                        <p v-if="form.errors.min_players" class="mt-1 text-sm text-error">
+                                        <p
+                                            v-if="form.errors.min_players"
+                                            class="mt-1 text-sm text-error"
+                                        >
                                             {{ form.errors.min_players }}
                                         </p>
                                     </div>
                                     <div>
-                                        <label for="max_players" class="block text-sm font-medium text-base-secondary">
+                                        <label
+                                            for="max_players"
+                                            class="block text-sm font-medium text-base-secondary"
+                                        >
                                             {{ t('gameTables.create.fields.maxPlayers') }}
                                             <span class="text-error">*</span>
                                         </label>
@@ -802,7 +890,10 @@ function cancel(): void {
                                             :error="form.errors.max_players"
                                             class="mt-1"
                                         />
-                                        <p v-if="form.errors.max_players" class="mt-1 text-sm text-error">
+                                        <p
+                                            v-if="form.errors.max_players"
+                                            class="mt-1 text-sm text-error"
+                                        >
                                             {{ form.errors.max_players }}
                                         </p>
                                     </div>
@@ -811,7 +902,10 @@ function cancel(): void {
 
                             <!-- Max Spectators -->
                             <div>
-                                <label for="max_spectators" class="block text-sm font-medium text-base-secondary">
+                                <label
+                                    for="max_spectators"
+                                    class="block text-sm font-medium text-base-secondary"
+                                >
                                     {{ t('gameTables.create.fields.maxSpectators') }}
                                 </label>
                                 <FormNumberInput
@@ -823,14 +917,20 @@ function cancel(): void {
                                     :error="form.errors.max_spectators"
                                     class="mt-1"
                                 />
-                                <p v-if="form.errors.max_spectators" class="mt-1 text-sm text-error">
+                                <p
+                                    v-if="form.errors.max_spectators"
+                                    class="mt-1 text-sm text-error"
+                                >
                                     {{ form.errors.max_spectators }}
                                 </p>
                             </div>
 
                             <!-- Minimum Age -->
                             <div>
-                                <label for="minimum_age" class="block text-sm font-medium text-base-secondary">
+                                <label
+                                    for="minimum_age"
+                                    class="block text-sm font-medium text-base-secondary"
+                                >
                                     {{ t('gameTables.create.fields.minimumAge') }}
                                 </label>
                                 <FormNumberInput
@@ -854,7 +954,10 @@ function cancel(): void {
                         <div class="space-y-6 p-6">
                             <!-- Synopsis -->
                             <div>
-                                <label for="synopsis" class="block text-sm font-medium text-base-secondary">
+                                <label
+                                    for="synopsis"
+                                    class="block text-sm font-medium text-base-secondary"
+                                >
                                     {{ t('gameTables.create.fields.synopsis') }}
                                 </label>
                                 <textarea
@@ -864,9 +967,7 @@ function cancel(): void {
                                     rows="6"
                                     :aria-invalid="!!form.errors.synopsis"
                                     :class="fieldStateClass(!!form.errors.synopsis)"
-                                    class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
-                                           text-base-primary placeholder-base-muted
-                                           focus:outline-none focus:ring-2"
+                                    class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5 text-base-primary placeholder-base-muted focus:outline-none focus:ring-2"
                                 />
                                 <p v-if="form.errors.synopsis" class="mt-1 text-sm text-error">
                                     {{ form.errors.synopsis }}
@@ -875,7 +976,10 @@ function cancel(): void {
 
                             <!-- Tone -->
                             <div>
-                                <label for="tone" class="block text-sm font-medium text-base-secondary">
+                                <label
+                                    for="tone"
+                                    class="block text-sm font-medium text-base-secondary"
+                                >
                                     {{ t('gameTables.create.fields.tone') }}
                                 </label>
                                 <FormSelect
@@ -913,20 +1017,28 @@ function cancel(): void {
 
                             <!-- Character Creation -->
                             <div>
-                                <label for="character_creation" class="block text-sm font-medium text-base-secondary">
+                                <label
+                                    for="character_creation"
+                                    class="block text-sm font-medium text-base-secondary"
+                                >
                                     {{ t('gameTables.create.fields.characterCreation') }}
                                     <span class="text-error">*</span>
                                 </label>
                                 <FormSelect
                                     id="character_creation"
-                                    name="character_creation"
                                     v-model="form.character_creation"
+                                    name="character_creation"
                                     :error="form.errors.character_creation ?? ''"
                                     :options="objectToOptions(props.formData.character_creation)"
-                                    :placeholder="t('gameTables.create.fields.selectCharacterCreation')"
+                                    :placeholder="
+                                        t('gameTables.create.fields.selectCharacterCreation')
+                                    "
                                     class="mt-1"
                                 />
-                                <p v-if="form.errors.character_creation" class="mt-1 text-sm text-error">
+                                <p
+                                    v-if="form.errors.character_creation"
+                                    class="mt-1 text-sm text-error"
+                                >
                                     {{ form.errors.character_creation }}
                                 </p>
                             </div>
@@ -942,12 +1054,12 @@ function cancel(): void {
                                 <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                     <FormCheckboxWithTooltip
                                         v-for="tool in safetyToolsWithDescriptions"
+                                        :id="`safety_tool_${tool.id}`"
                                         :key="tool.id"
                                         v-model="form.safety_tools"
                                         :value="tool.id"
                                         :label="tool.name"
                                         :description="tool.description"
-                                        :id="`safety_tool_${tool.id}`"
                                     />
                                 </div>
                                 <p v-if="form.errors.safety_tools" class="mt-2 text-sm text-error">
@@ -981,14 +1093,19 @@ function cancel(): void {
                                 </p>
                                 <FormTagsInput
                                     id="custom_warnings_input"
-                                    name="custom_warnings"
                                     v-model="form.custom_warnings"
-                                    :placeholder="t('gameTables.create.fields.customWarningsPlaceholder')"
+                                    name="custom_warnings"
+                                    :placeholder="
+                                        t('gameTables.create.fields.customWarningsPlaceholder')
+                                    "
                                     :max-tags="10"
                                     :max-length="200"
                                     :error="form.errors.custom_warnings"
                                 />
-                                <p v-if="form.errors.custom_warnings" class="mt-1 text-sm text-error">
+                                <p
+                                    v-if="form.errors.custom_warnings"
+                                    class="mt-1 text-sm text-error"
+                                >
                                     {{ form.errors.custom_warnings }}
                                 </p>
                             </div>
@@ -1000,9 +1117,16 @@ function cancel(): void {
                         <div class="space-y-6 p-6">
                             <!-- Location (for in-person/hybrid) -->
                             <div v-if="showLocation">
-                                <label for="location" class="block text-sm font-medium text-base-secondary">
+                                <label
+                                    for="location"
+                                    class="block text-sm font-medium text-base-secondary"
+                                >
                                     {{ t('gameTables.create.fields.location') }}
-                                    <span v-if="isInPerson && !isLocationDisabled" class="text-error">*</span>
+                                    <span
+                                        v-if="isInPerson && !isLocationDisabled"
+                                        class="text-error"
+                                        >*</span
+                                    >
                                 </label>
                                 <input
                                     id="location"
@@ -1016,7 +1140,10 @@ function cancel(): void {
                                         'mt-1 block w-full rounded-lg border px-4 py-2.5',
                                         isLocationDisabled
                                             ? 'border-default bg-base-secondary/10 text-base-secondary cursor-not-allowed'
-                                            : ['bg-surface text-base-primary placeholder-base-muted focus:outline-none focus:ring-2', fieldStateClass(!!form.errors.location)]
+                                            : [
+                                                  'bg-surface text-base-primary placeholder-base-muted focus:outline-none focus:ring-2',
+                                                  fieldStateClass(!!form.errors.location),
+                                              ],
                                     ]"
                                 />
                                 <p v-if="isLocationDisabled" class="mt-1 text-xs text-base-muted">
@@ -1029,7 +1156,10 @@ function cancel(): void {
 
                             <!-- Online URL (for online/hybrid) -->
                             <div v-if="showOnlineUrl">
-                                <label for="online_url" class="block text-sm font-medium text-base-secondary">
+                                <label
+                                    for="online_url"
+                                    class="block text-sm font-medium text-base-secondary"
+                                >
                                     {{ t('gameTables.create.fields.onlineUrl') }}
                                     <span v-if="isOnline" class="text-error">*</span>
                                 </label>
@@ -1042,9 +1172,7 @@ function cancel(): void {
                                     :aria-invalid="!!form.errors.online_url"
                                     placeholder="https://..."
                                     :class="fieldStateClass(!!form.errors.online_url)"
-                                    class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
-                                           text-base-primary placeholder-base-muted
-                                           focus:outline-none focus:ring-2"
+                                    class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5 text-base-primary placeholder-base-muted focus:outline-none focus:ring-2"
                                 />
                                 <p class="mt-1 text-xs text-base-muted">
                                     {{ t('gameTables.create.fields.onlineUrlHelp') }}
@@ -1055,7 +1183,10 @@ function cancel(): void {
                             </div>
 
                             <!-- Message when no location fields shown -->
-                            <div v-if="!showLocation && !showOnlineUrl" class="rounded-lg bg-surface-subtle p-4 text-center">
+                            <div
+                                v-if="!showLocation && !showOnlineUrl"
+                                class="rounded-lg bg-surface-subtle p-4 text-center"
+                            >
                                 <p class="text-sm text-base-muted">
                                     {{ t('gameTables.create.fields.noLocationNeeded') }}
                                 </p>
@@ -1066,7 +1197,10 @@ function cancel(): void {
 
                             <!-- Notes -->
                             <div>
-                                <label for="notes" class="block text-sm font-medium text-base-secondary">
+                                <label
+                                    for="notes"
+                                    class="block text-sm font-medium text-base-secondary"
+                                >
                                     {{ t('gameTables.create.fields.notes') }}
                                 </label>
                                 <textarea
@@ -1076,9 +1210,7 @@ function cancel(): void {
                                     rows="4"
                                     :aria-invalid="!!form.errors.notes"
                                     :class="fieldStateClass(!!form.errors.notes)"
-                                    class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
-                                           text-base-primary placeholder-base-muted
-                                           focus:outline-none focus:ring-2"
+                                    class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5 text-base-primary placeholder-base-muted focus:outline-none focus:ring-2"
                                 />
                                 <p class="mt-1 text-xs text-base-muted">
                                     {{ t('gameTables.create.fields.notesHelp') }}
@@ -1094,11 +1226,7 @@ function cancel(): void {
 
             <!-- Action Buttons -->
             <div class="mt-6 flex items-center justify-end gap-4">
-                <BaseButton
-                    type="button"
-                    variant="secondary"
-                    @click="cancel"
-                >
+                <BaseButton type="button" variant="secondary" @click="cancel">
                     {{ t('gameTables.edit.cancel') }}
                 </BaseButton>
                 <BaseButton

@@ -48,20 +48,24 @@ function visitOptions(onFinish?: () => void): VisitOptions {
 
 // Header
 const accessLabel = computed(
-    () => props.roster_access_options[props.campaign.roster_access] ?? props.campaign.roster_access,
+    () => props.roster_access_options[props.campaign.roster_access] ?? props.campaign.roster_access
 );
 
 const subtitle = computed(() => {
     const count = props.campaign.roster_count;
 
     return props.campaign.max_players !== null
-        ? t('campaigns.roster.subtitle', { count, max: props.campaign.max_players, access: accessLabel.value })
+        ? t('campaigns.roster.subtitle', {
+              count,
+              max: props.campaign.max_players,
+              access: accessLabel.value,
+          })
         : t('campaigns.roster.subtitleNoMax', { count, access: accessLabel.value }, count);
 });
 
 // Settings
 const accessOptions = computed(
-    () => Object.entries(props.roster_access_options) as Array<[RosterAccessValue, string]>,
+    () => Object.entries(props.roster_access_options) as Array<[RosterAccessValue, string]>
 );
 
 const settingsForm = useForm<{
@@ -101,7 +105,7 @@ function acceptRequest(request: RosterRequest): void {
 // The reject dialog asks for an optional reason, so it is ConfirmDialog's markup with a textarea
 const rejecting = ref<RosterRequest | null>(null);
 const rejectReason = ref('');
-// eslint-disable-next-line no-undef
+
 const rejectDialog = ref<HTMLDialogElement | null>(null);
 const rejectTitleId = useId();
 const rejectReasonId = useId();
@@ -142,7 +146,7 @@ function confirmReject(): void {
     router.post(
         `${baseUrl.value}/solicitudes/${request.id}/rechazar`,
         { reason: reason === '' ? null : reason },
-        visitOptions(),
+        visitOptions()
     );
 }
 
@@ -196,7 +200,7 @@ function confirmCancel(): void {
         `${baseUrl.value}/invitaciones/${invitation.id}`,
         visitOptions(() => {
             cancelling.value = null;
-        }),
+        })
     );
 }
 
@@ -204,7 +208,7 @@ function confirmCancel(): void {
 // publish a whole season): 4 columns from sm up, 2 below, always starting at the nearest session
 const smQuery = typeof window !== 'undefined' ? window.matchMedia('(min-width: 640px)') : null;
 const isSmUp = ref(smQuery?.matches ?? true);
-// eslint-disable-next-line no-undef
+
 function onBreakpointChange(event: MediaQueryListEvent): void {
     isSmUp.value = event.matches;
 }
@@ -220,13 +224,21 @@ watch([pageSize, () => props.sessions.length], () => {
     windowStart.value = Math.min(windowStart.value, lastStart);
 });
 
-const visibleSessions = computed(() => props.sessions.slice(windowStart.value, windowStart.value + pageSize.value));
-const windowEnd = computed(() => Math.min(windowStart.value + pageSize.value, props.sessions.length));
+const visibleSessions = computed(() =>
+    props.sessions.slice(windowStart.value, windowStart.value + pageSize.value)
+);
+const windowEnd = computed(() =>
+    Math.min(windowStart.value + pageSize.value, props.sessions.length)
+);
 const hasPrevious = computed(() => windowStart.value > 0);
 const hasNext = computed(() => windowEnd.value < props.sessions.length);
 
 const rangeLabel = computed(() =>
-    t('campaigns.roster.attendance.range', { from: windowStart.value + 1, to: windowEnd.value, total: props.sessions.length })
+    t('campaigns.roster.attendance.range', {
+        from: windowStart.value + 1,
+        to: windowEnd.value,
+        total: props.sessions.length,
+    })
 );
 
 // «Anteriores: sesiones 1–4 de 20»: the visible text first, then the range it leads to
@@ -255,7 +267,10 @@ function showNext(): void {
 
 // «sáb 25/10» in the venue's time zone
 function weekday(session: RosterSession): string {
-    return new Date(session.starts_at).toLocaleDateString(locale.value, { timeZone: VENUE_TIMEZONE, weekday: 'short' });
+    return new Date(session.starts_at).toLocaleDateString(locale.value, {
+        timeZone: VENUE_TIMEZONE,
+        weekday: 'short',
+    });
 }
 
 function sessionLabel(session: RosterSession): string {
@@ -290,10 +305,14 @@ function cellAction(cell: RosterPlayerSession | null, session: RosterSession): C
     switch (cell.state) {
         case 'going':
         case 'waiting':
-            return cell.can_toggle ? { kind: 'markAbsence' } : { kind: 'blocked', reason: 'notFromRoster' };
+            return cell.can_toggle
+                ? { kind: 'markAbsence' }
+                : { kind: 'blocked', reason: 'notFromRoster' };
         case 'absent':
             if (!cell.can_toggle) return { kind: 'blocked', reason: 'closed' };
-            return session.has_room ? { kind: 'clearAbsence' } : { kind: 'blocked', reason: 'full' };
+            return session.has_room
+                ? { kind: 'clearAbsence' }
+                : { kind: 'blocked', reason: 'full' };
         default:
             return null;
     }
@@ -309,7 +328,9 @@ function isActionable(cell: RosterPlayerSession | null, session: RosterSession):
 function blockedShort(cell: RosterPlayerSession | null, session: RosterSession): string | null {
     const action = cellAction(cell, session);
 
-    return action?.kind === 'blocked' ? t(`campaigns.roster.attendance.blockedShort.${action.reason}`) : null;
+    return action?.kind === 'blocked'
+        ? t(`campaigns.roster.attendance.blockedShort.${action.reason}`)
+        : null;
 }
 
 const stateKeys: Record<RosterSessionState, string> = {
@@ -340,14 +361,19 @@ function stateLabel(state: RosterSessionState): string {
 
 // «✓ Va — Jane Doe, sáb 09/11/2026 18:00. Marcar ausencia»: starts with the visible text (so voice
 // control finds the cell by what it shows), then the player, the full date and the action
-function cellAccessibleName(player: RosterPlayer, session: RosterSession, cell: RosterPlayerSession | null): string {
+function cellAccessibleName(
+    player: RosterPlayer,
+    session: RosterSession,
+    cell: RosterPlayerSession | null
+): string {
     const state: RosterSessionState = cell?.state ?? 'none';
     const action = cellAction(cell, session);
-    const after = action === null
-        ? ''
-        : action.kind === 'blocked'
-            ? t(`campaigns.roster.attendance.blocked.${action.reason}`)
-            : t(`campaigns.roster.attendance.actions.${action.kind}`);
+    const after =
+        action === null
+            ? ''
+            : action.kind === 'blocked'
+              ? t(`campaigns.roster.attendance.blocked.${action.reason}`)
+              : t(`campaigns.roster.attendance.actions.${action.kind}`);
 
     return t('campaigns.roster.attendance.accessibleName', {
         label: `${stateIcons[state]} ${stateLabel(state)}`,
@@ -357,12 +383,17 @@ function cellAccessibleName(player: RosterPlayer, session: RosterSession, cell: 
     }).trim();
 }
 
-const cellKey = (player: RosterPlayer, session: RosterSession): string => `${player.user_id}:${session.game_table_id}`;
+const cellKey = (player: RosterPlayer, session: RosterSession): string =>
+    `${player.user_id}:${session.game_table_id}`;
 
 // The cell whose change is on its way: it shows a spinner until the answer
 const busyCell = ref<string | null>(null);
 
-const pendingChange = ref<{ player: RosterPlayer; session: RosterSession; kind: 'markAbsence' | 'clearAbsence' } | null>(null);
+const pendingChange = ref<{
+    player: RosterPlayer;
+    session: RosterSession;
+    kind: 'markAbsence' | 'clearAbsence';
+} | null>(null);
 const showChangeDialog = ref(false);
 
 function askChange(player: RosterPlayer, session: RosterSession): void {
@@ -403,7 +434,7 @@ function confirmChange(): void {
         },
         visitOptions(() => {
             busyCell.value = null;
-        }),
+        })
     );
 }
 
@@ -426,22 +457,29 @@ function confirmRemove(): void {
         `${baseUrl.value}/jugadores/${player.user_id}`,
         visitOptions(() => {
             removing.value = null;
-        }),
+        })
     );
 }
 
 // What the server does on removal (CampaignRosterService::removeMember): out of the roster, out of
 // the sessions that have not started, and an email only while the roster_removed notice is on
 const removeMessage = computed(() =>
-    t(props.removal_notice ? 'campaigns.roster.players.removeMessage' : 'campaigns.roster.players.removeMessageNoEmail', {
-        name: removing.value?.name ?? '',
-    })
+    t(
+        props.removal_notice
+            ? 'campaigns.roster.players.removeMessage'
+            : 'campaigns.roster.players.removeMessageNoEmail',
+        {
+            name: removing.value?.name ?? '',
+        }
+    )
 );
 
 // A danger action that does not shout: BaseButton's size sm, outlined in the error tone
-const dangerOutlineClass = 'inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center gap-2 rounded-md border border-error/60 bg-transparent px-4 py-2 text-sm font-medium text-error transition-colors hover:bg-error/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-error focus-visible:ring-offset-2 focus-visible:ring-offset-surface aria-disabled:cursor-not-allowed aria-disabled:opacity-50';
+const dangerOutlineClass =
+    'inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center gap-2 rounded-md border border-error/60 bg-transparent px-4 py-2 text-sm font-medium text-error transition-colors hover:bg-error/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-error focus-visible:ring-offset-2 focus-visible:ring-offset-surface aria-disabled:cursor-not-allowed aria-disabled:opacity-50';
 
-const inputClass = 'mt-1 block w-full rounded-lg border border-default bg-surface px-4 py-2.5 text-base-primary placeholder-base-muted hover:border-strong focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500';
+const inputClass =
+    'mt-1 block w-full rounded-lg border border-default bg-surface px-4 py-2.5 text-base-primary placeholder-base-muted hover:border-strong focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500';
 const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
 </script>
 
@@ -498,14 +536,20 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                         :label="t('campaigns.roster.settings.acceptsNewPlayers')"
                         name="accepts_new_players"
                     />
-                    <p v-if="settingsForm.errors.accepts_new_players" class="mt-1 text-sm text-error">
+                    <p
+                        v-if="settingsForm.errors.accepts_new_players"
+                        class="mt-1 text-sm text-error"
+                    >
                         {{ settingsForm.errors.accepts_new_players }}
                     </p>
                 </div>
 
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
-                        <label :for="settingsIds.access" class="block text-sm font-medium text-base-secondary">
+                        <label
+                            :for="settingsIds.access"
+                            class="block text-sm font-medium text-base-secondary"
+                        >
                             {{ t('campaigns.roster.settings.rosterAccess') }}
                         </label>
                         <select
@@ -514,7 +558,11 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                             name="roster_access"
                             :class="inputClass"
                         >
-                            <option v-for="[value, label] in accessOptions" :key="value" :value="value">
+                            <option
+                                v-for="[value, label] in accessOptions"
+                                :key="value"
+                                :value="value"
+                            >
                                 {{ label }}
                             </option>
                         </select>
@@ -524,7 +572,10 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                     </div>
 
                     <div>
-                        <label :for="settingsIds.max" class="block text-sm font-medium text-base-secondary">
+                        <label
+                            :for="settingsIds.max"
+                            class="block text-sm font-medium text-base-secondary"
+                        >
                             {{ t('campaigns.roster.settings.maxPlayers') }}
                         </label>
                         <input
@@ -537,21 +588,38 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                             :max="max_players_limit"
                             step="1"
                             :aria-invalid="!!settingsForm.errors.max_players"
-                            :aria-describedby="settingsForm.errors.max_players ? `${settingsIds.maxHelp} ${settingsIds.maxError}` : settingsIds.maxHelp"
+                            :aria-describedby="
+                                settingsForm.errors.max_players
+                                    ? `${settingsIds.maxHelp} ${settingsIds.maxError}`
+                                    : settingsIds.maxHelp
+                            "
                             :class="inputClass"
                             @input="onMaxPlayersInput"
                         />
                         <p :id="settingsIds.maxHelp" class="mt-1 text-sm text-base-muted">
-                            {{ t('campaigns.roster.settings.maxPlayersHelp', { count: campaign.roster_count }) }}
+                            {{
+                                t('campaigns.roster.settings.maxPlayersHelp', {
+                                    count: campaign.roster_count,
+                                })
+                            }}
                         </p>
-                        <p v-if="settingsForm.errors.max_players" :id="settingsIds.maxError" class="mt-1 text-sm text-error">
+                        <p
+                            v-if="settingsForm.errors.max_players"
+                            :id="settingsIds.maxError"
+                            class="mt-1 text-sm text-error"
+                        >
                             {{ settingsForm.errors.max_players }}
                         </p>
                     </div>
                 </div>
 
                 <div>
-                    <BaseButton type="submit" variant="primary" size="sm" :loading="settingsForm.processing">
+                    <BaseButton
+                        type="submit"
+                        variant="primary"
+                        size="sm"
+                        :loading="settingsForm.processing"
+                    >
                         {{ t('campaigns.roster.settings.save') }}
                     </BaseButton>
                 </div>
@@ -581,7 +649,10 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                                 <span class="text-base-muted"> · {{ request.created_at }}</span>
                             </template>
                         </p>
-                        <p v-if="request.message" class="mt-1 whitespace-pre-line break-words text-sm text-base-secondary">
+                        <p
+                            v-if="request.message"
+                            class="mt-1 whitespace-pre-line break-words text-sm text-base-secondary"
+                        >
                             «{{ request.message }}»
                         </p>
                         <p v-else class="mt-1 text-sm italic text-base-muted">
@@ -621,7 +692,9 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
             <form class="mt-4 flex flex-col gap-3" @submit.prevent="invitePlayer">
                 <div class="flex flex-col gap-2 sm:flex-row sm:items-start">
                     <div class="min-w-0 flex-1">
-                        <label :for="inviteEmailId" class="sr-only">{{ t('campaigns.roster.invite.email') }}</label>
+                        <label :for="inviteEmailId" class="sr-only">{{
+                            t('campaigns.roster.invite.email')
+                        }}</label>
                         <input
                             :id="inviteEmailId"
                             v-model="inviteForm.email"
@@ -635,11 +708,20 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                             :aria-describedby="inviteForm.errors.email ? inviteErrorId : undefined"
                             :class="[inputClass, 'mt-0']"
                         />
-                        <p v-if="inviteForm.errors.email" :id="inviteErrorId" class="mt-1 text-sm text-error">
+                        <p
+                            v-if="inviteForm.errors.email"
+                            :id="inviteErrorId"
+                            class="mt-1 text-sm text-error"
+                        >
                             {{ inviteForm.errors.email }}
                         </p>
                     </div>
-                    <BaseButton type="submit" variant="primary" class="w-full sm:w-auto" :loading="inviteForm.processing">
+                    <BaseButton
+                        type="submit"
+                        variant="primary"
+                        class="w-full sm:w-auto"
+                        :loading="inviteForm.processing"
+                    >
                         {{ t('campaigns.roster.invite.submit') }}
                     </BaseButton>
                 </div>
@@ -659,12 +741,20 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
         </section>
 
         <!-- Pending invitations: listed even when the roster is full or the campaign has finished -->
-        <section v-if="invitations.length > 0" :class="sectionClass" aria-labelledby="roster-invitations-title">
+        <section
+            v-if="invitations.length > 0"
+            :class="sectionClass"
+            aria-labelledby="roster-invitations-title"
+        >
             <div>
                 <h2 id="roster-invitations-title" class="text-lg font-semibold text-base-primary">
                     {{ t('campaigns.roster.invitations.title', { count: invitations.length }) }}
                 </h2>
-                <p v-if="more_invitations_than_seats" class="mt-2 text-sm text-warning" role="status">
+                <p
+                    v-if="more_invitations_than_seats"
+                    class="mt-2 text-sm text-warning"
+                    role="status"
+                >
                     {{ t('campaigns.roster.invitations.tooManyPending') }}
                 </p>
                 <ul class="mt-3 divide-y divide-default">
@@ -674,13 +764,27 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                         class="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
                     >
                         <div class="min-w-0">
-                            <p class="break-all font-medium text-base-primary">{{ invitation.email }}</p>
+                            <p class="break-all font-medium text-base-primary">
+                                {{ invitation.email }}
+                            </p>
                             <p class="text-sm text-base-secondary">
-                                {{ t('campaigns.roster.invitations.invitedBy', { name: invitation.inviter_name }) }}
+                                {{
+                                    t('campaigns.roster.invitations.invitedBy', {
+                                        name: invitation.inviter_name,
+                                    })
+                                }}
                                 ·
-                                {{ t('campaigns.roster.invitations.expires', { date: formatExpiry(invitation) }) }}
+                                {{
+                                    t('campaigns.roster.invitations.expires', {
+                                        date: formatExpiry(invitation),
+                                    })
+                                }}
                                 ·
-                                {{ t('campaigns.roster.invitations.sends', { count: invitation.send_count }) }}
+                                {{
+                                    t('campaigns.roster.invitations.sends', {
+                                        count: invitation.send_count,
+                                    })
+                                }}
                             </p>
                         </div>
                         <div class="flex flex-col gap-2 sm:flex-row">
@@ -714,7 +818,10 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
             <h2 id="roster-players-title" class="text-lg font-semibold text-base-primary">
                 {{ t('campaigns.roster.players.title', { count: players.length }) }}
             </h2>
-            <p v-if="players.length > 0 && sessions.length > 0" class="mt-1 text-sm text-base-secondary">
+            <p
+                v-if="players.length > 0 && sessions.length > 0"
+                class="mt-1 text-sm text-base-secondary"
+            >
                 {{ t('campaigns.roster.footnote') }}
             </p>
 
@@ -760,7 +867,11 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                 <!-- Scrolls inside the card on narrow screens; the player column stays -->
                 <div class="-mx-4 mt-4 overflow-x-auto sm:mx-0">
                     <table class="w-full border-separate border-spacing-0 text-left text-sm">
-                        <caption class="sr-only">{{ t('campaigns.roster.attendance.caption') }}</caption>
+                        <caption class="sr-only">
+                            {{
+                                t('campaigns.roster.attendance.caption')
+                            }}
+                        </caption>
                         <thead>
                             <tr>
                                 <th
@@ -775,13 +886,27 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                                     scope="col"
                                     class="border-b border-default px-1 py-2 text-center align-bottom font-medium text-base-primary sm:min-w-[8rem]"
                                 >
-                                    <span class="block whitespace-nowrap">{{ sessionLabel(session) }}</span>
-                                    <span class="block whitespace-nowrap text-xs font-normal text-base-muted">
-                                        {{ t('campaigns.roster.attendance.seats', { taken: session.seats_taken, max: session.max_players }) }}
+                                    <span class="block whitespace-nowrap">{{
+                                        sessionLabel(session)
+                                    }}</span>
+                                    <span
+                                        class="block whitespace-nowrap text-xs font-normal text-base-muted"
+                                    >
+                                        {{
+                                            t('campaigns.roster.attendance.seats', {
+                                                taken: session.seats_taken,
+                                                max: session.max_players,
+                                            })
+                                        }}
                                     </span>
                                 </th>
-                                <th scope="col" class="border-b border-default py-2 pl-2 pr-4 max-sm:hidden sm:pr-0">
-                                    <span class="sr-only">{{ t('campaigns.roster.attendance.actionsColumn') }}</span>
+                                <th
+                                    scope="col"
+                                    class="border-b border-default py-2 pl-2 pr-4 max-sm:hidden sm:pr-0"
+                                >
+                                    <span class="sr-only">{{
+                                        t('campaigns.roster.attendance.actionsColumn')
+                                    }}</span>
                                 </th>
                             </tr>
                         </thead>
@@ -791,9 +916,18 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                                     scope="row"
                                     class="sticky left-0 z-10 w-full border-b border-default bg-surface py-2 pl-4 pr-3 align-middle font-medium text-base-primary sm:pl-0"
                                 >
-                                    <span class="block max-w-[10rem] break-words sm:max-w-none">{{ player.name }}</span>
-                                    <span v-if="player.joined_at" class="block text-xs font-normal text-base-muted">
-                                        {{ t('campaigns.roster.players.since', { date: player.joined_at }) }}
+                                    <span class="block max-w-[10rem] break-words sm:max-w-none">{{
+                                        player.name
+                                    }}</span>
+                                    <span
+                                        v-if="player.joined_at"
+                                        class="block text-xs font-normal text-base-muted"
+                                    >
+                                        {{
+                                            t('campaigns.roster.players.since', {
+                                                date: player.joined_at,
+                                            })
+                                        }}
                                     </span>
                                     <!-- On phones «Quitar» sits under the name, so two sessions fit without scrolling.
                                          The wrapper hides it: the core's display utilities outrank the module's variants -->
@@ -801,7 +935,11 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                                         <button
                                             type="button"
                                             :aria-disabled="processing ? 'true' : undefined"
-                                            :aria-label="t('campaigns.roster.players.removeNamed', { name: player.name })"
+                                            :aria-label="
+                                                t('campaigns.roster.players.removeNamed', {
+                                                    name: player.name,
+                                                })
+                                            "
                                             :class="dangerOutlineClass"
                                             @click="askRemove(player)"
                                         >
@@ -818,8 +956,18 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                                         v-if="isActionable(cellOf(player, session), session)"
                                         type="button"
                                         aria-haspopup="dialog"
-                                        :aria-label="cellAccessibleName(player, session, cellOf(player, session))"
-                                        :aria-busy="busyCell === cellKey(player, session) ? 'true' : undefined"
+                                        :aria-label="
+                                            cellAccessibleName(
+                                                player,
+                                                session,
+                                                cellOf(player, session)
+                                            )
+                                        "
+                                        :aria-busy="
+                                            busyCell === cellKey(player, session)
+                                                ? 'true'
+                                                : undefined
+                                        "
                                         :aria-disabled="processing ? 'true' : undefined"
                                         :class="[
                                             'inline-flex min-h-[44px] w-full min-w-[4.5rem] cursor-pointer items-center justify-center gap-1 rounded-md border px-2 py-1 text-xs font-medium transition-colors',
@@ -829,8 +977,13 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                                         ]"
                                         @click="askChange(player, session)"
                                     >
-                                        <LoadingSpinner v-if="busyCell === cellKey(player, session)" size="sm" />
-                                        <span v-else aria-hidden="true">{{ stateIcons[stateOf(player, session)] }}</span>
+                                        <LoadingSpinner
+                                            v-if="busyCell === cellKey(player, session)"
+                                            size="sm"
+                                        />
+                                        <span v-else aria-hidden="true">{{
+                                            stateIcons[stateOf(player, session)]
+                                        }}</span>
                                         {{ stateLabel(stateOf(player, session)) }}
                                     </button>
                                     <span
@@ -841,7 +994,8 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                                         ]"
                                     >
                                         <span aria-hidden="true">
-                                            {{ stateIcons[stateOf(player, session)] }} {{ stateLabel(stateOf(player, session)) }}
+                                            {{ stateIcons[stateOf(player, session)] }}
+                                            {{ stateLabel(stateOf(player, session)) }}
                                         </span>
                                         <span
                                             v-if="blockedShort(cellOf(player, session), session)"
@@ -850,14 +1004,26 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                                         >
                                             {{ blockedShort(cellOf(player, session), session) }}
                                         </span>
-                                        <span class="sr-only">{{ cellAccessibleName(player, session, cellOf(player, session)) }}</span>
+                                        <span class="sr-only">{{
+                                            cellAccessibleName(
+                                                player,
+                                                session,
+                                                cellOf(player, session)
+                                            )
+                                        }}</span>
                                     </span>
                                 </td>
-                                <td class="border-b border-default py-2 pl-2 pr-4 text-right align-middle max-sm:hidden sm:pr-0">
+                                <td
+                                    class="border-b border-default py-2 pl-2 pr-4 text-right align-middle max-sm:hidden sm:pr-0"
+                                >
                                     <button
                                         type="button"
                                         :aria-disabled="processing ? 'true' : undefined"
-                                        :aria-label="t('campaigns.roster.players.removeNamed', { name: player.name })"
+                                        :aria-label="
+                                            t('campaigns.roster.players.removeNamed', {
+                                                name: player.name,
+                                            })
+                                        "
                                         :class="dangerOutlineClass"
                                         @click="askRemove(player)"
                                     >
@@ -892,7 +1058,10 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                 <p v-if="rejecting" class="mt-2 text-base-secondary">
                     {{ rejecting.user_name }}
                 </p>
-                <label :for="rejectReasonId" class="mt-4 block text-sm font-medium text-base-secondary">
+                <label
+                    :for="rejectReasonId"
+                    class="mt-4 block text-sm font-medium text-base-secondary"
+                >
                     {{ t('campaigns.roster.requests.rejectReason') }}
                 </label>
                 <textarea
@@ -930,7 +1099,9 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
     <ConfirmDialog
         v-model="showCancelDialog"
         :title="t('campaigns.roster.invitations.cancelTitle')"
-        :message="t('campaigns.roster.invitations.cancelMessage', { email: cancelling?.email ?? '' })"
+        :message="
+            t('campaigns.roster.invitations.cancelMessage', { email: cancelling?.email ?? '' })
+        "
         :confirm-label="t('campaigns.roster.invitations.cancel')"
         :cancel-label="t('common.cancel')"
         confirm-variant="danger"

@@ -17,6 +17,20 @@ final class RegistrationButtonSourceTest extends TestCase
         return (string) file_get_contents(dirname(__DIR__, 4).'/resources/js/'.$file);
     }
 
+    /**
+     * Compares without whitespace or trailing commas: Prettier decides where the code breaks
+     * its lines, and adds a trailing comma when it breaks a list.
+     */
+    private function assertCodeContains(string $needle, string $source, string $message = ''): void
+    {
+        $this->assertStringContainsString($this->compact($needle), $this->compact($source), $message);
+    }
+
+    private function compact(string $code): string
+    {
+        return (string) preg_replace('/,(?=[)\]}]|$)/', '', (string) preg_replace('/\s+/', '', $code));
+    }
+
     /** The body of `const <name> = computed...;` up to the next top-level declaration. */
     private function computedBody(string $source, string $name): string
     {
@@ -30,15 +44,15 @@ final class RegistrationButtonSourceTest extends TestCase
     {
         $body = $this->computedBody($this->source('components/RegistrationButton.vue'), 'canCancel');
 
-        $this->assertStringContainsString('hasActiveRegistration.value', $body);
-        $this->assertStringContainsString('eligibility.value?.canCancel === true', $body);
+        $this->assertCodeContains('hasActiveRegistration.value', $body);
+        $this->assertCodeContains('eligibility.value?.canCancel === true', $body);
     }
 
     public function test_closed_reasons_include_the_start_the_end_the_invitation_and_the_closed_campaign(): void
     {
         $source = $this->source('components/RegistrationButton.vue');
 
-        $this->assertStringContainsString(
+        $this->assertCodeContains(
             "['registration_closed', 'table_started', 'table_ended', 'invitation_only', 'campaign_roster_only']",
             $source
         );
@@ -49,24 +63,24 @@ final class RegistrationButtonSourceTest extends TestCase
         $source = $this->source('components/RegistrationButton.vue');
 
         $box = $this->computedBody($source, 'rosterSession');
-        $this->assertStringContainsString('if (!isAuthenticated.value) return null;', $box);
-        $this->assertStringContainsString('if (props.campaignSession?.is_roster_member !== true) return null;', $box);
+        $this->assertCodeContains('if (!isAuthenticated.value) return null;', $box);
+        $this->assertCodeContains('if (props.campaignSession?.is_roster_member !== true) return null;', $box);
         // A member's active spectator row is not a roster seat: it keeps the usual flow
-        $this->assertStringContainsString("return !hasActiveRegistration.value || registration.value?.role !== 'spectator' ? props.campaignSession : null;", $box);
+        $this->assertCodeContains("return !hasActiveRegistration.value || registration.value?.role !== 'spectator' ? props.campaignSession : null;", $box);
 
-        $this->assertStringContainsString('campaignSession?: CampaignSessionInfo | null;', $source);
-        $this->assertStringContainsString("<CampaignSessionRosterBox\n            v-if=\"rosterSession\"", $source);
-        $this->assertStringContainsString('<template v-else>', $source);
+        $this->assertCodeContains('campaignSession?: CampaignSessionInfo | null;', $source);
+        $this->assertCodeContains("<CampaignSessionRosterBox\n            v-if=\"rosterSession\"", $source);
+        $this->assertCodeContains('<template v-else>', $source);
     }
 
     public function test_the_campaign_box_cancels_and_rejoins_through_the_registration_routes(): void
     {
         $source = $this->source('components/CampaignSessionRosterBox.vue');
 
-        $this->assertStringContainsString('router.delete(`/mesas/${props.table.slug}/inscripcion`', $source);
-        $this->assertStringContainsString("router.post(\n        `/mesas/\${props.table.slug}/inscripcion`,\n        { role: 'player' },", $source);
-        $this->assertStringContainsString('<ConfirmDialog', $source);
-        $this->assertStringContainsString(':disabled="!campaignSession.can_rejoin"', $source);
+        $this->assertCodeContains('router.delete(`/mesas/${props.table.slug}/inscripcion`', $source);
+        $this->assertCodeContains("router.post(\n        `/mesas/\${props.table.slug}/inscripcion`,\n        { role: 'player' },", $source);
+        $this->assertCodeContains('<ConfirmDialog', $source);
+        $this->assertCodeContains(':disabled="!campaignSession.can_rejoin"', $source);
     }
 
     public function test_the_campaign_session_copy_is_pinned_in_both_locales(): void
@@ -96,15 +110,15 @@ final class RegistrationButtonSourceTest extends TestCase
             "rosterOnly: 'Solo para la plantilla de la campaña',",
             "sessionOnly: 'Solo puedes crear sesiones de las campañas que diriges.',",
         ] as $line) {
-            $this->assertStringContainsString($line, $es);
+            $this->assertCodeContains($line, $es);
         }
-        $this->assertStringContainsString(
+        $this->assertCodeContains(
             "notice: 'Al publicarse, la plantilla ({count} jugador) quedará inscrita y recibirá un correo. Se han rellenado el sistema de juego y el máximo de jugadores ({max}). | Al publicarse, la plantilla ({count} jugadores) quedará inscrita y recibirá un correo. Se han rellenado el sistema de juego y el máximo de jugadores ({max}).',",
             $es
         );
 
         foreach (['campaignSession: {', 'cannotGoConfirm:', 'rejoin:', 'requestToJoin:', 'newTab:', 'emptyAlternative:', 'waitingNoPosition:', 'rosterOnly:', 'sessionOnly:', 'notice:'] as $key) {
-            $this->assertStringContainsString($key, $en);
+            $this->assertCodeContains($key, $en);
         }
     }
 
@@ -116,16 +130,16 @@ final class RegistrationButtonSourceTest extends TestCase
     {
         $source = $this->source('components/CampaignSessionRosterBox.vue');
 
-        $this->assertStringContainsString('() => props.campaignSession.can_rejoin || props.campaignSession.rejoin_refusal !== null', $source);
-        $this->assertStringContainsString('<p v-if="rejoinOffered" class="mt-2 text-base-secondary">'."\n                {{ t('gameTables.campaignSession.absentHint') }}", $source);
-        $this->assertStringContainsString('<div v-if="rejoinOffered" class="mt-3">', $source);
+        $this->assertCodeContains('() => props.campaignSession.can_rejoin || props.campaignSession.rejoin_refusal !== null', $source);
+        $this->assertCodeContains('<p v-if="rejoinOffered" class="mt-2 text-base-secondary">'."\n                {{ t('gameTables.campaignSession.absentHint') }}", $source);
+        $this->assertCodeContains('<div v-if="rejoinOffered" class="mt-3">', $source);
     }
 
     public function test_the_waiting_line_has_a_variant_without_a_position(): void
     {
         $source = $this->source('components/CampaignSessionRosterBox.vue');
 
-        $this->assertStringContainsString("waitingPosition !== null\n                        ? t('gameTables.campaignSession.waiting', { position: waitingPosition })\n                        : t('gameTables.campaignSession.waitingNoPosition')", $source);
+        $this->assertCodeContains("waitingPosition !== null\n                        ? t('gameTables.campaignSession.waiting', { position: waitingPosition })\n                        : t('gameTables.campaignSession.waitingNoPosition')", $source);
         $this->assertStringNotContainsString("position: waitingPosition ?? ''", $source);
     }
 
@@ -134,9 +148,9 @@ final class RegistrationButtonSourceTest extends TestCase
         foreach (['pages/GameTables/Create.vue', 'pages/GameTables/Edit.vue'] as $page) {
             $source = $this->source($page);
 
-            $this->assertStringContainsString('sessionOnly?: boolean;', $source, $page);
-            $this->assertStringContainsString(":options=\"objectToOptions(props.formData.table_types)\"\n                                    :disabled=\"props.sessionOnly\"", $source, $page);
-            $this->assertStringContainsString("<p v-if=\"props.sessionOnly\" class=\"mt-1 text-xs text-base-muted\">\n                                    {{ t('gameTables.create.campaign.sessionOnly') }}", $source, $page);
+            $this->assertCodeContains('sessionOnly?: boolean;', $source, $page);
+            $this->assertCodeContains(":options=\"objectToOptions(props.formData.table_types)\"\n                                    :disabled=\"props.sessionOnly\"", $source, $page);
+            $this->assertCodeContains("<p v-if=\"props.sessionOnly\" class=\"mt-1 text-xs text-base-muted\">\n                                    {{ t('gameTables.create.campaign.sessionOnly') }}", $source, $page);
         }
     }
 
@@ -145,21 +159,21 @@ final class RegistrationButtonSourceTest extends TestCase
         $source = $this->source('components/SessionCampaignField.vue');
 
         // The new-tab warning is part of the link's text, hence of its accessible name
-        $this->assertStringContainsString(">{{ t('gameTables.create.campaign.createLink') }} {{ t('gameTables.create.campaign.newTab') }}</a>", $source);
+        $this->assertCodeContains(">{{ t('gameTables.create.campaign.createLink') }} {{ t('gameTables.create.campaign.newTab') }}</a>", $source);
         // The focusable button of the select is the one described by the error; a button does not
         // take `aria-required` (the label's marker says the field is required)
         $this->assertStringNotContainsString("setAttribute('aria-required'", $source);
         $this->assertStringNotContainsString(':aria-required', $source);
-        $this->assertStringContainsString("button.setAttribute('aria-describedby', errorId);", $source);
-        $this->assertStringContainsString('<p v-if="error" :id="errorId" class="mt-1 text-sm text-error">', $source);
+        $this->assertCodeContains("button.setAttribute('aria-describedby', errorId);", $source);
+        $this->assertCodeContains('<p v-if="error" :id="errorId" class="mt-1 text-sm text-error">', $source);
     }
 
     public function test_a_closed_campaign_session_shows_the_roster_only_type(): void
     {
         $source = $this->source('pages/GameTables/Show.vue');
 
-        $this->assertStringContainsString("props.campaignSession?.closed === true\n        ? t('gameTables.campaignSession.rosterOnly')\n        : props.table.registrationTypeLabel", $source);
-        $this->assertStringContainsString('{{ registrationTypeText }}', $source);
+        $this->assertCodeContains("props.campaignSession?.closed === true\n        ? t('gameTables.campaignSession.rosterOnly')\n        : props.table.registrationTypeLabel", $source);
+        $this->assertCodeContains('{{ registrationTypeText }}', $source);
         $this->assertStringNotContainsString('{{ table.registrationTypeLabel }}', $source);
     }
 
@@ -169,9 +183,9 @@ final class RegistrationButtonSourceTest extends TestCase
             $source = $this->source($page);
 
             $this->assertStringNotContainsString('context.campaign', $source, $page);
-            $this->assertStringContainsString("type ContextType = 'independent' | 'event';", $source, $page);
-            $this->assertStringContainsString('<SessionCampaignField', $source, $page);
-            $this->assertStringContainsString("if (type !== 'campaign_session') form.campaign_id = null;", $source, $page);
+            $this->assertCodeContains("type ContextType = 'independent' | 'event';", $source, $page);
+            $this->assertCodeContains('<SessionCampaignField', $source, $page);
+            $this->assertCodeContains("if (type !== 'campaign_session') form.campaign_id = null;", $source, $page);
         }
     }
 
@@ -180,15 +194,15 @@ final class RegistrationButtonSourceTest extends TestCase
         $source = $this->source('components/RegistrationButton.vue');
 
         $disabled = $this->computedBody($source, 'buttonDisabled');
-        $this->assertStringContainsString('if (hasActiveRegistration.value) return !canCancel.value;', $disabled);
+        $this->assertCodeContains('if (hasActiveRegistration.value) return !canCancel.value;', $disabled);
         $this->assertBefore($disabled, 'hasActiveRegistration.value', 'isRegistrationClosed.value');
 
         $gate = $this->computedBody($source, 'verificationBlockedAction');
-        $this->assertStringContainsString("if (hasActiveRegistration.value) return canCancel.value ? 'cancelRegistration' : null;", $gate);
+        $this->assertCodeContains("if (hasActiveRegistration.value) return canCancel.value ? 'cancelRegistration' : null;", $gate);
         $this->assertBefore($gate, 'hasActiveRegistration.value', 'isRegistrationClosed.value');
 
         $text = $this->computedBody($source, 'buttonText');
-        $this->assertStringContainsString("t('gameTables.registration.withdrawalClosed')", $text);
+        $this->assertCodeContains("t('gameTables.registration.withdrawalClosed')", $text);
         $this->assertBefore($text, 'hasActiveRegistration.value', 'isRegistrationClosed.value');
     }
 
@@ -198,7 +212,7 @@ final class RegistrationButtonSourceTest extends TestCase
         $found = preg_match('/^function handleClick\(\).*?^\}/ms', $source, $match);
         $this->assertSame(1, $found);
 
-        $this->assertStringContainsString(
+        $this->assertCodeContains(
             "if (hasActiveRegistration.value) {\n        if (canCancel.value) showCancelConfirm.value = true;\n        return;\n    }",
             $match[0]
         );
@@ -209,7 +223,7 @@ final class RegistrationButtonSourceTest extends TestCase
     {
         $text = $this->computedBody($this->source('components/RegistrationButton.vue'), 'buttonText');
 
-        $this->assertStringContainsString(
+        $this->assertCodeContains(
             "eligibility.value?.reason === 'registration_closed'\n            ? t('gameTables.registration.closed')\n            : (eligibility.value?.message ?? t('gameTables.registration.closed'));",
             $text
         );
@@ -229,18 +243,18 @@ final class RegistrationButtonSourceTest extends TestCase
         $source = $this->source('components/RegistrationButton.vue');
 
         $closed = $this->computedBody($source, 'guestRegistrationClosed');
-        $this->assertStringContainsString('if (isAuthenticated.value) return false;', $closed);
-        $this->assertStringContainsString('if (!guest || guest.eligible || guest.spectator.eligible) return false;', $closed);
-        $this->assertStringContainsString('return guest.reason !== null && CLOSED_REASONS.includes(guest.reason);', $closed);
+        $this->assertCodeContains('if (isAuthenticated.value) return false;', $closed);
+        $this->assertCodeContains('if (!guest || guest.eligible || guest.spectator.eligible) return false;', $closed);
+        $this->assertCodeContains('return guest.reason !== null && CLOSED_REASONS.includes(guest.reason);', $closed);
 
         $text = $this->computedBody($source, 'buttonText');
-        $this->assertStringContainsString(
+        $this->assertCodeContains(
             "if (guestRegistrationClosed.value) {\n            return props.guestEligibility?.message ?? t('gameTables.registration.closed');\n        }\n        return t('gameTables.registration.loginRequired');",
             $text
         );
 
         $disabled = $this->computedBody($source, 'buttonDisabled');
-        $this->assertStringContainsString('return guestRegistrationClosed.value;', $disabled);
+        $this->assertCodeContains('return guestRegistrationClosed.value;', $disabled);
         $this->assertStringNotContainsString('return false; // Login redirect still works', $disabled);
     }
 
@@ -254,8 +268,8 @@ final class RegistrationButtonSourceTest extends TestCase
         $source = $this->source('pages/GameTables/CancelRegistration.vue');
 
         $this->assertStringNotContainsString('gameTables.cancelRegistration.', $source);
-        $this->assertStringContainsString('tableStarted: boolean;', $source);
-        $this->assertStringContainsString("tableStarted ? t('cancelRegistration.tableStarted') : t('cancelRegistration.alreadyCancelled')", $source);
+        $this->assertCodeContains('tableStarted: boolean;', $source);
+        $this->assertCodeContains("tableStarted ? t('cancelRegistration.tableStarted') : t('cancelRegistration.alreadyCancelled')", $source);
     }
 
     public function test_the_new_texts_exist_in_the_right_place_of_both_locales(): void
@@ -264,9 +278,9 @@ final class RegistrationButtonSourceTest extends TestCase
         $en = $this->source('locales/en.ts');
 
         // withdrawalClosed sits in the registration block (right after registeredAt), tableStarted in cancelRegistration
-        $this->assertStringContainsString("registeredAt: 'Inscrito el',\n            withdrawalClosed: 'La partida ya ha comenzado: ya no puedes cancelar la inscripción',", $es);
-        $this->assertStringContainsString("guest: 'Invitado',\n        tableStarted: 'La partida ya ha comenzado: ya no puedes cancelar la inscripción.',", $es);
-        $this->assertStringContainsString("registeredAt: 'Registered on',\n            withdrawalClosed: 'The session has already started: you can no longer cancel your registration',", $en);
-        $this->assertStringContainsString("guest: 'Guest',\n        tableStarted: 'The session has already started: you can no longer cancel your registration.',", $en);
+        $this->assertCodeContains("registeredAt: 'Inscrito el',\n            withdrawalClosed: 'La partida ya ha comenzado: ya no puedes cancelar la inscripción',", $es);
+        $this->assertCodeContains("guest: 'Invitado',\n        tableStarted: 'La partida ya ha comenzado: ya no puedes cancelar la inscripción.',", $es);
+        $this->assertCodeContains("registeredAt: 'Registered on',\n            withdrawalClosed: 'The session has already started: you can no longer cancel your registration',", $en);
+        $this->assertCodeContains("guest: 'Guest',\n        tableStarted: 'The session has already started: you can no longer cancel your registration.',", $en);
     }
 }

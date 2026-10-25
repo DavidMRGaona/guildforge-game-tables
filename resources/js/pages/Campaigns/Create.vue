@@ -4,7 +4,14 @@ import { computed, ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import BaseButton from '@/components/ui/BaseButton.vue';
-import { FormCombobox, FormSelect, FormCheckboxGroup, FormCheckboxWithTooltip, FormTagsInput, FormNumberInput } from '@/components/form';
+import {
+    FormCombobox,
+    FormSelect,
+    FormCheckboxGroup,
+    FormCheckboxWithTooltip,
+    FormTagsInput,
+    FormNumberInput,
+} from '@/components/form';
 import type { CheckboxGroup } from '@/components/form';
 import type { GameSystem } from '../../types/gametables';
 import FormTabs from '../../components/FormTabs.vue';
@@ -13,12 +20,11 @@ import FormErrorSummary from '../../components/FormErrorSummary.vue';
 import { useFormErrorSummary } from '../../composables/useFormErrorSummary';
 import { fieldStateClass } from '../../utils/fieldStateClass';
 
-type OptionsInput = Record<string, string> | Array<{ value: string; label: string }> | null | undefined;
+type OptionsInput =
+    Record<string, string> | Array<{ value: string; label: string }> | null | undefined;
 
 // Helper to transform {value: label} objects to [{value, label}] arrays
-function objectToOptions(
-    obj: OptionsInput
-): Array<{ value: string; label: string }> {
+function objectToOptions(obj: OptionsInput): Array<{ value: string; label: string }> {
     if (!obj) return [];
     if (Array.isArray(obj)) return obj;
     return Object.entries(obj).map(([value, label]) => ({ value, label }));
@@ -169,10 +175,13 @@ const gameSystemOptions = computed(() =>
 // Safety tool descriptions mapped by enum value (ID)
 const safetyToolDescriptions: Record<string, string> = {
     x_card: 'Permite a cualquier jugador detener una escena o pausar el juego sin necesidad de dar explicaciones. Una herramienta simple pero poderosa para mantener la comodidad de todos.',
-    lines_and_veils: 'Define límites absolutos (líneas) que nunca se cruzarán, y temas que se pueden mencionar pero no explorar en detalle (velos). Se establecen al inicio de la partida.',
-    open_door: 'Los jugadores pueden abandonar la sesión en cualquier momento sin dar explicaciones. Promueve un ambiente seguro donde nadie se siente obligado a quedarse si está incómodo.',
+    lines_and_veils:
+        'Define límites absolutos (líneas) que nunca se cruzarán, y temas que se pueden mencionar pero no explorar en detalle (velos). Se establecen al inicio de la partida.',
+    open_door:
+        'Los jugadores pueden abandonar la sesión en cualquier momento sin dar explicaciones. Promueve un ambiente seguro donde nadie se siente obligado a quedarse si está incómodo.',
     stars: 'Sistema para pedir más o menos de cierto tipo de contenido durante la partida. Permite ajustar el tono y los temas en tiempo real según las preferencias del grupo.',
-    support_flower: 'Método para indicar que necesitas apoyo emocional o un descanso. Especialmente útil en partidas con temas intensos donde los jugadores pueden necesitar un momento.',
+    support_flower:
+        'Método para indicar que necesitas apoyo emocional o un descanso. Especialmente útil en partidas con temas intensos donde los jugadores pueden necesitar un momento.',
     script: 'Permite rebobinar (volver atrás), avanzar rápidamente o pausar una escena, como en una película. Útil para ajustar momentos que no funcionan para el grupo.',
     roses: 'Al final de cada sesión, los jugadores comparten aspectos positivos (rosas) y constructivos (espinas). Fomenta la comunicación y mejora continua del juego.',
     other: 'Otra herramienta de seguridad no listada. Especifica cuál en las notas de la mesa.',
@@ -267,7 +276,10 @@ function submit(): void {
 
     <div class="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         <!-- Eligibility check -->
-        <div v-if="!props.eligibility.eligible" class="mb-6 rounded-lg border border-warning/30 bg-warning-bg p-4">
+        <div
+            v-if="!props.eligibility.eligible"
+            class="mb-6 rounded-lg border border-warning/30 bg-warning-bg p-4"
+        >
             <div class="flex">
                 <div class="flex-shrink-0">
                     <TriangleAlert class="h-5 w-5 text-warning" aria-hidden="true" />
@@ -277,7 +289,11 @@ function submit(): void {
                         {{ props.eligibility.reason }}
                     </p>
                     <p v-if="props.eligibility.canCreateAt" class="mt-1 text-sm text-warning/80">
-                        {{ t('campaigns.create.canCreateAt', { date: props.eligibility.canCreateAt }) }}
+                        {{
+                            t('campaigns.create.canCreateAt', {
+                                date: props.eligibility.canCreateAt,
+                            })
+                        }}
                     </p>
                 </div>
             </div>
@@ -293,7 +309,10 @@ function submit(): void {
                         <div class="space-y-6 p-6">
                             <!-- Game System -->
                             <div>
-                                <label for="game_system_id" class="block text-sm font-medium text-base-secondary">
+                                <label
+                                    for="game_system_id"
+                                    class="block text-sm font-medium text-base-secondary"
+                                >
                                     {{ t('campaigns.create.fields.gameSystem') }}
                                     <span class="text-error">*</span>
                                 </label>
@@ -307,14 +326,20 @@ function submit(): void {
                                     :error="form.errors.game_system_id"
                                     class="mt-1"
                                 />
-                                <p v-if="form.errors.game_system_id" class="mt-1 text-sm text-error">
+                                <p
+                                    v-if="form.errors.game_system_id"
+                                    class="mt-1 text-sm text-error"
+                                >
                                     {{ form.errors.game_system_id }}
                                 </p>
                             </div>
 
                             <!-- Title -->
                             <div>
-                                <label for="title" class="block text-sm font-medium text-base-secondary">
+                                <label
+                                    for="title"
+                                    class="block text-sm font-medium text-base-secondary"
+                                >
                                     {{ t('campaigns.create.fields.title') }}
                                     <span class="text-error">*</span>
                                 </label>
@@ -325,20 +350,27 @@ function submit(): void {
                                     name="title"
                                     required
                                     :aria-invalid="!!form.errors.title"
-                                    :aria-describedby="form.errors.title ? 'title-error' : undefined"
+                                    :aria-describedby="
+                                        form.errors.title ? 'title-error' : undefined
+                                    "
                                     :class="fieldStateClass(!!form.errors.title)"
-                                    class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
-                                           text-base-primary placeholder-base-muted
-                                           focus:outline-none focus:ring-2"
+                                    class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5 text-base-primary placeholder-base-muted focus:outline-none focus:ring-2"
                                 />
-                                <p v-if="form.errors.title" id="title-error" class="mt-1 text-sm text-error">
+                                <p
+                                    v-if="form.errors.title"
+                                    id="title-error"
+                                    class="mt-1 text-sm text-error"
+                                >
                                     {{ form.errors.title }}
                                 </p>
                             </div>
 
                             <!-- Frequency -->
                             <div>
-                                <label for="frequency" class="block text-sm font-medium text-base-secondary">
+                                <label
+                                    for="frequency"
+                                    class="block text-sm font-medium text-base-secondary"
+                                >
                                     {{ t('campaigns.create.fields.frequency') }}
                                     <span class="text-error">*</span>
                                 </label>
@@ -357,7 +389,10 @@ function submit(): void {
 
                             <!-- Schedule Notes -->
                             <div>
-                                <label for="schedule_notes" class="block text-sm font-medium text-base-secondary">
+                                <label
+                                    for="schedule_notes"
+                                    class="block text-sm font-medium text-base-secondary"
+                                >
                                     {{ t('campaigns.create.fields.scheduleNotes') }}
                                 </label>
                                 <input
@@ -366,23 +401,29 @@ function submit(): void {
                                     type="text"
                                     name="schedule_notes"
                                     :aria-invalid="!!form.errors.schedule_notes"
-                                    :placeholder="t('campaigns.create.fields.scheduleNotesPlaceholder')"
+                                    :placeholder="
+                                        t('campaigns.create.fields.scheduleNotesPlaceholder')
+                                    "
                                     :class="fieldStateClass(!!form.errors.schedule_notes)"
-                                    class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
-                                           text-base-primary placeholder-base-muted
-                                           focus:outline-none focus:ring-2"
+                                    class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5 text-base-primary placeholder-base-muted focus:outline-none focus:ring-2"
                                 />
                                 <p class="mt-1 text-xs text-base-muted">
                                     {{ t('campaigns.create.fields.scheduleNotesHelp') }}
                                 </p>
-                                <p v-if="form.errors.schedule_notes" class="mt-1 text-sm text-error">
+                                <p
+                                    v-if="form.errors.schedule_notes"
+                                    class="mt-1 text-sm text-error"
+                                >
                                     {{ form.errors.schedule_notes }}
                                 </p>
                             </div>
 
                             <!-- Table Format -->
                             <div>
-                                <label for="table_format" class="block text-sm font-medium text-base-secondary">
+                                <label
+                                    for="table_format"
+                                    class="block text-sm font-medium text-base-secondary"
+                                >
                                     {{ t('campaigns.create.fields.tableFormat') }}
                                     <span class="text-error">*</span>
                                 </label>
@@ -405,7 +446,10 @@ function submit(): void {
                                 </h3>
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label for="min_players" class="block text-sm font-medium text-base-secondary">
+                                        <label
+                                            for="min_players"
+                                            class="block text-sm font-medium text-base-secondary"
+                                        >
                                             {{ t('campaigns.create.fields.minPlayers') }}
                                             <span class="text-error">*</span>
                                         </label>
@@ -419,12 +463,18 @@ function submit(): void {
                                             :error="form.errors.min_players"
                                             class="mt-1"
                                         />
-                                        <p v-if="form.errors.min_players" class="mt-1 text-sm text-error">
+                                        <p
+                                            v-if="form.errors.min_players"
+                                            class="mt-1 text-sm text-error"
+                                        >
                                             {{ form.errors.min_players }}
                                         </p>
                                     </div>
                                     <div>
-                                        <label for="max_players" class="block text-sm font-medium text-base-secondary">
+                                        <label
+                                            for="max_players"
+                                            class="block text-sm font-medium text-base-secondary"
+                                        >
                                             {{ t('campaigns.create.fields.maxPlayers') }}
                                             <span class="text-error">*</span>
                                         </label>
@@ -438,7 +488,10 @@ function submit(): void {
                                             :error="form.errors.max_players"
                                             class="mt-1"
                                         />
-                                        <p v-if="form.errors.max_players" class="mt-1 text-sm text-error">
+                                        <p
+                                            v-if="form.errors.max_players"
+                                            class="mt-1 text-sm text-error"
+                                        >
                                             {{ form.errors.max_players }}
                                         </p>
                                     </div>
@@ -447,13 +500,16 @@ function submit(): void {
 
                             <!-- Language -->
                             <div>
-                                <label for="language" class="block text-sm font-medium text-base-secondary">
+                                <label
+                                    for="language"
+                                    class="block text-sm font-medium text-base-secondary"
+                                >
                                     {{ t('campaigns.create.fields.language') }}
                                 </label>
                                 <FormSelect
                                     id="language"
-                                    name="language"
                                     v-model="form.language"
+                                    name="language"
                                     :error="form.errors.language ?? ''"
                                     :options="objectToOptions(props.formData.languages)"
                                     class="mt-1"
@@ -465,19 +521,27 @@ function submit(): void {
 
                             <!-- Experience Level -->
                             <div>
-                                <label for="experience_level" class="block text-sm font-medium text-base-secondary">
+                                <label
+                                    for="experience_level"
+                                    class="block text-sm font-medium text-base-secondary"
+                                >
                                     {{ t('campaigns.create.fields.experienceLevel') }}
                                 </label>
                                 <FormSelect
                                     id="experience_level"
-                                    name="experience_level"
                                     v-model="form.experience_level"
+                                    name="experience_level"
                                     :error="form.errors.experience_level ?? ''"
                                     :options="objectToOptions(props.formData.experience_levels)"
-                                    :placeholder="t('campaigns.create.fields.selectExperienceLevel')"
+                                    :placeholder="
+                                        t('campaigns.create.fields.selectExperienceLevel')
+                                    "
                                     class="mt-1"
                                 />
-                                <p v-if="form.errors.experience_level" class="mt-1 text-sm text-error">
+                                <p
+                                    v-if="form.errors.experience_level"
+                                    class="mt-1 text-sm text-error"
+                                >
                                     {{ form.errors.experience_level }}
                                 </p>
                             </div>
@@ -489,7 +553,10 @@ function submit(): void {
                         <div class="space-y-6 p-6">
                             <!-- Synopsis -->
                             <div>
-                                <label for="synopsis" class="block text-sm font-medium text-base-secondary">
+                                <label
+                                    for="synopsis"
+                                    class="block text-sm font-medium text-base-secondary"
+                                >
                                     {{ t('campaigns.create.fields.synopsis') }}
                                 </label>
                                 <textarea
@@ -500,9 +567,7 @@ function submit(): void {
                                     :aria-invalid="!!form.errors.synopsis"
                                     :placeholder="t('campaigns.create.fields.synopsisPlaceholder')"
                                     :class="fieldStateClass(!!form.errors.synopsis)"
-                                    class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
-                                           text-base-primary placeholder-base-muted
-                                           focus:outline-none focus:ring-2"
+                                    class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5 text-base-primary placeholder-base-muted focus:outline-none focus:ring-2"
                                 />
                                 <p v-if="form.errors.synopsis" class="mt-1 text-sm text-error">
                                     {{ form.errors.synopsis }}
@@ -511,7 +576,10 @@ function submit(): void {
 
                             <!-- Tone -->
                             <div>
-                                <label for="tone" class="block text-sm font-medium text-base-secondary">
+                                <label
+                                    for="tone"
+                                    class="block text-sm font-medium text-base-secondary"
+                                >
                                     {{ t('campaigns.create.fields.tone') }}
                                 </label>
                                 <FormSelect
@@ -529,19 +597,27 @@ function submit(): void {
 
                             <!-- Character Creation -->
                             <div>
-                                <label for="character_creation" class="block text-sm font-medium text-base-secondary">
+                                <label
+                                    for="character_creation"
+                                    class="block text-sm font-medium text-base-secondary"
+                                >
                                     {{ t('campaigns.create.fields.characterCreation') }}
                                 </label>
                                 <FormSelect
                                     id="character_creation"
-                                    name="character_creation"
                                     v-model="form.character_creation"
+                                    name="character_creation"
                                     :error="form.errors.character_creation ?? ''"
                                     :options="objectToOptions(props.formData.character_creation)"
-                                    :placeholder="t('campaigns.create.fields.selectCharacterCreation')"
+                                    :placeholder="
+                                        t('campaigns.create.fields.selectCharacterCreation')
+                                    "
                                     class="mt-1"
                                 />
-                                <p v-if="form.errors.character_creation" class="mt-1 text-sm text-error">
+                                <p
+                                    v-if="form.errors.character_creation"
+                                    class="mt-1 text-sm text-error"
+                                >
                                     {{ form.errors.character_creation }}
                                 </p>
                             </div>
@@ -557,12 +633,12 @@ function submit(): void {
                                 <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                     <FormCheckboxWithTooltip
                                         v-for="tool in safetyToolsWithDescriptions"
+                                        :id="`safety_tool_${tool.id}`"
                                         :key="tool.id"
                                         v-model="form.safety_tools"
                                         :value="tool.id"
                                         :label="tool.name"
                                         :description="tool.description"
-                                        :id="`safety_tool_${tool.id}`"
                                     />
                                 </div>
                                 <p v-if="form.errors.safety_tools" class="mt-2 text-sm text-error">
@@ -596,14 +672,19 @@ function submit(): void {
                                 </p>
                                 <FormTagsInput
                                     id="custom_warnings_input"
-                                    name="custom_warnings"
                                     v-model="form.custom_warnings"
-                                    :placeholder="t('campaigns.create.fields.customWarningsPlaceholder')"
+                                    name="custom_warnings"
+                                    :placeholder="
+                                        t('campaigns.create.fields.customWarningsPlaceholder')
+                                    "
                                     :max-tags="10"
                                     :max-length="200"
                                     :error="form.errors.custom_warnings"
                                 />
-                                <p v-if="form.errors.custom_warnings" class="mt-1 text-sm text-error">
+                                <p
+                                    v-if="form.errors.custom_warnings"
+                                    class="mt-1 text-sm text-error"
+                                >
                                     {{ form.errors.custom_warnings }}
                                 </p>
                             </div>
@@ -615,7 +696,10 @@ function submit(): void {
                         <div class="space-y-6 p-6">
                             <!-- Location (for in-person/hybrid) -->
                             <div v-if="showLocation">
-                                <label for="location" class="block text-sm font-medium text-base-secondary">
+                                <label
+                                    for="location"
+                                    class="block text-sm font-medium text-base-secondary"
+                                >
                                     {{ t('campaigns.create.fields.location') }}
                                 </label>
                                 <input
@@ -625,9 +709,7 @@ function submit(): void {
                                     name="location"
                                     :aria-invalid="!!form.errors.location"
                                     :class="fieldStateClass(!!form.errors.location)"
-                                    class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
-                                           text-base-primary placeholder-base-muted
-                                           focus:outline-none focus:ring-2"
+                                    class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5 text-base-primary placeholder-base-muted focus:outline-none focus:ring-2"
                                 />
                                 <p class="mt-1 text-xs text-base-muted">
                                     {{ t('campaigns.create.fields.locationHelp') }}
@@ -639,7 +721,10 @@ function submit(): void {
 
                             <!-- Online URL (for online/hybrid) -->
                             <div v-if="showOnlineUrl">
-                                <label for="online_url" class="block text-sm font-medium text-base-secondary">
+                                <label
+                                    for="online_url"
+                                    class="block text-sm font-medium text-base-secondary"
+                                >
                                     {{ t('campaigns.create.fields.onlineUrl') }}
                                 </label>
                                 <input
@@ -650,9 +735,7 @@ function submit(): void {
                                     :aria-invalid="!!form.errors.online_url"
                                     placeholder="https://..."
                                     :class="fieldStateClass(!!form.errors.online_url)"
-                                    class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
-                                           text-base-primary placeholder-base-muted
-                                           focus:outline-none focus:ring-2"
+                                    class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5 text-base-primary placeholder-base-muted focus:outline-none focus:ring-2"
                                 />
                                 <p class="mt-1 text-xs text-base-muted">
                                     {{ t('campaigns.create.fields.onlineUrlHelp') }}
@@ -663,7 +746,10 @@ function submit(): void {
                             </div>
 
                             <!-- Message when no location fields shown -->
-                            <div v-if="!showLocation && !showOnlineUrl" class="rounded-lg bg-surface-subtle p-4 text-center">
+                            <div
+                                v-if="!showLocation && !showOnlineUrl"
+                                class="rounded-lg bg-surface-subtle p-4 text-center"
+                            >
                                 <p class="text-sm text-base-muted">
                                     {{ t('campaigns.create.fields.noLocationNeeded') }}
                                 </p>

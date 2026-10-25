@@ -45,32 +45,41 @@ const expiresAt = computed(() => {
 });
 
 // Links styled as buttons (a button inside a link is invalid interactive nesting)
-const linkButtonBase = 'inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-md px-4 py-2 text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface';
+const linkButtonBase =
+    'inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-md px-4 py-2 text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface';
 const primaryLinkClass = `${linkButtonBase} bg-primary text-white hover:bg-primary-700 focus:ring-primary-500`;
 const secondaryLinkClass = `${linkButtonBase} bg-base-secondary/10 text-base-primary hover:bg-base-secondary/20 focus:ring-primary-500`;
 
 // Only the buttons act: opening the link (as mail scanners do) changes nothing
 function handleAccept(): void {
-    router.post(`${baseUrl.value}/aceptar`, {}, {
-        onStart: () => {
-            isAccepting.value = true;
-        },
-        onFinish: () => {
-            isAccepting.value = false;
-        },
-    });
+    router.post(
+        `${baseUrl.value}/aceptar`,
+        {},
+        {
+            onStart: () => {
+                isAccepting.value = true;
+            },
+            onFinish: () => {
+                isAccepting.value = false;
+            },
+        }
+    );
 }
 
 function handleReject(): void {
-    router.post(`${baseUrl.value}/rechazar`, {}, {
-        onStart: () => {
-            isRejecting.value = true;
-        },
-        onFinish: () => {
-            isRejecting.value = false;
-            showRejectDialog.value = false;
-        },
-    });
+    router.post(
+        `${baseUrl.value}/rechazar`,
+        {},
+        {
+            onStart: () => {
+                isRejecting.value = true;
+            },
+            onFinish: () => {
+                isRejecting.value = false;
+                showRejectDialog.value = false;
+            },
+        }
+    );
 }
 </script>
 
@@ -102,10 +111,7 @@ function handleReject(): void {
                 <p class="mb-6 text-center text-base-secondary">
                     {{ t('campaigns.invitation.rejected') }}
                 </p>
-                <Link
-                    href="/campanas"
-                    :class="primaryLinkClass"
-                >
+                <Link href="/campanas" :class="primaryLinkClass">
                     {{ t('campaigns.invitation.viewCampaigns') }}
                 </Link>
             </template>
@@ -118,31 +124,29 @@ function handleReject(): void {
                 <p class="mb-6 text-center text-base-secondary">
                     {{ t('campaigns.invitation.invalid') }}
                 </p>
-                <Link
-                    href="/campanas"
-                    :class="primaryLinkClass"
-                >
+                <Link href="/campanas" :class="primaryLinkClass">
                     {{ t('campaigns.invitation.viewCampaigns') }}
                 </Link>
             </template>
 
             <template v-else>
                 <div class="mb-6 text-center">
-                    <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary-light">
+                    <div
+                        class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary-light"
+                    >
                         <Mail class="h-8 w-8 text-primary" aria-hidden="true" />
                     </div>
                     <h1 class="text-2xl font-bold text-base-primary">
-                        {{ t('campaigns.invitation.title', { campaign: invitation.campaign_title }) }}
+                        {{
+                            t('campaigns.invitation.title', { campaign: invitation.campaign_title })
+                        }}
                     </h1>
                 </div>
 
                 <p class="mb-2 text-center text-base-secondary">
                     {{ t('campaigns.invitation.intro', { inviter: invitation.inviter_name }) }}
                 </p>
-                <p
-                    v-if="expiresAt"
-                    class="mb-6 text-center text-sm text-base-muted"
-                >
+                <p v-if="expiresAt" class="mb-6 text-center text-sm text-base-muted">
                     {{ t('campaigns.invitation.expires', { date: expiresAt }) }}
                 </p>
 
@@ -155,12 +159,7 @@ function handleReject(): void {
                     <p class="text-sm text-base-primary">
                         {{ t('campaigns.invitation.mismatch') }}
                     </p>
-                    <BaseButton
-                        variant="secondary"
-                        size="sm"
-                        class="mt-3"
-                        @click="logout"
-                    >
+                    <BaseButton variant="secondary" size="sm" class="mt-3" @click="logout">
                         {{ t('campaigns.invitation.logout') }}
                     </BaseButton>
                 </div>
@@ -226,10 +225,7 @@ function handleReject(): void {
                 </template>
 
                 <!-- Rejecting needs no account: whoever has the link can delete their email -->
-                <div
-                    v-if="state === 'guest'"
-                    class="mt-4 text-center"
-                >
+                <div v-if="state === 'guest'" class="mt-4 text-center">
                     <button
                         type="button"
                         class="min-h-[44px] px-2 text-sm text-base-muted underline hover:text-base-primary"

@@ -27,7 +27,8 @@ const { t } = useI18n();
 const gate = useVerificationGate();
 
 // The look of BaseButton (secondary, size sm) on a link
-const rosterLinkClass = 'inline-flex min-h-[44px] w-full items-center justify-center rounded-md bg-muted px-4 py-2 text-sm font-medium text-base-primary transition-colors hover:bg-base-secondary/20 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface sm:w-auto';
+const rosterLinkClass =
+    'inline-flex min-h-[44px] w-full items-center justify-center rounded-md bg-muted px-4 py-2 text-sm font-medium text-base-primary transition-colors hover:bg-base-secondary/20 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface sm:w-auto';
 
 const campaignUrl = computed(() =>
     props.campaign.slug ? `/campanas/${props.campaign.slug}` : null
@@ -65,10 +66,7 @@ const playersText = computed(() => {
                     >
                         {{ campaign.title }}
                     </Link>
-                    <span
-                        v-else
-                        class="truncate text-base font-medium text-base-primary"
-                    >
+                    <span v-else class="truncate text-base font-medium text-base-primary">
                         {{ campaign.title }}
                     </span>
                     <span class="shrink-0 text-xs text-base-muted">
@@ -77,7 +75,9 @@ const playersText = computed(() => {
                 </div>
 
                 <!-- Meta info -->
-                <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-base-muted">
+                <div
+                    class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-base-muted"
+                >
                     <!-- Frequency -->
                     <span v-if="campaign.frequencyLabel" class="flex items-center gap-1">
                         <Clock class="h-4 w-4" aria-hidden="true" />
@@ -103,7 +103,10 @@ const playersText = computed(() => {
 
             <!-- Status badge -->
             <span
-                :class="['shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium', statusColorClasses]"
+                :class="[
+                    'shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium',
+                    statusColorClasses,
+                ]"
             >
                 {{ campaign.statusLabel }}
             </span>
@@ -118,7 +121,13 @@ const playersText = computed(() => {
                 v-if="campaign.pendingRequests > 0"
                 class="inline-flex self-start rounded-full bg-warning-light px-2 py-0.5 text-xs font-medium text-base-primary sm:self-auto"
             >
-                {{ t('campaigns.myCampaigns.pendingRequests', { count: campaign.pendingRequests }, campaign.pendingRequests) }}
+                {{
+                    t(
+                        'campaigns.myCampaigns.pendingRequests',
+                        { count: campaign.pendingRequests },
+                        campaign.pendingRequests
+                    )
+                }}
             </span>
             <VerificationBlockedButton
                 v-if="gate.blocked.value"
@@ -128,11 +137,7 @@ const playersText = computed(() => {
             >
                 {{ t('campaigns.myCampaigns.roster') }}
             </VerificationBlockedButton>
-            <Link
-                v-else
-                :href="campaign.rosterUrl"
-                :class="rosterLinkClass"
-            >
+            <Link v-else :href="campaign.rosterUrl" :class="rosterLinkClass">
                 {{ t('campaigns.myCampaigns.roster') }}
             </Link>
         </div>

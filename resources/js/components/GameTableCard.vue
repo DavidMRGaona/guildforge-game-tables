@@ -24,7 +24,9 @@ const dateBadge = computed(() => {
     const date = new Date(props.table.startsAt);
     return {
         day: Number(venueDayKey(date).slice(8)),
-        month: date.toLocaleDateString(locale.value, { timeZone: VENUE_TIMEZONE, month: 'short' }).toUpperCase(),
+        month: date
+            .toLocaleDateString(locale.value, { timeZone: VENUE_TIMEZONE, month: 'short' })
+            .toUpperCase(),
     };
 });
 
@@ -82,13 +84,11 @@ const availabilityBadge = computed(() => {
     >
         <!-- Image with overlay badges (if image exists) -->
         <div v-if="imageUrl" class="relative">
-            <img
-                :src="imageUrl"
-                :alt="table.title"
-                class="h-36 w-full object-cover"
-            />
+            <img :src="imageUrl" :alt="table.title" class="h-36 w-full object-cover" />
             <!-- Overlay gradient for better badge visibility -->
-            <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30" />
+            <div
+                class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30"
+            />
 
             <!-- Date badge (top-left, overlaid on image) -->
             <div
@@ -105,7 +105,10 @@ const availabilityBadge = computed(() => {
             <!-- Status + Availability badges (top-right, overlaid on image) -->
             <div class="absolute right-3 top-3 flex items-center gap-2">
                 <span
-                    :class="['rounded-full px-2 py-0.5 text-xs font-semibold', availabilityBadge.classes]"
+                    :class="[
+                        'rounded-full px-2 py-0.5 text-xs font-semibold',
+                        availabilityBadge.classes,
+                    ]"
                 >
                     {{ availabilityBadge.text }}
                 </span>
@@ -118,14 +121,9 @@ const availabilityBadge = computed(() => {
         </div>
 
         <!-- Neutral header band (only if no image); the format badge below names the format -->
-        <div
-            v-else
-            class="flex min-h-16 items-center justify-between bg-muted px-4 py-3"
-        >
+        <div v-else class="flex min-h-16 items-center justify-between bg-muted px-4 py-3">
             <!-- Date badge (top-left) -->
-            <div
-                class="flex flex-col items-center rounded bg-surface/95 px-2 py-1 shadow-sm"
-            >
+            <div class="flex flex-col items-center rounded bg-surface/95 px-2 py-1 shadow-sm">
                 <span class="text-lg font-bold leading-none text-primary">
                     {{ dateBadge.day }}
                 </span>
@@ -137,7 +135,10 @@ const availabilityBadge = computed(() => {
             <!-- Status + Availability badges (top-right) -->
             <div class="flex items-center gap-2">
                 <span
-                    :class="['rounded-full px-2 py-0.5 text-xs font-semibold', availabilityBadge.classes]"
+                    :class="[
+                        'rounded-full px-2 py-0.5 text-xs font-semibold',
+                        availabilityBadge.classes,
+                    ]"
                 >
                     {{ availabilityBadge.text }}
                 </span>
@@ -171,14 +172,19 @@ const availabilityBadge = computed(() => {
                         class="mr-1.5 h-4 w-4 flex-shrink-0 text-base-muted"
                         aria-hidden="true"
                     />
-                    <span>{{ formattedDate }} &middot; {{ formattedTime }} &middot; {{ formattedDuration }}</span>
+                    <span
+                        >{{ formattedDate }} &middot; {{ formattedTime }} &middot;
+                        {{ formattedDuration }}</span
+                    >
                 </div>
 
                 <!-- Capacity bar -->
                 <div>
                     <div class="mb-1 flex items-center justify-between text-xs text-base-secondary">
                         <span>{{ t('gameTables.capacity') }}</span>
-                        <span class="font-medium">{{ table.currentPlayers }} / {{ table.maxPlayers }}</span>
+                        <span class="font-medium"
+                            >{{ table.currentPlayers }} / {{ table.maxPlayers }}</span
+                        >
                     </div>
                     <CapacityBar
                         :current="table.currentPlayers"
@@ -193,9 +199,13 @@ const availabilityBadge = computed(() => {
             <div class="mt-auto flex items-center justify-between">
                 <!-- GM with avatar pill -->
                 <div class="flex items-center gap-2 text-sm text-base-secondary">
-                    <span class="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1">
+                    <span
+                        class="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1"
+                    >
                         <User class="h-3.5 w-3.5" aria-hidden="true" />
-                        <span class="max-w-[120px] truncate text-xs font-medium">{{ table.mainGameMasterName }}</span>
+                        <span class="max-w-[120px] truncate text-xs font-medium">{{
+                            table.mainGameMasterName
+                        }}</span>
                     </span>
                 </div>
 

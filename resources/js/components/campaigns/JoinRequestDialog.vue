@@ -35,9 +35,9 @@ const counterId = useId();
 const errorId = useId();
 
 const message = ref('');
-// eslint-disable-next-line no-undef
+
 const dialog = ref<HTMLDialogElement | null>(null);
-// eslint-disable-next-line no-undef
+
 const textarea = ref<HTMLTextAreaElement | null>(null);
 // The button that opened the dialog, to take the focus back there
 let opener: HTMLElement | null = null;
@@ -126,10 +126,22 @@ function submit(): void {
                 </p>
 
                 <div class="mt-6 grid grid-cols-2 gap-3 sm:flex sm:justify-end">
-                    <BaseButton variant="secondary" size="sm" class="w-full sm:w-auto" :disabled="processing" @click="close">
+                    <BaseButton
+                        variant="secondary"
+                        size="sm"
+                        class="w-full sm:w-auto"
+                        :disabled="processing"
+                        @click="close"
+                    >
                         {{ t('common.cancel') }}
                     </BaseButton>
-                    <BaseButton type="submit" variant="primary" size="sm" class="w-full sm:w-auto" :loading="processing">
+                    <BaseButton
+                        type="submit"
+                        variant="primary"
+                        size="sm"
+                        class="w-full sm:w-auto"
+                        :loading="processing"
+                    >
                         {{ t('campaigns.join.send') }}
                     </BaseButton>
                 </div>

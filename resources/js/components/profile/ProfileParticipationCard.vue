@@ -105,7 +105,9 @@ const formattedTime = computed(() => {
                     v-if="participation.waitingListPosition !== null"
                     class="inline-flex items-center rounded-full bg-info-light px-2 py-0.5 text-xs font-medium text-base-primary"
                 >
-                    {{ t('gameTables.profile.waitingPosition') }}: #{{ participation.waitingListPosition }}
+                    {{ t('gameTables.profile.waitingPosition') }}: #{{
+                        participation.waitingListPosition
+                    }}
                 </span>
             </div>
         </div>

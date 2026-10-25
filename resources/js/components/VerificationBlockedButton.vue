@@ -23,11 +23,14 @@ const gate = useVerificationGate();
 // Unique per instance: a page may show several of these
 const reasonId = useId();
 
-const alignClass = computed(() => ({
-    start: 'items-start text-left',
-    center: 'items-center text-center',
-    end: 'items-end text-right',
-})[props.align]);
+const alignClass = computed(
+    () =>
+        ({
+            start: 'items-start text-left',
+            center: 'items-center text-center',
+            end: 'items-end text-right',
+        })[props.align]
+);
 </script>
 
 <template>

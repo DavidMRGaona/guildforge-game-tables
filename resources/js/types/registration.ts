@@ -1,4 +1,5 @@
-export type ParticipantStatus = 'pending' | 'confirmed' | 'waiting_list' | 'cancelled' | 'rejected' | 'no_show' | 'expired';
+export type ParticipantStatus =
+    'pending' | 'confirmed' | 'waiting_list' | 'cancelled' | 'rejected' | 'no_show' | 'expired';
 export type ParticipantRole = 'player' | 'spectator';
 
 /** Whether one role can register, and why not. */
@@ -118,5 +119,10 @@ export function isWaitingStatus(status: ParticipantStatus): boolean {
  * Check if a status is final (cancelled, rejected, no_show, expired).
  */
 export function isFinalStatus(status: ParticipantStatus): boolean {
-    return status === 'cancelled' || status === 'rejected' || status === 'no_show' || status === 'expired';
+    return (
+        status === 'cancelled' ||
+        status === 'rejected' ||
+        status === 'no_show' ||
+        status === 'expired'
+    );
 }

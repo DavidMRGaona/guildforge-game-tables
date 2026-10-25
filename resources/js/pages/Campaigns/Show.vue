@@ -92,9 +92,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
             </Link>
         </div>
 
-        <article
-            class="overflow-hidden rounded-lg bg-surface shadow"
-        >
+        <article class="overflow-hidden rounded-lg bg-surface shadow">
             <!-- Campaign Image -->
             <div v-if="imageUrl" class="relative">
                 <img
@@ -121,9 +119,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                     </span>
                 </div>
 
-                <h1
-                    class="mb-4 text-3xl font-bold text-base-primary sm:text-4xl"
-                >
+                <h1 class="mb-4 text-3xl font-bold text-base-primary sm:text-4xl">
                     {{ campaign.title }}
                 </h1>
 
@@ -140,9 +136,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                 </div>
 
                 <!-- Key Information Grid -->
-                <div
-                    class="mb-6 grid grid-cols-1 gap-4 rounded-lg bg-muted p-4 sm:grid-cols-2"
-                >
+                <div class="mb-6 grid grid-cols-1 gap-4 rounded-lg bg-muted p-4 sm:grid-cols-2">
                     <!-- Frequency -->
                     <div v-if="campaign.frequencyLabel">
                         <h3 class="mb-1 text-sm font-semibold text-base-primary">
@@ -162,7 +156,11 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                         <div class="flex items-center text-base-secondary">
                             <Clock class="mr-2 h-5 w-5 text-primary" aria-hidden="true" />
                             <span>
-                                {{ t('campaigns.monthsCount', { count: campaign.expectedDurationMonths }) }}
+                                {{
+                                    t('campaigns.monthsCount', {
+                                        count: campaign.expectedDurationMonths,
+                                    })
+                                }}
                             </span>
                         </div>
                     </div>
@@ -214,8 +212,16 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                                     class="flex items-center text-base-secondary"
                                 >
                                     <User class="mr-2 h-5 w-5 text-primary" aria-hidden="true" />
-                                    <span>{{ gm.isNamePublic ? gm.displayName : t('campaigns.anonymousGm') }}</span>
-                                    <span v-if="gm.customTitle" class="ml-1 text-sm text-base-secondary">({{ gm.customTitle }})</span>
+                                    <span>{{
+                                        gm.isNamePublic
+                                            ? gm.displayName
+                                            : t('campaigns.anonymousGm')
+                                    }}</span>
+                                    <span
+                                        v-if="gm.customTitle"
+                                        class="ml-1 text-sm text-base-secondary"
+                                        >({{ gm.customTitle }})</span
+                                    >
                                 </div>
                             </template>
                             <template v-else>
@@ -239,8 +245,12 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                                 class="flex items-center text-base-secondary"
                             >
                                 <User class="mr-2 h-5 w-5 text-primary" aria-hidden="true" />
-                                <span>{{ gm.isNamePublic ? gm.displayName : t('campaigns.anonymousGm') }}</span>
-                                <span v-if="gm.customTitle" class="ml-1 text-sm text-base-secondary">({{ gm.customTitle }})</span>
+                                <span>{{
+                                    gm.isNamePublic ? gm.displayName : t('campaigns.anonymousGm')
+                                }}</span>
+                                <span v-if="gm.customTitle" class="ml-1 text-sm text-base-secondary"
+                                    >({{ gm.customTitle }})</span
+                                >
                             </div>
                         </div>
                     </div>
@@ -252,10 +262,12 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                         </h3>
                         <div class="text-base-secondary">
                             <p>
-                                {{ t('campaigns.playersCount', {
-                                    current: campaign.currentPlayers,
-                                    max: campaign.maxPlayers,
-                                }) }}
+                                {{
+                                    t('campaigns.playersCount', {
+                                        current: campaign.currentPlayers,
+                                        max: campaign.maxPlayers,
+                                    })
+                                }}
                             </p>
                             <p v-if="spotsAvailable !== null" class="text-sm">
                                 {{ spotsAvailable }} {{ t('campaigns.spotsAvailable') }}
@@ -379,9 +391,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                         <h3 class="mb-2 text-sm font-semibold text-base-primary">
                             {{ t('campaigns.recruitmentMessage') }}
                         </h3>
-                        <div
-                            class="rounded-lg bg-success-light p-4 text-base-primary"
-                        >
+                        <div class="rounded-lg bg-success-light p-4 text-base-primary">
                             <p class="whitespace-pre-line">{{ campaign.recruitmentMessage }}</p>
                         </div>
                     </div>

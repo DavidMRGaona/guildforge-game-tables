@@ -51,7 +51,9 @@ defineExpose({ focus });
                             class="group w-full rounded-md px-2 py-1.5 text-left transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-error"
                             @click="emit('select', item)"
                         >
-                            <span class="block text-sm font-medium text-error underline-offset-2 group-hover:underline">
+                            <span
+                                class="block text-sm font-medium text-error underline-offset-2 group-hover:underline"
+                            >
                                 {{ item.tabLabel }} › {{ item.label }}
                             </span>
                             <span class="block text-sm text-base-secondary">

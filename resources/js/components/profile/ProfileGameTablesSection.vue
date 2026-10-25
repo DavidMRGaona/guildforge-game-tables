@@ -67,9 +67,13 @@ const hasMorePast = computed(() => visiblePastCount.value < filteredPast.value.l
 const remainingPastCount = computed(() => filteredPast.value.length - visiblePastCount.value);
 
 // Reset visible count when filters change
-watch(filters, () => {
-    visiblePastCount.value = INITIAL_PAST_COUNT;
-}, { deep: true });
+watch(
+    filters,
+    () => {
+        visiblePastCount.value = INITIAL_PAST_COUNT;
+    },
+    { deep: true }
+);
 
 function togglePastSection(): void {
     showPastSection.value = !showPastSection.value;
@@ -86,10 +90,7 @@ function loadMore(): void {
 <template>
     <div v-if="profileGameTables && profileGameTables.total > 0" class="space-y-10">
         <!-- Filters -->
-        <ProfileGameTablesFilters
-            v-model="filters"
-            :participations="allParticipations"
-        />
+        <ProfileGameTablesFilters v-model="filters" :participations="allParticipations" />
 
         <!-- No results message -->
         <div
@@ -106,7 +107,9 @@ function loadMore(): void {
             <!-- Upcoming section -->
             <section>
                 <h2 class="mb-6 flex items-center gap-2 text-lg font-semibold text-base-primary">
-                    <span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary">
+                    <span
+                        class="flex h-6 w-6 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary"
+                    >
                         {{ filteredUpcoming.length }}
                     </span>
                     {{ t('gameTables.profile.upcoming') }}
@@ -124,7 +127,11 @@ function loadMore(): void {
                     v-else
                     class="rounded-lg border border-dashed border-default bg-muted p-6 text-center text-sm text-base-secondary"
                 >
-                    {{ hasActiveFilters ? t('gameTables.profile.filters.noUpcomingMatch') : t('gameTables.profile.noUpcoming') }}
+                    {{
+                        hasActiveFilters
+                            ? t('gameTables.profile.filters.noUpcomingMatch')
+                            : t('gameTables.profile.noUpcoming')
+                    }}
                 </p>
             </section>
 
@@ -137,13 +144,18 @@ function loadMore(): void {
                     @click="togglePastSection"
                 >
                     <span class="flex items-center gap-2 text-lg font-semibold text-base-primary">
-                        <span class="flex h-6 w-6 items-center justify-center rounded-full bg-base-secondary/10 text-xs font-bold text-base-secondary">
+                        <span
+                            class="flex h-6 w-6 items-center justify-center rounded-full bg-base-secondary/10 text-xs font-bold text-base-secondary"
+                        >
                             {{ filteredPast.length }}
                         </span>
                         {{ t('gameTables.profile.past') }}
                     </span>
                     <ChevronDown
-                        :class="['h-5 w-5 text-base-muted transition-transform', showPastSection ? 'rotate-180' : '']"
+                        :class="[
+                            'h-5 w-5 text-base-muted transition-transform',
+                            showPastSection ? 'rotate-180' : '',
+                        ]"
                         aria-hidden="true"
                     />
                 </button>
@@ -171,10 +183,7 @@ function loadMore(): void {
     </div>
 
     <!-- Empty state when no tables at all -->
-    <div
-        v-else
-        class="rounded-lg border border-dashed border-default bg-muted p-12 text-center"
-    >
+    <div v-else class="rounded-lg border border-dashed border-default bg-muted p-12 text-center">
         <Box class="mx-auto h-12 w-12 text-base-secondary" aria-hidden="true" />
         <h3 class="mt-4 text-lg font-medium text-base-primary">
             {{ t('gameTables.profile.noTables') }}

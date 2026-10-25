@@ -51,9 +51,9 @@ interface PublishedTable {
 }
 
 interface Props {
-    drafts: GameTableResponseDTO[];
-    published: PublishedTable[];
-    canCreate: boolean;
+    drafts?: GameTableResponseDTO[];
+    published?: PublishedTable[];
+    canCreate?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -171,11 +171,7 @@ function getTableLink(table: GameTableResponseDTO): string {
             :title="t('gameTables.myTables.noTables')"
             :description="t('gameTables.myTables.noTablesDescription')"
         >
-            <BaseButton
-                v-if="props.canCreate"
-                variant="primary"
-                @click="handleCreate"
-            >
+            <BaseButton v-if="props.canCreate" variant="primary" @click="handleCreate">
                 {{ t('gameTables.myTables.createTable') }}
             </BaseButton>
         </EmptyState>
@@ -187,92 +183,102 @@ function getTableLink(table: GameTableResponseDTO): string {
             <p v-if="props.drafts.length === 0" class="text-sm text-base-secondary">
                 {{ t('gameTables.myTables.emptyDrafts') }}
             </p>
-        <div v-else class="space-y-4">
-            <div
-                v-for="table in props.drafts"
-                :key="table.id"
-                class="overflow-hidden rounded-lg bg-surface shadow transition-shadow hover:shadow-md"
-            >
-                <div class="p-6">
-                    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                        <div class="min-w-0 flex-1">
-                            <div class="mb-2 flex items-center gap-2">
-                                <h3 class="truncate text-xl font-semibold text-base-primary">
-                                    <Link
-                                        v-if="isApproved(table)"
-                                        :href="getTableLink(table)"
-                                        class="hover:text-primary"
-                                    >
-                                        {{ table.title }}
-                                    </Link>
-                                    <span v-else>{{ table.title }}</span>
-                                </h3>
-                                <StatusBadge
-                                    :status="table.frontend_creation_status ?? table.status"
-                                    :label="table.frontend_creation_status_label ?? table.status_label"
-                                    :color="table.frontend_creation_status_color ?? table.status_color"
-                                />
-                            </div>
-
-                            <p class="text-sm font-medium text-primary">
-                                {{ table.game_system_name }}
-                            </p>
-
-                            <div class="mt-3 flex flex-wrap items-center gap-4 text-sm text-base-secondary">
-                                <div class="flex items-center gap-1.5">
-                                    <Calendar class="h-4 w-4" aria-hidden="true" />
-                                    <span>{{ formatDate(table.starts_at) }}</span>
+            <div v-else class="space-y-4">
+                <div
+                    v-for="table in props.drafts"
+                    :key="table.id"
+                    class="overflow-hidden rounded-lg bg-surface shadow transition-shadow hover:shadow-md"
+                >
+                    <div class="p-6">
+                        <div
+                            class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+                        >
+                            <div class="min-w-0 flex-1">
+                                <div class="mb-2 flex items-center gap-2">
+                                    <h3 class="truncate text-xl font-semibold text-base-primary">
+                                        <Link
+                                            v-if="isApproved(table)"
+                                            :href="getTableLink(table)"
+                                            class="hover:text-primary"
+                                        >
+                                            {{ table.title }}
+                                        </Link>
+                                        <span v-else>{{ table.title }}</span>
+                                    </h3>
+                                    <StatusBadge
+                                        :status="table.frontend_creation_status ?? table.status"
+                                        :label="
+                                            table.frontend_creation_status_label ??
+                                            table.status_label
+                                        "
+                                        :color="
+                                            table.frontend_creation_status_color ??
+                                            table.status_color
+                                        "
+                                    />
                                 </div>
 
-                                <div class="flex items-center gap-1.5">
-                                    <Clock class="h-4 w-4" aria-hidden="true" />
-                                    <span>{{ formatDuration(table.duration_minutes) }}</span>
-                                </div>
+                                <p class="text-sm font-medium text-primary">
+                                    {{ table.game_system_name }}
+                                </p>
 
-                                <FormatBadge
-                                    :format="table.table_format"
-                                    :label="table.table_format_label"
-                                    :color="table.table_format_color"
-                                />
-                            </div>
-
-                            <!-- Rejected in review: back to a draft until it is sent again -->
-                            <DraftRejectionReason
-                                v-if="table.rejection_reason"
-                                kind="table"
-                                :reason="table.rejection_reason"
-                                class="mt-3"
-                            />
-                        </div>
-
-                        <div class="flex flex-shrink-0 flex-wrap gap-2">
-                            <template v-if="isPendingReview(table)">
-                                <span class="text-sm text-base-muted">
-                                    {{ t('gameTables.myTables.pendingReviewMessage') }}
-                                </span>
-                            </template>
-
-                            <template v-else-if="isApproved(table)">
-                                <Link
-                                    :href="getTableLink(table)"
-                                    class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
+                                <div
+                                    class="mt-3 flex flex-wrap items-center gap-4 text-sm text-base-secondary"
                                 >
-                                    {{ t('gameTables.myTables.viewPublic') }}
-                                </Link>
-                            </template>
+                                    <div class="flex items-center gap-1.5">
+                                        <Calendar class="h-4 w-4" aria-hidden="true" />
+                                        <span>{{ formatDate(table.starts_at) }}</span>
+                                    </div>
 
-                            <!-- While the author may still change it: can_edit, the rule the server enforces -->
-                            <DraftActions
-                                v-else-if="table.can_edit"
-                                kind="table"
-                                :route-key="table.slug!"
-                                :title="table.title"
-                            />
+                                    <div class="flex items-center gap-1.5">
+                                        <Clock class="h-4 w-4" aria-hidden="true" />
+                                        <span>{{ formatDuration(table.duration_minutes) }}</span>
+                                    </div>
+
+                                    <FormatBadge
+                                        :format="table.table_format"
+                                        :label="table.table_format_label"
+                                        :color="table.table_format_color"
+                                    />
+                                </div>
+
+                                <!-- Rejected in review: back to a draft until it is sent again -->
+                                <DraftRejectionReason
+                                    v-if="table.rejection_reason"
+                                    kind="table"
+                                    :reason="table.rejection_reason"
+                                    class="mt-3"
+                                />
+                            </div>
+
+                            <div class="flex flex-shrink-0 flex-wrap gap-2">
+                                <template v-if="isPendingReview(table)">
+                                    <span class="text-sm text-base-muted">
+                                        {{ t('gameTables.myTables.pendingReviewMessage') }}
+                                    </span>
+                                </template>
+
+                                <template v-else-if="isApproved(table)">
+                                    <Link
+                                        :href="getTableLink(table)"
+                                        class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
+                                    >
+                                        {{ t('gameTables.myTables.viewPublic') }}
+                                    </Link>
+                                </template>
+
+                                <!-- While the author may still change it: can_edit, the rule the server enforces -->
+                                <DraftActions
+                                    v-else-if="table.can_edit"
+                                    kind="table"
+                                    :route-key="table.slug!"
+                                    :title="table.title"
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
         </section>
 
         <!-- Published single tables the person created or directs -->
@@ -297,14 +303,29 @@ function getTableLink(table: GameTableResponseDTO): string {
                                         {{ table.title }}
                                     </Link>
                                 </h3>
-                                <StatusBadge :status="table.status" :label="table.status_label" :color="table.status_color" />
+                                <StatusBadge
+                                    :status="table.status"
+                                    :label="table.status_label"
+                                    :color="table.status_color"
+                                />
                             </div>
-                            <p class="text-sm text-base-secondary">{{ formatDate(table.starts_at) }}</p>
+                            <p class="text-sm text-base-secondary">
+                                {{ formatDate(table.starts_at) }}
+                            </p>
                             <span
-                                v-if="table.manages_registrations && (table.pending_registrations ?? 0) > 0"
+                                v-if="
+                                    table.manages_registrations &&
+                                    (table.pending_registrations ?? 0) > 0
+                                "
                                 class="mt-2 inline-flex items-center rounded-full bg-warning-light px-2 py-0.5 text-xs font-medium text-base-primary"
                             >
-                                {{ t('gameTables.myTables.pendingCount', { count: table.pending_registrations }, table.pending_registrations ?? 0) }}
+                                {{
+                                    t(
+                                        'gameTables.myTables.pendingCount',
+                                        { count: table.pending_registrations },
+                                        table.pending_registrations ?? 0
+                                    )
+                                }}
                             </span>
                         </div>
 

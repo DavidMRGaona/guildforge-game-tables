@@ -75,7 +75,9 @@ function hasErrors(tabId: string): boolean {
 function tabAccessibleName(tab: FormTab): string | undefined {
     const count = getErrorCount(tab.id);
 
-    return count > 0 ? t('gameTables.formErrors.tabWithErrors', { tab: tab.label, count }, count) : undefined;
+    return count > 0
+        ? t('gameTables.formErrors.tabWithErrors', { tab: tab.label, count }, count)
+        : undefined;
 }
 </script>
 
@@ -89,11 +91,11 @@ function tabAccessibleName(tab: FormTab): string | undefined {
         >
             <button
                 v-for="(tab, index) in tabs"
+                :id="`tab-${tab.id}`"
                 :key="tab.id"
                 :ref="(element) => setTabButton(element, index)"
                 type="button"
                 role="tab"
-                :id="`tab-${tab.id}`"
                 :aria-selected="activeTab === tab.id"
                 :aria-controls="`panel-${tab.id}`"
                 :tabindex="activeTab === tab.id ? 0 : -1"
@@ -124,7 +126,10 @@ function tabAccessibleName(tab: FormTab): string | undefined {
                 <!-- Active indicator -->
                 <span
                     v-if="activeTab === tab.id"
-                    :class="['absolute inset-x-0 bottom-0 h-0.5', hasErrors(tab.id) ? 'bg-error' : 'bg-primary-500']"
+                    :class="[
+                        'absolute inset-x-0 bottom-0 h-0.5',
+                        hasErrors(tab.id) ? 'bg-error' : 'bg-primary-500',
+                    ]"
                     aria-hidden="true"
                 />
             </button>
@@ -134,8 +139,8 @@ function tabAccessibleName(tab: FormTab): string | undefined {
         <div class="mt-6">
             <div
                 v-for="tab in tabs"
-                :key="tab.id"
                 :id="`panel-${tab.id}`"
+                :key="tab.id"
                 role="tabpanel"
                 :aria-labelledby="`tab-${tab.id}`"
                 :hidden="activeTab !== tab.id"

@@ -3,7 +3,12 @@ import { ref, computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import type { PaginatedResponse } from '@/types';
-import type { GameTableListItem, GameSystem, GameTableFilters as GameTableFiltersType, EventFilter } from '../../types/gametables';
+import type {
+    GameTableListItem,
+    GameSystem,
+    GameTableFilters as GameTableFiltersType,
+    EventFilter,
+} from '../../types/gametables';
 import GameTableCard from '../../components/GameTableCard.vue';
 import GameTableCardSkeleton from '../../components/GameTableCardSkeleton.vue';
 import GameTableFilters from '../../components/GameTableFilters.vue';
@@ -15,9 +20,9 @@ import { useGridLayout, type GridColumns } from '@/composables/useGridLayout';
 
 interface Props {
     tables: PaginatedResponse<GameTableListItem>;
-    gameSystems: GameSystem[];
-    events: EventFilter[];
-    currentFilters: GameTableFiltersType;
+    gameSystems?: GameSystem[];
+    events?: EventFilter[];
+    currentFilters?: GameTableFiltersType;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -86,10 +91,7 @@ function handleNext(): void {
         />
 
         <!-- Results counter -->
-        <p
-            aria-live="polite"
-            class="mb-4 text-sm text-base-secondary"
-        >
+        <p aria-live="polite" class="mb-4 text-sm text-base-secondary">
             {{ t('gameTables.filters.resultsCount', { count: totalResults }) }}
         </p>
 

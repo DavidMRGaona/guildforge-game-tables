@@ -61,24 +61,31 @@ const resultClasses: Record<ConfirmationResult['tone'], string> = {
 
 // The table, or the list of tables when the link no longer leads to one
 const backHref = computed(() => (props.gameTable ? `/mesas/${props.gameTable.slug}` : '/mesas'));
-const backLabel = computed(() => (props.gameTable ? t('confirmRegistration.viewTable') : t('confirmRegistration.viewTables')));
+const backLabel = computed(() =>
+    props.gameTable ? t('confirmRegistration.viewTable') : t('confirmRegistration.viewTables')
+);
 
 // A link styled as a button (a button inside a link is invalid interactive nesting)
-const linkButtonBase = 'inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-md px-4 py-2 text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface';
+const linkButtonBase =
+    'inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-md px-4 py-2 text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface';
 const primaryLinkClass = `${linkButtonBase} bg-primary text-white hover:bg-primary-700 focus:ring-primary-500`;
 const secondaryLinkClass = `${linkButtonBase} bg-base-secondary/10 text-base-primary hover:bg-base-secondary/20 focus:ring-primary-500`;
 
 // Only the button confirms: opening the link (as mail scanners do) changes nothing
 function handleConfirm(): void {
-    router.post(`/mesas/confirmar/${props.token}`, {}, {
-        preserveScroll: true,
-        onStart: () => {
-            isLoading.value = true;
-        },
-        onFinish: () => {
-            isLoading.value = false;
-        },
-    });
+    router.post(
+        `/mesas/confirmar/${props.token}`,
+        {},
+        {
+            preserveScroll: true,
+            onStart: () => {
+                isLoading.value = true;
+            },
+            onFinish: () => {
+                isLoading.value = false;
+            },
+        }
+    );
 }
 </script>
 
@@ -87,7 +94,9 @@ function handleConfirm(): void {
         <div class="rounded-xl bg-surface p-8 shadow-lg">
             <!-- Header -->
             <div class="mb-6 text-center">
-                <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary-light">
+                <div
+                    class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary-light"
+                >
                     <Mail class="h-8 w-8 text-primary" aria-hidden="true" />
                 </div>
                 <h1 class="text-2xl font-bold text-base-primary">
@@ -96,15 +105,9 @@ function handleConfirm(): void {
             </div>
 
             <!-- Registration info -->
-            <div
-                v-if="participant && gameTable"
-                class="mb-6 rounded-lg bg-muted p-4"
-            >
+            <div v-if="participant && gameTable" class="mb-6 rounded-lg bg-muted p-4">
                 <dl class="space-y-2">
-                    <div
-                        v-if="participant.first_name"
-                        class="flex justify-between"
-                    >
+                    <div v-if="participant.first_name" class="flex justify-between">
                         <dt class="text-sm text-base-muted">
                             {{ t('confirmRegistration.participant') }}
                         </dt>
@@ -120,10 +123,7 @@ function handleConfirm(): void {
                             {{ gameTable.title }}
                         </dd>
                     </div>
-                    <div
-                        v-if="formattedDate"
-                        class="flex justify-between"
-                    >
+                    <div v-if="formattedDate" class="flex justify-between">
                         <dt class="text-sm text-base-muted">
                             {{ t('confirmRegistration.date') }}
                         </dt>
@@ -162,10 +162,7 @@ function handleConfirm(): void {
                     </p>
                 </div>
 
-                <Link
-                    :href="backHref"
-                    :class="primaryLinkClass"
-                >
+                <Link :href="backHref" :class="primaryLinkClass">
                     {{ backLabel }}
                 </Link>
             </template>
@@ -178,10 +175,7 @@ function handleConfirm(): void {
                     </p>
                 </div>
 
-                <Link
-                    :href="backHref"
-                    :class="primaryLinkClass"
-                >
+                <Link :href="backHref" :class="primaryLinkClass">
                     {{ backLabel }}
                 </Link>
             </template>
@@ -193,10 +187,7 @@ function handleConfirm(): void {
                 </p>
 
                 <div class="flex gap-4">
-                    <Link
-                        :href="backHref"
-                        :class="[secondaryLinkClass, 'flex-1']"
-                    >
+                    <Link :href="backHref" :class="[secondaryLinkClass, 'flex-1']">
                         {{ backLabel }}
                     </Link>
                     <BaseButton

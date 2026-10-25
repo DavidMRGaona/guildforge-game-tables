@@ -34,7 +34,9 @@ const gate = useVerificationGate();
 const showSubmitDialog = ref(false);
 const showDeleteDialog = ref(false);
 
-const keys = computed(() => (props.kind === 'table' ? 'gameTables.myTables' : 'campaigns.myCampaigns'));
+const keys = computed(() =>
+    props.kind === 'table' ? 'gameTables.myTables' : 'campaigns.myCampaigns'
+);
 
 const baseUrl = computed(() =>
     props.kind === 'table'
@@ -45,17 +47,23 @@ const baseUrl = computed(() =>
 const returnQuery = computed(() => (props.returnTo === 'profile' ? '?return_to=profile' : ''));
 
 // Landing back on the profile (the server adds the tab to the URL) keeps the page's state: no remount
-const visitOptions = computed(() => (props.returnTo === 'profile' ? { preserveState: true, preserveScroll: true } : {}));
+const visitOptions = computed(() =>
+    props.returnTo === 'profile' ? { preserveState: true, preserveScroll: true } : {}
+);
 
 function handleEdit(): void {
     router.visit(`${baseUrl.value}/editar`);
 }
 
 function confirmSubmitForReview(): void {
-    router.post(`${baseUrl.value}/enviar-revision${returnQuery.value}`, {}, {
-        preserveScroll: true,
-        ...visitOptions.value,
-    });
+    router.post(
+        `${baseUrl.value}/enviar-revision${returnQuery.value}`,
+        {},
+        {
+            preserveScroll: true,
+            ...visitOptions.value,
+        }
+    );
 }
 
 function confirmDelete(): void {

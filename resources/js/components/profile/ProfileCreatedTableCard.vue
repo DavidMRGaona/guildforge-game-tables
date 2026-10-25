@@ -35,9 +35,7 @@ const formattedDate = computed(() => {
     });
 });
 
-const tableUrl = computed(() =>
-    props.table.slug ? `/mesas/${props.table.slug}` : null
-);
+const tableUrl = computed(() => (props.table.slug ? `/mesas/${props.table.slug}` : null));
 
 const statusColorClasses = computed(() => {
     const colorMap: Record<string, string> = {
@@ -68,10 +66,7 @@ const playersText = computed(() => {
                     >
                         {{ table.title }}
                     </Link>
-                    <span
-                        v-else
-                        class="truncate text-base font-medium text-base-primary"
-                    >
+                    <span v-else class="truncate text-base font-medium text-base-primary">
                         {{ table.title }}
                     </span>
                     <span class="shrink-0 text-xs text-base-muted">
@@ -80,7 +75,9 @@ const playersText = computed(() => {
                 </div>
 
                 <!-- Meta info -->
-                <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-base-muted">
+                <div
+                    class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-base-muted"
+                >
                     <!-- Date -->
                     <span v-if="formattedDate" class="flex items-center gap-1">
                         <Calendar class="h-4 w-4" aria-hidden="true" />
@@ -107,7 +104,10 @@ const playersText = computed(() => {
 
             <!-- Status badge -->
             <span
-                :class="['shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium', statusColorClasses]"
+                :class="[
+                    'shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium',
+                    statusColorClasses,
+                ]"
             >
                 {{ table.statusLabel }}
             </span>

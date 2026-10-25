@@ -5,7 +5,10 @@ import { useI18n } from 'vue-i18n';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
-import type { ProfileCampaignInvitation, ProfileCampaignInvitationsData } from '../../types/gametables';
+import type {
+    ProfileCampaignInvitation,
+    ProfileCampaignInvitationsData,
+} from '../../types/gametables';
 
 interface Props {
     profileCampaignInvitations: ProfileCampaignInvitationsData | null;
@@ -17,7 +20,9 @@ interface Props {
 const props = defineProps<Props>();
 const { t, locale } = useI18n();
 
-const invitations = computed<ProfileCampaignInvitation[]>(() => props.profileCampaignInvitations?.invitations ?? []);
+const invitations = computed<ProfileCampaignInvitation[]>(
+    () => props.profileCampaignInvitations?.invitations ?? []
+);
 
 // The invitation whose action is running, and the one the reject dialog asks about
 const busyId = ref<string | null>(null);
@@ -43,16 +48,20 @@ function formatDate(iso: string): string {
 }
 
 function send(id: string, action: 'aceptar' | 'rechazar'): void {
-    router.post(`${baseUrl}/${id}/${action}`, {}, {
-        preserveScroll: true,
-        onStart: () => {
-            busyId.value = id;
-        },
-        onFinish: () => {
-            busyId.value = null;
-            rejectingId.value = null;
-        },
-    });
+    router.post(
+        `${baseUrl}/${id}/${action}`,
+        {},
+        {
+            preserveScroll: true,
+            onStart: () => {
+                busyId.value = id;
+            },
+            onFinish: () => {
+                busyId.value = null;
+                rejectingId.value = null;
+            },
+        }
+    );
 }
 
 function confirmReject(): void {
@@ -82,10 +91,18 @@ function confirmReject(): void {
                         {{ invitation.campaign_title }}
                     </Link>
                     <p class="mt-1 text-sm text-base-secondary">
-                        {{ t('gameTables.profile.invitations.invitedBy', { inviter: invitation.inviter_name }) }}
+                        {{
+                            t('gameTables.profile.invitations.invitedBy', {
+                                inviter: invitation.inviter_name,
+                            })
+                        }}
                     </p>
                     <p class="text-sm text-base-muted">
-                        {{ t('gameTables.profile.invitations.expires', { date: formatDate(invitation.expires_at) }) }}
+                        {{
+                            t('gameTables.profile.invitations.expires', {
+                                date: formatDate(invitation.expires_at),
+                            })
+                        }}
                     </p>
                 </div>
 

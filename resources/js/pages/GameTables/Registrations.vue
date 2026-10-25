@@ -59,7 +59,7 @@ function approve(row: TableRegistrationRow): void {
 // The reject dialog asks for an optional reason, as on the campaign roster page
 const rejecting = ref<TableRegistrationRow | null>(null);
 const rejectReason = ref('');
-// eslint-disable-next-line no-undef
+
 const rejectDialog = ref<HTMLDialogElement | null>(null);
 const rejectTitleId = useId();
 const rejectReasonId = useId();
@@ -97,16 +97,22 @@ function confirmReject(): void {
 
     const reason = rejectReason.value.trim();
     closeReject();
-    router.post(`${baseUrl.value}/${row.id}/rechazar`, { reason: reason === '' ? null : reason }, visitOptions());
+    router.post(
+        `${baseUrl.value}/${row.id}/rechazar`,
+        { reason: reason === '' ? null : reason },
+        visitOptions()
+    );
 }
 
 function awaitingId(row: TableRegistrationRow): string {
     return `registration-awaiting-${row.id}`;
 }
 
-const inputClass = 'mt-1 block w-full rounded-lg border border-default bg-surface px-4 py-2.5 text-base-primary placeholder-base-muted hover:border-strong focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500';
+const inputClass =
+    'mt-1 block w-full rounded-lg border border-default bg-surface px-4 py-2.5 text-base-primary placeholder-base-muted hover:border-strong focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500';
 const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
-const badgeClass = 'inline-flex items-center rounded-full border border-default px-2 py-0.5 text-xs font-medium text-base-secondary';
+const badgeClass =
+    'inline-flex items-center rounded-full border border-default px-2 py-0.5 text-xs font-medium text-base-secondary';
 </script>
 
 <template>
@@ -132,7 +138,12 @@ const badgeClass = 'inline-flex items-center rounded-full border border-default 
                 <span> · {{ formatDateTime(table.starts_at) }}</span>
             </p>
             <p class="mt-1 text-sm text-base-secondary">
-                {{ t('gameTables.registrations.seats', { confirmed: table.confirmed_players, max: table.max_players }) }}
+                {{
+                    t('gameTables.registrations.seats', {
+                        confirmed: table.confirmed_players,
+                        max: table.max_players,
+                    })
+                }}
             </p>
         </div>
     </div>
@@ -154,7 +165,10 @@ const badgeClass = 'inline-flex items-center rounded-full border border-default 
             {{ flashError }}
         </div>
 
-        <p v-if="table.auto_confirm" class="rounded-lg border border-default bg-surface p-4 text-sm text-base-secondary">
+        <p
+            v-if="table.auto_confirm"
+            class="rounded-lg border border-default bg-surface p-4 text-sm text-base-secondary"
+        >
             {{ t('gameTables.registrations.autoConfirmNotice') }}
         </p>
 
@@ -165,7 +179,10 @@ const badgeClass = 'inline-flex items-center rounded-full border border-default 
         <template v-else>
             <!-- Pending requests -->
             <section :class="sectionClass" aria-labelledby="registrations-pending-title">
-                <h2 id="registrations-pending-title" class="text-lg font-semibold text-base-primary">
+                <h2
+                    id="registrations-pending-title"
+                    class="text-lg font-semibold text-base-primary"
+                >
                     {{ t('gameTables.registrations.pending') }}
                     <span class="text-base-muted">({{ pending_count }})</span>
                 </h2>
@@ -183,7 +200,9 @@ const badgeClass = 'inline-flex items-center rounded-full border border-default 
                         <div class="min-w-0">
                             <p class="flex flex-wrap items-center gap-2 text-sm text-base-primary">
                                 <span class="break-words font-medium">{{ row.name }}</span>
-                                <span v-if="row.is_guest" :class="badgeClass">{{ t('gameTables.registrations.guest') }}</span>
+                                <span v-if="row.is_guest" :class="badgeClass">{{
+                                    t('gameTables.registrations.guest')
+                                }}</span>
                                 <span :class="badgeClass">{{ row.role_label }}</span>
                             </p>
                             <p v-if="row.requested_at" class="mt-1 text-sm text-base-muted">
@@ -203,8 +222,12 @@ const badgeClass = 'inline-flex items-center rounded-full border border-default 
                                 variant="primary"
                                 size="sm"
                                 :aria-disabled="processing || !row.can_approve ? 'true' : undefined"
-                                :aria-label="t('gameTables.registrations.approveNamed', { name: row.name })"
-                                :aria-describedby="row.awaiting_email_confirmation ? awaitingId(row) : undefined"
+                                :aria-label="
+                                    t('gameTables.registrations.approveNamed', { name: row.name })
+                                "
+                                :aria-describedby="
+                                    row.awaiting_email_confirmation ? awaitingId(row) : undefined
+                                "
                                 class="w-full aria-disabled:cursor-not-allowed aria-disabled:opacity-50 sm:w-auto"
                                 @click="approve(row)"
                             >
@@ -214,7 +237,9 @@ const badgeClass = 'inline-flex items-center rounded-full border border-default 
                                 variant="secondary"
                                 size="sm"
                                 :aria-disabled="processing || !row.can_reject ? 'true' : undefined"
-                                :aria-label="t('gameTables.registrations.rejectTitle', { name: row.name })"
+                                :aria-label="
+                                    t('gameTables.registrations.rejectTitle', { name: row.name })
+                                "
                                 class="w-full aria-disabled:cursor-not-allowed aria-disabled:opacity-50 sm:w-auto"
                                 @click="openReject(row)"
                             >
@@ -226,7 +251,11 @@ const badgeClass = 'inline-flex items-center rounded-full border border-default 
             </section>
 
             <!-- Everything else: confirmed, waiting list, then the rest -->
-            <section v-if="otherRows.length > 0" :class="sectionClass" aria-labelledby="registrations-others-title">
+            <section
+                v-if="otherRows.length > 0"
+                :class="sectionClass"
+                aria-labelledby="registrations-others-title"
+            >
                 <h2 id="registrations-others-title" class="text-lg font-semibold text-base-primary">
                     {{ t('gameTables.registrations.others') }}
                 </h2>
@@ -237,9 +266,13 @@ const badgeClass = 'inline-flex items-center rounded-full border border-default 
                         :key="row.id"
                         class="flex flex-col gap-1 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
                     >
-                        <p class="flex min-w-0 flex-wrap items-center gap-2 text-sm text-base-primary">
+                        <p
+                            class="flex min-w-0 flex-wrap items-center gap-2 text-sm text-base-primary"
+                        >
                             <span class="break-words font-medium">{{ row.name }}</span>
-                            <span v-if="row.is_guest" :class="badgeClass">{{ t('gameTables.registrations.guest') }}</span>
+                            <span v-if="row.is_guest" :class="badgeClass">{{
+                                t('gameTables.registrations.guest')
+                            }}</span>
                             <span :class="badgeClass">{{ row.role_label }}</span>
                         </p>
                         <p class="text-sm text-base-secondary">
@@ -268,7 +301,10 @@ const badgeClass = 'inline-flex items-center rounded-full border border-default 
                 <h3 :id="rejectTitleId" class="break-words text-lg font-semibold text-base-primary">
                     {{ t('gameTables.registrations.rejectTitle', { name: rejecting?.name ?? '' }) }}
                 </h3>
-                <label :for="rejectReasonId" class="mt-4 block text-sm font-medium text-base-secondary">
+                <label
+                    :for="rejectReasonId"
+                    class="mt-4 block text-sm font-medium text-base-secondary"
+                >
                     {{ t('gameTables.registrations.rejectReason') }}
                 </label>
                 <textarea

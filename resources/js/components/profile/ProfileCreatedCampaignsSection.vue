@@ -21,8 +21,12 @@ const actionsReasonId = useId();
 
 const showDraftsSection = ref(true);
 
-const publishedCampaigns = computed<ProfileCreatedCampaign[]>(() => props.profileCreatedCampaigns?.campaigns ?? []);
-const draftCampaigns = computed<ProfileCreatedCampaign[]>(() => props.profileCreatedCampaigns?.drafts ?? []);
+const publishedCampaigns = computed<ProfileCreatedCampaign[]>(
+    () => props.profileCreatedCampaigns?.campaigns ?? []
+);
+const draftCampaigns = computed<ProfileCreatedCampaign[]>(
+    () => props.profileCreatedCampaigns?.drafts ?? []
+);
 const totalCampaigns = computed(() => props.profileCreatedCampaigns?.total ?? 0);
 const canCreate = computed(() => props.profileCreatedCampaigns?.canCreate ?? false);
 
@@ -31,7 +35,8 @@ const createUrl = '/campanas/crear';
 const manageUrl = '/campanas/mis-campanas';
 
 // The look of the manage link; its disabled stand-in keeps it
-const manageLinkClass = 'inline-flex min-h-[44px] items-center gap-1 text-sm font-medium text-primary underline-offset-2 hover:underline';
+const manageLinkClass =
+    'inline-flex min-h-[44px] items-center gap-1 text-sm font-medium text-primary underline-offset-2 hover:underline';
 
 function toggleDraftsSection(): void {
     showDraftsSection.value = !showDraftsSection.value;
@@ -49,11 +54,7 @@ function toggleDraftsSection(): void {
             >
                 {{ t('campaigns.profile.manage') }}
             </VerificationBlockedButton>
-            <Link
-                v-else
-                :href="manageUrl"
-                :class="manageLinkClass"
-            >
+            <Link v-else :href="manageUrl" :class="manageLinkClass">
                 {{ t('campaigns.profile.manage') }}
                 <span aria-hidden="true">→</span>
             </Link>
@@ -80,7 +81,9 @@ function toggleDraftsSection(): void {
         <!-- Published campaigns section -->
         <section>
             <h2 class="mb-6 flex items-center gap-2 text-lg font-semibold text-base-primary">
-                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-success-light text-xs font-bold text-base-primary">
+                <span
+                    class="flex h-6 w-6 items-center justify-center rounded-full bg-success-light text-xs font-bold text-base-primary"
+                >
                     {{ publishedCampaigns.length }}
                 </span>
                 {{ t('campaigns.profile.published') }}
@@ -111,13 +114,18 @@ function toggleDraftsSection(): void {
                 @click="toggleDraftsSection"
             >
                 <span class="flex items-center gap-2 text-lg font-semibold text-base-primary">
-                    <span class="flex h-6 w-6 items-center justify-center rounded-full bg-warning-light text-xs font-bold text-base-primary">
+                    <span
+                        class="flex h-6 w-6 items-center justify-center rounded-full bg-warning-light text-xs font-bold text-base-primary"
+                    >
                         {{ draftCampaigns.length }}
                     </span>
                     {{ t('campaigns.profile.drafts') }}
                 </span>
                 <ChevronDown
-                    :class="['h-5 w-5 text-base-muted transition-transform', showDraftsSection ? 'rotate-180' : '']"
+                    :class="[
+                        'h-5 w-5 text-base-muted transition-transform',
+                        showDraftsSection ? 'rotate-180' : '',
+                    ]"
                     aria-hidden="true"
                 />
             </button>
@@ -149,7 +157,10 @@ function toggleDraftsSection(): void {
 
         <!-- Create new campaign link (secondary) -->
         <!-- Only once on the page while blocked: the top one says why -->
-        <div v-if="canCreate && !gate.blocked.value" class="flex justify-center border-t border-default pt-8">
+        <div
+            v-if="canCreate && !gate.blocked.value"
+            class="flex justify-center border-t border-default pt-8"
+        >
             <Link
                 :href="createUrl"
                 class="inline-flex items-center gap-2 rounded-lg border-2 border-primary px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary-light"
@@ -161,10 +172,7 @@ function toggleDraftsSection(): void {
     </div>
 
     <!-- Empty state when no campaigns created -->
-    <div
-        v-else
-        class="rounded-lg border border-dashed border-default bg-muted p-12 text-center"
-    >
+    <div v-else class="rounded-lg border border-dashed border-default bg-muted p-12 text-center">
         <BookOpen class="mx-auto h-12 w-12 text-base-secondary" aria-hidden="true" />
         <h3 class="mt-4 text-lg font-medium text-base-primary">
             {{ t('campaigns.profile.noCampaigns') }}
@@ -192,10 +200,7 @@ function toggleDraftsSection(): void {
             </Link>
             <!-- While blocked the create button above already says why -->
             <p v-if="!gate.blocked.value" class="mt-4">
-                <Link
-                    :href="manageUrl"
-                    :class="manageLinkClass"
-                >
+                <Link :href="manageUrl" :class="manageLinkClass">
                     {{ t('campaigns.profile.manage') }}
                     <span aria-hidden="true">→</span>
                 </Link>

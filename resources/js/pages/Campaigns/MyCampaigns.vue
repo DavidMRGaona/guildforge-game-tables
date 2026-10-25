@@ -12,8 +12,8 @@ import { useFlashMessages } from '@/composables/useFlashMessages';
 import type { CampaignResponseDTO } from '../../types/gametables';
 
 interface Props {
-    campaigns: CampaignResponseDTO[];
-    canCreate: boolean;
+    campaigns?: CampaignResponseDTO[];
+    canCreate?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -60,20 +60,34 @@ function handleCreate(): void {
 }
 
 // Links styled as BaseButton (primary / secondary, size sm)
-const primaryLinkClass = 'inline-flex min-h-[44px] items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface';
-const secondaryLinkClass = 'inline-flex min-h-[44px] items-center justify-center rounded-md bg-base-secondary/10 px-4 py-2 text-sm font-medium text-base-primary transition-colors hover:bg-base-secondary/20 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface';
+const primaryLinkClass =
+    'inline-flex min-h-[44px] items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface';
+const secondaryLinkClass =
+    'inline-flex min-h-[44px] items-center justify-center rounded-md bg-base-secondary/10 px-4 py-2 text-sm font-medium text-base-primary transition-colors hover:bg-base-secondary/20 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface';
 
 // «Semanal · 4/5 jugadores · Aceptando nuevos jugadores» on the campaigns the viewer directs
 function directedSummary(campaign: CampaignResponseDTO): string {
-    const players = campaign.max_players !== null
-        ? t('campaigns.playersCount', { current: campaign.current_players, max: campaign.max_players })
-        : t('campaigns.myCampaigns.playersNoMax', { count: campaign.current_players }, campaign.current_players);
+    const players =
+        campaign.max_players !== null
+            ? t('campaigns.playersCount', {
+                  current: campaign.current_players,
+                  max: campaign.max_players,
+              })
+            : t(
+                  'campaigns.myCampaigns.playersNoMax',
+                  { count: campaign.current_players },
+                  campaign.current_players
+              );
     const recruiting = campaign.accepts_new_players
         ? t('campaigns.recruiting')
         : t('campaigns.notRecruiting');
 
     return campaign.frequency_label
-        ? t('campaigns.myCampaigns.summary', { frequency: campaign.frequency_label, players, recruiting })
+        ? t('campaigns.myCampaigns.summary', {
+              frequency: campaign.frequency_label,
+              players,
+              recruiting,
+          })
         : t('campaigns.myCampaigns.summaryNoFrequency', { players, recruiting });
 }
 
@@ -148,11 +162,7 @@ function getCampaignLink(campaign: CampaignResponseDTO): string {
             :title="t('campaigns.myCampaigns.noCampaigns')"
             :description="t('campaigns.myCampaigns.noCampaignsDescription')"
         >
-            <BaseButton
-                v-if="props.canCreate"
-                variant="primary"
-                @click="handleCreate"
-            >
+            <BaseButton v-if="props.canCreate" variant="primary" @click="handleCreate">
                 {{ t('campaigns.myCampaigns.createCampaign') }}
             </BaseButton>
         </EmptyState>
@@ -167,7 +177,9 @@ function getCampaignLink(campaign: CampaignResponseDTO): string {
                     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                         <div class="min-w-0 flex-1">
                             <div class="mb-2 flex flex-wrap items-center gap-2">
-                                <h2 class="min-w-0 truncate text-xl font-semibold text-base-primary">
+                                <h2
+                                    class="min-w-0 truncate text-xl font-semibold text-base-primary"
+                                >
                                     <Link
                                         v-if="isApproved(campaign)"
                                         :href="getCampaignLink(campaign)"
@@ -197,13 +209,25 @@ function getCampaignLink(campaign: CampaignResponseDTO): string {
                                     v-if="campaign.pending_requests > 0"
                                     class="mt-2 inline-flex items-center rounded-full bg-warning-light px-2 py-0.5 text-xs font-medium text-base-primary"
                                 >
-                                    {{ t('campaigns.myCampaigns.pendingRequests', { count: campaign.pending_requests }, campaign.pending_requests) }}
+                                    {{
+                                        t(
+                                            'campaigns.myCampaigns.pendingRequests',
+                                            { count: campaign.pending_requests },
+                                            campaign.pending_requests
+                                        )
+                                    }}
                                 </span>
                             </template>
 
-                            <div v-else class="mt-3 flex flex-wrap items-center gap-4 text-sm text-base-secondary">
+                            <div
+                                v-else
+                                class="mt-3 flex flex-wrap items-center gap-4 text-sm text-base-secondary"
+                            >
                                 <!-- Frequency -->
-                                <div v-if="campaign.frequency_label" class="flex items-center gap-1.5">
+                                <div
+                                    v-if="campaign.frequency_label"
+                                    class="flex items-center gap-1.5"
+                                >
                                     <Clock class="h-4 w-4" aria-hidden="true" />
                                     <span>{{ campaign.frequency_label }}</span>
                                 </div>
@@ -213,7 +237,9 @@ function getCampaignLink(campaign: CampaignResponseDTO): string {
                                     <Users class="h-4 w-4" aria-hidden="true" />
                                     <span>
                                         <template v-if="campaign.max_players">
-                                            {{ campaign.current_players }}/{{ campaign.max_players }}
+                                            {{ campaign.current_players }}/{{
+                                                campaign.max_players
+                                            }}
                                         </template>
                                         <template v-else>
                                             {{ campaign.current_players }}
@@ -243,10 +269,7 @@ function getCampaignLink(campaign: CampaignResponseDTO): string {
 
                         <div class="flex flex-shrink-0 flex-wrap gap-2">
                             <template v-if="campaign.directed_by_viewer">
-                                <Link
-                                    :href="rosterLink(campaign)"
-                                    :class="primaryLinkClass"
-                                >
+                                <Link :href="rosterLink(campaign)" :class="primaryLinkClass">
                                     {{ t('campaigns.myCampaigns.roster') }}
                                 </Link>
                                 <Link
@@ -267,7 +290,11 @@ function getCampaignLink(campaign: CampaignResponseDTO): string {
                             <template v-else-if="isApproved(campaign)">
                                 <Link
                                     :href="getCampaignLink(campaign)"
-                                    :class="campaign.directed_by_viewer ? secondaryLinkClass : primaryLinkClass"
+                                    :class="
+                                        campaign.directed_by_viewer
+                                            ? secondaryLinkClass
+                                            : primaryLinkClass
+                                    "
                                 >
                                     {{ t('campaigns.myCampaigns.viewPublic') }}
                                 </Link>
