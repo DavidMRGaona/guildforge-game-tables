@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Forms\Components;
 
-use Filament\Schemas\Components\Utilities\Get;
-use Filament\Schemas\Components\Grid;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
@@ -13,9 +11,12 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Flex;
+use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Icon;
 use Filament\Schemas\Components\Text;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Support\Enums\FontWeight;
 use Filament\Support\Icons\Heroicon;
 use Modules\GameTables\Domain\Enums\GameMasterRole;
@@ -94,11 +95,11 @@ final class GameMasterRepeater
         $label = self::getItemLabel($state);
 
         if (! empty($state['is_inherited'])) {
-            $label .= ' ' . __('game-tables::messages.fields.inherited_badge');
+            $label .= ' '.__('game-tables::messages.fields.inherited_badge');
         }
 
         if (! empty($state['excluded'])) {
-            $label .= ' ' . __('game-tables::messages.fields.excluded_badge');
+            $label .= ' '.__('game-tables::messages.fields.excluded_badge');
         }
 
         return $label;
@@ -107,7 +108,7 @@ final class GameMasterRepeater
     /**
      * Get the schema for a single game master item (campaigns).
      *
-     * @return array<int, \Filament\Schemas\Components\Component>
+     * @return array<int, Component>
      */
     public static function getSchema(): array
     {
@@ -194,7 +195,7 @@ final class GameMasterRepeater
     /**
      * Get the schema for a single game master item (game tables - with inheritance support).
      *
-     * @return array<int, \Filament\Schemas\Components\Component>
+     * @return array<int, Component>
      */
     public static function getSchemaForTable(): array
     {

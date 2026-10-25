@@ -37,7 +37,7 @@ final class ParticipantRegisteredNotification extends Notification implements Sh
             ? __('game-tables::emails.guest_confirmation.role_player')
             : __('game-tables::emails.guest_confirmation.role_spectator');
 
-        $message = (new MailMessage())
+        $message = (new MailMessage)
             ->subject(__('game-tables::emails.registration.subject', ['tableTitle' => $this->tableTitle]))
             ->greeting(__('game-tables::emails.registration.greeting'))
             ->line(__('game-tables::emails.registration.intro', [
@@ -46,14 +46,14 @@ final class ParticipantRegisteredNotification extends Notification implements Sh
                 'tableTitle' => $this->tableTitle,
             ]));
 
-        $message->line('**' . __('game-tables::emails.registration.table_title') . ':** ' . $this->tableTitle);
+        $message->line('**'.__('game-tables::emails.registration.table_title').':** '.$this->tableTitle);
 
         if ($this->tableDate !== null) {
-            $message->line('**' . __('game-tables::emails.registration.table_date') . ':** ' . $this->tableDate);
+            $message->line('**'.__('game-tables::emails.registration.table_date').':** '.$this->tableDate);
         }
 
         if ($this->tableLocation !== null) {
-            $message->line('**' . __('game-tables::emails.registration.table_location') . ':** ' . $this->tableLocation);
+            $message->line('**'.__('game-tables::emails.registration.table_location').':** '.$this->tableLocation);
         }
 
         if ($this->manageUrl !== null) {

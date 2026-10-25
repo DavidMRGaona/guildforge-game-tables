@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Tests\Feature\Infrastructure\Services;
 
+use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Str;
+use Modules\GameTables\Application\DTOs\TableSeatsDTO;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use Modules\GameTables\Http\Resources\GameTableResource;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
@@ -63,7 +65,7 @@ final class EffectiveClosingDateExposureTest extends ModuleTestCase
         $table = GameTableModel::create($attributes + [
             'id' => (string) Str::uuid(),
             'game_system_id' => $system->id,
-            'created_by' => \App\Infrastructure\Persistence\Eloquent\Models\UserModel::factory()->create()->id,
+            'created_by' => UserModel::factory()->create()->id,
             'title' => 'Mesa de prueba',
             'slug' => 'mesa-de-prueba',
             'starts_at' => '2030-01-10 18:00:00',
@@ -80,7 +82,7 @@ final class EffectiveClosingDateExposureTest extends ModuleTestCase
         $dto = app(GameTableQueryServiceInterface::class)->findPublished($table->id);
         $this->assertNotNull($dto);
 
-        $seats = new \Modules\GameTables\Application\DTOs\TableSeatsDTO(0, 0, 5, 0, 0);
+        $seats = new TableSeatsDTO(0, 0, 5, 0, 0);
 
         $value = (new GameTableResource($dto, $seats))->toArray(request())['effectiveRegistrationClosesAt'];
         $this->assertIsString($value);

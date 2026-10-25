@@ -53,12 +53,12 @@ final class GuestEmailConfirmationRequestTest extends TestCase
         $notification = $this->notification(holdsPlace: true, deadline: '02/11/2026 12:00');
 
         $this->assertInstanceOf(ShouldQueue::class, $notification);
-        $this->assertSame(['mail'], $notification->via(new AnonymousNotifiable()));
+        $this->assertSame(['mail'], $notification->via(new AnonymousNotifiable));
     }
 
     private function mail(bool $holdsPlace, ?string $deadline): MailMessage
     {
-        return $this->notification($holdsPlace, $deadline)->toMail(new AnonymousNotifiable());
+        return $this->notification($holdsPlace, $deadline)->toMail(new AnonymousNotifiable);
     }
 
     private function notification(bool $holdsPlace, ?string $deadline): GuestEmailConfirmationRequest

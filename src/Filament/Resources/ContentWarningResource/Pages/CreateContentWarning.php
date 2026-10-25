@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\GameTables\Filament\Resources\ContentWarningResource\Pages;
 
 use Filament\Resources\Pages\CreateRecord;
-use Illuminate\Contracts\Support\Htmlable;
 use Modules\GameTables\Filament\Resources\ContentWarningResource;
 
 final class CreateContentWarning extends CreateRecord

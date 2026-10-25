@@ -24,10 +24,10 @@ use Modules\GameTables\Domain\ValueObjects\TimeSlot;
 final class GameTable
 {
     /**
-     * @param array<Genre>|null $genres
-     * @param array<SafetyTool>|null $safetyTools
-     * @param array<string>|null $contentWarningIds
-     * @param array<string>|null $customWarnings
+     * @param  array<Genre>|null  $genres
+     * @param  array<SafetyTool>|null  $safetyTools
+     * @param  array<string>|null  $contentWarningIds
+     * @param  array<string>|null  $customWarnings
      */
     public function __construct(
         public readonly GameTableId $id,
@@ -71,14 +71,13 @@ final class GameTable
         public ?string $moderationNotes = null,
         public ?DateTimeImmutable $createdAt = null,
         public ?DateTimeImmutable $updatedAt = null,
-    ) {
-    }
+    ) {}
 
     public function publish(): void
     {
         $this->status = TableStatus::Scheduled;
         $this->isPublished = true;
-        $this->publishedAt = new DateTimeImmutable();
+        $this->publishedAt = new DateTimeImmutable;
     }
 
     /**
@@ -255,7 +254,7 @@ final class GameTable
 
     public function isMemberEarlyAccessActive(DateTimeImmutable $now): bool
     {
-        if ($this->membersEarlyAccessDays <= 0 || !$this->registrationOpensAt instanceof \DateTimeImmutable) {
+        if ($this->membersEarlyAccessDays <= 0 || ! $this->registrationOpensAt instanceof DateTimeImmutable) {
             return false;
         }
 
@@ -324,7 +323,7 @@ final class GameTable
         $slot = new TimeSlot(DateTimeImmutable::createFromInterface($startsAt), $durationMinutes);
         $limit = $acceptsRegistrationsInProgress ? $slot->endsAt() : $slot->startsAt;
 
-        if (!$configuredClosesAt instanceof \DateTimeInterface) {
+        if (! $configuredClosesAt instanceof \DateTimeInterface) {
             return $limit;
         }
 
@@ -339,10 +338,11 @@ final class GameTable
             return false;
         }
 
-        if ($this->registrationOpensAt instanceof \DateTimeImmutable && $now < $this->registrationOpensAt) {
+        if ($this->registrationOpensAt instanceof DateTimeImmutable && $now < $this->registrationOpensAt) {
             return false;
         }
-        return !$this->registrationClosesAt instanceof \DateTimeImmutable || $now <= $this->registrationClosesAt;
+
+        return ! $this->registrationClosesAt instanceof DateTimeImmutable || $now <= $this->registrationClosesAt;
     }
 
     /**
@@ -357,7 +357,7 @@ final class GameTable
             return false;
         }
 
-        return !$this->registrationClosesAt instanceof \DateTimeImmutable || $now <= $this->registrationClosesAt;
+        return ! $this->registrationClosesAt instanceof DateTimeImmutable || $now <= $this->registrationClosesAt;
     }
 
     public function canUserRegister(bool $isMember, DateTimeImmutable $now, bool $membersEarlyAccess = true): bool
@@ -402,8 +402,8 @@ final class GameTable
     }
 
     /**
-     * @param array<Genre>|null $genres
-     * @param array<SafetyTool>|null $safetyTools
+     * @param  array<Genre>|null  $genres
+     * @param  array<SafetyTool>|null  $safetyTools
      */
     public function updateDetails(
         string $title,
@@ -444,8 +444,8 @@ final class GameTable
     }
 
     /**
-     * @param array<string>|null $contentWarningIds
-     * @param array<string>|null $customWarnings
+     * @param  array<string>|null  $contentWarningIds
+     * @param  array<string>|null  $customWarnings
      */
     public function updateContentWarnings(?array $contentWarningIds, ?array $customWarnings): void
     {
@@ -519,12 +519,12 @@ final class GameTable
 
     public function isCreatedFromFrontend(): bool
     {
-        return $this->frontendCreationStatus instanceof \Modules\GameTables\Domain\Enums\FrontendCreationStatus;
+        return $this->frontendCreationStatus instanceof FrontendCreationStatus;
     }
 
     public function isPendingModeration(): bool
     {
-        return $this->frontendCreationStatus instanceof \Modules\GameTables\Domain\Enums\FrontendCreationStatus && $this->frontendCreationStatus->isPending();
+        return $this->frontendCreationStatus instanceof FrontendCreationStatus && $this->frontendCreationStatus->isPending();
     }
 
     /**

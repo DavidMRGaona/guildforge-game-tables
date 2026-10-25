@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Models;
 
+use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -25,9 +27,9 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\Concerns\HasGa
  * @property string|null $notes
  * @property Carbon $created_at
  * @property Carbon $updated_at
- * @property-read \App\Infrastructure\Persistence\Eloquent\Models\UserModel|null $user
- * @property-read \Illuminate\Database\Eloquent\Collection<int, CampaignModel> $campaigns
- * @property-read \Illuminate\Database\Eloquent\Collection<int, GameTableModel> $gameTables
+ * @property-read UserModel|null $user
+ * @property-read Collection<int, CampaignModel> $campaigns
+ * @property-read Collection<int, GameTableModel> $gameTables
  */
 final class GameMasterModel extends Model
 {

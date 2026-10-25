@@ -19,11 +19,11 @@ final class EventModelRelationsTest extends ModuleTestCase
 
     public function test_module_registers_the_game_tables_relation_on_events(): void
     {
-        $this->assertNotNull((new EventModel())->relationResolver(EventModel::class, 'gameTables'));
+        $this->assertNotNull((new EventModel)->relationResolver(EventModel::class, 'gameTables'));
     }
 
     public function test_module_registers_the_game_table_config_relation_on_events(): void
     {
-        $this->assertNotNull((new EventModel())->relationResolver(EventModel::class, 'gameTableConfig'));
+        $this->assertNotNull((new EventModel)->relationResolver(EventModel::class, 'gameTableConfig'));
     }
 }

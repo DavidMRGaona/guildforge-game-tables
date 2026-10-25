@@ -6,6 +6,7 @@ namespace Modules\GameTables\Tests\Feature\Infrastructure\Listeners;
 
 use DateTimeImmutable;
 use Illuminate\Support\Facades\Notification;
+use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableStatus;
@@ -17,7 +18,6 @@ use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Domain\ValueObjects\TimeSlot;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnWaitingListPromotion;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
-use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Notifications\WaitingListPromotionGmNotification;
 use Modules\GameTables\Notifications\WaitingListPromotionNotification;
 use Tests\TestCase;
@@ -25,7 +25,9 @@ use Tests\TestCase;
 final class NotifyOnWaitingListPromotionTest extends TestCase
 {
     private NotificationRecipientResolverInterface $recipientResolver;
+
     private GameTableRepositoryInterface $gameTableRepository;
+
     private NotifyOnWaitingListPromotion $listener;
 
     protected function setUp(): void
@@ -36,7 +38,7 @@ final class NotifyOnWaitingListPromotionTest extends TestCase
         $this->gameTableRepository = $this->createMock(GameTableRepositoryInterface::class);
 
         $this->listener = new NotifyOnWaitingListPromotion(
-            new GameTableSettingsReader(),
+            new GameTableSettingsReader,
             $this->recipientResolver,
             $this->gameTableRepository,
         );

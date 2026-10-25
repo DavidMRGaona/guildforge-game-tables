@@ -54,7 +54,7 @@ final readonly class TableRegistrationsQuery implements TableRegistrationsQueryI
     {
         $participant = $this->participants->find(new ParticipantId($participantId));
 
-        if (!$participant instanceof \Modules\GameTables\Domain\Entities\Participant || $participant->gameTableId->value !== $gameTableId || ! $this->isListed($participant)) {
+        if (! $participant instanceof Participant || $participant->gameTableId->value !== $gameTableId || ! $this->isListed($participant)) {
             return null;
         }
 

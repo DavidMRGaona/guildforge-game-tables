@@ -67,8 +67,7 @@ interface ContentWarningRepositoryInterface
     /**
      * Find multiple content warnings by their IDs.
      *
-     * @param array<ContentWarningId> $ids
-     *
+     * @param  array<ContentWarningId>  $ids
      * @return array<ContentWarning>
      */
     public function findByIds(array $ids): array;

@@ -6,7 +6,6 @@ namespace Modules\GameTables\Filament\Resources\ContentWarningResource\Pages;
 
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
-use Illuminate\Contracts\Support\Htmlable;
 use Modules\GameTables\Filament\Resources\ContentWarningResource;
 
 final class ListContentWarnings extends ListRecords

@@ -38,7 +38,7 @@ final readonly class EloquentGameSystemRepository implements GameSystemRepositor
     {
         $gameSystem = $this->find($id);
 
-        if (!$gameSystem instanceof \Modules\GameTables\Domain\Entities\GameSystem) {
+        if (! $gameSystem instanceof GameSystem) {
             throw GameSystemNotFoundException::withId($id->value);
         }
 

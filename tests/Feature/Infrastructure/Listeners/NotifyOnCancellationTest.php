@@ -6,6 +6,7 @@ namespace Modules\GameTables\Tests\Feature\Infrastructure\Listeners;
 
 use DateTimeImmutable;
 use Illuminate\Support\Facades\Notification;
+use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableStatus;
@@ -17,14 +18,15 @@ use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Domain\ValueObjects\TimeSlot;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnCancellation;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
-use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Notifications\ParticipantCancelledNotification;
 use Tests\TestCase;
 
 final class NotifyOnCancellationTest extends TestCase
 {
     private NotificationRecipientResolverInterface $recipientResolver;
+
     private GameTableRepositoryInterface $gameTableRepository;
+
     private NotifyOnCancellation $listener;
 
     protected function setUp(): void
@@ -35,7 +37,7 @@ final class NotifyOnCancellationTest extends TestCase
         $this->gameTableRepository = $this->createMock(GameTableRepositoryInterface::class);
 
         $this->listener = new NotifyOnCancellation(
-            new GameTableSettingsReader(),
+            new GameTableSettingsReader,
             $this->recipientResolver,
             $this->gameTableRepository,
         );

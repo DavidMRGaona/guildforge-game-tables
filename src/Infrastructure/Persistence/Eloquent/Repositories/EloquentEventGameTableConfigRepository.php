@@ -46,7 +46,7 @@ final readonly class EloquentEventGameTableConfigRepository implements EventGame
     {
         $config = $this->findByEvent($eventId);
 
-        if ($config instanceof \Modules\GameTables\Domain\Entities\EventGameTableConfig) {
+        if ($config instanceof EventGameTableConfig) {
             return $config;
         }
 
@@ -153,7 +153,7 @@ final readonly class EloquentEventGameTableConfigRepository implements EventGame
 
     private function carbonToDateTimeImmutable(?Carbon $carbon): ?DateTimeImmutable
     {
-        if (!$carbon instanceof \Carbon\Carbon) {
+        if (! $carbon instanceof Carbon) {
             return null;
         }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Services;
 
+use Illuminate\Database\Eloquent\Builder;
 use Modules\GameTables\Application\DTOs\GameMasterResponseDTO;
 use Modules\GameTables\Application\DTOs\GameTableListDTO;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
@@ -109,7 +110,7 @@ final readonly class GameTableQueryService implements GameTableQueryServiceInter
         ?string $status = null,
         ?string $eventId = null,
         ?string $campaignId = null,
-    ): \Illuminate\Database\Eloquent\Builder {
+    ): Builder {
         $query = SeatCounter::withPlayerSeatCounts(GameTableModel::query())
             ->with(['gameSystem', 'creator', 'event', 'gameMasters.user'])
             ->where('is_published', true)

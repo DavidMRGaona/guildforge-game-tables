@@ -29,7 +29,7 @@ final readonly class SeatCounter
 
     public function __construct(
         private ParticipantRepositoryInterface $participantRepository,
-        private GameTableSettingsReader $settings = new GameTableSettingsReader(),
+        private GameTableSettingsReader $settings = new GameTableSettingsReader,
     ) {}
 
     public function takenPlayerSeats(GameTable $gameTable): int

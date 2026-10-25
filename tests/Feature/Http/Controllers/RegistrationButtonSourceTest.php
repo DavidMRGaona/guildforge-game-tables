@@ -56,7 +56,7 @@ final class RegistrationButtonSourceTest extends TestCase
 
         $this->assertStringContainsString('campaignSession?: CampaignSessionInfo | null;', $source);
         $this->assertStringContainsString("<CampaignSessionRosterBox\n            v-if=\"rosterSession\"", $source);
-        $this->assertStringContainsString("<template v-else>", $source);
+        $this->assertStringContainsString('<template v-else>', $source);
     }
 
     public function test_the_campaign_box_cancels_and_rejoins_through_the_registration_routes(): void
@@ -168,7 +168,7 @@ final class RegistrationButtonSourceTest extends TestCase
         foreach (['pages/GameTables/Create.vue', 'pages/GameTables/Edit.vue'] as $page) {
             $source = $this->source($page);
 
-            $this->assertStringNotContainsString("context.campaign", $source, $page);
+            $this->assertStringNotContainsString('context.campaign', $source, $page);
             $this->assertStringContainsString("type ContextType = 'independent' | 'event';", $source, $page);
             $this->assertStringContainsString('<SessionCampaignField', $source, $page);
             $this->assertStringContainsString("if (type !== 'campaign_session') form.campaign_id = null;", $source, $page);
@@ -253,7 +253,7 @@ final class RegistrationButtonSourceTest extends TestCase
     {
         $source = $this->source('pages/GameTables/CancelRegistration.vue');
 
-        $this->assertStringNotContainsString("gameTables.cancelRegistration.", $source);
+        $this->assertStringNotContainsString('gameTables.cancelRegistration.', $source);
         $this->assertStringContainsString('tableStarted: boolean;', $source);
         $this->assertStringContainsString("tableStarted ? t('cancelRegistration.tableStarted') : t('cancelRegistration.alreadyCancelled')", $source);
     }

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Modules\GameTables\Listeners;
 
 use Illuminate\Support\Facades\Notification;
+use Modules\GameTables\Domain\Entities\Campaign;
+use Modules\GameTables\Domain\Entities\CampaignInvitation;
 use Modules\GameTables\Domain\Events\CampaignInvitationSent;
 use Modules\GameTables\Domain\Repositories\CampaignInvitationRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
@@ -27,13 +29,13 @@ final readonly class SendCampaignInvitation
         $invitation = $this->invitations->find(new CampaignInvitationId($event->invitationId));
 
         // Gone (declined, cancelled, expired) or replaced by a newer resend: this token is dead.
-        if (!$invitation instanceof \Modules\GameTables\Domain\Entities\CampaignInvitation || ! hash_equals($invitation->tokenHash, hash('sha256', $event->token))) {
+        if (! $invitation instanceof CampaignInvitation || ! hash_equals($invitation->tokenHash, hash('sha256', $event->token))) {
             return;
         }
 
         $campaign = $this->campaigns->find(new CampaignId($event->campaignId));
 
-        if (!$campaign instanceof \Modules\GameTables\Domain\Entities\Campaign) {
+        if (! $campaign instanceof Campaign) {
             return;
         }
 

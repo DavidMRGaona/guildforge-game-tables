@@ -33,20 +33,20 @@ final class GuestCancellationConfirmation extends Notification implements Should
     {
         $tableUrl = url("/mesas/{$this->tableId}");
 
-        $message = (new MailMessage())
+        $message = (new MailMessage)
             ->subject(__('game-tables::emails.cancellation_confirmation.subject', ['tableTitle' => $this->tableTitle]))
             ->greeting(__('game-tables::emails.cancellation_confirmation.greeting', ['name' => $this->firstName]))
             ->line(__('game-tables::emails.cancellation_confirmation.intro'))
             ->line(__('game-tables::emails.cancellation_confirmation.details'));
 
-        $message->line('**' . __('game-tables::emails.cancellation_confirmation.table_title') . ':** ' . $this->tableTitle);
+        $message->line('**'.__('game-tables::emails.cancellation_confirmation.table_title').':** '.$this->tableTitle);
 
         if ($this->tableDate !== null) {
-            $message->line('**' . __('game-tables::emails.cancellation_confirmation.table_date') . ':** ' . $this->tableDate);
+            $message->line('**'.__('game-tables::emails.cancellation_confirmation.table_date').':** '.$this->tableDate);
         }
 
         if ($this->tableLocation !== null) {
-            $message->line('**' . __('game-tables::emails.cancellation_confirmation.table_location') . ':** ' . $this->tableLocation);
+            $message->line('**'.__('game-tables::emails.cancellation_confirmation.table_location').':** '.$this->tableLocation);
         }
 
         return $message

@@ -13,6 +13,7 @@ use Modules\GameTables\Domain\Exceptions\TableFullException;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
+use Symfony\Component\HttpFoundation\Response;
 use Tests\Support\Modules\ModuleTestCase;
 
 /**
@@ -412,7 +413,7 @@ final class WaitingListRegistrationTest extends ModuleTestCase
     }
 
     /**
-     * @return TestResponse<\Symfony\Component\HttpFoundation\Response>
+     * @return TestResponse<Response>
      */
     private function register(UserModel $user, GameTableModel $table, string $role = 'player'): TestResponse
     {
@@ -424,7 +425,7 @@ final class WaitingListRegistrationTest extends ModuleTestCase
     }
 
     /**
-     * @return TestResponse<\Symfony\Component\HttpFoundation\Response>
+     * @return TestResponse<Response>
      */
     private function confirmGuestEmails(GameTableModel $table): void
     {

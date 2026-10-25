@@ -33,19 +33,19 @@ final class WaitingListPromotionNotification extends Notification implements Sho
 
     public function toMail(object $notifiable): MailMessage
     {
-        $message = (new MailMessage())
+        $message = (new MailMessage)
             ->subject(__('game-tables::emails.waiting_list_promotion.subject', ['tableTitle' => $this->tableTitle]))
             ->greeting(__('game-tables::emails.waiting_list_promotion.greeting', ['name' => $this->participantName]))
             ->line(__('game-tables::emails.waiting_list_promotion.intro', ['tableTitle' => $this->tableTitle]));
 
-        $message->line('**' . __('game-tables::emails.waiting_list_promotion.table_title') . ':** ' . $this->tableTitle);
+        $message->line('**'.__('game-tables::emails.waiting_list_promotion.table_title').':** '.$this->tableTitle);
 
         if ($this->tableDate !== null) {
-            $message->line('**' . __('game-tables::emails.waiting_list_promotion.table_date') . ':** ' . $this->tableDate);
+            $message->line('**'.__('game-tables::emails.waiting_list_promotion.table_date').':** '.$this->tableDate);
         }
 
         if ($this->tableLocation !== null) {
-            $message->line('**' . __('game-tables::emails.waiting_list_promotion.table_location') . ':** ' . $this->tableLocation);
+            $message->line('**'.__('game-tables::emails.waiting_list_promotion.table_location').':** '.$this->tableLocation);
         }
 
         $tableUrl = url("/mesas/{$this->tableId}");

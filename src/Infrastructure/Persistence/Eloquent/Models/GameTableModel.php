@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Models;
 
 use App\Infrastructure\Persistence\Eloquent\Concerns\DeletesCloudinaryImages;
+use App\Infrastructure\Persistence\Eloquent\Concerns\HasSlug;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -23,7 +25,6 @@ use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Enums\TableType;
 use Modules\GameTables\Domain\Enums\Tone;
-use App\Infrastructure\Persistence\Eloquent\Concerns\HasSlug;
 
 /**
  * @property string $id
@@ -281,9 +282,9 @@ final class GameTableModel extends Model
     /**
      * Get the effective game masters for this table (inherited from campaign + local, minus excluded).
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, GameMasterModel>
+     * @return Collection<int, GameMasterModel>
      */
-    public function getEffectiveGameMastersAttribute(): \Illuminate\Database\Eloquent\Collection
+    public function getEffectiveGameMastersAttribute(): Collection
     {
         // Get excluded GM IDs for this table
         $excludedIds = $this->excludedGameMasters()->pluck('gametables_game_masters.id')->toArray();
@@ -292,9 +293,9 @@ final class GameTableModel extends Model
         if ($this->campaign_id !== null) {
             $campaignGms = $this->campaign?->gameMasters()
                 ->whereNotIn('gametables_game_masters.id', $excludedIds)
-                ->get() ?? new \Illuminate\Database\Eloquent\Collection();
+                ->get() ?? new Collection;
         } else {
-            $campaignGms = new \Illuminate\Database\Eloquent\Collection();
+            $campaignGms = new Collection;
         }
 
         // Add local GMs

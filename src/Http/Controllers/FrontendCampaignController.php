@@ -11,12 +11,12 @@ use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
-use Modules\GameTables\Domain\Exceptions\NotEditableException;
-use Modules\GameTables\Domain\Exceptions\CampaignNotFoundException;
-use Modules\GameTables\Application\DTOs\FrontendCreateCampaignDTO;
 use Modules\GameTables\Application\DTOs\CampaignResponseDTO;
+use Modules\GameTables\Application\DTOs\FrontendCreateCampaignDTO;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
+use Modules\GameTables\Domain\Exceptions\CampaignNotFoundException;
+use Modules\GameTables\Domain\Exceptions\NotEditableException;
 use Modules\GameTables\Http\Requests\FrontendCreateCampaignRequest;
 use Modules\GameTables\Http\Support\AuthorLockRedirect;
 use Modules\GameTables\Http\Support\AuthorReturnTarget;
@@ -116,7 +116,7 @@ final class FrontendCampaignController extends Controller
      */
     public function edit(string $id): Response|RedirectResponse
     {
-        if (($locked = $this->sendLockedAuthorBack(CampaignModel::query()->find($id))) instanceof \Illuminate\Http\RedirectResponse) {
+        if (($locked = $this->sendLockedAuthorBack(CampaignModel::query()->find($id))) instanceof RedirectResponse) {
             return $locked;
         }
 
@@ -125,7 +125,7 @@ final class FrontendCampaignController extends Controller
 
         // Only the author's own drafts: anyone else gets 404, so the page never reveals that a campaign exists
         $drafts = $this->creationService->getUserCampaignDrafts((string) $user->id);
-        $campaign = array_find($drafts, fn($draft) => $draft->id === $id);
+        $campaign = array_find($drafts, fn ($draft) => $draft->id === $id);
 
         if ($campaign === null) {
             abort(404);
@@ -149,7 +149,7 @@ final class FrontendCampaignController extends Controller
      */
     public function update(string $id, FrontendCreateCampaignRequest $request): RedirectResponse
     {
-        if (($locked = $this->sendLockedAuthorBack(CampaignModel::query()->find($id))) instanceof \Illuminate\Http\RedirectResponse) {
+        if (($locked = $this->sendLockedAuthorBack(CampaignModel::query()->find($id))) instanceof RedirectResponse) {
             return $locked;
         }
 
@@ -180,7 +180,7 @@ final class FrontendCampaignController extends Controller
      */
     public function submitForReview(string $id): RedirectResponse
     {
-        if (($locked = $this->sendLockedAuthorBack(CampaignModel::query()->find($id))) instanceof \Illuminate\Http\RedirectResponse) {
+        if (($locked = $this->sendLockedAuthorBack(CampaignModel::query()->find($id))) instanceof RedirectResponse) {
             return $locked;
         }
 
@@ -211,7 +211,7 @@ final class FrontendCampaignController extends Controller
      */
     public function destroy(string $id): RedirectResponse
     {
-        if (($locked = $this->sendLockedAuthorBack(CampaignModel::query()->find($id))) instanceof \Illuminate\Http\RedirectResponse) {
+        if (($locked = $this->sendLockedAuthorBack(CampaignModel::query()->find($id))) instanceof RedirectResponse) {
             return $locked;
         }
 

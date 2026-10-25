@@ -18,12 +18,12 @@ use Modules\GameTables\Domain\Enums\RegistrationType;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Enums\TableType;
-use Modules\GameTables\Domain\ValueObjects\GameSystemId;
-use Modules\GameTables\Domain\ValueObjects\TimeSlot;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
+use Modules\GameTables\Domain\ValueObjects\GameSystemId;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Domain\ValueObjects\ParticipantId;
+use Modules\GameTables\Domain\ValueObjects\TimeSlot;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Tests\Support\Modules\ModuleTestCase;
@@ -31,11 +31,15 @@ use Tests\Support\Modules\ModuleTestCase;
 final class RegistrationControllerTest extends ModuleTestCase
 {
     protected ?string $moduleName = 'game-tables';
+
     protected bool $autoEnableModule = true;
 
     private GameTableRepositoryInterface $gameTableRepository;
+
     private ParticipantRepositoryInterface $participantRepository;
+
     private UserModel $testUser;
+
     private GameSystemModel $gameSystem;
 
     protected function setUp(): void
@@ -264,7 +268,7 @@ final class RegistrationControllerTest extends ModuleTestCase
         $response = $this->get(route('gametables.cancel-confirmation', $participant->cancellationToken));
 
         $response->assertStatus(200);
-        $response->assertInertia(fn($page) => $page
+        $response->assertInertia(fn ($page) => $page
             ->component('GameTables/CancelRegistration', shouldExist: false)
             ->has('participant')
             ->has('gameTable')
@@ -454,7 +458,7 @@ final class RegistrationControllerTest extends ModuleTestCase
             gameSystemId: new GameSystemId($this->gameSystem->id),
             createdBy: $this->testUser->id,
             title: 'Test Game Table',
-            slug: 'test-game-table-' . Str::random(6),
+            slug: 'test-game-table-'.Str::random(6),
             timeSlot: $timeSlot,
             tableType: TableType::OneShot,
             tableFormat: TableFormat::InPerson,
@@ -485,7 +489,7 @@ final class RegistrationControllerTest extends ModuleTestCase
             firstName: 'Test',
             email: 'test@example.com',
             cancellationToken: bin2hex(random_bytes(32)),
-            createdAt: new DateTimeImmutable(),
+            createdAt: new DateTimeImmutable,
         );
 
         if ($status === ParticipantStatus::Confirmed) {

@@ -14,10 +14,10 @@ use Modules\GameTables\Application\Services\CampaignInvitationServiceInterface;
 use Modules\GameTables\Domain\Events\CampaignInvitationSent;
 use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
+use Modules\GameTables\GameTablesServiceProvider;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignInvitationModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
-use Modules\GameTables\GameTablesServiceProvider;
 use Tests\Support\Modules\ModuleTestCase;
 
 /**

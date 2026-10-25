@@ -7,8 +7,11 @@ namespace Modules\GameTables\Http\Controllers;
 use App\Application\Seo\DTOs\SeoPageDTO;
 use App\Application\Seo\DTOs\SeoScheduleDTO;
 use App\Application\Seo\Services\SeoMetadataFactoryInterface;
+use App\Application\Services\SlugRedirectServiceInterface;
 use App\Http\Concerns\BuildsPaginatedResponse;
 use App\Http\Controllers\Controller;
+use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
+use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use DateInterval;
@@ -19,20 +22,19 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
-use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
-use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
-use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
+use Modules\GameTables\Application\DTOs\ParticipantResponseDTO;
 use Modules\GameTables\Application\Services\CampaignRosterQueryInterface;
 use Modules\GameTables\Application\Services\EligibilityServiceInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
+use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
-use App\Application\Services\SlugRedirectServiceInterface;
 use Modules\GameTables\Http\Concerns\ReadsListFilters;
 use Modules\GameTables\Http\Resources\GameTableListResource;
 use Modules\GameTables\Http\Resources\GameTableResource;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Services\GuestConfirmationPolicy;
 use Modules\GameTables\Infrastructure\Services\SeatCounter;
 
@@ -151,7 +153,7 @@ final class GameTableController extends Controller
         // 1. Try to find by slug directly
         $table = $this->queryService->findPublishedBySlug($identifier);
 
-        if ($table instanceof \Modules\GameTables\Application\DTOs\GameTableResponseDTO) {
+        if ($table instanceof GameTableResponseDTO) {
             return $this->renderShow($table);
         }
 
@@ -164,7 +166,7 @@ final class GameTableController extends Controller
         // 3. If it looks like a UUID, try finding by ID and redirect to slug
         if (Str::isUuid($identifier)) {
             $table = $this->queryService->findPublished($identifier);
-            if ($table instanceof \Modules\GameTables\Application\DTOs\GameTableResponseDTO && $table->slug !== null) {
+            if ($table instanceof GameTableResponseDTO && $table->slug !== null) {
                 return redirect()->route('gametables.show', $table->slug, 301);
             }
         }
@@ -218,12 +220,12 @@ final class GameTableController extends Controller
         } else {
             // Get current user's registration
             $registration = $this->registrationService->findByTableAndUser($table->id, (string) $user->id);
-            $userRegistration = $registration instanceof \Modules\GameTables\Application\DTOs\ParticipantResponseDTO ? $this->formatRegistrationForFrontend($registration) : null;
+            $userRegistration = $registration instanceof ParticipantResponseDTO ? $this->formatRegistrationForFrontend($registration) : null;
 
             $eligibility = [
                 ...$this->eligibilityService->canRegisterById($table->id, (string) $user->id),
                 // Whether the button may offer the cancellation: the rule the server applies on submit
-                'canCancel' => $registration instanceof \Modules\GameTables\Application\DTOs\ParticipantResponseDTO && $this->registrationService->withdrawalRefusal($registration->id, $now) === null,
+                'canCancel' => $registration instanceof ParticipantResponseDTO && $this->registrationService->withdrawalRefusal($registration->id, $now) === null,
             ];
         }
 
@@ -252,7 +254,7 @@ final class GameTableController extends Controller
     {
         $gameTable = $this->gameTableRepository->find(new GameTableId($gameTableId));
 
-        return $gameTable instanceof \Modules\GameTables\Domain\Entities\GameTable ? $this->guestConfirmationPolicy->noticeFor($gameTable, $now) : null;
+        return $gameTable instanceof GameTable ? $this->guestConfirmationPolicy->noticeFor($gameTable, $now) : null;
     }
 
     /**
@@ -260,7 +262,7 @@ final class GameTableController extends Controller
      *
      * @return array<string, mixed>
      */
-    private function formatRegistrationForFrontend(\Modules\GameTables\Application\DTOs\ParticipantResponseDTO $dto): array
+    private function formatRegistrationForFrontend(ParticipantResponseDTO $dto): array
     {
         return [
             'id' => $dto->id,

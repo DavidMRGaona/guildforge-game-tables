@@ -24,7 +24,7 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel
  */
 final class PendingModerationWidget extends BaseWidget
 {
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     protected static ?int $sort = 10;
 

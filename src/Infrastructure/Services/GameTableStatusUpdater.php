@@ -7,6 +7,7 @@ namespace Modules\GameTables\Infrastructure\Services;
 use DateTimeImmutable;
 use Illuminate\Support\Facades\Log;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
+use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Exceptions\GameTableNotFoundException;
 use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
@@ -78,7 +79,7 @@ final readonly class GameTableStatusUpdater
             // Read again: someone may have changed the table by hand since the list was read
             $table = $this->gameTableRepository->find(new GameTableId($id));
 
-            if (!$table instanceof \Modules\GameTables\Domain\Entities\GameTable || ! $table->status->canTransitionTo($to)) {
+            if (! $table instanceof GameTable || ! $table->status->canTransitionTo($to)) {
                 return self::SKIPPED;
             }
 

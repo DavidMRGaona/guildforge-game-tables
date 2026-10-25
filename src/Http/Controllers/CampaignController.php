@@ -6,6 +6,7 @@ namespace Modules\GameTables\Http\Controllers;
 
 use App\Application\Seo\DTOs\SeoPageDTO;
 use App\Application\Seo\Services\SeoMetadataFactoryInterface;
+use App\Application\Services\SlugRedirectServiceInterface;
 use App\Http\Concerns\BuildsPaginatedResponse;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
@@ -13,9 +14,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\GameTables\Application\DTOs\CampaignResponseDTO;
 use Modules\GameTables\Application\Services\CampaignQueryServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterQueryInterface;
-use App\Application\Services\SlugRedirectServiceInterface;
 use Modules\GameTables\Http\Concerns\ReadsListFilters;
 use Modules\GameTables\Http\Resources\CampaignResource;
 
@@ -81,7 +82,7 @@ final class CampaignController extends Controller
         // 1. Try to find by slug directly
         $campaign = $this->queryService->findPublishedBySlug($identifier);
 
-        if ($campaign instanceof \Modules\GameTables\Application\DTOs\CampaignResponseDTO) {
+        if ($campaign instanceof CampaignResponseDTO) {
             return Inertia::render('Campaigns/Show', [
                 'campaign' => CampaignResource::make($campaign)->resolve(),
                 // What the viewer can do with the roster: ask to join, withdraw, leave or manage it
@@ -103,7 +104,7 @@ final class CampaignController extends Controller
         // 3. If it looks like a UUID, try finding by ID and redirect to slug
         if (Str::isUuid($identifier)) {
             $campaign = $this->queryService->findPublished($identifier);
-            if ($campaign instanceof \Modules\GameTables\Application\DTOs\CampaignResponseDTO && $campaign->slug !== null) {
+            if ($campaign instanceof CampaignResponseDTO && $campaign->slug !== null) {
                 return redirect()->route('campaigns.show', $campaign->slug, 301);
             }
         }

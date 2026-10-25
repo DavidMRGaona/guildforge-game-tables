@@ -7,7 +7,6 @@ namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories;
 use DateTimeImmutable;
 use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
-use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\RosterAccess;
 use Modules\GameTables\Domain\Exceptions\CampaignNotFoundException;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
@@ -40,7 +39,7 @@ final readonly class EloquentCampaignRepository implements CampaignRepositoryInt
     {
         $campaign = $this->find($id);
 
-        if (!$campaign instanceof \Modules\GameTables\Domain\Entities\Campaign) {
+        if (! $campaign instanceof Campaign) {
             throw CampaignNotFoundException::withId($id->value);
         }
 

@@ -10,7 +10,6 @@ use DateTimeZone;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Modules\GameTables\Domain\Entities\GameTable;
-use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Enums\TableStatus;
@@ -75,7 +74,7 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
     {
         $gameTable = $this->find($id);
 
-        if (!$gameTable instanceof \Modules\GameTables\Domain\Entities\GameTable) {
+        if (! $gameTable instanceof GameTable) {
             throw GameTableNotFoundException::withId($id->value);
         }
 

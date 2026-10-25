@@ -38,7 +38,7 @@ final class PublicationLock
      */
     public static function hint(?Model $record): ?string
     {
-        if (!$record instanceof GameTableModel && !$record instanceof CampaignModel || ! self::isLocked($record)) {
+        if (! $record instanceof GameTableModel && ! $record instanceof CampaignModel || ! self::isLocked($record)) {
             return null;
         }
 

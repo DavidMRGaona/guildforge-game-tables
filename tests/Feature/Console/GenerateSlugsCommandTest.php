@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Tests\Feature\Console;
 
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\GameTables\Console\Commands\GenerateSlugsCommand;
 use Modules\GameTables\Domain\Enums\TableFormat;
@@ -12,7 +13,6 @@ use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Enums\TableType;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
-use Illuminate\Support\Facades\DB;
 use Symfony\Component\Console\Tester\CommandTester;
 use Tests\Support\Modules\ModuleTestCase;
 

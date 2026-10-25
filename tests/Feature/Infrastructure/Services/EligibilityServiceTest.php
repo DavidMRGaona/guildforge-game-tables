@@ -14,12 +14,12 @@ use Modules\GameTables\Domain\Enums\RegistrationType;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Enums\TableType;
-use Modules\GameTables\Domain\ValueObjects\GameSystemId;
-use Modules\GameTables\Domain\ValueObjects\TimeSlot;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
+use Modules\GameTables\Domain\ValueObjects\GameSystemId;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Domain\ValueObjects\ParticipantId;
+use Modules\GameTables\Domain\ValueObjects\TimeSlot;
 use Modules\GameTables\Infrastructure\Services\EligibilityService;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -31,7 +31,9 @@ final class EligibilityServiceTest extends TestCase
     use RefreshDatabase;
 
     private ParticipantRepositoryInterface&MockObject $participantRepository;
+
     private GameTableRepositoryInterface&MockObject $gameTableRepository;
+
     private EligibilityService $service;
 
     protected function setUp(): void
@@ -61,14 +63,14 @@ final class EligibilityServiceTest extends TestCase
         $this->gameTableRepository
             ->expects($this->once())
             ->method('find')
-            ->with($this->callback(fn($id) => $id->value === $gameTableId))
+            ->with($this->callback(fn ($id) => $id->value === $gameTableId))
             ->willReturn($gameTable);
 
         $this->participantRepository
             ->expects($this->once())
             ->method('findByTableAndEmail')
             ->with(
-                $this->callback(fn($id) => $id->value === $gameTableId),
+                $this->callback(fn ($id) => $id->value === $gameTableId),
                 $email
             )
             ->willReturn(null);
@@ -100,7 +102,7 @@ final class EligibilityServiceTest extends TestCase
         $this->gameTableRepository
             ->expects($this->once())
             ->method('find')
-            ->with($this->callback(fn($id) => $id->value === $gameTableId))
+            ->with($this->callback(fn ($id) => $id->value === $gameTableId))
             ->willReturn($gameTable);
 
         $result = $this->service->canGuestRegister($gameTableId, $email);
@@ -139,7 +141,7 @@ final class EligibilityServiceTest extends TestCase
             ->expects($this->once())
             ->method('findByTableAndEmail')
             ->with(
-                $this->callback(fn($id) => $id->value === $gameTableId),
+                $this->callback(fn ($id) => $id->value === $gameTableId),
                 $email
             )
             ->willReturn($existingParticipant);
@@ -242,7 +244,7 @@ final class EligibilityServiceTest extends TestCase
         $gameTableId = GameTableId::generate()->value;
         $email = 'guest@example.com';
 
-        $futureDate = (new DateTimeImmutable())->modify('+5 days');
+        $futureDate = (new DateTimeImmutable)->modify('+5 days');
         $gameTable = $this->createGameTable(
             id: $gameTableId,
             registrationType: RegistrationType::Everyone,

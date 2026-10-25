@@ -6,6 +6,7 @@ namespace Modules\GameTables\Tests\Integration\Infrastructure\Services;
 
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Str;
+use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
@@ -157,7 +158,7 @@ final class UnconfirmedSeatsTest extends ModuleTestCase
         return app(SeatCounter::class)->takenPlayerSeats($this->domainTable());
     }
 
-    private function domainTable(): \Modules\GameTables\Domain\Entities\GameTable
+    private function domainTable(): GameTable
     {
         return app(GameTableRepositoryInterface::class)->findOrFail(new GameTableId($this->table->id));
     }

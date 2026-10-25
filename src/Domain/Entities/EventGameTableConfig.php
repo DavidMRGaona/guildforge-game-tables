@@ -72,7 +72,7 @@ final class EventGameTableConfig
 
     public function hasEligibilityOverride(): bool
     {
-        return $this->eligibilityOverride instanceof \Modules\GameTables\Domain\ValueObjects\EligibilityOverride;
+        return $this->eligibilityOverride instanceof EligibilityOverride;
     }
 
     /**
@@ -149,7 +149,7 @@ final class EventGameTableConfig
      */
     public function hasEarlyAccess(): bool
     {
-        return $this->earlyAccessEnabled && $this->creationOpensAt instanceof \DateTimeImmutable;
+        return $this->earlyAccessEnabled && $this->creationOpensAt instanceof DateTimeImmutable;
     }
 
     public function isEarlyAccessEnabled(): bool

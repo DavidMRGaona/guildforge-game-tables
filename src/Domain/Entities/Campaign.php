@@ -39,8 +39,7 @@ final class Campaign
         // Null when the creator was never asked (campaigns created before they were stored)
         public ?string $language = null,
         public ?ExperienceLevel $experienceLevel = null,
-    ) {
-    }
+    ) {}
 
     public function updateInfo(
         string $title,
@@ -136,7 +135,7 @@ final class Campaign
 
     public function isDirectedFromWebBy(string $userId): bool
     {
-        return $this->createdBy === $userId && $this->frontendCreationStatus instanceof \Modules\GameTables\Domain\Enums\FrontendCreationStatus;
+        return $this->createdBy === $userId && $this->frontendCreationStatus instanceof FrontendCreationStatus;
     }
 
     /**
@@ -212,12 +211,12 @@ final class Campaign
 
     public function isCreatedFromFrontend(): bool
     {
-        return $this->frontendCreationStatus instanceof \Modules\GameTables\Domain\Enums\FrontendCreationStatus;
+        return $this->frontendCreationStatus instanceof FrontendCreationStatus;
     }
 
     public function isPendingModeration(): bool
     {
-        return $this->frontendCreationStatus instanceof \Modules\GameTables\Domain\Enums\FrontendCreationStatus && $this->frontendCreationStatus->isPending();
+        return $this->frontendCreationStatus instanceof FrontendCreationStatus && $this->frontendCreationStatus->isPending();
     }
 
     /**

@@ -4,49 +4,48 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources;
 
-use Closure;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Tabs;
-use Filament\Schemas\Components\Tabs\Tab;
-use Filament\Schemas\Components\Section;
-use Filament\Actions\Action;
-use Filament\Actions\EditAction;
-use Filament\Notifications\Notification;
-use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
-use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Modules\GameTables\Filament\Resources\CampaignResource\Pages\ListCampaigns;
-use Modules\GameTables\Filament\Resources\CampaignResource\Pages\CreateCampaign;
-use Modules\GameTables\Filament\Resources\CampaignResource\Pages\EditCampaign;
 use App\Filament\Concerns\ChecksPermissions;
 use App\Filament\Resources\BaseResource;
+use Closure;
+use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
-use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Domain\Enums\CampaignFrequency;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
+use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\Language;
 use Modules\GameTables\Domain\Enums\RosterAccess;
+use Modules\GameTables\Domain\Exceptions\NotEditableException;
 use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
+use Modules\GameTables\Filament\Forms\Components\GameMasterRepeater;
+use Modules\GameTables\Filament\Resources\CampaignResource\Pages\CreateCampaign;
+use Modules\GameTables\Filament\Resources\CampaignResource\Pages\EditCampaign;
+use Modules\GameTables\Filament\Resources\CampaignResource\Pages\ListCampaigns;
 use Modules\GameTables\Filament\Resources\CampaignResource\RelationManagers\InvitationsRelationManager;
 use Modules\GameTables\Filament\Resources\CampaignResource\RelationManagers\JoinRequestsRelationManager;
 use Modules\GameTables\Filament\Resources\CampaignResource\RelationManagers\RosterRelationManager;
-use Modules\GameTables\Domain\Exceptions\NotEditableException;
-use Modules\GameTables\Filament\Forms\Components\GameMasterRepeater;
-use Modules\GameTables\Filament\Resources\CampaignResource\Pages;
 use Modules\GameTables\Filament\Support\PublicationLock;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
@@ -57,7 +56,7 @@ final class CampaignResource extends BaseResource
 
     protected static ?string $model = CampaignModel::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-book-open';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-book-open';
 
     protected static ?int $navigationSort = 2;
 
@@ -140,9 +139,9 @@ final class CampaignResource extends BaseResource
                                     ->label(__('game-tables::messages.fields.image'))
                                     ->image()
                                     ->disk('images')
-                                    ->directory(fn (): string => 'campaigns/' . now()->format('Y/m'))
+                                    ->directory(fn (): string => 'campaigns/'.now()->format('Y/m'))
                                     ->getUploadedFileNameForStorageUsing(
-                                        fn (TemporaryUploadedFile $file): string => Str::uuid()->toString() . '.' . $file->getClientOriginalExtension()
+                                        fn (TemporaryUploadedFile $file): string => Str::uuid()->toString().'.'.$file->getClientOriginalExtension()
                                     )
                                     ->maxSize(2048)
                                     ->columnSpanFull(),

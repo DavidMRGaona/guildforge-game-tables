@@ -103,7 +103,7 @@ enum TableStatus: string
             self::cases(),
             static fn (self $status): bool => $status === $current
                 || (in_array($status, [self::Scheduled, self::Full], true)
-                    && (!$current instanceof \Modules\GameTables\Domain\Enums\TableStatus || $current->canTransitionTo($status))),
+                    && (! $current instanceof TableStatus || $current->canTransitionTo($status))),
         ));
     }
 

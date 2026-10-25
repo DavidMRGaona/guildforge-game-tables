@@ -6,9 +6,12 @@ namespace Modules\GameTables\Listeners;
 
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Facades\Notification;
+use Modules\GameTables\Domain\Entities\Campaign;
+use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Events\RosterMemberEnrolledInSession;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
+use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 use Modules\GameTables\Notifications\CampaignSessionScheduledNotification;
@@ -35,13 +38,13 @@ final readonly class SendCampaignSessionScheduled
 
         $table = $this->tables->find(new GameTableId($event->gameTableId));
 
-        if (!$table instanceof \Modules\GameTables\Domain\Entities\GameTable || !$table->campaignId instanceof \Modules\GameTables\Domain\ValueObjects\CampaignId) {
+        if (! $table instanceof GameTable || ! $table->campaignId instanceof CampaignId) {
             return;
         }
 
         $campaign = $this->campaigns->find($table->campaignId);
 
-        if (!$campaign instanceof \Modules\GameTables\Domain\Entities\Campaign) {
+        if (! $campaign instanceof Campaign) {
             return;
         }
 

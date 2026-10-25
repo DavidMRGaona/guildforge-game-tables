@@ -16,6 +16,5 @@ final readonly class CampaignStatusChanged
         public CampaignId $campaignId,
         public CampaignStatus $previousStatus,
         public CampaignStatus $newStatus,
-    ) {
-    }
+    ) {}
 }

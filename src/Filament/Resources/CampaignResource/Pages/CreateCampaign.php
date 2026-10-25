@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\GameTables\Filament\Resources\CampaignResource\Pages;
 
 use Filament\Resources\Pages\CreateRecord;
-use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Auth;
 use Modules\GameTables\Application\Services\GameMasterServiceInterface;
 use Modules\GameTables\Filament\Resources\CampaignResource;

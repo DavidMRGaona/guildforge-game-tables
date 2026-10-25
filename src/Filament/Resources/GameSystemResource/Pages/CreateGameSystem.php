@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\GameTables\Filament\Resources\GameSystemResource\Pages;
 
 use Filament\Resources\Pages\CreateRecord;
-use Illuminate\Contracts\Support\Htmlable;
 use Modules\GameTables\Filament\Resources\GameSystemResource;
 
 final class CreateGameSystem extends CreateRecord

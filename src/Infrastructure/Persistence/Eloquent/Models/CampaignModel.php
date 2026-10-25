@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Models;
 
 use App\Infrastructure\Persistence\Eloquent\Concerns\DeletesCloudinaryImages;
+use App\Infrastructure\Persistence\Eloquent\Concerns\HasSlug;
+use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,7 +18,6 @@ use Modules\GameTables\Domain\Enums\CampaignStatus;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\RosterAccess;
-use App\Infrastructure\Persistence\Eloquent\Concerns\HasSlug;
 
 /**
  * @property string $id
@@ -111,12 +112,12 @@ final class CampaignModel extends Model
     }
 
     /**
-     * @return BelongsTo<\App\Infrastructure\Persistence\Eloquent\Models\UserModel, $this>
+     * @return BelongsTo<UserModel, $this>
      */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(
-            \App\Infrastructure\Persistence\Eloquent\Models\UserModel::class,
+            UserModel::class,
             'created_by',
         );
     }
@@ -130,12 +131,12 @@ final class CampaignModel extends Model
     }
 
     /**
-     * @return BelongsToMany<\App\Infrastructure\Persistence\Eloquent\Models\UserModel, $this>
+     * @return BelongsToMany<UserModel, $this>
      */
     public function players(): BelongsToMany
     {
         return $this->belongsToMany(
-            \App\Infrastructure\Persistence\Eloquent\Models\UserModel::class,
+            UserModel::class,
             'gametables_campaign_players',
             'campaign_id',
             'user_id',

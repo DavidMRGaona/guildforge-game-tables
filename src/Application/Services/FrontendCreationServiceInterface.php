@@ -10,6 +10,13 @@ use Modules\GameTables\Application\DTOs\FrontendCreateCampaignDTO;
 use Modules\GameTables\Application\DTOs\FrontendCreateGameTableDTO;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
 use Modules\GameTables\Application\DTOs\MyPublishedTableDTO;
+use Modules\GameTables\Domain\Exceptions\CampaignNotFoundException;
+use Modules\GameTables\Domain\Exceptions\GameTableNotFoundException;
+use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
+use Modules\GameTables\Domain\Exceptions\NotEditableException;
+use Modules\GameTables\Domain\Exceptions\NotEligibleToCreateException;
+use Modules\GameTables\Domain\Exceptions\SessionBelowRosterException;
+use Modules\GameTables\Domain\Exceptions\TableNotFoundException;
 
 interface FrontendCreationServiceInterface
 {
@@ -19,16 +26,16 @@ interface FrontendCreationServiceInterface
      * A campaign session outside an event is also created for someone who directs its campaign
      * when the general creation rules refuse them.
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\NotEligibleToCreateException
-     * @throws \Modules\GameTables\Domain\Exceptions\SessionBelowRosterException when it would be published at once
-     *         with fewer seats than its campaign roster (nothing is saved)
+     * @throws NotEligibleToCreateException
+     * @throws SessionBelowRosterException when it would be published at once
+     *                                     with fewer seats than its campaign roster (nothing is saved)
      */
     public function createGameTable(FrontendCreateGameTableDTO $dto): GameTableResponseDTO;
 
     /**
      * Create a new campaign from the frontend.
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\NotEligibleToCreateException
+     * @throws NotEligibleToCreateException
      */
     public function createCampaign(FrontendCreateCampaignDTO $dto): CampaignResponseDTO;
 
@@ -92,19 +99,19 @@ interface FrontendCreationServiceInterface
     /**
      * Submit a draft table for review.
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\TableNotFoundException
-     * @throws \Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException
-     * @throws \Modules\GameTables\Domain\Exceptions\NotEligibleToCreateException when the author may not create it any more
-     * @throws \Modules\GameTables\Domain\Exceptions\SessionBelowRosterException when it would be published at once
+     * @throws TableNotFoundException
+     * @throws InvalidStatusTransitionException
+     * @throws NotEligibleToCreateException when the author may not create it any more
+     * @throws SessionBelowRosterException when it would be published at once
      */
     public function submitForReview(string $tableId, string $userId): void;
 
     /**
      * Update a draft table.
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\TableNotFoundException
-     * @throws \Modules\GameTables\Domain\Exceptions\NotEditableException
-     * @throws \Modules\GameTables\Domain\Exceptions\NotEligibleToCreateException when the author may not create the edited table
+     * @throws TableNotFoundException
+     * @throws NotEditableException
+     * @throws NotEligibleToCreateException when the author may not create the edited table
      */
     public function updateDraft(string $tableId, FrontendCreateGameTableDTO $dto): GameTableResponseDTO;
 
@@ -137,25 +144,25 @@ interface FrontendCreationServiceInterface
     /**
      * Delete a draft table.
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\TableNotFoundException
-     * @throws \Modules\GameTables\Domain\Exceptions\NotEditableException
+     * @throws TableNotFoundException
+     * @throws NotEditableException
      */
     public function deleteDraft(string $tableId, string $userId): void;
 
     /**
      * Approve a frontend-created table for publication.
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\GameTableNotFoundException
-     * @throws \Modules\GameTables\Domain\Exceptions\NotEditableException when it is not waiting for review
-     * @throws \Modules\GameTables\Domain\Exceptions\SessionBelowRosterException
+     * @throws GameTableNotFoundException
+     * @throws NotEditableException when it is not waiting for review
+     * @throws SessionBelowRosterException
      */
     public function approveFrontendCreation(string $tableId, ?string $notes = null): void;
 
     /**
      * Reject a frontend-created table.
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\GameTableNotFoundException
-     * @throws \Modules\GameTables\Domain\Exceptions\NotEditableException when it is not waiting for review
+     * @throws GameTableNotFoundException
+     * @throws NotEditableException when it is not waiting for review
      */
     public function rejectFrontendCreation(string $tableId, string $reason): void;
 
@@ -177,40 +184,40 @@ interface FrontendCreationServiceInterface
     /**
      * Update a draft campaign.
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\CampaignNotFoundException
-     * @throws \Modules\GameTables\Domain\Exceptions\NotEditableException
+     * @throws CampaignNotFoundException
+     * @throws NotEditableException
      */
     public function updateCampaignDraft(string $campaignId, FrontendCreateCampaignDTO $dto): CampaignResponseDTO;
 
     /**
      * Submit a draft campaign for review.
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\CampaignNotFoundException
-     * @throws \Modules\GameTables\Domain\Exceptions\NotEditableException
+     * @throws CampaignNotFoundException
+     * @throws NotEditableException
      */
     public function submitCampaignForReview(string $campaignId, string $userId): void;
 
     /**
      * Approve a campaign sent for review and publish it.
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\CampaignNotFoundException
-     * @throws \Modules\GameTables\Domain\Exceptions\NotEditableException when it is not waiting for review
+     * @throws CampaignNotFoundException
+     * @throws NotEditableException when it is not waiting for review
      */
     public function approveCampaign(string $campaignId, ?string $notes = null): void;
 
     /**
      * Reject a campaign sent for review.
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\CampaignNotFoundException
-     * @throws \Modules\GameTables\Domain\Exceptions\NotEditableException when it is not waiting for review
+     * @throws CampaignNotFoundException
+     * @throws NotEditableException when it is not waiting for review
      */
     public function rejectCampaign(string $campaignId, string $reason): void;
 
     /**
      * Delete a draft campaign.
      *
-     * @throws \Modules\GameTables\Domain\Exceptions\CampaignNotFoundException
-     * @throws \Modules\GameTables\Domain\Exceptions\NotEditableException
+     * @throws CampaignNotFoundException
+     * @throws NotEditableException
      */
     public function deleteCampaignDraft(string $campaignId, string $userId): void;
 }

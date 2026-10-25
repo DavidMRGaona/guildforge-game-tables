@@ -11,6 +11,7 @@ use DateTimeImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Mockery\MockInterface;
+use Modules\GameTables\Application\DTOs\CreationEligibilityDTO;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
 use Modules\GameTables\Domain\Entities\EventGameTableConfig;
 use Modules\GameTables\Domain\Enums\CreationAccessLevel;
@@ -168,7 +169,7 @@ final class EventCreationEligibilityServiceTest extends TestCase
             ->shouldReceive('canCreateTable')
             ->with($user->id)
             ->once()
-            ->andReturn(\Modules\GameTables\Application\DTOs\CreationEligibilityDTO::eligible());
+            ->andReturn(CreationEligibilityDTO::eligible());
 
         $result = $this->service->canCreateTableForEvent($eventId, $user->id);
 
@@ -212,7 +213,7 @@ final class EventCreationEligibilityServiceTest extends TestCase
             ->shouldReceive('canCreateTable')
             ->with($user->id)
             ->once()
-            ->andReturn(\Modules\GameTables\Application\DTOs\CreationEligibilityDTO::eligible());
+            ->andReturn(CreationEligibilityDTO::eligible());
 
         $result = $this->service->canCreateTableForEvent($eventId, $user->id);
 
@@ -244,7 +245,7 @@ final class EventCreationEligibilityServiceTest extends TestCase
             ->shouldReceive('canCreateTable')
             ->with($user->id)
             ->once()
-            ->andReturn(\Modules\GameTables\Application\DTOs\CreationEligibilityDTO::eligible());
+            ->andReturn(CreationEligibilityDTO::eligible());
 
         $result = $this->service->canCreateTableForEvent($eventId, $user->id);
 
@@ -273,7 +274,7 @@ final class EventCreationEligibilityServiceTest extends TestCase
             ->shouldReceive('canCreateTable')
             ->with($user->id)
             ->once()
-            ->andReturn(\Modules\GameTables\Application\DTOs\CreationEligibilityDTO::eligible());
+            ->andReturn(CreationEligibilityDTO::eligible());
 
         $result = $this->service->canCreateTableForEvent($eventId, $user->id);
 
@@ -298,7 +299,7 @@ final class EventCreationEligibilityServiceTest extends TestCase
         // The global settings would happily allow creation; the event has to win.
         $this->globalEligibilityService
             ->shouldReceive('canCreateTable')
-            ->andReturn(\Modules\GameTables\Application\DTOs\CreationEligibilityDTO::eligible());
+            ->andReturn(CreationEligibilityDTO::eligible());
 
         $result = $this->service->canCreateTableForEvent($eventId, $user->id);
 
@@ -322,7 +323,7 @@ final class EventCreationEligibilityServiceTest extends TestCase
             ->shouldReceive('canCreateTable')
             ->with($user->id)
             ->once()
-            ->andReturn(\Modules\GameTables\Application\DTOs\CreationEligibilityDTO::notEligible('frontend_creation_disabled'));
+            ->andReturn(CreationEligibilityDTO::notEligible('frontend_creation_disabled'));
 
         $result = $this->service->canCreateTableForEvent($eventId, $user->id);
 

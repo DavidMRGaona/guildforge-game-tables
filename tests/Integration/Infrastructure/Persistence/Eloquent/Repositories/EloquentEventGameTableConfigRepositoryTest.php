@@ -7,6 +7,7 @@ namespace Modules\GameTables\Tests\Integration\Infrastructure\Persistence\Eloque
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use DateTimeImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Modules\GameTables\Domain\Entities\EventGameTableConfig;
 use Modules\GameTables\Domain\Enums\CreationAccessLevel;
 use Modules\GameTables\Domain\Enums\LocationMode;
@@ -14,7 +15,6 @@ use Modules\GameTables\Domain\Enums\SchedulingMode;
 use Modules\GameTables\Domain\Repositories\EventGameTableConfigRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\EligibilityOverride;
 use Modules\GameTables\Domain\ValueObjects\TimeSlotDefinition;
-use Illuminate\Support\Str;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\EventGameTableConfigModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentEventGameTableConfigRepository;
 use Tests\TestCase;
@@ -28,7 +28,7 @@ final class EloquentEventGameTableConfigRepositoryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->repository = new EloquentEventGameTableConfigRepository();
+        $this->repository = new EloquentEventGameTableConfigRepository;
     }
 
     public function test_it_implements_repository_interface(): void

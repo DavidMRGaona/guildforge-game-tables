@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace Modules\GameTables\Tests\Integration\Infrastructure\Services;
 
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
+use Modules\GameTables\Application\Services\GameTableServiceInterface;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Enums\TableType;
+use Modules\GameTables\Domain\Events\GameTableCancelled;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
-use Illuminate\Support\Facades\Event;
-use Modules\GameTables\Application\Services\GameTableServiceInterface;
-use Modules\GameTables\Domain\Events\GameTableCancelled;
 use Tests\Support\Modules\ModuleTestCase;
 
 final class GameTableServiceCancelTest extends ModuleTestCase

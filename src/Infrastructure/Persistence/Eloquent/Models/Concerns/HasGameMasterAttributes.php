@@ -69,6 +69,6 @@ trait HasGameMasterAttributes
             return $this->user->name;
         }
 
-        return trim(($this->first_name ?? '') . ' ' . ($this->last_name ?? ''));
+        return trim(($this->first_name ?? '').' '.($this->last_name ?? ''));
     }
 }

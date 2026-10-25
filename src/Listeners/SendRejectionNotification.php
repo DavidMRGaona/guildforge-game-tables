@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Listeners;
 
 use Illuminate\Support\Facades\Notification;
+use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Events\ParticipantRejected;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
@@ -22,7 +23,7 @@ final readonly class SendRejectionNotification
     {
         $gameTable = $this->gameTableRepository->find(new GameTableId($event->gameTableId));
 
-        if (!$gameTable instanceof \Modules\GameTables\Domain\Entities\GameTable) {
+        if (! $gameTable instanceof GameTable) {
             return;
         }
 

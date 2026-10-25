@@ -28,7 +28,7 @@ final class TimeSlotTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Duration must be greater than zero.');
 
-        new TimeSlot(new DateTimeImmutable(), 0);
+        new TimeSlot(new DateTimeImmutable, 0);
     }
 
     public function test_it_throws_exception_for_negative_duration(): void
@@ -36,7 +36,7 @@ final class TimeSlotTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Duration must be greater than zero.');
 
-        new TimeSlot(new DateTimeImmutable(), -60);
+        new TimeSlot(new DateTimeImmutable, -60);
     }
 
     public function test_it_calculates_ends_at(): void
@@ -74,14 +74,14 @@ final class TimeSlotTest extends TestCase
 
     public function test_it_calculates_duration_hours(): void
     {
-        $timeSlot = new TimeSlot(new DateTimeImmutable(), 240);
+        $timeSlot = new TimeSlot(new DateTimeImmutable, 240);
 
         $this->assertEquals(4.0, $timeSlot->durationHours());
     }
 
     public function test_it_calculates_duration_hours_with_fraction(): void
     {
-        $timeSlot = new TimeSlot(new DateTimeImmutable(), 90);
+        $timeSlot = new TimeSlot(new DateTimeImmutable, 90);
 
         $this->assertEquals(1.5, $timeSlot->durationHours());
     }

@@ -6,7 +6,6 @@ namespace Modules\GameTables\Filament\Resources\GameSystemResource\Pages;
 
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
-use Illuminate\Contracts\Support\Htmlable;
 use Modules\GameTables\Filament\Resources\GameSystemResource;
 
 final class EditGameSystem extends EditRecord

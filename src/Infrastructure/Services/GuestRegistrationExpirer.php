@@ -7,6 +7,7 @@ namespace Modules\GameTables\Infrastructure\Services;
 use DateTimeImmutable;
 use Illuminate\Support\Facades\Log;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
+use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
@@ -47,7 +48,7 @@ final readonly class GuestRegistrationExpirer
         foreach ($this->participants->unconfirmedWaitingByTable() as $gameTableId => $ids) {
             $table = $this->tables->find(new GameTableId($gameTableId));
 
-            if (!$table instanceof \Modules\GameTables\Domain\Entities\GameTable || $now < $table->effectiveRegistrationClosesAt()) {
+            if (! $table instanceof GameTable || $now < $table->effectiveRegistrationClosesAt()) {
                 continue;
             }
 
@@ -92,7 +93,7 @@ final readonly class GuestRegistrationExpirer
         foreach ($this->participants->gameTableIdsWithFingerprints() as $gameTableId) {
             $table = $this->tables->find(new GameTableId($gameTableId));
 
-            if ($table instanceof \Modules\GameTables\Domain\Entities\GameTable && $table->timeSlot->hasEnded($now)) {
+            if ($table instanceof GameTable && $table->timeSlot->hasEnded($now)) {
                 $ended[] = $gameTableId;
             }
         }

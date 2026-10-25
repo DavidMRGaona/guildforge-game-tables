@@ -18,9 +18,8 @@ final readonly class GuestConfirmationPolicy
 {
     public function __construct(
         private ParticipantRepositoryInterface $participants,
-        private GameTableSettingsReader $settings = new GameTableSettingsReader(),
-    ) {
-    }
+        private GameTableSettingsReader $settings = new GameTableSettingsReader,
+    ) {}
 
     /**
      * The earlier of now plus the hold hours and the table's registration closing.

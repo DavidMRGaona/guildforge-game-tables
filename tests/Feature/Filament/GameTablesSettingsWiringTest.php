@@ -8,6 +8,7 @@ use Livewire\Livewire;
 use Modules\GameTables\Filament\Pages\GameTablesSettings;
 use Modules\GameTables\Filament\Resources\GameTableResource;
 use Modules\GameTables\Filament\Resources\GameTableResource\Pages\CreateGameTable;
+use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 use Tests\Support\Modules\InteractsWithModulePanel;
 use Tests\Support\Modules\ModuleTestCase;
 
@@ -73,7 +74,7 @@ final class GameTablesSettingsWiringTest extends ModuleTestCase
             ->call('save')
             ->assertHasNoFormErrors();
 
-        $this->assertTrue((new \Modules\GameTables\Infrastructure\Services\GameTableSettingsReader())->isWaitingListEnabled());
+        $this->assertTrue((new GameTableSettingsReader)->isWaitingListEnabled());
     }
 
     // Panel creation is governed by the gametables.create permission and web creation by its access level
@@ -146,7 +147,7 @@ final class GameTablesSettingsWiringTest extends ModuleTestCase
             ->call('save')
             ->assertHasNoFormErrors();
 
-        $this->assertFalse((new \Modules\GameTables\Infrastructure\Services\GameTableSettingsReader())->isAutoStatusEnabled());
+        $this->assertFalse((new GameTableSettingsReader)->isAutoStatusEnabled());
     }
 
     // A tenant saved its settings before 2.10.0: the new key is missing from the stored JSON. The page
@@ -161,6 +162,6 @@ final class GameTablesSettingsWiringTest extends ModuleTestCase
             ->call('save')
             ->assertHasNoFormErrors();
 
-        $this->assertTrue((new \Modules\GameTables\Infrastructure\Services\GameTableSettingsReader())->isAutoStatusEnabled());
+        $this->assertTrue((new GameTableSettingsReader)->isAutoStatusEnabled());
     }
 }

@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
 use Modules\GameTables\Application\DTOs\ParticipantResponseDTO;
 use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
@@ -170,7 +171,7 @@ final class RegistrationController extends Controller
 
         $deadline = $registration->confirmationExpiresAt;
 
-        if ($registration->confirmationMode !== GuestConfirmationMode::Hold || !$deadline instanceof \DateTimeInterface) {
+        if ($registration->confirmationMode !== GuestConfirmationMode::Hold || ! $deadline instanceof \DateTimeInterface) {
             return (string) __('game-tables::messages.success.guest_confirmation_sent_unguaranteed');
         }
 
@@ -228,14 +229,14 @@ final class RegistrationController extends Controller
     {
         $participant = $this->registrationService->findByToken($token);
 
-        if (!$participant instanceof \Modules\GameTables\Application\DTOs\ParticipantResponseDTO) {
+        if (! $participant instanceof ParticipantResponseDTO) {
             return redirect()->route('gametables.index')
                 ->with('error', __('game-tables::messages.errors.invalid_token'));
         }
 
         $gameTable = $this->gameTableQueryService->findPublished($participant->gameTableId);
 
-        if (!$gameTable instanceof \Modules\GameTables\Application\DTOs\GameTableResponseDTO) {
+        if (! $gameTable instanceof GameTableResponseDTO) {
             return redirect()->route('gametables.index')
                 ->with('error', __('game-tables::messages.errors.table_not_found'));
         }

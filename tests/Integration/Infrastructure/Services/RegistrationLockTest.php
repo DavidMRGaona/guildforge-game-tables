@@ -58,7 +58,7 @@ final class RegistrationLockTest extends ModuleTestCase
 
     public function test_the_lock_runs_the_callback_in_a_transaction_and_returns_its_value(): void
     {
-        $lock = new DatabaseRegistrationLock();
+        $lock = new DatabaseRegistrationLock;
         $level = DB::transactionLevel();
 
         $result = $lock->forTable($this->table->id, fn (): int => DB::transactionLevel());
@@ -77,7 +77,7 @@ final class RegistrationLockTest extends ModuleTestCase
             'slug' => 'campana',
             'status' => 'recruiting',
         ]);
-        $lock = new DatabaseRegistrationLock();
+        $lock = new DatabaseRegistrationLock;
         $level = DB::transactionLevel();
 
         $result = $lock->forCampaign($campaign->id, fn (): int => DB::transactionLevel());
@@ -97,7 +97,7 @@ final class RegistrationLockTest extends ModuleTestCase
             'role' => 'player',
             'status' => 'confirmed',
         ]);
-        $lock = new DatabaseRegistrationLock();
+        $lock = new DatabaseRegistrationLock;
 
         $this->assertSame('ok', $lock->forParticipant($participant->id, fn (): string => 'ok'));
         $this->assertSame('ok', $lock->forCancellationToken('token-de-prueba', fn (): string => 'ok'));
@@ -106,7 +106,7 @@ final class RegistrationLockTest extends ModuleTestCase
     // The callback reports the missing participant itself
     public function test_without_a_participant_the_callback_still_runs(): void
     {
-        $lock = new DatabaseRegistrationLock();
+        $lock = new DatabaseRegistrationLock;
 
         $this->assertSame('ok', $lock->forParticipant((string) Str::uuid(), fn (): string => 'ok'));
         $this->assertSame('ok', $lock->forCancellationToken('desconocido', fn (): string => 'ok'));
@@ -189,7 +189,7 @@ final class RegistrationLockTest extends ModuleTestCase
      */
     private function recordingLock(): RegistrationLockInterface
     {
-        $lock = new class(new DatabaseRegistrationLock()) implements RegistrationLockInterface
+        $lock = new class(new DatabaseRegistrationLock) implements RegistrationLockInterface
         {
             /** @var list<string> */
             public array $calls = [];

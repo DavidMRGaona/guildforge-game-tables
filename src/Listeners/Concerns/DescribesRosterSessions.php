@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Listeners\Concerns;
 
+use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
 
@@ -22,7 +23,7 @@ trait DescribesRosterSessions
         foreach ($sessions as $session) {
             $table = $tables->find(new GameTableId($session['game_table_id']));
 
-            if (!$table instanceof \Modules\GameTables\Domain\Entities\GameTable) {
+            if (! $table instanceof GameTable) {
                 continue;
             }
 

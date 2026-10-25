@@ -137,7 +137,7 @@ final readonly class GameTableService implements GameTableServiceInterface
     {
         $gameTable = $this->gameTableRepository->find(new GameTableId($id));
 
-        if (!$gameTable instanceof \Modules\GameTables\Domain\Entities\GameTable) {
+        if (! $gameTable instanceof GameTable) {
             return null;
         }
 
@@ -326,7 +326,7 @@ final readonly class GameTableService implements GameTableServiceInterface
      */
     private function guardRoster(GameTable $gameTable): void
     {
-        if (!$this->roster instanceof \Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface || !$gameTable->campaignId instanceof \Modules\GameTables\Domain\ValueObjects\CampaignId) {
+        if (! $this->roster instanceof CampaignRosterRepositoryInterface || ! $gameTable->campaignId instanceof CampaignId) {
             return;
         }
 

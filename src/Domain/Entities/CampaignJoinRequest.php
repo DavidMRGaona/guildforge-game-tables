@@ -22,8 +22,7 @@ final class CampaignJoinRequest
         public ?string $decidedBy = null,
         public ?DateTimeImmutable $decidedAt = null,
         public readonly ?DateTimeImmutable $createdAt = null,
-    ) {
-    }
+    ) {}
 
     public function isPending(): bool
     {

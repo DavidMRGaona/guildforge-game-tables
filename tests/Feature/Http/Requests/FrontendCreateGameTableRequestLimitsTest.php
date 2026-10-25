@@ -52,7 +52,7 @@ final class FrontendCreateGameTableRequestLimitsTest extends TestCase
      */
     private function validate(array $data): array
     {
-        $rules = Arr::only((new FrontendCreateGameTableRequest())->rules(), self::LIMITED_FIELDS);
+        $rules = Arr::only((new FrontendCreateGameTableRequest)->rules(), self::LIMITED_FIELDS);
 
         return Validator::make($data, $rules)->errors()->toArray();
     }

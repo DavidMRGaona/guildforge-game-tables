@@ -109,7 +109,7 @@ final class CampaignInvitationNotification extends Notification implements Shoul
             ':days' => (string) self::EXPIRY_DAYS,
         ];
 
-        if ($this->legalText === null && $service instanceof \App\Application\Legal\Services\LegalMailNoticeServiceInterface) {
+        if ($this->legalText === null && $service instanceof LegalMailNoticeServiceInterface) {
             return $service->paragraphs(self::NOTICE_KEY, $replacements);
         }
 

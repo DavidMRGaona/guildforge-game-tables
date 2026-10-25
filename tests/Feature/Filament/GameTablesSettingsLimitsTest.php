@@ -60,7 +60,7 @@ final class GameTablesSettingsLimitsTest extends ModuleTestCase
             'defaults.members_early_access_days' => 3,
         ])->assertHasNoFormErrors();
 
-        $settings = new GameTableSettingsReader();
+        $settings = new GameTableSettingsReader;
         $this->assertSame(6, $settings->defaultMaxPlayers());
         $this->assertSame(1, $settings->defaultMaxSpectators());
         $this->assertSame(180, $settings->defaultDurationMinutes());
@@ -82,7 +82,7 @@ final class GameTablesSettingsLimitsTest extends ModuleTestCase
             'defaults.duration_minutes' => 300,
         ])->assertHasNoFormErrors();
 
-        $settings = new GameTableSettingsReader();
+        $settings = new GameTableSettingsReader;
         $this->assertSame(6, $settings->maxPlayersLimit());
         $this->assertSame(6, $settings->defaultMaxPlayers());
     }
@@ -144,7 +144,7 @@ final class GameTablesSettingsLimitsTest extends ModuleTestCase
         ]);
 
         // Nothing is saved
-        $settings = new GameTableSettingsReader();
+        $settings = new GameTableSettingsReader;
         $this->assertSame(20, $settings->maxPlayersLimit());
         $this->assertSame(5, $settings->defaultMaxPlayers());
         $this->assertFalse($settings->isWaitingListEnabled());
@@ -166,7 +166,7 @@ final class GameTablesSettingsLimitsTest extends ModuleTestCase
             'defaults.max_players' => 10,
         ])->assertHasNoFormErrors();
 
-        $this->assertSame(10, (new GameTableSettingsReader())->defaultMaxPlayers());
+        $this->assertSame(10, (new GameTableSettingsReader)->defaultMaxPlayers());
     }
 
     public function test_the_default_minimum_may_not_exceed_the_default_maximum(): void
@@ -239,7 +239,7 @@ final class GameTablesSettingsLimitsTest extends ModuleTestCase
             'duplicate_signal.window_hours' => 720,
         ])->assertHasNoFormErrors();
 
-        $settings = new GameTableSettingsReader();
+        $settings = new GameTableSettingsReader;
         $this->assertSame(GuestConfirmationMode::Wait, $settings->guestConfirmationMode());
         $this->assertSame(168, $settings->guestConfirmationHoldHours());
         $this->assertSame(0, $settings->maxUnconfirmedHeldSeats());
@@ -281,7 +281,7 @@ final class GameTablesSettingsLimitsTest extends ModuleTestCase
             ->assertHasFormErrors([$field => $rule]);
 
         // The same submission saved nothing else
-        $this->assertSame(5, (new GameTableSettingsReader())->defaultMaxPlayers());
+        $this->assertSame(5, (new GameTableSettingsReader)->defaultMaxPlayers());
     }
 
     /**

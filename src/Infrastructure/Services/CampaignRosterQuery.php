@@ -133,7 +133,7 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
             }
 
             $pending = $this->requests->findPending($campaign->id, $userId);
-            if ($pending instanceof \Modules\GameTables\Domain\Entities\CampaignJoinRequest) {
+            if ($pending instanceof CampaignJoinRequest) {
                 return new JoinBoxDTO('pending', requestedAt: $pending->createdAt?->format('d/m/Y'));
             }
         }
@@ -151,9 +151,9 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
     public function sessionBox(string $gameTableId, ?string $userId, DateTimeImmutable $now): ?CampaignSessionBoxDTO
     {
         $session = Str::isUuid($gameTableId) ? $this->gameTables->find(new GameTableId($gameTableId)) : null;
-        $campaign = $session?->campaignId instanceof \Modules\GameTables\Domain\ValueObjects\CampaignId ? $this->campaigns->find($session->campaignId) : null;
+        $campaign = $session?->campaignId instanceof CampaignId ? $this->campaigns->find($session->campaignId) : null;
 
-        if (!$session instanceof \Modules\GameTables\Domain\Entities\GameTable || !$campaign instanceof \Modules\GameTables\Domain\Entities\Campaign) {
+        if (! $session instanceof GameTable || ! $campaign instanceof Campaign) {
             return null;
         }
 
@@ -167,7 +167,7 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
 
         $row = $this->participants->findByTableAndUser($session->id, $userId);
         $state = match (true) {
-            !$row instanceof \Modules\GameTables\Domain\Entities\Participant => 'none',
+            ! $row instanceof Participant => 'none',
             $row->isOnWaitingList() => 'waiting',
             $row->isActive() => 'enrolled',
             $row->isSessionAbsence() => 'absent',
@@ -178,7 +178,7 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
         // (RegistrationService::register()); a rejected or no-show row follows the table rules
         $refusal = null;
         $canRejoin = false;
-        if (!$row instanceof \Modules\GameTables\Domain\Entities\Participant || $row->isCancelled()) {
+        if (! $row instanceof Participant || $row->isCancelled()) {
             $closedReason = $session->rosterEnrollmentRefusal($now);
             $refusal = match (true) {
                 $closedReason !== null => (string) __('game-tables::messages.errors.'.$closedReason),
@@ -194,7 +194,7 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
             closed: $closed,
             isRosterMember: true,
             rosterState: $state,
-            waitingListPosition: $state === 'waiting' && $row instanceof \Modules\GameTables\Domain\Entities\Participant ? $this->participants->getWaitingListRank($row->id) : null,
+            waitingListPosition: $state === 'waiting' && $row instanceof Participant ? $this->participants->getWaitingListRank($row->id) : null,
             canRejoin: $canRejoin,
             rejoinRefusal: $refusal,
         );
@@ -265,7 +265,7 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
     private function playerState(?Participant $row, GameTable $session, DateTimeImmutable $now): array
     {
         return match (true) {
-            !$row instanceof \Modules\GameTables\Domain\Entities\Participant => ['state' => 'none', 'can_toggle' => false],
+            ! $row instanceof Participant => ['state' => 'none', 'can_toggle' => false],
             $row->isOnWaitingList() => ['state' => 'waiting', 'can_toggle' => $row->fromRoster],
             $row->isActive() => ['state' => 'going', 'can_toggle' => $row->fromRoster],
             $row->isSessionAbsence() => ['state' => 'absent', 'can_toggle' => $session->admitsRosterEnrollment($now)],
