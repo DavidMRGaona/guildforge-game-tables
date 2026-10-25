@@ -61,7 +61,7 @@ final class SendTableRemindersCommandTest extends ModuleTestCase
         $this->sendReminders();
 
         Notification::assertNothingSent();
-        $this->assertNull($row->refresh()->getAttribute('reminder_sent_at'));
+        $this->assertNull($row->refresh()->reminder_sent_at);
     }
 
     public function test_confirmed_participants_of_a_table_starting_soon_are_reminded_once(): void
