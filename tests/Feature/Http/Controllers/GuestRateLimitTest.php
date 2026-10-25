@@ -12,6 +12,7 @@ use Illuminate\Testing\TestResponse;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
+use Symfony\Component\HttpFoundation\Response;
 use Tests\Support\Modules\ModuleTestCase;
 
 /**
@@ -135,6 +136,9 @@ final class GuestRateLimitTest extends ModuleTestCase
         $this->assertNotContains('throttle:game-tables-guest-registration', $middleware);
     }
 
+    /**
+     * @return TestResponse<Response>
+     */
     private function submit(string $email): TestResponse
     {
         return $this->from(route('gametables.show', 'la-cripta'))

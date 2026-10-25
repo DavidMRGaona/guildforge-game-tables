@@ -54,6 +54,6 @@ final class ParticipantRejectedNotificationTest extends TestCase
     {
         $mail = $notification->toMail(new AnonymousNotifiable);
 
-        return array_map(static fn (mixed $line): string => (string) $line, $mail->introLines);
+        return array_values(array_map(static fn (mixed $line): string => (string) $line, $mail->introLines));
     }
 }

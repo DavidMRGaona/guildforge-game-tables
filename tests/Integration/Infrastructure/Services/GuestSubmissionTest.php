@@ -9,6 +9,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
+use Illuminate\Support\Testing\Fakes\EventFake;
 use Modules\GameTables\Application\DTOs\ParticipantResponseDTO;
 use Modules\GameTables\Application\DTOs\RegisterParticipantDTO;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
@@ -79,7 +80,7 @@ final class GuestSubmissionTest extends ModuleTestCase
         $row = ParticipantModel::query()->findOrFail($result->id);
         $this->assertSame('confirmed', $row->status->value);
         $this->assertNull($row->email_confirmed_at);
-        $this->assertSame('hold', $row->confirmation_mode->value);
+        $this->assertSame('hold', $row->confirmation_mode?->value);
         $this->assertSame('2026-11-02 12:00:00', $row->confirmation_expires_at?->format('Y-m-d H:i:s'));
         $this->assertSame('2026-11-02 10:00:00', $row->confirmation_sent_at?->format('Y-m-d H:i:s'));
         $this->assertSame(64, strlen((string) $row->confirmation_token));
@@ -143,7 +144,7 @@ final class GuestSubmissionTest extends ModuleTestCase
 
         $row = ParticipantModel::query()->findOrFail($third->id);
         $this->assertSame('pending', $row->status->value);
-        $this->assertSame('wait', $row->confirmation_mode->value);
+        $this->assertSame('wait', $row->confirmation_mode?->value);
         $this->assertNull($row->confirmation_expires_at);
         $this->assertNull($row->waiting_list_position);
         $this->assertSame(GuestConfirmationMode::Wait, $third->confirmationMode);
@@ -431,7 +432,9 @@ final class GuestSubmissionTest extends ModuleTestCase
         Event::assertDispatched(GuestConfirmationRequested::class, fn (GuestConfirmationRequested $event): bool => $event->deadline === '02/11/2026 14:01'
             && $event->confirmationToken === $row->confirmation_token);
         // Only the first email gave the deadline already gone
-        $this->assertCount(1, Event::dispatched(GuestConfirmationRequested::class, fn (GuestConfirmationRequested $event): bool => $event->deadline === '02/11/2026 12:00'));
+        $events = Event::getFacadeRoot();
+        $this->assertInstanceOf(EventFake::class, $events);
+        $this->assertCount(1, $events->dispatched(GuestConfirmationRequested::class, fn (GuestConfirmationRequested $event): bool => $event->deadline === '02/11/2026 12:00'));
         // Registering again, not told the old registration lapsed
         Event::assertNotDispatched(GuestRegistrationExpired::class);
     }

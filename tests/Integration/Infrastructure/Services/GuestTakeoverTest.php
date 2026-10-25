@@ -325,7 +325,8 @@ final class GuestTakeoverTest extends ModuleTestCase
         $this->assertSame('waiting_list', ParticipantModel::query()->findOrFail($guest->id)->status->value);
         // The freed seat skips the unconfirmed guest: it stays on the list, the seat stays free
         $this->service()->cancel($other->id);
-        $this->assertSame('waiting_list', ParticipantModel::query()->findOrFail($guest->id)->status->value);
+        $row = ParticipantModel::query()->findOrFail($guest->id);
+        $this->assertSame('waiting_list', $row->status->value);
         $user = UserModel::factory()->create(['email' => 'cuenta@example.test']);
         Event::fake(self::EVENTS);
 

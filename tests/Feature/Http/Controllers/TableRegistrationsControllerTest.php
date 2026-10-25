@@ -212,7 +212,7 @@ final class TableRegistrationsControllerTest extends ModuleTestCase
     {
         DB::table('users')->where('id', $this->john->id)->update(['anonymized_at' => CarbonImmutable::now()]);
 
-        $this->actingAs($this->john->fresh())->get($this->pageUrl())->assertForbidden();
+        $this->actingAs($this->john->refresh())->get($this->pageUrl())->assertForbidden();
     }
 
     public function test_a_guest_is_sent_to_log_in(): void

@@ -9,8 +9,10 @@ use App\Filament\Resources\EventResource\Pages\EditEvent;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use DateTimeImmutable;
+use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Str;
+use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 use Modules\GameTables\Domain\Enums\SchedulingMode;
 use Modules\GameTables\Filament\Pages\GameTablesSettings;
@@ -118,11 +120,11 @@ final class GameTablesPanelTest extends ModuleTestCase
     {
         $this->gameTable();
 
-        $options = Livewire::test(ListGameTables::class)
-            ->instance()
-            ->getTable()
-            ->getFilter('frontend_creation_status')
-            ->getOptions();
+        /** @var Testable<ListGameTables> $list */
+        $list = Livewire::test(ListGameTables::class);
+        $filter = $list->instance()->getTable()->getFilter('frontend_creation_status');
+        $this->assertInstanceOf(SelectFilter::class, $filter);
+        $options = $filter->getOptions();
 
         $this->assertArrayNotHasKey('rejected', $options);
         $this->assertSame(['draft', 'pending_review', 'approved'], array_keys($options));

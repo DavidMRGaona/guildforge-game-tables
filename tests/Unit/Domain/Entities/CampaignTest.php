@@ -278,12 +278,11 @@ final class CampaignTest extends ModuleTestCase
         $campaign = $this->createCampaign();
         $campaign->moderationNotes = 'Falta la sinopsis';
 
-        $campaign->frontendCreationStatus = FrontendCreationStatus::Draft;
-        $this->assertSame('Falta la sinopsis', $campaign->rejectionReason());
-
-        // Rows rejected before 2.10.0, until the deploy converts them
-        $campaign->frontendCreationStatus = FrontendCreationStatus::Rejected;
-        $this->assertSame('Falta la sinopsis', $campaign->rejectionReason());
+        // Rejected: rows rejected before 2.10.0, until the deploy converts them
+        foreach ([FrontendCreationStatus::Draft, FrontendCreationStatus::Rejected] as $status) {
+            $campaign->frontendCreationStatus = $status;
+            $this->assertSame('Falta la sinopsis', $campaign->rejectionReason(), $status->value);
+        }
 
         // Approval notes are not a rejection
         $campaign->frontendCreationStatus = FrontendCreationStatus::Approved;

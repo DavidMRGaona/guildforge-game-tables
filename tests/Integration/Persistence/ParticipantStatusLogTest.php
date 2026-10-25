@@ -79,15 +79,17 @@ final class ParticipantStatusLogTest extends ModuleTestCase
 
         $rows = $this->rows();
         $this->assertCount(1, $rows);
-        $this->assertSame($this->table->id, $rows[0]->game_table_id);
-        $this->assertSame($participant->id, $rows[0]->participant_id);
-        $this->assertSame($user->id, $rows[0]->participant_user_id);
-        $this->assertNull($rows[0]->guest_name);
-        $this->assertNull($rows[0]->from_status);
-        $this->assertSame('confirmed', $rows[0]->to_status);
-        $this->assertSame($user->id, $rows[0]->actor_user_id);
-        $this->assertSame(StatusLogActorKind::Participant, $rows[0]->actor_kind);
-        $this->assertNull($rows[0]->reason);
+        $log = $rows->first();
+        $this->assertNotNull($log);
+        $this->assertSame($this->table->id, $log->game_table_id);
+        $this->assertSame($participant->id, $log->participant_id);
+        $this->assertSame($user->id, $log->participant_user_id);
+        $this->assertNull($log->guest_name);
+        $this->assertNull($log->from_status);
+        $this->assertSame('confirmed', $log->to_status);
+        $this->assertSame($user->id, $log->actor_user_id);
+        $this->assertSame(StatusLogActorKind::Participant, $log->actor_kind);
+        $this->assertNull($log->reason);
     }
 
     public function test_a_guest_row_keeps_the_guest_name_and_no_account(): void
@@ -103,11 +105,13 @@ final class ParticipantStatusLogTest extends ModuleTestCase
 
         $rows = $this->rows();
         $this->assertCount(1, $rows);
-        $this->assertNull($rows[0]->participant_user_id);
-        $this->assertSame('Jane Roe', $rows[0]->guest_name);
+        $log = $rows->first();
+        $this->assertNotNull($log);
+        $this->assertNull($log->participant_user_id);
+        $this->assertSame('Jane Roe', $log->guest_name);
         // Nobody signed in, but the guest's own registration is theirs, never the system's
-        $this->assertSame(StatusLogActorKind::Participant, $rows[0]->actor_kind);
-        $this->assertNull($rows[0]->actor_user_id);
+        $this->assertSame(StatusLogActorKind::Participant, $log->actor_kind);
+        $this->assertNull($log->actor_user_id);
     }
 
     public function test_a_cancellation_that_promotes_the_first_waiting_player_leaves_two_rows(): void
@@ -319,8 +323,10 @@ final class ParticipantStatusLogTest extends ModuleTestCase
 
         $rows = $this->rows();
         $this->assertCount(1, $rows);
-        $this->assertNull($rows[0]->participant_id);
-        $this->assertSame('cancelled', $rows[0]->to_status);
+        $log = $rows->first();
+        $this->assertNotNull($log);
+        $this->assertNull($log->participant_id);
+        $this->assertSame('cancelled', $log->to_status);
     }
 
     public function test_an_update_that_does_not_touch_the_status_writes_nothing(): void

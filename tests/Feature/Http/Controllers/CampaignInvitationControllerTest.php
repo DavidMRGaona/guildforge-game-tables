@@ -10,6 +10,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
+use Illuminate\Support\Testing\Fakes\EventFake;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\GameTables\Application\Services\CampaignInvitationServiceInterface;
 use Modules\GameTables\Domain\Events\CampaignInvitationSent;
@@ -346,7 +347,9 @@ final class CampaignInvitationControllerTest extends ModuleTestCase
     {
         $this->app->make(CampaignInvitationServiceInterface::class)->invite($this->campaign->id, $email, $this->mary->id);
 
-        $last = Event::dispatched(CampaignInvitationSent::class)
+        $events = Event::getFacadeRoot();
+        $this->assertInstanceOf(EventFake::class, $events);
+        $last = $events->dispatched(CampaignInvitationSent::class)
             ->map(fn (array $args): CampaignInvitationSent => $args[0])
             ->filter(fn (CampaignInvitationSent $event): bool => $event->email === mb_strtolower(trim($email)))
             ->last();

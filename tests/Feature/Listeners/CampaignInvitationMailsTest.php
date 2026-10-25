@@ -220,6 +220,7 @@ final class CampaignInvitationMailsTest extends ModuleTestCase
     {
         $repository = app(CampaignInvitationRepositoryInterface::class);
         $invitation = $repository->find(new CampaignInvitationId($this->invitationId));
+        $this->assertNotNull($invitation);
         $invitation->resend(hash('sha256', 'a-newer-token'), new DateTimeImmutable);
         $repository->save($invitation);
 

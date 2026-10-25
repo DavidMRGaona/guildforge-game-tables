@@ -9,6 +9,7 @@ use App\Infrastructure\Persistence\Eloquent\Models\RoleModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Carbon\CarbonImmutable;
 use Filament\Actions\Action;
+use Filament\Tables\Columns\TextColumn;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportTesting\Testable;
@@ -227,8 +228,10 @@ final class ParticipantsGuestConfirmationTest extends ModuleTestCase
     {
         $component->assertTableColumnExists('guest_flags');
         $column = $component->instance()->getTable()->getColumn('guest_flags');
-        $this->assertNotNull($column);
-        $column->record($component->instance()->getTableRecord((string) $record->getKey()));
+        $this->assertInstanceOf(TextColumn::class, $column);
+        $row = $component->instance()->getTableRecord((string) $record->getKey());
+        $this->assertNotNull($row);
+        $column->record($row);
         $column->clearCachedState();
         // A row without badges has a blank state, which Filament turns into the default (null)
         $state = $column->getState() ?? [];

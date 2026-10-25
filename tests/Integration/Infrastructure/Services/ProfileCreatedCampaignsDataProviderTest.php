@@ -27,7 +27,7 @@ final class ProfileCreatedCampaignsDataProviderTest extends ModuleTestCase
         $this->joinRoster($campaign, $this->user());
         $this->joinRoster($campaign, $this->user(anonymized: true));
 
-        $data = app(ProfileCreatedCampaignsDataProvider::class)->getDataForUser((string) $creator->id);
+        $data = $this->dataFor($creator);
 
         // Same count as «Mis campañas»: roster members whose account was not anonymized
         $this->assertSame(2, $data['campaigns'][0]['currentPlayers']);
@@ -39,7 +39,7 @@ final class ProfileCreatedCampaignsDataProviderTest extends ModuleTestCase
         $creator = $this->user();
         $this->campaign($creator);
 
-        $data = app(ProfileCreatedCampaignsDataProvider::class)->getDataForUser((string) $creator->id);
+        $data = $this->dataFor($creator);
 
         $this->assertSame(0, $data['campaigns'][0]['currentPlayers']);
     }
@@ -50,7 +50,7 @@ final class ProfileCreatedCampaignsDataProviderTest extends ModuleTestCase
         $this->campaign($creator, ['is_published' => false, 'frontend_creation_status' => 'pending_review', 'title' => 'En revisión']);
         $this->campaign($creator, ['is_published' => false, 'frontend_creation_status' => 'draft', 'title' => 'Borrador']);
 
-        $drafts = collect(app(ProfileCreatedCampaignsDataProvider::class)->getDataForUser((string) $creator->id)['drafts'])->keyBy('title');
+        $drafts = collect($this->dataFor($creator)['drafts'])->keyBy('title')->all();
 
         // As «Mis campañas»: a campaign sent to review is waiting for the moderators, not editable
         $this->assertSame('pending_review', $drafts['En revisión']['status']);
@@ -67,7 +67,7 @@ final class ProfileCreatedCampaignsDataProviderTest extends ModuleTestCase
         $this->campaign($creator, ['is_published' => false, 'frontend_creation_status' => 'pending_review', 'title' => 'En revisión', 'moderation_notes' => 'Nota antigua']);
         $this->campaign($creator, ['is_published' => false, 'frontend_creation_status' => 'draft', 'title' => 'Borrador']);
 
-        $drafts = collect(app(ProfileCreatedCampaignsDataProvider::class)->getDataForUser((string) $creator->id)['drafts'])->keyBy('title');
+        $drafts = collect($this->dataFor($creator)['drafts'])->keyBy('title')->all();
 
         // As «Mis campañas»: the reason only while the draft is back in the author's hands
         $this->assertSame("Falta la sinopsis.\nRevisa el sistema.", $drafts['Rechazada']['rejectionReason']);
@@ -87,8 +87,8 @@ final class ProfileCreatedCampaignsDataProviderTest extends ModuleTestCase
         $this->campaign($creator, ['frontend_creation_status' => null, 'title' => 'Del panel']);
         $this->campaign($creator, ['is_published' => false, 'frontend_creation_status' => 'draft', 'title' => 'Borrador']);
 
-        $data = app(ProfileCreatedCampaignsDataProvider::class)->getDataForUser((string) $creator->id);
-        $published = collect($data['campaigns'])->keyBy('title');
+        $data = $this->dataFor($creator);
+        $published = collect($data['campaigns'])->keyBy('title')->all();
 
         // As «Mis campañas»: pending requests of accounts that were not anonymized
         $this->assertSame(route('campaigns.roster', $directed->id), $published['Dirigida']['rosterUrl']);
@@ -119,9 +119,20 @@ final class ProfileCreatedCampaignsDataProviderTest extends ModuleTestCase
             'updated_at' => now(),
         ]);
 
-        $data = app(ProfileCreatedCampaignsDataProvider::class)->getDataForUser((string) $creator->id);
+        $data = $this->dataFor($creator);
 
         $this->assertSame(route('campaigns.roster', $campaign->id), $data['campaigns'][0]['rosterUrl']);
+    }
+
+    /**
+     * @return array{campaigns: array<array<string, mixed>>, drafts: array<array<string, mixed>>, total: int, canCreate: bool}
+     */
+    private function dataFor(UserModel $creator): array
+    {
+        $data = app(ProfileCreatedCampaignsDataProvider::class)->getDataForUser((string) $creator->id);
+        $this->assertNotNull($data);
+
+        return $data;
     }
 
     private function joinRequest(CampaignModel $campaign, UserModel $user, string $status): void

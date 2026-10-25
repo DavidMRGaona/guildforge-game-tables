@@ -30,10 +30,9 @@ final class FrontendCreationStatusTest extends TestCase
 
     public function test_it_returns_label(): void
     {
-        $this->assertIsString(FrontendCreationStatus::Draft->label());
-        $this->assertIsString(FrontendCreationStatus::PendingReview->label());
-        $this->assertIsString(FrontendCreationStatus::Approved->label());
-        $this->assertIsString(FrontendCreationStatus::Rejected->label());
+        foreach (FrontendCreationStatus::cases() as $status) {
+            $this->assertSame(__('game-tables::messages.enums.frontend_creation_status.'.$status->value), $status->label());
+        }
     }
 
     public function test_it_returns_color(): void
@@ -46,17 +45,16 @@ final class FrontendCreationStatusTest extends TestCase
 
     public function test_it_returns_icon(): void
     {
-        $this->assertIsString(FrontendCreationStatus::Draft->icon());
-        $this->assertIsString(FrontendCreationStatus::PendingReview->icon());
-        $this->assertIsString(FrontendCreationStatus::Approved->icon());
-        $this->assertIsString(FrontendCreationStatus::Rejected->icon());
+        $this->assertSame('heroicon-o-pencil', FrontendCreationStatus::Draft->icon());
+        $this->assertSame('heroicon-o-clock', FrontendCreationStatus::PendingReview->icon());
+        $this->assertSame('heroicon-o-check-circle', FrontendCreationStatus::Approved->icon());
+        $this->assertSame('heroicon-o-x-circle', FrontendCreationStatus::Rejected->icon());
     }
 
     public function test_it_returns_options(): void
     {
         $options = FrontendCreationStatus::options();
 
-        $this->assertIsArray($options);
         $this->assertCount(4, $options);
         $this->assertArrayHasKey('draft', $options);
         $this->assertArrayHasKey('pending_review', $options);
@@ -68,7 +66,6 @@ final class FrontendCreationStatusTest extends TestCase
     {
         $values = FrontendCreationStatus::values();
 
-        $this->assertIsArray($values);
         $this->assertCount(4, $values);
         $this->assertContains('draft', $values);
         $this->assertContains('pending_review', $values);

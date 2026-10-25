@@ -20,13 +20,14 @@ use Modules\GameTables\Infrastructure\Listeners\NotifyOnWaitingListPromotion;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 use Modules\GameTables\Notifications\WaitingListPromotionGmNotification;
 use Modules\GameTables\Notifications\WaitingListPromotionNotification;
+use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 
 final class NotifyOnWaitingListPromotionTest extends TestCase
 {
-    private NotificationRecipientResolverInterface $recipientResolver;
+    private NotificationRecipientResolverInterface&MockObject $recipientResolver;
 
-    private GameTableRepositoryInterface $gameTableRepository;
+    private GameTableRepositoryInterface&MockObject $gameTableRepository;
 
     private NotifyOnWaitingListPromotion $listener;
 

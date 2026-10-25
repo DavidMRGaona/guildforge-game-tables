@@ -136,7 +136,7 @@ final class GameTableStatusUpdaterTest extends ModuleTestCase
     // Someone cancelled the table by hand after it was read again: the save refuses the transition
     public function test_a_table_changed_by_hand_between_the_read_and_the_save_is_skipped_without_an_error(): void
     {
-        Log::spy();
+        $log = Log::spy();
         $table = $this->table(TableStatus::Scheduled, '2030-03-10 18:00:00');
 
         $counts = $this->updateWithFind(function (GameTable $read) use ($table): void {
@@ -145,13 +145,13 @@ final class GameTableStatusUpdaterTest extends ModuleTestCase
 
         $this->assertSame($this->counts(skipped: 1), $counts);
         $this->assertSame(TableStatus::Cancelled, $table->refresh()->status);
-        Log::shouldNotHaveReceived('error');
+        $log->shouldNotHaveReceived('error');
     }
 
     // Someone deleted the table after it was read again: nothing left to move, so it is skipped
     public function test_a_table_deleted_between_the_read_and_the_save_is_skipped_without_an_error(): void
     {
-        Log::spy();
+        $log = Log::spy();
         $table = $this->table(TableStatus::Scheduled, '2030-03-10 18:00:00');
 
         $counts = $this->updateWithFind(function (GameTable $read) use ($table): void {
@@ -160,12 +160,12 @@ final class GameTableStatusUpdaterTest extends ModuleTestCase
 
         $this->assertSame($this->counts(skipped: 1), $counts);
         $this->assertFalse(GameTableModel::query()->whereKey($table->id)->exists());
-        Log::shouldNotHaveReceived('error');
+        $log->shouldNotHaveReceived('error');
     }
 
     public function test_a_failing_table_is_logged_and_the_rest_still_change(): void
     {
-        Log::spy();
+        $log = Log::spy();
         $broken = $this->table(TableStatus::Scheduled, '2030-03-10 18:00:00');
         $healthy = $this->table(TableStatus::Scheduled, '2030-03-10 18:00:00');
         $real = app(GameTableServiceInterface::class);
@@ -182,7 +182,7 @@ final class GameTableStatusUpdaterTest extends ModuleTestCase
         $this->assertSame($this->counts(started: 1, failed: 1), $counts);
         $this->assertSame(TableStatus::Scheduled, $broken->refresh()->status);
         $this->assertSame(TableStatus::InProgress, $healthy->refresh()->status);
-        Log::shouldHaveReceived('error')
+        $log->shouldHaveReceived('error')
             ->once()
             ->withArgs(fn (string $message, array $context): bool => $message === 'game-tables: automatic status update failed'
                 && $context['game_table_id'] === $broken->id

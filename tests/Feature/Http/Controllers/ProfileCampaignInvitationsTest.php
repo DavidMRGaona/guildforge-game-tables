@@ -112,6 +112,7 @@ final class ProfileCampaignInvitationsTest extends ModuleTestCase
             ['profileCampaignInvitations', 'profileCampaignInvitationsTotal', 'profileCampaignInvitationsVisible'],
             $slot->dataKeys,
         );
+        $this->assertNotNull($slot->profileTab);
         $this->assertSame('profileCampaignInvitationsVisible', $slot->profileTab['visibleKey']);
         $this->assertSame('profileCampaignInvitationsTotal', $slot->profileTab['badgeKey']);
     }

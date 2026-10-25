@@ -13,6 +13,9 @@ use PHPUnit\Framework\TestCase;
  */
 final class StartClosesRegistrationsCopyTest extends TestCase
 {
+    /**
+     * @return array<string, mixed>
+     */
     private function lang(string $locale, string $file): array
     {
         return Arr::dot(require dirname(__DIR__, 3)."/lang/{$locale}/{$file}.php");

@@ -271,7 +271,7 @@ final class FrontendAuthorDirectorRecordTest extends ModuleTestCase
 
         $richard = $this->table->gameMasters()->where('email', 'richard@example.com')->firstOrFail();
         $this->assertSame(['co_gm', null], [$richard->role->value, $richard->user_id]);
-        $this->assertSame([$this->authorRecord->id], $this->table->gameMasters()->where('role', 'main')->get()->modelKeys());
+        $this->assertSame([$this->authorRecord->id], $this->table->gameMasters()->where('role', 'main')->pluck('gametables_game_masters.id')->all());
     }
 
     public function test_a_campaign_session_keeps_the_campaign_directors_as_they_are(): void
@@ -362,7 +362,7 @@ final class FrontendAuthorDirectorRecordTest extends ModuleTestCase
      */
     private function linkedIds(GameTableModel $table): array
     {
-        return $table->gameMasters()->pluck('gametables_game_masters.id')->values()->all();
+        return array_values($table->gameMasters()->get()->map(fn (GameMasterModel $gameMaster): string => $gameMaster->id)->all());
     }
 
     /**

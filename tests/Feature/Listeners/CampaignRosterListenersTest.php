@@ -8,6 +8,7 @@ use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\GameMasterRole;
 use Modules\GameTables\Domain\Events\CampaignJoinRequestAccepted;
@@ -129,6 +130,7 @@ final class CampaignRosterListenersTest extends ModuleTestCase
             'roster_added' => event(new CampaignRosterMemberAdded($this->campaign->id, $this->mary->id, $sessions)),
             'roster_removed' => event(new CampaignRosterMemberRemoved($this->campaign->id, $this->mary->id)),
             'player_left' => event(new CampaignRosterMemberLeft($this->campaign->id, $this->mary->id)),
+            default => throw new InvalidArgumentException("Unknown notification key: {$key}"),
         };
     }
 
