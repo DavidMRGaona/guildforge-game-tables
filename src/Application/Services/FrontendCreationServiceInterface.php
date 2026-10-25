@@ -16,7 +16,6 @@ use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
 use Modules\GameTables\Domain\Exceptions\NotEditableException;
 use Modules\GameTables\Domain\Exceptions\NotEligibleToCreateException;
 use Modules\GameTables\Domain\Exceptions\SessionBelowRosterException;
-use Modules\GameTables\Domain\Exceptions\TableNotFoundException;
 
 interface FrontendCreationServiceInterface
 {
@@ -99,7 +98,8 @@ interface FrontendCreationServiceInterface
     /**
      * Submit a draft table for review.
      *
-     * @throws TableNotFoundException
+     * @throws GameTableNotFoundException
+     * @throws NotEditableException when it is not the author's draft
      * @throws InvalidStatusTransitionException
      * @throws NotEligibleToCreateException when the author may not create it any more
      * @throws SessionBelowRosterException when it would be published at once
@@ -109,7 +109,7 @@ interface FrontendCreationServiceInterface
     /**
      * Update a draft table.
      *
-     * @throws TableNotFoundException
+     * @throws GameTableNotFoundException
      * @throws NotEditableException
      * @throws NotEligibleToCreateException when the author may not create the edited table
      */
@@ -144,7 +144,7 @@ interface FrontendCreationServiceInterface
     /**
      * Delete a draft table.
      *
-     * @throws TableNotFoundException
+     * @throws GameTableNotFoundException
      * @throws NotEditableException
      */
     public function deleteDraft(string $tableId, string $userId): void;

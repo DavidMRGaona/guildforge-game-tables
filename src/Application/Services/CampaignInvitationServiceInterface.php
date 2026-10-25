@@ -47,6 +47,7 @@ interface CampaignInvitationServiceInterface
     /**
      * Joins the campaign with the emailed token. The account must hold the invited email.
      *
+     * @throws CampaignNotFoundException when the campaign was deleted meanwhile
      * @throws RosterActionRefusedException invitation_not_found, invitation_other_account, or the roster's own refusals
      */
     public function accept(string $token, string $userId): void;

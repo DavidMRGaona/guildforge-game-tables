@@ -143,14 +143,14 @@ final class ParticipantsRelationManager extends RelationManager
         $key = 'game-tables::messages.relation_managers.participants.flags.';
 
         if ($flag === self::FLAG_POSSIBLE_DUPLICATE) {
-            return __($key.'possible_duplicate_tooltip', [
+            return (string) __($key.'possible_duplicate_tooltip', [
                 'hours' => app(GameTableSettingsReader::class)->duplicateSignalWindowHours(),
             ]);
         }
 
         // Only hold mode has a deadline
         return $record->confirmation_expires_at !== null
-            ? __($key.'expires_at', ['date' => $record->confirmation_expires_at->format('d/m/Y H:i')])
+            ? (string) __($key.'expires_at', ['date' => $record->confirmation_expires_at->format('d/m/Y H:i')])
             : null;
     }
 

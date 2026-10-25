@@ -552,7 +552,6 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                     inviterName: 'John Doe',
                     campaignTitle: (string) __('game-tables::emails.campaign_invitation.preview_campaign'),
                     campaignSlug: 'campana-de-ejemplo',
-                    email: 'john@example.com',
                     token: Str::random(64),
                     expiresAt: now()->addDays(CampaignInvitationNotification::EXPIRY_DAYS)->format('d/m/Y'),
                     legalText: $content,

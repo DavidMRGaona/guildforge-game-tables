@@ -42,7 +42,7 @@ final class GameMasterRepeater
             ->defaultItems($defaultItems)
             ->minItems($minItems)
             ->collapsible()
-            ->itemLabel(fn (array $state): ?string => self::getItemLabel($state))
+            ->itemLabel(fn (array $state): string => self::getItemLabel($state))
             ->columnSpanFull();
     }
 
@@ -63,7 +63,7 @@ final class GameMasterRepeater
             ->defaultItems(0)
             ->minItems($minItems)
             ->collapsible()
-            ->itemLabel(fn (array $state): ?string => self::getItemLabelForTable($state))
+            ->itemLabel(fn (array $state): string => self::getItemLabelForTable($state))
             ->columnSpanFull();
     }
 
@@ -72,7 +72,7 @@ final class GameMasterRepeater
      *
      * @param  array<string, mixed>  $state
      */
-    private static function getItemLabel(array $state): ?string
+    private static function getItemLabel(array $state): string
     {
         if (! empty($state['custom_title'])) {
             return $state['custom_title'];
@@ -82,7 +82,7 @@ final class GameMasterRepeater
             return $state['first_name'];
         }
 
-        return __('game-tables::messages.fields.game_master');
+        return (string) __('game-tables::messages.fields.game_master');
     }
 
     /**
@@ -90,7 +90,7 @@ final class GameMasterRepeater
      *
      * @param  array<string, mixed>  $state
      */
-    private static function getItemLabelForTable(array $state): ?string
+    private static function getItemLabelForTable(array $state): string
     {
         $label = self::getItemLabel($state);
 

@@ -55,7 +55,8 @@ final class SendTableRemindersCommand extends Command
             $table = $participant->gameTable;
             $email = $participant->user_id !== null ? $participant->user?->email : $participant->email;
 
-            if ($table === null || $email === null || $email === '') {
+            // The query already requires the table (whereHas)
+            if ($email === null || $email === '') {
                 continue;
             }
 
@@ -72,7 +73,8 @@ final class SendTableRemindersCommand extends Command
             $notification = new TableReminderNotification(
                 participantName: $participant->user_id !== null ? (string) $participant->user?->name : (string) $participant->first_name,
                 tableTitle: $table->title,
-                tableSlug: $table->slug,
+                // HasSlug always sets one; the id keeps a row without it from stopping the run
+                tableSlug: $table->slug ?? $table->id,
                 tableDate: $table->starts_at->format('d/m/Y H:i'),
                 tableLocation: $table->location,
                 cancellationToken: $participant->user_id === null ? $participant->cancellation_token : null,

@@ -42,7 +42,7 @@ final class EventGameTableConfigRelationManager extends RelationManager
     /** @var array<string, mixed> */
     public array $configData = [];
 
-    public static function getTitle($ownerRecord, string $pageClass): string
+    public static function getTitle(Model $ownerRecord, string $pageClass): string
     {
         return __('game-tables::messages.event_config.title');
     }

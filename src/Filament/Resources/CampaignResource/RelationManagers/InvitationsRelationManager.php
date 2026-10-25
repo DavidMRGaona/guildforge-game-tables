@@ -41,7 +41,7 @@ final class InvitationsRelationManager extends RelationManager
             ->defaultSort('created_at', 'desc')
             // No seat is reserved: whoever accepts first enters, so the direction is told (as on the web)
             ->description(fn (): ?string => $this->moreInvitationsThanSeats()
-                ? __('game-tables::messages.relation_managers.invitations.more_than_seats')
+                ? (string) __('game-tables::messages.relation_managers.invitations.more_than_seats')
                 : null)
             ->columns([
                 TextColumn::make('email')

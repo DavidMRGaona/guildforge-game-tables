@@ -25,6 +25,9 @@ use Modules\GameTables\Filament\Support\DelegatedDirectors;
 use Modules\GameTables\Filament\Support\PublicationLock;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
+/**
+ * @property GameTableModel $record
+ */
 final class EditGameTable extends EditRecord
 {
     protected static string $resource = GameTableResource::class;
@@ -106,7 +109,7 @@ final class EditGameTable extends EditRecord
 
     protected function afterFill(): void
     {
-        $this->loadedStatus = $this->getRecord()->status->value;
+        $this->loadedStatus = $this->record->status->value;
     }
 
     /**
@@ -118,7 +121,7 @@ final class EditGameTable extends EditRecord
 
         // The actions show the status they set: the form is current again
         if (in_array('status', $statePaths, true)) {
-            $this->loadedStatus = $this->getRecord()->status->value;
+            $this->loadedStatus = $this->record->status->value;
         }
     }
 
@@ -129,7 +132,7 @@ final class EditGameTable extends EditRecord
      */
     protected function beforeValidate(): void
     {
-        $current = $this->getRecord()->status->value;
+        $current = $this->record->status->value;
 
         if ($this->loadedStatus === null || $current === $this->loadedStatus) {
             return;
@@ -185,7 +188,7 @@ final class EditGameTable extends EditRecord
         // Sync game masters using the service
         /** @var GameMasterServiceInterface $gameMasterService */
         $gameMasterService = app(GameMasterServiceInterface::class);
-        $gameMasterService->syncTableGameMasters($record->id, $gameMastersData);
+        $gameMasterService->syncTableGameMasters((string) $record->getKey(), $gameMastersData);
 
         return $record;
     }
