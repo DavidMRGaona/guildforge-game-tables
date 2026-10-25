@@ -41,7 +41,7 @@ final class CampaignInvitationController extends Controller
     {
         $invitation = $this->invitations->viewByToken($token, now()->toDateTimeImmutable());
 
-        if ($invitation === null) {
+        if (!$invitation instanceof \Modules\GameTables\Application\DTOs\CampaignInvitationViewDTO) {
             // Right after rejecting, the page says so instead of calling the invitation invalid
             return $this->page(session()->get(self::REJECTED_FLASH) === true ? 'rejected' : 'invalid', null, $token);
         }
@@ -96,7 +96,7 @@ final class CampaignInvitationController extends Controller
             return redirect()->route('campaigns.invitation.show', $token)->with('error', $e->getMessage());
         }
 
-        return $invitation !== null
+        return $invitation instanceof \Modules\GameTables\Application\DTOs\CampaignInvitationViewDTO
             ? redirect()->route('campaigns.show', $invitation->campaignSlug)
                 ->with('success', __('game-tables::messages.roster.success.invitation_accepted'))
             : redirect()->route('campaigns.index')
@@ -211,7 +211,7 @@ final class CampaignInvitationController extends Controller
      */
     private function props(string $state, ?CampaignInvitationViewDTO $invitation): ?array
     {
-        if ($invitation === null || in_array($state, ['invalid', 'rejected'], true)) {
+        if (!$invitation instanceof \Modules\GameTables\Application\DTOs\CampaignInvitationViewDTO || in_array($state, ['invalid', 'rejected'], true)) {
             return null;
         }
 

@@ -12,12 +12,9 @@ use DomainException;
  */
 final class ParticipantAwaitingEmailException extends DomainException
 {
-    public readonly string $reason;
-
-    private function __construct(string $message, string $reason)
+    private function __construct(string $message, public readonly string $reason)
     {
         parent::__construct($message);
-        $this->reason = $reason;
     }
 
     public static function forParticipant(string $participantId): self

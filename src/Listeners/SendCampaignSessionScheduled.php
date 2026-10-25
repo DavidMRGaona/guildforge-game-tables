@@ -35,13 +35,13 @@ final readonly class SendCampaignSessionScheduled
 
         $table = $this->tables->find(new GameTableId($event->gameTableId));
 
-        if ($table === null || $table->campaignId === null) {
+        if (!$table instanceof \Modules\GameTables\Domain\Entities\GameTable || !$table->campaignId instanceof \Modules\GameTables\Domain\ValueObjects\CampaignId) {
             return;
         }
 
         $campaign = $this->campaigns->find($table->campaignId);
 
-        if ($campaign === null) {
+        if (!$campaign instanceof \Modules\GameTables\Domain\Entities\Campaign) {
             return;
         }
 

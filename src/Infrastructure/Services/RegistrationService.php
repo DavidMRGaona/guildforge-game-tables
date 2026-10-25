@@ -133,19 +133,19 @@ final readonly class RegistrationService implements RegistrationServiceInterface
      */
     private function rosterRejoinOf(RegisterParticipantDTO $dto, string $userId): ?array
     {
-        if ($this->roster === null || $dto->role !== ParticipantRole::Player) {
+        if (!$this->roster instanceof \Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface || $dto->role !== ParticipantRole::Player) {
             return null;
         }
 
         $gameTable = $this->gameTableRepository->find(new GameTableId($dto->gameTableId));
 
-        if ($gameTable === null || ! $this->isRosterMember($gameTable, $userId)) {
+        if (!$gameTable instanceof \Modules\GameTables\Domain\Entities\GameTable || ! $this->isRosterMember($gameTable, $userId)) {
             return null;
         }
 
         $existing = $this->participantRepository->findByTableAndUser($gameTable->id, $userId);
 
-        if ($existing !== null && ! $existing->isActive() && ! $existing->isCancelled()) {
+        if ($existing instanceof \Modules\GameTables\Domain\Entities\Participant && ! $existing->isActive() && ! $existing->isCancelled()) {
             return null;
         }
 
@@ -157,8 +157,8 @@ final readonly class RegistrationService implements RegistrationServiceInterface
      */
     private function isRosterMember(GameTable $gameTable, string $userId): bool
     {
-        return $this->roster !== null
-            && $gameTable->campaignId !== null
+        return $this->roster instanceof \Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface
+            && $gameTable->campaignId instanceof \Modules\GameTables\Domain\ValueObjects\CampaignId
             && $this->roster->contains($gameTable->campaignId, $userId);
     }
 
@@ -175,7 +175,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     {
         $this->ensureAdmitsRoster($gameTable, $now);
 
-        if ($existing !== null && $existing->isActive()) {
+        if ($existing instanceof \Modules\GameTables\Domain\Entities\Participant && $existing->isActive()) {
             throw AlreadyRegisteredException::forTable($userId, $gameTable->id->value);
         }
 
@@ -232,7 +232,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             fromRoster: true,
         );
 
-        if ($existing !== null) {
+        if ($existing instanceof \Modules\GameTables\Domain\Entities\Participant) {
             $participant->reactivate();
         }
 
@@ -244,7 +244,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
     public function enrollRoster(string $gameTableId, ?string $onlyUserId = null): array
     {
-        if ($this->roster === null) {
+        if (!$this->roster instanceof \Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface) {
             return [];
         }
 
@@ -253,7 +253,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         [$placed, $promotions] = $this->lock->forTable($gameTableId, function () use ($gameTableId, $onlyUserId, $now): array {
             $gameTable = $this->gameTableRepository->find(new GameTableId($gameTableId));
 
-            if ($gameTable?->campaignId === null || ! $gameTable->admitsRosterEnrollment($now)) {
+            if (!$gameTable?->campaignId instanceof \Modules\GameTables\Domain\ValueObjects\CampaignId || ! $gameTable->admitsRosterEnrollment($now)) {
                 return [[], []];
             }
 
@@ -298,7 +298,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             return $this->isRosterMember($gameTable, $onlyUserId) ? [$onlyUserId] : [];
         }
 
-        return $this->roster !== null && $gameTable->campaignId !== null
+        return $this->roster instanceof \Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface && $gameTable->campaignId instanceof \Modules\GameTables\Domain\ValueObjects\CampaignId
             ? $this->roster->memberIds($gameTable->campaignId)
             : [];
     }
@@ -318,7 +318,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     {
         $existing = $this->participantRepository->findByTableAndUser($gameTable->id, $userId);
 
-        if ($existing !== null && $existing->isActive()) {
+        if ($existing instanceof \Modules\GameTables\Domain\Entities\Participant && $existing->isActive()) {
             $this->adoptAsRosterRow($existing);
 
             return [null, null];
@@ -326,7 +326,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
         // The organisation's decision (rejected, no-show, expired) or an absence stands: not even a
         // guest row of the member's is taken over, as that would delete it
-        if ($existing !== null && (! $existing->isCancelled() || $existing->isSessionAbsence())) {
+        if ($existing instanceof \Modules\GameTables\Domain\Entities\Participant && (! $existing->isCancelled() || $existing->isSessionAbsence())) {
             return [null, null];
         }
 
@@ -337,7 +337,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             return $this->adoptGuestLocked($guest, $account, $now);
         }
 
-        if ($existing !== null && ! $existing->leftRoster()) {
+        if ($existing instanceof \Modules\GameTables\Domain\Entities\Participant && ! $existing->leftRoster()) {
             return [null, $promoted];
         }
 
@@ -406,7 +406,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         [$cancelled, $promoted] = $this->lock->forTable($gameTableId, function () use ($gameTableId, $userId): array {
             $participant = $this->participantRepository->findByTableAndUser(new GameTableId($gameTableId), $userId);
 
-            if ($participant === null || ! $participant->fromRoster || ! $participant->canBeCancelled()) {
+            if (!$participant instanceof \Modules\GameTables\Domain\Entities\Participant || ! $participant->fromRoster || ! $participant->canBeCancelled()) {
                 return [false, null];
             }
 
@@ -430,7 +430,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         $participant = $this->lock->forTable($gameTableId, function () use ($gameTableId, $userId, $now): Participant {
             $existing = $this->participantRepository->findByTableAndUser(new GameTableId($gameTableId), $userId);
 
-            if ($existing === null || ! $existing->isSessionAbsence()) {
+            if (!$existing instanceof \Modules\GameTables\Domain\Entities\Participant || ! $existing->isSessionAbsence()) {
                 throw ParticipantNotFoundException::forUserInTable($userId, $gameTableId);
             }
 
@@ -467,11 +467,11 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     private function guestOfAccount(string $gameTableId, string $userId, DateTimeImmutable $now): array
     {
         $account = $this->accounts?->findById($userId);
-        $guest = $account !== null
+        $guest = $account instanceof \Modules\GameTables\Application\DTOs\AccountDTO
             ? $this->participantRepository->findByTableAndEmail(new GameTableId($gameTableId), $account->email)
             : null;
 
-        if ($guest === null || ! $guest->isActive()) {
+        if (!$guest instanceof \Modules\GameTables\Domain\Entities\Participant || ! $guest->isActive()) {
             return [null, $account, null];
         }
 
@@ -539,7 +539,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         // gives way to the one taken over
         $own = $this->participantRepository->findByTableAndUser($guest->gameTableId, $userId);
 
-        if ($own !== null) {
+        if ($own instanceof \Modules\GameTables\Domain\Entities\Participant) {
             // Never reached in the normal flow: the user's rules refuse an active row as
             // already_registered and the roster enrolment adopts it first. It stays so a change to
             // either can never leave two active rows
@@ -617,13 +617,13 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         $gameTableId = new GameTableId($dto->gameTableId);
 
         $existing = $this->participantRepository->findByTableAndUser($gameTableId, $userId);
-        if ($existing !== null && $existing->isActive()) {
+        if ($existing instanceof \Modules\GameTables\Domain\Entities\Participant && $existing->isActive()) {
             throw AlreadyRegisteredException::forTable($userId, $dto->gameTableId);
         }
 
         $gameTable = $this->gameTableRepository->findOrFail($gameTableId);
 
-        if ($existing !== null) {
+        if ($existing instanceof \Modules\GameTables\Domain\Entities\Participant) {
             $participant = $existing;
             $participant->reactivate();
             // Not the roster path (rosterRow() marks its own rows): a row left by an absence or by
@@ -686,14 +686,14 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         $gameTableId = new GameTableId($dto->gameTableId);
         $email = $this->normalisedEmail($dto);
 
-        if ($existing !== null && $existing->isActive()) {
+        if ($existing instanceof \Modules\GameTables\Domain\Entities\Participant && $existing->isActive()) {
             throw AlreadyRegisteredException::forGuestEmail((string) $email, $dto->gameTableId);
         }
 
         $gameTable = $this->gameTableRepository->findOrFail($gameTableId);
         $cancellationToken = bin2hex(random_bytes(32));
 
-        if ($existing !== null) {
+        if ($existing instanceof \Modules\GameTables\Domain\Entities\Participant) {
             $participant = $existing;
             $participant->reactivate();
             $participant->changeRole($dto->role);
@@ -842,7 +842,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         $participant = $this->participantRepository->find(new ParticipantId($participantId));
 
         // An unknown id still fails under the lock, as before
-        if ($participant !== null) {
+        if ($participant instanceof \Modules\GameTables\Domain\Entities\Participant) {
             $this->ensureTableNotStarted($participant);
         }
 
@@ -879,14 +879,14 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     {
         $gameTable = $this->gameTableRepository->find($gameTableId);
 
-        return $gameTable !== null && $gameTable->canParticipantWithdraw($now);
+        return $gameTable instanceof \Modules\GameTables\Domain\Entities\GameTable && $gameTable->canParticipantWithdraw($now);
     }
 
     public function withdrawalRefusal(string $participantId, ?DateTimeImmutable $now = null): ?string
     {
         $participant = $this->participantRepository->find(new ParticipantId($participantId));
 
-        if ($participant === null || ! $participant->canBeCancelled()) {
+        if (!$participant instanceof \Modules\GameTables\Domain\Entities\Participant || ! $participant->canBeCancelled()) {
             return 'not_allowed';
         }
 
@@ -955,7 +955,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             $byOrganization,
         );
 
-        if ($promoted !== null) {
+        if ($promoted instanceof \Modules\GameTables\Domain\Entities\Participant) {
             $this->announcePromotion($promoted);
         }
     }
@@ -983,14 +983,14 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         // A freed seat is a player seat: spectators in the list are never moved into it
         $participant = $this->participantRepository->getFirstInWaitingList($gameTableId, ParticipantRole::Player);
 
-        if ($participant === null) {
+        if (!$participant instanceof \Modules\GameTables\Domain\Entities\Participant) {
             return null;
         }
 
         $gameTable = $this->gameTableRepository->find($gameTableId);
 
         // Closed with the registrations: the director promotes by hand from the panel
-        if ($gameTable === null || ! $gameTable->isWaitingListOpen(CarbonImmutable::now()->toDateTimeImmutable())) {
+        if (!$gameTable instanceof \Modules\GameTables\Domain\Entities\GameTable || ! $gameTable->isWaitingListOpen(CarbonImmutable::now()->toDateTimeImmutable())) {
             return null;
         }
 
@@ -1030,7 +1030,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             $userId,
         );
 
-        if ($participant === null) {
+        if (!$participant instanceof \Modules\GameTables\Domain\Entities\Participant) {
             throw ParticipantNotFoundException::forUserInTable($userId, $gameTableId);
         }
 
@@ -1312,7 +1312,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         $participants = $this->participantRepository->getByGameTable(new GameTableId($gameTableId));
 
         return array_map(
-            fn (Participant $p): ParticipantResponseDTO => $this->toResponse($p),
+            $this->toResponse(...),
             $participants,
         );
     }
@@ -1325,7 +1325,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         $participants = $this->participantRepository->getWaitingList(new GameTableId($gameTableId));
 
         return array_map(
-            fn (Participant $p): ParticipantResponseDTO => $this->toResponse($p),
+            $this->toResponse(...),
             $participants,
         );
     }
@@ -1338,7 +1338,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         $participants = $this->participantRepository->getByUser($userId);
 
         return array_map(
-            fn (Participant $p): ParticipantResponseDTO => $this->toResponse($p),
+            $this->toResponse(...),
             $participants,
         );
     }
@@ -1347,7 +1347,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     {
         $participant = $this->participantRepository->find(new ParticipantId($participantId));
 
-        if ($participant === null) {
+        if (!$participant instanceof \Modules\GameTables\Domain\Entities\Participant) {
             return null;
         }
 
@@ -1361,7 +1361,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             $userId,
         );
 
-        if ($participant === null) {
+        if (!$participant instanceof \Modules\GameTables\Domain\Entities\Participant) {
             return null;
         }
 
@@ -1386,17 +1386,17 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
             // Past its deadline the row has lapsed, even if the expiry command has not run yet: the
             // submission is a new registration, never an email with a deadline already gone
-            $promoted = $existing !== null && $existing->isConfirmationOverdue($now)
+            $promoted = $existing instanceof \Modules\GameTables\Domain\Entities\Participant && $existing->isConfirmationOverdue($now)
                 ? $this->expireLocked($existing, $now)
                 : null;
 
-            $unconfirmed = $existing !== null && $existing->isAwaitingEmailConfirmation() ? $existing : null;
+            $unconfirmed = $existing instanceof \Modules\GameTables\Domain\Entities\Participant && $existing->isAwaitingEmailConfirmation() ? $existing : null;
             $role = $unconfirmed->role ?? $dto->role;
 
             $seatRefusal = $this->ensureGuestAdmitted($dto->gameTableId, $role);
             $this->ensureAccountEmailAdmitted($dto, $role, $now);
 
-            if ($unconfirmed !== null) {
+            if ($unconfirmed instanceof \Modules\GameTables\Domain\Entities\Participant) {
                 $send = $unconfirmed->canResendConfirmation($now);
 
                 if ($send) {
@@ -1410,7 +1410,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
             // An unconfirmed guest already holds their place (or waits for one): only a new
             // registration needs a free seat. A confirmed duplicate is refused in placeGuest().
-            if ($seatRefusal !== null && ($existing === null || ! $existing->isActive())) {
+            if ($seatRefusal instanceof \Modules\GameTables\Domain\Exceptions\RegistrationNotAllowedException && (!$existing instanceof \Modules\GameTables\Domain\Entities\Participant || ! $existing->isActive())) {
                 throw $seatRefusal;
             }
 
@@ -1461,7 +1461,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             // Read under the lock: confirmed, cancelled or sent again as a new registration meanwhile
             $participant = $this->participantRepository->find(new ParticipantId($participantId));
 
-            if ($participant === null || ! $participant->isAwaitingEmailConfirmation() || ! $this->lapsesNow($participant, $now)) {
+            if (!$participant instanceof \Modules\GameTables\Domain\Entities\Participant || ! $participant->isAwaitingEmailConfirmation() || ! $this->lapsesNow($participant, $now)) {
                 return [null, null];
             }
 
@@ -1493,7 +1493,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
         $gameTable = $this->gameTableRepository->find($participant->gameTableId);
 
-        return $gameTable !== null && $now >= $gameTable->effectiveRegistrationClosesAt();
+        return $gameTable instanceof \Modules\GameTables\Domain\Entities\GameTable && $now >= $gameTable->effectiveRegistrationClosesAt();
     }
 
     /**
@@ -1565,7 +1565,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         $email = $this->normalisedEmail($dto);
         $account = $email !== null ? $this->accounts?->findByEmail($email) : null;
 
-        if ($account === null || ! $account->emailVerified) {
+        if (!$account instanceof \Modules\GameTables\Application\DTOs\AccountDTO || ! $account->emailVerified) {
             return;
         }
 
@@ -1585,7 +1585,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         // Unknown, or cleared on cancelling, expiring or a takeover: nothing to lock
         $found = $this->participantRepository->findByConfirmationToken($token);
 
-        if ($found === null) {
+        if (!$found instanceof \Modules\GameTables\Domain\Entities\Participant) {
             return new GuestConfirmationResultDTO(GuestConfirmationOutcome::Invalid);
         }
 
@@ -1598,11 +1598,11 @@ final readonly class RegistrationService implements RegistrationServiceInterface
                 // Read under the lock: a link followed twice at once confirms once
                 $participant = $this->participantRepository->findByConfirmationToken($token);
 
-                if ($participant === null || ! $participant->isActive()) {
+                if (!$participant instanceof \Modules\GameTables\Domain\Entities\Participant || ! $participant->isActive()) {
                     return [GuestConfirmationOutcome::Invalid, $participant, null, null, false];
                 }
 
-                if ($participant->emailConfirmedAt !== null) {
+                if ($participant->emailConfirmedAt instanceof \DateTimeImmutable) {
                     return [GuestConfirmationOutcome::AlreadyConfirmed, $participant, $this->rankOf($participant), null, false];
                 }
 
@@ -1691,7 +1691,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         // The first confirmed player waiting takes a free seat: maybe this one
         $promoted = $this->promoteNext($participant->gameTableId);
 
-        if ($promoted !== null && $promoted->id->equals($participant->id)) {
+        if ($promoted instanceof \Modules\GameTables\Domain\Entities\Participant && $promoted->id->equals($participant->id)) {
             return [$promoted, null];
         }
 
@@ -1760,7 +1760,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     {
         $participant = $this->participantRepository->findByConfirmationToken($token);
 
-        return $participant !== null ? $this->toResponse($participant) : null;
+        return $participant instanceof \Modules\GameTables\Domain\Entities\Participant ? $this->toResponse($participant) : null;
     }
 
     public function cancelByToken(string $token): ParticipantResponseDTO
@@ -1775,7 +1775,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             // Read under the lock: a link followed twice at once frees one seat
             $participant = $this->participantRepository->findByCancellationToken($token);
 
-            if ($participant === null) {
+            if (!$participant instanceof \Modules\GameTables\Domain\Entities\Participant) {
                 throw ParticipantNotFoundException::byToken($token);
             }
 
@@ -1791,7 +1791,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     {
         $participant = $this->participantRepository->findByCancellationToken($token);
 
-        if ($participant === null) {
+        if (!$participant instanceof \Modules\GameTables\Domain\Entities\Participant) {
             return null;
         }
 

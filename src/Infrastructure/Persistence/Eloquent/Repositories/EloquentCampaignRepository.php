@@ -40,7 +40,7 @@ final readonly class EloquentCampaignRepository implements CampaignRepositoryInt
     {
         $campaign = $this->find($id);
 
-        if ($campaign === null) {
+        if (!$campaign instanceof \Modules\GameTables\Domain\Entities\Campaign) {
             throw CampaignNotFoundException::withId($id->value);
         }
 
@@ -173,15 +173,15 @@ final readonly class EloquentCampaignRepository implements CampaignRepositoryInt
             isPublished: $model->is_published,
             frontendCreationStatus: $model->frontend_creation_status,
             moderationNotes: $model->moderation_notes,
-            rosterAccess: $model->roster_access ?? RosterAccess::Anyone,
-            language: $model->language,
-            experienceLevel: $model->experience_level,
             createdAt: $model->created_at !== null
                 ? new DateTimeImmutable($model->created_at->toDateTimeString())
                 : null,
             updatedAt: $model->updated_at !== null
                 ? new DateTimeImmutable($model->updated_at->toDateTimeString())
                 : null,
+            rosterAccess: $model->roster_access ?? RosterAccess::Anyone,
+            language: $model->language,
+            experienceLevel: $model->experience_level,
         );
     }
 

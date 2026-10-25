@@ -78,9 +78,6 @@ final readonly class EloquentCampaignRosterRepository implements CampaignRosterR
         return $counts;
     }
 
-    /**
-     * @return \Illuminate\Database\Query\Builder
-     */
     private function activeMembers(): \Illuminate\Database\Query\Builder
     {
         return DB::table(self::TABLE.' as p')

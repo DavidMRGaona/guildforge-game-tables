@@ -27,7 +27,7 @@ final readonly class TableRegistrationsQuery implements TableRegistrationsQueryI
         $table = $this->gameTables->findOrFail(new GameTableId($gameTableId));
         $participants = array_values(array_filter(
             $this->participants->getByGameTable($table->id),
-            fn (Participant $participant): bool => $this->isListed($participant),
+            $this->isListed(...),
         ));
 
         // usort is stable: within a group the repository's order (oldest request first) stays
@@ -54,7 +54,7 @@ final readonly class TableRegistrationsQuery implements TableRegistrationsQueryI
     {
         $participant = $this->participants->find(new ParticipantId($participantId));
 
-        if ($participant === null || $participant->gameTableId->value !== $gameTableId || ! $this->isListed($participant)) {
+        if (!$participant instanceof \Modules\GameTables\Domain\Entities\Participant || $participant->gameTableId->value !== $gameTableId || ! $this->isListed($participant)) {
             return null;
         }
 

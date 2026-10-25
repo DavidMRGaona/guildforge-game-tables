@@ -122,7 +122,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         $registrationClosesAt = null;
         if ($dto->eventId !== null) {
             $event = $this->eventRepository->findById(new \App\Domain\ValueObjects\EventId($dto->eventId));
-            if ($event !== null) {
+            if ($event instanceof \App\Domain\Entities\Event) {
                 $registrationClosesAt = $this->cappedToTableStart($event->startDate(), $dto->startsAt);
             }
         }
@@ -140,7 +140,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
 
         // 5. Retrieve the entity to update frontend creation status
         $tableEntity = $this->gameTableRepository->find(new GameTableId($gameTable->id));
-        if ($tableEntity !== null) {
+        if ($tableEntity instanceof \Modules\GameTables\Domain\Entities\GameTable) {
             $tableEntity->setFrontendCreationStatus($creationStatus);
             $this->gameTableRepository->save($tableEntity);
         }
@@ -152,7 +152,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
 
         // 7. Auto-publish for approved status
         if ($creationStatus === FrontendCreationStatus::Approved) {
-            $gameTable = $this->gameTableService->publish($gameTable->id);
+            return $this->gameTableService->publish($gameTable->id);
         }
 
         return $gameTable;
@@ -276,7 +276,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         if ($keepEventId !== null && ! $events->contains(static fn (Event $event): bool => $event->id()->value === $keepEventId)) {
             $kept = $this->eventRepository->findById(new \App\Domain\ValueObjects\EventId($keepEventId));
 
-            if ($kept !== null) {
+            if ($kept instanceof \App\Domain\Entities\Event) {
                 $events->push($kept);
             }
         }
@@ -399,7 +399,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             )->all();
 
             $table = $this->gameTableRepository->find(new GameTableId($model->id));
-            if ($table === null) {
+            if (!$table instanceof \Modules\GameTables\Domain\Entities\GameTable) {
                 throw GameTableNotFoundException::withId($model->id);
             }
 
@@ -457,7 +457,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
     {
         $table = $this->gameTableRepository->find(new GameTableId($tableId));
 
-        if ($table === null) {
+        if (!$table instanceof \Modules\GameTables\Domain\Entities\GameTable) {
             throw GameTableNotFoundException::withId($tableId);
         }
 
@@ -502,7 +502,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
     {
         $table = $this->gameTableRepository->find(new GameTableId($tableId));
 
-        if ($table === null) {
+        if (!$table instanceof \Modules\GameTables\Domain\Entities\GameTable) {
             throw GameTableNotFoundException::withId($tableId);
         }
 
@@ -520,15 +520,15 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
 
         // Default registration closes at to event start date if event is set and no existing value
         $registrationClosesAt = $table->registrationClosesAt;
-        if ($dto->eventId !== null && $registrationClosesAt === null) {
+        if ($dto->eventId !== null && !$registrationClosesAt instanceof \DateTimeImmutable) {
             $event = $this->eventRepository->findById(new \App\Domain\ValueObjects\EventId($dto->eventId));
-            if ($event !== null) {
+            if ($event instanceof \App\Domain\Entities\Event) {
                 $registrationClosesAt = $this->cappedToTableStart($event->startDate(), $dto->startsAt);
             }
         }
 
         // A kept date must not end up after the (possibly earlier) start of the table
-        if ($registrationClosesAt !== null) {
+        if ($registrationClosesAt instanceof \DateTimeImmutable) {
             $registrationClosesAt = $this->cappedToTableStart(
                 \DateTimeImmutable::createFromInterface($registrationClosesAt),
                 $dto->startsAt,
@@ -616,7 +616,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         return [
             'phone' => $record?->phone ?? '',
             'custom_title' => $record?->custom_title ?? '',
-            'is_name_public' => $record !== null ? (bool) $record->is_name_public : true,
+            'is_name_public' => $record instanceof \Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel ? (bool) $record->is_name_public : true,
         ];
     }
 
@@ -624,7 +624,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
     {
         $table = $this->gameTableRepository->find(new GameTableId($tableId));
 
-        if ($table === null) {
+        if (!$table instanceof \Modules\GameTables\Domain\Entities\GameTable) {
             throw GameTableNotFoundException::withId($tableId);
         }
 
@@ -644,7 +644,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
     {
         $table = $this->gameTableRepository->find(new GameTableId($tableId));
 
-        if ($table === null) {
+        if (!$table instanceof \Modules\GameTables\Domain\Entities\GameTable) {
             throw GameTableNotFoundException::withId($tableId);
         }
 
@@ -673,7 +673,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
     {
         $table = $this->gameTableRepository->find(new GameTableId($tableId));
 
-        if ($table === null) {
+        if (!$table instanceof \Modules\GameTables\Domain\Entities\GameTable) {
             throw GameTableNotFoundException::withId($tableId);
         }
 
@@ -703,7 +703,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         // Filter to only include drafts (frontend-created, unpublished campaigns)
         $draftCampaigns = array_filter(
             $campaigns,
-            fn (Campaign $campaign): bool => $campaign->frontendCreationStatus !== null && ! $campaign->isPublished,
+            fn (Campaign $campaign): bool => $campaign->frontendCreationStatus instanceof \Modules\GameTables\Domain\Enums\FrontendCreationStatus && ! $campaign->isPublished,
         );
 
         return array_map(
@@ -734,7 +734,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         foreach ($this->direction->campaignIdsDirectedBy($userId) as $campaignId) {
             $campaign = $this->campaignRepository->find(new CampaignId($campaignId));
 
-            if ($campaign !== null && $campaign->isApprovedOrPublished()) {
+            if ($campaign instanceof \Modules\GameTables\Domain\Entities\Campaign && $campaign->isApprovedOrPublished()) {
                 $directed[$campaign->id->value] = $campaign;
             }
         }
@@ -776,7 +776,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
     {
         $campaign = $this->campaignRepository->find(new CampaignId($campaignId));
 
-        if ($campaign === null) {
+        if (!$campaign instanceof \Modules\GameTables\Domain\Entities\Campaign) {
             throw CampaignNotFoundException::withId($campaignId);
         }
 
@@ -814,7 +814,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
     {
         $campaign = $this->campaignRepository->find(new CampaignId($campaignId));
 
-        if ($campaign === null) {
+        if (!$campaign instanceof \Modules\GameTables\Domain\Entities\Campaign) {
             throw CampaignNotFoundException::withId($campaignId);
         }
 
@@ -855,7 +855,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
     {
         $campaign = $this->campaignRepository->find(new CampaignId($campaignId));
 
-        if ($campaign === null) {
+        if (!$campaign instanceof \Modules\GameTables\Domain\Entities\Campaign) {
             throw CampaignNotFoundException::withId($campaignId);
         }
 
@@ -879,7 +879,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
     {
         $campaign = $this->campaignRepository->find(new CampaignId($campaignId));
 
-        if ($campaign === null) {
+        if (!$campaign instanceof \Modules\GameTables\Domain\Entities\Campaign) {
             throw CampaignNotFoundException::withId($campaignId);
         }
 
@@ -902,7 +902,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
     {
         $campaign = $this->campaignRepository->find(new CampaignId($campaignId));
 
-        if ($campaign === null) {
+        if (!$campaign instanceof \Modules\GameTables\Domain\Entities\Campaign) {
             throw CampaignNotFoundException::withId($campaignId);
         }
 
@@ -949,7 +949,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         // Rows kept or added back carry their id; a row without one would create a director
         foreach (array_slice($safeRows, 1) as $row) {
             if (! isset($row['id'])) {
-                $name = trim(((string) ($row['first_name'] ?? '')).' '.((string) ($row['last_name'] ?? '')));
+                $name = trim((($row['first_name'] ?? '')).' '.(($row['last_name'] ?? '')));
 
                 throw ValidationException::withMessages([
                     'game_masters' => __('game-tables::messages.validation.delegated_directors_need_accounts', [
@@ -1034,12 +1034,10 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         }
 
         // No main row: the author stays the main director, their record's values untouched
-        if ($authorRow === null) {
-            $authorRow = array_intersect_key(
-                $this->newAuthorRow($authorId),
-                array_flip(['user_id', 'first_name', 'last_name', 'email', 'role']),
-            );
-        }
+        $authorRow ??= array_intersect_key(
+            $this->newAuthorRow($authorId),
+            array_flip(['user_id', 'first_name', 'last_name', 'email', 'role']),
+        );
 
         $result = [$authorRow, ...$coRows];
 
@@ -1169,16 +1167,12 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
 
         // Check if user has any of the auto-publish roles
         $roles = $this->settingsReader->getAutoPublishRoles();
-        if (! empty($roles) && $this->authorizationService->hasAnyRole($user, $roles)) {
+        if ($roles !== [] && $this->authorizationService->hasAnyRole($user, $roles)) {
             return true;
         }
 
         // Check if user has any of the auto-publish permissions
         $permissions = $this->settingsReader->getAutoPublishPermissions();
-        if (! empty($permissions) && $this->authorizationService->canAny($user, $permissions)) {
-            return true;
-        }
-
-        return false;
+        return $permissions !== [] && $this->authorizationService->canAny($user, $permissions);
     }
 }

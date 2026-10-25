@@ -7,15 +7,15 @@ namespace Modules\GameTables\Domain\Events;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-final class GameTableModerationApproved
+final readonly class GameTableModerationApproved
 {
     use Dispatchable;
     use SerializesModels;
 
     public function __construct(
-        public readonly string $gameTableId,
-        public readonly string $title,
-        public readonly string $createdBy,
-        public readonly ?string $notes = null,
+        public string $gameTableId,
+        public string $title,
+        public string $createdBy,
+        public ?string $notes = null,
     ) {}
 }

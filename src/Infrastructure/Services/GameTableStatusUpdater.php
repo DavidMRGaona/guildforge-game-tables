@@ -78,7 +78,7 @@ final readonly class GameTableStatusUpdater
             // Read again: someone may have changed the table by hand since the list was read
             $table = $this->gameTableRepository->find(new GameTableId($id));
 
-            if ($table === null || ! $table->status->canTransitionTo($to)) {
+            if (!$table instanceof \Modules\GameTables\Domain\Entities\GameTable || ! $table->status->canTransitionTo($to)) {
                 return self::SKIPPED;
             }
 

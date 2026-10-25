@@ -118,7 +118,7 @@ final readonly class CampaignRosterSessionSync implements CampaignRosterSessionS
 
         $row = $this->participants->findByTableAndUser($session->id, $userId);
 
-        if ($row === null || ! $row->fromRoster || ! $row->canBeCancelled()) {
+        if (!$row instanceof \Modules\GameTables\Domain\Entities\Participant || ! $row->fromRoster || ! $row->canBeCancelled()) {
             throw RosterActionRefusedException::because('nothing_to_change');
         }
 
@@ -147,7 +147,7 @@ final readonly class CampaignRosterSessionSync implements CampaignRosterSessionS
     {
         $session = Str::isUuid($gameTableId) ? $this->gameTables->find(new GameTableId($gameTableId)) : null;
 
-        if ($session === null || $session->campaignId?->value !== $campaignId) {
+        if (!$session instanceof \Modules\GameTables\Domain\Entities\GameTable || $session->campaignId?->value !== $campaignId) {
             throw RosterActionRefusedException::because('session_not_in_campaign');
         }
 

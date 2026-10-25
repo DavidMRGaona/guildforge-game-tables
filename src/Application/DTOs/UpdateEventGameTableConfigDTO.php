@@ -68,12 +68,12 @@ final readonly class UpdateEventGameTableConfigDTO
     }
 
     /**
-     * @param  array<array{label?: string, start_time?: string, end_time?: string, max_tables?: int|null}>  $data
+     * @param  array<array{label?: string, start_time?: string, end_time?: string, max_tables?: int|string|null}>  $data
      * @return array<TimeSlotDefinition>
      */
     private static function parseTimeSlots(array $data): array
     {
-        if (empty($data)) {
+        if ($data === []) {
             return [];
         }
 

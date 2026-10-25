@@ -20,13 +20,13 @@ use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
-final class GameTableQueryService implements GameTableQueryServiceInterface
+final readonly class GameTableQueryService implements GameTableQueryServiceInterface
 {
     public function __construct(
-        private readonly GameTableRepositoryInterface $gameTableRepository,
-        private readonly GameSystemRepositoryInterface $gameSystemRepository,
-        private readonly EventWithTablesQueryInterface $eventWithTablesQuery,
-        private readonly SeatCounter $seatCounter,
+        private GameTableRepositoryInterface $gameTableRepository,
+        private GameSystemRepositoryInterface $gameSystemRepository,
+        private EventWithTablesQueryInterface $eventWithTablesQuery,
+        private SeatCounter $seatCounter,
     ) {}
 
     public function getPublishedTablesPaginated(
@@ -222,11 +222,11 @@ final class GameTableQueryService implements GameTableQueryServiceInterface
             experienceLevel: $table->experience_level,
             characterCreation: $table->character_creation,
             genres: $table->genres !== null
-                ? array_map(fn (string $g): Genre => Genre::from($g), $table->genres)
+                ? array_map(Genre::from(...), $table->genres)
                 : [],
             tone: $table->tone,
             safetyTools: $table->safety_tools !== null
-                ? array_map(fn (string $s): SafetyTool => SafetyTool::from($s), $table->safety_tools)
+                ? array_map(SafetyTool::from(...), $table->safety_tools)
                 : [],
             contentWarnings: $table->contentWarnings->pluck('name')->all(),
             customWarnings: $table->custom_warnings ?? [],

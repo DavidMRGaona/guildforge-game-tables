@@ -19,7 +19,7 @@ final class CreateCampaign extends CreateRecord
      */
     private array $gameMastersData = [];
 
-    public function getTitle(): string|Htmlable
+    public function getTitle(): string
     {
         return __('game-tables::messages.pages.create_campaign');
     }
@@ -40,7 +40,7 @@ final class CreateCampaign extends CreateRecord
 
     protected function afterCreate(): void
     {
-        if (empty($this->gameMastersData)) {
+        if ($this->gameMastersData === []) {
             return;
         }
 

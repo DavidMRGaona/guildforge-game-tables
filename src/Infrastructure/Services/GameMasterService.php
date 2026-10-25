@@ -65,7 +65,7 @@ final class GameMasterService implements GameMasterServiceInterface
     public function excludeFromTable(string $gameTableId, string $gameMasterId): void
     {
         $gameTable = GameTableModel::findOrFail($gameTableId);
-        $gameMaster = GameMasterModel::findOrFail($gameMasterId);
+        GameMasterModel::findOrFail($gameMasterId);
 
         // Check if already in pivot table
         if ($gameTable->gameMasters()->where('gametables_game_masters.id', $gameMasterId)->exists()) {
@@ -263,16 +263,7 @@ final class GameMasterService implements GameMasterServiceInterface
         // Mark inherited GMs as excluded if they were removed from the form data
         foreach ($campaignGmIds as $campaignGmId) {
             if (! in_array($campaignGmId, $includedInheritedIds, true)) {
-                // Check if it was explicitly passed as excluded in the data
-                $wasExplicitlyExcluded = false;
-                foreach ($gameMastersData as $gmData) {
-                    if (($gmData['id'] ?? null) === $campaignGmId && ! empty($gmData['excluded'])) {
-                        $wasExplicitlyExcluded = true;
-
-                        break;
-                    }
-                }
-
+                $wasExplicitlyExcluded = array_any($gameMastersData, fn($gmData) => ($gmData['id'] ?? null) === $campaignGmId && ! empty($gmData['excluded']));
                 // If not in included list and not explicitly marked, it might have been removed
                 // Only exclude if it was in the original form but removed
                 if (! $wasExplicitlyExcluded) {

@@ -38,7 +38,7 @@ final readonly class NotifyDirectionOfJoinRequest
 
         $campaign = $this->campaigns->find(new CampaignId($event->campaignId));
 
-        if ($campaign === null) {
+        if (!$campaign instanceof \Modules\GameTables\Domain\Entities\Campaign) {
             return;
         }
 

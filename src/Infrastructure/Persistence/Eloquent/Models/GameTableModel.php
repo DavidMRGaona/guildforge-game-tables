@@ -341,7 +341,7 @@ final class GameTableModel extends Model
         $table = self::query()->where('slug', $key)->first();
 
         if ($table === null && Str::isUuid($key)) {
-            $table = self::query()->find($key);
+            return self::query()->find($key);
         }
 
         return $table;

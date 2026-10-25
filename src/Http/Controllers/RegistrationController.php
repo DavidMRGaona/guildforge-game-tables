@@ -142,7 +142,6 @@ final class RegistrationController extends Controller
                 role: $role,
                 notes: $validated['notes'] ?? null,
                 firstName: $validated['first_name'],
-                lastName: null,
                 email: $validated['email'],
                 phone: $validated['phone'] ?? null,
                 fingerprint: GuestFingerprint::of($request),
@@ -171,7 +170,7 @@ final class RegistrationController extends Controller
 
         $deadline = $registration->confirmationExpiresAt;
 
-        if ($registration->confirmationMode !== GuestConfirmationMode::Hold || $deadline === null) {
+        if ($registration->confirmationMode !== GuestConfirmationMode::Hold || !$deadline instanceof \DateTimeInterface) {
             return (string) __('game-tables::messages.success.guest_confirmation_sent_unguaranteed');
         }
 
@@ -229,14 +228,14 @@ final class RegistrationController extends Controller
     {
         $participant = $this->registrationService->findByToken($token);
 
-        if ($participant === null) {
+        if (!$participant instanceof \Modules\GameTables\Application\DTOs\ParticipantResponseDTO) {
             return redirect()->route('gametables.index')
                 ->with('error', __('game-tables::messages.errors.invalid_token'));
         }
 
         $gameTable = $this->gameTableQueryService->findPublished($participant->gameTableId);
 
-        if ($gameTable === null) {
+        if (!$gameTable instanceof \Modules\GameTables\Application\DTOs\GameTableResponseDTO) {
             return redirect()->route('gametables.index')
                 ->with('error', __('game-tables::messages.errors.table_not_found'));
         }

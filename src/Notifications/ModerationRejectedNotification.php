@@ -31,9 +31,11 @@ final class ModerationRejectedNotification extends Notification implements Shoul
 
     public function toMail(object $notifiable): MailMessage
     {
-        // The slug is the canonical form of the link; the edit page also accepts the id. isset():
-        // a notification queued before this property existed comes back without it
-        $key = isset($this->tableSlug) && $this->tableSlug !== '' ? $this->tableSlug : $this->tableId;
+        // The slug is the canonical form of the link; the edit page also accepts the id. ?? and not
+        // a null check: a notification queued before this property existed comes back without it
+        // initialised, and reading it directly would throw
+        $slug = $this->tableSlug ?? '';
+        $key = $slug !== '' ? $slug : $this->tableId;
         $editUrl = url("/mesas/mis-mesas/{$key}/editar");
 
         return (new MailMessage)

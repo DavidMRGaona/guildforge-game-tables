@@ -570,27 +570,25 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     private function registerRateLimiters(): void
     {
         // The invitation page and its actions: the token is the credential, so guessing is limited per IP
-        RateLimiter::for('game-tables-campaign-invitation', static function (Request $request): Limit {
-            return Limit::perMinute(30)->by('gt-invitation:'.($request->ip() ?? 'unknown'))->response(
-                static function (Request $request, array $headers): HttpResponse {
-                    $message = (string) __('game-tables::messages.errors.too_many_confirmation_attempts');
+        RateLimiter::for('game-tables-campaign-invitation', static fn(Request $request): Limit => Limit::perMinute(30)->by('gt-invitation:'.($request->ip() ?? 'unknown'))->response(
+            static function (Request $request, array $headers): HttpResponse {
+                $message = (string) __('game-tables::messages.errors.too_many_confirmation_attempts');
 
-                    if ($request->expectsJson()) {
-                        return response()->json(['message' => $message], 429, $headers);
-                    }
+                if ($request->expectsJson()) {
+                    return response()->json(['message' => $message], 429, $headers);
+                }
 
-                    // The page with the message, still 429: a plain 429 would land in Inertia's raw error modal
-                    $token = $request->route('token');
-                    $response = app(CampaignInvitationController::class)
-                        ->limitedPage($message, is_string($token) ? $token : '')
-                        ->toResponse($request);
-                    $response->setStatusCode(429);
-                    $response->headers->add($headers);
+                // The page with the message, still 429: a plain 429 would land in Inertia's raw error modal
+                $token = $request->route('token');
+                $response = app(CampaignInvitationController::class)
+                    ->limitedPage($message, is_string($token) ? $token : '')
+                    ->toResponse($request);
+                $response->setStatusCode(429);
+                $response->headers->add($headers);
 
-                    return $response;
-                },
-            );
-        });
+                return $response;
+            },
+        ));
 
         RateLimiter::for('game-tables-guest-confirmation', static function (Request $request): array {
             $ip = $request->ip() ?? 'unknown';
@@ -854,15 +852,11 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     {
         // Add gameTableConfig() relationship to EventModel for configuration form section
         // Note: resolveRelationUsing is idempotent - calling it multiple times is safe
-        EventModel::resolveRelationUsing('gameTableConfig', function (EventModel $eventModel) {
-            return $eventModel->hasOne(EventGameTableConfigModel::class, 'event_id', 'id');
-        });
+        EventModel::resolveRelationUsing('gameTableConfig', fn(EventModel $eventModel) => $eventModel->hasOne(EventGameTableConfigModel::class, 'event_id', 'id'));
 
         // Add gameTables() so the core EventModel does not need to reference this module.
         // While a core still declares the method, the method wins and this is unused.
-        EventModel::resolveRelationUsing('gameTables', function (EventModel $eventModel) {
-            return $eventModel->hasMany(GameTableModel::class, 'event_id');
-        });
+        EventModel::resolveRelationUsing('gameTables', fn(EventModel $eventModel) => $eventModel->hasMany(GameTableModel::class, 'event_id'));
     }
 
     /**

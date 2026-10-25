@@ -47,7 +47,7 @@ final readonly class GuestRegistrationExpirer
         foreach ($this->participants->unconfirmedWaitingByTable() as $gameTableId => $ids) {
             $table = $this->tables->find(new GameTableId($gameTableId));
 
-            if ($table === null || $now < $table->effectiveRegistrationClosesAt()) {
+            if (!$table instanceof \Modules\GameTables\Domain\Entities\GameTable || $now < $table->effectiveRegistrationClosesAt()) {
                 continue;
             }
 
@@ -92,7 +92,7 @@ final readonly class GuestRegistrationExpirer
         foreach ($this->participants->gameTableIdsWithFingerprints() as $gameTableId) {
             $table = $this->tables->find(new GameTableId($gameTableId));
 
-            if ($table !== null && $table->timeSlot->hasEnded($now)) {
+            if ($table instanceof \Modules\GameTables\Domain\Entities\GameTable && $table->timeSlot->hasEnded($now)) {
                 $ended[] = $gameTableId;
             }
         }

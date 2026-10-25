@@ -34,7 +34,6 @@ final readonly class CreationEligibilityDTO
             canCreateTables: $canCreateTables,
             canCreateCampaigns: $canCreateCampaigns,
             hasEarlyAccess: $hasEarlyAccess,
-            publicOpenDate: null,
             requiresAuthentication: false,
         );
     }
@@ -51,7 +50,6 @@ final readonly class CreationEligibilityDTO
             canCreateTables: false,
             canCreateCampaigns: false,
             hasEarlyAccess: false,
-            publicOpenDate: null,
             requiresAuthentication: $requiresAuthentication,
         );
     }

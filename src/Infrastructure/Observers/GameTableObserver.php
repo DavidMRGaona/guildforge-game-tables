@@ -17,10 +17,10 @@ use Throwable;
  * Game masters are not copied from campaigns: they are inherited through the campaign
  * relationship (effective_game_masters).
  */
-final class GameTableObserver implements ShouldHandleEventsAfterCommit
+final readonly class GameTableObserver implements ShouldHandleEventsAfterCommit
 {
     public function __construct(
-        private readonly CampaignRosterSessionSyncInterface $sync,
+        private CampaignRosterSessionSyncInterface $sync,
     ) {}
 
     public function saved(GameTableModel $table): void

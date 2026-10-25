@@ -27,13 +27,13 @@ final readonly class SendCampaignInvitation
         $invitation = $this->invitations->find(new CampaignInvitationId($event->invitationId));
 
         // Gone (declined, cancelled, expired) or replaced by a newer resend: this token is dead.
-        if ($invitation === null || ! hash_equals($invitation->tokenHash, hash('sha256', $event->token))) {
+        if (!$invitation instanceof \Modules\GameTables\Domain\Entities\CampaignInvitation || ! hash_equals($invitation->tokenHash, hash('sha256', $event->token))) {
             return;
         }
 
         $campaign = $this->campaigns->find(new CampaignId($event->campaignId));
 
-        if ($campaign === null) {
+        if (!$campaign instanceof \Modules\GameTables\Domain\Entities\Campaign) {
             return;
         }
 

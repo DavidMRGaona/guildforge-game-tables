@@ -37,7 +37,7 @@ final class EditGameTable extends EditRecord
     #[Locked]
     public ?string $loadedStatus = null;
 
-    public function getTitle(): string|Htmlable
+    public function getTitle(): string
     {
         return __('game-tables::messages.pages.edit_table');
     }
@@ -324,7 +324,7 @@ final class EditGameTable extends EditRecord
                 ->modalHeading(__('game-tables::messages.actions.start_confirmation_title'))
                 ->modalDescription(__('game-tables::messages.actions.start_confirmation_description'))
                 ->modalSubmitActionLabel(__('game-tables::messages.actions.start_confirm'))
-                ->schema([self::secondConfirmation('start')])
+                ->schema([$this->secondConfirmation('start')])
                 ->visible(fn (): bool => in_array($this->record->status, [TableStatus::Scheduled, TableStatus::Full], true))
                 ->action(function (): void {
                     $this->moveTable(TableStatus::InProgress);
@@ -338,7 +338,7 @@ final class EditGameTable extends EditRecord
                 ->modalHeading(__('game-tables::messages.actions.complete_confirmation_title'))
                 ->modalDescription(__('game-tables::messages.actions.complete_confirmation_description'))
                 ->modalSubmitActionLabel(__('game-tables::messages.actions.complete_confirm'))
-                ->schema([self::secondConfirmation('complete')])
+                ->schema([$this->secondConfirmation('complete')])
                 ->visible(fn (): bool => $this->record->status === TableStatus::InProgress)
                 ->action(function (): void {
                     $this->moveTable(TableStatus::Completed);
@@ -352,7 +352,7 @@ final class EditGameTable extends EditRecord
                 ->modalHeading(__('game-tables::messages.actions.cancel_confirmation_title'))
                 ->modalDescription(__('game-tables::messages.actions.cancel_confirmation_description'))
                 ->modalSubmitActionLabel(__('game-tables::messages.actions.cancel_confirm'))
-                ->schema([self::secondConfirmation('cancel')])
+                ->schema([$this->secondConfirmation('cancel')])
                 ->visible(fn (): bool => ! $this->record->status->isFinal())
                 ->action(function (): void {
                     try {
@@ -376,14 +376,14 @@ final class EditGameTable extends EditRecord
                 }),
 
             DeleteAction::make()
-                ->schema([self::secondConfirmation('delete')]),
+                ->schema([$this->secondConfirmation('delete')]),
         ];
     }
 
     /**
      * The box to tick, on top of the confirmation modal, before an action that cannot be undone.
      */
-    private static function secondConfirmation(string $action): Checkbox
+    private function secondConfirmation(string $action): Checkbox
     {
         return Checkbox::make('confirmation')
             ->label(__("game-tables::messages.actions.{$action}_confirmation_check"))

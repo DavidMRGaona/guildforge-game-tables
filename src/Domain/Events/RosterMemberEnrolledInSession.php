@@ -11,15 +11,15 @@ use Illuminate\Queue\SerializesModels;
  * A roster member was placed in a campaign session when it was published: with a seat, or on the
  * waiting list ($waiting) when the session had no room left.
  */
-final class RosterMemberEnrolledInSession
+final readonly class RosterMemberEnrolledInSession
 {
     use Dispatchable;
     use SerializesModels;
 
     public function __construct(
-        public readonly string $participantId,
-        public readonly string $gameTableId,
-        public readonly string $userId,
-        public readonly bool $waiting,
+        public string $participantId,
+        public string $gameTableId,
+        public string $userId,
+        public bool $waiting,
     ) {}
 }

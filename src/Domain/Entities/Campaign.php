@@ -136,7 +136,7 @@ final class Campaign
 
     public function isDirectedFromWebBy(string $userId): bool
     {
-        return $this->createdBy === $userId && $this->frontendCreationStatus !== null;
+        return $this->createdBy === $userId && $this->frontendCreationStatus instanceof \Modules\GameTables\Domain\Enums\FrontendCreationStatus;
     }
 
     /**
@@ -212,12 +212,12 @@ final class Campaign
 
     public function isCreatedFromFrontend(): bool
     {
-        return $this->frontendCreationStatus !== null;
+        return $this->frontendCreationStatus instanceof \Modules\GameTables\Domain\Enums\FrontendCreationStatus;
     }
 
     public function isPendingModeration(): bool
     {
-        return $this->frontendCreationStatus !== null && $this->frontendCreationStatus->isPending();
+        return $this->frontendCreationStatus instanceof \Modules\GameTables\Domain\Enums\FrontendCreationStatus && $this->frontendCreationStatus->isPending();
     }
 
     /**

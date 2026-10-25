@@ -7,16 +7,16 @@ namespace Modules\GameTables\Domain\Events;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-final class CampaignModerationApproved
+final readonly class CampaignModerationApproved
 {
     use Dispatchable;
     use SerializesModels;
 
     public function __construct(
-        public readonly string $campaignId,
-        public readonly string $title,
-        public readonly string $createdBy,
-        public readonly string $slug,
-        public readonly ?string $notes = null,
+        public string $campaignId,
+        public string $title,
+        public string $createdBy,
+        public string $slug,
+        public ?string $notes = null,
     ) {}
 }

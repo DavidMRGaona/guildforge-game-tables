@@ -12,7 +12,7 @@ final class CreateGameSystem extends CreateRecord
 {
     protected static string $resource = GameSystemResource::class;
 
-    public function getTitle(): string|Htmlable
+    public function getTitle(): string
     {
         return __('game-tables::messages.pages.create_game_system');
     }

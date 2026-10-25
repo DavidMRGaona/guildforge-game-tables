@@ -7,18 +7,18 @@ namespace Modules\GameTables\Domain\Events;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-final class ParticipantCancelled
+final readonly class ParticipantCancelled
 {
     use Dispatchable;
     use SerializesModels;
 
     public function __construct(
-        public readonly string $participantId,
-        public readonly string $gameTableId,
-        public readonly ?string $userId,
-        public readonly bool $wasConfirmed,
+        public string $participantId,
+        public string $gameTableId,
+        public ?string $userId,
+        public bool $wasConfirmed,
         // True when the organisation cancelled it from the panel: the participant gets its own
         // notice and the directors none
-        public readonly bool $byOrganization = false,
+        public bool $byOrganization = false,
     ) {}
 }

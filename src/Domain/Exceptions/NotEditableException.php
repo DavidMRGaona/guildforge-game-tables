@@ -8,12 +8,9 @@ use DomainException;
 
 final class NotEditableException extends DomainException
 {
-    public readonly string $status;
-
-    private function __construct(string $message, string $status)
+    private function __construct(string $message, public readonly string $status)
     {
         parent::__construct($message);
-        $this->status = $status;
     }
 
     public static function forStatus(string $status): self
