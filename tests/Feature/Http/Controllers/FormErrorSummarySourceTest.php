@@ -204,7 +204,7 @@ final class FormErrorSummarySourceTest extends TestCase
                 $this->assertStringContainsString("<div id=\"{$id}\">", $source, "{$page}: {$id}");
             }
             $this->assertStringContainsString('<GameMasterSection
-                                    id="game_masters"', $source, $page);
+                                id="game_masters"', $source, $page);
         }
 
         foreach (self::CAMPAIGN_PAGES as $page) {

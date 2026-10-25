@@ -1297,8 +1297,8 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     public function registerPagePrefixes(): array
     {
         return [
-            new PagePrefixDTO(prefix: 'GameTables', module: $this->moduleName()),
-            new PagePrefixDTO(prefix: 'Campaigns', module: $this->moduleName()),
+            new PagePrefixDTO(prefix: 'GameTables', module: $this->moduleName(), usesCoreLayout: true),
+            new PagePrefixDTO(prefix: 'Campaigns', module: $this->moduleName(), usesCoreLayout: true),
         ];
     }
 

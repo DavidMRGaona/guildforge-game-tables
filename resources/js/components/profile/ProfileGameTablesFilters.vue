@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { X } from '@lucide/vue';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { ProfileParticipationFilters, ProfileParticipation } from '../../types/gametables';
@@ -210,9 +211,7 @@ function getFilterLabel(
                 @click="removeFilter('statuses', status)"
             >
                 {{ getFilterLabel('statuses', status) }}
-                <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X class="h-3 w-3" aria-hidden="true" />
             </button>
 
             <!-- Role pills -->
@@ -225,9 +224,7 @@ function getFilterLabel(
                 @click="removeFilter('roles', role)"
             >
                 {{ getFilterLabel('roles', role) }}
-                <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X class="h-3 w-3" aria-hidden="true" />
             </button>
 
             <!-- System pills -->
@@ -240,9 +237,7 @@ function getFilterLabel(
                 @click="removeFilter('systems', system)"
             >
                 {{ getFilterLabel('systems', system) }}
-                <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X class="h-3 w-3" aria-hidden="true" />
             </button>
 
             <!-- Clear all button -->

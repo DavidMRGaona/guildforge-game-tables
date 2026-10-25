@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { BookOpen, ChevronDown, Plus } from '@lucide/vue';
 import { useI18n } from 'vue-i18n';
 import { ref, computed, useId } from 'vue';
 import { Link } from '@inertiajs/vue3';
@@ -63,9 +64,7 @@ function toggleDraftsSection(): void {
                 align="end"
                 button-class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm"
             >
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
+                <Plus class="h-4 w-4" aria-hidden="true" />
                 {{ t('campaigns.profile.createNew') }}
             </VerificationBlockedButton>
             <Link
@@ -73,9 +72,7 @@ function toggleDraftsSection(): void {
                 :href="createUrl"
                 class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
             >
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
+                <Plus class="h-4 w-4" aria-hidden="true" />
                 {{ t('campaigns.profile.createNew') }}
             </Link>
         </div>
@@ -119,15 +116,10 @@ function toggleDraftsSection(): void {
                     </span>
                     {{ t('campaigns.profile.drafts') }}
                 </span>
-                <svg
+                <ChevronDown
                     :class="['h-5 w-5 text-base-muted transition-transform', showDraftsSection ? 'rotate-180' : '']"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
                     aria-hidden="true"
-                >
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                </svg>
+                />
             </button>
 
             <div v-if="showDraftsSection" class="space-y-3">
@@ -162,9 +154,7 @@ function toggleDraftsSection(): void {
                 :href="createUrl"
                 class="inline-flex items-center gap-2 rounded-lg border-2 border-primary px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary-light"
             >
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
+                <Plus class="h-4 w-4" aria-hidden="true" />
                 {{ t('campaigns.profile.createNew') }}
             </Link>
         </div>
@@ -175,20 +165,7 @@ function toggleDraftsSection(): void {
         v-else
         class="rounded-lg border border-dashed border-default bg-muted p-12 text-center"
     >
-        <svg
-            class="mx-auto h-12 w-12 text-base-secondary"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-        >
-            <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-            />
-        </svg>
+        <BookOpen class="mx-auto h-12 w-12 text-base-secondary" aria-hidden="true" />
         <h3 class="mt-4 text-lg font-medium text-base-primary">
             {{ t('campaigns.profile.noCampaigns') }}
         </h3>
@@ -202,9 +179,7 @@ function toggleDraftsSection(): void {
                 align="center"
                 button-class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white"
             >
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
+                <Plus class="h-4 w-4" aria-hidden="true" />
                 {{ t('campaigns.profile.createFirst') }}
             </VerificationBlockedButton>
             <Link
@@ -212,9 +187,7 @@ function toggleDraftsSection(): void {
                 :href="createUrl"
                 class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700"
             >
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
+                <Plus class="h-4 w-4" aria-hidden="true" />
                 {{ t('campaigns.profile.createFirst') }}
             </Link>
             <!-- While blocked the create button above already says why -->

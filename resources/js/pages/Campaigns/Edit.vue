@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import { Info, TriangleAlert } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { FormCombobox, FormSelect, FormCheckboxGroup, FormCheckboxWithTooltip, FormTagsInput, FormNumberInput } from '@/components/form';
 import type { CheckboxGroup } from '@/components/form';
@@ -268,476 +268,470 @@ function submit(): void {
 </script>
 
 <template>
-    <DefaultLayout>
-        <div class="bg-surface shadow">
-            <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                <h1 class="text-3xl font-bold tracking-tight text-base-primary">
-                    {{ t('campaigns.edit.title') }}
-                </h1>
-                <p class="mt-2 text-lg text-base-secondary">
-                    {{ t('campaigns.edit.subtitle') }}
-                </p>
+    <div class="bg-surface shadow">
+        <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+            <h1 class="text-3xl font-bold tracking-tight text-base-primary">
+                {{ t('campaigns.edit.title') }}
+            </h1>
+            <p class="mt-2 text-lg text-base-secondary">
+                {{ t('campaigns.edit.subtitle') }}
+            </p>
+        </div>
+    </div>
+
+    <main class="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+        <!-- Not editable warning -->
+        <div v-if="!props.campaign.can_edit" class="mb-6 rounded-lg border border-warning/30 bg-warning-bg p-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <TriangleAlert class="h-5 w-5 text-warning" aria-hidden="true" />
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-warning">
+                        {{ t('campaigns.edit.notEditable') }}
+                    </p>
+                    <p v-if="props.campaign.frontend_creation_status_label" class="mt-1 text-sm text-warning/80">
+                        {{ t('campaigns.edit.currentStatus', { status: props.campaign.frontend_creation_status_label }) }}
+                    </p>
+                </div>
             </div>
         </div>
 
-        <main class="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-            <!-- Not editable warning -->
-            <div v-if="!props.campaign.can_edit" class="mb-6 rounded-lg border border-warning/30 bg-warning-bg p-4">
-                <div class="flex">
-                    <div class="flex-shrink-0">
-                        <svg class="h-5 w-5 text-warning" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                    <div class="ml-3">
-                        <p class="text-sm text-warning">
-                            {{ t('campaigns.edit.notEditable') }}
-                        </p>
-                        <p v-if="props.campaign.frontend_creation_status_label" class="mt-1 text-sm text-warning/80">
-                            {{ t('campaigns.edit.currentStatus', { status: props.campaign.frontend_creation_status_label }) }}
-                        </p>
-                    </div>
+        <!-- Rejection reason, until the campaign is sent to review again -->
+        <div v-if="props.campaign.rejection_reason" class="mb-6 rounded-lg border border-info/30 bg-info-bg p-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <Info class="h-5 w-5 text-info" aria-hidden="true" />
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-info">
+                        {{ t('campaigns.edit.rejectionReason') }}
+                    </h3>
+                    <p class="mt-1 text-sm text-info/80">
+                        {{ props.campaign.rejection_reason }}
+                    </p>
                 </div>
             </div>
+        </div>
 
-            <!-- Rejection reason, until the campaign is sent to review again -->
-            <div v-if="props.campaign.rejection_reason" class="mb-6 rounded-lg border border-info/30 bg-info-bg p-4">
-                <div class="flex">
-                    <div class="flex-shrink-0">
-                        <svg class="h-5 w-5 text-info" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                    <div class="ml-3">
-                        <h3 class="text-sm font-medium text-info">
-                            {{ t('campaigns.edit.rejectionReason') }}
-                        </h3>
-                        <p class="mt-1 text-sm text-info/80">
-                            {{ props.campaign.rejection_reason }}
-                        </p>
-                    </div>
-                </div>
-            </div>
+        <form novalidate @submit.prevent="submit">
+            <FormErrorSummary ref="errorSummary" :items="errorItems" @select="focusError" />
 
-            <form novalidate @submit.prevent="submit">
-                <FormErrorSummary ref="errorSummary" :items="errorItems" @select="focusError" />
-
-                <div class="rounded-lg border border-default bg-surface">
-                    <FormTabs v-model="activeTab" :tabs="tabs" :errors="tabErrors">
-                        <!-- Tab 1: Basic Information -->
-                        <template #basic>
-                            <div class="space-y-6 p-6">
-                                <!-- Game System -->
-                                <div>
-                                    <label for="game_system_id" class="block text-sm font-medium text-base-secondary">
-                                        {{ t('campaigns.create.fields.gameSystem') }}
-                                        <span class="text-error">*</span>
-                                    </label>
-                                    <FormCombobox
-                                        id="game_system_id"
-                                        v-model="form.game_system_id"
-                                        :options="gameSystemOptions"
-                                        option-label="name"
-                                        option-value="id"
-                                        :placeholder="t('campaigns.create.fields.selectGameSystem')"
-                                        :error="form.errors.game_system_id"
-                                        :disabled="!props.campaign.can_edit"
-                                        class="mt-1"
-                                    />
-                                    <p v-if="form.errors.game_system_id" class="mt-1 text-sm text-error">
-                                        {{ form.errors.game_system_id }}
-                                    </p>
-                                </div>
-
-                                <!-- Title -->
-                                <div>
-                                    <label for="title" class="block text-sm font-medium text-base-secondary">
-                                        {{ t('campaigns.create.fields.title') }}
-                                        <span class="text-error">*</span>
-                                    </label>
-                                    <input
-                                        id="title"
-                                        v-model="form.title"
-                                        type="text"
-                                        name="title"
-                                        required
-                                        :disabled="!props.campaign.can_edit"
-                                        :aria-invalid="!!form.errors.title"
-                                        :aria-describedby="form.errors.title ? 'title-error' : undefined"
-                                        :class="fieldStateClass(!!form.errors.title)"
-                                        class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
-                                               text-base-primary placeholder-base-muted
-                                               focus:outline-none focus:ring-2
-                                               disabled:cursor-not-allowed disabled:opacity-50"
-                                    />
-                                    <p v-if="form.errors.title" id="title-error" class="mt-1 text-sm text-error">
-                                        {{ form.errors.title }}
-                                    </p>
-                                </div>
-
-                                <!-- Frequency -->
-                                <div>
-                                    <label for="frequency" class="block text-sm font-medium text-base-secondary">
-                                        {{ t('campaigns.create.fields.frequency') }}
-                                        <span class="text-error">*</span>
-                                    </label>
-                                    <FormSelect
-                                        id="frequency"
-                                        v-model="form.frequency"
-                                        :error="form.errors.frequency ?? ''"
-                                        :options="objectToOptions(props.formData.campaign_frequencies)"
-                                        :placeholder="t('campaigns.create.fields.selectFrequency')"
-                                        :disabled="!props.campaign.can_edit"
-                                        class="mt-1"
-                                    />
-                                    <p v-if="form.errors.frequency" class="mt-1 text-sm text-error">
-                                        {{ form.errors.frequency }}
-                                    </p>
-                                </div>
-
-                                <!-- Schedule Notes -->
-                                <div>
-                                    <label for="schedule_notes" class="block text-sm font-medium text-base-secondary">
-                                        {{ t('campaigns.create.fields.scheduleNotes') }}
-                                    </label>
-                                    <input
-                                        id="schedule_notes"
-                                        v-model="form.schedule_notes"
-                                        type="text"
-                                        name="schedule_notes"
-                                        :disabled="!props.campaign.can_edit"
-                                        :aria-invalid="!!form.errors.schedule_notes"
-                                        :placeholder="t('campaigns.create.fields.scheduleNotesPlaceholder')"
-                                        :class="fieldStateClass(!!form.errors.schedule_notes)"
-                                        class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
-                                               text-base-primary placeholder-base-muted
-                                               focus:outline-none focus:ring-2
-                                               disabled:cursor-not-allowed disabled:opacity-50"
-                                    />
-                                    <p class="mt-1 text-xs text-base-muted">
-                                        {{ t('campaigns.create.fields.scheduleNotesHelp') }}
-                                    </p>
-                                    <p v-if="form.errors.schedule_notes" class="mt-1 text-sm text-error">
-                                        {{ form.errors.schedule_notes }}
-                                    </p>
-                                </div>
-
-                                <!-- Table Format -->
-                                <div>
-                                    <label for="table_format" class="block text-sm font-medium text-base-secondary">
-                                        {{ t('campaigns.create.fields.tableFormat') }}
-                                        <span class="text-error">*</span>
-                                    </label>
-                                    <FormSelect
-                                        id="table_format"
-                                        v-model="form.table_format"
-                                        :error="form.errors.table_format ?? ''"
-                                        :options="objectToOptions(props.formData.table_formats)"
-                                        :disabled="!props.campaign.can_edit"
-                                        class="mt-1"
-                                    />
-                                    <p v-if="form.errors.table_format" class="mt-1 text-sm text-error">
-                                        {{ form.errors.table_format }}
-                                    </p>
-                                </div>
-
-                                <!-- Players Range -->
-                                <div>
-                                    <h3 class="mb-4 text-base font-medium text-base-primary">
-                                        {{ t('campaigns.create.sections.players') }}
-                                    </h3>
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label for="min_players" class="block text-sm font-medium text-base-secondary">
-                                                {{ t('campaigns.create.fields.minPlayers') }}
-                                                <span class="text-error">*</span>
-                                            </label>
-                                            <FormNumberInput
-                                                id="min_players"
-                                                v-model="form.min_players"
-                                                name="min_players"
-                                                :min="1"
-                                                :max="12"
-                                                required
-                                                :disabled="!props.campaign.can_edit"
-                                                :error="form.errors.min_players"
-                                                class="mt-1"
-                                            />
-                                            <p v-if="form.errors.min_players" class="mt-1 text-sm text-error">
-                                                {{ form.errors.min_players }}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <label for="max_players" class="block text-sm font-medium text-base-secondary">
-                                                {{ t('campaigns.create.fields.maxPlayers') }}
-                                                <span class="text-error">*</span>
-                                            </label>
-                                            <FormNumberInput
-                                                id="max_players"
-                                                v-model="form.max_players"
-                                                name="max_players"
-                                                :min="1"
-                                                :max="12"
-                                                required
-                                                :disabled="!props.campaign.can_edit"
-                                                :error="form.errors.max_players"
-                                                class="mt-1"
-                                            />
-                                            <p v-if="form.errors.max_players" class="mt-1 text-sm text-error">
-                                                {{ form.errors.max_players }}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Language -->
-                                <div>
-                                    <label for="language" class="block text-sm font-medium text-base-secondary">
-                                        {{ t('campaigns.create.fields.language') }}
-                                    </label>
-                                    <FormSelect
-                                        id="language"
-                                        name="language"
-                                        v-model="form.language"
-                                        :error="form.errors.language ?? ''"
-                                        :options="objectToOptions(props.formData.languages)"
-                                        :disabled="!props.campaign.can_edit"
-                                        class="mt-1"
-                                    />
-                                    <p v-if="form.errors.language" class="mt-1 text-sm text-error">
-                                        {{ form.errors.language }}
-                                    </p>
-                                </div>
-
-                                <!-- Experience Level -->
-                                <div>
-                                    <label for="experience_level" class="block text-sm font-medium text-base-secondary">
-                                        {{ t('campaigns.create.fields.experienceLevel') }}
-                                    </label>
-                                    <FormSelect
-                                        id="experience_level"
-                                        name="experience_level"
-                                        v-model="form.experience_level"
-                                        :error="form.errors.experience_level ?? ''"
-                                        :options="objectToOptions(props.formData.experience_levels)"
-                                        :placeholder="t('campaigns.create.fields.selectExperienceLevel')"
-                                        :disabled="!props.campaign.can_edit"
-                                        class="mt-1"
-                                    />
-                                    <p v-if="form.errors.experience_level" class="mt-1 text-sm text-error">
-                                        {{ form.errors.experience_level }}
-                                    </p>
-                                </div>
+            <div class="rounded-lg border border-default bg-surface">
+                <FormTabs v-model="activeTab" :tabs="tabs" :errors="tabErrors">
+                    <!-- Tab 1: Basic Information -->
+                    <template #basic>
+                        <div class="space-y-6 p-6">
+                            <!-- Game System -->
+                            <div>
+                                <label for="game_system_id" class="block text-sm font-medium text-base-secondary">
+                                    {{ t('campaigns.create.fields.gameSystem') }}
+                                    <span class="text-error">*</span>
+                                </label>
+                                <FormCombobox
+                                    id="game_system_id"
+                                    v-model="form.game_system_id"
+                                    :options="gameSystemOptions"
+                                    option-label="name"
+                                    option-value="id"
+                                    :placeholder="t('campaigns.create.fields.selectGameSystem')"
+                                    :error="form.errors.game_system_id"
+                                    :disabled="!props.campaign.can_edit"
+                                    class="mt-1"
+                                />
+                                <p v-if="form.errors.game_system_id" class="mt-1 text-sm text-error">
+                                    {{ form.errors.game_system_id }}
+                                </p>
                             </div>
-                        </template>
 
-                        <!-- Tab 2: Content -->
-                        <template #content>
-                            <div class="space-y-6 p-6">
-                                <!-- Synopsis -->
-                                <div>
-                                    <label for="synopsis" class="block text-sm font-medium text-base-secondary">
-                                        {{ t('campaigns.create.fields.synopsis') }}
-                                    </label>
-                                    <textarea
-                                        id="synopsis"
-                                        v-model="form.synopsis"
-                                        name="synopsis"
-                                        rows="6"
-                                        :disabled="!props.campaign.can_edit"
-                                        :aria-invalid="!!form.errors.synopsis"
-                                        :placeholder="t('campaigns.create.fields.synopsisPlaceholder')"
-                                        :class="fieldStateClass(!!form.errors.synopsis)"
-                                        class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
-                                               text-base-primary placeholder-base-muted
-                                               focus:outline-none focus:ring-2
-                                               disabled:cursor-not-allowed disabled:opacity-50"
-                                    />
-                                    <p v-if="form.errors.synopsis" class="mt-1 text-sm text-error">
-                                        {{ form.errors.synopsis }}
-                                    </p>
-                                </div>
+                            <!-- Title -->
+                            <div>
+                                <label for="title" class="block text-sm font-medium text-base-secondary">
+                                    {{ t('campaigns.create.fields.title') }}
+                                    <span class="text-error">*</span>
+                                </label>
+                                <input
+                                    id="title"
+                                    v-model="form.title"
+                                    type="text"
+                                    name="title"
+                                    required
+                                    :disabled="!props.campaign.can_edit"
+                                    :aria-invalid="!!form.errors.title"
+                                    :aria-describedby="form.errors.title ? 'title-error' : undefined"
+                                    :class="fieldStateClass(!!form.errors.title)"
+                                    class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
+                                           text-base-primary placeholder-base-muted
+                                           focus:outline-none focus:ring-2
+                                           disabled:cursor-not-allowed disabled:opacity-50"
+                                />
+                                <p v-if="form.errors.title" id="title-error" class="mt-1 text-sm text-error">
+                                    {{ form.errors.title }}
+                                </p>
+                            </div>
 
-                                <!-- Tone -->
-                                <div>
-                                    <label for="tone" class="block text-sm font-medium text-base-secondary">
-                                        {{ t('campaigns.create.fields.tone') }}
-                                    </label>
-                                    <FormSelect
-                                        id="tone"
-                                        v-model="form.tone"
-                                        :error="form.errors.tone ?? ''"
-                                        :options="objectToOptions(props.formData.tones)"
-                                        :placeholder="t('campaigns.create.fields.selectTone')"
-                                        :disabled="!props.campaign.can_edit"
-                                        class="mt-1"
-                                    />
-                                    <p v-if="form.errors.tone" class="mt-1 text-sm text-error">
-                                        {{ form.errors.tone }}
-                                    </p>
-                                </div>
+                            <!-- Frequency -->
+                            <div>
+                                <label for="frequency" class="block text-sm font-medium text-base-secondary">
+                                    {{ t('campaigns.create.fields.frequency') }}
+                                    <span class="text-error">*</span>
+                                </label>
+                                <FormSelect
+                                    id="frequency"
+                                    v-model="form.frequency"
+                                    :error="form.errors.frequency ?? ''"
+                                    :options="objectToOptions(props.formData.campaign_frequencies)"
+                                    :placeholder="t('campaigns.create.fields.selectFrequency')"
+                                    :disabled="!props.campaign.can_edit"
+                                    class="mt-1"
+                                />
+                                <p v-if="form.errors.frequency" class="mt-1 text-sm text-error">
+                                    {{ form.errors.frequency }}
+                                </p>
+                            </div>
 
-                                <!-- Character Creation -->
-                                <div>
-                                    <label for="character_creation" class="block text-sm font-medium text-base-secondary">
-                                        {{ t('campaigns.create.fields.characterCreation') }}
-                                    </label>
-                                    <FormSelect
-                                        id="character_creation"
-                                        name="character_creation"
-                                        v-model="form.character_creation"
-                                        :error="form.errors.character_creation ?? ''"
-                                        :options="objectToOptions(props.formData.character_creation)"
-                                        :placeholder="t('campaigns.create.fields.selectCharacterCreation')"
-                                        :disabled="!props.campaign.can_edit"
-                                        class="mt-1"
-                                    />
-                                    <p v-if="form.errors.character_creation" class="mt-1 text-sm text-error">
-                                        {{ form.errors.character_creation }}
-                                    </p>
-                                </div>
+                            <!-- Schedule Notes -->
+                            <div>
+                                <label for="schedule_notes" class="block text-sm font-medium text-base-secondary">
+                                    {{ t('campaigns.create.fields.scheduleNotes') }}
+                                </label>
+                                <input
+                                    id="schedule_notes"
+                                    v-model="form.schedule_notes"
+                                    type="text"
+                                    name="schedule_notes"
+                                    :disabled="!props.campaign.can_edit"
+                                    :aria-invalid="!!form.errors.schedule_notes"
+                                    :placeholder="t('campaigns.create.fields.scheduleNotesPlaceholder')"
+                                    :class="fieldStateClass(!!form.errors.schedule_notes)"
+                                    class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
+                                           text-base-primary placeholder-base-muted
+                                           focus:outline-none focus:ring-2
+                                           disabled:cursor-not-allowed disabled:opacity-50"
+                                />
+                                <p class="mt-1 text-xs text-base-muted">
+                                    {{ t('campaigns.create.fields.scheduleNotesHelp') }}
+                                </p>
+                                <p v-if="form.errors.schedule_notes" class="mt-1 text-sm text-error">
+                                    {{ form.errors.schedule_notes }}
+                                </p>
+                            </div>
 
-                                <!-- Separator -->
-                                <hr class="border-default" />
+                            <!-- Table Format -->
+                            <div>
+                                <label for="table_format" class="block text-sm font-medium text-base-secondary">
+                                    {{ t('campaigns.create.fields.tableFormat') }}
+                                    <span class="text-error">*</span>
+                                </label>
+                                <FormSelect
+                                    id="table_format"
+                                    v-model="form.table_format"
+                                    :error="form.errors.table_format ?? ''"
+                                    :options="objectToOptions(props.formData.table_formats)"
+                                    :disabled="!props.campaign.can_edit"
+                                    class="mt-1"
+                                />
+                                <p v-if="form.errors.table_format" class="mt-1 text-sm text-error">
+                                    {{ form.errors.table_format }}
+                                </p>
+                            </div>
 
-                                <!-- Safety Tools with tooltips -->
-                                <div id="safety_tools">
-                                    <label class="block text-sm font-medium text-base-secondary mb-3">
-                                        {{ t('campaigns.create.fields.safetyTools') }}
-                                    </label>
-                                    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                        <FormCheckboxWithTooltip
-                                            v-for="tool in safetyToolsWithDescriptions"
-                                            :key="tool.id"
-                                            v-model="form.safety_tools"
-                                            :value="tool.id"
-                                            :label="tool.name"
-                                            :description="tool.description"
-                                            :id="`safety_tool_${tool.id}`"
+                            <!-- Players Range -->
+                            <div>
+                                <h3 class="mb-4 text-base font-medium text-base-primary">
+                                    {{ t('campaigns.create.sections.players') }}
+                                </h3>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="min_players" class="block text-sm font-medium text-base-secondary">
+                                            {{ t('campaigns.create.fields.minPlayers') }}
+                                            <span class="text-error">*</span>
+                                        </label>
+                                        <FormNumberInput
+                                            id="min_players"
+                                            v-model="form.min_players"
+                                            name="min_players"
+                                            :min="1"
+                                            :max="12"
+                                            required
                                             :disabled="!props.campaign.can_edit"
+                                            :error="form.errors.min_players"
+                                            class="mt-1"
                                         />
+                                        <p v-if="form.errors.min_players" class="mt-1 text-sm text-error">
+                                            {{ form.errors.min_players }}
+                                        </p>
                                     </div>
-                                    <p v-if="form.errors.safety_tools" class="mt-2 text-sm text-error">
-                                        {{ form.errors.safety_tools }}
-                                    </p>
-                                </div>
-
-                                <!-- Content Warnings with collapsible groups -->
-                                <div id="content_warning_ids">
-                                    <label class="block text-sm font-medium text-base-secondary mb-3">
-                                        {{ t('campaigns.create.fields.contentWarnings') }}
-                                    </label>
-                                    <FormCheckboxGroup
-                                        v-model="form.content_warning_ids"
-                                        :groups="contentWarningGroups"
-                                        collapsible
-                                        :disabled="!props.campaign.can_edit"
-                                        :error="form.errors.content_warning_ids"
-                                    />
-                                </div>
-
-                                <!-- Custom Warnings -->
-                                <div id="custom_warnings">
-                                    <label class="block text-sm font-medium text-base-secondary mb-2">
-                                        {{ t('campaigns.create.fields.customWarnings') }}
-                                    </label>
-                                    <p class="text-xs text-base-muted mb-3">
-                                        {{ t('campaigns.create.fields.customWarningsHelp') }}
-                                    </p>
-                                    <FormTagsInput
-                                        v-model="form.custom_warnings"
-                                        :placeholder="t('campaigns.create.fields.customWarningsPlaceholder')"
-                                        :max-tags="10"
-                                        :max-length="200"
-                                        :disabled="!props.campaign.can_edit"
-                                        :error="form.errors.custom_warnings"
-                                    />
-                                    <p v-if="form.errors.custom_warnings" class="mt-1 text-sm text-error">
-                                        {{ form.errors.custom_warnings }}
-                                    </p>
+                                    <div>
+                                        <label for="max_players" class="block text-sm font-medium text-base-secondary">
+                                            {{ t('campaigns.create.fields.maxPlayers') }}
+                                            <span class="text-error">*</span>
+                                        </label>
+                                        <FormNumberInput
+                                            id="max_players"
+                                            v-model="form.max_players"
+                                            name="max_players"
+                                            :min="1"
+                                            :max="12"
+                                            required
+                                            :disabled="!props.campaign.can_edit"
+                                            :error="form.errors.max_players"
+                                            class="mt-1"
+                                        />
+                                        <p v-if="form.errors.max_players" class="mt-1 text-sm text-error">
+                                            {{ form.errors.max_players }}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
-                        </template>
 
-                        <!-- Tab 3: Location -->
-                        <template #location>
-                            <div class="space-y-6 p-6">
-                                <!-- Location (for in-person/hybrid) -->
-                                <div v-if="showLocation">
-                                    <label for="location" class="block text-sm font-medium text-base-secondary">
-                                        {{ t('campaigns.create.fields.location') }}
-                                    </label>
-                                    <input
-                                        id="location"
-                                        v-model="form.location"
-                                        type="text"
-                                        name="location"
-                                        :disabled="!props.campaign.can_edit"
-                                        :aria-invalid="!!form.errors.location"
-                                        :class="fieldStateClass(!!form.errors.location)"
-                                        class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
-                                               text-base-primary placeholder-base-muted
-                                               focus:outline-none focus:ring-2
-                                               disabled:cursor-not-allowed disabled:opacity-50"
-                                    />
-                                    <p class="mt-1 text-xs text-base-muted">
-                                        {{ t('campaigns.create.fields.locationHelp') }}
-                                    </p>
-                                    <p v-if="form.errors.location" class="mt-1 text-sm text-error">
-                                        {{ form.errors.location }}
-                                    </p>
-                                </div>
-
-                                <!-- Online URL (for online/hybrid) -->
-                                <div v-if="showOnlineUrl">
-                                    <label for="online_url" class="block text-sm font-medium text-base-secondary">
-                                        {{ t('campaigns.create.fields.onlineUrl') }}
-                                    </label>
-                                    <input
-                                        id="online_url"
-                                        v-model="form.online_url"
-                                        type="url"
-                                        name="online_url"
-                                        :disabled="!props.campaign.can_edit"
-                                        :aria-invalid="!!form.errors.online_url"
-                                        placeholder="https://..."
-                                        :class="fieldStateClass(!!form.errors.online_url)"
-                                        class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
-                                               text-base-primary placeholder-base-muted
-                                               focus:outline-none focus:ring-2
-                                               disabled:cursor-not-allowed disabled:opacity-50"
-                                    />
-                                    <p class="mt-1 text-xs text-base-muted">
-                                        {{ t('campaigns.create.fields.onlineUrlHelp') }}
-                                    </p>
-                                    <p v-if="form.errors.online_url" class="mt-1 text-sm text-error">
-                                        {{ form.errors.online_url }}
-                                    </p>
-                                </div>
-
-                                <!-- Message when no location fields shown -->
-                                <div v-if="!showLocation && !showOnlineUrl" class="rounded-lg bg-surface-subtle p-4 text-center">
-                                    <p class="text-sm text-base-muted">
-                                        {{ t('campaigns.create.fields.noLocationNeeded') }}
-                                    </p>
-                                </div>
+                            <!-- Language -->
+                            <div>
+                                <label for="language" class="block text-sm font-medium text-base-secondary">
+                                    {{ t('campaigns.create.fields.language') }}
+                                </label>
+                                <FormSelect
+                                    id="language"
+                                    name="language"
+                                    v-model="form.language"
+                                    :error="form.errors.language ?? ''"
+                                    :options="objectToOptions(props.formData.languages)"
+                                    :disabled="!props.campaign.can_edit"
+                                    class="mt-1"
+                                />
+                                <p v-if="form.errors.language" class="mt-1 text-sm text-error">
+                                    {{ form.errors.language }}
+                                </p>
                             </div>
-                        </template>
-                    </FormTabs>
-                </div>
 
-                <!-- Submit Button -->
-                <div class="mt-6 flex items-center justify-end gap-4">
-                    <BaseButton
-                        type="submit"
-                        variant="primary"
-                        :disabled="form.processing || !props.campaign.can_edit"
-                        :loading="form.processing"
-                    >
-                        {{ t('campaigns.edit.submit') }}
-                    </BaseButton>
-                </div>
-            </form>
-        </main>
-    </DefaultLayout>
+                            <!-- Experience Level -->
+                            <div>
+                                <label for="experience_level" class="block text-sm font-medium text-base-secondary">
+                                    {{ t('campaigns.create.fields.experienceLevel') }}
+                                </label>
+                                <FormSelect
+                                    id="experience_level"
+                                    name="experience_level"
+                                    v-model="form.experience_level"
+                                    :error="form.errors.experience_level ?? ''"
+                                    :options="objectToOptions(props.formData.experience_levels)"
+                                    :placeholder="t('campaigns.create.fields.selectExperienceLevel')"
+                                    :disabled="!props.campaign.can_edit"
+                                    class="mt-1"
+                                />
+                                <p v-if="form.errors.experience_level" class="mt-1 text-sm text-error">
+                                    {{ form.errors.experience_level }}
+                                </p>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Tab 2: Content -->
+                    <template #content>
+                        <div class="space-y-6 p-6">
+                            <!-- Synopsis -->
+                            <div>
+                                <label for="synopsis" class="block text-sm font-medium text-base-secondary">
+                                    {{ t('campaigns.create.fields.synopsis') }}
+                                </label>
+                                <textarea
+                                    id="synopsis"
+                                    v-model="form.synopsis"
+                                    name="synopsis"
+                                    rows="6"
+                                    :disabled="!props.campaign.can_edit"
+                                    :aria-invalid="!!form.errors.synopsis"
+                                    :placeholder="t('campaigns.create.fields.synopsisPlaceholder')"
+                                    :class="fieldStateClass(!!form.errors.synopsis)"
+                                    class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
+                                           text-base-primary placeholder-base-muted
+                                           focus:outline-none focus:ring-2
+                                           disabled:cursor-not-allowed disabled:opacity-50"
+                                />
+                                <p v-if="form.errors.synopsis" class="mt-1 text-sm text-error">
+                                    {{ form.errors.synopsis }}
+                                </p>
+                            </div>
+
+                            <!-- Tone -->
+                            <div>
+                                <label for="tone" class="block text-sm font-medium text-base-secondary">
+                                    {{ t('campaigns.create.fields.tone') }}
+                                </label>
+                                <FormSelect
+                                    id="tone"
+                                    v-model="form.tone"
+                                    :error="form.errors.tone ?? ''"
+                                    :options="objectToOptions(props.formData.tones)"
+                                    :placeholder="t('campaigns.create.fields.selectTone')"
+                                    :disabled="!props.campaign.can_edit"
+                                    class="mt-1"
+                                />
+                                <p v-if="form.errors.tone" class="mt-1 text-sm text-error">
+                                    {{ form.errors.tone }}
+                                </p>
+                            </div>
+
+                            <!-- Character Creation -->
+                            <div>
+                                <label for="character_creation" class="block text-sm font-medium text-base-secondary">
+                                    {{ t('campaigns.create.fields.characterCreation') }}
+                                </label>
+                                <FormSelect
+                                    id="character_creation"
+                                    name="character_creation"
+                                    v-model="form.character_creation"
+                                    :error="form.errors.character_creation ?? ''"
+                                    :options="objectToOptions(props.formData.character_creation)"
+                                    :placeholder="t('campaigns.create.fields.selectCharacterCreation')"
+                                    :disabled="!props.campaign.can_edit"
+                                    class="mt-1"
+                                />
+                                <p v-if="form.errors.character_creation" class="mt-1 text-sm text-error">
+                                    {{ form.errors.character_creation }}
+                                </p>
+                            </div>
+
+                            <!-- Separator -->
+                            <hr class="border-default" />
+
+                            <!-- Safety Tools with tooltips -->
+                            <div id="safety_tools">
+                                <label class="block text-sm font-medium text-base-secondary mb-3">
+                                    {{ t('campaigns.create.fields.safetyTools') }}
+                                </label>
+                                <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                    <FormCheckboxWithTooltip
+                                        v-for="tool in safetyToolsWithDescriptions"
+                                        :key="tool.id"
+                                        v-model="form.safety_tools"
+                                        :value="tool.id"
+                                        :label="tool.name"
+                                        :description="tool.description"
+                                        :id="`safety_tool_${tool.id}`"
+                                        :disabled="!props.campaign.can_edit"
+                                    />
+                                </div>
+                                <p v-if="form.errors.safety_tools" class="mt-2 text-sm text-error">
+                                    {{ form.errors.safety_tools }}
+                                </p>
+                            </div>
+
+                            <!-- Content Warnings with collapsible groups -->
+                            <div id="content_warning_ids">
+                                <label class="block text-sm font-medium text-base-secondary mb-3">
+                                    {{ t('campaigns.create.fields.contentWarnings') }}
+                                </label>
+                                <FormCheckboxGroup
+                                    v-model="form.content_warning_ids"
+                                    :groups="contentWarningGroups"
+                                    collapsible
+                                    :disabled="!props.campaign.can_edit"
+                                    :error="form.errors.content_warning_ids"
+                                />
+                            </div>
+
+                            <!-- Custom Warnings -->
+                            <div id="custom_warnings">
+                                <label class="block text-sm font-medium text-base-secondary mb-2">
+                                    {{ t('campaigns.create.fields.customWarnings') }}
+                                </label>
+                                <p class="text-xs text-base-muted mb-3">
+                                    {{ t('campaigns.create.fields.customWarningsHelp') }}
+                                </p>
+                                <FormTagsInput
+                                    v-model="form.custom_warnings"
+                                    :placeholder="t('campaigns.create.fields.customWarningsPlaceholder')"
+                                    :max-tags="10"
+                                    :max-length="200"
+                                    :disabled="!props.campaign.can_edit"
+                                    :error="form.errors.custom_warnings"
+                                />
+                                <p v-if="form.errors.custom_warnings" class="mt-1 text-sm text-error">
+                                    {{ form.errors.custom_warnings }}
+                                </p>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Tab 3: Location -->
+                    <template #location>
+                        <div class="space-y-6 p-6">
+                            <!-- Location (for in-person/hybrid) -->
+                            <div v-if="showLocation">
+                                <label for="location" class="block text-sm font-medium text-base-secondary">
+                                    {{ t('campaigns.create.fields.location') }}
+                                </label>
+                                <input
+                                    id="location"
+                                    v-model="form.location"
+                                    type="text"
+                                    name="location"
+                                    :disabled="!props.campaign.can_edit"
+                                    :aria-invalid="!!form.errors.location"
+                                    :class="fieldStateClass(!!form.errors.location)"
+                                    class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
+                                           text-base-primary placeholder-base-muted
+                                           focus:outline-none focus:ring-2
+                                           disabled:cursor-not-allowed disabled:opacity-50"
+                                />
+                                <p class="mt-1 text-xs text-base-muted">
+                                    {{ t('campaigns.create.fields.locationHelp') }}
+                                </p>
+                                <p v-if="form.errors.location" class="mt-1 text-sm text-error">
+                                    {{ form.errors.location }}
+                                </p>
+                            </div>
+
+                            <!-- Online URL (for online/hybrid) -->
+                            <div v-if="showOnlineUrl">
+                                <label for="online_url" class="block text-sm font-medium text-base-secondary">
+                                    {{ t('campaigns.create.fields.onlineUrl') }}
+                                </label>
+                                <input
+                                    id="online_url"
+                                    v-model="form.online_url"
+                                    type="url"
+                                    name="online_url"
+                                    :disabled="!props.campaign.can_edit"
+                                    :aria-invalid="!!form.errors.online_url"
+                                    placeholder="https://..."
+                                    :class="fieldStateClass(!!form.errors.online_url)"
+                                    class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5
+                                           text-base-primary placeholder-base-muted
+                                           focus:outline-none focus:ring-2
+                                           disabled:cursor-not-allowed disabled:opacity-50"
+                                />
+                                <p class="mt-1 text-xs text-base-muted">
+                                    {{ t('campaigns.create.fields.onlineUrlHelp') }}
+                                </p>
+                                <p v-if="form.errors.online_url" class="mt-1 text-sm text-error">
+                                    {{ form.errors.online_url }}
+                                </p>
+                            </div>
+
+                            <!-- Message when no location fields shown -->
+                            <div v-if="!showLocation && !showOnlineUrl" class="rounded-lg bg-surface-subtle p-4 text-center">
+                                <p class="text-sm text-base-muted">
+                                    {{ t('campaigns.create.fields.noLocationNeeded') }}
+                                </p>
+                            </div>
+                        </div>
+                    </template>
+                </FormTabs>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="mt-6 flex items-center justify-end gap-4">
+                <BaseButton
+                    type="submit"
+                    variant="primary"
+                    :disabled="form.processing || !props.campaign.can_edit"
+                    :loading="form.processing"
+                >
+                    {{ t('campaigns.edit.submit') }}
+                </BaseButton>
+            </div>
+        </form>
+    </main>
 </template>

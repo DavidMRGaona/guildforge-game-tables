@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import { CircleArrowRight, Clock, Users } from '@lucide/vue';
 import { computed } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import EmptyState from '@/components/ui/EmptyState.vue';
 import StatusBadge from '../../components/StatusBadge.vue';
@@ -94,226 +94,196 @@ function getCampaignLink(campaign: CampaignResponseDTO): string {
 </script>
 
 <template>
-    <DefaultLayout>
-        <div class="bg-surface shadow">
-            <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <!-- Back to the profile tab that links here -->
-                        <Link
-                            href="/perfil?tab=gametables-campaigns"
-                            class="mb-2 inline-flex min-h-[44px] items-center gap-1 text-sm font-medium text-primary underline-offset-2 hover:underline"
-                        >
-                            <span aria-hidden="true">←</span>
-                            {{ t('gameTables.backToProfile') }}
-                        </Link>
-                        <h1 class="text-3xl font-bold tracking-tight text-base-primary">
-                            {{ t('campaigns.myCampaigns.title') }}
-                        </h1>
-                        <p class="mt-2 text-lg text-base-secondary">
-                            {{ t('campaigns.myCampaigns.subtitle') }}
-                        </p>
-                    </div>
-
-                    <BaseButton
-                        v-if="props.canCreate"
-                        variant="primary"
-                        class="shrink-0 self-start sm:self-auto"
-                        @click="handleCreate"
+    <div class="bg-surface shadow">
+        <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <!-- Back to the profile tab that links here -->
+                    <Link
+                        href="/perfil?tab=gametables-campaigns"
+                        class="mb-2 inline-flex min-h-[44px] items-center gap-1 text-sm font-medium text-primary underline-offset-2 hover:underline"
                     >
-                        {{ t('campaigns.myCampaigns.createCampaign') }}
-                    </BaseButton>
+                        <span aria-hidden="true">←</span>
+                        {{ t('gameTables.backToProfile') }}
+                    </Link>
+                    <h1 class="text-3xl font-bold tracking-tight text-base-primary">
+                        {{ t('campaigns.myCampaigns.title') }}
+                    </h1>
+                    <p class="mt-2 text-lg text-base-secondary">
+                        {{ t('campaigns.myCampaigns.subtitle') }}
+                    </p>
                 </div>
-            </div>
-        </div>
 
-        <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-            <div
-                v-if="flashSuccess"
-                role="status"
-                class="mb-6 rounded-lg border-l-4 border-success bg-success/10 p-4 text-sm text-base-primary"
-            >
-                {{ flashSuccess }}
-            </div>
-            <div
-                v-if="flashError"
-                role="alert"
-                class="mb-6 rounded-lg border-l-4 border-error bg-error/10 p-4 text-sm text-base-primary"
-            >
-                {{ flashError }}
-            </div>
-
-            <EmptyState
-                v-if="!hasCampaigns"
-                icon="book"
-                :title="t('campaigns.myCampaigns.noCampaigns')"
-                :description="t('campaigns.myCampaigns.noCampaignsDescription')"
-            >
                 <BaseButton
                     v-if="props.canCreate"
                     variant="primary"
+                    class="shrink-0 self-start sm:self-auto"
                     @click="handleCreate"
                 >
                     {{ t('campaigns.myCampaigns.createCampaign') }}
                 </BaseButton>
-            </EmptyState>
+            </div>
+        </div>
+    </div>
 
-            <div v-else class="space-y-4">
-                <div
-                    v-for="campaign in props.campaigns"
-                    :key="campaign.id"
-                    class="overflow-hidden rounded-lg bg-surface shadow transition-shadow hover:shadow-md"
-                >
-                    <div class="p-4 sm:p-6">
-                        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                            <div class="min-w-0 flex-1">
-                                <div class="mb-2 flex flex-wrap items-center gap-2">
-                                    <h2 class="min-w-0 truncate text-xl font-semibold text-base-primary">
-                                        <Link
-                                            v-if="isApproved(campaign)"
-                                            :href="getCampaignLink(campaign)"
-                                            class="hover:text-primary"
-                                        >
-                                            {{ campaign.title }}
-                                        </Link>
-                                        <span v-else>{{ campaign.title }}</span>
-                                    </h2>
-                                    <StatusBadge
-                                        :status="campaign.frontend_creation_status ?? campaign.status"
-                                        :label="getStatusLabel(campaign)"
-                                        :color="getStatusColor(campaign)"
-                                    />
-                                </div>
+    <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div
+            v-if="flashSuccess"
+            role="status"
+            class="mb-6 rounded-lg border-l-4 border-success bg-success/10 p-4 text-sm text-base-primary"
+        >
+            {{ flashSuccess }}
+        </div>
+        <div
+            v-if="flashError"
+            role="alert"
+            class="mb-6 rounded-lg border-l-4 border-error bg-error/10 p-4 text-sm text-base-primary"
+        >
+            {{ flashError }}
+        </div>
 
-                                <p class="text-sm font-medium text-primary">
-                                    {{ campaign.game_system_name }}
-                                </p>
+        <EmptyState
+            v-if="!hasCampaigns"
+            icon="book"
+            :title="t('campaigns.myCampaigns.noCampaigns')"
+            :description="t('campaigns.myCampaigns.noCampaignsDescription')"
+        >
+            <BaseButton
+                v-if="props.canCreate"
+                variant="primary"
+                @click="handleCreate"
+            >
+                {{ t('campaigns.myCampaigns.createCampaign') }}
+            </BaseButton>
+        </EmptyState>
 
-                                <!-- Campaigns the viewer directs: roster summary -->
-                                <template v-if="campaign.directed_by_viewer">
-                                    <p class="mt-3 text-sm text-base-secondary">
-                                        {{ directedSummary(campaign) }}
-                                    </p>
-                                    <span
-                                        v-if="campaign.pending_requests > 0"
-                                        class="mt-2 inline-flex items-center rounded-full bg-warning-light px-2 py-0.5 text-xs font-medium text-base-primary"
-                                    >
-                                        {{ t('campaigns.myCampaigns.pendingRequests', { count: campaign.pending_requests }, campaign.pending_requests) }}
-                                    </span>
-                                </template>
-
-                                <div v-else class="mt-3 flex flex-wrap items-center gap-4 text-sm text-base-secondary">
-                                    <!-- Frequency -->
-                                    <div v-if="campaign.frequency_label" class="flex items-center gap-1.5">
-                                        <svg
-                                            class="h-4 w-4"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                            aria-hidden="true"
-                                        >
-                                            <path
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                                stroke-width="2"
-                                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                            />
-                                        </svg>
-                                        <span>{{ campaign.frequency_label }}</span>
-                                    </div>
-
-                                    <!-- Players -->
-                                    <div class="flex items-center gap-1.5">
-                                        <svg
-                                            class="h-4 w-4"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                            aria-hidden="true"
-                                        >
-                                            <path
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                                stroke-width="2"
-                                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                                            />
-                                        </svg>
-                                        <span>
-                                            <template v-if="campaign.max_players">
-                                                {{ campaign.current_players }}/{{ campaign.max_players }}
-                                            </template>
-                                            <template v-else>
-                                                {{ campaign.current_players }}
-                                            </template>
-                                            {{ t('campaigns.myCampaigns.players') }}
-                                        </span>
-                                    </div>
-
-                                    <!-- Recruiting badge -->
-                                    <span
-                                        v-if="campaign.is_recruiting"
-                                        class="inline-flex items-center gap-1 rounded-full bg-success-light px-2 py-0.5 text-xs font-medium text-base-primary"
-                                    >
-                                        <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" />
-                                        </svg>
-                                        {{ t('campaigns.myCampaigns.recruiting') }}
-                                    </span>
-                                </div>
-
-                                <!-- Rejected in review: back to a draft until it is sent again -->
-                                <DraftRejectionReason
-                                    v-if="campaign.rejection_reason"
-                                    kind="campaign"
-                                    :reason="campaign.rejection_reason"
-                                    class="mt-3"
-                                />
-                            </div>
-
-                            <div class="flex flex-shrink-0 flex-wrap gap-2">
-                                <template v-if="campaign.directed_by_viewer">
+        <div v-else class="space-y-4">
+            <div
+                v-for="campaign in props.campaigns"
+                :key="campaign.id"
+                class="overflow-hidden rounded-lg bg-surface shadow transition-shadow hover:shadow-md"
+            >
+                <div class="p-4 sm:p-6">
+                    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                        <div class="min-w-0 flex-1">
+                            <div class="mb-2 flex flex-wrap items-center gap-2">
+                                <h2 class="min-w-0 truncate text-xl font-semibold text-base-primary">
                                     <Link
-                                        :href="rosterLink(campaign)"
-                                        :class="primaryLinkClass"
-                                    >
-                                        {{ t('campaigns.myCampaigns.roster') }}
-                                    </Link>
-                                    <Link
-                                        v-if="campaign.can_add_session"
-                                        :href="addSessionLink(campaign)"
-                                        :class="secondaryLinkClass"
-                                    >
-                                        {{ t('campaigns.myCampaigns.addSession') }}
-                                    </Link>
-                                </template>
-
-                                <template v-if="isPendingReview(campaign)">
-                                    <span class="text-sm text-base-muted">
-                                        {{ t('campaigns.myCampaigns.pendingReviewMessage') }}
-                                    </span>
-                                </template>
-
-                                <template v-else-if="isApproved(campaign)">
-                                    <Link
+                                        v-if="isApproved(campaign)"
                                         :href="getCampaignLink(campaign)"
-                                        :class="campaign.directed_by_viewer ? secondaryLinkClass : primaryLinkClass"
+                                        class="hover:text-primary"
                                     >
-                                        {{ t('campaigns.myCampaigns.viewPublic') }}
+                                        {{ campaign.title }}
                                     </Link>
-                                </template>
-
-                                <!-- While the author may still change it: can_edit, the rule the server enforces -->
-                                <DraftActions
-                                    v-else-if="campaign.can_edit"
-                                    kind="campaign"
-                                    :route-key="campaign.id"
-                                    :title="campaign.title"
+                                    <span v-else>{{ campaign.title }}</span>
+                                </h2>
+                                <StatusBadge
+                                    :status="campaign.frontend_creation_status ?? campaign.status"
+                                    :label="getStatusLabel(campaign)"
+                                    :color="getStatusColor(campaign)"
                                 />
                             </div>
+
+                            <p class="text-sm font-medium text-primary">
+                                {{ campaign.game_system_name }}
+                            </p>
+
+                            <!-- Campaigns the viewer directs: roster summary -->
+                            <template v-if="campaign.directed_by_viewer">
+                                <p class="mt-3 text-sm text-base-secondary">
+                                    {{ directedSummary(campaign) }}
+                                </p>
+                                <span
+                                    v-if="campaign.pending_requests > 0"
+                                    class="mt-2 inline-flex items-center rounded-full bg-warning-light px-2 py-0.5 text-xs font-medium text-base-primary"
+                                >
+                                    {{ t('campaigns.myCampaigns.pendingRequests', { count: campaign.pending_requests }, campaign.pending_requests) }}
+                                </span>
+                            </template>
+
+                            <div v-else class="mt-3 flex flex-wrap items-center gap-4 text-sm text-base-secondary">
+                                <!-- Frequency -->
+                                <div v-if="campaign.frequency_label" class="flex items-center gap-1.5">
+                                    <Clock class="h-4 w-4" aria-hidden="true" />
+                                    <span>{{ campaign.frequency_label }}</span>
+                                </div>
+
+                                <!-- Players -->
+                                <div class="flex items-center gap-1.5">
+                                    <Users class="h-4 w-4" aria-hidden="true" />
+                                    <span>
+                                        <template v-if="campaign.max_players">
+                                            {{ campaign.current_players }}/{{ campaign.max_players }}
+                                        </template>
+                                        <template v-else>
+                                            {{ campaign.current_players }}
+                                        </template>
+                                        {{ t('campaigns.myCampaigns.players') }}
+                                    </span>
+                                </div>
+
+                                <!-- Recruiting badge -->
+                                <span
+                                    v-if="campaign.is_recruiting"
+                                    class="inline-flex items-center gap-1 rounded-full bg-success-light px-2 py-0.5 text-xs font-medium text-base-primary"
+                                >
+                                    <CircleArrowRight class="h-3 w-3" aria-hidden="true" />
+                                    {{ t('campaigns.myCampaigns.recruiting') }}
+                                </span>
+                            </div>
+
+                            <!-- Rejected in review: back to a draft until it is sent again -->
+                            <DraftRejectionReason
+                                v-if="campaign.rejection_reason"
+                                kind="campaign"
+                                :reason="campaign.rejection_reason"
+                                class="mt-3"
+                            />
+                        </div>
+
+                        <div class="flex flex-shrink-0 flex-wrap gap-2">
+                            <template v-if="campaign.directed_by_viewer">
+                                <Link
+                                    :href="rosterLink(campaign)"
+                                    :class="primaryLinkClass"
+                                >
+                                    {{ t('campaigns.myCampaigns.roster') }}
+                                </Link>
+                                <Link
+                                    v-if="campaign.can_add_session"
+                                    :href="addSessionLink(campaign)"
+                                    :class="secondaryLinkClass"
+                                >
+                                    {{ t('campaigns.myCampaigns.addSession') }}
+                                </Link>
+                            </template>
+
+                            <template v-if="isPendingReview(campaign)">
+                                <span class="text-sm text-base-muted">
+                                    {{ t('campaigns.myCampaigns.pendingReviewMessage') }}
+                                </span>
+                            </template>
+
+                            <template v-else-if="isApproved(campaign)">
+                                <Link
+                                    :href="getCampaignLink(campaign)"
+                                    :class="campaign.directed_by_viewer ? secondaryLinkClass : primaryLinkClass"
+                                >
+                                    {{ t('campaigns.myCampaigns.viewPublic') }}
+                                </Link>
+                            </template>
+
+                            <!-- While the author may still change it: can_edit, the rule the server enforces -->
+                            <DraftActions
+                                v-else-if="campaign.can_edit"
+                                kind="campaign"
+                                :route-key="campaign.id"
+                                :title="campaign.title"
+                            />
                         </div>
                     </div>
                 </div>
             </div>
-        </main>
-    </DefaultLayout>
+        </div>
+    </main>
 </template>

@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import { Calendar, ChevronLeft, Clipboard, Clock, MapPin, TriangleAlert, User } from '@lucide/vue';
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import type { GameTable, GameMaster } from '../../types/gametables';
 import type { CampaignSessionInfo } from '../../types/registration';
-import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import CapacityBar from '../../components/CapacityBar.vue';
 import FormatBadge from '../../components/FormatBadge.vue';
@@ -185,589 +185,466 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
 </script>
 
 <template>
-    <DefaultLayout>
-        <div class="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-            <!-- Back link -->
-            <div class="mb-6">
-                <Link
-                    href="/mesas"
-                    class="inline-flex items-center text-sm text-base-secondary hover:underline focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
-                >
-                    <svg
-                        class="mr-1 h-4 w-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M15 19l-7-7 7-7"
-                        />
-                    </svg>
-                    {{ t('common.back') }}
-                </Link>
+    <div class="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+        <!-- Back link -->
+        <div class="mb-6">
+            <Link
+                href="/mesas"
+                class="inline-flex items-center text-sm text-base-secondary hover:underline focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
+            >
+                <ChevronLeft class="mr-1 h-4 w-4" aria-hidden="true" />
+                {{ t('common.back') }}
+            </Link>
+        </div>
+
+        <article
+            class="overflow-hidden rounded-lg bg-surface shadow"
+        >
+            <!-- Game Table Image -->
+            <div v-if="imageUrl" class="relative">
+                <img
+                    :src="imageUrl"
+                    :alt="table.title"
+                    class="h-64 w-full object-cover sm:h-80"
+                />
             </div>
 
-            <article
-                class="overflow-hidden rounded-lg bg-surface shadow"
-            >
-                <!-- Game Table Image -->
-                <div v-if="imageUrl" class="relative">
-                    <img
-                        :src="imageUrl"
-                        :alt="table.title"
-                        class="h-64 w-full object-cover sm:h-80"
-                    />
+            <div class="p-6 sm:p-8">
+                <!-- Section 1: Header -->
+                <div class="mb-6">
+                    <div class="mb-4 flex flex-wrap items-center gap-2">
+                        <StatusBadge
+                            :status="table.status"
+                            :label="table.statusLabel"
+                            :color="table.statusColor"
+                            size="md"
+                        />
+                        <FormatBadge
+                            :format="table.tableFormat"
+                            :label="table.tableFormatLabel"
+                            :color="table.tableFormatColor"
+                            size="md"
+                        />
+                        <span
+                            class="rounded-full bg-muted px-3 py-1 text-sm font-medium text-base-secondary"
+                        >
+                            {{ table.tableTypeLabel }}
+                        </span>
+                    </div>
+
+                    <h1
+                        class="mb-4 text-3xl font-bold text-base-primary sm:text-4xl"
+                    >
+                        {{ table.title }}
+                    </h1>
+
+                    <p class="text-xl font-medium text-primary">
+                        {{ table.gameSystemName }}
+                    </p>
+
+                    <Link
+                        v-if="canManageRegistrations"
+                        :href="`/mesas/mis-mesas/${table.slug}/inscritos`"
+                        class="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-md border border-default px-4 py-2 text-sm font-medium text-base-primary transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
+                    >
+                        {{ t('gameTables.myTables.manageRegistrations') }}
+                    </Link>
                 </div>
 
-                <div class="p-6 sm:p-8">
-                    <!-- Section 1: Header -->
-                    <div class="mb-6">
-                        <div class="mb-4 flex flex-wrap items-center gap-2">
-                            <StatusBadge
-                                :status="table.status"
-                                :label="table.statusLabel"
-                                :color="table.statusColor"
-                                size="md"
-                            />
-                            <FormatBadge
-                                :format="table.tableFormat"
-                                :label="table.tableFormatLabel"
-                                :color="table.tableFormatColor"
-                                size="md"
-                            />
-                            <span
-                                class="rounded-full bg-muted px-3 py-1 text-sm font-medium text-base-secondary"
-                            >
+                <!-- Section 2: Key Information -->
+                <div
+                    class="mb-6 rounded-lg bg-muted p-4"
+                >
+                    <h2 class="sr-only">{{ t('gameTables.details.gameSystem') }}</h2>
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <!-- Date and Time -->
+                        <div>
+                            <h3 class="mb-1 text-sm font-semibold text-base-primary">
+                                {{ t('gameTables.dateAndTime') }}
+                            </h3>
+                            <div class="flex items-center text-base-secondary">
+                                <Calendar class="mr-2 h-5 w-5 text-primary" aria-hidden="true" />
+                                <div>
+                                    <p>{{ formattedDate }}</p>
+                                    <p class="text-sm">{{ formattedTime }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Duration -->
+                        <div>
+                            <h3 class="mb-1 text-sm font-semibold text-base-primary">
+                                {{ t('gameTables.duration') }}
+                            </h3>
+                            <div class="flex items-center text-base-secondary">
+                                <Clock class="mr-2 h-5 w-5 text-primary" aria-hidden="true" />
+                                <span>{{ formattedDuration }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Location -->
+                        <div>
+                            <h3 class="mb-1 text-sm font-semibold text-base-primary">
+                                {{ t('gameTables.location') }}
+                            </h3>
+                            <div class="flex items-center text-base-secondary">
+                                <MapPin class="mr-2 h-5 w-5 text-primary" aria-hidden="true" />
+                                <span>{{ table.location || t('gameTables.online') }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Game Masters -->
+                        <div>
+                            <h3 class="mb-1 text-sm font-semibold text-base-primary">
+                                {{ t('gameTables.gameMaster') }}
+                            </h3>
+                            <div class="text-base-secondary">
+                                <!-- When all GMs have the same role, show as a single list -->
+                                <template v-if="allSameRole">
+                                    <ul class="space-y-1">
+                                        <!-- No game master rows: the table's main GM name (the creator by default) -->
+                                        <li
+                                            v-if="formattedAllGameMasters.length === 0"
+                                            class="flex items-center"
+                                        >
+                                            <User
+                                                class="mr-2 h-5 w-5 text-primary"
+                                                aria-hidden="true"
+                                            />
+                                            <span>{{ table.mainGameMasterName }}</span>
+                                        </li>
+                                        <li
+                                            v-for="gm in formattedAllGameMasters"
+                                            :key="gm.id"
+                                            class="flex items-center"
+                                        >
+                                            <User
+                                                class="mr-2 h-5 w-5 text-primary"
+                                                aria-hidden="true"
+                                            />
+                                            <span>{{ gm.formattedName }}</span>
+                                        </li>
+                                    </ul>
+                                </template>
+
+                                <!-- When there are both main directors and co-directors -->
+                                <template v-else>
+                                    <!-- Main Directors -->
+                                    <ul class="space-y-1">
+                                        <li
+                                            v-for="gm in formattedMainGameMasters"
+                                            :key="gm.id"
+                                            class="flex items-center"
+                                        >
+                                            <User
+                                                class="mr-2 h-5 w-5 text-primary"
+                                                aria-hidden="true"
+                                            />
+                                            <span>{{ gm.formattedName }}</span>
+                                        </li>
+                                    </ul>
+
+                                    <!-- Co-Directors as a separate list -->
+                                    <div v-if="formattedCoGameMasters.length > 0" class="mt-2">
+                                        <span class="text-sm font-medium">{{ t('gameTables.coGameMasters') }}:</span>
+                                        <ul class="ml-7 mt-1 space-y-1 text-sm">
+                                            <li
+                                                v-for="gm in formattedCoGameMasters"
+                                                :key="gm.id"
+                                            >
+                                                {{ gm.formattedName }}
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Format -->
+                        <div>
+                            <h3 class="mb-1 text-sm font-semibold text-base-primary">
+                                {{ t('gameTables.filters.format') }}
+                            </h3>
+                            <p class="text-base-secondary">
+                                {{ table.tableFormatLabel }}
+                            </p>
+                        </div>
+
+                        <!-- Table Type -->
+                        <div>
+                            <h3 class="mb-1 text-sm font-semibold text-base-primary">
+                                {{ t('gameTables.tableType') }}
+                            </h3>
+                            <p class="text-base-secondary">
                                 {{ table.tableTypeLabel }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Capacity -->
+                <div class="mb-6">
+                    <h2 class="mb-4 text-lg font-semibold text-base-primary">
+                        {{ t('gameTables.capacity') }}
+                    </h2>
+
+                    <!-- Players -->
+                    <div class="mb-4">
+                        <div class="mb-2 flex items-center justify-between text-sm">
+                            <span class="text-base-secondary">
+                                {{ t('gameTables.roles.players') }}
+                                <span class="text-base-muted">
+                                    ({{ t('gameTables.playersRequired', { min: table.minPlayers, max: table.maxPlayers }) }})
+                                </span>
+                            </span>
+                            <span class="font-medium text-base-primary">
+                                {{ table.currentPlayers }} / {{ table.maxPlayers }}
                             </span>
                         </div>
-
-                        <h1
-                            class="mb-4 text-3xl font-bold text-base-primary sm:text-4xl"
-                        >
-                            {{ table.title }}
-                        </h1>
-
-                        <p class="text-xl font-medium text-primary">
-                            {{ table.gameSystemName }}
+                        <CapacityBar
+                            :current="table.currentPlayers"
+                            :max="table.maxPlayers"
+                            :label="t('gameTables.roles.players')"
+                            size="md"
+                        />
+                        <p v-if="table.spotsAvailable > 0" class="mt-1 text-sm text-success">
+                            {{ table.spotsAvailable }} {{ t('gameTables.spotsAvailable') }}
                         </p>
-
-                        <Link
-                            v-if="canManageRegistrations"
-                            :href="`/mesas/mis-mesas/${table.slug}/inscritos`"
-                            class="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-md border border-default px-4 py-2 text-sm font-medium text-base-primary transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
-                        >
-                            {{ t('gameTables.myTables.manageRegistrations') }}
-                        </Link>
-                    </div>
-
-                    <!-- Section 2: Key Information -->
-                    <div
-                        class="mb-6 rounded-lg bg-muted p-4"
-                    >
-                        <h2 class="sr-only">{{ t('gameTables.details.gameSystem') }}</h2>
-                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <!-- Date and Time -->
-                            <div>
-                                <h3 class="mb-1 text-sm font-semibold text-base-primary">
-                                    {{ t('gameTables.dateAndTime') }}
-                                </h3>
-                                <div class="flex items-center text-base-secondary">
-                                    <svg
-                                        class="mr-2 h-5 w-5 text-primary"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                        aria-hidden="true"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                        />
-                                    </svg>
-                                    <div>
-                                        <p>{{ formattedDate }}</p>
-                                        <p class="text-sm">{{ formattedTime }}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Duration -->
-                            <div>
-                                <h3 class="mb-1 text-sm font-semibold text-base-primary">
-                                    {{ t('gameTables.duration') }}
-                                </h3>
-                                <div class="flex items-center text-base-secondary">
-                                    <svg
-                                        class="mr-2 h-5 w-5 text-primary"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                        aria-hidden="true"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                        />
-                                    </svg>
-                                    <span>{{ formattedDuration }}</span>
-                                </div>
-                            </div>
-
-                            <!-- Location -->
-                            <div>
-                                <h3 class="mb-1 text-sm font-semibold text-base-primary">
-                                    {{ t('gameTables.location') }}
-                                </h3>
-                                <div class="flex items-center text-base-secondary">
-                                    <svg
-                                        class="mr-2 h-5 w-5 text-primary"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                        aria-hidden="true"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                                        />
-                                    </svg>
-                                    <span>{{ table.location || t('gameTables.online') }}</span>
-                                </div>
-                            </div>
-
-                            <!-- Game Masters -->
-                            <div>
-                                <h3 class="mb-1 text-sm font-semibold text-base-primary">
-                                    {{ t('gameTables.gameMaster') }}
-                                </h3>
-                                <div class="text-base-secondary">
-                                    <!-- When all GMs have the same role, show as a single list -->
-                                    <template v-if="allSameRole">
-                                        <ul class="space-y-1">
-                                            <!-- No game master rows: the table's main GM name (the creator by default) -->
-                                            <li
-                                                v-if="formattedAllGameMasters.length === 0"
-                                                class="flex items-center"
-                                            >
-                                                <svg
-                                                    class="mr-2 h-5 w-5 text-primary"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                    aria-hidden="true"
-                                                >
-                                                    <path
-                                                        stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                                    />
-                                                </svg>
-                                                <span>{{ table.mainGameMasterName }}</span>
-                                            </li>
-                                            <li
-                                                v-for="gm in formattedAllGameMasters"
-                                                :key="gm.id"
-                                                class="flex items-center"
-                                            >
-                                                <svg
-                                                    class="mr-2 h-5 w-5 text-primary"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                    aria-hidden="true"
-                                                >
-                                                    <path
-                                                        stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                                    />
-                                                </svg>
-                                                <span>{{ gm.formattedName }}</span>
-                                            </li>
-                                        </ul>
-                                    </template>
-
-                                    <!-- When there are both main directors and co-directors -->
-                                    <template v-else>
-                                        <!-- Main Directors -->
-                                        <ul class="space-y-1">
-                                            <li
-                                                v-for="gm in formattedMainGameMasters"
-                                                :key="gm.id"
-                                                class="flex items-center"
-                                            >
-                                                <svg
-                                                    class="mr-2 h-5 w-5 text-primary"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                    aria-hidden="true"
-                                                >
-                                                    <path
-                                                        stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                                    />
-                                                </svg>
-                                                <span>{{ gm.formattedName }}</span>
-                                            </li>
-                                        </ul>
-
-                                        <!-- Co-Directors as a separate list -->
-                                        <div v-if="formattedCoGameMasters.length > 0" class="mt-2">
-                                            <span class="text-sm font-medium">{{ t('gameTables.coGameMasters') }}:</span>
-                                            <ul class="ml-7 mt-1 space-y-1 text-sm">
-                                                <li
-                                                    v-for="gm in formattedCoGameMasters"
-                                                    :key="gm.id"
-                                                >
-                                                    {{ gm.formattedName }}
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </template>
-                                </div>
-                            </div>
-
-                            <!-- Format -->
-                            <div>
-                                <h3 class="mb-1 text-sm font-semibold text-base-primary">
-                                    {{ t('gameTables.filters.format') }}
-                                </h3>
-                                <p class="text-base-secondary">
-                                    {{ table.tableFormatLabel }}
-                                </p>
-                            </div>
-
-                            <!-- Table Type -->
-                            <div>
-                                <h3 class="mb-1 text-sm font-semibold text-base-primary">
-                                    {{ t('gameTables.tableType') }}
-                                </h3>
-                                <p class="text-base-secondary">
-                                    {{ table.tableTypeLabel }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Section 3: Capacity -->
-                    <div class="mb-6">
-                        <h2 class="mb-4 text-lg font-semibold text-base-primary">
-                            {{ t('gameTables.capacity') }}
-                        </h2>
-
-                        <!-- Players -->
-                        <div class="mb-4">
-                            <div class="mb-2 flex items-center justify-between text-sm">
-                                <span class="text-base-secondary">
-                                    {{ t('gameTables.roles.players') }}
-                                    <span class="text-base-muted">
-                                        ({{ t('gameTables.playersRequired', { min: table.minPlayers, max: table.maxPlayers }) }})
-                                    </span>
-                                </span>
-                                <span class="font-medium text-base-primary">
-                                    {{ table.currentPlayers }} / {{ table.maxPlayers }}
-                                </span>
-                            </div>
-                            <CapacityBar
-                                :current="table.currentPlayers"
-                                :max="table.maxPlayers"
-                                :label="t('gameTables.roles.players')"
-                                size="md"
-                            />
-                            <p v-if="table.spotsAvailable > 0" class="mt-1 text-sm text-success">
-                                {{ table.spotsAvailable }} {{ t('gameTables.spotsAvailable') }}
-                            </p>
-                            <p v-else class="mt-1 text-sm font-medium text-error">
-                                {{ t('gameTables.full') }}
-                            </p>
-                        </div>
-
-                        <!-- Spectators -->
-                        <div v-if="table.maxSpectators > 0">
-                            <div class="mb-2 flex items-center justify-between text-sm">
-                                <span class="text-base-secondary">
-                                    {{ t('gameTables.roles.spectators') }}
-                                </span>
-                                <span class="font-medium text-base-primary">
-                                    {{ table.currentSpectators }} / {{ table.maxSpectators }}
-                                </span>
-                            </div>
-                            <CapacityBar
-                                :current="table.currentSpectators"
-                                :max="table.maxSpectators"
-                                :label="t('gameTables.roles.spectators')"
-                                tone="info"
-                                size="md"
-                            />
-                            <p v-if="table.spectatorSpotsAvailable > 0" class="mt-1 text-sm text-info">
-                                {{ table.spectatorSpotsAvailable }} {{ t('gameTables.spotsAvailable') }}
-                            </p>
-                            <p v-else class="mt-1 text-sm text-base-muted">
-                                {{ t('gameTables.registration.spectatorsFull') }}
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Section 4: Registration Info (info box; only the icons take the info colour) -->
-                    <div
-                        v-if="hasRegistrationInfo"
-                        class="mb-6 rounded-lg border border-info bg-info-light p-4"
-                    >
-                        <h2 class="mb-3 flex items-center text-lg font-semibold text-base-primary">
-                            <svg
-                                class="mr-2 h-5 w-5 text-info"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                                aria-hidden="true"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                                />
-                            </svg>
-                            {{ t('gameTables.registration.title') }}
-                        </h2>
-
-                        <div class="space-y-2 text-sm text-base-primary">
-                            <p>
-                                <span class="font-medium">{{ t('gameTables.registrationTypeLabel') || 'Tipo' }}:</span>
-                                {{ registrationTypeText }}
-                            </p>
-
-                            <p v-if="table.registrationOpensAt">
-                                <span class="font-medium">{{ t('gameTables.registration.opensAtDate') }}:</span>
-                                {{ formatRegistrationDate(table.registrationOpensAt) }}
-                            </p>
-
-                            <p v-if="table.effectiveRegistrationClosesAt">
-                                <span class="font-medium">{{ t('gameTables.registration.closesAtDate') }}:</span>
-                                {{ formatRegistrationDate(table.effectiveRegistrationClosesAt) }}
-                            </p>
-
-                            <p
-                                v-if="table.membersEarlyAccessDays > 0"
-                                class="flex items-center font-medium text-base-primary"
-                            >
-                                <svg
-                                    class="mr-1 h-4 w-4 text-info"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    aria-hidden="true"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                    />
-                                </svg>
-                                {{ t('gameTables.registration.earlyAccessDays', { days: table.membersEarlyAccessDays }) }}
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Section 5: Synopsis -->
-                    <div v-if="table.synopsis" class="mb-6">
-                        <h2 class="mb-2 text-lg font-semibold text-base-primary">
-                            {{ t('gameTables.content.synopsis') }}
-                        </h2>
-                        <p class="whitespace-pre-line text-base-secondary">
-                            {{ table.synopsis }}
+                        <p v-else class="mt-1 text-sm font-medium text-error">
+                            {{ t('gameTables.full') }}
                         </p>
                     </div>
 
-                    <!-- Section 6: Details -->
-                    <div class="mb-6 space-y-4">
-                        <h2 class="text-lg font-semibold text-base-primary">
-                            {{ t('gameTables.details.gameSystem') }}
-                        </h2>
-
-                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <!-- Experience Level -->
-                            <div v-if="table.experienceLevelLabel">
-                                <h3 class="mb-1 text-sm font-semibold text-base-primary">
-                                    {{ t('gameTables.experienceLevel') }}
-                                </h3>
-                                <p class="text-base-secondary">
-                                    {{ table.experienceLevelLabel }}
-                                </p>
-                            </div>
-
-                            <!-- Character Creation -->
-                            <div v-if="table.characterCreationLabel">
-                                <h3 class="mb-1 text-sm font-semibold text-base-primary">
-                                    {{ t('gameTables.characterCreation') }}
-                                </h3>
-                                <p class="text-base-secondary">
-                                    {{ table.characterCreationLabel }}
-                                </p>
-                            </div>
-
-                            <!-- Language -->
-                            <div v-if="table.languageLabel">
-                                <h3 class="mb-1 text-sm font-semibold text-base-primary">
-                                    {{ t('gameTables.language') }}
-                                </h3>
-                                <p class="text-base-secondary">{{ table.languageLabel }}</p>
-                            </div>
-
-                            <!-- Tone -->
-                            <div v-if="table.toneLabel">
-                                <h3 class="mb-1 text-sm font-semibold text-base-primary">
-                                    {{ t('gameTables.tone') }}
-                                </h3>
-                                <p class="text-base-secondary">{{ table.toneLabel }}</p>
-                            </div>
-
-                            <!-- Minimum Age -->
-                            <div v-if="table.minimumAge">
-                                <h3 class="mb-1 text-sm font-semibold text-base-primary">
-                                    {{ t('gameTables.minimumAge') }}
-                                </h3>
-                                <p class="text-base-secondary">
-                                    {{ t('gameTables.ageRequirement', { age: table.minimumAge }) }}
-                                </p>
-                            </div>
+                    <!-- Spectators -->
+                    <div v-if="table.maxSpectators > 0">
+                        <div class="mb-2 flex items-center justify-between text-sm">
+                            <span class="text-base-secondary">
+                                {{ t('gameTables.roles.spectators') }}
+                            </span>
+                            <span class="font-medium text-base-primary">
+                                {{ table.currentSpectators }} / {{ table.maxSpectators }}
+                            </span>
                         </div>
-
-                        <!-- Genres -->
-                        <div v-if="table.genres.length > 0">
-                            <h3 class="mb-2 text-sm font-semibold text-base-primary">
-                                {{ t('gameTables.genres') }}
-                            </h3>
-                            <div class="flex flex-wrap gap-2">
-                                <span
-                                    v-for="(genre, index) in table.genres"
-                                    :key="index"
-                                    class="rounded-full bg-muted px-3 py-1 text-sm text-base-secondary"
-                                >
-                                    {{ genre }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Section 7: Safety and Warnings -->
-                    <div v-if="hasSafetySection" class="mb-6 space-y-4">
-                        <h2 class="text-lg font-semibold text-base-primary">
-                            {{ t('gameTables.safetyTools') }}
-                        </h2>
-
-                        <!-- Safety Tools -->
-                        <div v-if="table.safetyTools.length > 0">
-                            <div class="flex flex-wrap gap-2">
-                                <SafetyToolBadge
-                                    v-for="(tool, index) in table.safetyTools"
-                                    :key="index"
-                                    :tool="tool"
-                                />
-                            </div>
-                        </div>
-
-                        <!-- Content Warnings -->
-                        <div v-if="table.contentWarnings && table.contentWarnings.length > 0">
-                            <h3 class="mb-2 text-sm font-semibold text-base-primary">
-                                {{ t('gameTables.contentWarnings') }}
-                            </h3>
-                            <div class="flex flex-wrap gap-2">
-                                <ContentWarningBadge
-                                    v-for="(warning, index) in table.contentWarnings"
-                                    :key="index"
-                                    :warning="warning"
-                                />
-                            </div>
-                        </div>
-
-                        <!-- Custom Warnings (highlighted amber) -->
-                        <div
-                            v-if="hasCustomWarnings"
-                            class="rounded-lg border border-warning bg-warning-light p-4"
-                        >
-                            <h3 class="mb-2 flex items-center text-sm font-semibold text-warning">
-                                <svg
-                                    class="mr-2 h-5 w-5 text-warning"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    aria-hidden="true"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                                    />
-                                </svg>
-                                {{ t('gameTables.customWarningsTitle') }}
-                            </h3>
-                            <ul class="list-inside list-disc space-y-1 text-sm text-warning">
-                                <li v-for="(warning, index) in table.customWarnings" :key="index">
-                                    {{ warning }}
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <!-- Section 8: Additional Info -->
-                    <div class="mb-6 space-y-4">
-                        <!-- Campaign -->
-                        <div v-if="table.campaignTitle">
-                            <h3 class="mb-2 text-sm font-semibold text-base-primary">
-                                {{ t('gameTables.campaign') }}
-                            </h3>
-                            <Link
-                                :href="`/campanas/${table.campaignId}`"
-                                class="text-primary hover:underline"
-                            >
-                                {{ table.campaignTitle }}
-                            </Link>
-                        </div>
-
-                        <!-- Notes -->
-                        <div v-if="table.notes">
-                            <h3 class="mb-2 text-sm font-semibold text-base-primary">
-                                {{ t('gameTables.notes') }}
-                            </h3>
-                            <p class="whitespace-pre-line text-base-secondary">
-                                {{ table.notes }}
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Section 9: Module slot for registration actions -->
-                    <div class="mb-6">
-                        <ModuleSlot name="game-table-registration" />
-                    </div>
-
-                    <div class="border-t border-default pt-6">
-                        <Link href="/mesas">
-                            <BaseButton variant="primary">
-                                {{ t('gameTables.viewAll') }}
-                            </BaseButton>
-                        </Link>
+                        <CapacityBar
+                            :current="table.currentSpectators"
+                            :max="table.maxSpectators"
+                            :label="t('gameTables.roles.spectators')"
+                            tone="info"
+                            size="md"
+                        />
+                        <p v-if="table.spectatorSpotsAvailable > 0" class="mt-1 text-sm text-info">
+                            {{ table.spectatorSpotsAvailable }} {{ t('gameTables.spotsAvailable') }}
+                        </p>
+                        <p v-else class="mt-1 text-sm text-base-muted">
+                            {{ t('gameTables.registration.spectatorsFull') }}
+                        </p>
                     </div>
                 </div>
-            </article>
-        </div>
-    </DefaultLayout>
+
+                <!-- Section 4: Registration Info (info box; only the icons take the info colour) -->
+                <div
+                    v-if="hasRegistrationInfo"
+                    class="mb-6 rounded-lg border border-info bg-info-light p-4"
+                >
+                    <h2 class="mb-3 flex items-center text-lg font-semibold text-base-primary">
+                        <Clipboard class="mr-2 h-5 w-5 text-info" aria-hidden="true" />
+                        {{ t('gameTables.registration.title') }}
+                    </h2>
+
+                    <div class="space-y-2 text-sm text-base-primary">
+                        <p>
+                            <span class="font-medium">{{ t('gameTables.registrationTypeLabel') || 'Tipo' }}:</span>
+                            {{ registrationTypeText }}
+                        </p>
+
+                        <p v-if="table.registrationOpensAt">
+                            <span class="font-medium">{{ t('gameTables.registration.opensAtDate') }}:</span>
+                            {{ formatRegistrationDate(table.registrationOpensAt) }}
+                        </p>
+
+                        <p v-if="table.effectiveRegistrationClosesAt">
+                            <span class="font-medium">{{ t('gameTables.registration.closesAtDate') }}:</span>
+                            {{ formatRegistrationDate(table.effectiveRegistrationClosesAt) }}
+                        </p>
+
+                        <p
+                            v-if="table.membersEarlyAccessDays > 0"
+                            class="flex items-center font-medium text-base-primary"
+                        >
+                            <Clock class="mr-1 h-4 w-4 text-info" aria-hidden="true" />
+                            {{ t('gameTables.registration.earlyAccessDays', { days: table.membersEarlyAccessDays }) }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Section 5: Synopsis -->
+                <div v-if="table.synopsis" class="mb-6">
+                    <h2 class="mb-2 text-lg font-semibold text-base-primary">
+                        {{ t('gameTables.content.synopsis') }}
+                    </h2>
+                    <p class="whitespace-pre-line text-base-secondary">
+                        {{ table.synopsis }}
+                    </p>
+                </div>
+
+                <!-- Section 6: Details -->
+                <div class="mb-6 space-y-4">
+                    <h2 class="text-lg font-semibold text-base-primary">
+                        {{ t('gameTables.details.gameSystem') }}
+                    </h2>
+
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <!-- Experience Level -->
+                        <div v-if="table.experienceLevelLabel">
+                            <h3 class="mb-1 text-sm font-semibold text-base-primary">
+                                {{ t('gameTables.experienceLevel') }}
+                            </h3>
+                            <p class="text-base-secondary">
+                                {{ table.experienceLevelLabel }}
+                            </p>
+                        </div>
+
+                        <!-- Character Creation -->
+                        <div v-if="table.characterCreationLabel">
+                            <h3 class="mb-1 text-sm font-semibold text-base-primary">
+                                {{ t('gameTables.characterCreation') }}
+                            </h3>
+                            <p class="text-base-secondary">
+                                {{ table.characterCreationLabel }}
+                            </p>
+                        </div>
+
+                        <!-- Language -->
+                        <div v-if="table.languageLabel">
+                            <h3 class="mb-1 text-sm font-semibold text-base-primary">
+                                {{ t('gameTables.language') }}
+                            </h3>
+                            <p class="text-base-secondary">{{ table.languageLabel }}</p>
+                        </div>
+
+                        <!-- Tone -->
+                        <div v-if="table.toneLabel">
+                            <h3 class="mb-1 text-sm font-semibold text-base-primary">
+                                {{ t('gameTables.tone') }}
+                            </h3>
+                            <p class="text-base-secondary">{{ table.toneLabel }}</p>
+                        </div>
+
+                        <!-- Minimum Age -->
+                        <div v-if="table.minimumAge">
+                            <h3 class="mb-1 text-sm font-semibold text-base-primary">
+                                {{ t('gameTables.minimumAge') }}
+                            </h3>
+                            <p class="text-base-secondary">
+                                {{ t('gameTables.ageRequirement', { age: table.minimumAge }) }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Genres -->
+                    <div v-if="table.genres.length > 0">
+                        <h3 class="mb-2 text-sm font-semibold text-base-primary">
+                            {{ t('gameTables.genres') }}
+                        </h3>
+                        <div class="flex flex-wrap gap-2">
+                            <span
+                                v-for="(genre, index) in table.genres"
+                                :key="index"
+                                class="rounded-full bg-muted px-3 py-1 text-sm text-base-secondary"
+                            >
+                                {{ genre }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 7: Safety and Warnings -->
+                <div v-if="hasSafetySection" class="mb-6 space-y-4">
+                    <h2 class="text-lg font-semibold text-base-primary">
+                        {{ t('gameTables.safetyTools') }}
+                    </h2>
+
+                    <!-- Safety Tools -->
+                    <div v-if="table.safetyTools.length > 0">
+                        <div class="flex flex-wrap gap-2">
+                            <SafetyToolBadge
+                                v-for="(tool, index) in table.safetyTools"
+                                :key="index"
+                                :tool="tool"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Content Warnings -->
+                    <div v-if="table.contentWarnings && table.contentWarnings.length > 0">
+                        <h3 class="mb-2 text-sm font-semibold text-base-primary">
+                            {{ t('gameTables.contentWarnings') }}
+                        </h3>
+                        <div class="flex flex-wrap gap-2">
+                            <ContentWarningBadge
+                                v-for="(warning, index) in table.contentWarnings"
+                                :key="index"
+                                :warning="warning"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Custom Warnings (highlighted amber) -->
+                    <div
+                        v-if="hasCustomWarnings"
+                        class="rounded-lg border border-warning bg-warning-light p-4"
+                    >
+                        <h3 class="mb-2 flex items-center text-sm font-semibold text-warning">
+                            <TriangleAlert class="mr-2 h-5 w-5 text-warning" aria-hidden="true" />
+                            {{ t('gameTables.customWarningsTitle') }}
+                        </h3>
+                        <ul class="list-inside list-disc space-y-1 text-sm text-warning">
+                            <li v-for="(warning, index) in table.customWarnings" :key="index">
+                                {{ warning }}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Section 8: Additional Info -->
+                <div class="mb-6 space-y-4">
+                    <!-- Campaign -->
+                    <div v-if="table.campaignTitle">
+                        <h3 class="mb-2 text-sm font-semibold text-base-primary">
+                            {{ t('gameTables.campaign') }}
+                        </h3>
+                        <Link
+                            :href="`/campanas/${table.campaignId}`"
+                            class="text-primary hover:underline"
+                        >
+                            {{ table.campaignTitle }}
+                        </Link>
+                    </div>
+
+                    <!-- Notes -->
+                    <div v-if="table.notes">
+                        <h3 class="mb-2 text-sm font-semibold text-base-primary">
+                            {{ t('gameTables.notes') }}
+                        </h3>
+                        <p class="whitespace-pre-line text-base-secondary">
+                            {{ table.notes }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Section 9: Module slot for registration actions -->
+                <div class="mb-6">
+                    <ModuleSlot name="game-table-registration" />
+                </div>
+
+                <div class="border-t border-default pt-6">
+                    <Link href="/mesas">
+                        <BaseButton variant="primary">
+                            {{ t('gameTables.viewAll') }}
+                        </BaseButton>
+                    </Link>
+                </div>
+            </div>
+        </article>
+    </div>
 </template>

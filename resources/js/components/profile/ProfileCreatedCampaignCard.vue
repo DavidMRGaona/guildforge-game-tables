@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { CircleArrowRight, Clock, Users } from '@lucide/vue';
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
@@ -79,17 +80,13 @@ const playersText = computed(() => {
                 <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-base-muted">
                     <!-- Frequency -->
                     <span v-if="campaign.frequencyLabel" class="flex items-center gap-1">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+                        <Clock class="h-4 w-4" aria-hidden="true" />
                         {{ campaign.frequencyLabel }}
                     </span>
 
                     <!-- Players -->
                     <span class="flex items-center gap-1">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                        </svg>
+                        <Users class="h-4 w-4" aria-hidden="true" />
                         {{ playersText }} {{ t('campaigns.profile.players') }}
                     </span>
 
@@ -98,9 +95,7 @@ const playersText = computed(() => {
                         v-if="campaign.isRecruiting"
                         class="inline-flex items-center gap-1 rounded-full bg-success-light px-2 py-0.5 text-xs font-medium text-base-primary"
                     >
-                        <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" />
-                        </svg>
+                        <CircleArrowRight class="h-3 w-3" aria-hidden="true" />
                         {{ t('campaigns.profile.recruiting') }}
                     </span>
                 </div>

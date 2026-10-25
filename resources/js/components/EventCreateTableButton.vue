@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Clock, Plus, Star, User } from '@lucide/vue';
 import { computed } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
@@ -127,10 +128,7 @@ const createTableUrl = computed(() => {
         button-class="inline-flex items-center gap-2 rounded-lg border border-primary-500/30 bg-primary-500/10 px-4 py-2.5 text-sm font-medium text-primary"
     >
         <!-- Plus icon -->
-        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
+        <Plus class="h-4 w-4" aria-hidden="true" />
         <span>{{ t('gameTables.eventActions.createTable') }}</span>
     </VerificationBlockedButton>
 
@@ -141,10 +139,7 @@ const createTableUrl = computed(() => {
         class="inline-flex items-center gap-2 rounded-lg border border-primary-500/30 bg-primary-500/10 px-4 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary-500/20 hover:underline"
     >
         <!-- Plus icon -->
-        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
+        <Plus class="h-4 w-4" aria-hidden="true" />
         <span>{{ t('gameTables.eventActions.createTable') }}</span>
     </Link>
 
@@ -156,15 +151,10 @@ const createTableUrl = computed(() => {
     >
         <span class="flex items-center gap-2 font-medium text-base-primary">
             <!-- Star icon -->
-            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-            </svg>
+            <Star class="h-4 w-4" aria-hidden="true" />
             <span>{{ t('gameTables.eventActions.earlyAccessForMembers') }}</span>
             <!-- Clock icon -->
-            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-            </svg>
+            <Clock class="h-4 w-4" aria-hidden="true" />
         </span>
         <span class="text-info">
             {{ t('gameTables.eventActions.generalOpeningAt', { date: formattedPublicDate }) }}
@@ -178,10 +168,7 @@ const createTableUrl = computed(() => {
         role="status"
     >
         <!-- Clock icon -->
-        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="12 6 12 12 16 14" />
-        </svg>
+        <Clock class="h-4 w-4" aria-hidden="true" />
         <span>{{ t('gameTables.eventActions.publicOpeningAt', { date: formattedUserDate }) }}</span>
     </div>
 
@@ -192,14 +179,9 @@ const createTableUrl = computed(() => {
         role="status"
     >
         <!-- Star icon -->
-        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-        </svg>
+        <Star class="h-4 w-4" aria-hidden="true" />
         <!-- Clock icon -->
-        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="12 6 12 12 16 14" />
-        </svg>
+        <Clock class="h-4 w-4" aria-hidden="true" />
         <span>{{ t('gameTables.eventActions.earlyAccessActiveFrom', { date: formattedUserDate }) }}</span>
     </div>
 
@@ -210,10 +192,7 @@ const createTableUrl = computed(() => {
         role="status"
     >
         <!-- Clock icon -->
-        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="12 6 12 12 16 14" />
-        </svg>
+        <Clock class="h-4 w-4" aria-hidden="true" />
         <span>{{ t('gameTables.eventActions.creationOpensAt', { date: formattedUserDate }) }}</span>
     </div>
 
@@ -224,10 +203,7 @@ const createTableUrl = computed(() => {
         class="inline-flex items-center gap-2 rounded-lg border border-default bg-base-secondary/10 px-4 py-2.5 text-sm font-medium text-base-secondary transition-colors hover:bg-base-secondary/20 hover:underline"
     >
         <!-- User icon -->
-        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-        </svg>
+        <User class="h-4 w-4" aria-hidden="true" />
         <span>{{ t('gameTables.eventActions.loginToCreate') }}</span>
     </Link>
 </template>

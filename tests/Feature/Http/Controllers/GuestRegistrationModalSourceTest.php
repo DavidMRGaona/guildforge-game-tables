@@ -9,7 +9,8 @@ use PHPUnit\Framework\TestCase;
 /**
  * The module has no Vue test harness: these tests read the guest sign-up modal. A guest accepts the
  * privacy policy there (the GDPR consent of the sign-up), so its link must open the real policy page,
- * and the modal must behave as a dialog for keyboard and screen reader users.
+ * taken from the core's routes, and the modal must behave as a dialog for keyboard and screen reader
+ * users.
  */
 final class GuestRegistrationModalSourceTest extends TestCase
 {
@@ -22,9 +23,11 @@ final class GuestRegistrationModalSourceTest extends TestCase
     {
         $source = $this->source();
 
-        // The core serves the policy at /politica-de-privacidad (route legal.show); /privacidad is a 404
-        $this->assertStringContainsString('href="/politica-de-privacidad"', $source);
-        $this->assertStringNotContainsString('href="/privacidad"', $source);
+        // The URL comes from the core's routes, checked there against the legal.show route; a
+        // hand-written path went stale once (/privacidad, a 404)
+        $this->assertStringContainsString("import { useRoutes } from '@/composables/useRoutes';", $source);
+        $this->assertStringContainsString(':href="routes.legal.privacy"', $source);
+        $this->assertStringNotContainsString('href="/', $source);
     }
 
     public function test_the_modal_is_a_native_modal_dialog_named_by_its_heading(): void

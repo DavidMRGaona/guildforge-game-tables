@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Calendar } from '@lucide/vue';
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
@@ -80,20 +81,7 @@ const formattedTime = computed(() => {
                     v-if="formattedDate"
                     class="mt-2 flex items-center gap-1.5 text-sm text-base-muted"
                 >
-                    <svg
-                        class="h-4 w-4 shrink-0"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
-                    </svg>
+                    <Calendar class="h-4 w-4 shrink-0" aria-hidden="true" />
                     <span>{{ formattedDate }}</span>
                     <span v-if="formattedTime" class="text-base-secondary">&middot;</span>
                     <span v-if="formattedTime">{{ formattedTime }}</span>

@@ -8,6 +8,8 @@ const TRIGGER_FOCUS_HANDOFF_MS = 5000;
 </script>
 
 <script setup lang="ts">
+import { Lock, TriangleAlert } from '@lucide/vue';
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue';
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Link, usePage, router } from '@inertiajs/vue3';
@@ -701,25 +703,11 @@ function cancelRoleSelect(): void {
                                             @click="submitWithNotes"
                                         >
                                             <span v-if="loading" class="flex items-center justify-center">
-                                                <svg
-                                                    class="mr-2 h-4 w-4 animate-spin"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                >
-                                                    <circle
-                                                        class="opacity-25"
-                                                        cx="12"
-                                                        cy="12"
-                                                        r="10"
-                                                        stroke="currentColor"
-                                                        stroke-width="4"
-                                                    ></circle>
-                                                    <path
-                                                        class="opacity-75"
-                                                        fill="currentColor"
-                                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                                    ></path>
-                                                </svg>
+                                                <LoadingSpinner
+                                                    class="mr-2"
+                                                    size="sm"
+                                                    color="text-current"
+                                                />
                                             </span>
                                             <span v-else>{{ $t('buttons.confirm') }}</span>
                                         </button>
@@ -746,20 +734,7 @@ function cancelRoleSelect(): void {
                 v-if="showsClosedNotice"
                 class="flex items-start gap-2 rounded-lg border border-default bg-muted px-4 py-3 text-left text-sm text-base-primary"
             >
-                <svg
-                    class="mt-0.5 h-4 w-4 flex-shrink-0 text-base-secondary"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                    />
-                </svg>
+                <Lock class="mt-0.5 h-4 w-4 flex-shrink-0 text-base-secondary" aria-hidden="true" />
                 <span>{{ buttonText }}</span>
             </p>
 
@@ -788,25 +763,7 @@ function cancelRoleSelect(): void {
                 @click="handleClick"
             >
                 <span v-if="loading" class="flex items-center justify-center">
-                    <svg
-                        class="mr-2 h-5 w-5 animate-spin"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                    >
-                        <circle
-                            class="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            stroke-width="4"
-                        ></circle>
-                        <path
-                            class="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                    </svg>
+                    <LoadingSpinner class="mr-2" size="sm" color="text-current" />
                     {{ $t('common.loading') }}
                 </span>
                 <span v-else>{{ buttonText }}</span>
@@ -901,19 +858,7 @@ function cancelRoleSelect(): void {
                             >
                                 <!-- Icon -->
                                 <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-error-light">
-                                    <svg
-                                        class="h-6 w-6 text-error"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                                        />
-                                    </svg>
+                                    <TriangleAlert class="h-6 w-6 text-error" aria-hidden="true" />
                                 </div>
 
                                 <!-- Title -->

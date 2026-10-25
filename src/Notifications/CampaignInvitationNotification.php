@@ -68,7 +68,7 @@ final class CampaignInvitationNotification extends Notification implements Shoul
             $message->line($this->plainLine($paragraph));
         }
 
-        return $message->line(__('game-tables::emails.campaign_invitation.privacy_policy', ['url' => url('/politica-de-privacidad')]));
+        return $message->line(__('game-tables::emails.campaign_invitation.privacy_policy', ['url' => route('legal.show', ['slug' => 'politica-de-privacidad'])]));
     }
 
     /**
