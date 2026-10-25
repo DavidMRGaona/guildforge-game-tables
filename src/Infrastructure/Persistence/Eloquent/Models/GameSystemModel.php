@@ -22,8 +22,8 @@ use Illuminate\Support\Carbon;
  * @property string|null $website_url
  * @property string $game_master_title
  * @property bool $is_active
- * @property Carbon $created_at
- * @property Carbon $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property-read PublisherModel|null $publisher
  */
 final class GameSystemModel extends Model

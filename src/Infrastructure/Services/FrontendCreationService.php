@@ -241,7 +241,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
 
         // 5. Get game system name for response
         $gameSystem = $this->gameSystemRepository->find(new GameSystemId($dto->gameSystemId));
-        $gameSystemName = $gameSystem?->name ?? '';
+        $gameSystemName = $gameSystem->name ?? '';
 
         return CampaignResponseDTO::fromEntity($campaign, $gameSystemName);
     }
@@ -322,13 +322,13 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             'genres' => Genre::options(),
             'languages' => Language::options(),
             'campaign_frequencies' => CampaignFrequency::options(),
-            'events' => $events->map(
+            'events' => array_values($events->map(
                 static fn ($event): array => [
                     'id' => $event->id()->value,
                     'name' => $event->title(),
                     'start_date' => $event->startDate()->format('Y-m-d\TH:i'),
                 ],
-            )->values()->all(),
+            )->all()),
             'campaigns' => $campaigns,
             'defaults' => [
                 'duration_minutes' => $this->settingsReader->defaultDurationMinutes(),
@@ -349,10 +349,9 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
      */
     public function selectableEventIds(): array
     {
-        return $this->selectableEvents()
+        return array_values($this->selectableEvents()
             ->map(static fn (Event $event): string => $event->id()->value)
-            ->values()
-            ->all();
+            ->all());
     }
 
     public function eventCreationEligibility(string $eventId, ?string $userId): CreationEligibilityDTO
@@ -445,7 +444,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
                 id: $model->id,
                 title: $model->title,
                 slug: (string) $model->slug,
-                startsAt: $model->starts_at?->format('c'),
+                startsAt: $model->starts_at->format('c'),
                 status: $model->status->value,
                 statusLabel: $model->status->label(),
                 statusColor: $model->status->color(),
@@ -454,7 +453,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             );
         })->values()->all();
 
-        return ['drafts' => $this->getUserDrafts($userId), 'published' => $published];
+        return ['drafts' => array_values($this->getUserDrafts($userId)), 'published' => array_values($published)];
     }
 
     public function submitForReview(string $tableId, string $userId): void
@@ -497,7 +496,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             GameTableSubmittedForReview::dispatch(
                 $table->id->value,
                 $table->title,
-                $table->createdBy ?? '',
+                $table->createdBy,
             );
         }
     }
@@ -618,8 +617,8 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         $record = $this->authorsSharedRecord($authorId);
 
         return [
-            'phone' => $record?->phone ?? '',
-            'custom_title' => $record?->custom_title ?? '',
+            'phone' => $record->phone ?? '',
+            'custom_title' => $record->custom_title ?? '',
             'is_name_public' => $record instanceof GameMasterModel ? (bool) $record->is_name_public : true,
         ];
     }
@@ -668,7 +667,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         GameTableModerationApproved::dispatch(
             $table->id->value,
             $table->title,
-            $table->createdBy ?? '',
+            $table->createdBy,
             $notes,
         );
     }
@@ -691,7 +690,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         GameTableModerationRejected::dispatch(
             $table->id->value,
             $table->title,
-            $table->createdBy ?? '',
+            $table->createdBy,
             $reason,
         );
     }
@@ -714,7 +713,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             function (Campaign $campaign): CampaignResponseDTO {
                 $gameSystem = $this->gameSystemRepository->find($campaign->gameSystemId);
 
-                return CampaignResponseDTO::fromEntity($campaign, $gameSystem?->name ?? '');
+                return CampaignResponseDTO::fromEntity($campaign, $gameSystem->name ?? '');
             },
             array_values($draftCampaigns),
         );
@@ -757,7 +756,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
                 $campaign->createdAt,
                 CampaignResponseDTO::fromEntity(
                     $campaign,
-                    $gameSystem?->name ?? '',
+                    $gameSystem->name ?? '',
                     currentPlayers: $isDirected ? ($players[$id] ?? 0) : 0,
                     pendingRequests: $isDirected ? ($pending[$id] ?? 0) : 0,
                     directedByViewer: $isDirected,
@@ -811,7 +810,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
 
         $gameSystem = $this->gameSystemRepository->find($campaign->gameSystemId);
 
-        return CampaignResponseDTO::fromEntity($campaign, $gameSystem?->name ?? '');
+        return CampaignResponseDTO::fromEntity($campaign, $gameSystem->name ?? '');
     }
 
     public function submitCampaignForReview(string $campaignId, string $userId): void

@@ -20,8 +20,8 @@ use Modules\GameTables\Domain\Enums\JoinRequestStatus;
  * @property string|null $decision_reason
  * @property string|null $decided_by
  * @property Carbon|null $decided_at
- * @property Carbon $created_at
- * @property Carbon $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 final class CampaignJoinRequestModel extends Model
 {

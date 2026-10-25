@@ -8,7 +8,11 @@ use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Auth;
 use Modules\GameTables\Application\Services\GameMasterServiceInterface;
 use Modules\GameTables\Filament\Resources\CampaignResource;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 
+/**
+ * @property CampaignModel $record
+ */
 final class CreateCampaign extends CreateRecord
 {
     protected static string $resource = CampaignResource::class;

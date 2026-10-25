@@ -78,11 +78,20 @@ final readonly class SeatCounter
             'participants as '.self::CONFIRMED_PLAYERS => fn (Builder $participants): Builder => $participants
                 ->where('role', ParticipantRole::Player->value)
                 ->where('status', ParticipantStatus::Confirmed->value),
-            'participants as '.self::PENDING_PLAYERS => fn (Builder $participants): Builder => $participants
-                ->where('role', ParticipantRole::Player->value)
-                ->where('status', ParticipantStatus::Pending->value)
-                ->holdingOrConfirmed(),
+            'participants as '.self::PENDING_PLAYERS => self::pendingPlayersHoldingASeat(...),
         ]);
+    }
+
+    /**
+     * @param  Builder<ParticipantModel>  $participants
+     * @return Builder<ParticipantModel>
+     */
+    private static function pendingPlayersHoldingASeat(Builder $participants): Builder
+    {
+        return $participants
+            ->where('role', ParticipantRole::Player->value)
+            ->where('status', ParticipantStatus::Pending->value)
+            ->holdingOrConfirmed();
     }
 
     /**

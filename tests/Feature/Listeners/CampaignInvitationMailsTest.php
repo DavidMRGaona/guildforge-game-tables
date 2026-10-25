@@ -136,7 +136,7 @@ final class CampaignInvitationMailsTest extends ModuleTestCase
 
     private function invitationText(): string
     {
-        $mail = (new CampaignInvitationNotification('John <b>Doe</b>', 'Campaña de prueba', 'campana-de-prueba', 'guest@example.com', self::TOKEN, '04/11/2026'))
+        $mail = (new CampaignInvitationNotification('John <b>Doe</b>', 'Campaña de prueba', 'campana-de-prueba', self::TOKEN, '04/11/2026'))
             ->toMail(new AnonymousNotifiable);
 
         return implode("\n", array_map('strval', $mail->introLines))."\n".implode("\n", array_map('strval', $mail->outroLines));

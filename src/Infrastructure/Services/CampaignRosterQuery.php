@@ -194,7 +194,7 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
             closed: $closed,
             isRosterMember: true,
             rosterState: $state,
-            waitingListPosition: $state === 'waiting' && $row instanceof Participant ? $this->participants->getWaitingListRank($row->id) : null,
+            waitingListPosition: $state === 'waiting' ? $this->participants->getWaitingListRank($row->id) : null,
             canRejoin: $canRejoin,
             rejoinRefusal: $refusal,
         );
@@ -280,7 +280,7 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
      */
     private function members(CampaignId $campaignId): array
     {
-        return DB::table('gametables_campaign_players as p')
+        return array_values(DB::table('gametables_campaign_players as p')
             ->join('users', 'users.id', '=', 'p.user_id')
             ->whereNull('users.anonymized_at')
             ->where('p.campaign_id', $campaignId->value)
@@ -292,8 +292,7 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
                 'name' => (string) $row->name,
                 'joined_at' => $row->created_at !== null ? CarbonImmutable::parse((string) $row->created_at)->format('d/m/Y') : null,
             ])
-            ->values()
-            ->all();
+            ->all());
     }
 
     /**

@@ -118,7 +118,7 @@ final class GameMasterService implements GameMasterServiceInterface
             ->where('gametables_game_masters.id', $gameMasterId)
             ->first();
 
-        return $pivot !== null && $pivot->pivot->excluded;
+        return $pivot !== null && (bool) $pivot->pivot->getAttribute('excluded');
     }
 
     public function removeFromCampaign(string $campaignId, string $gameMasterId): void
@@ -162,7 +162,7 @@ final class GameMasterService implements GameMasterServiceInterface
         $gameMaster->fill($fillableData);
         $gameMaster->save();
 
-        return $gameMaster->fresh();
+        return $gameMaster->refresh();
     }
 
     public function syncCampaignGameMasters(string $campaignId, array $gameMastersData): void
@@ -302,7 +302,7 @@ final class GameMasterService implements GameMasterServiceInterface
 
         // If an ID is provided and exists, return that GM
         if (! empty($data['id'])) {
-            $existing = GameMasterModel::find($data['id']);
+            $existing = GameMasterModel::query()->find((string) $data['id']);
             if ($existing !== null) {
                 return $existing;
             }

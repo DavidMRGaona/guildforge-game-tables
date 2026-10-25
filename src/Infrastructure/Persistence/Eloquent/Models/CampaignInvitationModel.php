@@ -20,8 +20,8 @@ use Illuminate\Support\Carbon;
  * @property Carbon $expires_at
  * @property int $send_count
  * @property Carbon $last_sent_at
- * @property Carbon $created_at
- * @property Carbon $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 final class CampaignInvitationModel extends Model
 {

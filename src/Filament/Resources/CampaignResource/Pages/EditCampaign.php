@@ -79,7 +79,7 @@ final class EditCampaign extends EditRecord
         // Sync game masters using the service
         /** @var GameMasterServiceInterface $gameMasterService */
         $gameMasterService = app(GameMasterServiceInterface::class);
-        $gameMasterService->syncCampaignGameMasters($record->id, $gameMastersData);
+        $gameMasterService->syncCampaignGameMasters((string) $record->getKey(), $gameMastersData);
 
         return $record;
     }

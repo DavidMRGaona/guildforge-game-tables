@@ -48,8 +48,9 @@ final readonly class EventCreationEligibilityService implements EventCreationEli
         }
 
         // If event has an eligibility override, use it
-        if ($config->hasEligibilityOverride()) {
-            return $this->checkWithOverride($config->eligibilityOverride(), $userId);
+        $override = $config->eligibilityOverride();
+        if ($override instanceof EligibilityOverride) {
+            return $this->checkWithOverride($override, $userId);
         }
 
         // Event has tables enabled but no specific override.
@@ -155,7 +156,6 @@ final readonly class EventCreationEligibilityService implements EventCreationEli
             CreationAccessLevel::Registered => $this->checkRegisteredAccess($userId),
             CreationAccessLevel::Role => $this->checkRoleAccess($userId, $override->allowedRoles ?? []),
             CreationAccessLevel::Permission => $this->checkPermissionAccess($userId, $override->requiredPermission ?? ''),
-            default => CreationEligibilityDTO::notEligible('invalid_access_level'),
         };
     }
 

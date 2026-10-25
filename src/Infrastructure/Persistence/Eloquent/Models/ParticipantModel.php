@@ -34,12 +34,13 @@ use Modules\GameTables\Domain\Enums\ParticipantStatus;
  * @property Carbon|null $confirmation_expires_at
  * @property string|null $confirmation_token
  * @property Carbon|null $confirmation_sent_at
+ * @property Carbon|null $reminder_sent_at
  * @property GuestConfirmationMode|null $confirmation_mode
  * @property string|null $fingerprint
  * @property bool $from_roster
  * @property ParticipantCancellationReason|null $cancellation_reason
- * @property Carbon $created_at
- * @property Carbon $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property-read UserModel|null $user
  * @property-read GameTableModel $gameTable
  */

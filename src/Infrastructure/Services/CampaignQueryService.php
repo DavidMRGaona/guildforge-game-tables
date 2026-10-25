@@ -81,6 +81,7 @@ final readonly class CampaignQueryService implements CampaignQueryServiceInterfa
 
     /**
      * @param  array<string>|null  $gameSystemIds
+     * @return Builder<CampaignModel>
      */
     private function buildQuery(
         ?array $gameSystemIds = null,
@@ -118,9 +119,9 @@ final readonly class CampaignQueryService implements CampaignQueryServiceInterfa
             slug: $campaign->slug,
             description: $campaign->description,
             gameSystemId: $campaign->game_system_id,
-            gameSystemName: $campaign->gameSystem?->name ?? '',
+            gameSystemName: $campaign->gameSystem->name ?? '',
             createdBy: $campaign->created_by,
-            creatorName: $campaign->creator?->name ?? '',
+            creatorName: $campaign->creator->name ?? '',
             status: $campaign->status,
             frequency: $campaign->frequency,
             maxPlayers: $campaign->max_players,
@@ -160,9 +161,9 @@ final readonly class CampaignQueryService implements CampaignQueryServiceInterfa
             slug: $campaign->slug,
             description: $campaign->description,
             gameSystemId: $campaign->game_system_id,
-            gameSystemName: $campaign->gameSystem?->name ?? '',
+            gameSystemName: $campaign->gameSystem->name ?? '',
             createdBy: $campaign->created_by,
-            creatorName: $campaign->creator?->name ?? '',
+            creatorName: $campaign->creator->name ?? '',
             status: $campaign->status,
             frequency: $campaign->frequency,
             maxPlayers: $campaign->max_players,
@@ -190,18 +191,18 @@ final readonly class CampaignQueryService implements CampaignQueryServiceInterfa
         $mainGameMasterName = '';
         if ($mainGm !== null) {
             $mainGameMasterName = $mainGm->is_name_public
-                ? ($mainGm->user?->name ?? $mainGm->external_name ?? '')
+                ? ($mainGm->user->name ?? $mainGm->external_name ?? '')
                 : '';
         }
         if ($mainGameMasterName === '') {
-            $mainGameMasterName = $table->creator?->name ?? '';
+            $mainGameMasterName = $table->creator->name ?? '';
         }
 
         return new GameTableListDTO(
             id: $table->id,
             title: $table->title,
             slug: $table->slug,
-            gameSystemName: $table->gameSystem?->name ?? '',
+            gameSystemName: $table->gameSystem->name ?? '',
             startsAt: $table->starts_at,
             durationMinutes: $table->duration_minutes,
             tableFormat: $table->table_format,
@@ -214,7 +215,7 @@ final readonly class CampaignQueryService implements CampaignQueryServiceInterfa
             // The taken seats the table page shows
             currentPlayers: $this->seatCounter->takenPlayerSeatsOf($table),
             isPublished: $table->is_published,
-            creatorName: $table->creator?->name ?? '',
+            creatorName: $table->creator->name ?? '',
             mainGameMasterName: $mainGameMasterName,
             eventId: $table->event_id,
             eventTitle: $table->event?->title,
@@ -230,7 +231,7 @@ final readonly class CampaignQueryService implements CampaignQueryServiceInterfa
         return $campaign->gameTables->contains(function (GameTableModel $table) use ($now): bool {
             $isScheduled = $table->status === TableStatus::Scheduled;
             $isInProgress = $table->status === TableStatus::InProgress;
-            $isFuture = $table->starts_at !== null && $table->starts_at >= $now;
+            $isFuture = $table->starts_at >= $now;
 
             return ($isScheduled && $isFuture) || $isInProgress;
         });

@@ -29,7 +29,6 @@ final class CampaignInvitationNotification extends Notification implements Shoul
         private readonly string $inviterName,
         private readonly string $campaignTitle,
         private readonly string $campaignSlug,
-        private readonly string $email,
         private readonly string $token,
         private readonly string $expiresAt,
         private readonly ?string $legalText = null,

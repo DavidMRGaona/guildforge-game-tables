@@ -19,8 +19,8 @@ use Modules\GameTables\Domain\Enums\WarningSeverity;
  * @property WarningSeverity $severity
  * @property string|null $icon
  * @property bool $is_active
- * @property Carbon $created_at
- * @property Carbon $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 final class ContentWarningModel extends Model
 {

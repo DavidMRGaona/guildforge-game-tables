@@ -121,8 +121,6 @@ final class CampaignInvitationController extends Controller
     {
         try {
             $this->invitations->reject($token);
-        } catch (CampaignNotFoundException) {
-            abort(404);
         } catch (RosterActionRefusedException $e) {
             return redirect()->route('campaigns.invitation.show', $token)->with('error', $e->getMessage());
         }

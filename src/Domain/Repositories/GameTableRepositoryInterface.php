@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\GameTables\Domain\Repositories;
 
 use DateTimeImmutable;
-use Illuminate\Support\Collection;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Exceptions\GameTableNotFoundException;
@@ -93,15 +92,4 @@ interface GameTableRepositoryInterface
      * Returns the model (not entity) to support eager loading for read scenarios.
      */
     public function findPublishedModelBySlugWithRelations(string $slug): ?object;
-
-    /**
-     * Get published game table models within a date range for calendar view.
-     * Returns models (not entities) to support eager loading for read scenarios.
-     *
-     * @return Collection<int, object>
-     */
-    public function getPublishedModelsInDateRange(
-        \DateTimeInterface $from,
-        \DateTimeInterface $to,
-    ): Collection;
 }

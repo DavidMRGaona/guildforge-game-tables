@@ -53,7 +53,6 @@ final readonly class CreationEligibilityService implements CreationEligibilitySe
             CreationAccessLevel::Registered => $this->checkRegisteredAccess($userId),
             CreationAccessLevel::Role => $this->checkRoleAccess($userId),
             CreationAccessLevel::Permission => $this->checkPermissionAccess($userId),
-            default => CreationEligibilityDTO::notEligible('invalid_access_level'),
         };
     }
 
@@ -92,7 +91,6 @@ final readonly class CreationEligibilityService implements CreationEligibilitySe
             CreationAccessLevel::Registered => $this->checkRegisteredAccessForCampaign($userId),
             CreationAccessLevel::Role => $this->checkRoleAccessForCampaign($userId),
             CreationAccessLevel::Permission => $this->checkPermissionAccessForCampaign($userId),
-            default => CreationEligibilityDTO::notEligible('invalid_access_level'),
         };
     }
 

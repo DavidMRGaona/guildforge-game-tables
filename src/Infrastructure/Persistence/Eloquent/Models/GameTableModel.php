@@ -67,8 +67,8 @@ use Modules\GameTables\Domain\Enums\Tone;
  * @property string|null $image_public_id
  * @property FrontendCreationStatus|null $frontend_creation_status
  * @property string|null $moderation_notes
- * @property Carbon $created_at
- * @property Carbon $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 final class GameTableModel extends Model
 {

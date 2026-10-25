@@ -68,9 +68,9 @@ final class CampaignResource extends BaseResource
         return self::userCan('gametables:campaigns.update');
     }
 
-    public static function getNavigationGroup(): ?string
+    public static function getNavigationGroup(): string
     {
-        return __('game-tables::messages.navigation.group');
+        return (string) __('game-tables::messages.navigation.group');
     }
 
     public static function getNavigationLabel(): string

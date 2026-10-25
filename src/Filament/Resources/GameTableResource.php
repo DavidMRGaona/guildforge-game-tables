@@ -88,9 +88,9 @@ final class GameTableResource extends BaseResource
         return self::userCan('gametables:gametables.update');
     }
 
-    public static function getNavigationGroup(): ?string
+    public static function getNavigationGroup(): string
     {
-        return __('game-tables::messages.navigation.group');
+        return (string) __('game-tables::messages.navigation.group');
     }
 
     public static function getNavigationLabel(): string
@@ -602,6 +602,7 @@ final class GameTableResource extends BaseResource
                             $skipped = false;
                             $refused = false;
 
+                            /** @var GameTableModel $record */
                             foreach ($records as $record) {
                                 // Only what the author sent to review: never a draft or an approved table
                                 if ($record->frontend_creation_status === FrontendCreationStatus::PendingReview) {
@@ -647,6 +648,7 @@ final class GameTableResource extends BaseResource
                             $rejectedCount = 0;
                             $skipped = false;
 
+                            /** @var GameTableModel $record */
                             foreach ($records as $record) {
                                 if ($record->frontend_creation_status === FrontendCreationStatus::PendingReview) {
                                     try {

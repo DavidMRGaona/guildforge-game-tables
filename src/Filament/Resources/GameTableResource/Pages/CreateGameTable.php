@@ -9,7 +9,11 @@ use Illuminate\Support\Facades\Auth;
 use Modules\GameTables\Application\Services\GameMasterServiceInterface;
 use Modules\GameTables\Filament\Resources\GameTableResource;
 use Modules\GameTables\Filament\Support\DelegatedDirectors;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
+/**
+ * @property GameTableModel $record
+ */
 final class CreateGameTable extends CreateRecord
 {
     protected static string $resource = GameTableResource::class;

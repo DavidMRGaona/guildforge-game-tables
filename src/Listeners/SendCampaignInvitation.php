@@ -43,7 +43,6 @@ final readonly class SendCampaignInvitation
             inviterName: $invitation->inviterName,
             campaignTitle: $campaign->title,
             campaignSlug: $campaign->slug,
-            email: $event->email,
             token: $event->token,
             expiresAt: $invitation->expiresAt
                 ->setTimezone(new \DateTimeZone((string) config('app.timezone')))

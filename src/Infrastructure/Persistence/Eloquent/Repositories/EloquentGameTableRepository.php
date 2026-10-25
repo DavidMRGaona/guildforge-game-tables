@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories;
 
 use DateTimeImmutable;
-use DateTimeInterface;
 use DateTimeZone;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\Genre;
@@ -21,7 +19,6 @@ use Modules\GameTables\Domain\ValueObjects\GameSystemId;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Domain\ValueObjects\TimeSlot;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
-use Modules\GameTables\Infrastructure\Services\SeatCounter;
 
 final readonly class EloquentGameTableRepository implements GameTableRepositoryInterface
 {
@@ -253,23 +250,6 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
             ->first();
     }
 
-    /**
-     * @return Collection<int, object>
-     */
-    public function getPublishedModelsInDateRange(
-        DateTimeInterface $from,
-        DateTimeInterface $to,
-    ): Collection {
-        // Everything the calendar cards read, loaded with the list (no query per table)
-        return SeatCounter::withPlayerSeatCounts(GameTableModel::query())
-            ->with(['gameSystem', 'creator', 'event', 'gameMasters.user'])
-            ->where('is_published', true)
-            ->whereNotIn('status', [TableStatus::Cancelled->value, TableStatus::Draft->value])
-            ->whereBetween('starts_at', [$from, $to])
-            ->orderBy('starts_at', 'asc')
-            ->get();
-    }
-
     public function toEntity(GameTableModel $model): GameTable
     {
         // Content warning ids: from the loaded relation when a list eager-loaded it (one query for every table)
@@ -282,7 +262,8 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
             gameSystemId: new GameSystemId($model->game_system_id),
             createdBy: $model->created_by,
             title: $model->title,
-            slug: $model->slug,
+            // HasSlug always sets one; the id stands in for a row without it
+            slug: $model->slug ?? $model->id,
             timeSlot: new TimeSlot(
                 new DateTimeImmutable($model->starts_at->toDateTimeString()),
                 $model->duration_minutes,
