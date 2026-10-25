@@ -373,7 +373,7 @@ function goBack(): void {
                         >
                             {{ t('guestRegistration.gdprConsent') }}
                             <a
-                                href="/politica-de-privacidad"
+                                :href="routes.legal.privacy"
                                 target="_blank"
                                 class="text-primary underline"
                             >
