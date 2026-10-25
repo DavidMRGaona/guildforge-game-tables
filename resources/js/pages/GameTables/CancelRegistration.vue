@@ -65,7 +65,9 @@ function handleCancel(): void {
         <div class="rounded-xl bg-surface p-8 shadow-lg">
             <!-- Header -->
             <div class="mb-6 text-center">
-                <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary-light">
+                <div
+                    class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary-light"
+                >
                     <TriangleAlert class="h-8 w-8 text-primary" aria-hidden="true" />
                 </div>
                 <h1 class="text-2xl font-bold text-base-primary">
@@ -126,14 +128,8 @@ function handleCancel(): void {
                 </p>
 
                 <div class="flex gap-4">
-                    <Link
-                        :href="`/mesas/${gameTable.id}`"
-                        class="flex-1"
-                    >
-                        <BaseButton
-                            variant="secondary"
-                            class="w-full"
-                        >
+                    <Link :href="`/mesas/${gameTable.id}`" class="flex-1">
+                        <BaseButton variant="secondary" class="w-full">
                             {{ $t('common.back') }}
                         </BaseButton>
                     </Link>
@@ -152,15 +148,16 @@ function handleCancel(): void {
             <template v-else>
                 <div class="mb-6 rounded-lg bg-warning-light p-4 text-center">
                     <p class="text-sm text-warning">
-                        {{ tableStarted ? t('cancelRegistration.tableStarted') : t('cancelRegistration.alreadyCancelled') }}
+                        {{
+                            tableStarted
+                                ? t('cancelRegistration.tableStarted')
+                                : t('cancelRegistration.alreadyCancelled')
+                        }}
                     </p>
                 </div>
 
                 <Link :href="`/mesas/${gameTable.id}`">
-                    <BaseButton
-                        variant="primary"
-                        class="w-full"
-                    >
+                    <BaseButton variant="primary" class="w-full">
                         {{ t('cancelRegistration.viewTable') }}
                     </BaseButton>
                 </Link>

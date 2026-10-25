@@ -197,16 +197,10 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
             </Link>
         </div>
 
-        <article
-            class="overflow-hidden rounded-lg bg-surface shadow"
-        >
+        <article class="overflow-hidden rounded-lg bg-surface shadow">
             <!-- Game Table Image -->
             <div v-if="imageUrl" class="relative">
-                <img
-                    :src="imageUrl"
-                    :alt="table.title"
-                    class="h-64 w-full object-cover sm:h-80"
-                />
+                <img :src="imageUrl" :alt="table.title" class="h-64 w-full object-cover sm:h-80" />
             </div>
 
             <div class="p-6 sm:p-8">
@@ -232,9 +226,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                         </span>
                     </div>
 
-                    <h1
-                        class="mb-4 text-3xl font-bold text-base-primary sm:text-4xl"
-                    >
+                    <h1 class="mb-4 text-3xl font-bold text-base-primary sm:text-4xl">
                         {{ table.title }}
                     </h1>
 
@@ -252,9 +244,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                 </div>
 
                 <!-- Section 2: Key Information -->
-                <div
-                    class="mb-6 rounded-lg bg-muted p-4"
-                >
+                <div class="mb-6 rounded-lg bg-muted p-4">
                     <h2 class="sr-only">{{ t('gameTables.details.gameSystem') }}</h2>
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <!-- Date and Time -->
@@ -346,12 +336,11 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
 
                                     <!-- Co-Directors as a separate list -->
                                     <div v-if="formattedCoGameMasters.length > 0" class="mt-2">
-                                        <span class="text-sm font-medium">{{ t('gameTables.coGameMasters') }}:</span>
+                                        <span class="text-sm font-medium"
+                                            >{{ t('gameTables.coGameMasters') }}:</span
+                                        >
                                         <ul class="ml-7 mt-1 space-y-1 text-sm">
-                                            <li
-                                                v-for="gm in formattedCoGameMasters"
-                                                :key="gm.id"
-                                            >
+                                            <li v-for="gm in formattedCoGameMasters" :key="gm.id">
                                                 {{ gm.formattedName }}
                                             </li>
                                         </ul>
@@ -394,7 +383,12 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                             <span class="text-base-secondary">
                                 {{ t('gameTables.roles.players') }}
                                 <span class="text-base-muted">
-                                    ({{ t('gameTables.playersRequired', { min: table.minPlayers, max: table.maxPlayers }) }})
+                                    ({{
+                                        t('gameTables.playersRequired', {
+                                            min: table.minPlayers,
+                                            max: table.maxPlayers,
+                                        })
+                                    }})
                                 </span>
                             </span>
                             <span class="font-medium text-base-primary">
@@ -453,17 +447,23 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
 
                     <div class="space-y-2 text-sm text-base-primary">
                         <p>
-                            <span class="font-medium">{{ t('gameTables.registrationTypeLabel') || 'Tipo' }}:</span>
+                            <span class="font-medium"
+                                >{{ t('gameTables.registrationTypeLabel') || 'Tipo' }}:</span
+                            >
                             {{ registrationTypeText }}
                         </p>
 
                         <p v-if="table.registrationOpensAt">
-                            <span class="font-medium">{{ t('gameTables.registration.opensAtDate') }}:</span>
+                            <span class="font-medium"
+                                >{{ t('gameTables.registration.opensAtDate') }}:</span
+                            >
                             {{ formatRegistrationDate(table.registrationOpensAt) }}
                         </p>
 
                         <p v-if="table.effectiveRegistrationClosesAt">
-                            <span class="font-medium">{{ t('gameTables.registration.closesAtDate') }}:</span>
+                            <span class="font-medium"
+                                >{{ t('gameTables.registration.closesAtDate') }}:</span
+                            >
                             {{ formatRegistrationDate(table.effectiveRegistrationClosesAt) }}
                         </p>
 
@@ -472,7 +472,11 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                             class="flex items-center font-medium text-base-primary"
                         >
                             <Clock class="mr-1 h-4 w-4 text-info" aria-hidden="true" />
-                            {{ t('gameTables.registration.earlyAccessDays', { days: table.membersEarlyAccessDays }) }}
+                            {{
+                                t('gameTables.registration.earlyAccessDays', {
+                                    days: table.membersEarlyAccessDays,
+                                })
+                            }}
                         </p>
                     </div>
                 </div>

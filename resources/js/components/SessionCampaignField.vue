@@ -29,8 +29,12 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const options = computed(() => props.campaigns.map((campaign) => ({ value: campaign.id, label: campaign.name })));
-const selected = computed(() => props.campaigns.find((campaign) => campaign.id === campaignId.value) ?? null);
+const options = computed(() =>
+    props.campaigns.map((campaign) => ({ value: campaign.id, label: campaign.name }))
+);
+const selected = computed(
+    () => props.campaigns.find((campaign) => campaign.id === campaignId.value) ?? null
+);
 
 // The maximum this field filled in; the notice only shows once it filled the form
 const filledMax = ref<number | null>(null);
@@ -52,12 +56,13 @@ watchEffect(
             button.removeAttribute('aria-describedby');
         }
     },
-    { flush: 'post' },
+    { flush: 'post' }
 );
 
 function fill(campaign: SessionCampaignOption): void {
     // Never below the roster: every member gets a seat when the session is published
-    const maxPlayers = campaign.max_players ?? Math.max(props.defaultMaxPlayers, campaign.roster_count);
+    const maxPlayers =
+        campaign.max_players ?? Math.max(props.defaultMaxPlayers, campaign.roster_count);
     filledMax.value = maxPlayers;
     emit('fill', { gameSystemId: campaign.game_system_id, maxPlayers });
 }
@@ -81,9 +86,11 @@ onMounted(() => {
 <template>
     <div
         class="rounded-lg border-l-4 p-4"
-        :class="campaigns.length > 0
-            ? 'border-primary-500 bg-primary-500/10'
-            : 'border-warning bg-warning-bg'"
+        :class="
+            campaigns.length > 0
+                ? 'border-primary-500 bg-primary-500/10'
+                : 'border-warning bg-warning-bg'
+        "
     >
         <template v-if="campaigns.length > 0">
             <label for="campaign_id" class="block text-sm font-medium text-base-secondary">
@@ -105,8 +112,17 @@ onMounted(() => {
             <p v-if="error" :id="errorId" class="mt-1 text-sm text-error">
                 {{ error }}
             </p>
-            <p v-if="selected !== null && filledMax !== null" class="mt-2 text-sm text-base-secondary">
-                {{ t('gameTables.create.campaign.notice', { count: selected.roster_count, max: filledMax }, selected.roster_count) }}
+            <p
+                v-if="selected !== null && filledMax !== null"
+                class="mt-2 text-sm text-base-secondary"
+            >
+                {{
+                    t(
+                        'gameTables.create.campaign.notice',
+                        { count: selected.roster_count, max: filledMax },
+                        selected.roster_count
+                    )
+                }}
             </p>
         </template>
 
@@ -119,7 +135,9 @@ onMounted(() => {
                     target="_blank"
                     rel="noopener"
                     class="font-medium text-primary underline underline-offset-2 hover:no-underline focus:outline-none focus:ring-2 focus:ring-primary-500"
-                >{{ t('gameTables.create.campaign.createLink') }} {{ t('gameTables.create.campaign.newTab') }}</a>
+                    >{{ t('gameTables.create.campaign.createLink') }}
+                    {{ t('gameTables.create.campaign.newTab') }}</a
+                >
                 {{ t('gameTables.create.campaign.emptyAlternative') }}
             </p>
             <p v-if="error" class="mt-1 text-sm text-error">

@@ -57,17 +57,21 @@ const hasFutureDateRestriction = computed(() => {
 // State: Early access for members (not logged in, has early access tier)
 const showEarlyAccessForMembers = computed(() => {
     if (!eligibility.value) return false;
-    return !isAuthenticated.value
-        && hasFutureDateRestriction.value
-        && eligibility.value.has_early_access;
+    return (
+        !isAuthenticated.value &&
+        hasFutureDateRestriction.value &&
+        eligibility.value.has_early_access
+    );
 });
 
 // State: General opening pending (not logged in, no early access)
 const showGeneralOpeningPending = computed(() => {
     if (!eligibility.value) return false;
-    return !isAuthenticated.value
-        && hasFutureDateRestriction.value
-        && !eligibility.value.has_early_access;
+    return (
+        !isAuthenticated.value &&
+        hasFutureDateRestriction.value &&
+        !eligibility.value.has_early_access
+    );
 });
 
 // State: Logged in, waiting (with or without early access privilege)
@@ -79,9 +83,11 @@ const showWaitingAuthenticated = computed(() => {
 // State: Requires login (no date restriction, just needs authentication)
 const showLoginRequired = computed(() => {
     if (!eligibility.value) return false;
-    return !isAuthenticated.value
-        && !hasFutureDateRestriction.value
-        && eligibility.value.requires_authentication;
+    return (
+        !isAuthenticated.value &&
+        !hasFutureDateRestriction.value &&
+        eligibility.value.requires_authentication
+    );
 });
 
 // Formatted dates
@@ -182,7 +188,9 @@ const createTableUrl = computed(() => {
         <Star class="h-4 w-4" aria-hidden="true" />
         <!-- Clock icon -->
         <Clock class="h-4 w-4" aria-hidden="true" />
-        <span>{{ t('gameTables.eventActions.earlyAccessActiveFrom', { date: formattedUserDate }) }}</span>
+        <span>{{
+            t('gameTables.eventActions.earlyAccessActiveFrom', { date: formattedUserDate })
+        }}</span>
     </div>
 
     <!-- State 5: Logged in, waiting without early access -->

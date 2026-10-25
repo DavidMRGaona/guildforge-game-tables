@@ -255,7 +255,11 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
                         v-model="selectedFormat"
                         class="block w-full appearance-none rounded-lg border border-default bg-surface py-2 pl-3 pr-10 text-sm text-base-primary shadow-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                     >
-                        <option v-for="option in formatOptions" :key="option.value" :value="option.value">
+                        <option
+                            v-for="option in formatOptions"
+                            :key="option.value"
+                            :value="option.value"
+                        >
                             {{ option.label }}
                         </option>
                     </select>
@@ -280,7 +284,11 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
                         v-model="selectedStatus"
                         class="block w-full appearance-none rounded-lg border border-default bg-surface py-2 pl-3 pr-10 text-sm text-base-primary shadow-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                     >
-                        <option v-for="option in statusOptions" :key="option.value" :value="option.value">
+                        <option
+                            v-for="option in statusOptions"
+                            :key="option.value"
+                            :value="option.value"
+                        >
                             {{ option.label }}
                         </option>
                     </select>
@@ -306,13 +314,15 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
                         :disabled="!hasEvents"
                         :class="[
                             'block w-full appearance-none rounded-lg border border-default bg-surface py-2 pl-3 pr-10 text-sm shadow-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500',
-                            hasEvents
-                                ? 'text-base-primary'
-                                : 'cursor-not-allowed text-base-muted',
+                            hasEvents ? 'text-base-primary' : 'cursor-not-allowed text-base-muted',
                         ]"
                     >
                         <option value="">
-                            {{ hasEvents ? t('gameTables.filters.allEvents') : t('gameTables.filters.noEvents') }}
+                            {{
+                                hasEvents
+                                    ? t('gameTables.filters.allEvents')
+                                    : t('gameTables.filters.noEvents')
+                            }}
                         </option>
                         <option v-for="event in events" :key="event.id" :value="event.id">
                             {{ event.title }}

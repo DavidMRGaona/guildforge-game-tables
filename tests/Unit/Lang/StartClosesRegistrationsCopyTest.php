@@ -21,6 +21,14 @@ final class StartClosesRegistrationsCopyTest extends TestCase
         return Arr::dot(require dirname(__DIR__, 3)."/lang/{$locale}/{$file}.php");
     }
 
+    /**
+     * Prettier may move a long text to the line after its key.
+     */
+    private function assertLocaleText(string $key, string $text, string $source): void
+    {
+        $this->assertMatchesRegularExpression('/\b'.$key.":\\s+'".preg_quote($text, '/')."',/u", $source, $key);
+    }
+
     private function source(string $file): string
     {
         return (string) file_get_contents(dirname(__DIR__, 3).'/resources/js/'.$file);
@@ -67,24 +75,12 @@ final class StartClosesRegistrationsCopyTest extends TestCase
     public function test_the_page_texts_of_the_waiting_list_end_at_the_start(): void
     {
         $es = $this->source('locales/es.ts');
-        $this->assertStringContainsString(
-            "waitingListHelp: 'La mesa está completa. Si se libera una plaza antes del inicio de la partida (o del cierre de inscripciones, si es anterior), pasarás a ella automáticamente por orden de lista y te avisaremos por correo.',",
-            $es
-        );
-        $this->assertStringContainsString(
-            "waitingListHelpManual: 'La mesa está completa. Si se libera una plaza antes del inicio de la partida (o del cierre de inscripciones, si es anterior), pasarás a ella por orden de lista, pendiente de que el director te confirme, y te avisaremos por correo.',",
-            $es
-        );
+        $this->assertLocaleText('waitingListHelp', 'La mesa está completa. Si se libera una plaza antes del inicio de la partida (o del cierre de inscripciones, si es anterior), pasarás a ella automáticamente por orden de lista y te avisaremos por correo.', $es);
+        $this->assertLocaleText('waitingListHelpManual', 'La mesa está completa. Si se libera una plaza antes del inicio de la partida (o del cierre de inscripciones, si es anterior), pasarás a ella por orden de lista, pendiente de que el director te confirme, y te avisaremos por correo.', $es);
 
         $en = $this->source('locales/en.ts');
-        $this->assertStringContainsString(
-            "waitingListHelp: 'The table is full. If a seat is freed before the table starts (or before registrations close, if that comes first), you will take it automatically, in waiting list order, and we will let you know by email.',",
-            $en
-        );
-        $this->assertStringContainsString(
-            "waitingListHelpManual: 'The table is full. If a seat is freed before the table starts (or before registrations close, if that comes first), you will take it in waiting list order, pending confirmation by the game master, and we will let you know by email.',",
-            $en
-        );
+        $this->assertLocaleText('waitingListHelp', 'The table is full. If a seat is freed before the table starts (or before registrations close, if that comes first), you will take it automatically, in waiting list order, and we will let you know by email.', $en);
+        $this->assertLocaleText('waitingListHelpManual', 'The table is full. If a seat is freed before the table starts (or before registrations close, if that comes first), you will take it in waiting list order, pending confirmation by the game master, and we will let you know by email.', $en);
     }
 
     public function test_the_cancellation_email_says_the_link_works_before_the_start(): void

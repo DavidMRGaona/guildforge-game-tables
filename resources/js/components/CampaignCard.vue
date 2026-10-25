@@ -22,19 +22,24 @@ const RECRUITING_STATUS = 'recruiting';
 const imageUrl = computed(() => buildCardImageUrl(props.campaign.imagePublicId));
 
 const showLookingForPlayers = computed(
-    () => props.campaign.acceptsNewPlayers && props.campaign.status !== RECRUITING_STATUS,
+    () => props.campaign.acceptsNewPlayers && props.campaign.status !== RECRUITING_STATUS
 );
 
 const sessionLabel = computed(() => {
     const { sessionCount, currentSession } = props.campaign;
     if (sessionCount !== null && sessionCount > 0) {
-        return t('campaigns.details.totalSessions', { current: currentSession, total: sessionCount });
+        return t('campaigns.details.totalSessions', {
+            current: currentSession,
+            total: sessionCount,
+        });
     }
     return t('campaigns.sessionNumber', { number: currentSession });
 });
 
 const scheduleLine = computed(() =>
-    [props.campaign.frequencyLabel, sessionLabel.value].filter((part): part is string => Boolean(part)).join(' · '),
+    [props.campaign.frequencyLabel, sessionLabel.value]
+        .filter((part): part is string => Boolean(part))
+        .join(' · ')
 );
 </script>
 
@@ -47,7 +52,9 @@ const scheduleLine = computed(() =>
         <!-- Image with overlay badges (if image exists) -->
         <div v-if="imageUrl" class="relative">
             <img :src="imageUrl" :alt="campaign.title" class="h-36 w-full object-cover" />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30" />
+            <div
+                class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30"
+            />
 
             <div class="absolute right-3 top-3 flex items-center gap-2">
                 <span
@@ -96,7 +103,10 @@ const scheduleLine = computed(() =>
 
             <!-- Zone 2: Key details -->
             <div class="mb-3 rounded-lg bg-muted p-3">
-                <div class="flex items-center text-sm text-base-secondary" :class="{ 'mb-2': campaign.maxPlayers !== null }">
+                <div
+                    class="flex items-center text-sm text-base-secondary"
+                    :class="{ 'mb-2': campaign.maxPlayers !== null }"
+                >
                     <Calendar
                         class="mr-1.5 h-4 w-4 flex-shrink-0 text-base-muted"
                         aria-hidden="true"
@@ -107,7 +117,9 @@ const scheduleLine = computed(() =>
                 <div v-if="campaign.maxPlayers !== null">
                     <div class="mb-1 flex items-center justify-between text-xs text-base-secondary">
                         <span>{{ t('campaigns.players') }}</span>
-                        <span class="font-medium">{{ campaign.currentPlayers }} / {{ campaign.maxPlayers }}</span>
+                        <span class="font-medium"
+                            >{{ campaign.currentPlayers }} / {{ campaign.maxPlayers }}</span
+                        >
                     </div>
                     <CapacityBar
                         :current="campaign.currentPlayers"
@@ -121,9 +133,13 @@ const scheduleLine = computed(() =>
             <!-- Zone 3: Meta (pinned to the bottom so footers line up across a grid row) -->
             <div class="mt-auto flex items-center justify-between">
                 <div class="flex items-center gap-2 text-sm text-base-secondary">
-                    <span class="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1">
+                    <span
+                        class="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1"
+                    >
                         <User class="h-3.5 w-3.5" aria-hidden="true" />
-                        <span class="max-w-[160px] truncate text-xs font-medium">{{ campaign.mainGameMasterName }}</span>
+                        <span class="max-w-[160px] truncate text-xs font-medium">{{
+                            campaign.mainGameMasterName
+                        }}</span>
                     </span>
                 </div>
             </div>

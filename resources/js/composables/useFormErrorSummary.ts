@@ -54,7 +54,10 @@ const GAME_MASTER_ERROR = /^game_masters\.(\d+)\.(.+)$/;
  * position up, and every other error stays as it is, in the same order. Adding a row (at the end)
  * moves nothing, so it needs no call.
  */
-export function shiftGameMasterErrors(errors: Partial<Record<string, string>>, removed: number): Record<string, string> {
+export function shiftGameMasterErrors(
+    errors: Partial<Record<string, string>>,
+    removed: number
+): Record<string, string> {
     const shifted: Record<string, string> = {};
 
     for (const [key, message] of Object.entries(errors)) {
@@ -113,13 +116,11 @@ export function useFormErrorSummary(options: Options): FormErrorSummary {
     }
 
     const errorEntries = computed((): Array<[string, string]> =>
-        Object.entries(options.errors()).filter(
-            (entry): entry is [string, string] => {
-                const message = entry[1];
+        Object.entries(options.errors()).filter((entry): entry is [string, string] => {
+            const message = entry[1];
 
-                return typeof message === 'string' && message !== '';
-            }
-        )
+            return typeof message === 'string' && message !== '';
+        })
     );
 
     // Errors per tab, for the badges
@@ -224,13 +225,19 @@ export function useFormErrorSummary(options: Options): FormErrorSummary {
     }
 
     function findElement(target: string): PageElement | null {
-        return document.getElementById(target)
-            ?? document.querySelector<PageElement>(`[name="${window.CSS.escape(target)}"]:not([type="hidden"])`);
+        return (
+            document.getElementById(target) ??
+            document.querySelector<PageElement>(
+                `[name="${window.CSS.escape(target)}"]:not([type="hidden"])`
+            )
+        );
     }
 
     // Focus the element, or the first control inside it (a list of checkboxes, the directors' section)
     function focusWithin(element: PageElement): boolean {
-        const control = element.matches(FOCUSABLE) ? element : element.querySelector<PageElement>(FOCUSABLE);
+        const control = element.matches(FOCUSABLE)
+            ? element
+            : element.querySelector<PageElement>(FOCUSABLE);
         if (control === null) {
             return false;
         }
@@ -264,5 +271,12 @@ export function useFormErrorSummary(options: Options): FormErrorSummary {
         options.replaceErrors?.(shiftGameMasterErrors(options.errors(), index));
     }
 
-    return { tabErrors, gameMasterErrors, errorItems, revealErrors, focusError, removeGameMasterRowErrors };
+    return {
+        tabErrors,
+        gameMasterErrors,
+        errorItems,
+        revealErrors,
+        focusError,
+        removeGameMasterRowErrors,
+    };
 }

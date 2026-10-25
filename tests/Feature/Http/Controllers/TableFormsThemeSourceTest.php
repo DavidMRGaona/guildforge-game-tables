@@ -65,7 +65,8 @@ final class TableFormsThemeSourceTest extends TestCase
         }
 
         $section = $this->source('components/GameMasterSection.vue');
-        $this->assertSame(7, substr_count($section, ':class="fieldStateClass(!!fieldError('), 'director inputs');
+        // Prettier may break the binding after its opening quote
+        $this->assertSame(7, preg_match_all('/:class="\\s*fieldStateClass\\(!!fieldError\\(/', $section), 'director inputs');
     }
 
     public function test_no_light_dark_pairs_in_the_pieces_of_these_forms(): void

@@ -3,7 +3,12 @@ import { ref, computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import type { PaginatedResponse } from '@/types';
-import type { CampaignListItem, FilterOption, GameSystem, GameTableFilters as GameTableFiltersType } from '../../types/gametables';
+import type {
+    CampaignListItem,
+    FilterOption,
+    GameSystem,
+    GameTableFilters as GameTableFiltersType,
+} from '../../types/gametables';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import EmptyState from '@/components/ui/EmptyState.vue';
 import CampaignCard from '../../components/CampaignCard.vue';
@@ -85,15 +90,16 @@ function handleNext(): void {
         />
 
         <!-- Results counter -->
-        <p
-            aria-live="polite"
-            class="mb-4 text-sm text-base-secondary"
-        >
+        <p aria-live="polite" class="mb-4 text-sm text-base-secondary">
             {{ t('campaigns.found', { count: totalResults }) }}
         </p>
 
         <div v-if="props.campaigns.data.length > 0" class="grid gap-6" :class="gridClasses">
-            <CampaignCard v-for="campaign in props.campaigns.data" :key="campaign.id" :campaign="campaign" />
+            <CampaignCard
+                v-for="campaign in props.campaigns.data"
+                :key="campaign.id"
+                :campaign="campaign"
+            />
         </div>
 
         <EmptyState

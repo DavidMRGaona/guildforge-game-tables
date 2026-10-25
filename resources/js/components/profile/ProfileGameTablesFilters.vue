@@ -62,10 +62,7 @@ const activeFilterCount = computed(() => {
     );
 });
 
-function toggleFilter(
-    filterType: 'statuses' | 'roles' | 'systems',
-    value: string
-): void {
+function toggleFilter(filterType: 'statuses' | 'roles' | 'systems', value: string): void {
     const currentValues = [...props.modelValue[filterType]];
     const index = currentValues.indexOf(value);
 
@@ -81,17 +78,11 @@ function toggleFilter(
     });
 }
 
-function isSelected(
-    filterType: 'statuses' | 'roles' | 'systems',
-    value: string
-): boolean {
+function isSelected(filterType: 'statuses' | 'roles' | 'systems', value: string): boolean {
     return props.modelValue[filterType].includes(value);
 }
 
-function removeFilter(
-    filterType: 'statuses' | 'roles' | 'systems',
-    value: string
-): void {
+function removeFilter(filterType: 'statuses' | 'roles' | 'systems', value: string): void {
     const currentValues = props.modelValue[filterType].filter((v) => v !== value);
     emit('update:modelValue', {
         ...props.modelValue,
@@ -107,10 +98,7 @@ function clearAllFilters(): void {
     });
 }
 
-function getFilterLabel(
-    filterType: 'statuses' | 'roles' | 'systems',
-    value: string
-): string {
+function getFilterLabel(filterType: 'statuses' | 'roles' | 'systems', value: string): string {
     if (filterType === 'systems') {
         return value;
     }
@@ -127,7 +115,9 @@ function getFilterLabel(
         <div class="space-y-3">
             <!-- Status filter -->
             <div>
-                <span class="mb-2 block text-xs font-medium uppercase tracking-wider text-base-muted">
+                <span
+                    class="mb-2 block text-xs font-medium uppercase tracking-wider text-base-muted"
+                >
                     {{ t('gameTables.profile.filters.status') }}
                 </span>
                 <div class="flex flex-wrap gap-2">
@@ -150,7 +140,9 @@ function getFilterLabel(
 
             <!-- Role filter -->
             <div>
-                <span class="mb-2 block text-xs font-medium uppercase tracking-wider text-base-muted">
+                <span
+                    class="mb-2 block text-xs font-medium uppercase tracking-wider text-base-muted"
+                >
                     {{ t('gameTables.profile.filters.role') }}
                 </span>
                 <div class="flex flex-wrap gap-2">
@@ -173,7 +165,9 @@ function getFilterLabel(
 
             <!-- Game system filter (only show if there are multiple systems) -->
             <div v-if="systemOptions.length > 1">
-                <span class="mb-2 block text-xs font-medium uppercase tracking-wider text-base-muted">
+                <span
+                    class="mb-2 block text-xs font-medium uppercase tracking-wider text-base-muted"
+                >
                     {{ t('gameTables.profile.filters.gameSystem') }}
                 </span>
                 <div class="flex flex-wrap gap-2">
@@ -196,7 +190,10 @@ function getFilterLabel(
         </div>
 
         <!-- Active filters pills -->
-        <div v-if="hasActiveFilters" class="flex flex-wrap items-center gap-2 border-t border-default pt-3">
+        <div
+            v-if="hasActiveFilters"
+            class="flex flex-wrap items-center gap-2 border-t border-default pt-3"
+        >
             <span class="text-xs text-base-muted">
                 {{ t('gameTables.profile.filters.active', activeFilterCount) }}:
             </span>

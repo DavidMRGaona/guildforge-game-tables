@@ -18,24 +18,38 @@ final class JoinAndRosterButtonsSourceTest extends TestCase
         return (string) file_get_contents(dirname(__DIR__, 4).'/'.$file);
     }
 
+    /**
+     * Compares without whitespace or trailing commas: Prettier decides where the code breaks
+     * its lines, and adds a trailing comma when it breaks a list.
+     */
+    private function assertCodeContains(string $needle, string $source, string $message = ''): void
+    {
+        $this->assertStringContainsString($this->compact($needle), $this->compact($source), $message);
+    }
+
+    private function compact(string $code): string
+    {
+        return (string) preg_replace('/,(?=[)\]}]|$)/', '', (string) preg_replace('/\s+/', '', $code));
+    }
+
     public function test_the_join_box_opens_the_request_dialog_from_one_button(): void
     {
         $box = $this->source('resources/js/components/campaigns/CampaignJoinBox.vue');
 
         // No inline form any more: one primary button, full width on phones
         $this->assertStringNotContainsString('<textarea', $box);
-        $this->assertStringContainsString("import JoinRequestDialog from './JoinRequestDialog.vue';", $box);
+        $this->assertCodeContains("import JoinRequestDialog from './JoinRequestDialog.vue';", $box);
         $this->assertMatchesRegularExpression('/<BaseButton\s+v-else\s+variant="primary"\s+size="sm"\s+class="w-full sm:w-auto"\s+aria-haspopup="dialog"\s+@click="openRequest"/', $box);
-        $this->assertStringContainsString('<JoinRequestDialog', $box);
-        $this->assertStringContainsString(':error="requestError"', $box);
-        $this->assertStringContainsString(':processing="processing"', $box);
+        $this->assertCodeContains('<JoinRequestDialog', $box);
+        $this->assertCodeContains(':error="requestError"', $box);
+        $this->assertCodeContains(':processing="processing"', $box);
         // Once sent, the opening button is gone: the focus moves to the new pending status
         $this->assertMatchesRegularExpression('/:id="pendingStatusId"\s+ref="pendingStatus"\s+role="status"\s+tabindex="-1"/', $box);
-        $this->assertStringContainsString("showRequestDialog.value = false;\n                void nextTick(() => pendingStatus.value?.focus());", $box);
+        $this->assertCodeContains("showRequestDialog.value = false;\n                void nextTick(() => pendingStatus.value?.focus());", $box);
         // Withdrawing asks first
-        $this->assertStringContainsString('@click="askWithdraw"', $box);
-        $this->assertStringContainsString('v-model="showWithdrawDialog"', $box);
-        $this->assertStringContainsString('@confirm="confirmWithdraw"', $box);
+        $this->assertCodeContains('@click="askWithdraw"', $box);
+        $this->assertCodeContains('v-model="showWithdrawDialog"', $box);
+        $this->assertCodeContains('@confirm="confirmWithdraw"', $box);
     }
 
     public function test_the_request_dialog_is_an_accessible_modal_with_the_validated_limit(): void
@@ -59,7 +73,7 @@ final class JoinAndRosterButtonsSourceTest extends TestCase
             "t('campaigns.join.counter', { count: message.length, max: MAX_LENGTH })",
             'role="alert"',
         ] as $needle) {
-            $this->assertStringContainsString($needle, $dialog);
+            $this->assertCodeContains($needle, $dialog);
         }
 
         // The counter's limit is the one the request validates
@@ -73,16 +87,16 @@ final class JoinAndRosterButtonsSourceTest extends TestCase
         $roster = $this->source('resources/js/pages/Campaigns/Roster.vue');
 
         // «Quitar»: an outlined danger button named after the player, confirmed in a dialog
-        $this->assertStringContainsString("const dangerOutlineClass = 'inline-flex min-h-[44px]", $roster);
-        $this->assertStringContainsString(':class="dangerOutlineClass"', $roster);
-        $this->assertStringContainsString("t('campaigns.roster.players.removeNamed', { name: player.name })", $roster);
-        $this->assertStringContainsString(':message="removeMessage"', $roster);
+        $this->assertCodeContains("const dangerOutlineClass = 'inline-flex min-h-[44px]", $roster);
+        $this->assertCodeContains(':class="dangerOutlineClass"', $roster);
+        $this->assertCodeContains("t('campaigns.roster.players.removeNamed', { name: player.name })", $roster);
+        $this->assertCodeContains(':message="removeMessage"', $roster);
         // The dialog only promises the email the server sends
-        $this->assertStringContainsString("props.removal_notice ? 'campaigns.roster.players.removeMessage' : 'campaigns.roster.players.removeMessageNoEmail'", $roster);
+        $this->assertCodeContains("props.removal_notice ? 'campaigns.roster.players.removeMessage' : 'campaigns.roster.players.removeMessageNoEmail'", $roster);
         $this->assertStringNotContainsString('variant="ghost"', $roster);
         // Requests and the invite form: full-width buttons on phones
-        $this->assertStringContainsString('class="grid flex-shrink-0 grid-cols-2 gap-2 sm:flex"', $roster);
-        $this->assertStringContainsString('<BaseButton type="submit" variant="primary" class="w-full sm:w-auto" :loading="inviteForm.processing">', $roster);
+        $this->assertCodeContains('class="grid flex-shrink-0 grid-cols-2 gap-2 sm:flex"', $roster);
+        $this->assertCodeContains('<BaseButton type="submit" variant="primary" class="w-full sm:w-auto" :loading="inviteForm.processing">', $roster);
         // The helper line sits under the heading
         $this->assertLessThan(
             strpos($roster, '<table'),

@@ -18,6 +18,20 @@ final class RosterPageSourceTest extends TestCase
     }
 
     /**
+     * Compares without whitespace or trailing commas: Prettier decides where the code breaks
+     * its lines, and adds a trailing comma when it breaks a list.
+     */
+    private function assertCodeContains(string $needle, string $source, string $message = ''): void
+    {
+        $this->assertStringContainsString($this->compact($needle), $this->compact($source), $message);
+    }
+
+    private function compact(string $code): string
+    {
+        return (string) preg_replace('/,(?=[)\]}]|$)/', '', (string) preg_replace('/\s+/', '', $code));
+    }
+
+    /**
      * Module stylesheets load in a cascade layer below the core utilities, so the attendance cells
      * use theme tokens (their value flips with the theme) instead of a light/dark colour pair.
      */
@@ -25,7 +39,7 @@ final class RosterPageSourceTest extends TestCase
     {
         $source = $this->source();
 
-        $this->assertStringContainsString(
+        $this->assertCodeContains(
             "going: 'border-success/40 bg-success-light text-base-primary',",
             $source
         );
@@ -40,7 +54,7 @@ final class RosterPageSourceTest extends TestCase
     {
         $source = $this->source();
 
-        $this->assertStringContainsString("onSuccess: () => {\n            if (!flashError.value) inviteForm.reset();\n        },", $source);
+        $this->assertCodeContains("onSuccess: () => {\n            if (!flashError.value) inviteForm.reset();\n        },", $source);
         $this->assertStringNotContainsString('onSuccess: () => inviteForm.reset(),', $source);
     }
 
@@ -52,8 +66,8 @@ final class RosterPageSourceTest extends TestCase
     {
         $source = $this->source();
 
-        $this->assertStringContainsString('<section v-if="invitations.length > 0"', $source);
-        $this->assertStringContainsString('<section v-if="can_add" :class="sectionClass" aria-labelledby="roster-invite-title">', $source);
+        $this->assertCodeContains('<section v-if="invitations.length > 0"', $source);
+        $this->assertCodeContains('<section v-if="can_add" :class="sectionClass" aria-labelledby="roster-invite-title">', $source);
         $this->assertSame(1, substr_count($source, 'v-if="can_add"'));
     }
 
@@ -64,9 +78,9 @@ final class RosterPageSourceTest extends TestCase
     {
         $root = dirname(__DIR__, 4).'/resources/js/locales/';
 
-        $this->assertStringContainsString("t('campaigns.roster.invitations.sends', { count: invitation.send_count })", $this->source());
-        $this->assertStringContainsString("sends: 'Envíos: {count}',", (string) file_get_contents($root.'es.ts'));
-        $this->assertStringContainsString("sends: 'Sends: {count}',", (string) file_get_contents($root.'en.ts'));
+        $this->assertCodeContains("t('campaigns.roster.invitations.sends', { count: invitation.send_count })", $this->source());
+        $this->assertCodeContains("sends: 'Envíos: {count}',", (string) file_get_contents($root.'es.ts'));
+        $this->assertCodeContains("sends: 'Sends: {count}',", (string) file_get_contents($root.'en.ts'));
     }
 
     /**
@@ -77,8 +91,8 @@ final class RosterPageSourceTest extends TestCase
         $source = $this->source();
         $root = dirname(__DIR__, 4).'/resources/js/locales/';
 
-        $this->assertStringContainsString("t('campaigns.roster.attendance.accessibleName', {\n".'        label: `${stateIcons[state]} ${stateLabel(state)}`,', $source);
-        $this->assertStringContainsString("accessibleName: '{label} — {name}, {date}. {action}',", (string) file_get_contents($root.'es.ts'));
-        $this->assertStringContainsString("accessibleName: '{label} — {name}, {date}. {action}',", (string) file_get_contents($root.'en.ts'));
+        $this->assertCodeContains("t('campaigns.roster.attendance.accessibleName', {\n".'        label: `${stateIcons[state]} ${stateLabel(state)}`,', $source);
+        $this->assertCodeContains("accessibleName: '{label} — {name}, {date}. {action}',", (string) file_get_contents($root.'es.ts'));
+        $this->assertCodeContains("accessibleName: '{label} — {name}, {date}. {action}',", (string) file_get_contents($root.'en.ts'));
     }
 }

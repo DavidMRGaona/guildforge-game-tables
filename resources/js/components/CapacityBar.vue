@@ -39,7 +39,10 @@ const fillColour = computed(() => {
 
 <template>
     <div
-        :class="['w-full overflow-hidden rounded-full bg-base-secondary/15', size === 'md' ? 'h-2.5' : 'h-2']"
+        :class="[
+            'w-full overflow-hidden rounded-full bg-base-secondary/15',
+            size === 'md' ? 'h-2.5' : 'h-2',
+        ]"
         role="progressbar"
         :aria-label="label"
         :aria-valuenow="current"

@@ -22,6 +22,20 @@ final class TableFormErrorsSourceTest extends TestCase
     }
 
     /**
+     * Compares without whitespace or trailing commas: Prettier decides where the code breaks
+     * its lines, and adds a trailing comma when it breaks a list.
+     */
+    private function assertCodeContains(string $needle, string $source, string $message = ''): void
+    {
+        $this->assertStringContainsString($this->compact($needle), $this->compact($source), $message);
+    }
+
+    private function compact(string $code): string
+    {
+        return (string) preg_replace('/,(?=[)\]}]|$)/', '', (string) preg_replace('/\s+/', '', $code));
+    }
+
+    /**
      * @return array<string, string> field => tab, as the page's `fieldToTab` maps them
      */
     private function fieldToTab(string $page): array
@@ -45,10 +59,10 @@ final class TableFormErrorsSourceTest extends TestCase
             $source = $this->source('resources/js/'.$page);
 
             // The shared summary composable maps each key by its first segment (FormErrorSummarySourceTest)
-            $this->assertStringContainsString("fieldToTab,\n    fieldLabels,", $source, $page);
+            $this->assertCodeContains("fieldToTab,\n    fieldLabels,", $source, $page);
             $this->assertStringNotContainsString('fieldToTab[key]', $source, $page);
             // A failed save opens the first tab with errors (Participantes when only a director failed)
-            $this->assertStringContainsString('onError: () => revealErrors(),', $source, $page);
+            $this->assertCodeContains('onError: () => revealErrors(),', $source, $page);
         }
     }
 
@@ -113,13 +127,13 @@ final class TableFormErrorsSourceTest extends TestCase
         foreach (self::PAGES as $page) {
             $source = $this->source('resources/js/'.$page);
 
-            $this->assertStringContainsString('<fieldset id="genres" class="min-w-0">', $source, $page);
-            $this->assertStringContainsString("v-for=\"genre in objectToOptions(props.formData.genres)\"\n", $source, $page);
-            $this->assertStringContainsString('v-model="form.genres"', $source, $page);
+            $this->assertCodeContains('<fieldset id="genres" class="min-w-0">', $source, $page);
+            $this->assertCodeContains("v-for=\"genre in objectToOptions(props.formData.genres)\"\n", $source, $page);
+            $this->assertCodeContains('v-model="form.genres"', $source, $page);
         }
 
         // The edit page receives the stored genres as {value, label}: the request validates the values
-        $this->assertStringContainsString('genres: extractOptionValues(props.table.genres),', $this->source('resources/js/pages/GameTables/Edit.vue'));
+        $this->assertCodeContains('genres: extractOptionValues(props.table.genres),', $this->source('resources/js/pages/GameTables/Edit.vue'));
     }
 
     public function test_the_pages_hand_the_directors_field_errors_to_their_section(): void
@@ -127,8 +141,8 @@ final class TableFormErrorsSourceTest extends TestCase
         foreach (self::PAGES as $page) {
             $source = $this->source('resources/js/'.$page);
 
-            $this->assertStringContainsString('const { tabErrors, gameMasterErrors, errorItems, revealErrors, focusError, removeGameMasterRowErrors } = useFormErrorSummary({', $source, $page);
-            $this->assertStringContainsString(":error=\"form.errors.game_masters\"\n                                :errors=\"gameMasterErrors\"", $source, $page);
+            $this->assertCodeContains('const { tabErrors, gameMasterErrors, errorItems, revealErrors, focusError, removeGameMasterRowErrors } = useFormErrorSummary({', $source, $page);
+            $this->assertCodeContains(":error=\"form.errors.game_masters\"\n                                :errors=\"gameMasterErrors\"", $source, $page);
         }
     }
 
@@ -137,19 +151,19 @@ final class TableFormErrorsSourceTest extends TestCase
         $source = $this->source('resources/js/components/GameMasterSection.vue');
 
         // Errors are keyed by the position in the full list, the main director included
-        $this->assertStringContainsString('return `game_masters.${fullIndex}.${field}`;', $source);
-        $this->assertStringContainsString("props.modelValue.flatMap((gm, i) => (gm.role !== 'main' ? [i] : []))", $source);
+        $this->assertCodeContains('return `game_masters.${fullIndex}.${field}`;', $source);
+        $this->assertCodeContains("props.modelValue.flatMap((gm, i) => (gm.role !== 'main' ? [i] : []))", $source);
 
         foreach (['first_name', 'last_name', 'email', 'phone', 'custom_title'] as $field) {
-            $this->assertStringContainsString(":aria-invalid=\"!!fieldError(fullIndexOf(index), '{$field}')\"\n                            :aria-describedby=\"errorId(fullIndexOf(index), '{$field}')\"", $source, $field);
-            $this->assertStringContainsString("<p\n                            v-if=\"fieldError(fullIndexOf(index), '{$field}')\"\n                            :id=\"errorId(fullIndexOf(index), '{$field}')\"\n                            class=\"mt-1 text-sm text-error\"", $source, $field);
+            $this->assertCodeContains(":aria-invalid=\"!!fieldError(fullIndexOf(index), '{$field}')\"\n                            :aria-describedby=\"errorId(fullIndexOf(index), '{$field}')\"", $source, $field);
+            $this->assertCodeContains("<p\n                            v-if=\"fieldError(fullIndexOf(index), '{$field}')\"\n                            :id=\"errorId(fullIndexOf(index), '{$field}')\"\n                            class=\"mt-1 text-sm text-error\"", $source, $field);
         }
 
         foreach (['custom_title', 'phone'] as $field) {
-            $this->assertStringContainsString(":aria-invalid=\"!!fieldError(mainGmIndex, '{$field}')\"\n                            :aria-describedby=\"errorId(mainGmIndex, '{$field}')\"", $source, $field);
+            $this->assertCodeContains(":aria-invalid=\"!!fieldError(mainGmIndex, '{$field}')\"\n                            :aria-describedby=\"errorId(mainGmIndex, '{$field}')\"", $source, $field);
         }
 
-        $this->assertStringContainsString('<p v-if="gdprConsentError" id="gm_gdpr_consent-error" class="mt-1 text-sm text-error">', $source);
+        $this->assertCodeContains('<p v-if="gdprConsentError" id="gm_gdpr_consent-error" class="mt-1 text-sm text-error">', $source);
         // An error with no input of its own is listed by the form's error summary (FormErrorSummarySourceTest)
         $this->assertStringNotContainsString('otherErrors', $source);
     }
@@ -159,12 +173,12 @@ final class TableFormErrorsSourceTest extends TestCase
         foreach (['pages/GameTables/MyTables.vue', 'pages/Campaigns/MyCampaigns.vue'] as $page) {
             $source = $this->source('resources/js/'.$page);
 
-            $this->assertStringContainsString('const { success: flashSuccess, error: flashError } = useFlashMessages();', $source, $page);
+            $this->assertCodeContains('const { success: flashSuccess, error: flashError } = useFlashMessages();', $source, $page);
             // What was done (created, saved, sent, deleted) and why an action was refused
-            $this->assertStringContainsString("<div\n            v-if=\"flashSuccess\"\n            role=\"status\"", $source, $page);
-            $this->assertStringContainsString('{{ flashSuccess }}', $source, $page);
-            $this->assertStringContainsString("<div\n            v-if=\"flashError\"\n            role=\"alert\"", $source, $page);
-            $this->assertStringContainsString('{{ flashError }}', $source, $page);
+            $this->assertCodeContains("<div\n            v-if=\"flashSuccess\"\n            role=\"status\"", $source, $page);
+            $this->assertCodeContains('{{ flashSuccess }}', $source, $page);
+            $this->assertCodeContains("<div\n            v-if=\"flashError\"\n            role=\"alert\"", $source, $page);
+            $this->assertCodeContains('{{ flashError }}', $source, $page);
         }
     }
 
@@ -175,8 +189,8 @@ final class TableFormErrorsSourceTest extends TestCase
 
             // Errors are keyed by row position: removing a row moves the later rows' errors up
             // (TableFormsThemeSourceTest); adding one, at the end, keeps them all
-            $this->assertStringContainsString('replaceErrors: (errors) => form.clearErrors().setError(errors as Parameters<typeof form.setError>[0]),', $source, $page);
-            $this->assertStringContainsString('@remove="removeGameMasterRowErrors"', $source, $page);
+            $this->assertCodeContains('replaceErrors: (errors) => form.clearErrors().setError(errors as Parameters<typeof form.setError>[0]),', $source, $page);
+            $this->assertCodeContains('@remove="removeGameMasterRowErrors"', $source, $page);
         }
     }
 }

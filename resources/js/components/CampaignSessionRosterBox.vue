@@ -45,10 +45,15 @@ const refusalId = useId();
 const state = computed(() => props.campaignSession.roster_state ?? 'none');
 const hasSeat = computed(() => state.value === 'enrolled' || state.value === 'waiting');
 const campaignUrl = computed(() =>
-    props.campaignSession.campaign_slug !== null ? `/campanas/${props.campaignSession.campaign_slug}` : null
+    props.campaignSession.campaign_slug !== null
+        ? `/campanas/${props.campaignSession.campaign_slug}`
+        : null
 );
 const waitingPosition = computed(
-    () => props.campaignSession.waiting_list_position ?? props.registration?.waitingListPosition ?? null
+    () =>
+        props.campaignSession.waiting_list_position ??
+        props.registration?.waitingListPosition ??
+        null
 );
 // The seat can be taken back now, or the server says why not. A rejected or no-show row gets
 // neither: nothing to offer, so no dead button and no «vuelve a apuntarte»
@@ -56,14 +61,16 @@ const rejoinOffered = computed(
     () => props.campaignSession.can_rejoin || props.campaignSession.rejoin_refusal !== null
 );
 
-const buttonClass = 'inline-flex min-h-[44px] items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface aria-disabled:cursor-not-allowed aria-disabled:opacity-50 disabled:cursor-not-allowed disabled:opacity-50';
+const buttonClass =
+    'inline-flex min-h-[44px] items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface aria-disabled:cursor-not-allowed aria-disabled:opacity-50 disabled:cursor-not-allowed disabled:opacity-50';
 const primaryButtonClass = `${buttonClass} bg-primary text-white hover:bg-primary-700 focus:ring-primary-500`;
 const secondaryButtonClass = `${buttonClass} bg-base-secondary/10 text-base-primary hover:bg-base-secondary/20 focus:ring-primary-500`;
 
 // The action on the page, or the status line when the action cannot take the focus
 function focusAction(): boolean {
     const button = actionButton.value;
-    const target = button !== null && button.isConnected && !button.disabled ? button : statusLine.value;
+    const target =
+        button !== null && button.isConnected && !button.disabled ? button : statusLine.value;
     if (target === null || !target.isConnected) return false;
 
     target.focus();
@@ -133,21 +140,13 @@ function confirmCancel(): void {
 function rejoin(): void {
     if (processing.value || gate.blocked.value || !props.campaignSession.can_rejoin) return;
 
-    router.post(
-        `/mesas/${props.table.slug}/inscripcion`,
-        { role: 'player' },
-        visitOptions(),
-    );
+    router.post(`/mesas/${props.table.slug}/inscripcion`, { role: 'player' }, visitOptions());
 }
 </script>
 
 <template>
     <div class="rounded-lg border border-default bg-surface p-4 text-sm">
-        <div
-            v-if="error"
-            role="alert"
-            class="mb-3 rounded-lg bg-error-light p-3 text-base-primary"
-        >
+        <div v-if="error" role="alert" class="mb-3 rounded-lg bg-error-light p-3 text-base-primary">
             {{ error }}
         </div>
 
@@ -161,9 +160,11 @@ function rejoin(): void {
                     {{ t('gameTables.campaignSession.enrolled') }}
                 </span>
                 <span v-else class="font-semibold text-base-primary">
-                    {{ waitingPosition !== null
-                        ? t('gameTables.campaignSession.waiting', { position: waitingPosition })
-                        : t('gameTables.campaignSession.waitingNoPosition') }}
+                    {{
+                        waitingPosition !== null
+                            ? t('gameTables.campaignSession.waiting', { position: waitingPosition })
+                            : t('gameTables.campaignSession.waitingNoPosition')
+                    }}
                 </span>
             </p>
             <p v-if="state === 'enrolled'" class="mt-2 text-base-secondary">
@@ -172,7 +173,9 @@ function rejoin(): void {
                     v-if="campaignUrl"
                     :href="campaignUrl"
                     class="font-medium text-primary underline underline-offset-2 hover:no-underline focus:outline-none focus:ring-2 focus:ring-primary-500"
-                >{{ campaignSession.campaign_title }}</Link><template v-else>{{ campaignSession.campaign_title }}</template>.
+                    >{{ campaignSession.campaign_title }}</Link
+                ><template v-else>{{ campaignSession.campaign_title }}</template
+                >.
             </p>
 
             <div class="mt-3">
@@ -206,7 +209,9 @@ function rejoin(): void {
         <!-- Not going: the seat can be taken back while there is one -->
         <template v-else>
             <p ref="statusLine" tabindex="-1" class="focus:outline-none">
-                <span class="inline-flex rounded-full bg-warning-bg px-2.5 py-0.5 text-sm font-medium text-warning">
+                <span
+                    class="inline-flex rounded-full bg-warning-bg px-2.5 py-0.5 text-sm font-medium text-warning"
+                >
                     {{ t('gameTables.campaignSession.absent') }}
                 </span>
             </p>

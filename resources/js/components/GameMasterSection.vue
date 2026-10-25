@@ -123,7 +123,8 @@ const consentWrapper = ref<HTMLElement | null>(null);
 
 watchEffect(
     () => {
-        const input = consentWrapper.value?.querySelector<HTMLInputElement>('#gm_gdpr_consent') ?? null;
+        const input =
+            consentWrapper.value?.querySelector<HTMLInputElement>('#gm_gdpr_consent') ?? null;
         if (input === null) return;
 
         if (gdprConsentError.value) {
@@ -134,7 +135,7 @@ watchEffect(
             input.removeAttribute('aria-describedby');
         }
     },
-    { flush: 'post' },
+    { flush: 'post' }
 );
 
 // Update main GM fields
@@ -226,9 +227,7 @@ function cancelRemoveGm(): void {
         <!-- Main GM (current user) - Highlighted card: a translucent primary tint over the surface, so
              the theme's text colours read on it in both themes (no light/dark pairs) -->
         <div v-if="mainGm">
-            <div
-                class="relative rounded-lg border border-primary-500/30 bg-primary-500/10 p-4"
-            >
+            <div class="relative rounded-lg border border-primary-500/30 bg-primary-500/10 p-4">
                 <!-- "Tú" badge -->
                 <span
                     class="absolute right-3 top-3 inline-flex items-center rounded-full border border-primary-500/30 bg-primary-500/5 px-2 py-0.5 text-xs font-medium text-[color:var(--color-primary-link)]"
@@ -256,7 +255,10 @@ function cancelRemoveGm(): void {
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <!-- Custom title -->
                     <div>
-                        <label :for="fieldId(mainGmIndex, 'custom_title')" class="block text-sm font-medium text-base-secondary mb-1">
+                        <label
+                            :for="fieldId(mainGmIndex, 'custom_title')"
+                            class="block text-sm font-medium text-base-secondary mb-1"
+                        >
                             {{ t('gameTables.create.gameMasters.customTitle') }}
                         </label>
                         <input
@@ -270,7 +272,12 @@ function cancelRemoveGm(): void {
                             :disabled="disabled"
                             :class="fieldStateClass(!!fieldError(mainGmIndex, 'custom_title'))"
                             class="w-full rounded-md border bg-surface px-3 py-2 text-sm text-base-primary placeholder-base-muted focus:outline-none focus:ring-1 disabled:opacity-50"
-                            @input="updateMainGm('custom_title', ($event.target as HTMLInputElement).value)"
+                            @input="
+                                updateMainGm(
+                                    'custom_title',
+                                    ($event.target as HTMLInputElement).value
+                                )
+                            "
                         />
                         <p
                             v-if="fieldError(mainGmIndex, 'custom_title')"
@@ -283,7 +290,10 @@ function cancelRemoveGm(): void {
 
                     <!-- Phone -->
                     <div>
-                        <label :for="fieldId(mainGmIndex, 'phone')" class="block text-sm font-medium text-base-secondary mb-1">
+                        <label
+                            :for="fieldId(mainGmIndex, 'phone')"
+                            class="block text-sm font-medium text-base-secondary mb-1"
+                        >
                             {{ t('gameTables.create.gameMasters.phone') }}
                         </label>
                         <input
@@ -297,7 +307,9 @@ function cancelRemoveGm(): void {
                             :disabled="disabled"
                             :class="fieldStateClass(!!fieldError(mainGmIndex, 'phone'))"
                             class="w-full rounded-md border bg-surface px-3 py-2 text-sm text-base-primary placeholder-base-muted focus:outline-none focus:ring-1 disabled:opacity-50"
-                            @input="updateMainGm('phone', ($event.target as HTMLInputElement).value)"
+                            @input="
+                                updateMainGm('phone', ($event.target as HTMLInputElement).value)
+                            "
                         />
                         <p
                             v-if="fieldError(mainGmIndex, 'phone')"
@@ -346,7 +358,9 @@ function cancelRemoveGm(): void {
                     <button
                         type="button"
                         :disabled="disabled"
-                        :aria-label="t('gameTables.create.gameMasters.removeGmLabel', { n: index + 1 })"
+                        :aria-label="
+                            t('gameTables.create.gameMasters.removeGmLabel', { n: index + 1 })
+                        "
                         class="rounded-full p-1.5 text-base-muted transition-colors hover:bg-error-bg hover:text-error disabled:opacity-50"
                         @click="requestRemoveGm(index)"
                     >
@@ -357,7 +371,10 @@ function cancelRemoveGm(): void {
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <!-- First name -->
                     <div>
-                        <label :for="fieldId(fullIndexOf(index), 'first_name')" class="block text-sm font-medium text-base-secondary mb-1">
+                        <label
+                            :for="fieldId(fullIndexOf(index), 'first_name')"
+                            class="block text-sm font-medium text-base-secondary mb-1"
+                        >
                             {{ t('gameTables.create.gameMasters.firstName') }}
                             <span class="text-error">*</span>
                         </label>
@@ -371,7 +388,13 @@ function cancelRemoveGm(): void {
                             :disabled="disabled"
                             :class="fieldStateClass(!!fieldError(fullIndexOf(index), 'first_name'))"
                             class="w-full rounded-md border bg-surface px-3 py-2 text-sm text-base-primary placeholder-base-muted focus:outline-none focus:ring-1 disabled:opacity-50"
-                            @input="updateAdditionalGm(index, 'first_name', ($event.target as HTMLInputElement).value)"
+                            @input="
+                                updateAdditionalGm(
+                                    index,
+                                    'first_name',
+                                    ($event.target as HTMLInputElement).value
+                                )
+                            "
                         />
                         <p
                             v-if="fieldError(fullIndexOf(index), 'first_name')"
@@ -384,7 +407,10 @@ function cancelRemoveGm(): void {
 
                     <!-- Last name -->
                     <div>
-                        <label :for="fieldId(fullIndexOf(index), 'last_name')" class="block text-sm font-medium text-base-secondary mb-1">
+                        <label
+                            :for="fieldId(fullIndexOf(index), 'last_name')"
+                            class="block text-sm font-medium text-base-secondary mb-1"
+                        >
                             {{ t('gameTables.create.gameMasters.lastName') }}
                         </label>
                         <input
@@ -397,7 +423,13 @@ function cancelRemoveGm(): void {
                             :disabled="disabled"
                             :class="fieldStateClass(!!fieldError(fullIndexOf(index), 'last_name'))"
                             class="w-full rounded-md border bg-surface px-3 py-2 text-sm text-base-primary placeholder-base-muted focus:outline-none focus:ring-1 disabled:opacity-50"
-                            @input="updateAdditionalGm(index, 'last_name', ($event.target as HTMLInputElement).value)"
+                            @input="
+                                updateAdditionalGm(
+                                    index,
+                                    'last_name',
+                                    ($event.target as HTMLInputElement).value
+                                )
+                            "
                         />
                         <p
                             v-if="fieldError(fullIndexOf(index), 'last_name')"
@@ -410,7 +442,10 @@ function cancelRemoveGm(): void {
 
                     <!-- Email -->
                     <div>
-                        <label :for="fieldId(fullIndexOf(index), 'email')" class="block text-sm font-medium text-base-secondary mb-1">
+                        <label
+                            :for="fieldId(fullIndexOf(index), 'email')"
+                            class="block text-sm font-medium text-base-secondary mb-1"
+                        >
                             {{ t('gameTables.create.gameMasters.email') }}
                             <span class="text-error">*</span>
                         </label>
@@ -424,7 +459,13 @@ function cancelRemoveGm(): void {
                             :disabled="disabled"
                             :class="fieldStateClass(!!fieldError(fullIndexOf(index), 'email'))"
                             class="w-full rounded-md border bg-surface px-3 py-2 text-sm text-base-primary placeholder-base-muted focus:outline-none focus:ring-1 disabled:opacity-50"
-                            @input="updateAdditionalGm(index, 'email', ($event.target as HTMLInputElement).value)"
+                            @input="
+                                updateAdditionalGm(
+                                    index,
+                                    'email',
+                                    ($event.target as HTMLInputElement).value
+                                )
+                            "
                         />
                         <p
                             v-if="fieldError(fullIndexOf(index), 'email')"
@@ -437,7 +478,10 @@ function cancelRemoveGm(): void {
 
                     <!-- Phone -->
                     <div>
-                        <label :for="fieldId(fullIndexOf(index), 'phone')" class="block text-sm font-medium text-base-secondary mb-1">
+                        <label
+                            :for="fieldId(fullIndexOf(index), 'phone')"
+                            class="block text-sm font-medium text-base-secondary mb-1"
+                        >
                             {{ t('gameTables.create.gameMasters.phone') }}
                         </label>
                         <input
@@ -451,7 +495,13 @@ function cancelRemoveGm(): void {
                             :disabled="disabled"
                             :class="fieldStateClass(!!fieldError(fullIndexOf(index), 'phone'))"
                             class="w-full rounded-md border bg-surface px-3 py-2 text-sm text-base-primary placeholder-base-muted focus:outline-none focus:ring-1 disabled:opacity-50"
-                            @input="updateAdditionalGm(index, 'phone', ($event.target as HTMLInputElement).value)"
+                            @input="
+                                updateAdditionalGm(
+                                    index,
+                                    'phone',
+                                    ($event.target as HTMLInputElement).value
+                                )
+                            "
                         />
                         <p
                             v-if="fieldError(fullIndexOf(index), 'phone')"
@@ -464,7 +514,10 @@ function cancelRemoveGm(): void {
 
                     <!-- Custom title -->
                     <div>
-                        <label :for="fieldId(fullIndexOf(index), 'custom_title')" class="block text-sm font-medium text-base-secondary mb-1">
+                        <label
+                            :for="fieldId(fullIndexOf(index), 'custom_title')"
+                            class="block text-sm font-medium text-base-secondary mb-1"
+                        >
                             {{ t('gameTables.create.gameMasters.customTitle') }}
                         </label>
                         <input
@@ -476,9 +529,17 @@ function cancelRemoveGm(): void {
                             :value="gm.custom_title"
                             :placeholder="t('gameTables.create.gameMasters.customTitlePlaceholder')"
                             :disabled="disabled"
-                            :class="fieldStateClass(!!fieldError(fullIndexOf(index), 'custom_title'))"
+                            :class="
+                                fieldStateClass(!!fieldError(fullIndexOf(index), 'custom_title'))
+                            "
                             class="w-full rounded-md border bg-surface px-3 py-2 text-sm text-base-primary placeholder-base-muted focus:outline-none focus:ring-1 disabled:opacity-50"
-                            @input="updateAdditionalGm(index, 'custom_title', ($event.target as HTMLInputElement).value)"
+                            @input="
+                                updateAdditionalGm(
+                                    index,
+                                    'custom_title',
+                                    ($event.target as HTMLInputElement).value
+                                )
+                            "
                         />
                         <p
                             v-if="fieldError(fullIndexOf(index), 'custom_title')"
@@ -495,7 +556,9 @@ function cancelRemoveGm(): void {
                             :model-value="gm.is_name_public"
                             :label="t('gameTables.create.gameMasters.showNamePublicly')"
                             :disabled="disabled"
-                            @update:model-value="updateAdditionalGm(index, 'is_name_public', $event)"
+                            @update:model-value="
+                                updateAdditionalGm(index, 'is_name_public', $event)
+                            "
                         />
                     </div>
                 </div>
@@ -503,7 +566,11 @@ function cancelRemoveGm(): void {
         </div>
 
         <!-- GDPR consent for co-GMs data -->
-        <div v-if="showGdprConsent" ref="consentWrapper" class="rounded-lg border border-default bg-surface p-4">
+        <div
+            v-if="showGdprConsent"
+            ref="consentWrapper"
+            class="rounded-lg border border-default bg-surface p-4"
+        >
             <FormCheckbox
                 id="gm_gdpr_consent"
                 name="gm_gdpr_consent"

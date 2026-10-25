@@ -90,11 +90,19 @@ final class TableRegistrationsCopyTest extends TestCase
         $path = [];
         $values = [];
 
+        $pendingKey = null;
+
         foreach (explode("\n", (string) file_get_contents(dirname(__DIR__, 3)."/resources/js/locales/{$locale}.ts")) as $line) {
-            if (preg_match('/^\s*(\w+): \{$/', $line, $match) === 1) {
+            if ($pendingKey !== null) {
+                // Prettier moves a long text to the line after its key
+                $values[implode('.', [...array_slice($path, 1), $pendingKey])] = trim($line);
+                $pendingKey = null;
+            } elseif (preg_match('/^\s*(\w+): \{$/', $line, $match) === 1) {
                 $path[] = $match[1];
             } elseif (preg_match('/^\s*\},?$/', $line) === 1) {
                 array_pop($path);
+            } elseif (preg_match('/^\s*(\w+):$/', $line, $match) === 1) {
+                $pendingKey = $match[1];
             } elseif (preg_match('/^\s*(\w+): (.+)$/', $line, $match) === 1) {
                 $values[implode('.', [...array_slice($path, 1), $match[1]])] = (string) $match[2];
             }

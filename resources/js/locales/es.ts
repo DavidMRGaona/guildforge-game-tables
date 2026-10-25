@@ -161,8 +161,10 @@ export default {
             yourStatus: 'Tu inscripción',
             loginRequired: 'Inicia sesión para inscribirte',
             joinWaitingList: 'Apuntarse a la lista de espera',
-            waitingListHelp: 'La mesa está completa. Si se libera una plaza antes del inicio de la partida (o del cierre de inscripciones, si es anterior), pasarás a ella automáticamente por orden de lista y te avisaremos por correo.',
-            waitingListHelpManual: 'La mesa está completa. Si se libera una plaza antes del inicio de la partida (o del cierre de inscripciones, si es anterior), pasarás a ella por orden de lista, pendiente de que el director te confirme, y te avisaremos por correo.',
+            waitingListHelp:
+                'La mesa está completa. Si se libera una plaza antes del inicio de la partida (o del cierre de inscripciones, si es anterior), pasarás a ella automáticamente por orden de lista y te avisaremos por correo.',
+            waitingListHelpManual:
+                'La mesa está completa. Si se libera una plaza antes del inicio de la partida (o del cierre de inscripciones, si es anterior), pasarás a ella por orden de lista, pendiente de que el director te confirme, y te avisaremos por correo.',
             spectatorOnly: 'Las plazas de jugador están completas: te inscribirás como espectador',
             selectRole: 'Selecciona tu rol',
             addNotes: 'Añadir notas (opcional)',
@@ -177,7 +179,8 @@ export default {
         campaignSession: {
             enrolled: 'Inscrito por la campaña',
             sessionOf: 'Sesión de',
-            waiting: 'En lista de espera (puesto {position}). Tienes prioridad por ser de la plantilla.',
+            waiting:
+                'En lista de espera (puesto {position}). Tienes prioridad por ser de la plantilla.',
             waitingNoPosition: 'En lista de espera. Tienes prioridad por ser de la plantilla.',
             cannotGo: 'No puedo ir a esta sesión',
             cannotGoTitle: '¿No puedes ir a esta sesión?',
@@ -268,7 +271,8 @@ export default {
                 accept: 'Aceptar',
                 reject: 'Rechazar',
                 rejectTitle: 'Rechazar la invitación',
-                rejectMessage: 'Se borrará tu email de esta invitación y no recibirás más correos de ella.',
+                rejectMessage:
+                    'Se borrará tu email de esta invitación y no recibirás más correos de ella.',
             },
             created: {
                 tabLabel: 'Mis mesas',
@@ -302,9 +306,11 @@ export default {
             pendingReviewMessage: 'En revisión',
             rejectionReason: 'Motivo del rechazo',
             rejectionHint: 'Corrígela y vuelve a enviarla a revisión.',
-            confirmSubmit: 'Una vez enviada, la mesa será revisada por un moderador antes de publicarse. ¿Deseas continuar?',
+            confirmSubmit:
+                'Una vez enviada, la mesa será revisada por un moderador antes de publicarse. ¿Deseas continuar?',
             deleteTitle: 'Eliminar mesa',
-            confirmDelete: '¿Estás seguro de que quieres eliminar "{title}"? Esta acción no se puede deshacer.',
+            confirmDelete:
+                '¿Estás seguro de que quieres eliminar "{title}"? Esta acción no se puede deshacer.',
         },
         // «Gestionar inscritos»: the directors of a table that delegates its registrations
         registrations: {
@@ -322,7 +328,8 @@ export default {
             rejectTitle: 'Rechazar la solicitud de {name}',
             rejectReason: 'Motivo (opcional; se le enviará por correo)',
             rejectConfirm: 'Rechazar solicitud',
-            autoConfirmNotice: 'Esta partida confirma las inscripciones automáticamente; no tendrás solicitudes que aprobar.',
+            autoConfirmNotice:
+                'Esta partida confirma las inscripciones automáticamente; no tendrás solicitudes que aprobar.',
             seats: '{confirmed} de {max} plazas ocupadas',
         },
         // Name of the tab list of the table and campaign forms
@@ -410,7 +417,8 @@ export default {
                 notesHelp: 'Información adicional que quieras compartir con los jugadores',
                 noLocationNeeded: 'No se necesita ubicación para el formato de mesa seleccionado',
                 customWarnings: 'Avisos personalizados',
-                customWarningsHelp: 'Añade avisos de contenido específicos que no estén en la lista predefinida',
+                customWarningsHelp:
+                    'Añade avisos de contenido específicos que no estén en la lista predefinida',
                 customWarningsPlaceholder: 'Escribe un aviso y pulsa Enter',
                 event: 'Evento',
                 selectEvent: 'Buscar evento...',
@@ -418,7 +426,8 @@ export default {
             },
             gameMasters: {
                 title: 'Directores de juego',
-                description: 'Tú serás el director principal. Puedes añadir co-directores si lo deseas.',
+                description:
+                    'Tú serás el director principal. Puedes añadir co-directores si lo deseas.',
                 mainGmLabel: 'Director principal (tú)',
                 youBadge: 'Tú',
                 appliesToAllTables: 'Se aplica a todas las mesas que diriges.',
@@ -434,13 +443,15 @@ export default {
                 email: 'Email',
                 phone: 'Teléfono',
                 phonePlaceholder: '+34 600 000 000',
-                gdprConsent: 'Confirmo que tengo el consentimiento de los co-directores para compartir sus datos personales (nombre, email y teléfono) en esta plataforma.',
+                gdprConsent:
+                    'Confirmo que tengo el consentimiento de los co-directores para compartir sus datos personales (nombre, email y teléfono) en esta plataforma.',
                 gdprConsentLabel: 'Consentimiento de los co-directores',
                 roleMain: 'Director principal',
                 roleCogm: 'Co-director',
                 removeGmLabel: 'Eliminar co-director #{n}',
                 removeGmTitle: 'Eliminar co-director',
-                removeGmMessage: '¿Estás seguro de que quieres eliminar a este co-director? Esta acción no se puede deshacer.',
+                removeGmMessage:
+                    '¿Estás seguro de que quieres eliminar a este co-director? Esta acción no se puede deshacer.',
                 removeGmConfirm: 'Eliminar',
                 removeGmCancel: 'Cancelar',
             },
@@ -559,9 +570,11 @@ export default {
             submitForReviewTitle: 'Enviar campaña a revisión',
             viewPublic: 'Ver campaña pública',
             pendingReviewMessage: 'En revisión',
-            confirmSubmit: 'Una vez enviada, la campaña será revisada por un moderador antes de publicarse. ¿Deseas continuar?',
+            confirmSubmit:
+                'Una vez enviada, la campaña será revisada por un moderador antes de publicarse. ¿Deseas continuar?',
             deleteTitle: 'Eliminar campaña',
-            confirmDelete: '¿Estás seguro de que quieres eliminar "{title}"? Esta acción no se puede deshacer.',
+            confirmDelete:
+                '¿Estás seguro de que quieres eliminar "{title}"? Esta acción no se puede deshacer.',
             players: 'jugadores',
             recruiting: 'Reclutando',
             rejectionReason: 'Motivo del rechazo',
@@ -585,15 +598,19 @@ export default {
             accept: 'Aceptar',
             reject: 'Rechazar',
             rejectTitle: 'Rechazar la invitación',
-            rejectMessage: 'Se borrará tu email de esta invitación y no recibirás más correos de ella.',
-            mismatch: 'Esta invitación es para otro email. Cierra sesión y entra con la cuenta correcta.',
+            rejectMessage:
+                'Se borrará tu email de esta invitación y no recibirás más correos de ella.',
+            mismatch:
+                'Esta invitación es para otro email. Cierra sesión y entra con la cuenta correcta.',
             logout: 'Cerrar sesión',
             mustVerify: 'Verifica tu email para aceptar.',
             verifyLink: 'Ir a la verificación',
             rejectedTitle: 'Invitación rechazada',
-            rejected: 'Hemos borrado tu email de esta invitación y no recibirás más correos de ella.',
+            rejected:
+                'Hemos borrado tu email de esta invitación y no recibirás más correos de ella.',
             invalidTitle: 'Invitación no válida',
-            invalid: 'Esta invitación ya no está disponible: puede haber caducado, haberse rechazado o haberse aceptado.',
+            invalid:
+                'Esta invitación ya no está disponible: puede haber caducado, haberse rechazado o haberse aceptado.',
             viewCampaigns: 'Ver las campañas',
         },
         // The direction's roster page
@@ -601,13 +618,15 @@ export default {
             back: 'Mis campañas',
             title: 'Plantilla · {title}',
             subtitle: '{count} de {max} plazas · Pueden solicitar: {access}',
-            subtitleNoMax: '{count} jugador · Pueden solicitar: {access} | {count} jugadores · Pueden solicitar: {access}',
+            subtitleNoMax:
+                '{count} jugador · Pueden solicitar: {access} | {count} jugadores · Pueden solicitar: {access}',
             settings: {
                 title: 'Ajustes de la campaña',
                 acceptsNewPlayers: 'Acepta jugadores nuevos',
                 rosterAccess: 'Quién puede solicitar',
                 maxPlayers: 'Máximo de jugadores',
-                maxPlayersHelp: 'Déjalo vacío para no poner límite. No puede ser menor que la plantilla actual ({count}).',
+                maxPlayersHelp:
+                    'Déjalo vacío para no poner límite. No puede ser menor que la plantilla actual ({count}).',
                 save: 'Guardar ajustes',
                 finished: 'La campaña ha terminado: ya no se pueden añadir jugadores.',
             },
@@ -624,7 +643,8 @@ export default {
             invite: {
                 title: 'Invitar jugador',
                 email: 'Email de la persona',
-                consent: 'Confirmo que esta persona me ha dado permiso para usar su email para invitarla a la campaña.',
+                consent:
+                    'Confirmo que esta persona me ha dado permiso para usar su email para invitarla a la campaña.',
                 submit: 'Enviar invitación',
                 note: 'Le enviaremos un correo para que acepte. Si aún no tiene cuenta, podrá crearla desde el enlace.',
             },
@@ -637,7 +657,8 @@ export default {
                 cancel: 'Cancelar',
                 cancelTitle: 'Cancelar invitación',
                 cancelMessage: 'La invitación a {email} dejará de ser válida.',
-                tooManyPending: 'Hay más invitaciones pendientes que plazas libres; entrará quien acepte primero.',
+                tooManyPending:
+                    'Hay más invitaciones pendientes que plazas libres; entrará quien acepte primero.',
             },
             players: {
                 title: 'Jugadores ({count})',
@@ -647,8 +668,10 @@ export default {
                 removeTitle: 'Quitar de la plantilla',
                 // Starts with the visible «Quitar», so voice control finds it
                 removeNamed: 'Quitar a {name}',
-                removeMessage: '{name} dejará la plantilla y perderá sus plazas en las sesiones que aún no han empezado. Se le avisará por correo.',
-                removeMessageNoEmail: '{name} dejará la plantilla y perderá sus plazas en las sesiones que aún no han empezado.',
+                removeMessage:
+                    '{name} dejará la plantilla y perderá sus plazas en las sesiones que aún no han empezado. Se le avisará por correo.',
+                removeMessageNoEmail:
+                    '{name} dejará la plantilla y perderá sus plazas en las sesiones que aún no han empezado.',
                 since: 'Desde el {date}',
                 empty: 'La plantilla está vacía.',
                 noSessions: 'No hay sesiones próximas.',
@@ -684,13 +707,16 @@ export default {
                     full: 'Completa',
                 },
                 confirm: {
-                    markAbsence: '{name} quedará ausente de la sesión del {date}. Se le avisará por correo.',
-                    clearAbsence: '{name} volverá a tener plaza en la sesión del {date} y recibirá la confirmación por correo.',
+                    markAbsence:
+                        '{name} quedará ausente de la sesión del {date}. Se le avisará por correo.',
+                    clearAbsence:
+                        '{name} volverá a tener plaza en la sesión del {date} y recibirá la confirmación por correo.',
                 },
                 // Read by screen readers: the visible text first, then the player, the full date and the action
                 accessibleName: '{label} — {name}, {date}. {action}',
             },
-            footnote: 'Cada casilla es la asistencia de un jugador a una sesión. Púlsala para marcar su ausencia o volver a inscribirlo; el jugador recibe un correo.',
+            footnote:
+                'Cada casilla es la asistencia de un jugador a una sesión. Púlsala para marcar su ausencia o volver a inscribirlo; el jugador recibe un correo.',
         },
         // The join box of the campaign page
         join: {
@@ -710,10 +736,12 @@ export default {
             send: 'Enviar solicitud',
             counter: '{count}/{max} caracteres',
             memberTitle: 'Formas parte de esta campaña',
-            memberHint: 'Estás inscrito en sus próximas sesiones. Si no puedes ir a una, date de baja desde la ficha de esa sesión.',
+            memberHint:
+                'Estás inscrito en sus próximas sesiones. Si no puedes ir a una, date de baja desde la ficha de esa sesión.',
             leave: 'Salir de la campaña',
             leaveTitle: 'Salir de la campaña',
-            leaveMessage: 'Perderás tus plazas en las próximas sesiones. ¿Quieres salir de «{title}»?',
+            leaveMessage:
+                'Perderás tus plazas en las próximas sesiones. ¿Quieres salir de «{title}»?',
             leaveConfirm: 'Salir',
             full: 'Plantilla completa',
             notAccepting: 'No acepta jugadores nuevos',
@@ -763,7 +791,8 @@ export default {
                 safetyTools: 'Herramientas de seguridad',
                 contentWarnings: 'Avisos de contenido',
                 customWarnings: 'Avisos personalizados',
-                customWarningsHelp: 'Añade avisos de contenido específicos que no estén en la lista predefinida',
+                customWarningsHelp:
+                    'Añade avisos de contenido específicos que no estén en la lista predefinida',
                 customWarningsPlaceholder: 'Escribe un aviso y pulsa Enter',
                 location: 'Ubicación física',
                 locationHelp: 'Indica dónde se jugarán las sesiones presenciales',
@@ -816,8 +845,10 @@ export default {
         success: 'Te has inscrito correctamente. Recibirás un email de confirmación.',
         emailSent: 'Hemos enviado un email a {email} con los detalles de tu inscripción.',
         error: 'Ha ocurrido un error al procesar tu inscripción.',
-        confirmationNoticeHold: 'Te enviaremos un email para confirmar la inscripción. Si no la confirmas antes del {deadline}, la plaza se liberará.',
-        confirmationNoticeWait: 'Te enviaremos un email para confirmar la inscripción. Tu plaza no está garantizada hasta que la confirmes.',
+        confirmationNoticeHold:
+            'Te enviaremos un email para confirmar la inscripción. Si no la confirmas antes del {deadline}, la plaza se liberará.',
+        confirmationNoticeWait:
+            'Te enviaremos un email para confirmar la inscripción. Tu plaza no está garantizada hasta que la confirmes.',
         alreadyFromBrowser: 'Ya hay una inscripción desde este navegador para esta mesa.',
         logIn: 'Iniciar sesión',
     },

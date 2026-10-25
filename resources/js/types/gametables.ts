@@ -611,7 +611,8 @@ export interface JoinBox {
     pending_requests: number;
 }
 
-export type CampaignInvitationState = 'invalid' | 'rejected' | 'guest' | 'match' | 'mismatch' | 'must_verify';
+export type CampaignInvitationState =
+    'invalid' | 'rejected' | 'guest' | 'match' | 'mismatch' | 'must_verify';
 
 /** What the invitation page gets: the invited email and the expiry only when the state needs them */
 export interface CampaignInvitationView {
@@ -624,13 +625,7 @@ export interface CampaignInvitationView {
 }
 
 export type TableRegistrationStatus =
-    | 'pending'
-    | 'confirmed'
-    | 'waiting_list'
-    | 'cancelled'
-    | 'rejected'
-    | 'no_show'
-    | 'expired';
+    'pending' | 'confirmed' | 'waiting_list' | 'cancelled' | 'rejected' | 'no_show' | 'expired';
 
 /** One registration on the «Gestionar inscritos» page (TableRegistrationRowDTO): no contact details. */
 export interface TableRegistrationRow {

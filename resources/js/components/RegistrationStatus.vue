@@ -49,7 +49,10 @@ const statusIcon = computed(() => {
 });
 
 const showPosition = computed(() => {
-    return props.registration.status === 'waiting_list' && props.registration.waitingListPosition !== null;
+    return (
+        props.registration.status === 'waiting_list' &&
+        props.registration.waitingListPosition !== null
+    );
 });
 </script>
 
@@ -61,12 +64,9 @@ const showPosition = computed(() => {
                 <div
                     class="flex h-10 w-10 items-center justify-center rounded-full"
                     :class="{
-                        'bg-success-light text-base-primary':
-                            statusIcon === 'check-circle',
-                        'bg-info-light text-base-primary':
-                            statusIcon === 'clock',
-                        'bg-muted text-base-muted':
-                            statusIcon === 'x-circle',
+                        'bg-success-light text-base-primary': statusIcon === 'check-circle',
+                        'bg-info-light text-base-primary': statusIcon === 'clock',
+                        'bg-muted text-base-muted': statusIcon === 'x-circle',
                     }"
                 >
                     <!-- Check circle -->
@@ -92,10 +92,7 @@ const showPosition = computed(() => {
             </div>
 
             <!-- Position in waiting list -->
-            <div
-                v-if="showPosition"
-                class="text-right"
-            >
+            <div v-if="showPosition" class="text-right">
                 <p class="text-sm text-base-secondary">
                     {{ t('gameTables.participants.waitingList') }}
                 </p>

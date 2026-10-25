@@ -47,7 +47,7 @@ const routes = useRoutes();
 
 // Native modal dialog: showModal() gives it the dialog role, keeps focus inside, makes the page
 // behind inert and turns Escape into a cancel event
-// eslint-disable-next-line no-undef
+
 const dialogRef = ref<HTMLDialogElement | null>(null);
 const titleId = useId();
 

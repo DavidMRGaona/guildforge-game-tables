@@ -19,7 +19,9 @@ const { t } = useI18n();
 const headingId = useId();
 const reasonId = useId();
 
-const keys = computed(() => (props.kind === 'table' ? 'gameTables.myTables' : 'campaigns.myCampaigns'));
+const keys = computed(() =>
+    props.kind === 'table' ? 'gameTables.myTables' : 'campaigns.myCampaigns'
+);
 
 const reasonElement = ref<HTMLElement | null>(null);
 const expanded = ref(false);
@@ -61,12 +63,19 @@ watch(
         <div class="flex gap-3">
             <TriangleAlert class="h-5 w-5 shrink-0 text-error" aria-hidden="true" />
             <div class="min-w-0 flex-1 text-sm">
-                <p :id="headingId" class="font-semibold text-base-primary">{{ t(`${keys}.rejectionReason`) }}</p>
+                <p :id="headingId" class="font-semibold text-base-primary">
+                    {{ t(`${keys}.rejectionReason`) }}
+                </p>
                 <p
                     :id="reasonId"
                     ref="reasonElement"
-                    :class="['mt-1 whitespace-pre-line break-words text-base-primary', expanded ? '' : 'line-clamp-3']"
-                >{{ reason }}</p>
+                    :class="[
+                        'mt-1 whitespace-pre-line break-words text-base-primary',
+                        expanded ? '' : 'line-clamp-3',
+                    ]"
+                >
+                    {{ reason }}
+                </p>
                 <button
                     v-if="overflows"
                     type="button"
@@ -75,7 +84,11 @@ watch(
                     :aria-controls="reasonId"
                     @click="expanded = !expanded"
                 >
-                    {{ expanded ? t('gameTables.draftActions.showLess') : t('gameTables.draftActions.showMore') }}
+                    {{
+                        expanded
+                            ? t('gameTables.draftActions.showLess')
+                            : t('gameTables.draftActions.showMore')
+                    }}
                 </button>
                 <p class="mt-1 text-base-secondary">{{ t(`${keys}.rejectionHint`) }}</p>
             </div>

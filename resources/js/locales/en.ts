@@ -150,8 +150,10 @@ export default {
             yourStatus: 'Your registration',
             loginRequired: 'Log in to register',
             joinWaitingList: 'Join the waiting list',
-            waitingListHelp: 'The table is full. If a seat is freed before the table starts (or before registrations close, if that comes first), you will take it automatically, in waiting list order, and we will let you know by email.',
-            waitingListHelpManual: 'The table is full. If a seat is freed before the table starts (or before registrations close, if that comes first), you will take it in waiting list order, pending confirmation by the game master, and we will let you know by email.',
+            waitingListHelp:
+                'The table is full. If a seat is freed before the table starts (or before registrations close, if that comes first), you will take it automatically, in waiting list order, and we will let you know by email.',
+            waitingListHelpManual:
+                'The table is full. If a seat is freed before the table starts (or before registrations close, if that comes first), you will take it in waiting list order, pending confirmation by the game master, and we will let you know by email.',
             spectatorOnly: 'Player seats are taken: you will register as a spectator',
             selectRole: 'Select your role',
             addNotes: 'Add notes (optional)',
@@ -160,13 +162,15 @@ export default {
             spectatorsFull: 'No spectator spots available',
             confirmedAt: 'Confirmed on',
             registeredAt: 'Registered on',
-            withdrawalClosed: 'The session has already started: you can no longer cancel your registration',
+            withdrawalClosed:
+                'The session has already started: you can no longer cancel your registration',
         },
         // The registration box of a campaign session
         campaignSession: {
             enrolled: 'Registered through the campaign',
             sessionOf: 'Session of',
-            waiting: 'On the waiting list (position {position}). You have priority as a roster member.',
+            waiting:
+                'On the waiting list (position {position}). You have priority as a roster member.',
             waitingNoPosition: 'On the waiting list. You have priority as a roster member.',
             cannotGo: 'I cannot make this session',
             cannotGoTitle: 'Cannot make this session?',
@@ -268,7 +272,8 @@ export default {
                 accept: 'Accept',
                 reject: 'Reject',
                 rejectTitle: 'Reject the invitation',
-                rejectMessage: 'Your email will be deleted from this invitation and you will not receive more emails from it.',
+                rejectMessage:
+                    'Your email will be deleted from this invitation and you will not receive more emails from it.',
             },
             created: {
                 tabLabel: 'My tables',
@@ -302,9 +307,11 @@ export default {
             pendingReviewMessage: 'Under review',
             rejectionReason: 'Rejection reason',
             rejectionHint: 'Fix it and send it to review again.',
-            confirmSubmit: 'Once submitted, the table will be reviewed by a moderator before publishing. Do you want to continue?',
+            confirmSubmit:
+                'Once submitted, the table will be reviewed by a moderator before publishing. Do you want to continue?',
             deleteTitle: 'Delete table',
-            confirmDelete: 'Are you sure you want to delete "{title}"? This action cannot be undone.',
+            confirmDelete:
+                'Are you sure you want to delete "{title}"? This action cannot be undone.',
         },
         // «Gestionar inscritos»: the directors of a table that delegates its registrations
         registrations: {
@@ -322,7 +329,8 @@ export default {
             rejectTitle: "Reject {name}'s request",
             rejectReason: 'Reason (optional; it will be emailed to them)',
             rejectConfirm: 'Reject request',
-            autoConfirmNotice: 'This table confirms registrations automatically; you will have no requests to approve.',
+            autoConfirmNotice:
+                'This table confirms registrations automatically; you will have no requests to approve.',
             seats: '{confirmed} of {max} seats taken',
         },
         // Name of the tab list of the table and campaign forms
@@ -410,7 +418,8 @@ export default {
                 notesHelp: 'Additional information you want to share with players',
                 noLocationNeeded: 'No location needed for the selected table format',
                 customWarnings: 'Custom warnings',
-                customWarningsHelp: 'Add specific content warnings that are not in the predefined list',
+                customWarningsHelp:
+                    'Add specific content warnings that are not in the predefined list',
                 customWarningsPlaceholder: 'Type a warning and press Enter',
                 event: 'Event',
                 selectEvent: 'Search event...',
@@ -434,13 +443,15 @@ export default {
                 email: 'Email',
                 phone: 'Phone',
                 phonePlaceholder: '+1 555 000 0000',
-                gdprConsent: 'I confirm that I have consent from the co-GMs to share their personal data (name, email, and phone) on this platform.',
+                gdprConsent:
+                    'I confirm that I have consent from the co-GMs to share their personal data (name, email, and phone) on this platform.',
                 gdprConsentLabel: "Co-GMs' consent",
                 roleMain: 'Main GM',
                 roleCogm: 'Co-GM',
                 removeGmLabel: 'Remove co-GM #{n}',
                 removeGmTitle: 'Remove co-GM',
-                removeGmMessage: 'Are you sure you want to remove this co-GM? This action cannot be undone.',
+                removeGmMessage:
+                    'Are you sure you want to remove this co-GM? This action cannot be undone.',
                 removeGmConfirm: 'Remove',
                 removeGmCancel: 'Cancel',
             },
@@ -559,15 +570,19 @@ export default {
             accept: 'Accept',
             reject: 'Decline',
             rejectTitle: 'Decline the invitation',
-            rejectMessage: 'Your email will be deleted from this invitation and you will get no more emails from it.',
-            mismatch: 'This invitation is for another email. Sign out and sign in with the right account.',
+            rejectMessage:
+                'Your email will be deleted from this invitation and you will get no more emails from it.',
+            mismatch:
+                'This invitation is for another email. Sign out and sign in with the right account.',
             logout: 'Sign out',
             mustVerify: 'Verify your email to accept.',
             verifyLink: 'Go to verification',
             rejectedTitle: 'Invitation declined',
-            rejected: 'We have deleted your email from this invitation and you will get no more emails from it.',
+            rejected:
+                'We have deleted your email from this invitation and you will get no more emails from it.',
             invalidTitle: 'Invalid invitation',
-            invalid: 'This invitation is no longer available: it may have expired, been rejected or been accepted.',
+            invalid:
+                'This invitation is no longer available: it may have expired, been rejected or been accepted.',
             viewCampaigns: 'View campaigns',
         },
         // The direction's roster page
@@ -575,13 +590,15 @@ export default {
             back: 'My campaigns',
             title: 'Roster · {title}',
             subtitle: '{count} of {max} seats · Who can ask: {access}',
-            subtitleNoMax: '{count} player · Who can ask: {access} | {count} players · Who can ask: {access}',
+            subtitleNoMax:
+                '{count} player · Who can ask: {access} | {count} players · Who can ask: {access}',
             settings: {
                 title: 'Campaign settings',
                 acceptsNewPlayers: 'Accepts new players',
                 rosterAccess: 'Who can ask to join',
                 maxPlayers: 'Maximum players',
-                maxPlayersHelp: 'Leave it empty for no limit. It cannot be lower than the current roster ({count}).',
+                maxPlayersHelp:
+                    'Leave it empty for no limit. It cannot be lower than the current roster ({count}).',
                 save: 'Save settings',
                 finished: 'The campaign has ended: no more players can be added.',
             },
@@ -598,7 +615,8 @@ export default {
             invite: {
                 title: 'Invite player',
                 email: 'Email of the person',
-                consent: 'I confirm that this person has given me permission to use their email to invite them to the campaign.',
+                consent:
+                    'I confirm that this person has given me permission to use their email to invite them to the campaign.',
                 submit: 'Send invitation',
                 note: 'We will email them so they can accept. If they have no account yet, they can create one from the link.',
             },
@@ -611,7 +629,8 @@ export default {
                 cancel: 'Cancel',
                 cancelTitle: 'Cancel invitation',
                 cancelMessage: 'The invitation to {email} will stop being valid.',
-                tooManyPending: 'There are more pending invitations than free seats; whoever accepts first gets in.',
+                tooManyPending:
+                    'There are more pending invitations than free seats; whoever accepts first gets in.',
             },
             players: {
                 title: 'Players ({count})',
@@ -621,8 +640,10 @@ export default {
                 removeTitle: 'Remove from the roster',
                 // Starts with the visible «Remove», so voice control finds it
                 removeNamed: 'Remove {name}',
-                removeMessage: '{name} will leave the roster and lose their seats in the sessions that have not started yet. They will be told by email.',
-                removeMessageNoEmail: '{name} will leave the roster and lose their seats in the sessions that have not started yet.',
+                removeMessage:
+                    '{name} will leave the roster and lose their seats in the sessions that have not started yet. They will be told by email.',
+                removeMessageNoEmail:
+                    '{name} will leave the roster and lose their seats in the sessions that have not started yet.',
                 since: 'Since {date}',
                 empty: 'The roster is empty.',
                 noSessions: 'There are no upcoming sessions.',
@@ -658,13 +679,16 @@ export default {
                     full: 'Full',
                 },
                 confirm: {
-                    markAbsence: '{name} will be marked absent from the session of {date}. They will be told by email.',
-                    clearAbsence: '{name} will get a seat again in the session of {date} and receive the registration confirmation by email.',
+                    markAbsence:
+                        '{name} will be marked absent from the session of {date}. They will be told by email.',
+                    clearAbsence:
+                        '{name} will get a seat again in the session of {date} and receive the registration confirmation by email.',
                 },
                 // Read by screen readers: the visible text first, then the player, the full date and the action
                 accessibleName: '{label} — {name}, {date}. {action}',
             },
-            footnote: 'Each cell is a player\'s attendance to a session. Press it to mark their absence or register them again; the player receives an email.',
+            footnote:
+                "Each cell is a player's attendance to a session. Press it to mark their absence or register them again; the player receives an email.",
         },
         // The join box of the campaign page
         join: {
@@ -684,10 +708,12 @@ export default {
             send: 'Send request',
             counter: '{count}/{max} characters',
             memberTitle: 'You are part of this campaign',
-            memberHint: 'You are registered in its upcoming sessions. If you cannot attend one, cancel from that session\'s page.',
+            memberHint:
+                "You are registered in its upcoming sessions. If you cannot attend one, cancel from that session's page.",
             leave: 'Leave the campaign',
             leaveTitle: 'Leave the campaign',
-            leaveMessage: 'You will lose your seats in the upcoming sessions. Do you want to leave «{title}»?',
+            leaveMessage:
+                'You will lose your seats in the upcoming sessions. Do you want to leave «{title}»?',
             leaveConfirm: 'Leave',
             full: 'Roster full',
             notAccepting: 'Not accepting new players',
@@ -724,8 +750,10 @@ export default {
         success: 'You have been registered successfully. You will receive a confirmation email.',
         emailSent: 'We have sent an email to {email} with your registration details.',
         error: 'An error occurred while processing your registration.',
-        confirmationNoticeHold: 'We will email you to confirm the registration. If you do not confirm it before {deadline}, the place will be released.',
-        confirmationNoticeWait: 'We will email you to confirm the registration. Your place is not guaranteed until you confirm it.',
+        confirmationNoticeHold:
+            'We will email you to confirm the registration. If you do not confirm it before {deadline}, the place will be released.',
+        confirmationNoticeWait:
+            'We will email you to confirm the registration. Your place is not guaranteed until you confirm it.',
         alreadyFromBrowser: 'There is already a registration from this browser for this table.',
         logIn: 'Log in',
     },
@@ -743,7 +771,8 @@ export default {
         alreadyCancelled: 'This registration has already been cancelled or cannot be modified.',
         viewTable: 'View table',
         guest: 'Guest',
-        tableStarted: 'The session has already started: you can no longer cancel your registration.',
+        tableStarted:
+            'The session has already started: you can no longer cancel your registration.',
     },
     confirmRegistration: {
         title: 'Confirm registration',

@@ -26,7 +26,10 @@ import RegistrationStatus from './RegistrationStatus.vue';
 import GuestRegistrationModal from './GuestRegistrationModal.vue';
 import CampaignSessionRosterBox from './CampaignSessionRosterBox.vue';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
-import { useVerificationGate, type VerificationGateAction } from '@/composables/useVerificationGate';
+import {
+    useVerificationGate,
+    type VerificationGateAction,
+} from '@/composables/useVerificationGate';
 import { useFlashMessages } from '@/composables/useFlashMessages';
 
 // The table page always sends these props (slot game-table-registration); the module has no API to fetch them
@@ -80,7 +83,8 @@ const notesInput = ref<HTMLElement | null>(null);
 // The chosen role's option when it can still be chosen, else the first enabled one, else the heading
 function focusRoleOption(preferred: ParticipantRole | null): void {
     const options = { player: playerOptionButton.value, spectator: spectatorOptionButton.value };
-    const isEnabled = (button: HTMLButtonElement | null): button is HTMLButtonElement => button !== null && !button.disabled;
+    const isEnabled = (button: HTMLButtonElement | null): button is HTMLButtonElement =>
+        button !== null && !button.disabled;
     const preferredOption = preferred !== null ? options[preferred] : null;
     const target = isEnabled(preferredOption)
         ? preferredOption
@@ -214,7 +218,9 @@ const canRegister = computed(() => {
 });
 
 // An active registration decides the button: closed reasons only affect who is not registered
-const hasActiveRegistration = computed(() => !!registration.value && !isFinalStatus(registration.value.status));
+const hasActiveRegistration = computed(
+    () => !!registration.value && !isFinalStatus(registration.value.status)
+);
 
 // The server decides: an active registration on a table that has not started
 const canCancel = computed(() => {
@@ -229,7 +235,9 @@ const isTableFull = computed(() => spotsAvailable.value <= 0);
 const rosterSession = computed<CampaignSessionInfo | null>(() => {
     if (!isAuthenticated.value) return null;
     if (props.campaignSession?.is_roster_member !== true) return null;
-    return !hasActiveRegistration.value || registration.value?.role !== 'spectator' ? props.campaignSession : null;
+    return !hasActiveRegistration.value || registration.value?.role !== 'spectator'
+        ? props.campaignSession
+        : null;
 });
 
 // The campaign's public page (none while the campaign is not published)
@@ -238,9 +246,21 @@ const campaignUrl = computed(() =>
 );
 
 // Someone outside the roster: a closed campaign says where it is, an open one invites to join it
-const isCampaignOutsider = computed(() => props.campaignSession !== null && !props.campaignSession.is_roster_member);
-const showsClosedCampaignLink = computed(() => isCampaignOutsider.value && props.campaignSession?.closed === true && campaignUrl.value !== null);
-const invitesToCampaign = computed(() => isCampaignOutsider.value && props.campaignSession?.closed === false && campaignUrl.value !== null);
+const isCampaignOutsider = computed(
+    () => props.campaignSession !== null && !props.campaignSession.is_roster_member
+);
+const showsClosedCampaignLink = computed(
+    () =>
+        isCampaignOutsider.value &&
+        props.campaignSession?.closed === true &&
+        campaignUrl.value !== null
+);
+const invitesToCampaign = computed(
+    () =>
+        isCampaignOutsider.value &&
+        props.campaignSession?.closed === false &&
+        campaignUrl.value !== null
+);
 
 // A player registration goes to the waiting list (only when the module setting is on)
 const canJoinWaitingList = computed(() => {
@@ -248,7 +268,9 @@ const canJoinWaitingList = computed(() => {
     return playerEligible.value && eligibility.value?.waitingList === true;
 });
 
-const guestJoinsWaitingList = computed(() => props.guestEligibility?.eligible === true && props.guestEligibility.waitingList);
+const guestJoinsWaitingList = computed(
+    () => props.guestEligibility?.eligible === true && props.guestEligibility.waitingList
+);
 
 // Player seats taken (and no waiting list) but spectator seats free: only spectators can register
 const spectatorOnly = computed(() => !playerEligible.value && spectatorEligible.value);
@@ -259,7 +281,9 @@ const guestSpectatorOnly = computed(
 // Ties the main button to the line explaining the promotion (aria-describedby)
 const waitingListHelpId = computed(() => `waiting-list-help-${resolvedTableId.value}`);
 const showsWaitingListHelp = computed(
-    () => !canCancel.value && (canJoinWaitingList.value || (canRegisterAsGuest.value && guestJoinsWaitingList.value))
+    () =>
+        !canCancel.value &&
+        (canJoinWaitingList.value || (canRegisterAsGuest.value && guestJoinsWaitingList.value))
 );
 
 // The role options keep their explanation outside the button (a disabled button gets no focus)
@@ -275,7 +299,13 @@ const waitingListHelp = computed(() => {
 });
 
 // Reasons that close the registrations for everyone, whatever the seats
-const CLOSED_REASONS: readonly string[] = ['registration_closed', 'table_started', 'table_ended', 'invitation_only', 'campaign_roster_only'];
+const CLOSED_REASONS: readonly string[] = [
+    'registration_closed',
+    'table_started',
+    'table_ended',
+    'invitation_only',
+    'campaign_roster_only',
+];
 
 const isRegistrationClosed = computed(() => {
     if (!eligibility.value) return true;
@@ -428,7 +458,9 @@ function handleRegister(role: ParticipantRole): void {
                 notes.value = '';
             },
             onError: (errors) => {
-                error.value = Object.values(errors)[0] as string || t('gameTables.errors.registrationClosed');
+                error.value =
+                    (Object.values(errors)[0] as string) ||
+                    t('gameTables.errors.registrationClosed');
             },
             onFinish: () => {
                 loading.value = false;
@@ -447,7 +479,8 @@ function handleCancel(): void {
     router.delete(`/mesas/${resolvedTableSlug.value}/inscripcion`, {
         preserveScroll: true,
         onError: (errors) => {
-            error.value = Object.values(errors)[0] as string || t('gameTables.errors.cannotCancel');
+            error.value =
+                (Object.values(errors)[0] as string) || t('gameTables.errors.cannotCancel');
         },
         onFinish: () => {
             loading.value = false;
@@ -538,10 +571,7 @@ function cancelRoleSelect(): void {
         </div>
 
         <!-- Error message -->
-        <div
-            v-if="error"
-            class="mb-4 rounded-lg bg-error-light p-4 text-sm text-base-primary"
-        >
+        <div v-if="error" class="mb-4 rounded-lg bg-error-light p-4 text-sm text-base-primary">
             {{ error }}
         </div>
 
@@ -591,7 +621,11 @@ function cancelRoleSelect(): void {
                                     tabindex="-1"
                                     class="mb-4 text-center text-lg font-semibold text-base-primary focus:outline-none"
                                 >
-                                    {{ showNotesInput ? t('gameTables.registration.addNotes') : t('gameTables.registration.selectRole') }}
+                                    {{
+                                        showNotesInput
+                                            ? t('gameTables.registration.addNotes')
+                                            : t('gameTables.registration.selectRole')
+                                    }}
                                 </h3>
 
                                 <!-- Role buttons -->
@@ -602,8 +636,7 @@ function cancelRoleSelect(): void {
                                         :class="{
                                             'bg-primary-500/10 hover:bg-primary-500/20':
                                                 playerEligible && !canJoinWaitingList,
-                                            'bg-info/10 hover:bg-info/20':
-                                                canJoinWaitingList,
+                                            'bg-info/10 hover:bg-info/20': canJoinWaitingList,
                                             'bg-base-secondary/10': !playerEligible,
                                         }"
                                     >
@@ -615,26 +648,47 @@ function cancelRoleSelect(): void {
                                             class="w-full text-left font-medium text-base-primary before:absolute before:inset-0 before:rounded-lg focus:outline-none focus-visible:before:ring-2 focus-visible:before:ring-primary-500 disabled:cursor-not-allowed"
                                             @click="selectRole('player')"
                                         >
-                                            {{ canJoinWaitingList ? t('gameTables.registration.joinWaitingList') : t('gameTables.registration.registerAsPlayer') }}
+                                            {{
+                                                canJoinWaitingList
+                                                    ? t('gameTables.registration.joinWaitingList')
+                                                    : t('gameTables.registration.registerAsPlayer')
+                                            }}
                                         </button>
-                                        <p :id="playerOptionHelpId" class="mt-1 text-sm text-base-secondary">
+                                        <p
+                                            :id="playerOptionHelpId"
+                                            class="mt-1 text-sm text-base-secondary"
+                                        >
                                             <template v-if="canJoinWaitingList">
                                                 {{ waitingListHelp }}
                                                 <template v-if="waitingListCount > 0">
-                                                    ({{ waitingListCount }} {{ t('gameTables.participants.waitingList').toLowerCase() }})
+                                                    ({{ waitingListCount }}
+                                                    {{
+                                                        t(
+                                                            'gameTables.participants.waitingList'
+                                                        ).toLowerCase()
+                                                    }})
                                                 </template>
                                             </template>
                                             <template v-else-if="playerEligible">
-                                                {{ t('gameTables.details.spotsAvailable', { spots: spotsAvailable }) }}
+                                                {{
+                                                    t('gameTables.details.spotsAvailable', {
+                                                        spots: spotsAvailable,
+                                                    })
+                                                }}
                                             </template>
                                             <template v-else>
-                                                {{ eligibility?.message ?? t('gameTables.details.full') }}
+                                                {{
+                                                    eligibility?.message ??
+                                                    t('gameTables.details.full')
+                                                }}
                                             </template>
                                         </p>
                                     </div>
 
                                     <div
-                                        v-if="tableData?.maxSpectators && tableData.maxSpectators > 0"
+                                        v-if="
+                                            tableData?.maxSpectators && tableData.maxSpectators > 0
+                                        "
                                         class="relative w-full rounded-lg px-4 py-3 text-left transition-colors"
                                         :class="{
                                             'bg-base-secondary/10 hover:bg-base-secondary/20':
@@ -652,18 +706,38 @@ function cancelRoleSelect(): void {
                                         >
                                             {{ t('gameTables.registration.registerAsSpectator') }}
                                         </button>
-                                        <p :id="spectatorOptionHelpId" class="mt-1 text-sm text-base-secondary">
-                                            <template v-if="spectatorEligible && spectatorSpotsAvailable !== null">
-                                                {{ t('gameTables.details.spotsAvailable', { spots: spectatorSpotsAvailable }) }}
+                                        <p
+                                            :id="spectatorOptionHelpId"
+                                            class="mt-1 text-sm text-base-secondary"
+                                        >
+                                            <template
+                                                v-if="
+                                                    spectatorEligible &&
+                                                    spectatorSpotsAvailable !== null
+                                                "
+                                            >
+                                                {{
+                                                    t('gameTables.details.spotsAvailable', {
+                                                        spots: spectatorSpotsAvailable,
+                                                    })
+                                                }}
                                             </template>
                                             <template v-else-if="spectatorEligible">
                                                 {{ t('gameTables.details.spectators') }}
                                             </template>
-                                            <template v-else-if="eligibility?.spectator?.reason === 'spectators_full'">
+                                            <template
+                                                v-else-if="
+                                                    eligibility?.spectator?.reason ===
+                                                    'spectators_full'
+                                                "
+                                            >
                                                 {{ t('gameTables.registration.spectatorsFull') }}
                                             </template>
                                             <template v-else>
-                                                {{ eligibility?.spectator?.message ?? t('gameTables.registration.spectatorsFull') }}
+                                                {{
+                                                    eligibility?.spectator?.message ??
+                                                    t('gameTables.registration.spectatorsFull')
+                                                }}
                                             </template>
                                         </p>
                                     </div>
@@ -684,7 +758,9 @@ function cancelRoleSelect(): void {
                                             v-model="notes"
                                             rows="3"
                                             class="w-full rounded-lg border border-strong bg-surface px-3 py-2 text-sm text-base-primary focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                                            :placeholder="t('gameTables.registration.notesPlaceholder')"
+                                            :placeholder="
+                                                t('gameTables.registration.notesPlaceholder')
+                                            "
                                         ></textarea>
                                     </div>
 
@@ -702,7 +778,10 @@ function cancelRoleSelect(): void {
                                             class="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
                                             @click="submitWithNotes"
                                         >
-                                            <span v-if="loading" class="flex items-center justify-center">
+                                            <span
+                                                v-if="loading"
+                                                class="flex items-center justify-center"
+                                            >
                                                 <LoadingSpinner
                                                     class="mr-2"
                                                     size="sm"
@@ -748,13 +827,19 @@ function cancelRoleSelect(): void {
                 class="w-full rounded-lg px-6 py-3 text-center font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface"
                 :class="{
                     'bg-primary text-white hover:bg-primary-700 focus:ring-primary-500':
-                        (isAuthenticated && canRegister && !canJoinWaitingList && !verificationBlocked) || (canRegisterAsGuest && !guestJoinsWaitingList),
+                        (isAuthenticated &&
+                            canRegister &&
+                            !canJoinWaitingList &&
+                            !verificationBlocked) ||
+                        (canRegisterAsGuest && !guestJoinsWaitingList),
                     // Theme tokens: fixed hues ignored the site palette. The core's semantic backgrounds win over
                     // module hover variants, so the hover cue is a shadow (waiting list) or a tint on no base (cancel)
                     'border border-info bg-info-light text-base-primary hover:shadow-md focus:ring-info':
-                        (isAuthenticated && canJoinWaitingList && !verificationBlocked) || (canRegisterAsGuest && guestJoinsWaitingList),
+                        (isAuthenticated && canJoinWaitingList && !verificationBlocked) ||
+                        (canRegisterAsGuest && guestJoinsWaitingList),
                     // Destructive but secondary: outlined so it does not compete with the main action
-                    'border border-error text-error hover:bg-error/10 focus:ring-error': canCancel && !verificationBlocked,
+                    'border border-error text-error hover:bg-error/10 focus:ring-error':
+                        canCancel && !verificationBlocked,
                     'bg-base-secondary text-base-inverted hover:bg-base-secondary/90 focus:ring-base-secondary':
                         !isAuthenticated && !canRegisterAsGuest,
                     'cursor-not-allowed bg-base-secondary/10 text-base-secondary':
@@ -797,7 +882,8 @@ function cancelRoleSelect(): void {
                     {{ t('gameTables.details.full') }}
                 </template>
                 <template v-if="waitingListCount > 0">
-                    · {{ waitingListCount }} {{ t('gameTables.participants.waitingList').toLowerCase() }}
+                    · {{ waitingListCount }}
+                    {{ t('gameTables.participants.waitingList').toLowerCase() }}
                 </template>
             </div>
 
@@ -821,12 +907,16 @@ function cancelRoleSelect(): void {
             </p>
 
             <!-- An open campaign: the session is one way in, the roster another -->
-            <p v-if="invitesToCampaign && campaignUrl" class="mt-2 text-center text-sm text-base-secondary">
+            <p
+                v-if="invitesToCampaign && campaignUrl"
+                class="mt-2 text-center text-sm text-base-secondary"
+            >
                 {{ t('gameTables.campaignSession.wholeCampaign') }}
                 <Link
                     :href="campaignUrl"
                     class="font-medium text-primary underline underline-offset-2 hover:no-underline focus:outline-none focus:ring-2 focus:ring-primary-500"
-                >{{ t('gameTables.campaignSession.requestToJoin') }}</Link>
+                    >{{ t('gameTables.campaignSession.requestToJoin') }}</Link
+                >
             </p>
 
             <!-- Cancel confirmation modal -->
@@ -857,12 +947,16 @@ function cancelRoleSelect(): void {
                                 class="w-full max-w-md rounded-xl bg-surface p-6 shadow-2xl"
                             >
                                 <!-- Icon -->
-                                <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-error-light">
+                                <div
+                                    class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-error-light"
+                                >
                                     <TriangleAlert class="h-6 w-6 text-error" aria-hidden="true" />
                                 </div>
 
                                 <!-- Title -->
-                                <h3 class="mb-2 text-center text-lg font-semibold text-base-primary">
+                                <h3
+                                    class="mb-2 text-center text-lg font-semibold text-base-primary"
+                                >
                                     {{ t('gameTables.registration.cancelRegistration') }}
                                 </h3>
 
@@ -898,7 +992,10 @@ function cancelRoleSelect(): void {
             <GuestRegistrationModal
                 :is-open="showGuestModal"
                 :table-slug="resolvedTableSlug"
-                :has-spectator-slots="(tableData?.maxSpectators ?? 0) > 0 && guestEligibility?.spectator.eligible === true"
+                :has-spectator-slots="
+                    (tableData?.maxSpectators ?? 0) > 0 &&
+                    guestEligibility?.spectator.eligible === true
+                "
                 :player-available="guestEligibility?.eligible === true"
                 :waiting-list="guestJoinsWaitingList"
                 :waiting-list-help="waitingListHelp"

@@ -66,7 +66,10 @@ const groupedTables = computed((): DayGroup[] => {
                     month: '2-digit',
                     day: '2-digit',
                 }),
-                weekday: date.toLocaleDateString(locale.value, { timeZone: VENUE_TIMEZONE, weekday: 'long' }),
+                weekday: date.toLocaleDateString(locale.value, {
+                    timeZone: VENUE_TIMEZONE,
+                    weekday: 'long',
+                }),
                 day: Number(isoDate.slice(8)),
                 tables: tables.sort(
                     (a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()
@@ -131,11 +134,7 @@ function goToNextMonth(): void {
     <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <!-- Month Navigation -->
         <div class="mb-6 flex items-center justify-between">
-            <BaseButton
-                variant="secondary"
-                :loading="isNavigating"
-                @click="goToPreviousMonth"
-            >
+            <BaseButton variant="secondary" :loading="isNavigating" @click="goToPreviousMonth">
                 <ChevronLeft class="h-5 w-5" aria-hidden="true" />
                 {{ t('common.previous') }}
             </BaseButton>
@@ -154,7 +153,9 @@ function goToNextMonth(): void {
         <div v-if="groupedTables.length > 0" class="space-y-8">
             <div v-for="group in groupedTables" :key="group.isoDate" class="space-y-4">
                 <!-- Date Header -->
-                <div class="sticky top-0 z-10 border-l-4 border-primary-600 bg-surface py-2 pl-4 shadow-sm">
+                <div
+                    class="sticky top-0 z-10 border-l-4 border-primary-600 bg-surface py-2 pl-4 shadow-sm"
+                >
                     <h3 class="text-lg font-semibold text-base-primary">
                         {{ group.weekday }}, {{ group.day }}
                     </h3>
@@ -162,20 +163,13 @@ function goToNextMonth(): void {
 
                 <!-- Tables for this day -->
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    <GameTableCard
-                        v-for="table in group.tables"
-                        :key="table.id"
-                        :table="table"
-                    />
+                    <GameTableCard v-for="table in group.tables" :key="table.id" :table="table" />
                 </div>
             </div>
         </div>
 
         <!-- Empty State -->
-        <div
-            v-else
-            class="rounded-lg border border-dashed border-default p-12 text-center"
-        >
+        <div v-else class="rounded-lg border border-dashed border-default p-12 text-center">
             <Calendar class="mx-auto h-16 w-16 text-base-muted" aria-hidden="true" />
             <h3 class="mt-4 text-lg font-medium text-base-primary">
                 {{ t('gameTables.noTablesThisMonth') }}
