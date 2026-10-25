@@ -76,7 +76,7 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
     {
         $participant = $this->find($id);
 
-        if ($participant === null) {
+        if (!$participant instanceof \Modules\GameTables\Domain\Entities\Participant) {
             throw ParticipantNotFoundException::withId($id->value);
         }
 
@@ -357,7 +357,7 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
             }
         }
 
-        return array_map('strval', array_keys($marked));
+        return array_map(strval(...), array_keys($marked));
     }
 
     public function getNextWaitingListPosition(GameTableId $gameTableId): int
@@ -427,7 +427,7 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
         return $this->inWaitingListOrder(ParticipantModel::query()
             ->where('game_table_id', $gameTableId->value)
             ->where('status', ParticipantStatus::WaitingList->value)
-            ->when($role !== null, fn (Builder $query) => $query->where('role', $role?->value)));
+            ->when($role instanceof \Modules\GameTables\Domain\Enums\ParticipantRole, fn (Builder $query) => $query->where('role', $role?->value)));
     }
 
     /**
@@ -494,7 +494,7 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
 
     private function immutable(?Carbon $value): ?DateTimeImmutable
     {
-        return $value !== null ? new DateTimeImmutable($value->toDateTimeString()) : null;
+        return $value instanceof \Illuminate\Support\Carbon ? new DateTimeImmutable($value->toDateTimeString()) : null;
     }
 
     /**

@@ -113,7 +113,7 @@ final class ParticipantsRelationManager extends RelationManager
      * A guest of the public form who has not followed the emailed link yet (users never confirm an
      * email here, whatever the column holds).
      */
-    private static function isAwaitingEmailConfirmation(ParticipantModel $record): bool
+    private function isAwaitingEmailConfirmation(ParticipantModel $record): bool
     {
         return $record->user_id === null
             && $record->email_confirmed_at === null
@@ -127,7 +127,7 @@ final class ParticipantsRelationManager extends RelationManager
     {
         $flags = [];
 
-        if (self::isAwaitingEmailConfirmation($record)) {
+        if ($this->isAwaitingEmailConfirmation($record)) {
             $flags[] = self::FLAG_EMAIL_UNCONFIRMED;
         }
 
@@ -171,7 +171,7 @@ final class ParticipantsRelationManager extends RelationManager
                     // Who the registration belongs to changes only by cancelling it and adding again
                     ->disabled(fn (string $operation): bool => $operation === 'edit')
                     ->afterStateHydrated(function (Select $component, ?string $state, ?ParticipantModel $record): void {
-                        if ($record !== null) {
+                        if ($record instanceof \Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel) {
                             $component->state($record->user_id !== null ? 'user' : 'external');
                         }
                     }),
@@ -182,18 +182,18 @@ final class ParticipantsRelationManager extends RelationManager
                     ->searchable()
                     ->preload()
                     ->disabled(fn (string $operation): bool => $operation === 'edit')
-                    ->visible(fn (Get $get, string $operation, ?ParticipantModel $record): bool => ! self::isGuestForm($get, $operation, $record))
+                    ->visible(fn (Get $get, string $operation, ?ParticipantModel $record): bool => ! $this->isGuestForm($get, $operation, $record))
                     ->required(fn (Get $get, string $operation): bool => $operation !== 'edit' && $get('participant_type') === 'user'),
 
                 Grid::make(2)
                     ->schema([
                         TextInput::make('first_name')
                             ->label(__('game-tables::messages.fields.first_name'))
-                            ->required(fn (Get $get, string $operation, ?ParticipantModel $record): bool => self::isGuestForm($get, $operation, $record)),
+                            ->required(fn (Get $get, string $operation, ?ParticipantModel $record): bool => $this->isGuestForm($get, $operation, $record)),
                         TextInput::make('last_name')
                             ->label(__('game-tables::messages.fields.last_name')),
                     ])
-                    ->visible(fn (Get $get, string $operation, ?ParticipantModel $record): bool => self::isGuestForm($get, $operation, $record)),
+                    ->visible(fn (Get $get, string $operation, ?ParticipantModel $record): bool => $this->isGuestForm($get, $operation, $record)),
 
                 Grid::make(2)
                     ->schema([
@@ -202,14 +202,14 @@ final class ParticipantsRelationManager extends RelationManager
                             ->email()
                             // Adding goes through the registration service, which refuses it too
                             ->rule(
-                                fn (?ParticipantModel $record): Closure => self::emailFreeAtTable($record),
+                                fn (?ParticipantModel $record): Closure => $this->emailFreeAtTable($record),
                                 fn (string $operation): bool => $operation === 'edit',
                             ),
                         TextInput::make('phone')
                             ->label(__('game-tables::messages.fields.phone'))
                             ->tel(),
                     ])
-                    ->visible(fn (Get $get, string $operation, ?ParticipantModel $record): bool => self::isGuestForm($get, $operation, $record)),
+                    ->visible(fn (Get $get, string $operation, ?ParticipantModel $record): bool => $this->isGuestForm($get, $operation, $record)),
 
                 // On Edit the role is fixed: a new role is a new seat, so it means cancelling and
                 // adding again, which go through the table lock and the seat rules
@@ -236,10 +236,10 @@ final class ParticipantsRelationManager extends RelationManager
      * The guest fields show for a guest: chosen in the form when adding, the record's own when
      * editing (the type cannot change, so a state sent with the form is not trusted).
      */
-    private static function isGuestForm(Get $get, string $operation, ?ParticipantModel $record): bool
+    private function isGuestForm(Get $get, string $operation, ?ParticipantModel $record): bool
     {
         if ($operation === 'edit') {
-            return $record !== null && $record->user_id === null;
+            return $record instanceof \Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel && $record->user_id === null;
         }
 
         return $get('participant_type') === 'external';
@@ -248,10 +248,10 @@ final class ParticipantsRelationManager extends RelationManager
     /**
      * One active guest per email and table, whatever the case it is typed in (as on registration).
      */
-    private static function emailFreeAtTable(?ParticipantModel $record): Closure
+    private function emailFreeAtTable(?ParticipantModel $record): Closure
     {
         return function (string $attribute, mixed $value, Closure $fail) use ($record): void {
-            if ($record === null || ! is_string($value) || trim($value) === '') {
+            if (!$record instanceof \Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel || ! is_string($value) || trim($value) === '') {
                 return;
             }
 
@@ -288,7 +288,7 @@ final class ParticipantsRelationManager extends RelationManager
      * row was read. Nothing listens to participant deletes (the status history keeps its rows,
      * unlinked, by its foreign key), so a query delete loses nothing.
      */
-    private static function deleteIfCancelledOrRejected(Model $record): bool
+    private function deleteIfCancelledOrRejected(Model $record): bool
     {
         $deletable = array_map(
             fn (ParticipantStatus $status): string => $status->value,
@@ -308,7 +308,7 @@ final class ParticipantsRelationManager extends RelationManager
      *
      * @param  EloquentCollection<int, Model>  $records
      */
-    private static function deleteCancelledOrRejected(EloquentCollection $records): void
+    private function deleteCancelledOrRejected(EloquentCollection $records): void
     {
         $deleted = 0;
         $skipped = 0;
@@ -316,7 +316,7 @@ final class ParticipantsRelationManager extends RelationManager
 
         foreach ($records as $record) {
             try {
-                self::deleteIfCancelledOrRejected($record) ? $deleted++ : $skipped++;
+                $this->deleteIfCancelledOrRejected($record) ? $deleted++ : $skipped++;
             } catch (Throwable $exception) {
                 report($exception);
                 $failed++;
@@ -355,7 +355,7 @@ final class ParticipantsRelationManager extends RelationManager
         return ! $this->isReadOnly() && $this->canManageParticipants();
     }
 
-    private static function notifySeatsFull(TableFullException $exception): void
+    private function notifySeatsFull(TableFullException $exception): void
     {
         Notification::make()
             ->title(__('game-tables::messages.errors.'.$exception->reason))
@@ -373,13 +373,11 @@ final class ParticipantsRelationManager extends RelationManager
                 TextColumn::make('display_name')
                     ->label(__('game-tables::messages.fields.name'))
                     ->getStateUsing(fn (ParticipantModel $record): string => $record->display_name)
-                    ->searchable(query: function ($query, string $search) {
-                        return $query->where(function ($q) use ($search) {
-                            $q->whereHas('user', fn ($userQuery) => $userQuery->where('name', 'like', "%{$search}%"))
-                                ->orWhere('first_name', 'like', "%{$search}%")
-                                ->orWhere('last_name', 'like', "%{$search}%");
-                        });
-                    })
+                    ->searchable(query: fn($query, string $search) => $query->where(function ($q) use ($search) {
+                        $q->whereHas('user', fn ($userQuery) => $userQuery->where('name', 'like', "%{$search}%"))
+                            ->orWhere('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%");
+                    }))
                     ->sortable(),
 
                 TextColumn::make('role')
@@ -493,7 +491,7 @@ final class ParticipantsRelationManager extends RelationManager
                             $registrationService->confirm($record->id);
                         } catch (TableFullException $exception) {
                             // With the waiting list on, a confirmation never exceeds the player or spectator seats
-                            self::notifySeatsFull($exception);
+                            $this->notifySeatsFull($exception);
                         }
                     }),
 
@@ -502,7 +500,7 @@ final class ParticipantsRelationManager extends RelationManager
                     ->label(__('game-tables::messages.relation_managers.participants.confirm_email'))
                     ->icon('heroicon-o-envelope-open')
                     ->color('success')
-                    ->visible(fn (ParticipantModel $record): bool => self::isAwaitingEmailConfirmation($record))
+                    ->visible(fn (ParticipantModel $record): bool => $this->isAwaitingEmailConfirmation($record))
                     ->authorize(fn (): bool => $this->canManageParticipants())
                     ->requiresConfirmation()
                     ->modalDescription(__('game-tables::messages.relation_managers.participants.confirm_email_description'))
@@ -511,7 +509,7 @@ final class ParticipantsRelationManager extends RelationManager
                             app(RegistrationServiceInterface::class)->confirmGuestEmailByAdmin($record->id);
                         } catch (TableFullException $exception) {
                             // A guest without a place finds no room: it stays unconfirmed
-                            self::notifySeatsFull($exception);
+                            $this->notifySeatsFull($exception);
                         }
                     }),
 
@@ -554,7 +552,7 @@ final class ParticipantsRelationManager extends RelationManager
                             $registrationService->promoteParticipant($record->id);
                         } catch (TableFullException $exception) {
                             // With the waiting list on, a promotion never exceeds the player or spectator seats
-                            self::notifySeatsFull($exception);
+                            $this->notifySeatsFull($exception);
                         }
                     }),
 
@@ -637,7 +635,7 @@ final class ParticipantsRelationManager extends RelationManager
                     ->visible(fn (ParticipantModel $record): bool => $record->status->canBeDeleted())
                     ->authorize(fn (): bool => $this->canDeleteParticipants())
                     ->using(function (Model $record): bool {
-                        if (self::deleteIfCancelledOrRejected($record)) {
+                        if ($this->deleteIfCancelledOrRejected($record)) {
                             return true;
                         }
 
@@ -654,7 +652,7 @@ final class ParticipantsRelationManager extends RelationManager
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
                         ->authorize(fn (): bool => $this->canDeleteParticipants())
-                        ->action(fn (EloquentCollection $records) => self::deleteCancelledOrRejected($records))
+                        ->action(fn (EloquentCollection $records) => $this->deleteCancelledOrRejected($records))
                         ->successNotification(null)
                         ->failureNotification(null),
                 ]),

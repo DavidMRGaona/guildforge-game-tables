@@ -20,7 +20,7 @@ final readonly class SendGuestEmailConfirmationRequest
     {
         $gameTable = $this->gameTableRepository->find(new GameTableId($event->gameTableId));
 
-        if ($gameTable === null || $event->email === '' || $event->confirmationToken === '') {
+        if (!$gameTable instanceof \Modules\GameTables\Domain\Entities\GameTable || $event->email === '' || $event->confirmationToken === '') {
             return;
         }
 

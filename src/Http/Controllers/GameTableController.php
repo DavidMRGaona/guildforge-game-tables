@@ -41,7 +41,7 @@ final class GameTableController extends Controller
     use BuildsPaginatedResponse;
     use ReadsListFilters;
 
-    private const PER_PAGE = 12;
+    private const int PER_PAGE = 12;
 
     public function __construct(
         private readonly GameTableQueryServiceInterface $queryService,
@@ -151,7 +151,7 @@ final class GameTableController extends Controller
         // 1. Try to find by slug directly
         $table = $this->queryService->findPublishedBySlug($identifier);
 
-        if ($table !== null) {
+        if ($table instanceof \Modules\GameTables\Application\DTOs\GameTableResponseDTO) {
             return $this->renderShow($table);
         }
 
@@ -164,7 +164,7 @@ final class GameTableController extends Controller
         // 3. If it looks like a UUID, try finding by ID and redirect to slug
         if (Str::isUuid($identifier)) {
             $table = $this->queryService->findPublished($identifier);
-            if ($table !== null && $table->slug !== null) {
+            if ($table instanceof \Modules\GameTables\Application\DTOs\GameTableResponseDTO && $table->slug !== null) {
                 return redirect()->route('gametables.show', $table->slug, 301);
             }
         }
@@ -183,7 +183,7 @@ final class GameTableController extends Controller
     {
         $schedule = null;
 
-        if ($table->startsAt !== null) {
+        if ($table->startsAt instanceof \DateTimeInterface) {
             $start = DateTimeImmutable::createFromInterface($table->startsAt);
             $schedule = new SeoScheduleDTO(
                 start: $start,
@@ -218,12 +218,12 @@ final class GameTableController extends Controller
         } else {
             // Get current user's registration
             $registration = $this->registrationService->findByTableAndUser($table->id, (string) $user->id);
-            $userRegistration = $registration !== null ? $this->formatRegistrationForFrontend($registration) : null;
+            $userRegistration = $registration instanceof \Modules\GameTables\Application\DTOs\ParticipantResponseDTO ? $this->formatRegistrationForFrontend($registration) : null;
 
             $eligibility = [
                 ...$this->eligibilityService->canRegisterById($table->id, (string) $user->id),
                 // Whether the button may offer the cancellation: the rule the server applies on submit
-                'canCancel' => $registration !== null && $this->registrationService->withdrawalRefusal($registration->id, $now) === null,
+                'canCancel' => $registration instanceof \Modules\GameTables\Application\DTOs\ParticipantResponseDTO && $this->registrationService->withdrawalRefusal($registration->id, $now) === null,
             ];
         }
 
@@ -252,7 +252,7 @@ final class GameTableController extends Controller
     {
         $gameTable = $this->gameTableRepository->find(new GameTableId($gameTableId));
 
-        return $gameTable !== null ? $this->guestConfirmationPolicy->noticeFor($gameTable, $now) : null;
+        return $gameTable instanceof \Modules\GameTables\Domain\Entities\GameTable ? $this->guestConfirmationPolicy->noticeFor($gameTable, $now) : null;
     }
 
     /**

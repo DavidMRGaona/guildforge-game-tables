@@ -8,16 +8,13 @@ use DomainException;
 
 final class CannotCancelException extends DomainException
 {
-    /**
+    private function __construct(string $message, /**
      * Why: 'already_cancelled', 'not_allowed' (the registration is no longer active) or
      * 'table_started' (participants cannot cancel by themselves once the table has started).
      */
-    public readonly string $reason;
-
-    private function __construct(string $message, string $reason)
+    public readonly string $reason)
     {
         parent::__construct($message);
-        $this->reason = $reason;
     }
 
     public static function alreadyCancelled(string $participantId): self

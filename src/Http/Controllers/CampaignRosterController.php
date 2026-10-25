@@ -178,7 +178,7 @@ final class CampaignRosterController extends Controller
     {
         $request = Str::isUuid($requestId) ? $this->requests->find(new JoinRequestId($requestId)) : null;
 
-        if ($request === null || $request->campaignId->value !== $campaign->id) {
+        if (!$request instanceof \Modules\GameTables\Domain\Entities\CampaignJoinRequest || $request->campaignId->value !== $campaign->id) {
             abort(404);
         }
     }
@@ -190,7 +190,7 @@ final class CampaignRosterController extends Controller
     {
         $invitation = Str::isUuid($invitationId) ? $this->invitationRows->find(new CampaignInvitationId($invitationId)) : null;
 
-        if ($invitation === null || $invitation->campaignId->value !== $campaign->id) {
+        if (!$invitation instanceof \Modules\GameTables\Domain\Entities\CampaignInvitation || $invitation->campaignId->value !== $campaign->id) {
             abort(404);
         }
     }

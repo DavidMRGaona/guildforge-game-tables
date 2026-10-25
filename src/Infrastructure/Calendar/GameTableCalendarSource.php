@@ -45,7 +45,7 @@ final readonly class GameTableCalendarSource implements CalendarEntrySourceInter
         foreach ($tables as $table) {
             $entry = $this->toEntry($table);
 
-            if ($entry !== null) {
+            if ($entry instanceof \App\Application\Calendar\DTOs\CalendarEntryDTO) {
                 $entries[] = $entry;
             }
         }
@@ -55,7 +55,7 @@ final readonly class GameTableCalendarSource implements CalendarEntrySourceInter
 
     private function toEntry(GameTableListDTO $table): ?CalendarEntryDTO
     {
-        if ($table->startsAt === null || $table->slug === null) {
+        if (!$table->startsAt instanceof \DateTimeInterface || $table->slug === null) {
             return null;
         }
 

@@ -7,14 +7,14 @@ namespace Modules\GameTables\Domain\Events;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-final class GameTableCancelled
+final readonly class GameTableCancelled
 {
     use Dispatchable;
     use SerializesModels;
 
     public function __construct(
-        public readonly string $gameTableId,
-        public readonly string $title,
-        public readonly \DateTimeImmutable $startsAt,
+        public string $gameTableId,
+        public string $title,
+        public \DateTimeImmutable $startsAt,
     ) {}
 }

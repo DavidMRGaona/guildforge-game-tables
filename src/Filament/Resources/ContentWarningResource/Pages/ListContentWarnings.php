@@ -13,7 +13,7 @@ final class ListContentWarnings extends ListRecords
 {
     protected static string $resource = ContentWarningResource::class;
 
-    public function getTitle(): string|Htmlable
+    public function getTitle(): string
     {
         return __('game-tables::messages.model.content_warning.plural');
     }

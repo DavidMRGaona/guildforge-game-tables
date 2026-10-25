@@ -35,7 +35,6 @@ final readonly class CreationEligibilityService implements CreationEligibilitySe
 
         if ($accessLevel === CreationAccessLevel::Everyone) {
             return CreationEligibilityDTO::eligible(
-                userTier: null,
                 canCreateTables: true,
                 canCreateCampaigns: $this->settingsReader->canCreateCampaigns(),
             );
@@ -75,7 +74,6 @@ final readonly class CreationEligibilityService implements CreationEligibilitySe
 
         if ($accessLevel === CreationAccessLevel::Everyone) {
             return CreationEligibilityDTO::eligible(
-                userTier: null,
                 canCreateTables: $this->settingsReader->canCreateTables(),
                 canCreateCampaigns: true,
             );
@@ -98,7 +96,7 @@ final readonly class CreationEligibilityService implements CreationEligibilitySe
         };
     }
 
-    public function getCreationOpenDate(?string $userId, DateTimeImmutable $eventStartDate): ?DateTimeImmutable
+    public function getCreationOpenDate(?string $userId, DateTimeImmutable $eventStartDate): \DateTimeImmutable
     {
         $tier = $this->getUserPriorityTier($userId);
         if ($tier === null) {
@@ -124,7 +122,7 @@ final readonly class CreationEligibilityService implements CreationEligibilitySe
         $tiers = $this->settingsReader->getPriorityTiers();
         $user = $this->getUser($userId);
 
-        if ($user === null) {
+        if (!$user instanceof \App\Infrastructure\Persistence\Eloquent\Models\UserModel) {
             return null;
         }
 
@@ -158,7 +156,7 @@ final readonly class CreationEligibilityService implements CreationEligibilitySe
     private function checkRegisteredAccess(string $userId): CreationEligibilityDTO
     {
         $user = $this->getUser($userId);
-        if ($user === null) {
+        if (!$user instanceof \App\Infrastructure\Persistence\Eloquent\Models\UserModel) {
             return CreationEligibilityDTO::notEligible('user_not_found');
         }
 
@@ -174,12 +172,12 @@ final readonly class CreationEligibilityService implements CreationEligibilitySe
     private function checkRoleAccess(string $userId): CreationEligibilityDTO
     {
         $user = $this->getUser($userId);
-        if ($user === null) {
+        if (!$user instanceof \App\Infrastructure\Persistence\Eloquent\Models\UserModel) {
             return CreationEligibilityDTO::notEligible('user_not_found');
         }
 
         $allowedRoles = $this->settingsReader->getAllowedRoles();
-        if (empty($allowedRoles)) {
+        if ($allowedRoles === []) {
             return CreationEligibilityDTO::notEligible('no_roles_configured');
         }
 
@@ -199,7 +197,7 @@ final readonly class CreationEligibilityService implements CreationEligibilitySe
     private function checkPermissionAccess(string $userId): CreationEligibilityDTO
     {
         $user = $this->getUser($userId);
-        if ($user === null) {
+        if (!$user instanceof \App\Infrastructure\Persistence\Eloquent\Models\UserModel) {
             return CreationEligibilityDTO::notEligible('user_not_found');
         }
 
@@ -224,7 +222,7 @@ final readonly class CreationEligibilityService implements CreationEligibilitySe
     private function checkRegisteredAccessForCampaign(string $userId): CreationEligibilityDTO
     {
         $user = $this->getUser($userId);
-        if ($user === null) {
+        if (!$user instanceof \App\Infrastructure\Persistence\Eloquent\Models\UserModel) {
             return CreationEligibilityDTO::notEligible('user_not_found');
         }
 
@@ -240,12 +238,12 @@ final readonly class CreationEligibilityService implements CreationEligibilitySe
     private function checkRoleAccessForCampaign(string $userId): CreationEligibilityDTO
     {
         $user = $this->getUser($userId);
-        if ($user === null) {
+        if (!$user instanceof \App\Infrastructure\Persistence\Eloquent\Models\UserModel) {
             return CreationEligibilityDTO::notEligible('user_not_found');
         }
 
         $allowedRoles = $this->settingsReader->getAllowedRoles();
-        if (empty($allowedRoles)) {
+        if ($allowedRoles === []) {
             return CreationEligibilityDTO::notEligible('no_roles_configured');
         }
 
@@ -265,7 +263,7 @@ final readonly class CreationEligibilityService implements CreationEligibilitySe
     private function checkPermissionAccessForCampaign(string $userId): CreationEligibilityDTO
     {
         $user = $this->getUser($userId);
-        if ($user === null) {
+        if (!$user instanceof \App\Infrastructure\Persistence\Eloquent\Models\UserModel) {
             return CreationEligibilityDTO::notEligible('user_not_found');
         }
 

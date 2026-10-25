@@ -39,7 +39,7 @@ final class ParticipantActorContext implements ParticipantActorContextInterface
 
     public function actorUserId(): ?string
     {
-        if ($this->kind !== null) {
+        if ($this->kind instanceof \Modules\GameTables\Domain\Enums\StatusLogActorKind) {
             return $this->actorUserId;
         }
 
@@ -50,7 +50,7 @@ final class ParticipantActorContext implements ParticipantActorContextInterface
 
     public function actorKind(): StatusLogActorKind
     {
-        if ($this->kind !== null) {
+        if ($this->kind instanceof \Modules\GameTables\Domain\Enums\StatusLogActorKind) {
             return $this->kind;
         }
 
@@ -59,7 +59,7 @@ final class ParticipantActorContext implements ParticipantActorContextInterface
 
     public function reason(): ?string
     {
-        return $this->kind !== null ? $this->reason : null;
+        return $this->kind instanceof \Modules\GameTables\Domain\Enums\StatusLogActorKind ? $this->reason : null;
     }
 
     /**

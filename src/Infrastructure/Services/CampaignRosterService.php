@@ -62,7 +62,7 @@ final readonly class CampaignRosterService implements CampaignRosterServiceInter
                 throw RosterActionRefusedException::because('already_member');
             }
 
-            if ($this->requests->findPending($campaign->id, $userId) !== null) {
+            if ($this->requests->findPending($campaign->id, $userId) instanceof \Modules\GameTables\Domain\Entities\CampaignJoinRequest) {
                 throw RosterActionRefusedException::because('request_pending');
             }
 
@@ -159,7 +159,7 @@ final readonly class CampaignRosterService implements CampaignRosterServiceInter
             $this->guard->ensureCanChange($campaign);
 
             // Same answer as an unknown email: an anonymized account would be a dead roster row
-            if ($this->accounts->findActiveById($userId) === null) {
+            if (!$this->accounts->findActiveById($userId) instanceof \Modules\GameTables\Application\DTOs\AccountDTO) {
                 throw RosterActionRefusedException::because('account_not_found');
             }
 
@@ -177,7 +177,7 @@ final readonly class CampaignRosterService implements CampaignRosterServiceInter
             $this->roster->add($campaign->id, $userId, $now);
 
             $pending = $this->requests->findPending($campaign->id, $userId);
-            if ($pending !== null) {
+            if ($pending instanceof \Modules\GameTables\Domain\Entities\CampaignJoinRequest) {
                 $pending->accept($actorUserId, $now);
                 $this->requests->save($pending);
             }
@@ -264,7 +264,7 @@ final readonly class CampaignRosterService implements CampaignRosterServiceInter
     {
         $request = Str::isUuid($requestId) ? $this->requests->find(new JoinRequestId($requestId)) : null;
 
-        if ($request === null) {
+        if (!$request instanceof \Modules\GameTables\Domain\Entities\CampaignJoinRequest) {
             throw RosterActionRefusedException::because('not_pending');
         }
 
@@ -275,7 +275,7 @@ final readonly class CampaignRosterService implements CampaignRosterServiceInter
     {
         $request = $this->requests->find(new JoinRequestId($requestId));
 
-        if ($request === null || ! $request->isPending()) {
+        if (!$request instanceof \Modules\GameTables\Domain\Entities\CampaignJoinRequest || ! $request->isPending()) {
             throw RosterActionRefusedException::because('not_pending');
         }
 

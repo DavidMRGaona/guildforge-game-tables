@@ -255,7 +255,7 @@ final class GameTable
 
     public function isMemberEarlyAccessActive(DateTimeImmutable $now): bool
     {
-        if ($this->membersEarlyAccessDays <= 0 || $this->registrationOpensAt === null) {
+        if ($this->membersEarlyAccessDays <= 0 || !$this->registrationOpensAt instanceof \DateTimeImmutable) {
             return false;
         }
 
@@ -324,7 +324,7 @@ final class GameTable
         $slot = new TimeSlot(DateTimeImmutable::createFromInterface($startsAt), $durationMinutes);
         $limit = $acceptsRegistrationsInProgress ? $slot->endsAt() : $slot->startsAt;
 
-        if ($configuredClosesAt === null) {
+        if (!$configuredClosesAt instanceof \DateTimeInterface) {
             return $limit;
         }
 
@@ -339,15 +339,10 @@ final class GameTable
             return false;
         }
 
-        if ($this->registrationOpensAt !== null && $now < $this->registrationOpensAt) {
+        if ($this->registrationOpensAt instanceof \DateTimeImmutable && $now < $this->registrationOpensAt) {
             return false;
         }
-
-        if ($this->registrationClosesAt !== null && $now > $this->registrationClosesAt) {
-            return false;
-        }
-
-        return true;
+        return !$this->registrationClosesAt instanceof \DateTimeImmutable || $now <= $this->registrationClosesAt;
     }
 
     /**
@@ -362,7 +357,7 @@ final class GameTable
             return false;
         }
 
-        return $this->registrationClosesAt === null || $now <= $this->registrationClosesAt;
+        return !$this->registrationClosesAt instanceof \DateTimeImmutable || $now <= $this->registrationClosesAt;
     }
 
     public function canUserRegister(bool $isMember, DateTimeImmutable $now, bool $membersEarlyAccess = true): bool
@@ -524,12 +519,12 @@ final class GameTable
 
     public function isCreatedFromFrontend(): bool
     {
-        return $this->frontendCreationStatus !== null;
+        return $this->frontendCreationStatus instanceof \Modules\GameTables\Domain\Enums\FrontendCreationStatus;
     }
 
     public function isPendingModeration(): bool
     {
-        return $this->frontendCreationStatus !== null && $this->frontendCreationStatus->isPending();
+        return $this->frontendCreationStatus instanceof \Modules\GameTables\Domain\Enums\FrontendCreationStatus && $this->frontendCreationStatus->isPending();
     }
 
     /**

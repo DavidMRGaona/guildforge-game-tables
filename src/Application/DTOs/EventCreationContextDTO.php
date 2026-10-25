@@ -51,7 +51,7 @@ final readonly class EventCreationContextDTO
         $earlyAccessOpensAt = null;
         $earlyAccessDaysBefore = null;
 
-        if ($hasEarlyAccess && $creationOpensAt !== null && $earlyAccessTier !== null) {
+        if ($hasEarlyAccess && $creationOpensAt instanceof \DateTimeImmutable && $earlyAccessTier instanceof \Modules\GameTables\Domain\ValueObjects\EarlyAccessTier) {
             $earlyAccessOpensAt = $earlyAccessTier->getOpenDate($creationOpensAt)->format('c');
             $earlyAccessDaysBefore = $earlyAccessTier->daysBeforeOpening;
         }
@@ -86,9 +86,6 @@ final readonly class EventCreationContextDTO
             eventEndDate: null,
             hasEligibilityOverride: false,
             hasEarlyAccess: false,
-            creationOpensAt: null,
-            earlyAccessOpensAt: null,
-            earlyAccessDaysBefore: null,
         );
     }
 

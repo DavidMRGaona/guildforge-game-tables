@@ -137,7 +137,7 @@ final readonly class GameTableService implements GameTableServiceInterface
     {
         $gameTable = $this->gameTableRepository->find(new GameTableId($id));
 
-        if ($gameTable === null) {
+        if (!$gameTable instanceof \Modules\GameTables\Domain\Entities\GameTable) {
             return null;
         }
 
@@ -238,7 +238,7 @@ final readonly class GameTableService implements GameTableServiceInterface
         $gameTables = $this->gameTableRepository->getPublished();
 
         return array_map(
-            fn (GameTable $gt): GameTableListDTO => $this->toListDTO($gt),
+            $this->toListDTO(...),
             $gameTables,
         );
     }
@@ -251,7 +251,7 @@ final readonly class GameTableService implements GameTableServiceInterface
         $gameTables = $this->gameTableRepository->getByStatus($status);
 
         return array_map(
-            fn (GameTable $gt): GameTableListDTO => $this->toListDTO($gt),
+            $this->toListDTO(...),
             $gameTables,
         );
     }
@@ -264,7 +264,7 @@ final readonly class GameTableService implements GameTableServiceInterface
         $gameTables = $this->gameTableRepository->getByGameSystem(new GameSystemId($gameSystemId));
 
         return array_map(
-            fn (GameTable $gt): GameTableListDTO => $this->toListDTO($gt),
+            $this->toListDTO(...),
             $gameTables,
         );
     }
@@ -277,7 +277,7 @@ final readonly class GameTableService implements GameTableServiceInterface
         $gameTables = $this->gameTableRepository->getByCampaign(new CampaignId($campaignId));
 
         return array_map(
-            fn (GameTable $gt): GameTableListDTO => $this->toListDTO($gt),
+            $this->toListDTO(...),
             $gameTables,
         );
     }
@@ -290,7 +290,7 @@ final readonly class GameTableService implements GameTableServiceInterface
         $gameTables = $this->gameTableRepository->getByEvent($eventId);
 
         return array_map(
-            fn (GameTable $gt): GameTableListDTO => $this->toListDTO($gt),
+            $this->toListDTO(...),
             $gameTables,
         );
     }
@@ -303,7 +303,7 @@ final readonly class GameTableService implements GameTableServiceInterface
         $gameTables = $this->gameTableRepository->getByCreator($userId);
 
         return array_map(
-            fn (GameTable $gt): GameTableListDTO => $this->toListDTO($gt),
+            $this->toListDTO(...),
             $gameTables,
         );
     }
@@ -316,7 +316,7 @@ final readonly class GameTableService implements GameTableServiceInterface
         $gameTables = $this->gameTableRepository->getUpcoming($limit);
 
         return array_map(
-            fn (GameTable $gt): GameTableListDTO => $this->toListDTO($gt),
+            $this->toListDTO(...),
             $gameTables,
         );
     }
@@ -326,7 +326,7 @@ final readonly class GameTableService implements GameTableServiceInterface
      */
     private function guardRoster(GameTable $gameTable): void
     {
-        if ($this->roster === null || $gameTable->campaignId === null) {
+        if (!$this->roster instanceof \Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface || !$gameTable->campaignId instanceof \Modules\GameTables\Domain\ValueObjects\CampaignId) {
             return;
         }
 

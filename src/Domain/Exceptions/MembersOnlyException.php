@@ -8,12 +8,9 @@ use DomainException;
 
 final class MembersOnlyException extends DomainException
 {
-    public readonly string $reason;
-
-    private function __construct(string $message, string $reason)
+    private function __construct(string $message, public readonly string $reason)
     {
         parent::__construct($message);
-        $this->reason = $reason;
     }
 
     public static function forTable(string $tableId): self

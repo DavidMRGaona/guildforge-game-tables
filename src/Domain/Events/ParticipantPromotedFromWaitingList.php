@@ -7,16 +7,16 @@ namespace Modules\GameTables\Domain\Events;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-final class ParticipantPromotedFromWaitingList
+final readonly class ParticipantPromotedFromWaitingList
 {
     use Dispatchable;
     use SerializesModels;
 
     public function __construct(
-        public readonly string $participantId,
-        public readonly string $gameTableId,
-        public readonly ?string $userId,
+        public string $participantId,
+        public string $gameTableId,
+        public ?string $userId,
         // False on tables with manual confirmation: the promoted player waits as pending
-        public readonly bool $confirmed = true,
+        public bool $confirmed = true,
     ) {}
 }

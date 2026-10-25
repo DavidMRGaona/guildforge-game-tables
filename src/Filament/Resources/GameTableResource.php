@@ -729,7 +729,7 @@ final class GameTableResource extends BaseResource
                 return;
             }
 
-            if ($closesAt === null || $startsAt === null) {
+            if (!$closesAt instanceof \Carbon\CarbonImmutable || !$startsAt instanceof \Carbon\CarbonImmutable) {
                 return;
             }
 
@@ -815,13 +815,6 @@ final class GameTableResource extends BaseResource
         if ($gameMasters === []) {
             return false;
         }
-
-        foreach ($gameMasters as $gm) {
-            if (! empty($gm['user_id']) || ! empty($gm['first_name']) || ! empty($gm['email'])) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any($gameMasters, fn($gm) => ! empty($gm['user_id']) || ! empty($gm['first_name']) || ! empty($gm['email']));
     }
 }

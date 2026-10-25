@@ -72,7 +72,7 @@ final class StatusLogRelationManager extends RelationManager
                     ->label(__('game-tables::messages.relation_managers.status_log.change'))
                     ->state(fn (ParticipantStatusLogModel $record): string => ($record->from_status === null
                         ? __('game-tables::messages.relation_managers.status_log.registered')
-                        : self::statusLabel($record->from_status)).' → '.self::statusLabel($record->to_status)),
+                        : $this->statusLabel($record->from_status)).' → '.$this->statusLabel($record->to_status)),
 
                 TextColumn::make('actor')
                     ->label(__('game-tables::messages.relation_managers.status_log.actor'))
@@ -91,7 +91,7 @@ final class StatusLogRelationManager extends RelationManager
             ->defaultSort('created_at', 'desc');
     }
 
-    private static function statusLabel(string $status): string
+    private function statusLabel(string $status): string
     {
         return ParticipantStatus::tryFrom($status)?->label() ?? $status;
     }

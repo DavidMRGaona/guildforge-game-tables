@@ -116,7 +116,7 @@ final class FrontendCampaignController extends Controller
      */
     public function edit(string $id): Response|RedirectResponse
     {
-        if (($locked = $this->sendLockedAuthorBack(CampaignModel::query()->find($id))) !== null) {
+        if (($locked = $this->sendLockedAuthorBack(CampaignModel::query()->find($id))) instanceof \Illuminate\Http\RedirectResponse) {
             return $locked;
         }
 
@@ -125,14 +125,7 @@ final class FrontendCampaignController extends Controller
 
         // Only the author's own drafts: anyone else gets 404, so the page never reveals that a campaign exists
         $drafts = $this->creationService->getUserCampaignDrafts((string) $user->id);
-        $campaign = null;
-
-        foreach ($drafts as $draft) {
-            if ($draft->id === $id) {
-                $campaign = $draft;
-                break;
-            }
-        }
+        $campaign = array_find($drafts, fn($draft) => $draft->id === $id);
 
         if ($campaign === null) {
             abort(404);
@@ -156,7 +149,7 @@ final class FrontendCampaignController extends Controller
      */
     public function update(string $id, FrontendCreateCampaignRequest $request): RedirectResponse
     {
-        if (($locked = $this->sendLockedAuthorBack(CampaignModel::query()->find($id))) !== null) {
+        if (($locked = $this->sendLockedAuthorBack(CampaignModel::query()->find($id))) instanceof \Illuminate\Http\RedirectResponse) {
             return $locked;
         }
 
@@ -187,7 +180,7 @@ final class FrontendCampaignController extends Controller
      */
     public function submitForReview(string $id): RedirectResponse
     {
-        if (($locked = $this->sendLockedAuthorBack(CampaignModel::query()->find($id))) !== null) {
+        if (($locked = $this->sendLockedAuthorBack(CampaignModel::query()->find($id))) instanceof \Illuminate\Http\RedirectResponse) {
             return $locked;
         }
 
@@ -218,7 +211,7 @@ final class FrontendCampaignController extends Controller
      */
     public function destroy(string $id): RedirectResponse
     {
-        if (($locked = $this->sendLockedAuthorBack(CampaignModel::query()->find($id))) !== null) {
+        if (($locked = $this->sendLockedAuthorBack(CampaignModel::query()->find($id))) instanceof \Illuminate\Http\RedirectResponse) {
             return $locked;
         }
 

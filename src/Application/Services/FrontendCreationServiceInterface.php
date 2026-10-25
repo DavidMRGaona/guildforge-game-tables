@@ -146,6 +146,7 @@ interface FrontendCreationServiceInterface
      * Approve a frontend-created table for publication.
      *
      * @throws \Modules\GameTables\Domain\Exceptions\GameTableNotFoundException
+     * @throws \Modules\GameTables\Domain\Exceptions\NotEditableException when it is not waiting for review
      * @throws \Modules\GameTables\Domain\Exceptions\SessionBelowRosterException
      */
     public function approveFrontendCreation(string $tableId, ?string $notes = null): void;
@@ -154,6 +155,7 @@ interface FrontendCreationServiceInterface
      * Reject a frontend-created table.
      *
      * @throws \Modules\GameTables\Domain\Exceptions\GameTableNotFoundException
+     * @throws \Modules\GameTables\Domain\Exceptions\NotEditableException when it is not waiting for review
      */
     public function rejectFrontendCreation(string $tableId, string $reason): void;
 

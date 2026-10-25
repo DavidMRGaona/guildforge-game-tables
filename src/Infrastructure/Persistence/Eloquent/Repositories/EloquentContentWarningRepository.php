@@ -37,7 +37,7 @@ final readonly class EloquentContentWarningRepository implements ContentWarningR
     {
         $contentWarning = $this->find($id);
 
-        if ($contentWarning === null) {
+        if (!$contentWarning instanceof \Modules\GameTables\Domain\Entities\ContentWarning) {
             throw ContentWarningNotFoundException::withId($id->value);
         }
 

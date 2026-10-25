@@ -16,13 +16,13 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel
  * the form requests before validating, so a stale edit form gets the reason, not field errors.
  * An action sent from the profile's drafts goes back to the profile instead (AuthorReturnTarget).
  */
-final class AuthorLockRedirect
+final readonly class AuthorLockRedirect
 {
-    public function __construct(private readonly AuthorReturnTarget $returnTarget) {}
+    public function __construct(private AuthorReturnTarget $returnTarget) {}
 
     public function forTable(?GameTableModel $table, ?string $userId): ?RedirectResponse
     {
-        if ($table === null
+        if (!$table instanceof \Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel
             || $userId === null
             || $table->created_by !== $userId
             || FrontendCreationStatus::allowsAuthorChanges($table->frontend_creation_status, (bool) $table->is_published)) {
@@ -42,7 +42,7 @@ final class AuthorLockRedirect
 
     public function forCampaign(?CampaignModel $campaign, ?string $userId): ?RedirectResponse
     {
-        if ($campaign === null
+        if (!$campaign instanceof \Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel
             || $userId === null
             || $campaign->created_by !== $userId
             || FrontendCreationStatus::allowsAuthorChanges($campaign->frontend_creation_status, (bool) $campaign->is_published)) {

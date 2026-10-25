@@ -22,7 +22,7 @@ final readonly class SendRejectionNotification
     {
         $gameTable = $this->gameTableRepository->find(new GameTableId($event->gameTableId));
 
-        if ($gameTable === null) {
+        if (!$gameTable instanceof \Modules\GameTables\Domain\Entities\GameTable) {
             return;
         }
 

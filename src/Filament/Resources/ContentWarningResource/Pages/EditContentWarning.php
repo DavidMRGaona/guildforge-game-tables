@@ -13,7 +13,7 @@ final class EditContentWarning extends EditRecord
 {
     protected static string $resource = ContentWarningResource::class;
 
-    public function getTitle(): string|Htmlable
+    public function getTitle(): string
     {
         return __('game-tables::messages.pages.edit_content_warning');
     }

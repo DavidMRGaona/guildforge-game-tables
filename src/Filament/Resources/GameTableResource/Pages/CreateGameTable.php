@@ -20,7 +20,7 @@ final class CreateGameTable extends CreateRecord
      */
     private array $gameMastersData = [];
 
-    public function getTitle(): string|Htmlable
+    public function getTitle(): string
     {
         return __('game-tables::messages.pages.create_table');
     }
@@ -45,7 +45,7 @@ final class CreateGameTable extends CreateRecord
 
     protected function afterCreate(): void
     {
-        if (empty($this->gameMastersData)) {
+        if ($this->gameMastersData === []) {
             return;
         }
 

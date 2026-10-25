@@ -94,7 +94,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
             }
 
             if (! $gameTable->isPublicRegistrationOpen($now)) {
-                if ($gameTable->registrationOpensAt !== null && $now < $gameTable->registrationOpensAt) {
+                if ($gameTable->registrationOpensAt instanceof \DateTimeImmutable && $now < $gameTable->registrationOpensAt) {
                     throw RegistrationClosedException::notYetOpen($gameTable->id->value);
                 }
                 throw RegistrationClosedException::alreadyClosed($gameTable->id->value);
@@ -103,7 +103,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
 
         // Check if already registered
         $existing = $this->participantRepository->findByTableAndUser($gameTable->id, $userId);
-        if ($existing !== null && $existing->isActive()) {
+        if ($existing instanceof \Modules\GameTables\Domain\Entities\Participant && $existing->isActive()) {
             throw AlreadyRegisteredException::forTable($userId, $gameTable->id->value);
         }
 
@@ -206,7 +206,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
     public function hasCapacity(string $gameTableId): bool
     {
         $tableId = new GameTableId($gameTableId);
-        $confirmedPlayers = $this->participantRepository->countConfirmedPlayers($tableId);
+        $this->participantRepository->countConfirmedPlayers($tableId);
 
         // We need to get the game table to check max players
         // For now, we'll return true as this is a helper method
@@ -217,7 +217,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
     public function hasSpectatorCapacity(string $gameTableId): bool
     {
         $tableId = new GameTableId($gameTableId);
-        $confirmedSpectators = $this->participantRepository->countConfirmedSpectators($tableId);
+        $this->participantRepository->countConfirmedSpectators($tableId);
 
         // Similar to hasCapacity, actual check happens elsewhere
         return true;
@@ -232,7 +232,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
         $tableId = new GameTableId($gameTableId);
         $gameTable = $this->gameTableRepository->find($tableId);
 
-        if ($gameTable === null) {
+        if (!$gameTable instanceof \Modules\GameTables\Domain\Entities\GameTable) {
             return [
                 'eligible' => false,
                 'reason' => 'not_found',
@@ -256,7 +256,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
         // No opening date to announce when waiting can never reopen the table: nobody signs up
         // by themselves (invitation only), or it has started or ended
         $neverReopens = in_array($result['reason'], ['invitation_only', 'table_started', 'table_ended'], true);
-        if (! $result['eligible'] && ! $neverReopens && $gameTable->registrationOpensAt !== null) {
+        if (! $result['eligible'] && ! $neverReopens && $gameTable->registrationOpensAt instanceof \DateTimeImmutable) {
             if ($isMember && $gameTable->membersEarlyAccessDays > 0 && $this->settings->isMembershipIntegrationEnabled()) {
                 $earlyAccessDate = $gameTable->registrationOpensAt->modify("-{$gameTable->membersEarlyAccessDays} days");
                 if ($now < $earlyAccessDate) {
@@ -314,13 +314,13 @@ final readonly class EligibilityService implements EligibilityServiceInterface
      */
     private function closedToOutsiders(GameTable $gameTable, ?string $userId): bool
     {
-        if ($gameTable->campaignId === null || $this->campaigns === null || $this->roster === null) {
+        if (!$gameTable->campaignId instanceof \Modules\GameTables\Domain\ValueObjects\CampaignId || !$this->campaigns instanceof \Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface || !$this->roster instanceof \Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface) {
             return false;
         }
 
         $campaign = $this->campaigns->find($gameTable->campaignId);
 
-        if ($campaign === null || $campaign->canAcceptNewPlayers()) {
+        if (!$campaign instanceof \Modules\GameTables\Domain\Entities\Campaign || $campaign->canAcceptNewPlayers()) {
             return false;
         }
 
@@ -360,7 +360,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
         $tableId = new GameTableId($gameTableId);
         $gameTable = $this->gameTableRepository->find($tableId);
 
-        if ($gameTable === null) {
+        if (!$gameTable instanceof \Modules\GameTables\Domain\Entities\GameTable) {
             return $this->guestRefusal('not_found');
         }
 
@@ -397,7 +397,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
 
         // Check registration window for public (guests don't get early access)
         if (! $gameTable->isPublicRegistrationOpen($now)) {
-            if ($gameTable->registrationOpensAt !== null && $now < $gameTable->registrationOpensAt) {
+            if ($gameTable->registrationOpensAt instanceof \DateTimeImmutable && $now < $gameTable->registrationOpensAt) {
                 return $this->guestRefusal('registration_not_open');
             }
 
@@ -407,7 +407,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
         // Check if a guest with this email is already registered (or waiting)
         if ($email !== null) {
             $existing = $this->participantRepository->findByTableAndEmail($tableId, $email);
-            if ($existing !== null && $existing->isActive()) {
+            if ($existing instanceof \Modules\GameTables\Domain\Entities\Participant && $existing->isActive()) {
                 return $this->guestRefusal('guest_already_registered');
             }
         }
@@ -438,7 +438,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
     {
         $gameTable = $this->gameTableRepository->find(new GameTableId($gameTableId));
 
-        if ($gameTable === null) {
+        if (!$gameTable instanceof \Modules\GameTables\Domain\Entities\GameTable) {
             throw RegistrationNotAllowedException::because('not_found', $this->translateReason('not_found'));
         }
 
@@ -467,7 +467,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
     {
         $gameTable = $this->gameTableRepository->find(new GameTableId($gameTableId));
 
-        if ($gameTable === null) {
+        if (!$gameTable instanceof \Modules\GameTables\Domain\Entities\GameTable) {
             return 'not_found';
         }
 

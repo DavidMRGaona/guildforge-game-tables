@@ -22,7 +22,7 @@ trait DescribesRosterSessions
         foreach ($sessions as $session) {
             $table = $tables->find(new GameTableId($session['game_table_id']));
 
-            if ($table === null) {
+            if (!$table instanceof \Modules\GameTables\Domain\Entities\GameTable) {
                 continue;
             }
 

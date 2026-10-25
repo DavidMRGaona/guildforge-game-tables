@@ -7,15 +7,15 @@ namespace Modules\GameTables\Domain\Events;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-final class ParticipantConfirmed
+final readonly class ParticipantConfirmed
 {
     use Dispatchable;
     use SerializesModels;
 
     public function __construct(
-        public readonly string $participantId,
-        public readonly string $gameTableId,
-        public readonly ?string $userId,
-        public readonly bool $automatic = false,
+        public string $participantId,
+        public string $gameTableId,
+        public ?string $userId,
+        public bool $automatic = false,
     ) {}
 }

@@ -45,7 +45,7 @@ final class FrontendCreateCampaignRequest extends FormRequest
 
     protected function failedAuthorization(): void
     {
-        if ($this->lockedAuthorRedirect !== null) {
+        if ($this->lockedAuthorRedirect instanceof \Illuminate\Http\RedirectResponse) {
             throw new HttpResponseException($this->lockedAuthorRedirect);
         }
 

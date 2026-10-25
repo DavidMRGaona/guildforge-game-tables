@@ -17,12 +17,12 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
-final class CampaignQueryService implements CampaignQueryServiceInterface
+final readonly class CampaignQueryService implements CampaignQueryServiceInterface
 {
     public function __construct(
-        private readonly CampaignRepositoryInterface $campaignRepository,
-        private readonly GameSystemRepositoryInterface $gameSystemRepository,
-        private readonly SeatCounter $seatCounter,
+        private CampaignRepositoryInterface $campaignRepository,
+        private GameSystemRepositoryInterface $gameSystemRepository,
+        private SeatCounter $seatCounter,
     ) {}
 
     public function getPublishedCampaignsPaginated(

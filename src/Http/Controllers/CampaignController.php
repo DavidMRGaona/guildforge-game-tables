@@ -24,7 +24,7 @@ final class CampaignController extends Controller
     use BuildsPaginatedResponse;
     use ReadsListFilters;
 
-    private const PER_PAGE = 12;
+    private const int PER_PAGE = 12;
 
     public function __construct(
         private readonly CampaignQueryServiceInterface $queryService,
@@ -81,7 +81,7 @@ final class CampaignController extends Controller
         // 1. Try to find by slug directly
         $campaign = $this->queryService->findPublishedBySlug($identifier);
 
-        if ($campaign !== null) {
+        if ($campaign instanceof \Modules\GameTables\Application\DTOs\CampaignResponseDTO) {
             return Inertia::render('Campaigns/Show', [
                 'campaign' => CampaignResource::make($campaign)->resolve(),
                 // What the viewer can do with the roster: ask to join, withdraw, leave or manage it
@@ -103,7 +103,7 @@ final class CampaignController extends Controller
         // 3. If it looks like a UUID, try finding by ID and redirect to slug
         if (Str::isUuid($identifier)) {
             $campaign = $this->queryService->findPublished($identifier);
-            if ($campaign !== null && $campaign->slug !== null) {
+            if ($campaign instanceof \Modules\GameTables\Application\DTOs\CampaignResponseDTO && $campaign->slug !== null) {
                 return redirect()->route('campaigns.show', $campaign->slug, 301);
             }
         }

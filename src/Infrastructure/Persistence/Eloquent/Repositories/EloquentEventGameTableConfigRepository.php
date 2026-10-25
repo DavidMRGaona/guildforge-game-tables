@@ -46,7 +46,7 @@ final readonly class EloquentEventGameTableConfigRepository implements EventGame
     {
         $config = $this->findByEvent($eventId);
 
-        if ($config !== null) {
+        if ($config instanceof \Modules\GameTables\Domain\Entities\EventGameTableConfig) {
             return $config;
         }
 
@@ -57,11 +57,7 @@ final readonly class EloquentEventGameTableConfigRepository implements EventGame
             schedulingMode: SchedulingMode::FreeSchedule,
             timeSlots: [],
             locationMode: LocationMode::FreeChoice,
-            fixedLocation: null,
-            eligibilityOverride: null,
             earlyAccessEnabled: false,
-            creationOpensAt: null,
-            earlyAccessTier: null,
         );
     }
 
@@ -126,7 +122,7 @@ final readonly class EloquentEventGameTableConfigRepository implements EventGame
         }
 
         return array_map(
-            fn (array $item): TimeSlotDefinition => TimeSlotDefinition::fromArray($item),
+            TimeSlotDefinition::fromArray(...),
             $data
         );
     }
@@ -157,7 +153,7 @@ final readonly class EloquentEventGameTableConfigRepository implements EventGame
 
     private function carbonToDateTimeImmutable(?Carbon $carbon): ?DateTimeImmutable
     {
-        if ($carbon === null) {
+        if (!$carbon instanceof \Carbon\Carbon) {
             return null;
         }
 

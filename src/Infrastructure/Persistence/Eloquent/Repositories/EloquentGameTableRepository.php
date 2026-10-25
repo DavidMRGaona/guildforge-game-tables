@@ -75,7 +75,7 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
     {
         $gameTable = $this->find($id);
 
-        if ($gameTable === null) {
+        if (!$gameTable instanceof \Modules\GameTables\Domain\Entities\GameTable) {
             throw GameTableNotFoundException::withId($id->value);
         }
 
@@ -302,13 +302,13 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
             minimumAge: $model->minimum_age,
             language: $model->language,
             genres: $model->genres !== null
-                ? array_map(fn (string $g): Genre => Genre::from($g), $model->genres)
+                ? array_map(Genre::from(...), $model->genres)
                 : null,
             tone: $model->tone,
             experienceLevel: $model->experience_level,
             characterCreation: $model->character_creation,
             safetyTools: $model->safety_tools !== null
-                ? array_map(fn (string $s): SafetyTool => SafetyTool::from($s), $model->safety_tools)
+                ? array_map(SafetyTool::from(...), $model->safety_tools)
                 : null,
             contentWarningIds: count($contentWarningIds) > 0 ? $contentWarningIds : null,
             customWarnings: $model->custom_warnings,

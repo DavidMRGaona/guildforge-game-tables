@@ -37,13 +37,13 @@ final readonly class EventCreationEligibilityService implements EventCreationEli
         // A missing config means nobody enabled tables for this event. The admin
         // panel renders that same absence as an unchecked toggle, so creation has
         // to stay closed here too instead of falling back to the global settings.
-        if ($config === null || ! $config->isEnabled()) {
+        if (!$config instanceof \Modules\GameTables\Domain\Entities\EventGameTableConfig || ! $config->isEnabled()) {
             return CreationEligibilityDTO::notEligible('tables_not_enabled_for_event');
         }
 
         // Check early access restrictions
         $earlyAccessCheck = $this->checkEarlyAccess($config, $userId);
-        if ($earlyAccessCheck !== null) {
+        if ($earlyAccessCheck instanceof \Modules\GameTables\Application\DTOs\CreationEligibilityDTO) {
             return $earlyAccessCheck;
         }
 
@@ -65,7 +65,7 @@ final readonly class EventCreationEligibilityService implements EventCreationEli
     {
         // Check if there's a general opening date configured
         $generalOpenDate = $config->creationOpensAt();
-        if ($generalOpenDate === null) {
+        if (!$generalOpenDate instanceof \DateTimeImmutable) {
             return null;
         }
 
@@ -73,7 +73,7 @@ final readonly class EventCreationEligibilityService implements EventCreationEli
 
         // Check if early access is enabled and configured
         $earlyAccessTier = $config->isEarlyAccessEnabled() ? $config->earlyAccessTier() : null;
-        $hasEarlyAccessTier = $earlyAccessTier !== null;
+        $hasEarlyAccessTier = $earlyAccessTier instanceof \Modules\GameTables\Domain\ValueObjects\EarlyAccessTier;
 
         // Calculate the effective open date for this user
         $effectiveOpenDate = $this->getEffectiveOpenDateForUser(
@@ -86,7 +86,6 @@ final readonly class EventCreationEligibilityService implements EventCreationEli
         if ($effectiveOpenDate > $now) {
             return CreationEligibilityDTO::eligibleAt(
                 canCreateAt: $effectiveOpenDate,
-                userTier: null,
                 hasEarlyAccess: $hasEarlyAccessTier,
                 publicOpenDate: $generalOpenDate,
             );
@@ -105,12 +104,12 @@ final readonly class EventCreationEligibilityService implements EventCreationEli
         ?string $userId
     ): DateTimeImmutable {
         // If no early access tier or no user, use general open date
-        if ($earlyAccessTier === null || $userId === null) {
+        if (!$earlyAccessTier instanceof \Modules\GameTables\Domain\ValueObjects\EarlyAccessTier || $userId === null) {
             return $generalOpenDate;
         }
 
         $user = $this->getUser($userId);
-        if ($user === null) {
+        if (!$user instanceof \App\Infrastructure\Persistence\Eloquent\Models\UserModel) {
             return $generalOpenDate;
         }
 
@@ -139,7 +138,6 @@ final readonly class EventCreationEligibilityService implements EventCreationEli
         // Check based on the override's access level
         if ($override->accessLevel === CreationAccessLevel::Everyone) {
             return CreationEligibilityDTO::eligible(
-                userTier: null,
                 canCreateTables: true,
                 canCreateCampaigns: false,
             );
@@ -164,12 +162,11 @@ final readonly class EventCreationEligibilityService implements EventCreationEli
     private function checkRegisteredAccess(string $userId): CreationEligibilityDTO
     {
         $user = $this->getUser($userId);
-        if ($user === null) {
+        if (!$user instanceof \App\Infrastructure\Persistence\Eloquent\Models\UserModel) {
             return CreationEligibilityDTO::notEligible('user_not_found');
         }
 
         return CreationEligibilityDTO::eligible(
-            userTier: null,
             canCreateTables: true,
             canCreateCampaigns: false,
         );
@@ -181,11 +178,11 @@ final readonly class EventCreationEligibilityService implements EventCreationEli
     private function checkRoleAccess(string $userId, array $allowedRoles): CreationEligibilityDTO
     {
         $user = $this->getUser($userId);
-        if ($user === null) {
+        if (!$user instanceof \App\Infrastructure\Persistence\Eloquent\Models\UserModel) {
             return CreationEligibilityDTO::notEligible('user_not_found');
         }
 
-        if (empty($allowedRoles)) {
+        if ($allowedRoles === []) {
             return CreationEligibilityDTO::notEligible('no_roles_configured');
         }
 
@@ -194,7 +191,6 @@ final readonly class EventCreationEligibilityService implements EventCreationEli
         }
 
         return CreationEligibilityDTO::eligible(
-            userTier: null,
             canCreateTables: true,
             canCreateCampaigns: false,
         );
@@ -203,7 +199,7 @@ final readonly class EventCreationEligibilityService implements EventCreationEli
     private function checkPermissionAccess(string $userId, string $requiredPermission): CreationEligibilityDTO
     {
         $user = $this->getUser($userId);
-        if ($user === null) {
+        if (!$user instanceof \App\Infrastructure\Persistence\Eloquent\Models\UserModel) {
             return CreationEligibilityDTO::notEligible('user_not_found');
         }
 
@@ -216,7 +212,6 @@ final readonly class EventCreationEligibilityService implements EventCreationEli
         }
 
         return CreationEligibilityDTO::eligible(
-            userTier: null,
             canCreateTables: true,
             canCreateCampaigns: false,
         );

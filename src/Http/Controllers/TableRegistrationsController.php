@@ -103,7 +103,7 @@ final class TableRegistrationsController extends Controller
 
         $row = $this->query->row($gameTable->id, $participantId);
 
-        if ($row === null) {
+        if (!$row instanceof \Modules\GameTables\Application\DTOs\TableRegistrationRowDTO) {
             abort(404);
         }
 

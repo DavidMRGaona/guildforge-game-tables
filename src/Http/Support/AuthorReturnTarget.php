@@ -13,18 +13,18 @@ use Illuminate\Http\Request;
  * whitelisted `return_to=profile` is honoured, never a URL, so it cannot become an open redirect.
  * The profile opens on the tab of the item's kind (`/perfil?tab=…`).
  */
-final class AuthorReturnTarget
+final readonly class AuthorReturnTarget
 {
-    public const PROFILE = 'profile';
+    public const string PROFILE = 'profile';
 
     /** Profile tabs of the module (GameTablesServiceProvider's profile sections) */
-    public const TABLES_TAB = 'gametables-created';
+    public const string TABLES_TAB = 'gametables-created';
 
-    public const CAMPAIGNS_TAB = 'gametables-campaigns';
+    public const string CAMPAIGNS_TAB = 'gametables-campaigns';
 
-    private const PROFILE_ROUTE = 'profile.show';
+    private const string PROFILE_ROUTE = 'profile.show';
 
-    public function __construct(private readonly Request $request) {}
+    public function __construct(private Request $request) {}
 
     public function toProfile(): bool
     {
