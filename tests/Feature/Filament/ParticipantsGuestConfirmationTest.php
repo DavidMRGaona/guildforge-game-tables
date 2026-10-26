@@ -48,7 +48,7 @@ final class ParticipantsGuestConfirmationTest extends ModuleTestCase
         $this->actingAsPanelAdmin();
         config()->set('modules.settings.game-tables', []);
         Notification::fake();
-        $this->travelTo(CarbonImmutable::parse('2026-11-02 10:00:00'));
+        $this->travelTo(CarbonImmutable::parse('2026-11-02 10:00:00', 'Europe/Madrid'));
         $this->gameSystem = GameSystemModel::create([
             'id' => (string) Str::uuid(),
             'name' => 'Sistema de prueba',
@@ -95,7 +95,7 @@ final class ParticipantsGuestConfirmationTest extends ModuleTestCase
         $this->participants($table)->callTableAction('confirmEmail', $awaiting)->assertHasNoTableActionErrors();
 
         $awaiting->refresh();
-        $this->assertSame('2026-11-02 10:00:00', $awaiting->email_confirmed_at?->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-11-02 10:00:00', $awaiting->email_confirmed_at?->setTimezone('Europe/Madrid')->format('Y-m-d H:i:s'));
         $this->assertNull($awaiting->confirmation_expires_at);
         Notification::assertSentOnDemandTimes(GuestRegistrationConfirmation::class, 1);
     }
@@ -125,7 +125,7 @@ final class ParticipantsGuestConfirmationTest extends ModuleTestCase
 
         $awaiting->refresh();
         $this->assertSame('confirmed', $awaiting->status->value);
-        $this->assertSame('2026-11-02 10:00:00', $awaiting->email_confirmed_at?->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-11-02 10:00:00', $awaiting->email_confirmed_at?->setTimezone('Europe/Madrid')->format('Y-m-d H:i:s'));
         Notification::assertSentOnDemandTimes(GuestRegistrationConfirmation::class, 1);
     }
 
@@ -181,7 +181,7 @@ final class ParticipantsGuestConfirmationTest extends ModuleTestCase
     public function test_an_awaiting_guest_shows_the_unconfirmed_badge_with_its_deadline(): void
     {
         $table = $this->table();
-        $awaiting = $this->awaitingGuest($table, ['confirmation_expires_at' => '2026-11-02 12:00:00']);
+        $awaiting = $this->awaitingGuest($table, ['confirmation_expires_at' => CarbonImmutable::parse('2026-11-02 12:00:00', 'Europe/Madrid')]);
         $confirmedGuest = $this->guest($table, ['email_confirmed_at' => now()]);
         $user = $this->participant($table, ['user_id' => UserModel::factory()->create()->id]);
 
@@ -205,7 +205,7 @@ final class ParticipantsGuestConfirmationTest extends ModuleTestCase
     {
         $table = $this->table();
         $first = $this->guest($table, ['email_confirmed_at' => now(), 'fingerprint' => self::FINGERPRINT]);
-        $this->travelTo(CarbonImmutable::parse('2026-11-02 11:00:00'));
+        $this->travelTo(CarbonImmutable::parse('2026-11-02 11:00:00', 'Europe/Madrid'));
         $second = $this->awaitingGuest($table, ['fingerprint' => self::FINGERPRINT]);
         $other = $this->guest($table, ['email_confirmed_at' => now(), 'fingerprint' => str_repeat('b', 64)]);
 

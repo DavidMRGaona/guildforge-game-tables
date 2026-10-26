@@ -4,6 +4,7 @@ import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import BaseButton from '@/components/ui/BaseButton.vue';
+import { VENUE_TIMEZONE } from '@/utils/datetime';
 
 interface Props {
     reason: string;
@@ -12,7 +13,7 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const { t, d } = useI18n();
+const { t, locale } = useI18n();
 
 const reasonMessage = computed((): string => {
     const reasonMap: Record<string, string> = {
@@ -35,12 +36,20 @@ const formattedCanCreateAt = computed((): string | null => {
         return null;
     }
 
-    try {
-        const date = new Date(props.canCreateAt);
-        return d(date, 'long');
-    } catch {
+    const date = new Date(props.canCreateAt);
+    if (Number.isNaN(date.getTime())) {
         return null;
     }
+
+    // The day and time at the venue, wherever the visitor browses from
+    return date.toLocaleString(locale.value, {
+        timeZone: VENUE_TIMEZONE,
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
 });
 </script>
 

@@ -148,7 +148,7 @@ final readonly class EloquentGameSystemRepository implements GameSystemRepositor
             logoUrl: $model->logo_url,
             websiteUrl: $model->website_url,
             createdAt: $model->created_at !== null
-                ? new DateTimeImmutable($model->created_at->toDateTimeString())
+                ? DateTimeImmutable::createFromInterface($model->created_at)
                 : null,
         );
     }

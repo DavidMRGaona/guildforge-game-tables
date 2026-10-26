@@ -16,6 +16,7 @@ use App\Application\Modules\DTOs\PermissionDTO;
 use App\Application\Modules\DTOs\SlotRegistrationDTO;
 use App\Application\Services\EventQueryServiceInterface;
 use App\Application\Services\SiteBrandingServiceInterface;
+use App\Application\Services\TimezoneServiceInterface;
 use App\Filament\Resources\EventResource;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
@@ -553,7 +554,8 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                     campaignTitle: (string) __('game-tables::emails.campaign_invitation.preview_campaign'),
                     campaignSlug: 'campana-de-ejemplo',
                     token: Str::random(64),
-                    expiresAt: now()->addDays(CampaignInvitationNotification::EXPIRY_DAYS)->format('d/m/Y'),
+                    // Today on the site's calendar plus the days an invitation lasts
+                    expiresAt: app(TimezoneServiceInterface::class)->today()->modify('+'.CampaignInvitationNotification::EXPIRY_DAYS.' days')->format('d/m/Y'),
                     legalText: $content,
                 ))->toMail(new AnonymousNotifiable)->render(),
             ));

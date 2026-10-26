@@ -6,6 +6,7 @@ namespace Modules\GameTables\Tests\Integration\Infrastructure\Services;
 
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Carbon\CarbonImmutable;
+use DateTimeZone;
 use Illuminate\Support\Str;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\GuestConfirmationMode;
@@ -32,7 +33,7 @@ final class GuestConfirmationPolicyTest extends ModuleTestCase
         parent::setUp();
 
         config()->set('modules.settings.game-tables', []);
-        $this->travelTo(CarbonImmutable::parse('2026-11-01 10:00:00'));
+        $this->travelTo(CarbonImmutable::parse('2026-11-01 10:00:00', 'Europe/Madrid'));
         $this->model = $this->createTable(CarbonImmutable::now()->addWeek());
     }
 
@@ -42,7 +43,7 @@ final class GuestConfirmationPolicyTest extends ModuleTestCase
 
         $deadline = $this->policy()->deadlineFor($this->table($this->model), $now);
 
-        $this->assertSame('2026-11-01 12:00:00', $deadline->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-11-01 12:00:00', $deadline->setTimezone(new DateTimeZone('Europe/Madrid'))->format('Y-m-d H:i:s'));
     }
 
     /**
@@ -77,7 +78,7 @@ final class GuestConfirmationPolicyTest extends ModuleTestCase
 
         $deadline = $this->policy()->deadlineFor($this->table($model), $now);
 
-        $this->assertSame('2026-11-01 10:30:00', $deadline->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-11-01 10:30:00', $deadline->setTimezone(new DateTimeZone('Europe/Madrid'))->format('Y-m-d H:i:s'));
     }
 
     public function test_the_hold_hours_setting_moves_the_deadline(): void
@@ -86,7 +87,7 @@ final class GuestConfirmationPolicyTest extends ModuleTestCase
 
         $deadline = $this->policy()->deadlineFor($this->table($this->model), CarbonImmutable::now());
 
-        $this->assertSame('2026-11-01 15:00:00', $deadline->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-11-01 15:00:00', $deadline->setTimezone(new DateTimeZone('Europe/Madrid'))->format('Y-m-d H:i:s'));
     }
 
     public function test_the_third_unconfirmed_guest_waits(): void

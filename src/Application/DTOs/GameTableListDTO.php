@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Application\DTOs;
 
+use App\Application\Services\TimezoneServiceInterface;
 use DateTimeInterface;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\TableFormat;
@@ -74,12 +75,14 @@ final readonly class GameTableListDTO
      */
     public function toArray(): array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         return [
             'id' => $this->id,
             'title' => $this->title,
             'slug' => $this->slug,
             'game_system_name' => $this->gameSystemName,
-            'starts_at' => $this->startsAt?->format('c'),
+            'starts_at' => $timezone->iso($this->startsAt),
             'duration_minutes' => $this->durationMinutes,
             'table_format' => $this->tableFormat->value,
             'table_format_label' => $this->tableFormat->label(),

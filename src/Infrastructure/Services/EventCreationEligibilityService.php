@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Infrastructure\Services;
 
 use App\Application\Authorization\Services\AuthorizationServiceInterface;
+use App\Application\Services\TimezoneServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Carbon\CarbonImmutable;
 use DateTimeImmutable;
@@ -116,7 +117,10 @@ final readonly class EventCreationEligibilityService implements EventCreationEli
 
         // Check if user matches the early access tier
         if ($this->userMatchesEarlyAccessTier($user, $earlyAccessTier)) {
-            return $earlyAccessTier->getOpenDate($generalOpenDate);
+            // Calendar days of the site, whatever the storage zone
+            $timezone = app(TimezoneServiceInterface::class);
+
+            return $timezone->toStorage($earlyAccessTier->getOpenDate($timezone->toDisplay($generalOpenDate)));
         }
 
         return $generalOpenDate;

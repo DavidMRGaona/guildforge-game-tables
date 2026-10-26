@@ -50,7 +50,7 @@ final class GuestSubmissionTest extends ModuleTestCase
 
         Event::fake([GuestConfirmationRequested::class, GuestRegistered::class, GuestRegistrationExpired::class, ParticipantConfirmed::class]);
         config()->set('modules.settings.game-tables', []);
-        $this->travelTo(CarbonImmutable::parse('2026-11-02 10:00:00'));
+        $this->travelTo(CarbonImmutable::parse('2026-11-02 10:00:00', 'Europe/Madrid'));
 
         $system = GameSystemModel::create(['id' => (string) Str::uuid(), 'name' => 'Sistema', 'slug' => 'sistema', 'is_active' => true]);
         $this->table = GameTableModel::create([
@@ -81,8 +81,8 @@ final class GuestSubmissionTest extends ModuleTestCase
         $this->assertSame('confirmed', $row->status->value);
         $this->assertNull($row->email_confirmed_at);
         $this->assertSame('hold', $row->confirmation_mode?->value);
-        $this->assertSame('2026-11-02 12:00:00', $row->confirmation_expires_at?->format('Y-m-d H:i:s'));
-        $this->assertSame('2026-11-02 10:00:00', $row->confirmation_sent_at?->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-11-02 12:00:00', $row->confirmation_expires_at?->setTimezone('Europe/Madrid')->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-11-02 10:00:00', $row->confirmation_sent_at?->setTimezone('Europe/Madrid')->format('Y-m-d H:i:s'));
         $this->assertSame(64, strlen((string) $row->confirmation_token));
         $this->assertNotSame($row->cancellation_token, $row->confirmation_token);
         $this->assertSame('huella', $row->fingerprint);
@@ -91,7 +91,7 @@ final class GuestSubmissionTest extends ModuleTestCase
         $this->assertSame(GuestConfirmationMode::Hold, $result->confirmationMode);
         $this->assertFalse($result->confirmationResent);
         $this->assertTrue($result->toArray()['awaiting_email_confirmation']);
-        $this->assertSame(CarbonImmutable::parse('2026-11-02 12:00:00')->format('c'), $result->toArray()['confirmation_expires_at']);
+        $this->assertSame(CarbonImmutable::parse('2026-11-02 12:00:00', 'Europe/Madrid')->format('c'), $result->toArray()['confirmation_expires_at']);
 
         Event::assertDispatchedTimes(GuestConfirmationRequested::class, 1);
         Event::assertDispatched(
@@ -114,7 +114,7 @@ final class GuestSubmissionTest extends ModuleTestCase
 
         $result = $this->submit('invitada@example.test');
 
-        $this->assertSame('2026-11-02 10:30:00', ParticipantModel::query()->findOrFail($result->id)->confirmation_expires_at?->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-11-02 10:30:00', ParticipantModel::query()->findOrFail($result->id)->confirmation_expires_at?->setTimezone('Europe/Madrid')->format('Y-m-d H:i:s'));
         Event::assertDispatched(GuestConfirmationRequested::class, fn (GuestConfirmationRequested $event): bool => $event->deadline === '02/11/2026 10:30');
     }
 
@@ -165,16 +165,16 @@ final class GuestSubmissionTest extends ModuleTestCase
     {
         $first = $this->submit('invitada@example.test', name: 'Invitada', notes: 'Primera vez');
         $row = ParticipantModel::query()->findOrFail($first->id);
-        $deadline = $row->confirmation_expires_at?->format('Y-m-d H:i:s');
+        $deadline = $row->confirmation_expires_at?->setTimezone('Europe/Madrid')->format('Y-m-d H:i:s');
 
-        $this->travelTo(CarbonImmutable::parse('2026-11-02 10:10:00'));
+        $this->travelTo(CarbonImmutable::parse('2026-11-02 10:10:00', 'Europe/Madrid'));
         $second = $this->submit('Invitada@Example.TEST', name: 'Otro nombre', notes: 'Otra nota', role: ParticipantRole::Spectator);
 
         $this->assertSame($first->id, $second->id);
         $this->assertTrue($second->confirmationResent);
         $row->refresh();
-        $this->assertSame($deadline, $row->confirmation_expires_at?->format('Y-m-d H:i:s'));
-        $this->assertSame('2026-11-02 10:10:00', $row->confirmation_sent_at?->format('Y-m-d H:i:s'));
+        $this->assertSame($deadline, $row->confirmation_expires_at?->setTimezone('Europe/Madrid')->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-11-02 10:10:00', $row->confirmation_sent_at?->setTimezone('Europe/Madrid')->format('Y-m-d H:i:s'));
         $this->assertSame('Invitada', $row->first_name);
         $this->assertSame('Primera vez', $row->notes);
         $this->assertSame('player', $row->role->value);
@@ -182,11 +182,11 @@ final class GuestSubmissionTest extends ModuleTestCase
         Event::assertDispatchedTimes(GuestConfirmationRequested::class, 2);
 
         // Within five minutes of the last email: the same answer, no email
-        $this->travelTo(CarbonImmutable::parse('2026-11-02 10:12:00'));
+        $this->travelTo(CarbonImmutable::parse('2026-11-02 10:12:00', 'Europe/Madrid'));
         $third = $this->submit('invitada@example.test');
 
         $this->assertTrue($third->confirmationResent);
-        $this->assertSame('2026-11-02 10:10:00', $row->refresh()->confirmation_sent_at?->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-11-02 10:10:00', $row->refresh()->confirmation_sent_at?->setTimezone('Europe/Madrid')->format('Y-m-d H:i:s'));
         Event::assertDispatchedTimes(GuestConfirmationRequested::class, 2);
         Event::assertNotDispatched(GuestRegistered::class);
     }
@@ -197,7 +197,7 @@ final class GuestSubmissionTest extends ModuleTestCase
         $this->table->update(['max_players' => 1]);
         $first = $this->submit('invitada@example.test');
 
-        $this->travelTo(CarbonImmutable::parse('2026-11-02 10:10:00'));
+        $this->travelTo(CarbonImmutable::parse('2026-11-02 10:10:00', 'Europe/Madrid'));
         $second = $this->submit('invitada@example.test');
 
         $this->assertSame($first->id, $second->id);
@@ -211,7 +211,7 @@ final class GuestSubmissionTest extends ModuleTestCase
         $this->submit('invitada@example.test');
         $this->table->update(['registration_closes_at' => now()->addMinutes(5)]);
 
-        $this->travelTo(CarbonImmutable::parse('2026-11-02 10:10:00'));
+        $this->travelTo(CarbonImmutable::parse('2026-11-02 10:10:00', 'Europe/Madrid'));
 
         try {
             $this->submit('invitada@example.test');
@@ -278,7 +278,7 @@ final class GuestSubmissionTest extends ModuleTestCase
     {
         $this->submit('cuenta@example.test');
         UserModel::factory()->create(['email' => 'cuenta@example.test']);
-        $this->travelTo(CarbonImmutable::parse('2026-11-02 10:10:00'));
+        $this->travelTo(CarbonImmutable::parse('2026-11-02 10:10:00', 'Europe/Madrid'));
 
         $this->expectException(AccountEmailRequiresLoginException::class);
 
@@ -417,7 +417,7 @@ final class GuestSubmissionTest extends ModuleTestCase
         $first = $this->submit('invitada@example.test', name: 'Invitada');
         $old = ParticipantModel::query()->findOrFail($first->id);
 
-        $this->travelTo(CarbonImmutable::parse('2026-11-02 12:01:00'));
+        $this->travelTo(CarbonImmutable::parse('2026-11-02 12:01:00', 'Europe/Madrid'));
         $again = $this->submit('invitada@example.test', name: 'Nueva');
 
         $row = ParticipantModel::query()->findOrFail($first->id);
@@ -425,7 +425,7 @@ final class GuestSubmissionTest extends ModuleTestCase
         $this->assertFalse($again->confirmationResent);
         $this->assertSame('confirmed', $row->status->value);
         $this->assertSame('Nueva', $row->first_name);
-        $this->assertSame('2026-11-02 14:01:00', $row->confirmation_expires_at?->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-11-02 14:01:00', $row->confirmation_expires_at?->setTimezone('Europe/Madrid')->format('Y-m-d H:i:s'));
         $this->assertNotSame($old->confirmation_token, $row->confirmation_token);
         $this->assertNotSame($old->cancellation_token, $row->cancellation_token);
         Event::assertDispatchedTimes(GuestConfirmationRequested::class, 2);
@@ -453,7 +453,7 @@ final class GuestSubmissionTest extends ModuleTestCase
         ));
         $this->assertSame('waiting_list', ParticipantModel::query()->findOrFail($waiting->id)->status->value);
 
-        $this->travelTo(CarbonImmutable::parse('2026-11-02 12:01:00'));
+        $this->travelTo(CarbonImmutable::parse('2026-11-02 12:01:00', 'Europe/Madrid'));
         $again = $this->submit('invitada@example.test');
 
         $this->assertSame('confirmed', ParticipantModel::query()->findOrFail($waiting->id)->status->value);
@@ -461,7 +461,7 @@ final class GuestSubmissionTest extends ModuleTestCase
         $row = ParticipantModel::query()->findOrFail($guest->id);
         $this->assertSame($guest->id, $again->id);
         $this->assertSame('waiting_list', $row->status->value);
-        $this->assertSame('2026-11-02 14:01:00', $row->confirmation_expires_at?->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-11-02 14:01:00', $row->confirmation_expires_at?->setTimezone('Europe/Madrid')->format('Y-m-d H:i:s'));
     }
 
     public function test_an_expired_guest_is_reactivated_unconfirmed(): void
@@ -469,7 +469,7 @@ final class GuestSubmissionTest extends ModuleTestCase
         $first = $this->submit('invitada@example.test');
         ParticipantModel::query()->update(['status' => 'expired', 'confirmation_token' => null, 'confirmation_expires_at' => null, 'cancelled_at' => now()]);
 
-        $this->travelTo(CarbonImmutable::parse('2026-11-02 11:00:00'));
+        $this->travelTo(CarbonImmutable::parse('2026-11-02 11:00:00', 'Europe/Madrid'));
         $again = $this->submit('invitada@example.test', name: 'Nueva');
 
         $row = ParticipantModel::query()->findOrFail($first->id);
@@ -478,7 +478,7 @@ final class GuestSubmissionTest extends ModuleTestCase
         $this->assertNull($row->email_confirmed_at);
         $this->assertNull($row->cancelled_at);
         $this->assertSame('Nueva', $row->first_name);
-        $this->assertSame('2026-11-02 13:00:00', $row->confirmation_expires_at?->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-11-02 13:00:00', $row->confirmation_expires_at?->setTimezone('Europe/Madrid')->format('Y-m-d H:i:s'));
         $this->assertSame(64, strlen((string) $row->confirmation_token));
         Event::assertDispatchedTimes(GuestConfirmationRequested::class, 2);
     }
@@ -495,7 +495,7 @@ final class GuestSubmissionTest extends ModuleTestCase
         ));
 
         $row = ParticipantModel::query()->findOrFail($result->id);
-        $this->assertSame('2026-11-02 10:00:00', $row->email_confirmed_at?->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-11-02 10:00:00', $row->email_confirmed_at?->setTimezone('Europe/Madrid')->format('Y-m-d H:i:s'));
         $this->assertNull($row->confirmation_expires_at);
         $this->assertNull($row->confirmation_mode);
         $this->assertNull($row->fingerprint);

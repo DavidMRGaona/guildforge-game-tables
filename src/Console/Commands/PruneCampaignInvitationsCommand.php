@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Console\Commands;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 use Modules\GameTables\Application\Services\CampaignInvitationSendLogInterface;
@@ -23,7 +24,9 @@ final class PruneCampaignInvitationsCommand extends Command
 
         $expired = $invitations->deleteExpired($now);
         $closed = $invitations->deleteForCampaignsNotOpen();
-        $records = $sendLog->pruneBefore($now->modify('-30 days'));
+        // Thirty days on the site's calendar
+        $timezone = app(TimezoneServiceInterface::class);
+        $records = $sendLog->pruneBefore($timezone->toDisplay($now)->modify('-30 days'));
 
         $this->info(sprintf(
             'Pruned %d expired invitation(s), %d of closed campaigns, %d send record(s).',

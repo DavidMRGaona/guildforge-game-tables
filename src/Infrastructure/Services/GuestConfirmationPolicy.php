@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Services;
 
+use App\Application\Services\TimezoneServiceInterface;
 use DateInterval;
 use DateTimeImmutable;
 use Modules\GameTables\Domain\Entities\GameTable;
@@ -56,7 +57,7 @@ final readonly class GuestConfirmationPolicy
     public function noticeFor(GameTable $table, DateTimeImmutable $now): array
     {
         if ($this->modeFor($table) === GuestConfirmationMode::Hold) {
-            return ['mode' => 'hold', 'deadline' => $this->deadlineFor($table, $now)->format('c')];
+            return ['mode' => 'hold', 'deadline' => (string) app(TimezoneServiceInterface::class)->iso($this->deadlineFor($table, $now))];
         }
 
         return ['mode' => 'wait', 'deadline' => null];

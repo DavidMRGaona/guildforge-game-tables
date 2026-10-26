@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Application\DTOs;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Carbon\CarbonImmutable;
 use DateTimeImmutable;
 use Modules\GameTables\Domain\Entities\GameSystem;
@@ -61,12 +62,14 @@ final readonly class ProfileParticipationDTO
      */
     public function toArray(): array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         return [
             'id' => $this->id,
             'gameTableId' => $this->gameTableId,
             'gameTableTitle' => $this->gameTableTitle,
             'gameTableSlug' => $this->gameTableSlug,
-            'gameTableStartsAt' => $this->gameTableStartsAt?->format('c'),
+            'gameTableStartsAt' => $timezone->iso($this->gameTableStartsAt),
             'gameSystemName' => $this->gameSystemName,
             'role' => $this->role,
             'roleKey' => $this->roleKey,

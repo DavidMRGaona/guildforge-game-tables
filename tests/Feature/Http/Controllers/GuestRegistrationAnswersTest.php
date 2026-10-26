@@ -38,7 +38,7 @@ final class GuestRegistrationAnswersTest extends ModuleTestCase
 
         Notification::fake();
         config()->set('modules.settings.game-tables', []);
-        $this->travelTo(CarbonImmutable::parse('2026-11-02 10:00:00'));
+        $this->travelTo(CarbonImmutable::parse('2026-11-02 10:00:00', 'Europe/Madrid'));
 
         $system = GameSystemModel::create(['id' => (string) Str::uuid(), 'name' => 'Sistema', 'slug' => 'sistema', 'is_active' => true]);
         $this->table = GameTableModel::create([

@@ -11,7 +11,7 @@ namespace Modules\GameTables\Application\DTOs;
  * @phpstan-type RosterCampaign array{id: string, title: string, slug: string, status_label: string, is_finished: bool, accepts_new_players: bool, roster_access: string, max_players: int|null, roster_count: int}
  * @phpstan-type RosterRequest array{id: string, user_name: string, message: string|null, created_at: string|null}
  * @phpstan-type RosterInvitation array{id: string, email: string, inviter_name: string, send_count: int, expires_at: string, can_resend: bool}
- * @phpstan-type RosterSession array{game_table_id: string, title: string, slug: string, date_short: string, date: string}
+ * @phpstan-type RosterSession array{game_table_id: string, title: string, slug: string, starts_at: string|null, date_short: string, date: string}
  * @phpstan-type RosterPlayerSession array{game_table_id: string, state: string, can_toggle: bool}
  * @phpstan-type RosterPlayer array{user_id: string, name: string, joined_at: string|null, sessions: list<RosterPlayerSession>}
  */

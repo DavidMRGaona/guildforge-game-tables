@@ -42,7 +42,7 @@ final class SendTableRemindersCommandTest extends ModuleTestCase
         app('router')->getRoutes()->refreshNameLookups();
         Notification::fake();
         config()->set('modules.settings.game-tables', []);
-        $this->now = CarbonImmutable::parse('2026-11-02 10:00:00');
+        $this->now = CarbonImmutable::parse('2026-11-02 10:00:00', 'Europe/Madrid');
         $this->travelTo($this->now);
         $this->app->make(Kernel::class)->registerCommand($this->app->make(SendTableRemindersCommand::class));
 

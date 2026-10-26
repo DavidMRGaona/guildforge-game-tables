@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources;
 
+use App\Application\Services\TimezoneServiceInterface;
 use App\Filament\Concerns\ChecksPermissions;
 use App\Filament\Resources\BaseResource;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Carbon\CarbonImmutable;
 use Closure;
 use DateTimeInterface;
+use DateTimeZone;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
@@ -721,9 +723,13 @@ final class GameTableResource extends BaseResource
         return fn (Get $get): Closure => function (string $attribute, mixed $value, Closure $fail) use ($get): void {
             // The rule must never throw: reading a malformed date from the form state can already
             // fail, and the field itself reports it
+            $timezone = app(TimezoneServiceInterface::class);
+
             try {
-                $closesAt = self::toDate($value);
-                $startsAt = self::toDate($get('starts_at'));
+                // The rule sees the wall time the admin typed in this field, while the form state of
+                // the start is already in the storage zone
+                $closesAt = self::toDate($value, $timezone->displayTimezone());
+                $startsAt = self::toDate($get('starts_at'), $timezone->storageTimezone());
                 $inPlay = (bool) $get('accepts_registrations_in_progress');
                 $duration = $get('duration_minutes');
             } catch (\Throwable) {
@@ -746,7 +752,7 @@ final class GameTableResource extends BaseResource
             }
 
             $fail(__('game-tables::messages.validation.'.($inPlay ? 'registration_closes_after_end' : 'registration_closes_after_start'), [
-                'date' => $limit->format('d/m/Y H:i'),
+                'date' => $timezone->format($limit),
             ]));
         };
     }
@@ -788,7 +794,7 @@ final class GameTableResource extends BaseResource
         return app(CampaignRosterRepositoryInterface::class)->count(new CampaignId($campaignId));
     }
 
-    private static function toDate(mixed $value): ?CarbonImmutable
+    private static function toDate(mixed $value, DateTimeZone $zone): ?CarbonImmutable
     {
         if ($value instanceof DateTimeInterface) {
             return CarbonImmutable::instance($value);
@@ -800,7 +806,7 @@ final class GameTableResource extends BaseResource
 
         // The rule must never throw: an unparseable date is reported by the field itself
         try {
-            return CarbonImmutable::parse($value);
+            return CarbonImmutable::parse($value, $zone);
         } catch (\Throwable) {
             return null;
         }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Application\DTOs;
 
+use App\Application\Services\TimezoneServiceInterface;
 use DateTimeInterface;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
@@ -151,6 +152,8 @@ final readonly class GameTableResponseDTO
      */
     public function toArray(): array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         return [
             'id' => $this->id,
             'title' => $this->title,
@@ -172,7 +175,7 @@ final readonly class GameTableResponseDTO
             'status' => $this->status->value,
             'status_label' => $this->status->label(),
             'status_color' => $this->status->color(),
-            'starts_at' => $this->startsAt?->format('c'),
+            'starts_at' => $timezone->iso($this->startsAt),
             'duration_minutes' => $this->durationMinutes,
             'location' => $this->location,
             'online_url' => $this->onlineUrl,
@@ -194,14 +197,14 @@ final readonly class GameTableResponseDTO
             'registration_type' => $this->registrationType->value,
             'registration_type_label' => $this->registrationType->label(),
             'members_early_access_days' => $this->membersEarlyAccessDays,
-            'registration_opens_at' => $this->registrationOpensAt?->format('c'),
-            'registration_closes_at' => $this->registrationClosesAt?->format('c'),
-            'effective_registration_closes_at' => $this->effectiveRegistrationClosesAt?->format('c'),
+            'registration_opens_at' => $timezone->iso($this->registrationOpensAt),
+            'registration_closes_at' => $timezone->iso($this->registrationClosesAt),
+            'effective_registration_closes_at' => $timezone->iso($this->effectiveRegistrationClosesAt),
             'auto_confirm' => $this->autoConfirm,
             'accepts_registrations_in_progress' => $this->acceptsRegistrationsInProgress,
             'delegates_registrations' => $this->delegatesRegistrations,
             'is_published' => $this->isPublished,
-            'published_at' => $this->publishedAt?->format('c'),
+            'published_at' => $timezone->iso($this->publishedAt),
             'frontend_creation_status' => $this->frontendCreationStatus?->value,
             'frontend_creation_status_label' => $this->frontendCreationStatus?->label(),
             'frontend_creation_status_color' => $this->frontendCreationStatus?->color(),
@@ -211,8 +214,8 @@ final readonly class GameTableResponseDTO
             'image_public_id' => $this->imagePublicId,
             'participants' => array_map(fn (ParticipantResponseDTO $p) => $p->toArray(), $this->participants),
             'game_masters' => array_map(fn (GameMasterResponseDTO $gm) => $gm->toArray(), $this->gameMasters),
-            'created_at' => $this->createdAt?->format('c'),
-            'updated_at' => $this->updatedAt?->format('c'),
+            'created_at' => $timezone->iso($this->createdAt),
+            'updated_at' => $timezone->iso($this->updatedAt),
         ];
     }
 }

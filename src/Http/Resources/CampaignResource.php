@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Http\Resources;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\GameTables\Application\DTOs\CampaignGameMasterResponseDTO;
@@ -20,6 +21,8 @@ final class CampaignResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         $mainGm = array_filter($this->gameMasters, fn (CampaignGameMasterResponseDTO $gm) => $gm->isMain);
         $mainGameMaster = reset($mainGm) ?: null;
         $mainGameMasterName = $mainGameMaster->displayName ?? $this->creatorName;
@@ -66,8 +69,8 @@ final class CampaignResource extends JsonResource
             'languageLabel' => Language::nativeNameOf($this->language),
             'experienceLevel' => $this->experienceLevel?->value,
             'experienceLevelLabel' => $this->experienceLevel?->label(),
-            'createdAt' => $this->createdAt?->format('c'),
-            'updatedAt' => $this->updatedAt?->format('c'),
+            'createdAt' => $timezone->iso($this->createdAt),
+            'updatedAt' => $timezone->iso($this->updatedAt),
         ];
     }
 }

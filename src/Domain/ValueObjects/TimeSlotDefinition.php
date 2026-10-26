@@ -40,19 +40,6 @@ final readonly class TimeSlotDefinition
         return new self($label, $startTime, $endTime, $maxTables);
     }
 
-    /**
-     * @param  array{label: string, start_time: string, end_time: string, max_tables?: int|null}  $data
-     */
-    public static function fromArray(array $data): self
-    {
-        return new self(
-            label: $data['label'],
-            startTime: new DateTimeImmutable($data['start_time']),
-            endTime: new DateTimeImmutable($data['end_time']),
-            maxTables: $data['max_tables'] ?? null,
-        );
-    }
-
     public function durationMinutes(): int
     {
         return (int) (($this->endTime->getTimestamp() - $this->startTime->getTimestamp()) / 60);

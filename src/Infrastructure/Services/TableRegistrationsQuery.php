@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Services;
 
+use App\Application\Services\TimezoneServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Modules\GameTables\Application\DTOs\TableRegistrationRowDTO;
 use Modules\GameTables\Application\DTOs\TableRegistrationsPageDTO;
@@ -24,6 +25,8 @@ final readonly class TableRegistrationsQuery implements TableRegistrationsQueryI
 
     public function page(string $gameTableId): TableRegistrationsPageDTO
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         $table = $this->gameTables->findOrFail(new GameTableId($gameTableId));
         $participants = array_values(array_filter(
             $this->participants->getByGameTable($table->id),
@@ -40,7 +43,7 @@ final readonly class TableRegistrationsQuery implements TableRegistrationsQueryI
             table: [
                 'title' => $table->title,
                 'slug' => $table->slug,
-                'starts_at' => $table->timeSlot->startsAt->format('c'),
+                'starts_at' => (string) $timezone->iso($table->timeSlot->startsAt),
                 'auto_confirm' => $table->autoConfirm,
                 'max_players' => $table->maxPlayers,
                 'confirmed_players' => $this->participants->countConfirmedPlayers($table->id),
@@ -89,6 +92,8 @@ final readonly class TableRegistrationsQuery implements TableRegistrationsQueryI
      */
     private function toRow(Participant $participant, array $names): TableRegistrationRowDTO
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         $awaiting = $participant->isAwaitingEmailConfirmation();
         $pending = $participant->isPending();
 
@@ -100,7 +105,7 @@ final readonly class TableRegistrationsQuery implements TableRegistrationsQueryI
             roleLabel: $participant->role->label(),
             status: $participant->status->value,
             statusLabel: $participant->status->label(),
-            requestedAt: $participant->createdAt?->format('c'),
+            requestedAt: $timezone->iso($participant->createdAt),
             awaitingEmailConfirmation: $awaiting,
             canApprove: $pending && ! $awaiting,
             canReject: $pending,

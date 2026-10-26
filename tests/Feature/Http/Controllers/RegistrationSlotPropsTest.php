@@ -34,7 +34,7 @@ final class RegistrationSlotPropsTest extends ModuleTestCase
 
         // Far from a clock change: start times are stored as wall-clock times, ambiguous in the hour
         // repeated in October (GuildForge#107), and these tests store times minutes or hours from now
-        $this->travelTo(CarbonImmutable::parse('2026-11-04 18:00:00'));
+        $this->travelTo(CarbonImmutable::parse('2026-11-04 18:00:00', 'Europe/Madrid'));
 
         app('router')->getRoutes()->refreshNameLookups();
         config()->set('modules.settings.game-tables', []);
@@ -79,13 +79,12 @@ final class RegistrationSlotPropsTest extends ModuleTestCase
     // The guest form says before sending it how long the place is held, as the server will apply it
     public function test_a_visitor_is_told_the_confirmation_deadline_of_a_held_place(): void
     {
-        $now = CarbonImmutable::now();
-
+        // Two hours after the pinned 18:00 in Madrid
         $this->get(route('gametables.show', $this->table->slug))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('guestEligibility.confirmation.mode', 'hold')
-                ->where('guestEligibility.confirmation.deadline', $now->addHours(2)->format('c')));
+                ->where('guestEligibility.confirmation.deadline', '2026-11-04T20:00:00+01:00'));
     }
 
     public function test_a_visitor_is_told_the_place_is_not_guaranteed_once_the_cap_is_reached(): void

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Application\DTOs;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Modules\GameTables\Domain\Entities\ContentWarning;
 
 final readonly class ContentWarningDTO
@@ -23,6 +24,8 @@ final readonly class ContentWarningDTO
 
     public static function fromEntity(ContentWarning $contentWarning): self
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         return new self(
             id: $contentWarning->id->value,
             name: $contentWarning->name,
@@ -33,7 +36,7 @@ final readonly class ContentWarningDTO
             isActive: $contentWarning->isActive,
             description: $contentWarning->description,
             icon: $contentWarning->icon,
-            createdAt: $contentWarning->createdAt?->format('c'),
+            createdAt: $timezone->iso($contentWarning->createdAt),
         );
     }
 

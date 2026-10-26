@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Application\DTOs;
 
 use DateTimeImmutable;
+use Modules\GameTables\Application\Support\FormDateTime;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
 use Modules\GameTables\Domain\Enums\Genre;
@@ -57,6 +58,8 @@ final readonly class CreateGameTableDTO
     ) {}
 
     /**
+     * Date strings are form values: see FormDateTime.
+     *
      * @param  array<string, mixed>  $data
      */
     public static function fromArray(array $data): self
@@ -67,7 +70,7 @@ final readonly class CreateGameTableDTO
             title: $data['title'],
             startsAt: $data['starts_at'] instanceof DateTimeImmutable
                 ? $data['starts_at']
-                : new DateTimeImmutable($data['starts_at']),
+                : FormDateTime::read($data['starts_at']),
             durationMinutes: (int) $data['duration_minutes'],
             tableType: $data['table_type'] instanceof TableType
                 ? $data['table_type']
@@ -107,10 +110,10 @@ final readonly class CreateGameTableDTO
                 : RegistrationType::Everyone,
             membersEarlyAccessDays: (int) ($data['members_early_access_days'] ?? 0),
             registrationOpensAt: isset($data['registration_opens_at'])
-                ? ($data['registration_opens_at'] instanceof DateTimeImmutable ? $data['registration_opens_at'] : new DateTimeImmutable($data['registration_opens_at']))
+                ? ($data['registration_opens_at'] instanceof DateTimeImmutable ? $data['registration_opens_at'] : FormDateTime::read($data['registration_opens_at']))
                 : null,
             registrationClosesAt: isset($data['registration_closes_at'])
-                ? ($data['registration_closes_at'] instanceof DateTimeImmutable ? $data['registration_closes_at'] : new DateTimeImmutable($data['registration_closes_at']))
+                ? ($data['registration_closes_at'] instanceof DateTimeImmutable ? $data['registration_closes_at'] : FormDateTime::read($data['registration_closes_at']))
                 : null,
             autoConfirm: (bool) ($data['auto_confirm'] ?? true),
             acceptsRegistrationsInProgress: (bool) ($data['accepts_registrations_in_progress'] ?? false),

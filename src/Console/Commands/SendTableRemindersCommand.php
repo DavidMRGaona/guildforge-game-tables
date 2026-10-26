@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Console\Commands;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Carbon\CarbonImmutable;
+use DateInterval;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Notification;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
@@ -32,8 +34,10 @@ final class SendTableRemindersCommand extends Command
             return self::SUCCESS;
         }
 
-        $now = CarbonImmutable::now();
-        $until = $now->addHours($settings->reminderHoursBefore());
+        $timezone = app(TimezoneServiceInterface::class);
+        // Bound in the storage zone: bindings skip the model's conversion
+        $now = $timezone->toStorage(CarbonImmutable::now());
+        $until = $now->add(new DateInterval(sprintf('PT%dH', $settings->reminderHoursBefore())));
         $sent = 0;
 
         $participants = ParticipantModel::query()
@@ -75,7 +79,7 @@ final class SendTableRemindersCommand extends Command
                 tableTitle: $table->title,
                 // HasSlug always sets one; the id keeps a row without it from stopping the run
                 tableSlug: $table->slug ?? $table->id,
-                tableDate: $table->starts_at->format('d/m/Y H:i'),
+                tableDate: $timezone->format($table->starts_at),
                 tableLocation: $table->location,
                 cancellationToken: $participant->user_id === null ? $participant->cancellation_token : null,
             );

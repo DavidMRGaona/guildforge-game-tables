@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Listeners;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Illuminate\Support\Facades\Notification;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Events\GuestConfirmationRequested;
@@ -29,7 +30,7 @@ final readonly class SendGuestEmailConfirmationRequest
             ->notify(new GuestEmailConfirmationRequest(
                 firstName: $event->firstName,
                 tableTitle: $gameTable->title,
-                tableDate: $gameTable->timeSlot->startsAt->format('d/m/Y H:i'),
+                tableDate: app(TimezoneServiceInterface::class)->format($gameTable->timeSlot->startsAt),
                 confirmationUrl: route('gametables.confirm-guest', ['token' => $event->confirmationToken]),
                 holdsPlace: $event->holdsPlace,
                 deadline: $event->deadline,

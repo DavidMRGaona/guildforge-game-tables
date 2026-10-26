@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Services;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Modules\GameTables\Application\DTOs\GameMasterResponseDTO;
 use Modules\GameTables\Application\DTOs\GameTableListDTO;
@@ -62,12 +63,15 @@ final readonly class GameTableQueryService implements GameTableQueryServiceInter
 
     public function getUpcomingTables(\DateTimeInterface $from, \DateTimeInterface $to): array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         // Everything the calendar cards read, loaded with the list (no query per table)
         $tables = SeatCounter::withPlayerSeatCounts(GameTableModel::query())
             ->with(['gameSystem', 'creator', 'event', 'gameMasters.user'])
             ->where('is_published', true)
             ->whereNotIn('status', [TableStatus::Cancelled->value, TableStatus::Draft->value])
-            ->whereBetween('starts_at', [$from, $to])
+            // Bound in the storage zone: the callers may give the bounds in another one
+            ->whereBetween('starts_at', [$timezone->toStorage($from), $timezone->toStorage($to)])
             ->orderBy('starts_at', 'asc')
             ->get();
 

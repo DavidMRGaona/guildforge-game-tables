@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Services;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
@@ -70,6 +71,8 @@ final readonly class ProfileCreatedTablesDataProvider
      */
     private function formatTableForProfile(GameTableResponseDTO $dto, int $takenPlayerSeats, bool $canEdit): array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         // An unpublished web table shows where it stands in the review, as «Mis mesas» does
         $reviewStatus = $dto->isPublished ? null : $dto->frontendCreationStatus;
 
@@ -78,7 +81,7 @@ final readonly class ProfileCreatedTablesDataProvider
             'title' => $dto->title,
             'slug' => $dto->slug,
             'gameSystemName' => $dto->gameSystemName,
-            'startsAt' => $dto->startsAt?->format('c'),
+            'startsAt' => $timezone->iso($dto->startsAt),
             'status' => $reviewStatus->value ?? $dto->status->value,
             'statusLabel' => $reviewStatus?->label() ?? $dto->status->label(),
             'statusColor' => $reviewStatus?->color() ?? $dto->status->color(),

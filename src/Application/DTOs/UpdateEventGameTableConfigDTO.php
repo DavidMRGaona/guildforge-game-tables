@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Application\DTOs;
 
+use App\Application\Services\TimezoneServiceInterface;
 use DateTimeImmutable;
 use Modules\GameTables\Domain\Enums\CreationAccessLevel;
 use Modules\GameTables\Domain\Enums\LocationMode;
@@ -77,16 +78,20 @@ final readonly class UpdateEventGameTableConfigDTO
             return [];
         }
 
+        $timezone = app(TimezoneServiceInterface::class);
+        // An hour without offset is the site's wall time, as the saved slots read it
+        $read = fn (string $time): DateTimeImmutable => $timezone->toStorage(new DateTimeImmutable($time, $timezone->displayTimezone()));
+
         return array_filter(array_map(
-            function (array $item): ?TimeSlotDefinition {
+            function (array $item) use ($read): ?TimeSlotDefinition {
                 if (empty($item['label']) || empty($item['start_time']) || empty($item['end_time'])) {
                     return null;
                 }
 
                 return TimeSlotDefinition::create(
                     label: $item['label'],
-                    startTime: new DateTimeImmutable($item['start_time']),
-                    endTime: new DateTimeImmutable($item['end_time']),
+                    startTime: $read($item['start_time']),
+                    endTime: $read($item['end_time']),
                     maxTables: isset($item['max_tables']) && $item['max_tables'] !== '' ? (int) $item['max_tables'] : null,
                 );
             },
@@ -136,6 +141,8 @@ final readonly class UpdateEventGameTableConfigDTO
      */
     public function toArray(): array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         return [
             'event_id' => $this->eventId,
             'tables_enabled' => $this->tablesEnabled,
@@ -148,7 +155,7 @@ final readonly class UpdateEventGameTableConfigDTO
             'fixed_location' => $this->fixedLocation,
             'eligibility_override' => $this->eligibilityOverride?->toArray(),
             'early_access_enabled' => $this->earlyAccessEnabled,
-            'creation_opens_at' => $this->creationOpensAt?->format('c'),
+            'creation_opens_at' => $timezone->iso($this->creationOpensAt),
             'early_access_tier' => $this->earlyAccessTier?->toArray(),
         ];
     }

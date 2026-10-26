@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Http\Resources;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\GameTables\Application\DTOs\GameMasterResponseDTO;
@@ -28,6 +29,8 @@ final class GameTableResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         $mainGm = array_filter($this->gameMasters, fn (GameMasterResponseDTO $gm) => $gm->isMain);
         $mainGameMaster = reset($mainGm) ?: null;
         $mainGameMasterName = $mainGameMaster->displayName ?? $this->creatorName;
@@ -53,7 +56,7 @@ final class GameTableResource extends JsonResource
             'status' => $this->status->value,
             'statusLabel' => $this->status->label(),
             'statusColor' => $this->status->color(),
-            'startsAt' => $this->startsAt?->format('c'),
+            'startsAt' => $timezone->iso($this->startsAt),
             'durationMinutes' => $this->durationMinutes,
             'location' => $this->location,
             'onlineUrl' => $this->onlineUrl,
@@ -76,13 +79,13 @@ final class GameTableResource extends JsonResource
             'registrationType' => $this->registrationType->value,
             'registrationTypeLabel' => $this->registrationType->label(),
             'membersEarlyAccessDays' => $this->membersEarlyAccessDays,
-            'registrationOpensAt' => $this->registrationOpensAt?->format('c'),
-            'registrationClosesAt' => $this->registrationClosesAt?->format('c'),
-            'effectiveRegistrationClosesAt' => $this->effectiveRegistrationClosesAt?->format('c'),
+            'registrationOpensAt' => $timezone->iso($this->registrationOpensAt),
+            'registrationClosesAt' => $timezone->iso($this->registrationClosesAt),
+            'effectiveRegistrationClosesAt' => $timezone->iso($this->effectiveRegistrationClosesAt),
             'autoConfirm' => $this->autoConfirm,
             'acceptsRegistrationsInProgress' => $this->acceptsRegistrationsInProgress,
             'isPublished' => $this->isPublished,
-            'publishedAt' => $this->publishedAt?->format('c'),
+            'publishedAt' => $timezone->iso($this->publishedAt),
             'notes' => $this->notes,
             'imagePublicId' => $this->imagePublicId,
             'gameMasters' => GameMasterResource::collection($this->gameMasters)->resolve(),
@@ -92,8 +95,8 @@ final class GameTableResource extends JsonResource
             'spotsAvailable' => $this->seats->freePlayerSeats,
             'spectatorSpotsAvailable' => $this->seats->freeSpectatorSeats,
             'waitingListCount' => $this->seats->waitingPlayers,
-            'createdAt' => $this->createdAt?->format('c'),
-            'updatedAt' => $this->updatedAt?->format('c'),
+            'createdAt' => $timezone->iso($this->createdAt),
+            'updatedAt' => $timezone->iso($this->updatedAt),
         ];
     }
 }

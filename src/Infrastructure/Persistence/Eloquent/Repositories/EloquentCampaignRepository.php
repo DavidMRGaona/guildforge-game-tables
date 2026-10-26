@@ -173,10 +173,10 @@ final readonly class EloquentCampaignRepository implements CampaignRepositoryInt
             frontendCreationStatus: $model->frontend_creation_status,
             moderationNotes: $model->moderation_notes,
             createdAt: $model->created_at !== null
-                ? new DateTimeImmutable($model->created_at->toDateTimeString())
+                ? DateTimeImmutable::createFromInterface($model->created_at)
                 : null,
             updatedAt: $model->updated_at !== null
-                ? new DateTimeImmutable($model->updated_at->toDateTimeString())
+                ? DateTimeImmutable::createFromInterface($model->updated_at)
                 : null,
             rosterAccess: $model->roster_access ?? RosterAccess::Anyone,
             language: $model->language,

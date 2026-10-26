@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Tests\Feature\Http\Controllers;
 
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
@@ -161,7 +162,8 @@ final class WaitingListRankTest extends ModuleTestCase
     // The web guest's registration email waits for the confirmation: the admin guest's goes out at once
     public function test_the_message_after_a_guest_joins_and_the_email_of_an_admin_guest_give_the_place_among_those_waiting(): void
     {
-        $this->freezeTime();
+        // 18:00 in Madrid (CET): the place is held until 20:00
+        $this->travelTo(CarbonImmutable::parse('2026-11-04 18:00:00', 'Europe/Madrid'));
         $this->setWaitingList(true);
         Event::fake([GuestRegistered::class]);
         $table = $this->fullTable();
@@ -177,7 +179,7 @@ final class WaitingListRankTest extends ModuleTestCase
             ->assertRedirect()
             ->assertSessionHas(
                 'success',
-                'Te hemos enviado un email para confirmar la inscripción. Confírmala antes del '.now()->addHours(2)->format('d/m/Y H:i').' para conservar tu puesto 2 en la lista de espera.',
+                'Te hemos enviado un email para confirmar la inscripción. Confírmala antes del 04/11/2026 20:00 para conservar tu puesto 2 en la lista de espera.',
             );
         Event::assertNotDispatched(GuestRegistered::class);
 

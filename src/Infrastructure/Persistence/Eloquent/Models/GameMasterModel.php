@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Models;
 
+use App\Infrastructure\Persistence\Eloquent\Concerns\StoresInstantsInStorageTimezone;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -35,6 +36,7 @@ final class GameMasterModel extends Model
 {
     use HasGameMasterAttributes;
     use HasUuids;
+    use StoresInstantsInStorageTimezone;
 
     protected $table = 'gametables_game_masters';
 

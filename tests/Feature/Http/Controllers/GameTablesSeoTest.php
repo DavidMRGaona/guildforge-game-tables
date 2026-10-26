@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Tests\Feature\Http\Controllers;
 
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
@@ -59,8 +60,8 @@ final class GameTablesSeoTest extends ModuleTestCase
             'synopsis' => '<p>Una aventura corta</p>',
             'image_public_id' => 'gametables/cripta.jpg',
             'location' => 'Local de la asociación',
-            // app.timezone is Europe/Madrid: venue local time
-            'starts_at' => '2026-05-09 17:00:00',
+            // The venue's local time
+            'starts_at' => CarbonImmutable::parse('2026-05-09 17:00:00', 'Europe/Madrid'),
             'duration_minutes' => 240,
             'table_type' => TableType::OneShot,
             'table_format' => TableFormat::InPerson,

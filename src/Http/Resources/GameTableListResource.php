@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Http\Resources;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\GameTables\Application\DTOs\GameTableListDTO;
@@ -18,12 +19,14 @@ final class GameTableListResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         return [
             'id' => $this->id,
             'title' => $this->title,
             'slug' => $this->slug,
             'gameSystemName' => $this->gameSystemName,
-            'startsAt' => $this->startsAt?->format('c'),
+            'startsAt' => $timezone->iso($this->startsAt),
             'durationMinutes' => $this->durationMinutes,
             'tableFormat' => [
                 'value' => $this->tableFormat->value,

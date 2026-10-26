@@ -6,8 +6,11 @@ namespace Modules\GameTables\Tests\Unit\Application\DTOs;
 
 use Modules\GameTables\Application\DTOs\UpdateEventGameTableConfigDTO;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
+/**
+ * Reads the hours with the timezone service, so it runs on the application.
+ */
 final class UpdateEventGameTableConfigDTOTest extends TestCase
 {
     /**

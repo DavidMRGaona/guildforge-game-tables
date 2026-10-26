@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Services;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Carbon\CarbonImmutable;
 use DateMalformedStringException;
 use DateTimeImmutable;
@@ -91,7 +92,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
 
         // Check registration window
         // Members' early access is part of the membership integration setting
-        if (! $gameTable->canUserRegister($isMember, $now, $this->settings->isMembershipIntegrationEnabled())) {
+        if (! $gameTable->canUserRegister($isMember, $now, app(TimezoneServiceInterface::class)->displayTimezone(), $this->settings->isMembershipIntegrationEnabled())) {
             if ($gameTable->requiresMembership() && ! $isMember) {
                 throw MembersOnlyException::forTable($gameTable->id->value);
             }
@@ -213,6 +214,8 @@ final readonly class EligibilityService implements EligibilityServiceInterface
      */
     public function canRegisterById(string $gameTableId, string $userId): array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         $tableId = new GameTableId($gameTableId);
         $gameTable = $this->gameTableRepository->find($tableId);
 
@@ -242,12 +245,12 @@ final readonly class EligibilityService implements EligibilityServiceInterface
         $neverReopens = in_array($result['reason'], ['invitation_only', 'table_started', 'table_ended'], true);
         if (! $result['eligible'] && ! $neverReopens && $gameTable->registrationOpensAt instanceof DateTimeImmutable) {
             if ($isMember && $gameTable->membersEarlyAccessDays > 0 && $this->settings->isMembershipIntegrationEnabled()) {
-                $earlyAccessDate = $gameTable->registrationOpensAt->modify("-{$gameTable->membersEarlyAccessDays} days");
-                if ($now < $earlyAccessDate) {
-                    $canRegisterAt = $earlyAccessDate->format('c');
+                $earlyAccessDate = $gameTable->memberEarlyAccessStartsAt($timezone->displayTimezone());
+                if ($earlyAccessDate instanceof DateTimeImmutable && $now < $earlyAccessDate) {
+                    $canRegisterAt = $timezone->iso($earlyAccessDate);
                 }
             } elseif ($now < $gameTable->registrationOpensAt) {
-                $canRegisterAt = $gameTable->registrationOpensAt->format('c');
+                $canRegisterAt = $timezone->iso($gameTable->registrationOpensAt);
             }
         }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Tests\Feature\Listeners;
 
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Carbon\CarbonImmutable;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
@@ -74,7 +75,7 @@ final class CampaignRosterListenersTest extends ModuleTestCase
             'created_by' => $this->john->id,
             'title' => 'Sesión 2',
             'slug' => 'sesion-2',
-            'starts_at' => '2026-11-15 18:00:00',
+            'starts_at' => CarbonImmutable::parse('2026-11-15 18:00:00', 'Europe/Madrid'),
             'duration_minutes' => 240,
             'table_type' => 'one_shot',
             'table_format' => 'in_person',

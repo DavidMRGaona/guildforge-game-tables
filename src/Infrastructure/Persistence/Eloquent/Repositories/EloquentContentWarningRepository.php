@@ -131,7 +131,7 @@ final readonly class EloquentContentWarningRepository implements ContentWarningR
             description: $model->description,
             icon: $model->icon,
             createdAt: $model->created_at !== null
-                ? new DateTimeImmutable($model->created_at->toDateTimeString())
+                ? DateTimeImmutable::createFromInterface($model->created_at)
                 : null,
         );
     }

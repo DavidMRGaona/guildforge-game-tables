@@ -6,6 +6,7 @@ namespace Modules\GameTables\Http\Controllers;
 
 use App\Application\Seo\DTOs\SeoPageDTO;
 use App\Application\Seo\Services\SeoMetadataFactoryInterface;
+use App\Application\Services\TimezoneServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\User;
@@ -51,6 +52,8 @@ final class FrontendGameTableController extends Controller
      */
     public function create(Request $request): Response
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         $user = auth()->user();
         $eventSlug = $request->query('event');
 
@@ -77,7 +80,7 @@ final class FrontendGameTableController extends Controller
             // Show a page explaining why they can't create
             return Inertia::render('GameTables/CreateNotEligible', [
                 'reason' => $eligibility->reason,
-                'canCreateAt' => $eligibility->canCreateAt?->format('c'),
+                'canCreateAt' => $timezone->iso($eligibility->canCreateAt),
                 'seo' => $this->seo->forPage(new SeoPageDTO(
                     title: (string) __('game-tables::messages.seo.create_table_title'),
                     noindex: true,
@@ -219,6 +222,10 @@ final class FrontendGameTableController extends Controller
 
         return Inertia::render('GameTables/Edit', [
             'table' => $table->toArray(),
+            // The value of the datetime-local field: the site's wall time
+            'startsAtWallTime' => $table->startsAt instanceof \DateTimeInterface
+                ? app(TimezoneServiceInterface::class)->toDisplayWallTime($table->startsAt)
+                : null,
             // The author's own table: the directors come with their email and phone
             'gameMasters' => $this->creationService->getDraftGameMasters($gameTable->id, (string) $user->id),
             'formData' => $formData,

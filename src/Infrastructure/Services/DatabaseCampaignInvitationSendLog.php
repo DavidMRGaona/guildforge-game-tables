@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Services;
 
+use App\Application\Services\TimezoneServiceInterface;
 use DateTimeImmutable;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
@@ -13,8 +14,6 @@ use Modules\GameTables\Application\Services\CampaignInvitationSendLogInterface;
 final readonly class DatabaseCampaignInvitationSendLog implements CampaignInvitationSendLogInterface
 {
     private const string TABLE = 'gametables_campaign_invitation_sends';
-
-    private const string FORMAT = 'Y-m-d H:i:s';
 
     public function recordSend(string $campaignId, string $email, DateTimeImmutable $at): void
     {
@@ -29,7 +28,7 @@ final readonly class DatabaseCampaignInvitationSendLog implements CampaignInvita
     public function sendsSince(string $campaignId, string $email, DateTimeImmutable $since): int
     {
         return $this->query($campaignId, $email, 'sent')
-            ->where('occurred_at', '>=', $since->format(self::FORMAT))
+            ->where('occurred_at', '>=', $this->stored($since))
             ->count();
     }
 
@@ -43,14 +42,14 @@ final readonly class DatabaseCampaignInvitationSendLog implements CampaignInvita
     public function rejectedSince(string $campaignId, string $email, DateTimeImmutable $since): bool
     {
         return $this->query($campaignId, $email, 'rejected')
-            ->where('occurred_at', '>=', $since->format(self::FORMAT))
+            ->where('occurred_at', '>=', $this->stored($since))
             ->exists();
     }
 
     public function pruneBefore(DateTimeImmutable $before): int
     {
         return DB::table(self::TABLE)
-            ->where('occurred_at', '<', $before->format(self::FORMAT))
+            ->where('occurred_at', '<', $this->stored($before))
             ->delete();
     }
 
@@ -61,8 +60,16 @@ final readonly class DatabaseCampaignInvitationSendLog implements CampaignInvita
             'campaign_id' => $campaignId,
             'email_hash' => $this->hash($campaignId, $email),
             'kind' => $kind,
-            'occurred_at' => $at->format(self::FORMAT),
+            'occurred_at' => $this->stored($at),
         ]);
+    }
+
+    /**
+     * The query builder skips the model's conversion: instants go in the storage zone.
+     */
+    private function stored(DateTimeImmutable $instant): DateTimeImmutable
+    {
+        return app(TimezoneServiceInterface::class)->toStorage($instant);
     }
 
     private function query(string $campaignId, string $email, string $kind): Builder

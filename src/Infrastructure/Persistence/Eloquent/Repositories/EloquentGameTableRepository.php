@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories;
 
+use App\Application\Services\TimezoneServiceInterface;
 use DateTimeImmutable;
-use DateTimeZone;
 use Illuminate\Support\Facades\DB;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\Genre;
@@ -187,14 +187,11 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
      */
     public function idsStartedInStatuses(array $statuses, DateTimeImmutable $now): array
     {
-        // starts_at holds the wall-clock time of the application timezone, which Laravel sets as
-        // PHP's default one
-        $localNow = $now->setTimezone(new DateTimeZone(date_default_timezone_get()));
-
         /** @var array<int, string> $ids */
         $ids = GameTableModel::query()
             ->whereIn('status', array_map(static fn (TableStatus $status): string => $status->value, $statuses))
-            ->where('starts_at', '<=', $localNow->format('Y-m-d H:i:s'))
+            // Bound in the storage zone: bindings skip the model's conversion
+            ->where('starts_at', '<=', app(TimezoneServiceInterface::class)->toStorage($now))
             ->orderBy('starts_at')
             // Tables starting at the same time come in the same order on every run
             ->orderBy('id')
@@ -265,7 +262,7 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
             // HasSlug always sets one; the id stands in for a row without it
             slug: $model->slug ?? $model->id,
             timeSlot: new TimeSlot(
-                new DateTimeImmutable($model->starts_at->toDateTimeString()),
+                DateTimeImmutable::createFromInterface($model->starts_at),
                 $model->duration_minutes,
             ),
             tableType: $model->table_type,
@@ -295,27 +292,27 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
             registrationType: $model->registration_type,
             membersEarlyAccessDays: $model->members_early_access_days,
             registrationOpensAt: $model->registration_opens_at !== null
-                ? new DateTimeImmutable($model->registration_opens_at->toDateTimeString())
+                ? DateTimeImmutable::createFromInterface($model->registration_opens_at)
                 : null,
             registrationClosesAt: $model->registration_closes_at !== null
-                ? new DateTimeImmutable($model->registration_closes_at->toDateTimeString())
+                ? DateTimeImmutable::createFromInterface($model->registration_closes_at)
                 : null,
             autoConfirm: $model->auto_confirm,
             acceptsRegistrationsInProgress: $model->accepts_registrations_in_progress ?? false,
             delegatesRegistrations: $model->delegates_registrations ?? false,
             isPublished: $model->is_published,
             publishedAt: $model->published_at !== null
-                ? new DateTimeImmutable($model->published_at->toDateTimeString())
+                ? DateTimeImmutable::createFromInterface($model->published_at)
                 : null,
             notes: $model->notes,
             imagePublicId: $model->image_public_id,
             frontendCreationStatus: $model->frontend_creation_status,
             moderationNotes: $model->moderation_notes,
             createdAt: $model->created_at !== null
-                ? new DateTimeImmutable($model->created_at->toDateTimeString())
+                ? DateTimeImmutable::createFromInterface($model->created_at)
                 : null,
             updatedAt: $model->updated_at !== null
-                ? new DateTimeImmutable($model->updated_at->toDateTimeString())
+                ? DateTimeImmutable::createFromInterface($model->updated_at)
                 : null,
         );
     }
