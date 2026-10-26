@@ -196,7 +196,7 @@ function handleConfirm(): void {
                     {{ t('confirmRegistration.intro', { tableTitle: gameTable.title }) }}
                 </p>
 
-                <div class="flex gap-4">
+                <div class="flex flex-col gap-4 sm:flex-row">
                     <Link :href="backHref" :class="[secondaryLinkClass, 'flex-1']">
                         {{ backLabel }}
                     </Link>

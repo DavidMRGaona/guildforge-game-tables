@@ -139,7 +139,7 @@ function handleCancel(): void {
                     {{ t('cancelRegistration.confirm', { tableTitle: gameTable.title }) }}
                 </p>
 
-                <div class="flex gap-4">
+                <div class="flex flex-col gap-4 sm:flex-row">
                     <Link :href="`/mesas/${gameTable.id}`" class="flex-1">
                         <BaseButton variant="secondary" class="w-full">
                             {{ $t('common.back') }}
