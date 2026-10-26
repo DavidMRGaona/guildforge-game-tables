@@ -14,7 +14,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class CampaignRosterCopyTest extends TestCase
 {
-    private const MESSAGE_KEYS = [
+    private const array MESSAGE_KEYS = [
         'fields.roster_access',
         'fields.roster_access_help',
         'enums.roster_access.anyone',
@@ -98,7 +98,7 @@ final class CampaignRosterCopyTest extends TestCase
         'seo.roster_title',
     ];
 
-    private const EMAIL_KEYS = [
+    private const array EMAIL_KEYS = [
         'campaign_sessions.intro',
         'campaign_sessions.waiting_suffix',
         'campaign_sessions.no_sessions',
@@ -140,7 +140,7 @@ final class CampaignRosterCopyTest extends TestCase
         'campaign_player_left.view_roster',
     ];
 
-    private const LOCALE_KEYS = [
+    private const array LOCALE_KEYS = [
         'campaignSession.enrolled',
         'campaignSession.sessionOf',
         'campaignSession.waiting',
@@ -266,7 +266,7 @@ final class CampaignRosterCopyTest extends TestCase
         'join.manageRoster',
     ];
 
-    private const SAMPLE_NAMES = ['John Doe', 'Jane Doe', 'Richard Roe', 'Mary Major'];
+    private const array SAMPLE_NAMES = ['John Doe', 'Jane Doe', 'Richard Roe', 'Mary Major'];
 
     /** @return array<string, mixed> */
     private function lang(string $locale, string $file): array

@@ -312,8 +312,6 @@ final class FrontendTableEventLinkTest extends ModuleTestCase
             schedulingMode: SchedulingMode::FreeSchedule,
             timeSlots: [],
             locationMode: LocationMode::FreeChoice,
-            fixedLocation: null,
-            eligibilityOverride: null,
         ));
     }
 

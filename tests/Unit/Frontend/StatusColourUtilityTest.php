@@ -17,7 +17,7 @@ use RecursiveIteratorIterator;
  */
 final class StatusColourUtilityTest extends TestCase
 {
-    private const UTILITY = '/(?<![\w-])((?:[\w-]+:)*)((?:bg|text|border(?:-[lrtbxy])?|ring|ring-offset|divide|outline|fill|stroke|from|to|via|decoration|shadow)-((?:danger|error|success|warning|info)(?:-[a-z0-9]+)*))(?:\/\d+)?(?![\w-])/';
+    private const string UTILITY = '/(?<![\w-])((?:[\w-]+:)*)((?:bg|text|border(?:-[lrtbxy])?|ring|ring-offset|divide|outline|fill|stroke|from|to|via|decoration|shadow)-((?:danger|error|success|warning|info)(?:-[a-z0-9]+)*))(?:\/\d+)?(?![\w-])/';
 
     private function moduleRoot(): string
     {

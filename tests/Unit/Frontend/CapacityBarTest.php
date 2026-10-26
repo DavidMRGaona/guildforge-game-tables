@@ -14,9 +14,9 @@ use RecursiveIteratorIterator;
  */
 final class CapacityBarTest extends TestCase
 {
-    private const COMPONENT = 'components/CapacityBar.vue';
+    private const string COMPONENT = 'components/CapacityBar.vue';
 
-    private const TRACK = '/class="[^"]*\boverflow-hidden\b[^"]*\brounded-full\b[^"]*"/';
+    private const string TRACK = '/class="[^"]*\boverflow-hidden\b[^"]*\brounded-full\b[^"]*"/';
 
     private function root(): string
     {

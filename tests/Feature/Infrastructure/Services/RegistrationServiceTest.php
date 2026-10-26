@@ -270,8 +270,8 @@ final class RegistrationServiceTest extends TestCase
             userId: null,
             role: ParticipantRole::Player,
             status: ParticipantStatus::Confirmed,
-            email: $email,
             firstName: 'Existing',
+            email: $email,
             // An unconfirmed guest sending the form again is sent the confirmation email again
             emailConfirmedAt: new DateTimeImmutable('-1 day'),
         );
@@ -302,8 +302,8 @@ final class RegistrationServiceTest extends TestCase
             userId: null,
             role: ParticipantRole::Player,
             status: ParticipantStatus::Confirmed,
-            email: 'test@example.com',
             firstName: 'Test',
+            email: 'test@example.com',
             cancellationToken: $token,
         );
 
@@ -322,10 +322,8 @@ final class RegistrationServiceTest extends TestCase
         $this->participantRepository
             ->expects($this->once())
             ->method('save')
-            ->with($this->callback(function (Participant $p) {
-                return $p->status === ParticipantStatus::Cancelled
-                    && $p->cancelledAt !== null;
-            }));
+            ->with($this->callback(fn (Participant $p) => $p->status === ParticipantStatus::Cancelled
+                && $p->cancelledAt instanceof DateTimeImmutable));
 
         $result = $this->service->cancelByToken($token);
 
@@ -359,8 +357,8 @@ final class RegistrationServiceTest extends TestCase
             userId: null,
             role: ParticipantRole::Player,
             status: ParticipantStatus::Cancelled,
-            email: 'test@example.com',
             firstName: 'Test',
+            email: 'test@example.com',
             cancellationToken: $token,
         );
 
@@ -392,8 +390,8 @@ final class RegistrationServiceTest extends TestCase
             userId: null,
             role: ParticipantRole::Player,
             status: ParticipantStatus::Confirmed,
-            email: 'test@example.com',
             firstName: 'Test',
+            email: 'test@example.com',
             cancellationToken: $token,
         );
 
@@ -546,7 +544,7 @@ final class RegistrationServiceTest extends TestCase
             role: ParticipantRole::Player,
         );
 
-        $result = $this->service->register($dto);
+        $this->service->register($dto);
 
         $this->assertNotNull($savedParticipant);
         $this->assertEquals(ParticipantStatus::WaitingList, $savedParticipant->status);
@@ -566,10 +564,10 @@ final class RegistrationServiceTest extends TestCase
             userId: null,
             role: ParticipantRole::Player,
             status: ParticipantStatus::Cancelled,
-            email: $email,
-            firstName: 'Old Name',
-            cancellationToken: 'old-token',
             cancelledAt: new DateTimeImmutable('-1 hour'),
+            firstName: 'Old Name',
+            email: $email,
+            cancellationToken: 'old-token',
         );
 
         $this->participantRepository
@@ -649,7 +647,7 @@ final class RegistrationServiceTest extends TestCase
         );
         Event::assertDispatched(
             ParticipantConfirmed::class,
-            fn (ParticipantConfirmed $event): bool => $event->automatic === true,
+            fn (ParticipantConfirmed $event): bool => $event->automatic,
         );
     }
 
@@ -687,7 +685,6 @@ final class RegistrationServiceTest extends TestCase
         $this->participantRepository->method('countConfirmedPlayers')->willReturn(6);
         $this->participantRepository->method('getNextWaitingListPosition')->willReturn(4);
         // Someone ahead left the list: stored position 4, second among those waiting
-        /** @var MockObject&ParticipantRepositoryInterface $participants */
         $participants = $this->participantRepository;
         $participants->method('getWaitingListRank')->willReturn(2);
 
@@ -727,7 +724,7 @@ final class RegistrationServiceTest extends TestCase
         );
         Event::assertDispatched(
             ParticipantConfirmed::class,
-            fn (ParticipantConfirmed $event): bool => $event->automatic === true,
+            fn (ParticipantConfirmed $event): bool => $event->automatic,
         );
     }
 
@@ -1102,7 +1099,6 @@ final class RegistrationServiceTest extends TestCase
                 userId: null,
                 role: ParticipantRole::Player,
                 firstName: 'John',
-                email: null,
             ));
             $this->fail('A guest without email skipped the eligibility check');
         } catch (RegistrationNotAllowedException $e) {

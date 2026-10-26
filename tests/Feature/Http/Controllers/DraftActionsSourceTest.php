@@ -14,16 +14,16 @@ use PHPUnit\Framework\TestCase;
  */
 final class DraftActionsSourceTest extends TestCase
 {
-    private const SHARED = 'resources/js/components/DraftActions.vue';
+    private const string SHARED = 'resources/js/components/DraftActions.vue';
 
-    private const REASON = 'resources/js/components/DraftRejectionReason.vue';
+    private const string REASON = 'resources/js/components/DraftRejectionReason.vue';
 
-    private const PAGES = [
+    private const array PAGES = [
         'resources/js/pages/GameTables/MyTables.vue' => 'table',
         'resources/js/pages/Campaigns/MyCampaigns.vue' => 'campaign',
     ];
 
-    private const CARDS = [
+    private const array CARDS = [
         'resources/js/components/profile/ProfileCreatedTableCard.vue' => 'table',
         'resources/js/components/profile/ProfileCreatedCampaignCard.vue' => 'campaign',
     ];

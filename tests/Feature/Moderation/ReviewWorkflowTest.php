@@ -145,7 +145,7 @@ final class ReviewWorkflowTest extends ModuleTestCase
     public function test_a_legacy_rejected_item_still_shows_its_reason_and_can_be_sent_again(): void
     {
         $table = $this->table('rejected', notes: 'Fecha incorrecta');
-        $campaign = $this->campaign('rejected', notes: 'Sin sistema');
+        $this->campaign('rejected', notes: 'Sin sistema');
 
         $this->actingAs($this->author)
             ->get(route('gametables.my-tables'))

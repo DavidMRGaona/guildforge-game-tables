@@ -26,7 +26,7 @@ final class FrontendFormRequestsTest extends ModuleTestCase
 
     protected bool $autoEnableModule = true;
 
-    private const CONSENT_MESSAGE = 'Confirma que tienes el consentimiento de los co-directores.';
+    private const string CONSENT_MESSAGE = 'Confirma que tienes el consentimiento de los co-directores.';
 
     private UserModel $author;
 

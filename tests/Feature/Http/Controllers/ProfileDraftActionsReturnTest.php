@@ -25,9 +25,9 @@ final class ProfileDraftActionsReturnTest extends ModuleTestCase
 
     protected bool $autoEnableModule = true;
 
-    private const TABLES_TAB = ['tab' => 'gametables-created'];
+    private const array TABLES_TAB = ['tab' => 'gametables-created'];
 
-    private const CAMPAIGNS_TAB = ['tab' => 'gametables-campaigns'];
+    private const array CAMPAIGNS_TAB = ['tab' => 'gametables-campaigns'];
 
     private UserModel $author;
 

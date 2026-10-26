@@ -15,14 +15,14 @@ use PHPUnit\Framework\TestCase;
  */
 final class TableFormsThemeSourceTest extends TestCase
 {
-    private const FORM_PAGES = [
+    private const array FORM_PAGES = [
         'pages/GameTables/Create.vue',
         'pages/GameTables/Edit.vue',
         'pages/Campaigns/Create.vue',
         'pages/Campaigns/Edit.vue',
     ];
 
-    private const TABLE_PAGES = ['pages/GameTables/Create.vue', 'pages/GameTables/Edit.vue'];
+    private const array TABLE_PAGES = ['pages/GameTables/Create.vue', 'pages/GameTables/Edit.vue'];
 
     private function source(string $file): string
     {

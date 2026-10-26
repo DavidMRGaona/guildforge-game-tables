@@ -513,9 +513,9 @@ final class RegistrationEligibilityTest extends ModuleTestCase
     {
         $memberId = $isMember ? $this->user->id : null;
 
-        $this->app->instance(MembershipCheckerInterface::class, new class($memberId) implements MembershipCheckerInterface
+        $this->app->instance(MembershipCheckerInterface::class, new readonly class($memberId) implements MembershipCheckerInterface
         {
-            public function __construct(private readonly ?string $memberId) {}
+            public function __construct(private ?string $memberId) {}
 
             public function isActiveMember(string $userId): bool
             {

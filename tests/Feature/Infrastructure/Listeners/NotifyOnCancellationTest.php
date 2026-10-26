@@ -88,16 +88,12 @@ final class NotifyOnCancellationTest extends TestCase
 
         Notification::assertSentOnDemand(
             ParticipantCancelledNotification::class,
-            function ($notification, $channels, $notifiable) {
-                return $notifiable->routes['mail'] === 'gm@example.com';
-            }
+            fn ($notification, $channels, $notifiable) => $notifiable->routes['mail'] === 'gm@example.com'
         );
 
         Notification::assertSentOnDemand(
             ParticipantCancelledNotification::class,
-            function ($notification, $channels, $notifiable) {
-                return $notifiable->routes['mail'] === 'table@example.com';
-            }
+            fn ($notification, $channels, $notifiable) => $notifiable->routes['mail'] === 'table@example.com'
         );
     }
 

@@ -20,7 +20,7 @@ use Tests\Support\Modules\ModuleTestCase;
  */
 final class FrontendTableFormDataTest extends ModuleTestCase
 {
-    private const PAGES = ['pages/GameTables/Create.vue', 'pages/GameTables/Edit.vue'];
+    private const array PAGES = ['pages/GameTables/Create.vue', 'pages/GameTables/Edit.vue'];
 
     protected ?string $moduleName = 'game-tables';
 

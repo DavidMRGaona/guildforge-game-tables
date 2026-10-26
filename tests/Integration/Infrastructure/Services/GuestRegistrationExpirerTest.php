@@ -85,7 +85,7 @@ final class GuestRegistrationExpirerTest extends ModuleTestCase
             && $event->gameTableId === $this->table->id
             && $event->email === 'sentada@example.test'
             && $event->firstName === 'Invitada'
-            && $event->notifyGuest === true);
+            && $event->notifyGuest);
         // The director hears of the promoted user only, never of the expired guest
         Notification::assertSentOnDemandTimes(WaitingListPromotionGmNotification::class, 1);
     }
