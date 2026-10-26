@@ -80,43 +80,53 @@ function handleCancel(): void {
             <!-- Registration info -->
             <div class="mb-6 rounded-lg bg-muted p-4">
                 <dl class="space-y-2">
-                    <div class="flex justify-between">
-                        <dt class="text-sm text-base-muted">
+                    <div class="flex justify-between gap-4">
+                        <dt class="shrink-0 text-sm text-base-muted">
                             {{ t('cancelRegistration.participant') }}
                         </dt>
-                        <dd class="text-sm font-medium text-base-primary">
+                        <dd
+                            class="min-w-0 break-words text-right text-sm font-medium text-base-primary"
+                        >
                             {{ displayName }}
                         </dd>
                     </div>
-                    <div class="flex justify-between">
-                        <dt class="text-sm text-base-muted">
+                    <div class="flex justify-between gap-4">
+                        <dt class="shrink-0 text-sm text-base-muted">
                             {{ t('cancelRegistration.table') }}
                         </dt>
-                        <dd class="text-sm font-medium text-base-primary">
+                        <dd
+                            class="min-w-0 break-words text-right text-sm font-medium text-base-primary"
+                        >
                             {{ gameTable.title }}
                         </dd>
                     </div>
-                    <div class="flex justify-between">
-                        <dt class="text-sm text-base-muted">
+                    <div class="flex justify-between gap-4">
+                        <dt class="shrink-0 text-sm text-base-muted">
                             {{ t('cancelRegistration.date') }}
                         </dt>
-                        <dd class="text-sm font-medium text-base-primary">
+                        <dd
+                            class="min-w-0 break-words text-right text-sm font-medium text-base-primary"
+                        >
                             {{ formattedDate }}
                         </dd>
                     </div>
-                    <div class="flex justify-between">
-                        <dt class="text-sm text-base-muted">
+                    <div class="flex justify-between gap-4">
+                        <dt class="shrink-0 text-sm text-base-muted">
                             {{ t('cancelRegistration.role') }}
                         </dt>
-                        <dd class="text-sm font-medium text-base-primary">
+                        <dd
+                            class="min-w-0 break-words text-right text-sm font-medium text-base-primary"
+                        >
                             {{ participant.role_label }}
                         </dd>
                     </div>
-                    <div class="flex justify-between">
-                        <dt class="text-sm text-base-muted">
+                    <div class="flex justify-between gap-4">
+                        <dt class="shrink-0 text-sm text-base-muted">
                             {{ t('cancelRegistration.status') }}
                         </dt>
-                        <dd class="text-sm font-medium text-base-primary">
+                        <dd
+                            class="min-w-0 break-words text-right text-sm font-medium text-base-primary"
+                        >
                             {{ participant.status_label }}
                         </dd>
                     </div>
@@ -129,7 +139,7 @@ function handleCancel(): void {
                     {{ t('cancelRegistration.confirm', { tableTitle: gameTable.title }) }}
                 </p>
 
-                <div class="flex gap-4">
+                <div class="flex flex-col gap-4 sm:flex-row">
                     <Link :href="`/mesas/${gameTable.id}`" class="flex-1">
                         <BaseButton variant="secondary" class="w-full">
                             {{ $t('common.back') }}
