@@ -14,7 +14,7 @@ Módulo de GuildForge para gestionar mesas de rol y campañas: inscripciones de 
 - **Tipos de inscripción**: abierta a todos, solo socios (con acceso anticipado opcional) o solo por invitación.
 - **Avisos de contenido** con severidad (leve, moderada, severa) y **herramientas de seguridad** (Carta X, Líneas y velos, Puerta abierta, Estrellas y deseos, Flor de apoyo, Script change, Rosas y espinas, otras).
 - **Catálogo**: sistemas de juego y editoriales.
-- **Creación desde la web**: los usuarios crean mesas y campañas y las envían a revisión; administradores y editores reciben un correo y las aprueban o rechazan desde el panel.
+- **Creación desde la web**: los usuarios crean mesas y campañas y las envían a revisión; quien puede moderarlas recibe un correo y las aprueba o rechaza desde el panel.
 - **Integración con eventos**: configuración de mesas por evento, enlace a las mesas del evento y botón para crear una mesa desde su página.
 - **Calendario**: vista `/mesas/calendario` y mesas en el calendario del core, cuya ficha muestra imagen, sinopsis, lugar, sistema, director, plazas y modalidad.
 - **Perfil**: pestañas con las mesas en las que participa el usuario, las que ha creado y sus campañas.
@@ -229,7 +229,7 @@ Según el modo de publicación:
 - `approval`: queda pendiente de revisión.
 - `role_based`: se publica directamente para los roles o permisos de autopublicación (`frontend_creation.publication.auto_publish_roles` y `auto_publish_permissions`, sin campo en el panel y vacíos por defecto); el resto queda pendiente.
 
-Las mesas y campañas enviadas a revisión se avisan por correo a los usuarios con rol `admin` o `editor` y aparecen en el widget **Pendientes de moderación** del dashboard.
+Las mesas y campañas enviadas a revisión se avisan por correo a quien puede moderarlas (acceso al panel y `gametables.update` para mesas o `campaigns.update` para campañas; los administradores siempre) y aparecen en el widget **Pendientes de moderación** del dashboard.
 
 Aprobar o rechazar requiere el permiso de edición (`gametables.update` para mesas, `campaigns.update` para campañas); verlas o ser su autor no basta.
 
@@ -524,17 +524,17 @@ El módulo registra sus permisos con el prefijo `gametables:` (por ejemplo `game
 
 | Permiso | Rol propuesto | Uso |
 |---------|-----------------|-----|
-| `gametables.view_any`, `gametables.view` | editor | Ver mesas en el panel |
-| `gametables.create`, `gametables.update` | editor | Crear y editar mesas |
+| `gametables.view_any`, `gametables.view` | — | Ver mesas en el panel |
+| `gametables.create`, `gametables.update` | — | Crear y editar mesas |
 | `gametables.delete` | — | Eliminar mesas |
-| `campaigns.view_any`, `campaigns.view` | editor | Ver campañas en el panel |
-| `campaigns.create`, `campaigns.update` | editor | Crear y editar campañas |
+| `campaigns.view_any`, `campaigns.view` | — | Ver campañas en el panel |
+| `campaigns.create`, `campaigns.update` | — | Crear y editar campañas |
 | `campaigns.delete` | — | Eliminar campañas |
 | `gamesystems.view_any`, `gamesystems.manage` | — | Ver y gestionar sistemas de juego y editoriales |
 | `contentwarnings.view_any`, `contentwarnings.manage` | — | Ver y gestionar avisos de contenido |
 | `gametables.settings` | — | Abrir y guardar la página de configuración del módulo |
 
-La columna de rol indica el rol al que el módulo propone el permiso; habilitar el módulo no lo asigna, se concede en **Roles**. Los administradores tienen acceso completo. La dirección de una campaña gestiona su plantilla desde la web sin ningún permiso del panel. Los autores gestionan sus propias mesas y campañas desde «Mis mesas» y «Mis campañas»; solo pueden editarlas, enviarlas a revisión o borrarlas mientras no estén publicadas y estén en borrador o rechazadas.
+El módulo no propone ningún permiso a `editor`, que es el rol de contenido: se conceden en **Roles** a los roles de función que cree la asociación (por ejemplo, gestión de partidas); habilitar el módulo no asigna ninguno. Los administradores tienen acceso completo. La dirección de una campaña gestiona su plantilla desde la web sin ningún permiso del panel. Los autores gestionan sus propias mesas y campañas desde «Mis mesas» y «Mis campañas»; solo pueden editarlas, enviarlas a revisión o borrarlas mientras no estén publicadas y estén en borrador o rechazadas.
 
 ## Comandos
 
