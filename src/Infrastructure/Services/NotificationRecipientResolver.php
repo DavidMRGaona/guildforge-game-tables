@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Services;
 
+use App\Application\Authorization\Services\AuthorizationServiceInterface;
+use App\Domain\Enums\UserRole;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Illuminate\Database\Eloquent\Builder;
 use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Application\Services\TableDirectionInterface;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
@@ -13,6 +16,15 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantMod
 
 final readonly class NotificationRecipientResolver implements NotificationRecipientResolverInterface
 {
+    private const string PANEL_ACCESS_PERMISSION = 'admin.access';
+
+    /**
+     * The permissions the panel's approve and reject actions check (canModerate() on each resource).
+     */
+    private const string TABLES_MODERATE_PERMISSION = 'gametables:gametables.update';
+
+    private const string CAMPAIGNS_MODERATE_PERMISSION = 'gametables:campaigns.update';
+
     /**
      * Get the creator's email address by user ID.
      */
@@ -34,19 +46,53 @@ final readonly class NotificationRecipientResolver implements NotificationRecipi
     }
 
     /**
-     * Get emails of admin/editor users who can moderate game tables.
+     * Get emails of the users who can approve or reject game tables in the panel.
      *
-     * @return array<string>
+     * @return list<string>
      */
-    public function getModerationAdminEmails(): array
+    public function getTableModeratorEmails(): array
     {
-        return UserModel::query()
-            ->whereHas('roles', fn ($query) => $query->whereIn('name', ['admin', 'editor']))
+        return $this->moderatorEmails(self::TABLES_MODERATE_PERMISSION);
+    }
+
+    /**
+     * Get emails of the users who can approve or reject campaigns in the panel.
+     *
+     * @return list<string>
+     */
+    public function getCampaignModeratorEmails(): array
+    {
+        return $this->moderatorEmails(self::CAMPAIGNS_MODERATE_PERMISSION);
+    }
+
+    /**
+     * Same rule as the panel: panel access plus the permission its moderation actions check.
+     *
+     * The query only narrows the candidates (admins hold every permission without it being
+     * listed on their role); the authorization service has the final word on each one.
+     *
+     * @return list<string>
+     */
+    private function moderatorEmails(string $permission): array
+    {
+        $authorization = app(AuthorizationServiceInterface::class);
+
+        /** @var list<string> $emails */
+        $emails = UserModel::query()
+            ->whereHas('roles', fn (Builder $roles): Builder => $roles->where(
+                fn (Builder $query): Builder => $query
+                    ->where('name', UserRole::Admin->value)
+                    ->orWhereHas('permissions', fn (Builder $permissions): Builder => $permissions->where('key', $permission)),
+            ))
+            ->get()
+            ->filter(fn (UserModel $user): bool => $authorization->canAll($user, [self::PANEL_ACCESS_PERMISSION, $permission]))
             ->pluck('email')
             ->filter()
             ->unique()
             ->values()
             ->all();
+
+        return $emails;
     }
 
     /**

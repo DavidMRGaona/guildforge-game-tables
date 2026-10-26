@@ -17,11 +17,18 @@ interface NotificationRecipientResolverInterface
     public function getCreatorDisplayName(string $userId): string;
 
     /**
-     * Get emails of admin/editor users who can moderate game tables.
+     * Get emails of the users who can approve or reject game tables in the panel.
      *
-     * @return array<string>
+     * @return list<string>
      */
-    public function getModerationAdminEmails(): array;
+    public function getTableModeratorEmails(): array;
+
+    /**
+     * Get emails of the users who can approve or reject campaigns in the panel.
+     *
+     * @return list<string>
+     */
+    public function getCampaignModeratorEmails(): array;
 
     /**
      * Get emails of game masters that have notify_by_email enabled.
