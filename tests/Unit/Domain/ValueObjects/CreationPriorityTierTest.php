@@ -234,10 +234,6 @@ final class CreationPriorityTierTest extends TestCase
 
         $array = $tier->toArray();
 
-        $this->assertArrayHasKey('tier', $array);
-        $this->assertArrayHasKey('type', $array);
-        $this->assertArrayHasKey('value', $array);
-        $this->assertArrayHasKey('days_before', $array);
         $this->assertEquals(3, $array['tier']);
         $this->assertEquals('everyone', $array['type']);
         $this->assertNull($array['value']);

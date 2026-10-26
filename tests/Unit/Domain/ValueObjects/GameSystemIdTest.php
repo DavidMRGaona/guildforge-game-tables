@@ -15,7 +15,6 @@ final class GameSystemIdTest extends TestCase
     {
         $id = GameSystemId::generate();
 
-        $this->assertInstanceOf(GameSystemId::class, $id);
         $this->assertTrue(Uuid::isValid($id->value()));
     }
 
@@ -25,7 +24,6 @@ final class GameSystemIdTest extends TestCase
 
         $id = GameSystemId::fromString($uuid);
 
-        $this->assertInstanceOf(GameSystemId::class, $id);
         $this->assertEquals($uuid, $id->value());
     }
 

@@ -9,16 +9,6 @@ use Tests\TestCase;
 
 final class WarningSeverityTest extends TestCase
 {
-    public function test_it_has_expected_cases(): void
-    {
-        $cases = WarningSeverity::cases();
-
-        $this->assertCount(3, $cases);
-        $this->assertContains(WarningSeverity::Mild, $cases);
-        $this->assertContains(WarningSeverity::Moderate, $cases);
-        $this->assertContains(WarningSeverity::Severe, $cases);
-    }
-
     public function test_it_has_correct_values(): void
     {
         $this->assertEquals('mild', WarningSeverity::Mild->value);

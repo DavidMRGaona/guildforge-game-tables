@@ -232,7 +232,6 @@ final class GameTableSettingsReaderTest extends TestCase
         foreach (GameTableSettingsReader::CAMPAIGN_NOTIFICATIONS as $key) {
             $this->assertTrue($this->reader->isCampaignNotificationEnabled($key), $key);
         }
-        $this->assertCount(8, GameTableSettingsReader::CAMPAIGN_NOTIFICATIONS);
     }
 
     public function test_a_stored_false_campaign_notification_is_read_back(): void

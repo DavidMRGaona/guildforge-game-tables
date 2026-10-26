@@ -46,7 +46,6 @@ final class GameTableTest extends TestCase
             maxPlayers: 5,
         );
 
-        $this->assertInstanceOf(GameTable::class, $gameTable);
         $this->assertTrue($id->equals($gameTable->id));
         $this->assertTrue($gameSystemId->equals($gameTable->gameSystemId));
         $this->assertEquals('user-uuid-123', $gameTable->createdBy);

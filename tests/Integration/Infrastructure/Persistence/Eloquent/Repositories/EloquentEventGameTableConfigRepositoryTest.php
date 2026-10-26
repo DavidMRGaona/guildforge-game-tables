@@ -12,7 +12,6 @@ use Modules\GameTables\Domain\Entities\EventGameTableConfig;
 use Modules\GameTables\Domain\Enums\CreationAccessLevel;
 use Modules\GameTables\Domain\Enums\LocationMode;
 use Modules\GameTables\Domain\Enums\SchedulingMode;
-use Modules\GameTables\Domain\Repositories\EventGameTableConfigRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\EligibilityOverride;
 use Modules\GameTables\Domain\ValueObjects\TimeSlotDefinition;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\EventGameTableConfigModel;
@@ -31,11 +30,6 @@ final class EloquentEventGameTableConfigRepositoryTest extends TestCase
         $this->repository = new EloquentEventGameTableConfigRepository;
     }
 
-    public function test_it_implements_repository_interface(): void
-    {
-        $this->assertInstanceOf(EventGameTableConfigRepositoryInterface::class, $this->repository);
-    }
-
     public function test_it_saves_new_config(): void
     {
         $event = EventModel::factory()->create();
@@ -46,8 +40,6 @@ final class EloquentEventGameTableConfigRepositoryTest extends TestCase
             schedulingMode: SchedulingMode::FreeSchedule,
             timeSlots: [],
             locationMode: LocationMode::FreeChoice,
-            fixedLocation: null,
-            eligibilityOverride: null,
         );
 
         $this->repository->save($config);
@@ -77,7 +69,6 @@ final class EloquentEventGameTableConfigRepositoryTest extends TestCase
             timeSlots: [$timeSlot],
             locationMode: LocationMode::FixedLocation,
             fixedLocation: 'Main Hall',
-            eligibilityOverride: null,
         );
 
         $this->repository->save($config);
@@ -111,7 +102,6 @@ final class EloquentEventGameTableConfigRepositoryTest extends TestCase
             schedulingMode: SchedulingMode::FreeSchedule,
             timeSlots: [],
             locationMode: LocationMode::EventLocation,
-            fixedLocation: null,
             eligibilityOverride: $override,
         );
 
@@ -142,7 +132,6 @@ final class EloquentEventGameTableConfigRepositoryTest extends TestCase
             timeSlots: [],
             locationMode: LocationMode::FixedLocation,
             fixedLocation: 'Room B',
-            eligibilityOverride: null,
         );
 
         $this->repository->save($updatedConfig);

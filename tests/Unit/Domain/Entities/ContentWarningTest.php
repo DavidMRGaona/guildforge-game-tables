@@ -24,7 +24,6 @@ final class ContentWarningTest extends TestCase
             isActive: true,
         );
 
-        $this->assertInstanceOf(ContentWarning::class, $warning);
         $this->assertTrue($id->equals($warning->id));
         $this->assertEquals('violence', $warning->name);
         $this->assertEquals('Violencia', $warning->label);
@@ -51,7 +50,6 @@ final class ContentWarningTest extends TestCase
             createdAt: $createdAt,
         );
 
-        $this->assertInstanceOf(ContentWarning::class, $warning);
         $this->assertEquals('death', $warning->name);
         $this->assertEquals('Muerte', $warning->label);
         $this->assertEquals('Temas de muerte y morir', $warning->description);

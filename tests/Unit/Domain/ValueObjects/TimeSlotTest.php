@@ -139,13 +139,12 @@ final class TimeSlotTest extends TestCase
 
     public function test_it_converts_to_array(): void
     {
-        $startsAt = new DateTimeImmutable('2026-01-26 18:00:00');
+        $startsAt = new DateTimeImmutable('2026-01-26 18:00:00', new DateTimeZone('Europe/Madrid'));
         $timeSlot = new TimeSlot($startsAt, 240);
 
         $array = $timeSlot->toArray();
 
-        $this->assertArrayHasKey('starts_at', $array);
-        $this->assertArrayHasKey('duration_minutes', $array);
+        $this->assertSame('2026-01-26T18:00:00+01:00', $array['starts_at']);
         $this->assertEquals(240, $array['duration_minutes']);
     }
 }

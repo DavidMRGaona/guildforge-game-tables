@@ -33,7 +33,6 @@ final class ParticipantTest extends TestCase
             status: ParticipantStatus::Pending,
         );
 
-        $this->assertInstanceOf(Participant::class, $participant);
         $this->assertTrue($id->equals($participant->id));
         $this->assertTrue($gameTableId->equals($participant->gameTableId));
         $this->assertEquals($userId, $participant->userId);
@@ -230,7 +229,6 @@ final class ParticipantTest extends TestCase
             email: 'john@example.com',
         );
 
-        $this->assertInstanceOf(Participant::class, $participant);
         $this->assertNull($participant->userId);
         $this->assertEquals('John', $participant->firstName);
         $this->assertEquals('john@example.com', $participant->email);

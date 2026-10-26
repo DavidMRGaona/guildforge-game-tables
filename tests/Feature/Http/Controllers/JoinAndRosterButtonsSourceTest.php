@@ -77,9 +77,13 @@ final class JoinAndRosterButtonsSourceTest extends TestCase
         }
 
         // The counter's limit is the one the request validates
-        preg_match('/const MAX_LENGTH = (\d+);/', $dialog, $limit);
-        $this->assertSame(1, preg_match("/'message' => \['nullable', 'string', 'max:(\d+)'\]/", $this->source('src/Http/Requests/RequestToJoinCampaignRequest.php'), $rule));
-        $this->assertSame($rule[1] ?? null, $limit[1] ?? null);
+        if (preg_match('/const MAX_LENGTH = (\d+);/', $dialog, $limit) !== 1) {
+            $this->fail('The dialog declares no MAX_LENGTH.');
+        }
+        if (preg_match("/'message' => \['nullable', 'string', 'max:(\d+)'\]/", $this->source('src/Http/Requests/RequestToJoinCampaignRequest.php'), $rule) !== 1) {
+            $this->fail('The request validates no maximum message length.');
+        }
+        $this->assertSame($rule[1], $limit[1]);
     }
 
     public function test_the_roster_actions_are_buttons_that_ask_before_removing(): void

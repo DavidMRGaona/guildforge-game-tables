@@ -74,8 +74,10 @@ final class CampaignInvitationLegalNoticeTest extends ModuleTestCase
                 ->schemaComponent(LegalPagesSettings::noticeSectionKey(CampaignInvitationNotification::NOTICE_KEY)))
             ->getMountedActionModalHtml();
 
-        $this->assertSame(1, preg_match('/srcdoc="([^"]*)"/', $html, $match));
-        $email = html_entity_decode($match[1] ?? '', ENT_QUOTES | ENT_HTML5);
+        if (preg_match('/srcdoc="([^"]*)"/', $html, $match) !== 1) {
+            $this->fail('The preview modal has no srcdoc.');
+        }
+        $email = html_entity_decode($match[1], ENT_QUOTES | ENT_HTML5);
 
         $this->assertMatchesRegularExpression('/<h1[^>]*>¡Hola!<\/h1>/u', $email);
         $this->assertStringNotContainsString('# ¡Hola!', $email);

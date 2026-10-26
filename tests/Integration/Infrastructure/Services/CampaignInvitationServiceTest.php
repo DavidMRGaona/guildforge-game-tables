@@ -391,7 +391,7 @@ final class CampaignInvitationServiceTest extends ModuleTestCase
         $this->assertSame('Mary Major', $list[0]->inviterName);
         $this->assertSame(1, $list[0]->sendCount);
         $this->assertSame(CarbonImmutable::parse('2026-11-02 10:00:00', 'Europe/Madrid')->addDays(14)->toIso8601String(), $list[0]->expiresAt);
-        $this->assertArrayHasKey('can_resend', $list[0]->toArray());
+        $this->assertTrue($list[0]->toArray()['can_resend']);
 
         // Third send reached: no more resends even after 24 h
         $this->service()->resend($this->campaign->id, $this->pending('ana@example.com')->id->value, $this->mary->id);
