@@ -124,7 +124,7 @@ final readonly class EloquentCampaignRepository implements CampaignRepositoryInt
                 'gameTables' => function ($query): void {
                     $query->where('is_published', true)
                         ->with(['gameSystem', 'creator', 'gameMasters.user', 'participants'])
-                        ->orderBy('starts_at', 'asc');
+                        ->orderedByStart();
                 },
                 'gameMasters.user',
             ])
@@ -143,7 +143,7 @@ final readonly class EloquentCampaignRepository implements CampaignRepositoryInt
                 'gameTables' => function ($query): void {
                     $query->where('is_published', true)
                         ->with(['gameSystem', 'creator', 'gameMasters.user', 'participants'])
-                        ->orderBy('starts_at', 'asc');
+                        ->orderedByStart();
                 },
                 'gameMasters.user',
             ])

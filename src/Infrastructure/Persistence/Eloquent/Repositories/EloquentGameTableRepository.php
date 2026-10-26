@@ -92,7 +92,7 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
     {
         return GameTableModel::query()
             ->where('is_published', true)
-            ->orderBy('starts_at', 'asc')
+            ->orderedByStart()
             ->get()
             ->map(fn (GameTableModel $model): GameTable => $this->toEntity($model))
             ->all();
@@ -105,7 +105,7 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
     {
         return GameTableModel::query()
             ->where('status', $status->value)
-            ->orderBy('starts_at', 'asc')
+            ->orderedByStart()
             ->get()
             ->map(fn (GameTableModel $model): GameTable => $this->toEntity($model))
             ->all();
@@ -118,7 +118,7 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
     {
         return GameTableModel::query()
             ->where('game_system_id', $gameSystemId->value)
-            ->orderBy('starts_at', 'asc')
+            ->orderedByStart()
             ->get()
             ->map(fn (GameTableModel $model): GameTable => $this->toEntity($model))
             ->all();
@@ -132,7 +132,7 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
         return GameTableModel::query()
             ->where('campaign_id', $campaignId->value)
             ->with('contentWarnings')
-            ->orderBy('starts_at', 'asc')
+            ->orderedByStart()
             ->get()
             ->map(fn (GameTableModel $model): GameTable => $this->toEntity($model))
             ->all();
@@ -145,7 +145,7 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
     {
         return GameTableModel::query()
             ->where('event_id', $eventId)
-            ->orderBy('starts_at', 'asc')
+            ->orderedByStart()
             ->get()
             ->map(fn (GameTableModel $model): GameTable => $this->toEntity($model))
             ->all();
@@ -176,7 +176,7 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
                 TableStatus::Scheduled->value,
                 TableStatus::Full->value,
             ])
-            ->orderBy('starts_at', 'asc')
+            ->orderedByStart()
             ->limit($limit)
             ->get()
             ->map(fn (GameTableModel $model): GameTable => $this->toEntity($model))
@@ -228,7 +228,7 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
     public function all(): array
     {
         return GameTableModel::query()
-            ->orderBy('starts_at', 'desc')
+            ->orderedByStart('desc')
             ->get()
             ->map(fn (GameTableModel $model): GameTable => $this->toEntity($model))
             ->all();

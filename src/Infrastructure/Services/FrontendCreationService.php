@@ -429,7 +429,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             ->where(static function ($query) use ($userId, $directed): void {
                 $query->where('created_by', $userId)->orWhereIn('id', $directed);
             })
-            ->orderBy('starts_at')
+            ->orderedByStart()
             ->get();
 
         // Only the tables whose registrations the person manages need a count: one grouped query

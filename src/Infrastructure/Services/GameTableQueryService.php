@@ -43,7 +43,7 @@ final readonly class GameTableQueryService implements GameTableQueryServiceInter
         $query = $this->buildPublishedQuery($gameSystemIds, $format, $status, $eventId, $campaignId);
 
         $tables = $query
-            ->orderBy('starts_at', 'asc')
+            ->orderedByStart()
             ->skip(($page - 1) * $perPage)
             ->take($perPage)
             ->get();
@@ -72,7 +72,7 @@ final readonly class GameTableQueryService implements GameTableQueryServiceInter
             ->whereNotIn('status', [TableStatus::Cancelled->value, TableStatus::Draft->value])
             // Bound in the storage zone: the callers may give the bounds in another one
             ->whereBetween('starts_at', [$timezone->toStorage($from), $timezone->toStorage($to)])
-            ->orderBy('starts_at', 'asc')
+            ->orderedByStart()
             ->get();
 
         return $tables->map(fn (GameTableModel $table): GameTableListDTO => $this->toListDTO($table))->all();
