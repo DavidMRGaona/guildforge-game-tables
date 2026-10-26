@@ -892,9 +892,15 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             return 'not_allowed';
         }
 
-        return $this->tableAdmitsWithdrawal($participant->gameTableId, $now ?? CarbonImmutable::now()->toDateTimeImmutable())
-            ? null
-            : 'table_started';
+        $now ??= CarbonImmutable::now()->toDateTimeImmutable();
+        $gameTable = $this->gameTableRepository->find($participant->gameTableId);
+
+        return match (true) {
+            ! $gameTable instanceof GameTable => 'table_started',
+            $gameTable->hasEnded($now) => 'table_ended',
+            ! $gameTable->canParticipantWithdraw($now) => 'table_started',
+            default => null,
+        };
     }
 
     /**

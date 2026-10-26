@@ -227,10 +227,16 @@ final class GameTableController extends Controller
             $registration = $this->registrationService->findByTableAndUser($table->id, (string) $user->id);
             $userRegistration = $registration instanceof ParticipantResponseDTO ? $this->formatRegistrationForFrontend($registration) : null;
 
+            $withdrawalRefusal = $registration instanceof ParticipantResponseDTO
+                ? $this->registrationService->withdrawalRefusal($registration->id, $now)
+                : 'not_allowed';
+
             $eligibility = [
                 ...$this->eligibilityService->canRegisterById($table->id, (string) $user->id),
                 // Whether the button may offer the cancellation: the rule the server applies on submit
-                'canCancel' => $registration instanceof ParticipantResponseDTO && $this->registrationService->withdrawalRefusal($registration->id, $now) === null,
+                'canCancel' => $withdrawalRefusal === null,
+                // Why not, so the disabled button says whether the table started or ended
+                'withdrawalRefusal' => $withdrawalRefusal,
             ];
         }
 

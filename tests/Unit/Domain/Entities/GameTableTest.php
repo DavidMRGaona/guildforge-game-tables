@@ -598,6 +598,14 @@ final class GameTableTest extends TestCase
         }
     }
 
+    public function test_the_table_ends_at_the_end_of_its_time_slot(): void
+    {
+        $table = $this->publishedTable();
+
+        $this->assertFalse($table->hasEnded(new DateTimeImmutable('2026-02-01 21:59:59')));
+        $this->assertTrue($table->hasEnded(new DateTimeImmutable('2026-02-01 22:00:00')));
+    }
+
     public function test_roster_enrollment_ignores_the_opening_date(): void
     {
         $table = $this->publishedTable();

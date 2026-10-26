@@ -228,6 +228,13 @@ const canCancel = computed(() => {
     return eligibility.value?.canCancel === true;
 });
 
+// Why an active registration can no longer be cancelled: the table has started, or it is over
+const withdrawalClosedText = computed(() =>
+    eligibility.value?.withdrawalRefusal === 'table_ended'
+        ? t('gameTables.registration.withdrawalClosedEnded')
+        : t('gameTables.registration.withdrawalClosed')
+);
+
 const isTableFull = computed(() => spotsAvailable.value <= 0);
 
 // A signed-in roster member handles their seat in the campaign's box instead of this flow. An
@@ -368,7 +375,7 @@ const buttonText = computed(() => {
     if (hasActiveRegistration.value) {
         return canCancel.value
             ? t('gameTables.registration.cancelRegistration')
-            : t('gameTables.registration.withdrawalClosed');
+            : withdrawalClosedText.value;
     }
 
     if (isRegistrationClosed.value) {
@@ -582,6 +589,7 @@ function cancelRoleSelect(): void {
             :campaign-session="rosterSession"
             :registration="registration"
             :can-cancel="canCancel"
+            :withdrawal-closed-text="withdrawalClosedText"
         />
 
         <template v-else>

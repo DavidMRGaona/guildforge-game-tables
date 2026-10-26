@@ -26,6 +26,8 @@ interface Props {
     canCancel: boolean;
     /** The registration is active but the table has started: it can no longer be cancelled here */
     tableStarted: boolean;
+    /** The registration is active but the table is over */
+    tableEnded: boolean;
 }
 
 const props = defineProps<Props>();
@@ -149,9 +151,11 @@ function handleCancel(): void {
                 <div class="mb-6 rounded-lg bg-warning-light p-4 text-center">
                     <p class="text-sm text-warning">
                         {{
-                            tableStarted
-                                ? t('cancelRegistration.tableStarted')
-                                : t('cancelRegistration.alreadyCancelled')
+                            tableEnded
+                                ? t('cancelRegistration.tableEnded')
+                                : tableStarted
+                                  ? t('cancelRegistration.tableStarted')
+                                  : t('cancelRegistration.alreadyCancelled')
                         }}
                     </p>
                 </div>

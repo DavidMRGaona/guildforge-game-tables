@@ -164,6 +164,7 @@ export default {
             registeredAt: 'Registered on',
             withdrawalClosed:
                 'The session has already started: you can no longer cancel your registration',
+            withdrawalClosedEnded: 'The session has already ended',
         },
         // The registration box of a campaign session
         campaignSession: {
@@ -775,6 +776,7 @@ export default {
         guest: 'Guest',
         tableStarted:
             'The session has already started: you can no longer cancel your registration.',
+        tableEnded: 'The session has already ended.',
     },
     confirmRegistration: {
         title: 'Confirm registration',
