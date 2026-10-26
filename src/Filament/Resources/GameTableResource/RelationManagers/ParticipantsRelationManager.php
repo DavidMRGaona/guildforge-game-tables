@@ -618,7 +618,9 @@ final class ParticipantsRelationManager extends RelationManager
                         $record->fill($data);
 
                         try {
-                            $record->save();
+                            // Inside an open transaction the failed write is rolled back to a savepoint:
+                            // PostgreSQL would otherwise abort the whole transaction
+                            $record->newQuery()->withSavepointIfNeeded(fn (): bool => $record->save());
                         } catch (UniqueConstraintViolationException $exception) {
                             if (! $record->isDirty('email')) {
                                 throw $exception;
