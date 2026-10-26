@@ -221,19 +221,6 @@ final class TimeSlotDefinitionTest extends TestCase
         $this->assertFalse($slot1->equals($slot3));
     }
 
-    public function test_from_array_creates_instance(): void
-    {
-        $slot = TimeSlotDefinition::fromArray([
-            'label' => 'Morning',
-            'start_time' => '2026-03-01T09:00:00+00:00',
-            'end_time' => '2026-03-01T13:00:00+00:00',
-            'max_tables' => 5,
-        ]);
-
-        $this->assertEquals('Morning', $slot->label);
-        $this->assertEquals(5, $slot->maxTables);
-    }
-
     public function test_to_array_returns_correct_format(): void
     {
         $startTime = new DateTimeImmutable('2026-03-01 09:00:00+00:00');

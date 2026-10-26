@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Tests\Unit\Domain\Entities;
 
 use DateTimeImmutable;
+use DateTimeZone;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
@@ -404,7 +405,7 @@ final class GameTableTest extends TestCase
         );
 
         // Member early access should be active (3 days before = Jan 27)
-        $this->assertTrue($gameTable->isMemberEarlyAccessActive($now));
+        $this->assertTrue($gameTable->isMemberEarlyAccessActive($now, new DateTimeZone('Europe/Madrid')));
 
         // Non-members can't register yet (opens Jan 30)
         $this->assertFalse($gameTable->isPublicRegistrationOpen($now));
@@ -454,8 +455,8 @@ final class GameTableTest extends TestCase
 
         $this->assertTrue($table->isPublicRegistrationOpen(new DateTimeImmutable('2026-02-01 17:59:59')));
         $this->assertFalse($table->isPublicRegistrationOpen(new DateTimeImmutable('2026-02-01 18:00:00')));
-        $this->assertTrue($table->canUserRegister(false, new DateTimeImmutable('2026-02-01 17:59:59')));
-        $this->assertFalse($table->canUserRegister(false, new DateTimeImmutable('2026-02-01 18:00:00')));
+        $this->assertTrue($table->canUserRegister(false, new DateTimeImmutable('2026-02-01 17:59:59'), new DateTimeZone('Europe/Madrid')));
+        $this->assertFalse($table->canUserRegister(false, new DateTimeImmutable('2026-02-01 18:00:00'), new DateTimeZone('Europe/Madrid')));
     }
 
     public function test_a_closing_date_after_the_start_does_not_keep_registrations_open(): void
@@ -557,15 +558,15 @@ final class GameTableTest extends TestCase
     {
         $table = $this->publishedTable(inPlay: true, status: $status);
 
-        $this->assertSame($admits, $table->canUserRegister(false, new DateTimeImmutable('2026-02-01 19:00:00')));
+        $this->assertSame($admits, $table->canUserRegister(false, new DateTimeImmutable('2026-02-01 19:00:00'), new DateTimeZone('Europe/Madrid')));
     }
 
     public function test_a_table_without_registrations_in_play_refuses_them_during_the_session(): void
     {
         $now = new DateTimeImmutable('2026-02-01 19:00:00');
 
-        $this->assertFalse($this->publishedTable()->canUserRegister(false, $now));
-        $this->assertFalse($this->publishedTable(status: TableStatus::InProgress)->canUserRegister(false, $now));
+        $this->assertFalse($this->publishedTable()->canUserRegister(false, $now, new DateTimeZone('Europe/Madrid')));
+        $this->assertFalse($this->publishedTable(status: TableStatus::InProgress)->canUserRegister(false, $now, new DateTimeZone('Europe/Madrid')));
     }
 
     public function test_members_early_access_ends_at_the_start_of_the_table(): void
@@ -574,9 +575,9 @@ final class GameTableTest extends TestCase
         $table->registrationOpensAt = new DateTimeImmutable('2026-02-05 10:00:00');
         $table->membersEarlyAccessDays = 7;
 
-        $this->assertTrue($table->canUserRegister(true, new DateTimeImmutable('2026-02-01 17:00:00')));
-        $this->assertTrue($table->isMemberEarlyAccessActive(new DateTimeImmutable('2026-02-01 18:30:00')));
-        $this->assertFalse($table->canUserRegister(true, new DateTimeImmutable('2026-02-01 18:30:00')));
+        $this->assertTrue($table->canUserRegister(true, new DateTimeImmutable('2026-02-01 17:00:00'), new DateTimeZone('Europe/Madrid')));
+        $this->assertTrue($table->isMemberEarlyAccessActive(new DateTimeImmutable('2026-02-01 18:30:00'), new DateTimeZone('Europe/Madrid')));
+        $this->assertFalse($table->canUserRegister(true, new DateTimeImmutable('2026-02-01 18:30:00'), new DateTimeZone('Europe/Madrid')));
     }
 
     public function test_the_waiting_list_closes_at_the_start_of_the_table(): void

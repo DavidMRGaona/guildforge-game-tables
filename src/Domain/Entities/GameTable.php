@@ -256,20 +256,17 @@ final class GameTable
     /**
      * When members may start registering: the early access days are calendar days of the given
      * zone (the site's), so across a clock change the access opens at the opening's wall time.
-     * Without a zone, the opening date's own.
      */
-    public function memberEarlyAccessStartsAt(?DateTimeZone $calendarZone = null): ?DateTimeImmutable
+    public function memberEarlyAccessStartsAt(DateTimeZone $calendarZone): ?DateTimeImmutable
     {
         if ($this->membersEarlyAccessDays <= 0 || ! $this->registrationOpensAt instanceof DateTimeImmutable) {
             return null;
         }
 
-        $opensAt = $calendarZone instanceof DateTimeZone ? $this->registrationOpensAt->setTimezone($calendarZone) : $this->registrationOpensAt;
-
-        return $opensAt->modify("-{$this->membersEarlyAccessDays} days");
+        return $this->registrationOpensAt->setTimezone($calendarZone)->modify("-{$this->membersEarlyAccessDays} days");
     }
 
-    public function isMemberEarlyAccessActive(DateTimeImmutable $now, ?DateTimeZone $calendarZone = null): bool
+    public function isMemberEarlyAccessActive(DateTimeImmutable $now, DateTimeZone $calendarZone): bool
     {
         $memberAccessStart = $this->memberEarlyAccessStartsAt($calendarZone);
 
@@ -377,7 +374,10 @@ final class GameTable
         return ! $this->registrationClosesAt instanceof DateTimeImmutable || $now <= $this->registrationClosesAt;
     }
 
-    public function canUserRegister(bool $isMember, DateTimeImmutable $now, bool $membersEarlyAccess = true, ?DateTimeZone $calendarZone = null): bool
+    /**
+     * The members' early access days are counted on the calendar of the given zone (the site's).
+     */
+    public function canUserRegister(bool $isMember, DateTimeImmutable $now, DateTimeZone $calendarZone, bool $membersEarlyAccess = true): bool
     {
         // Check publication and registrable status
         if (! $this->canRegister()) {

@@ -26,6 +26,7 @@ use Illuminate\Testing\PendingCommand;
 use Inertia\Testing\AssertableInertia as Assert;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
+use Modules\GameTables\Application\DTOs\UpdateEventGameTableConfigDTO;
 use Modules\GameTables\Application\Services\CampaignInvitationSendLogInterface;
 use Modules\GameTables\Application\Services\CampaignInvitationServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterQueryInterface;
@@ -60,6 +61,7 @@ use Modules\GameTables\Domain\ValueObjects\CampaignInvitationId;
 use Modules\GameTables\Domain\ValueObjects\JoinRequestId;
 use Modules\GameTables\Filament\RelationManagers\EventGameTableConfigRelationManager;
 use Modules\GameTables\Filament\Resources\GameTableResource;
+use Modules\GameTables\Filament\Resources\GameTableResource\Pages\CreateGameTable;
 use Modules\GameTables\Filament\Resources\GameTableResource\Pages\EditGameTable;
 use Modules\GameTables\Filament\Resources\GameTableResource\RelationManagers\ParticipantsRelationManager;
 use Modules\GameTables\Infrastructure\Listeners\CancelParticipantsOnTableCancellation;
@@ -266,6 +268,25 @@ final class UtcStorageTest extends ModuleTestCase
         $this->assertSame('2026-07-01T22:00:00+02:00', $context['available_time_slots'][0]['end_time']);
     }
 
+    public function test_the_slots_take_the_day_of_the_event_in_madrid(): void
+    {
+        $this->actingAsPanelAdmin();
+        // 00:30 on the 1st of July in Madrid, still the 30th of June in UTC
+        $event = $this->eventWithTables(start: '2026-06-30T22:30:00Z');
+
+        Livewire::test(EventGameTableConfigRelationManager::class, ['ownerRecord' => $event, 'pageClass' => EditEvent::class])
+            ->set('configData.tables_enabled', true)
+            ->set('configData.scheduling_mode', SchedulingMode::SlotBased->value)
+            ->set('configData.time_slots', ['slot' => ['label' => 'Tarde', 'start_time' => '18:00', 'end_time' => '22:00', 'max_tables' => null]])
+            ->set('configData.creation_opens_at', '2026-06-01 10:00:00')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $context = app(EventGameTableConfigServiceInterface::class)->getCreationContext($event->id)->toArray();
+        $this->assertSame('2026-07-01T18:00:00+02:00', $context['available_time_slots'][0]['start_time']);
+        $this->assertSame('2026-07-01T22:00:00+02:00', $context['available_time_slots'][0]['end_time']);
+    }
+
     public function test_a_slot_saved_without_offset_is_read_as_madrid_wall_time(): void
     {
         $event = $this->eventWithTables();
@@ -277,6 +298,17 @@ final class UtcStorageTest extends ModuleTestCase
         $context = app(EventGameTableConfigServiceInterface::class)->getCreationContext($event->id)->toArray();
 
         $this->assertSame('2026-07-01T18:00:00+02:00', $context['available_time_slots'][0]['start_time']);
+    }
+
+    public function test_a_slot_hour_given_without_offset_is_read_as_madrid_wall_time(): void
+    {
+        $dto = UpdateEventGameTableConfigDTO::fromArray([
+            'event_id' => (string) Str::uuid(),
+            'time_slots' => [['label' => 'Tarde', 'start_time' => '2026-07-01T18:00:00', 'end_time' => '2026-07-01T22:00:00+02:00']],
+        ]);
+
+        $this->assertSame('2026-07-01T16:00:00+00:00', $dto->timeSlots[0]->startTime->setTimezone(new DateTimeZone('UTC'))->format('c'));
+        $this->assertSame('2026-07-01T20:00:00+00:00', $dto->timeSlots[0]->endTime->setTimezone(new DateTimeZone('UTC'))->format('c'));
     }
 
     public function test_the_config_tab_shows_the_creation_opening_in_madrid_and_saves_the_utc_instant(): void
@@ -829,6 +861,44 @@ final class UtcStorageTest extends ModuleTestCase
         );
 
         $save('2026-07-01 12:00:00')->assertHasNoFormErrors();
+        $this->assertSame('2026-07-01 10:00:00', $this->storedValue('gametables_tables', $table->id, 'registration_closes_at'));
+    }
+
+    public function test_the_create_page_caps_the_closing_date_at_the_start_in_madrid_time(): void
+    {
+        $this->registerOnAdminPanel([GameTableResource::class]);
+        $this->actingAsPanelAdmin();
+        $form = fn (string $closesAt): array => [
+            'title' => 'Mesa del panel',
+            'game_system_id' => $this->system()->id,
+            'starts_at' => '2026-07-01 12:00:00',
+            'duration_minutes' => 240,
+            'table_type' => 'one_shot',
+            'table_format' => 'in_person',
+            'min_players' => 1,
+            'max_players' => 4,
+            'language' => 'es',
+            'experience_level' => 'none',
+            'character_creation' => 'any',
+            'registration_closes_at' => $closesAt,
+        ];
+
+        $refused = Livewire::test(CreateGameTable::class)
+            ->fillForm($form('2026-07-01 12:01:00'))
+            ->call('create')
+            ->assertHasFormErrors(['registration_closes_at']);
+        $this->assertSame(
+            ['El cierre de inscripciones no puede ser posterior al inicio de la mesa ('.self::MADRID_TIME.')'],
+            $refused->errors()->get('data.registration_closes_at'),
+        );
+
+        Livewire::test(CreateGameTable::class)
+            ->fillForm($form('2026-07-01 12:00:00'))
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $table = GameTableModel::query()->where('title', 'Mesa del panel')->sole();
+        $this->assertSame('2026-07-01 10:00:00', $this->storedValue('gametables_tables', $table->id, 'starts_at'));
         $this->assertSame('2026-07-01 10:00:00', $this->storedValue('gametables_tables', $table->id, 'registration_closes_at'));
     }
 

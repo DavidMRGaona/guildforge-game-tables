@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\GameTables\Tests\Feature\Http\Controllers;
 
 use App\Application\Modules\DTOs\SlotRegistrationDTO;
-use App\Application\Services\TimezoneServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Carbon\CarbonImmutable;
 use Illuminate\Routing\Route;
@@ -80,13 +79,12 @@ final class RegistrationSlotPropsTest extends ModuleTestCase
     // The guest form says before sending it how long the place is held, as the server will apply it
     public function test_a_visitor_is_told_the_confirmation_deadline_of_a_held_place(): void
     {
-        $now = CarbonImmutable::now();
-
+        // Two hours after the pinned 18:00 in Madrid
         $this->get(route('gametables.show', $this->table->slug))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('guestEligibility.confirmation.mode', 'hold')
-                ->where('guestEligibility.confirmation.deadline', app(TimezoneServiceInterface::class)->iso($now->addHours(2))));
+                ->where('guestEligibility.confirmation.deadline', '2026-11-04T20:00:00+01:00'));
     }
 
     public function test_a_visitor_is_told_the_place_is_not_guaranteed_once_the_cap_is_reached(): void

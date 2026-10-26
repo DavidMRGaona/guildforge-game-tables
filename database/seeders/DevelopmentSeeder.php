@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Modules\GameTables\Database\Seeders;
 
 use App\Application\Authorization\Services\MemberRoleServiceInterface;
+use App\Application\Services\TimezoneServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
@@ -194,7 +196,7 @@ final class DevelopmentSeeder extends Seeder
                 'created_by' => $user->id,
                 'title' => 'Aventura en la Cripta de los Horrores',
                 'slug' => 'aventura-cripta-horrores',
-                'starts_at' => now()->addDays(7)->setHour(17)->setMinute(0),
+                'starts_at' => $this->siteNow()->addDays(7)->setHour(17)->setMinute(0),
                 'duration_minutes' => 240,
                 'table_type' => TableType::OneShot,
                 'table_format' => TableFormat::InPerson,
@@ -219,7 +221,7 @@ final class DevelopmentSeeder extends Seeder
                 'created_by' => $user->id,
                 'title' => 'La casa de la colina',
                 'slug' => 'casa-colina-coc',
-                'starts_at' => now()->addDays(14)->setHour(18)->setMinute(30),
+                'starts_at' => $this->siteNow()->addDays(14)->setHour(18)->setMinute(30),
                 'duration_minutes' => 180,
                 'table_type' => TableType::OneShot,
                 'table_format' => TableFormat::InPerson,
@@ -244,7 +246,7 @@ final class DevelopmentSeeder extends Seeder
                 'created_by' => $user->id,
                 'title' => 'El fin está cerca',
                 'slug' => 'fin-cerca-morkborg',
-                'starts_at' => now()->addDays(21)->setHour(16)->setMinute(0),
+                'starts_at' => $this->siteNow()->addDays(21)->setHour(16)->setMinute(0),
                 'duration_minutes' => 180,
                 'table_type' => TableType::OneShot,
                 'table_format' => TableFormat::Hybrid,
@@ -270,7 +272,7 @@ final class DevelopmentSeeder extends Seeder
                 'created_by' => $user->id,
                 'title' => 'Sombras sobre Doskvol',
                 'slug' => 'sombras-doskvol',
-                'starts_at' => now()->addDays(10)->setHour(19)->setMinute(0),
+                'starts_at' => $this->siteNow()->addDays(10)->setHour(19)->setMinute(0),
                 'duration_minutes' => 210,
                 'table_type' => TableType::CampaignSession,
                 'table_format' => TableFormat::Online,
@@ -295,7 +297,7 @@ final class DevelopmentSeeder extends Seeder
                 'created_by' => $user->id,
                 'title' => 'Iniciación a D&D para principiantes',
                 'slug' => 'iniciacion-dnd-principiantes',
-                'starts_at' => now()->addDays(5)->setHour(11)->setMinute(0),
+                'starts_at' => $this->siteNow()->addDays(5)->setHour(11)->setMinute(0),
                 'duration_minutes' => 180,
                 'table_type' => TableType::Demo,
                 'table_format' => TableFormat::InPerson,
@@ -322,7 +324,7 @@ final class DevelopmentSeeder extends Seeder
                 'created_by' => $user->id,
                 'title' => 'Strahd: Sesión 9 - El castillo Ravenloft',
                 'slug' => 'strahd-sesion-9',
-                'starts_at' => now()->addDays(3)->setHour(17)->setMinute(0),
+                'starts_at' => $this->siteNow()->addDays(3)->setHour(17)->setMinute(0),
                 'duration_minutes' => 240,
                 'table_type' => TableType::CampaignSession,
                 'table_format' => TableFormat::InPerson,
@@ -523,7 +525,7 @@ final class DevelopmentSeeder extends Seeder
         $past = $this->table(array_merge($closedSession, [
             'title' => 'Crónicas de la marca del este: sesión 4',
             'slug' => 'cronicas-marca-del-este-sesion-4',
-            'starts_at' => now()->subDays(7)->setTime(18, 0),
+            'starts_at' => $this->siteNow()->subDays(7)->setTime(18, 0),
             'status' => TableStatus::Completed,
             'synopsis' => 'El grupo terminó de explorar la torre del vigía y volvió a la fortaleza con un prisionero.',
             'published_at' => now()->subDays(14),
@@ -534,7 +536,7 @@ final class DevelopmentSeeder extends Seeder
         $next = $this->table(array_merge($closedSession, [
             'title' => 'Crónicas de la marca del este: sesión 5',
             'slug' => 'cronicas-marca-del-este-sesion-5',
-            'starts_at' => now()->addDays(4)->setTime(18, 0),
+            'starts_at' => $this->siteNow()->addDays(4)->setTime(18, 0),
             'status' => TableStatus::Scheduled,
             'synopsis' => 'El prisionero habla de una mina abandonada al norte. ¿Merece la pena el viaje?',
             'published_at' => now()->subDays(3),
@@ -545,7 +547,7 @@ final class DevelopmentSeeder extends Seeder
         $later = $this->table(array_merge($closedSession, [
             'title' => 'Crónicas de la marca del este: sesión 6',
             'slug' => 'cronicas-marca-del-este-sesion-6',
-            'starts_at' => now()->addDays(11)->setTime(18, 0),
+            'starts_at' => $this->siteNow()->addDays(11)->setTime(18, 0),
             'status' => TableStatus::Scheduled,
             'synopsis' => 'La mina del norte guarda algo más que plata.',
             'published_at' => now()->subDays(3),
@@ -584,7 +586,7 @@ final class DevelopmentSeeder extends Seeder
             'created_by' => $people['john']->id,
             'title' => 'Los herederos del dragón: sesión 1',
             'slug' => 'herederos-del-dragon-sesion-1',
-            'starts_at' => now()->addDays(6)->setTime(17, 30),
+            'starts_at' => $this->siteNow()->addDays(6)->setTime(17, 30),
             'duration_minutes' => 240,
             'table_type' => TableType::CampaignSession,
             'table_format' => TableFormat::InPerson,
@@ -653,7 +655,7 @@ final class DevelopmentSeeder extends Seeder
             'game_system_id' => $this->gameSystemId('dnd-2024'),
             'title' => 'La torre del hechicero',
             'slug' => 'torre-del-hechicero',
-            'starts_at' => now()->addDays(20)->setTime(17, 0),
+            'starts_at' => $this->siteNow()->addDays(20)->setTime(17, 0),
             'synopsis' => 'Un hechicero desaparecido, una torre sellada y un pueblo que no quiere hablar.',
             'genres' => [Genre::Fantasy->value, Genre::Mystery->value],
             'tone' => Tone::Mixed,
@@ -668,7 +670,7 @@ final class DevelopmentSeeder extends Seeder
             'game_system_id' => $this->gameSystemId('mork-borg'),
             'title' => 'La mazmorra sin nombre',
             'slug' => 'mazmorra-sin-nombre',
-            'starts_at' => now()->addDays(18)->setTime(17, 0),
+            'starts_at' => $this->siteNow()->addDays(18)->setTime(17, 0),
             'synopsis' => 'Bajad. No preguntéis.',
             'genres' => [Genre::Fantasy->value, Genre::Horror->value],
             'tone' => Tone::Dark,
@@ -682,7 +684,7 @@ final class DevelopmentSeeder extends Seeder
             'game_system_id' => $this->gameSystemId('dragonbane'),
             'title' => 'El bosque de los susurros',
             'slug' => 'bosque-de-los-susurros',
-            'starts_at' => now()->addDays(25)->setTime(11, 0),
+            'starts_at' => $this->siteNow()->addDays(25)->setTime(11, 0),
             'synopsis' => 'Una aventura ligera para jugar en familia.',
             'genres' => [Genre::Fantasy->value],
             'tone' => Tone::Light,
@@ -718,7 +720,7 @@ final class DevelopmentSeeder extends Seeder
             'game_system_id' => $this->gameSystemId('call-of-cthulhu-7e'),
             'title' => 'Noche en el faro',
             'slug' => 'noche-en-el-faro',
-            'starts_at' => now()->addDays(9)->setTime(18, 0),
+            'starts_at' => $this->siteNow()->addDays(9)->setTime(18, 0),
             'min_players' => 2,
             'max_players' => 2,
             'synopsis' => 'Dos fareros, una tormenta y una luz que no debería estar encendida. Partida para dos jugadores.',
@@ -759,7 +761,7 @@ final class DevelopmentSeeder extends Seeder
             'game_system_id' => $this->gameSystemId('wfrp-4e'),
             'title' => 'Las ruinas de Karak',
             'slug' => 'ruinas-de-karak',
-            'starts_at' => now()->subDays(5)->setTime(17, 0),
+            'starts_at' => $this->siteNow()->subDays(5)->setTime(17, 0),
             'status' => TableStatus::Completed,
             'min_players' => 2,
             'max_players' => 4,
@@ -781,7 +783,7 @@ final class DevelopmentSeeder extends Seeder
             'game_system_id' => $this->gameSystemId('vtm-5e'),
             'title' => 'Cena con el conde',
             'slug' => 'cena-con-el-conde',
-            'starts_at' => now()->addDays(13)->setTime(20, 0),
+            'starts_at' => $this->siteNow()->addDays(13)->setTime(20, 0),
             'duration_minutes' => 180,
             'min_players' => 2,
             'max_players' => 4,
@@ -802,7 +804,7 @@ final class DevelopmentSeeder extends Seeder
             'created_by' => $people['john']->id,
             'title' => 'Ecos de la colmena',
             'slug' => 'ecos-de-la-colmena',
-            'starts_at' => now()->addDays(16)->setTime(18, 0),
+            'starts_at' => $this->siteNow()->addDays(16)->setTime(18, 0),
             'duration_minutes' => 210,
             'table_type' => TableType::OneShot,
             'table_format' => TableFormat::Hybrid,
@@ -844,7 +846,7 @@ final class DevelopmentSeeder extends Seeder
             'game_system_id' => $this->gameSystemId('dread'),
             'title' => 'Feria de las sombras',
             'slug' => 'feria-de-las-sombras',
-            'starts_at' => now()->addDays(8)->setTime(18, 0),
+            'starts_at' => $this->siteNow()->addDays(8)->setTime(18, 0),
             'duration_minutes' => 180,
             'min_players' => 3,
             'max_players' => 6,
@@ -993,5 +995,13 @@ final class DevelopmentSeeder extends Seeder
                 'cancellation_token' => bin2hex(random_bytes(32)),
             ], $attributes),
         );
+    }
+
+    /**
+     * Now in the site's zone: the seeded tables start at those hours where the site is.
+     */
+    private function siteNow(): CarbonImmutable
+    {
+        return CarbonImmutable::now(app(TimezoneServiceInterface::class)->displayTimezone());
     }
 }

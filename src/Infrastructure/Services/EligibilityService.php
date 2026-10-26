@@ -92,7 +92,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
 
         // Check registration window
         // Members' early access is part of the membership integration setting
-        if (! $gameTable->canUserRegister($isMember, $now, $this->settings->isMembershipIntegrationEnabled(), app(TimezoneServiceInterface::class)->displayTimezone())) {
+        if (! $gameTable->canUserRegister($isMember, $now, app(TimezoneServiceInterface::class)->displayTimezone(), $this->settings->isMembershipIntegrationEnabled())) {
             if ($gameTable->requiresMembership() && ! $isMember) {
                 throw MembersOnlyException::forTable($gameTable->id->value);
             }

@@ -78,16 +78,20 @@ final readonly class UpdateEventGameTableConfigDTO
             return [];
         }
 
+        $timezone = app(TimezoneServiceInterface::class);
+        // An hour without offset is the site's wall time, as the saved slots read it
+        $read = fn (string $time): DateTimeImmutable => $timezone->toStorage(new DateTimeImmutable($time, $timezone->displayTimezone()));
+
         return array_filter(array_map(
-            function (array $item): ?TimeSlotDefinition {
+            function (array $item) use ($read): ?TimeSlotDefinition {
                 if (empty($item['label']) || empty($item['start_time']) || empty($item['end_time'])) {
                     return null;
                 }
 
                 return TimeSlotDefinition::create(
                     label: $item['label'],
-                    startTime: new DateTimeImmutable($item['start_time']),
-                    endTime: new DateTimeImmutable($item['end_time']),
+                    startTime: $read($item['start_time']),
+                    endTime: $read($item['end_time']),
                     maxTables: isset($item['max_tables']) && $item['max_tables'] !== '' ? (int) $item['max_tables'] : null,
                 );
             },

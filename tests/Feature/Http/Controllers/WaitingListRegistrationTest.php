@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Tests\Feature\Http\Controllers;
 
-use App\Application\Services\TimezoneServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -347,7 +347,8 @@ final class WaitingListRegistrationTest extends ModuleTestCase
 
     public function test_a_guest_who_can_only_be_a_spectator_is_told_so(): void
     {
-        $this->freezeTime();
+        // 18:00 in Madrid (CET): the place is held until 20:00
+        $this->travelTo(CarbonImmutable::parse('2026-11-04 18:00:00', 'Europe/Madrid'));
         $table = $this->fullTable(['max_spectators' => 2]);
 
         $this->get(route('gametables.show', $table->slug))
@@ -363,7 +364,7 @@ final class WaitingListRegistrationTest extends ModuleTestCase
             'gdpr_consent' => true,
         ])->assertSessionHas(
             'success',
-            'Te hemos enviado un email para confirmar la inscripción. Confírmala antes del '.app(TimezoneServiceInterface::class)->format(now()->addHours(2)).' o la plaza se liberará.',
+            'Te hemos enviado un email para confirmar la inscripción. Confírmala antes del 04/11/2026 20:00 o la plaza se liberará.',
         );
     }
 

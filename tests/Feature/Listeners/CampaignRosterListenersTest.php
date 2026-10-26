@@ -214,8 +214,8 @@ final class CampaignRosterListenersTest extends ModuleTestCase
             $mail = $notification->toMail(new AnonymousNotifiable);
 
             return $mail->subject === 'Solicitud para unirse a Campaña de prueba'
-                && in_array('<p>Mary Major quiere unirse a la campaña «Campaña de prueba».</p>', array_map(strval(...), $mail->introLines), true)
-                && in_array('<p>Mensaje: «Me encantaría jugar»</p>', array_map(strval(...), $mail->introLines), true);
+                && in_array('<p>Mary Major quiere unirse a la campaña «Campaña de prueba».</p>', array_map('strval', $mail->introLines), true)
+                && in_array('<p>Mensaje: «Me encantaría jugar»</p>', array_map('strval', $mail->introLines), true);
         });
     }
 
