@@ -9,6 +9,7 @@ use App\Infrastructure\Persistence\Eloquent\Concerns\HasSlug;
 use App\Infrastructure\Persistence\Eloquent\Concerns\StoresInstantsInStorageTimezone;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -317,6 +318,23 @@ final class GameTableModel extends Model
         return Attribute::make(
             set: fn (mixed $value): int => (int) ($value ?? 0),
         );
+    }
+
+    /**
+     * By start time and, for tables starting together (the same slot of an event), by title
+     * and then id: PostgreSQL returns tied rows in no fixed order, and a list that pages
+     * would repeat or skip them.
+     *
+     * @param  Builder<GameTableModel>  $query
+     * @param  'asc'|'desc'  $direction
+     * @return Builder<GameTableModel>
+     */
+    public function scopeOrderedByStart(Builder $query, string $direction = 'asc'): Builder
+    {
+        return $query
+            ->orderBy('starts_at', $direction)
+            ->orderBy('title')
+            ->orderBy('id');
     }
 
     /**
