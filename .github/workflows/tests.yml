@@ -14,11 +14,11 @@ concurrency:
 
 jobs:
   test:
-    uses: DavidMRGaona/GuildForge/.github/workflows/reusable-module-tests.yml@main
+    uses: DavidMRGaona/GuildForge/.github/workflows/reusable-module-tests.yml@ci/module-tests-pgsql
     with:
       module_name: 'game-tables'
       # Host branch, tag or SHA to test against (main when the variable is unset)
-      host_ref: ${{ vars.GUILDFORGE_HOST_REF || 'main' }}
+      host_ref: ci/module-tests-pgsql
       # The core's quality tools (Rector, Pint, PHPStan, ESLint, Prettier, vue-tsc)
       quality: true
     permissions:
