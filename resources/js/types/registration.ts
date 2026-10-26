@@ -18,7 +18,11 @@ export interface EligibilityResponse extends RoleEligibility {
     spectator: RoleEligibility;
     /** The user's registration can still be cancelled by them (active, table not started). */
     canCancel: boolean;
+    /** Why not: no active registration, the table has started or it is over; null when it can. */
+    withdrawalRefusal: WithdrawalRefusal | null;
 }
+
+export type WithdrawalRefusal = 'not_allowed' | 'table_started' | 'table_ended';
 
 /** What the guest form says before it is sent: a place held until the deadline, or not guaranteed. */
 export interface GuestConfirmationNotice {

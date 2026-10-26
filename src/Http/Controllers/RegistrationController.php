@@ -255,6 +255,7 @@ final class RegistrationController extends Controller
             'token' => $token,
             'canCancel' => $refusal === null,
             'tableStarted' => $refusal === 'table_started',
+            'tableEnded' => $refusal === 'table_ended',
             'seo' => $this->seo->forPage(new SeoPageDTO(
                 title: (string) __('game-tables::messages.seo.cancel_registration_title'),
                 noindex: true,

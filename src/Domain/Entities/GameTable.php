@@ -204,6 +204,14 @@ final class GameTable
         return ! $this->timeSlot->hasStarted($now);
     }
 
+    /**
+     * Whether the time slot of the table is over, whatever its status says.
+     */
+    public function hasEnded(DateTimeImmutable $now): bool
+    {
+        return $this->timeSlot->hasEnded($now);
+    }
+
     public function requiresInvitation(): bool
     {
         return $this->registrationType->requiresInvitation();

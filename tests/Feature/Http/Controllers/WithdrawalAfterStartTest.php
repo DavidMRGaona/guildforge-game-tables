@@ -95,7 +95,20 @@ final class WithdrawalAfterStartTest extends ModuleTestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('GameTables/CancelRegistration', shouldExist: false)
                 ->where('canCancel', false)
-                ->where('tableStarted', true));
+                ->where('tableStarted', true)
+                ->where('tableEnded', false));
+    }
+
+    public function test_the_cancellation_page_says_the_table_has_ended(): void
+    {
+        $this->guest($this->table(now()->subDay()));
+
+        $this->get(route('gametables.cancel-confirmation', 'token-de-prueba'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('canCancel', false)
+                ->where('tableStarted', false)
+                ->where('tableEnded', true));
     }
 
     public function test_the_cancellation_page_offers_the_cancellation_before_the_start(): void
@@ -106,7 +119,8 @@ final class WithdrawalAfterStartTest extends ModuleTestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('canCancel', true)
-                ->where('tableStarted', false));
+                ->where('tableStarted', false)
+                ->where('tableEnded', false));
     }
 
     // An inactive registration keeps its own message, whatever the time
@@ -118,7 +132,8 @@ final class WithdrawalAfterStartTest extends ModuleTestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('canCancel', false)
-                ->where('tableStarted', false));
+                ->where('tableStarted', false)
+                ->where('tableEnded', false));
     }
 
     public function test_the_table_page_offers_the_cancellation_only_before_the_start(): void
@@ -131,10 +146,27 @@ final class WithdrawalAfterStartTest extends ModuleTestCase
 
         $this->actingAs($user)
             ->get(route('gametables.show', $upcoming->slug))
-            ->assertInertia(fn (Assert $page) => $page->where('eligibility.canCancel', true));
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('eligibility.canCancel', true)
+                ->where('eligibility.withdrawalRefusal', null));
         $this->actingAs($user)
             ->get(route('gametables.show', $started->slug))
-            ->assertInertia(fn (Assert $page) => $page->where('eligibility.canCancel', false));
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('eligibility.canCancel', false)
+                ->where('eligibility.withdrawalRefusal', 'table_started'));
+    }
+
+    public function test_the_table_page_says_why_once_the_table_has_ended(): void
+    {
+        $user = UserModel::factory()->create();
+        $ended = $this->table(now()->subDay());
+        $this->participant($ended, ['user_id' => $user->id]);
+
+        $this->actingAs($user)
+            ->get(route('gametables.show', $ended->slug))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('eligibility.canCancel', false)
+                ->where('eligibility.withdrawalRefusal', 'table_ended'));
     }
 
     public function test_without_a_registration_the_table_page_offers_no_cancellation(): void

@@ -202,8 +202,21 @@ final class RegistrationButtonSourceTest extends TestCase
         $this->assertBefore($gate, 'hasActiveRegistration.value', 'isRegistrationClosed.value');
 
         $text = $this->computedBody($source, 'buttonText');
-        $this->assertCodeContains("t('gameTables.registration.withdrawalClosed')", $text);
+        $this->assertCodeContains('withdrawalClosedText.value', $text);
         $this->assertBefore($text, 'hasActiveRegistration.value', 'isRegistrationClosed.value');
+    }
+
+    public function test_a_closed_withdrawal_says_whether_the_table_started_or_ended(): void
+    {
+        $source = $this->source('components/RegistrationButton.vue');
+
+        $this->assertCodeContains("eligibility.value?.withdrawalRefusal === 'table_ended'", $source);
+        $this->assertCodeContains("t('gameTables.registration.withdrawalClosedEnded')", $source);
+        $this->assertCodeContains("t('gameTables.registration.withdrawalClosed')", $source);
+        // The campaign session box says the same as the button
+        $this->assertCodeContains(':withdrawal-closed-text="withdrawalClosedText"', $source);
+        $this->assertCodeContains('{{ withdrawalClosedText }}', $this->source('components/CampaignSessionRosterBox.vue'));
+        $this->assertCodeContains("t('cancelRegistration.tableEnded')", $this->source('pages/GameTables/CancelRegistration.vue'));
     }
 
     public function test_a_click_with_an_active_registration_never_falls_through_to_registering(): void

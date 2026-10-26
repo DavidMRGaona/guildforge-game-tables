@@ -203,7 +203,8 @@ interface RegistrationServiceInterface
     /**
      * Why the participant can no longer cancel the registration themselves (the table page or the
      * emailed link): 'not_allowed' when it is not active or does not exist, 'table_started' once
-     * the table has started; null while they can. The panel's cancellations have no such limit.
+     * the table has started, 'table_ended' once its time slot is over; null while they can. The
+     * panel's cancellations have no such limit.
      */
     public function withdrawalRefusal(string $participantId, ?DateTimeImmutable $now = null): ?string;
 

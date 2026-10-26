@@ -27,6 +27,8 @@ interface Props {
     registration: ParticipantData | null;
     /** The server lets the member drop the seat (the session has not started) */
     canCancel: boolean;
+    /** Why the seat can no longer be dropped: the session has started, or it is over */
+    withdrawalClosedText: string;
 }
 
 const props = defineProps<Props>();
@@ -198,7 +200,7 @@ function rejoin(): void {
                     {{ t('gameTables.campaignSession.cannotGo') }}
                 </button>
                 <p v-else class="text-base-secondary">
-                    {{ t('gameTables.registration.withdrawalClosed') }}
+                    {{ withdrawalClosedText }}
                 </p>
             </div>
             <p :id="hintId" class="mt-1 text-xs text-base-muted">

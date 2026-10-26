@@ -174,6 +174,7 @@ export default {
             confirmedAt: 'Confirmado el',
             registeredAt: 'Inscrito el',
             withdrawalClosed: 'La partida ya ha comenzado: ya no puedes cancelar la inscripción',
+            withdrawalClosedEnded: 'La partida ya ha terminado',
         },
         // The registration box of a campaign session
         campaignSession: {
@@ -869,6 +870,7 @@ export default {
         viewTable: 'Ver mesa',
         guest: 'Invitado',
         tableStarted: 'La partida ya ha comenzado: ya no puedes cancelar la inscripción.',
+        tableEnded: 'La partida ya ha terminado.',
     },
     confirmRegistration: {
         title: 'Confirmar inscripción',

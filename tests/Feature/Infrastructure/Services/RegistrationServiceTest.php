@@ -835,6 +835,8 @@ final class RegistrationServiceTest extends TestCase
             'waiting before the start' => [ParticipantStatus::WaitingList, 60, null],
             'confirmed after the start' => [ParticipantStatus::Confirmed, -1, 'table_started'],
             'waiting after the start' => [ParticipantStatus::WaitingList, -1, 'table_started'],
+            'confirmed after the end' => [ParticipantStatus::Confirmed, -240, 'table_ended'],
+            'confirmed a week after the end' => [ParticipantStatus::Confirmed, -7 * 24 * 60, 'table_ended'],
             'cancelled before the start' => [ParticipantStatus::Cancelled, 60, 'not_allowed'],
             'cancelled after the start' => [ParticipantStatus::Cancelled, -1, 'not_allowed'],
         ];
@@ -863,6 +865,18 @@ final class RegistrationServiceTest extends TestCase
 
         $this->assertNull($this->service->withdrawalRefusal($participant->id->value, $startsAt->modify('-1 second')));
         $this->assertSame('table_started', $this->service->withdrawalRefusal($participant->id->value, $startsAt));
+    }
+
+    public function test_the_refusal_says_the_table_ended_from_the_exact_end(): void
+    {
+        $participant = $this->participantWith(ParticipantStatus::Confirmed);
+        $startsAt = new DateTimeImmutable('2030-01-10 18:00:00');
+        $this->participantRepository->expects($this->exactly(2))->method('find')->willReturn($participant);
+        $this->gameTableRepository->expects($this->exactly(2))->method('find')
+            ->willReturn($this->createGameTable($participant->gameTableId->value, startsAt: $startsAt));
+
+        $this->assertSame('table_started', $this->service->withdrawalRefusal($participant->id->value, $startsAt->modify('+4 hours -1 second')));
+        $this->assertSame('table_ended', $this->service->withdrawalRefusal($participant->id->value, $startsAt->modify('+4 hours')));
     }
 
     public function test_an_unknown_registration_cannot_be_withdrawn(): void
