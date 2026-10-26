@@ -106,7 +106,7 @@ final class DevelopmentSeeder extends Seeder
                 'is_published' => true,
             ],
             [
-                'game_system_id' => $coc?->id ?? $dnd5e->id,
+                'game_system_id' => $coc->id ?? $dnd5e->id,
                 'created_by' => $user->id,
                 'title' => 'Las máscaras de Nyarlathotep',
                 'slug' => 'mascaras-nyarlathotep',
@@ -120,7 +120,7 @@ final class DevelopmentSeeder extends Seeder
                 'is_published' => true,
             ],
             [
-                'game_system_id' => $vtm?->id ?? $dnd5e->id,
+                'game_system_id' => $vtm->id ?? $dnd5e->id,
                 'created_by' => $user->id,
                 'title' => 'Noches de sangre en Madrid',
                 'slug' => 'noches-sangre-madrid',
@@ -192,7 +192,7 @@ final class DevelopmentSeeder extends Seeder
 
         $tables = [
             [
-                'game_system_id' => $dnd2024?->id ?? $dnd5e->id,
+                'game_system_id' => $dnd2024->id ?? $dnd5e->id,
                 'created_by' => $user->id,
                 'title' => 'Aventura en la Cripta de los Horrores',
                 'slug' => 'aventura-cripta-horrores',
@@ -217,7 +217,7 @@ final class DevelopmentSeeder extends Seeder
                 'warnings' => [$violenceWarning?->id, $horrorWarning?->id],
             ],
             [
-                'game_system_id' => $coc?->id ?? $dnd5e->id,
+                'game_system_id' => $coc->id ?? $dnd5e->id,
                 'created_by' => $user->id,
                 'title' => 'La casa de la colina',
                 'slug' => 'casa-colina-coc',
@@ -242,7 +242,7 @@ final class DevelopmentSeeder extends Seeder
                 'warnings' => [$horrorWarning?->id, $deathWarning?->id],
             ],
             [
-                'game_system_id' => $morkBorg?->id ?? $dnd5e->id,
+                'game_system_id' => $morkBorg->id ?? $dnd5e->id,
                 'created_by' => $user->id,
                 'title' => 'El fin está cerca',
                 'slug' => 'fin-cerca-morkborg',
@@ -268,7 +268,7 @@ final class DevelopmentSeeder extends Seeder
                 'warnings' => [$violenceWarning?->id, $deathWarning?->id],
             ],
             [
-                'game_system_id' => $blades?->id ?? $dnd5e->id,
+                'game_system_id' => $blades->id ?? $dnd5e->id,
                 'created_by' => $user->id,
                 'title' => 'Sombras sobre Doskvol',
                 'slug' => 'sombras-doskvol',
@@ -347,7 +347,7 @@ final class DevelopmentSeeder extends Seeder
         ];
 
         foreach ($tables as $tableData) {
-            $warnings = $tableData['warnings'] ?? [];
+            $warnings = $tableData['warnings'];
             unset($tableData['warnings']);
 
             $table = GameTableModel::firstOrCreate(
