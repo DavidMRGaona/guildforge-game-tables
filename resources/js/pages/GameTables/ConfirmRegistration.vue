@@ -107,43 +107,53 @@ function handleConfirm(): void {
             <!-- Registration info -->
             <div v-if="participant && gameTable" class="mb-6 rounded-lg bg-muted p-4">
                 <dl class="space-y-2">
-                    <div v-if="participant.first_name" class="flex justify-between">
-                        <dt class="text-sm text-base-muted">
+                    <div v-if="participant.first_name" class="flex justify-between gap-4">
+                        <dt class="shrink-0 text-sm text-base-muted">
                             {{ t('confirmRegistration.participant') }}
                         </dt>
-                        <dd class="text-sm font-medium text-base-primary">
+                        <dd
+                            class="min-w-0 break-words text-right text-sm font-medium text-base-primary"
+                        >
                             {{ participant.first_name }}
                         </dd>
                     </div>
-                    <div class="flex justify-between">
-                        <dt class="text-sm text-base-muted">
+                    <div class="flex justify-between gap-4">
+                        <dt class="shrink-0 text-sm text-base-muted">
                             {{ t('confirmRegistration.table') }}
                         </dt>
-                        <dd class="text-sm font-medium text-base-primary">
+                        <dd
+                            class="min-w-0 break-words text-right text-sm font-medium text-base-primary"
+                        >
                             {{ gameTable.title }}
                         </dd>
                     </div>
-                    <div v-if="formattedDate" class="flex justify-between">
-                        <dt class="text-sm text-base-muted">
+                    <div v-if="formattedDate" class="flex justify-between gap-4">
+                        <dt class="shrink-0 text-sm text-base-muted">
                             {{ t('confirmRegistration.date') }}
                         </dt>
-                        <dd class="text-sm font-medium text-base-primary">
+                        <dd
+                            class="min-w-0 break-words text-right text-sm font-medium text-base-primary"
+                        >
                             {{ formattedDate }}
                         </dd>
                     </div>
-                    <div class="flex justify-between">
-                        <dt class="text-sm text-base-muted">
+                    <div class="flex justify-between gap-4">
+                        <dt class="shrink-0 text-sm text-base-muted">
                             {{ t('confirmRegistration.role') }}
                         </dt>
-                        <dd class="text-sm font-medium text-base-primary">
+                        <dd
+                            class="min-w-0 break-words text-right text-sm font-medium text-base-primary"
+                        >
                             {{ participant.role_label }}
                         </dd>
                     </div>
-                    <div class="flex justify-between">
-                        <dt class="text-sm text-base-muted">
+                    <div class="flex justify-between gap-4">
+                        <dt class="shrink-0 text-sm text-base-muted">
                             {{ t('confirmRegistration.status') }}
                         </dt>
-                        <dd class="text-sm font-medium text-base-primary">
+                        <dd
+                            class="min-w-0 break-words text-right text-sm font-medium text-base-primary"
+                        >
                             {{ participant.status_label }}
                         </dd>
                     </div>
