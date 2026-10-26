@@ -1,7 +1,7 @@
 {
   "name": "game-tables",
   "displayName": "Mesas de rol",
-  "version": "2.26.5",
+  "version": "2.26.6",
   "repository": "DavidMRGaona/guildforge-game-tables",
   "namespace": "Modules\\GameTables",
   "provider": "GameTablesServiceProvider",
