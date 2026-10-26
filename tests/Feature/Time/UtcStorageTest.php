@@ -311,6 +311,38 @@ final class UtcStorageTest extends ModuleTestCase
         $this->assertSame('2026-07-01T20:00:00+00:00', $dto->timeSlots[0]->endTime->setTimezone(new DateTimeZone('UTC'))->format('c'));
     }
 
+    /**
+     * The start sent by the form is matched to a slot, and the tables of that slot counted, by
+     * instant: the slot written with its offset, the stored UTC start and a Madrid wall time agree.
+     */
+    public function test_the_event_slot_and_its_limit_are_checked_by_instant(): void
+    {
+        // The form offers the events not yet ended by the system clock
+        $event = $this->eventWithTables([
+            'scheduling_mode' => SchedulingMode::SlotBased->value,
+            'time_slots' => [
+                ['label' => 'Tarde', 'start_time' => '2030-07-01T18:00:00+02:00', 'end_time' => '2030-07-01T22:00:00+02:00', 'max_tables' => 1],
+            ],
+        ], start: '2030-07-01T08:00:00Z');
+
+        $this->actingAs($this->creator())
+            ->post(route('gametables.store'), [...$this->tableForm('2030-07-01T18:00'), 'event_id' => $event->id])
+            ->assertSessionHasNoErrors();
+        $table = GameTableModel::query()->where('title', 'Mesa desde la web')->sole();
+        $this->assertSame('2030-07-01 16:00:00', $this->storedValue('gametables_tables', $table->id, 'starts_at'));
+
+        $this->actingAs($this->creator())
+            ->post(route('gametables.store'), [...$this->tableForm('2030-07-01T16:00:00Z'), 'event_id' => $event->id])
+            ->assertSessionHasErrors(['starts_at' => __('game-tables::messages.validation.time_slot_full', ['slot' => 'Tarde'])]);
+        // 16:00 in Madrid is no slot of the event, though it is the stored hour
+        $this->actingAs($this->creator())
+            ->post(route('gametables.store'), [...$this->tableForm('2030-07-01T16:00'), 'event_id' => $event->id])
+            ->assertSessionHasErrors(['starts_at' => __('game-tables::messages.validation.starts_at_not_a_slot')]);
+
+        $context = app(EventGameTableConfigServiceInterface::class)->getCreationContext($event->id)->toArray();
+        $this->assertSame(0, $context['available_time_slots'][0]['available_slots']);
+    }
+
     public function test_the_config_tab_shows_the_creation_opening_in_madrid_and_saves_the_utc_instant(): void
     {
         $this->actingAsPanelAdmin();

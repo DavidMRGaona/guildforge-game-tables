@@ -710,6 +710,8 @@ return [
         'title_required' => 'Title is required',
         'title_min' => 'Title must be at least 5 characters',
         'starts_at_future' => 'Start date must be in the future',
+        'starts_at_not_a_slot' => 'Choose one of the event time slots',
+        'time_slot_full' => 'The ":slot" time slot takes no more tables',
         'max_players_gte_min' => 'Maximum players must be greater than or equal to minimum',
         'language_required' => 'Language is required',
         'experience_level_required' => 'Experience level is required',

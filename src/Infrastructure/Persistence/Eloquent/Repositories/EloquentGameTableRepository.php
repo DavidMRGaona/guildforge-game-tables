@@ -6,8 +6,10 @@ namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories;
 
 use App\Application\Services\TimezoneServiceInterface;
 use DateTimeImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Modules\GameTables\Domain\Entities\GameTable;
+use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Enums\TableStatus;
@@ -199,6 +201,25 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
             ->all();
 
         return array_values($ids);
+    }
+
+    public function countTakingTimeSlotPlace(string $eventId, DateTimeImmutable $startsAt, ?GameTableId $exceptId = null): int
+    {
+        return GameTableModel::query()
+            ->where('event_id', $eventId)
+            // Bound in the storage zone: bindings skip the model's conversion
+            ->where('starts_at', app(TimezoneServiceInterface::class)->toStorage($startsAt))
+            ->where('status', '!=', TableStatus::Cancelled->value)
+            // A rejected table, as GameTable::rejectionReason() tells it: back in the author's
+            // hands with the reason (every column is checked for null, so NOT never meets a NULL)
+            ->whereNot(fn (Builder $query) => $query
+                ->where('is_published', false)
+                ->whereNotNull('frontend_creation_status')
+                ->whereIn('frontend_creation_status', [FrontendCreationStatus::Draft->value, FrontendCreationStatus::Rejected->value])
+                ->whereNotNull('moderation_notes')
+                ->whereRaw("TRIM(moderation_notes) <> ''"))
+            ->when($exceptId instanceof GameTableId, fn (Builder $query) => $query->whereKeyNot($exceptId?->value))
+            ->count();
     }
 
     /**

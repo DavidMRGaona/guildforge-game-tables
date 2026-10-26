@@ -25,6 +25,7 @@ use Modules\GameTables\Application\DTOs\UpdateGameTableDTO;
 use Modules\GameTables\Application\Services\CampaignDirectionInterface;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
 use Modules\GameTables\Application\Services\EventCreationEligibilityServiceInterface;
+use Modules\GameTables\Application\Services\EventGameTableConfigServiceInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Application\Services\GameMasterServiceInterface;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
@@ -90,6 +91,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         private CampaignDirectionInterface $direction,
         private CampaignJoinRequestRepositoryInterface $joinRequests,
         private TableDirectionInterface $tableDirection,
+        private EventGameTableConfigServiceInterface $eventConfigService,
     ) {}
 
     /**
@@ -481,6 +483,12 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
 
         // The same rules as creating it
         $this->ensureMayCreate($userId, $table->eventId, $table->tableType, $table->campaignId?->value);
+
+        // A rejected table gave up its place in the event's time slot: it takes one again only
+        // while the slot has room (the form says so, but it may have filled up meanwhile)
+        if ($table->eventId !== null && ! $table->takesTimeSlotPlace()) {
+            $this->eventConfigService->ensureSlotTakes($table->eventId, $table->timeSlot->startsAt, $table->id->value);
+        }
 
         // Sent to review: clears the reason of an earlier rejection
         $table->submitForModeration();

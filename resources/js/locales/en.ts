@@ -392,6 +392,8 @@ export default {
                 timeSlot: 'Session time slot',
                 selectTimeSlot: 'Select a time slot',
                 timeSlotHelp: 'Select one of the available time slots for this event',
+                timeSlotTablesLeft: '{label} ({count} table left) | {label} ({count} tables left)',
+                timeSlotFull: '{label} (full)',
                 duration: 'Duration (minutes)',
                 durationHelp: 'Estimated duration in minutes (e.g., 240 for 4 hours)',
                 tableType: 'Session type',

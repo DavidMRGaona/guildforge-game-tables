@@ -75,7 +75,8 @@ interface TimeSlot {
     start_time: string;
     end_time: string;
     max_tables: number | null;
-    available_slots?: number | null;
+    // Tables the slot still takes; null without a limit
+    available_slots: number | null;
 }
 
 interface EventContext {
@@ -350,12 +351,24 @@ const selectedEventName = computed(() => {
     return event?.name ?? props.table.event_title ?? null;
 });
 
+// A slot with a limit shows the tables it still takes (the server refuses a full one)
+function timeSlotLabel(slot: TimeSlot): string {
+    const left = slot.available_slots;
+    if (left === null) return slot.label;
+    if (left === 0) return t('gameTables.create.fields.timeSlotFull', { label: slot.label });
+    return t(
+        'gameTables.create.fields.timeSlotTablesLeft',
+        { label: slot.label, count: left },
+        left
+    );
+}
+
 // Transform time slots for select component
 const timeSlotOptions = computed(() => {
     if (!props.eventContext?.available_time_slots) return [];
     return props.eventContext.available_time_slots.map((slot, index) => ({
         value: String(index),
-        label: slot.label,
+        label: timeSlotLabel(slot),
     }));
 });
 

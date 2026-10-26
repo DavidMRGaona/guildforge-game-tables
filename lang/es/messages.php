@@ -787,6 +787,8 @@ return [
         'title_required' => 'El título es obligatorio',
         'title_min' => 'El título debe tener al menos 5 caracteres',
         'starts_at_future' => 'La fecha de inicio debe ser posterior a ahora',
+        'starts_at_not_a_slot' => 'Elige uno de los horarios del evento',
+        'time_slot_full' => 'El horario «:slot» ya no admite más mesas',
         'max_players_gte_min' => 'El máximo de jugadores debe ser mayor o igual al mínimo',
         'language_required' => 'El idioma es obligatorio',
         'experience_level_required' => 'El nivel de experiencia es obligatorio',

@@ -28,6 +28,7 @@ use Modules\GameTables\Domain\Enums\TableType;
 use Modules\GameTables\Domain\Exceptions\NotEditableException;
 use Modules\GameTables\Domain\Exceptions\NotEligibleToCreateException;
 use Modules\GameTables\Domain\Exceptions\SessionBelowRosterException;
+use Modules\GameTables\Domain\Exceptions\TimeSlotUnavailableException;
 use Modules\GameTables\Http\Requests\FrontendCreateGameTableRequest;
 use Modules\GameTables\Http\Support\AuthorLockRedirect;
 use Modules\GameTables\Http\Support\AuthorReturnTarget;
@@ -204,7 +205,8 @@ final class FrontendGameTableController extends Controller
         // Get event context if a table is associated with an event
         $eventContext = null;
         if ($gameTable->event_id !== null) {
-            $eventContext = $this->eventConfigService->getCreationContext($gameTable->event_id);
+            // The table's own place in its time slot counts as free
+            $eventContext = $this->eventConfigService->getCreationContext($gameTable->event_id, $gameTable->id);
         }
 
         // Prepare current user data for GM section
@@ -293,6 +295,9 @@ final class FrontendGameTableController extends Controller
             abort(403);
         } catch (SessionBelowRosterException $e) {
             // Published at once (automatic mode) but with fewer seats than the roster
+            return $this->returnTarget->back(AuthorReturnTarget::TABLES_TAB)->with('error', $e->getMessage());
+        } catch (TimeSlotUnavailableException $e) {
+            // A rejected table whose time slot filled up meanwhile: it stays a draft
             return $this->returnTarget->back(AuthorReturnTarget::TABLES_TAB)->with('error', $e->getMessage());
         }
 

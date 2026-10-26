@@ -77,6 +77,12 @@ interface GameTableRepositoryInterface
     public function idsStartedInStatuses(array $statuses, DateTimeImmutable $now): array;
 
     /**
+     * How many tables of the event start at $startsAt and take a place in that time slot
+     * (GameTable::takesTimeSlotPlace()), leaving out $exceptId.
+     */
+    public function countTakingTimeSlotPlace(string $eventId, DateTimeImmutable $startsAt, ?GameTableId $exceptId = null): int;
+
+    /**
      * @return array<GameTable>
      */
     public function all(): array;
