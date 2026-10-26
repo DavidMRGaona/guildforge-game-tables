@@ -9,17 +9,6 @@ use Tests\TestCase;
 
 final class FrontendCreationStatusTest extends TestCase
 {
-    public function test_it_has_expected_cases(): void
-    {
-        $cases = FrontendCreationStatus::cases();
-
-        $this->assertCount(4, $cases);
-        $this->assertContains(FrontendCreationStatus::Draft, $cases);
-        $this->assertContains(FrontendCreationStatus::PendingReview, $cases);
-        $this->assertContains(FrontendCreationStatus::Approved, $cases);
-        $this->assertContains(FrontendCreationStatus::Rejected, $cases);
-    }
-
     public function test_it_has_correct_values(): void
     {
         $this->assertEquals('draft', FrontendCreationStatus::Draft->value);

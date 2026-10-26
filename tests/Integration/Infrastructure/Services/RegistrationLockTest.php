@@ -83,7 +83,7 @@ final class RegistrationLockTest extends ModuleTestCase
         $result = $lock->forCampaign($campaign->id, fn (): int => DB::transactionLevel());
 
         $this->assertSame($level + 1, $result);
-        $this->assertSame('ok', $lock->forCampaign((string) Str::uuid(), fn (): string => 'ok'));
+        $this->assertSame($level + 1, $lock->forCampaign((string) Str::uuid(), fn (): int => DB::transactionLevel()));
     }
 
     public function test_the_lock_of_a_participant_and_of_a_token_find_the_table(): void
@@ -98,18 +98,20 @@ final class RegistrationLockTest extends ModuleTestCase
             'status' => 'confirmed',
         ]);
         $lock = new DatabaseRegistrationLock;
+        $level = DB::transactionLevel();
 
-        $this->assertSame('ok', $lock->forParticipant($participant->id, fn (): string => 'ok'));
-        $this->assertSame('ok', $lock->forCancellationToken('token-de-prueba', fn (): string => 'ok'));
+        $this->assertSame($level + 1, $lock->forParticipant($participant->id, fn (): int => DB::transactionLevel()));
+        $this->assertSame($level + 1, $lock->forCancellationToken('token-de-prueba', fn (): int => DB::transactionLevel()));
     }
 
     // The callback reports the missing participant itself
     public function test_without_a_participant_the_callback_still_runs(): void
     {
         $lock = new DatabaseRegistrationLock;
+        $level = DB::transactionLevel();
 
-        $this->assertSame('ok', $lock->forParticipant((string) Str::uuid(), fn (): string => 'ok'));
-        $this->assertSame('ok', $lock->forCancellationToken('desconocido', fn (): string => 'ok'));
+        $this->assertSame($level + 1, $lock->forParticipant((string) Str::uuid(), fn (): int => DB::transactionLevel()));
+        $this->assertSame($level + 1, $lock->forCancellationToken('desconocido', fn (): int => DB::transactionLevel()));
     }
 
     public function test_registrations_and_cancellations_go_through_the_table_lock(): void

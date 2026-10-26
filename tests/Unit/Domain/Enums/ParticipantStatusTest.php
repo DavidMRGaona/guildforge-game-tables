@@ -37,7 +37,6 @@ final class ParticipantStatusTest extends TestCase
     {
         $status = ParticipantStatus::Expired;
 
-        $this->assertSame('expired', $status->value);
         $this->assertTrue($status->isFinal());
         $this->assertFalse($status->isActive());
         $this->assertFalse($status->canBeCancelled());

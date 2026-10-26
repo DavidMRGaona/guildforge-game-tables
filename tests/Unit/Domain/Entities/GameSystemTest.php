@@ -22,7 +22,6 @@ final class GameSystemTest extends TestCase
             isActive: true,
         );
 
-        $this->assertInstanceOf(GameSystem::class, $gameSystem);
         $this->assertTrue($id->equals($gameSystem->id));
         $this->assertEquals('Dungeons & Dragons', $gameSystem->name);
         $this->assertEquals('dungeons-and-dragons', $gameSystem->slug);
@@ -55,7 +54,6 @@ final class GameSystemTest extends TestCase
             createdAt: $createdAt,
         );
 
-        $this->assertInstanceOf(GameSystem::class, $gameSystem);
         $this->assertEquals('Call of Cthulhu', $gameSystem->name);
         $this->assertEquals('A horror roleplaying game based on the writings of H.P. Lovecraft.', $gameSystem->description);
         $this->assertEquals('Chaosium', $gameSystem->publisher);

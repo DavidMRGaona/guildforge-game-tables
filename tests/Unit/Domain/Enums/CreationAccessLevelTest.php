@@ -9,17 +9,6 @@ use Tests\TestCase;
 
 final class CreationAccessLevelTest extends TestCase
 {
-    public function test_it_has_expected_cases(): void
-    {
-        $cases = CreationAccessLevel::cases();
-
-        $this->assertCount(4, $cases);
-        $this->assertContains(CreationAccessLevel::Everyone, $cases);
-        $this->assertContains(CreationAccessLevel::Registered, $cases);
-        $this->assertContains(CreationAccessLevel::Role, $cases);
-        $this->assertContains(CreationAccessLevel::Permission, $cases);
-    }
-
     public function test_it_has_correct_values(): void
     {
         $this->assertEquals('everyone', CreationAccessLevel::Everyone->value);

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Tests\Unit\Notifications;
 
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\AnonymousNotifiable;
+use Illuminate\Notifications\SendQueuedNotifications;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Queue;
 use Modules\GameTables\Notifications\GuestRegistrationExpiredNotification;
 use Tests\TestCase;
 
@@ -46,9 +48,12 @@ final class GuestRegistrationExpiredNotificationTest extends TestCase
 
     public function test_it_is_queued_and_sent_by_mail(): void
     {
+        Queue::fake();
         $notification = $this->notification();
 
-        $this->assertInstanceOf(ShouldQueue::class, $notification);
+        Notification::route('mail', 'invitada@example.test')->notify($notification);
+
+        Queue::assertPushed(SendQueuedNotifications::class, fn (SendQueuedNotifications $job): bool => $job->notification instanceof GuestRegistrationExpiredNotification);
         $this->assertSame(['mail'], $notification->via(new AnonymousNotifiable));
     }
 

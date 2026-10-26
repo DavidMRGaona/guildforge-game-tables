@@ -36,7 +36,6 @@ final class CampaignTest extends ModuleTestCase
             status: CampaignStatus::Recruiting,
         );
 
-        $this->assertInstanceOf(Campaign::class, $campaign);
         $this->assertTrue($id->equals($campaign->id));
         $this->assertTrue($gameSystemId->equals($campaign->gameSystemId));
         $this->assertEquals('user-uuid-123', $campaign->createdBy);

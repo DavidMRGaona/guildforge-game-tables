@@ -15,7 +15,6 @@ final class ContentWarningIdTest extends TestCase
     {
         $id = ContentWarningId::generate();
 
-        $this->assertInstanceOf(ContentWarningId::class, $id);
         $this->assertTrue(Uuid::isValid($id->value()));
     }
 
@@ -25,7 +24,6 @@ final class ContentWarningIdTest extends TestCase
 
         $id = ContentWarningId::fromString($uuid);
 
-        $this->assertInstanceOf(ContentWarningId::class, $id);
         $this->assertEquals($uuid, $id->value());
     }
 
