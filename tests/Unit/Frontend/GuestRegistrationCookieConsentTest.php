@@ -42,8 +42,8 @@ final class GuestRegistrationCookieConsentTest extends TestCase
     {
         // A bundled copy of the contract would never hear from the consent provider
         // The core's build keeps its public API, the consent contract included, out of the bundle
-        $this->assertStringContainsString("import { defineModuleConfig } from '../../vite.module.config';", $this->source('vite.config.ts'));
-        $this->assertStringContainsString("defineModuleConfig({ name: 'game-tables', root: __dirname })", $this->source('vite.config.ts'));
+        $this->assertStringContainsString("import { defineModuleConfig } from '../../vite.module.config.ts';", $this->source('vite.config.ts'));
+        $this->assertStringContainsString("defineModuleConfig({ name: 'game-tables', root: import.meta.dirname })", $this->source('vite.config.ts'));
     }
 
     private function source(string $file): string
