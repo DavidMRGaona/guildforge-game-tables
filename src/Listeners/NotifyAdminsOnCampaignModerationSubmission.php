@@ -23,7 +23,7 @@ final readonly class NotifyAdminsOnCampaignModerationSubmission
             creatorName: $this->recipientResolver->getCreatorDisplayName($event->createdBy),
         );
 
-        foreach ($this->recipientResolver->getModerationAdminEmails() as $email) {
+        foreach ($this->recipientResolver->getCampaignModeratorEmails() as $email) {
             Notification::route('mail', $email)->notify($notification);
         }
     }

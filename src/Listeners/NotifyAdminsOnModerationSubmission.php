@@ -25,7 +25,7 @@ final readonly class NotifyAdminsOnModerationSubmission
             creatorName: $creatorName,
         );
 
-        $adminEmails = $this->recipientResolver->getModerationAdminEmails();
+        $adminEmails = $this->recipientResolver->getTableModeratorEmails();
 
         foreach ($adminEmails as $email) {
             Notification::route('mail', $email)->notify($notification);

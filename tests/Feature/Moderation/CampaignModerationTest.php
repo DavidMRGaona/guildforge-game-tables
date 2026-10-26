@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Tests\Feature\Moderation;
 
+use App\Infrastructure\Persistence\Eloquent\Models\PermissionModel;
+use App\Infrastructure\Persistence\Eloquent\Models\RoleModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Notification;
@@ -54,10 +56,14 @@ final class CampaignModerationTest extends ModuleTestCase
         config()->set('modules.settings.game-tables.frontend_creation.publication.mode', 'approval');
     }
 
-    public function test_a_campaign_sent_for_review_emails_the_admins_and_editors(): void
+    public function test_a_campaign_sent_for_review_emails_whoever_can_moderate_campaigns(): void
     {
         Notification::fake();
         $editor = UserModel::factory()->editor()->create();
+        RoleModel::query()->where('name', 'editor')->firstOrFail()->permissions()->attach($this->permission('gametables:campaigns.update')->id);
+        $tablesOnly = RoleModel::create(['name' => 'table_moderator', 'display_name' => 'Table moderator']);
+        $tablesOnly->permissions()->attach([$this->permission('admin.access')->id, $this->permission('gametables:gametables.update')->id]);
+        UserModel::factory()->create()->roles()->attach($tablesOnly->id);
         $campaign = $this->campaign('draft');
 
         app(FrontendCreationServiceInterface::class)->submitCampaignForReview($campaign->id, $this->creator->id);
@@ -160,6 +166,14 @@ final class CampaignModerationTest extends ModuleTestCase
         Livewire::test(ListCampaigns::class)
             ->assertTableActionHidden('approve', $campaign)
             ->assertTableActionHidden('reject', $campaign);
+    }
+
+    private function permission(string $key): PermissionModel
+    {
+        return PermissionModel::firstOrCreate(
+            ['key' => $key],
+            ['label' => $key, 'resource' => Str::before(Str::afterLast($key, ':'), '.'), 'action' => Str::afterLast($key, '.')],
+        );
     }
 
     private function campaign(?string $creationStatus, string $title = 'La llamada'): CampaignModel
