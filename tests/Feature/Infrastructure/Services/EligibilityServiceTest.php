@@ -128,8 +128,8 @@ final class EligibilityServiceTest extends TestCase
             userId: null,
             role: ParticipantRole::Player,
             status: ParticipantStatus::Confirmed,
-            email: $email,
             firstName: 'Existing',
+            email: $email,
         );
 
         $this->gameTableRepository
@@ -409,7 +409,7 @@ final class EligibilityServiceTest extends TestCase
         $this->gameTableRepository->expects($this->never())->method($this->anything());
         $this->participantRepository->expects($this->once())->method('findByTableAndUser')->willReturn(null);
         $startsAt = new DateTimeImmutable('2030-01-10 18:00:00');
-        $table = $this->createGameTable(id: GameTableId::generate()->value, startsAt: $startsAt, maxPlayers: 0, acceptsRegistrationsInProgress: true);
+        $table = $this->createGameTable(id: GameTableId::generate()->value, maxPlayers: 0, startsAt: $startsAt, acceptsRegistrationsInProgress: true);
 
         $result = $this->service->canRegister($table, 'user-1', false, null, $startsAt->modify('+1 hour'));
 
@@ -424,7 +424,7 @@ final class EligibilityServiceTest extends TestCase
         $this->gameTableRepository->expects($this->never())->method($this->anything());
         $this->participantRepository->expects($this->once())->method('findByTableAndUser')->willReturn(null);
         $startsAt = new DateTimeImmutable('2030-01-10 18:00:00');
-        $table = $this->createGameTable(id: GameTableId::generate()->value, startsAt: $startsAt, maxPlayers: 0, acceptsRegistrationsInProgress: true);
+        $table = $this->createGameTable(id: GameTableId::generate()->value, maxPlayers: 0, startsAt: $startsAt, acceptsRegistrationsInProgress: true);
 
         $result = $this->service->canRegister($table, 'user-1', false, null, $startsAt->modify('-1 hour'));
 

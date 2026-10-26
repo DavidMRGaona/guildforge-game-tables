@@ -25,7 +25,7 @@ final class GuestRateLimitTest extends ModuleTestCase
 
     protected bool $autoEnableModule = true;
 
-    private const MESSAGE = 'Has hecho demasiadas inscripciones seguidas. Espera unos minutos y vuelve a intentarlo.';
+    private const string MESSAGE = 'Has hecho demasiadas inscripciones seguidas. Espera unos minutos y vuelve a intentarlo.';
 
     protected function setUp(): void
     {

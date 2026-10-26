@@ -74,7 +74,7 @@ final class TableDirectionTest extends ModuleTestCase
             'user_id' => $user?->id,
             'first_name' => 'GM',
             'last_name' => 'Prueba',
-            'email' => $user === null ? 'external@example.com' : null,
+            'email' => $user instanceof UserModel ? null : 'external@example.com',
             'role' => $role,
             'notify_by_email' => true,
             'is_name_public' => true,

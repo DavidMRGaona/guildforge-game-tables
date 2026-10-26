@@ -207,7 +207,7 @@ final class GameTableCalendarSourceTest extends TestCase
             new DateTimeImmutable('2026-09-30'),
         )[0]->details['meta'];
 
-        $players = array_values(array_filter($meta, fn (array $row): bool => $row['icon'] === 'users'))[0];
+        $players = array_first(array_filter($meta, fn (array $row): bool => $row['icon'] === 'users'));
 
         $this->assertSame('6/6 · '.__('game-tables::messages.enums.table_status.full'), $players['value']);
     }

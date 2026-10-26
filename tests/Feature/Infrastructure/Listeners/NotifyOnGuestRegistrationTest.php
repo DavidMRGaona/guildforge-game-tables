@@ -86,16 +86,12 @@ final class NotifyOnGuestRegistrationTest extends TestCase
 
         Notification::assertSentOnDemand(
             ParticipantRegisteredNotification::class,
-            function ($notification, $channels, $notifiable) {
-                return $notifiable->routes['mail'] === 'gm@example.com';
-            }
+            fn ($notification, $channels, $notifiable) => $notifiable->routes['mail'] === 'gm@example.com'
         );
 
         Notification::assertSentOnDemand(
             ParticipantRegisteredNotification::class,
-            function ($notification, $channels, $notifiable) {
-                return $notifiable->routes['mail'] === 'table@example.com';
-            }
+            fn ($notification, $channels, $notifiable) => $notifiable->routes['mail'] === 'table@example.com'
         );
     }
 

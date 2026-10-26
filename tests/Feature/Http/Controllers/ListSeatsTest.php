@@ -170,13 +170,13 @@ final class ListSeatsTest extends ModuleTestCase
 
         /** @var array<int, array<string, mixed>> $entries */
         $entries = $this->getJson('/eventos/calendario?'.$this->calendarRange())->assertOk()->json();
-        $entry = array_values(array_filter($entries, fn (array $item): bool => $item['id'] === $table->id))[0] ?? null;
+        $entry = array_first(array_filter($entries, fn (array $item): bool => $item['id'] === $table->id));
         $this->assertIsArray($entry);
         $this->assertSame($taken, $entry['currentPlayers']);
         $this->assertSame($full, $entry['isFull']);
         /** @var array<int, array{icon: string, label: string, value: string}> $meta */
         $meta = $entry['meta'];
-        $players = array_values(array_filter($meta, fn (array $row): bool => $row['icon'] === 'users'))[0] ?? null;
+        $players = array_first(array_filter($meta, fn (array $row): bool => $row['icon'] === 'users'));
         $this->assertIsArray($players);
         $this->assertStringStartsWith("{$taken}/{$table->max_players}", $players['value']);
 

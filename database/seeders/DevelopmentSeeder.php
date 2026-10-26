@@ -86,7 +86,7 @@ final class DevelopmentSeeder extends Seeder
         $vtm = GameSystemModel::where('slug', 'vtm-5e')->first();
         $user = $this->oldestUser();
 
-        if ($user === null || $dnd5e === null) {
+        if (! $user instanceof UserModel || $dnd5e === null) {
             return;
         }
 
@@ -148,7 +148,7 @@ final class DevelopmentSeeder extends Seeder
     private function seedCampaignGameMasters(CampaignModel $campaign): void
     {
         $user = $this->oldestUser();
-        if ($user === null) {
+        if (! $user instanceof UserModel) {
             return;
         }
 
@@ -179,7 +179,7 @@ final class DevelopmentSeeder extends Seeder
         $blades = GameSystemModel::where('slug', 'blades-in-the-dark')->first();
         $user = $this->oldestUser();
 
-        if ($user === null || $dnd5e === null) {
+        if (! $user instanceof UserModel || $dnd5e === null) {
             return;
         }
 
@@ -356,7 +356,7 @@ final class DevelopmentSeeder extends Seeder
             );
 
             $warningIds = array_filter($warnings);
-            if (! empty($warningIds)) {
+            if ($warningIds !== []) {
                 $table->contentWarnings()->syncWithoutDetaching($warningIds);
             }
 
@@ -375,7 +375,7 @@ final class DevelopmentSeeder extends Seeder
     private function seedGameMasters(GameTableModel $table): void
     {
         $user = $this->oldestUser();
-        if ($user === null) {
+        if (! $user instanceof UserModel) {
             return;
         }
 

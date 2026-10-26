@@ -288,7 +288,7 @@ final class CampaignJoinControllerTest extends ModuleTestCase
 
     private function assertJoinBox(?UserModel $user, string $state): void
     {
-        if ($user !== null) {
+        if ($user instanceof UserModel) {
             $this->actingAs($user);
         }
 

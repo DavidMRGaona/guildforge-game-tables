@@ -101,7 +101,7 @@ final class GuestSubmissionTest extends ModuleTestCase
                 && $event->email === 'invitada@example.test'
                 && $event->firstName === 'Invitada'
                 && $event->confirmationToken === $row->confirmation_token
-                && $event->holdsPlace === true
+                && $event->holdsPlace
                 && $event->deadline === '02/11/2026 12:00',
         );
         Event::assertNotDispatched(GuestRegistered::class);

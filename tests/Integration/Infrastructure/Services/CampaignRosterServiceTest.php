@@ -259,9 +259,9 @@ final class CampaignRosterServiceTest extends ModuleTestCase
     {
         $this->campaign->update(['roster_access' => 'members_only']);
         $johnId = $this->john->id;
-        $this->app->instance(MembershipCheckerInterface::class, new class($johnId) implements MembershipCheckerInterface
+        $this->app->instance(MembershipCheckerInterface::class, new readonly class($johnId) implements MembershipCheckerInterface
         {
-            public function __construct(private readonly string $memberId) {}
+            public function __construct(private string $memberId) {}
 
             public function isActiveMember(string $userId): bool
             {

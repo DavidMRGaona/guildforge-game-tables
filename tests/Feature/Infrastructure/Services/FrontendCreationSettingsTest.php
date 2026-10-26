@@ -127,9 +127,9 @@ final class FrontendCreationSettingsTest extends ModuleTestCase
             tableFormat: TableFormat::InPerson,
             minPlayers: 3,
             maxPlayers: 5,
+            eventId: $table->event_id,
             experienceLevel: ExperienceLevel::cases()[0],
             characterCreation: CharacterCreation::cases()[0],
-            eventId: $table->event_id,
         ));
     }
 
@@ -142,8 +142,6 @@ final class FrontendCreationSettingsTest extends ModuleTestCase
             schedulingMode: SchedulingMode::FreeSchedule,
             timeSlots: [],
             locationMode: LocationMode::FreeChoice,
-            fixedLocation: null,
-            eligibilityOverride: null,
         ));
 
         return $this->createFromTheWeb(new DateTimeImmutable($tableStart), $event->id);
@@ -169,9 +167,9 @@ final class FrontendCreationSettingsTest extends ModuleTestCase
             tableFormat: TableFormat::InPerson,
             minPlayers: 3,
             maxPlayers: 5,
+            eventId: $eventId,
             experienceLevel: ExperienceLevel::cases()[0],
             characterCreation: CharacterCreation::cases()[0],
-            eventId: $eventId,
         ));
 
         return GameTableModel::query()->findOrFail($created->id);

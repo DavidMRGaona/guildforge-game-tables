@@ -150,7 +150,7 @@ final class ClosedCampaignEligibilityTest extends ModuleTestCase
             'slug' => 'sesion-de-prueba-'.Str::lower(Str::random(6)),
             'starts_at' => CarbonImmutable::now()->addWeek(),
             'duration_minutes' => 240,
-            'table_type' => $campaign === null ? 'one_shot' : 'campaign_session',
+            'table_type' => $campaign instanceof CampaignModel ? 'campaign_session' : 'one_shot',
             'table_format' => 'in_person',
             'status' => 'scheduled',
             'min_players' => 1,

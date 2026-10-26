@@ -380,7 +380,7 @@ final class GuestConfirmationControllerTest extends ModuleTestCase
         // The organisation hears of the registration only once the email is confirmed
         Notification::assertSentTimes(ParticipantRegisteredNotification::class, 0);
 
-        $this->get((string) $url)->assertOk();
+        $this->get($url)->assertOk();
         $this->assertResult(
             $this->post(route('gametables.confirm-guest.store', $row->confirmation_token)),
             'success',

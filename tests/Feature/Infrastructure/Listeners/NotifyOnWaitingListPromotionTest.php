@@ -94,23 +94,17 @@ final class NotifyOnWaitingListPromotionTest extends TestCase
 
         Notification::assertSentOnDemand(
             WaitingListPromotionNotification::class,
-            function ($notification, $channels, $notifiable) {
-                return $notifiable->routes['mail'] === 'participant@example.com';
-            }
+            fn ($notification, $channels, $notifiable) => $notifiable->routes['mail'] === 'participant@example.com'
         );
 
         Notification::assertSentOnDemand(
             WaitingListPromotionGmNotification::class,
-            function ($notification, $channels, $notifiable) {
-                return $notifiable->routes['mail'] === 'gm@example.com';
-            }
+            fn ($notification, $channels, $notifiable) => $notifiable->routes['mail'] === 'gm@example.com'
         );
 
         Notification::assertSentOnDemand(
             WaitingListPromotionGmNotification::class,
-            function ($notification, $channels, $notifiable) {
-                return $notifiable->routes['mail'] === 'table@example.com';
-            }
+            fn ($notification, $channels, $notifiable) => $notifiable->routes['mail'] === 'table@example.com'
         );
     }
 
@@ -163,9 +157,7 @@ final class NotifyOnWaitingListPromotionTest extends TestCase
 
         Notification::assertSentOnDemand(
             WaitingListPromotionGmNotification::class,
-            function ($notification, $channels, $notifiable) {
-                return $notifiable->routes['mail'] === 'gm@example.com';
-            }
+            fn ($notification, $channels, $notifiable) => $notifiable->routes['mail'] === 'gm@example.com'
         );
     }
 

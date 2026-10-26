@@ -176,7 +176,6 @@ final class EligibilityOverrideTest extends TestCase
         $override = EligibilityOverride::create(
             accessLevel: CreationAccessLevel::Role,
             allowedRoles: ['editor'],
-            requiredPermission: null,
         );
 
         $array = $override->toArray();

@@ -57,7 +57,7 @@ final class CampaignDirectionTest extends ModuleTestCase
             'user_id' => $user?->id,
             'first_name' => 'GM',
             'last_name' => 'Externo',
-            'email' => $user === null ? 'external@example.com' : null,
+            'email' => $user instanceof UserModel ? null : 'external@example.com',
             'role' => GameMasterRole::Main,
             'notify_by_email' => $notify,
             'is_name_public' => true,

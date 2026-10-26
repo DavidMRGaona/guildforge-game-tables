@@ -486,10 +486,10 @@ final class RegistrationControllerTest extends ModuleTestCase
             userId: null,
             role: ParticipantRole::Player,
             status: $status,
+            createdAt: new DateTimeImmutable,
             firstName: 'Test',
             email: 'test@example.com',
             cancellationToken: bin2hex(random_bytes(32)),
-            createdAt: new DateTimeImmutable,
         );
 
         if ($status === ParticipantStatus::Confirmed) {

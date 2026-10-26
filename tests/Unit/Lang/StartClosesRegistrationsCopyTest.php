@@ -103,6 +103,6 @@ final class StartClosesRegistrationsCopyTest extends TestCase
         $keys = array_filter(array_keys($dotted), fn (string $key): bool => str_ends_with($key, $suffix));
         $this->assertCount(1, $keys, "exactly one {$suffix} key expected");
 
-        return (string) array_values($keys)[0];
+        return (string) array_first($keys);
     }
 }

@@ -14,7 +14,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class TableRegistrationsCopyTest extends TestCase
 {
-    private const MESSAGE_KEYS = [
+    private const array MESSAGE_KEYS = [
         'fields.delegates_registrations',
         'fields.delegates_registrations_help',
         'validation.delegated_directors_need_accounts',
@@ -38,7 +38,7 @@ final class TableRegistrationsCopyTest extends TestCase
         'seo.registrations_title',
     ];
 
-    private const EMAIL_KEYS = [
+    private const array EMAIL_KEYS = [
         'rejection.subject',
         'rejection.greeting',
         'rejection.intro',
@@ -51,7 +51,7 @@ final class TableRegistrationsCopyTest extends TestCase
         'registration.pending_intro',
     ];
 
-    private const LOCALE_KEYS = [
+    private const array LOCALE_KEYS = [
         'myTables.drafts',
         'myTables.published',
         'myTables.manageRegistrations',
@@ -76,7 +76,7 @@ final class TableRegistrationsCopyTest extends TestCase
         'registrations.seats',
     ];
 
-    private const SAMPLE_NAMES = ['John Doe', 'Jane Doe', 'Richard Roe', 'Mary Major'];
+    private const array SAMPLE_NAMES = ['John Doe', 'Jane Doe', 'Richard Roe', 'Mary Major'];
 
     /** @return array<string, mixed> */
     private function lang(string $locale, string $file): array

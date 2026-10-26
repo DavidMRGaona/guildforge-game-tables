@@ -74,11 +74,7 @@ final class EventTableCreationAccessTest extends ModuleTestCase
             schedulingMode: SchedulingMode::FreeSchedule,
             timeSlots: [],
             locationMode: LocationMode::FreeChoice,
-            fixedLocation: null,
-            eligibilityOverride: null,
             earlyAccessEnabled: false,
-            creationOpensAt: null,
-            earlyAccessTier: null,
         ));
     }
 }

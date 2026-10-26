@@ -14,11 +14,11 @@ use PHPUnit\Framework\TestCase;
  */
 final class FormErrorSummarySourceTest extends TestCase
 {
-    private const TABLE_PAGES = ['pages/GameTables/Create.vue', 'pages/GameTables/Edit.vue'];
+    private const array TABLE_PAGES = ['pages/GameTables/Create.vue', 'pages/GameTables/Edit.vue'];
 
-    private const CAMPAIGN_PAGES = ['pages/Campaigns/Create.vue', 'pages/Campaigns/Edit.vue'];
+    private const array CAMPAIGN_PAGES = ['pages/Campaigns/Create.vue', 'pages/Campaigns/Edit.vue'];
 
-    private const COMPOSABLE = 'composables/useFormErrorSummary.ts';
+    private const string COMPOSABLE = 'composables/useFormErrorSummary.ts';
 
     private function source(string $file): string
     {

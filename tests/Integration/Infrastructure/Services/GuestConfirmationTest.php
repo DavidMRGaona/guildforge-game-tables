@@ -95,7 +95,7 @@ final class GuestConfirmationTest extends ModuleTestCase
                 && $event->email === 'invitada@example.test'
                 && $event->cancellationToken === $row->cancellation_token
                 && $event->status === ParticipantStatus::Confirmed
-                && $event->notifyOrganization === true,
+                && $event->notifyOrganization,
         );
         Event::assertDispatched(ParticipantConfirmed::class, fn (ParticipantConfirmed $event): bool => $event->participantId === $guest->id && $event->automatic);
     }
@@ -131,7 +131,7 @@ final class GuestConfirmationTest extends ModuleTestCase
         Event::assertDispatchedTimes(GuestRegistrationExpired::class, 1);
         Event::assertDispatched(GuestRegistrationExpired::class, fn (GuestRegistrationExpired $event): bool => $event->participantId === $guest->id
             && $event->email === 'invitada@example.test'
-            && $event->notifyGuest === true);
+            && $event->notifyGuest);
     }
 
     public function test_an_overdue_link_gives_the_seat_to_the_waiting_list(): void
@@ -166,7 +166,7 @@ final class GuestConfirmationTest extends ModuleTestCase
         Event::assertNotDispatched(GuestRegistered::class);
         // The place was held: told as the expiry command would
         Event::assertDispatched(GuestRegistrationExpired::class, fn (GuestRegistrationExpired $event): bool => $event->participantId === $guest->id
-            && $event->notifyGuest === true);
+            && $event->notifyGuest);
     }
 
     public function test_an_unknown_or_cleared_token_is_invalid(): void

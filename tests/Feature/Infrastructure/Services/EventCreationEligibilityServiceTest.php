@@ -351,8 +351,6 @@ final class EventCreationEligibilityServiceTest extends TestCase
             schedulingMode: SchedulingMode::FreeSchedule,
             timeSlots: [],
             locationMode: LocationMode::FreeChoice,
-            fixedLocation: null,
-            eligibilityOverride: null,
             earlyAccessEnabled: $earlyAccessEnabled,
             creationOpensAt: $creationOpensAt,
             earlyAccessTier: $earlyAccessTier,

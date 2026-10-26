@@ -99,8 +99,8 @@ final class ParticipantStatusLogTest extends ModuleTestCase
             userId: null,
             role: ParticipantRole::Player,
             firstName: 'Jane',
-            email: 'jane@example.test',
             lastName: 'Roe',
+            email: 'jane@example.test',
         ));
 
         $rows = $this->rows();

@@ -14,7 +14,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class TableFormErrorsSourceTest extends TestCase
 {
-    private const PAGES = ['pages/GameTables/Create.vue', 'pages/GameTables/Edit.vue'];
+    private const array PAGES = ['pages/GameTables/Create.vue', 'pages/GameTables/Edit.vue'];
 
     private function source(string $file): string
     {

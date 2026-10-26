@@ -123,7 +123,7 @@ final class CampaignInvitationMailsTest extends ModuleTestCase
 
         Notification::assertSentOnDemand(CampaignInvitationNotification::class, function (CampaignInvitationNotification $notification): bool {
             $mail = $notification->toMail(new AnonymousNotifiable);
-            $text = implode("\n", array_map('strval', $mail->introLines))."\n".implode("\n", array_map('strval', $mail->outroLines));
+            $text = implode("\n", array_map(strval(...), $mail->introLines))."\n".implode("\n", array_map(strval(...), $mail->outroLines));
 
             return str_contains($text, 'Gremio de prueba')
                 && str_contains($text, 'tu email nos lo ha facilitado John Doe')
@@ -139,7 +139,7 @@ final class CampaignInvitationMailsTest extends ModuleTestCase
         $mail = (new CampaignInvitationNotification('John <b>Doe</b>', 'Campaña de prueba', 'campana-de-prueba', self::TOKEN, '04/11/2026'))
             ->toMail(new AnonymousNotifiable);
 
-        return implode("\n", array_map('strval', $mail->introLines))."\n".implode("\n", array_map('strval', $mail->outroLines));
+        return implode("\n", array_map(strval(...), $mail->introLines))."\n".implode("\n", array_map(strval(...), $mail->outroLines));
     }
 
     private function requireLegalNotices(): void
