@@ -16,6 +16,7 @@ use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
 use Modules\GameTables\Domain\Exceptions\NotEditableException;
 use Modules\GameTables\Domain\Exceptions\NotEligibleToCreateException;
 use Modules\GameTables\Domain\Exceptions\SessionBelowRosterException;
+use Modules\GameTables\Domain\Exceptions\TimeSlotUnavailableException;
 
 interface FrontendCreationServiceInterface
 {
@@ -103,6 +104,7 @@ interface FrontendCreationServiceInterface
      * @throws InvalidStatusTransitionException
      * @throws NotEligibleToCreateException when the author may not create it any more
      * @throws SessionBelowRosterException when it would be published at once
+     * @throws TimeSlotUnavailableException when a rejected table's time slot has no room left
      */
     public function submitForReview(string $tableId, string $userId): void;
 

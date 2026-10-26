@@ -35,21 +35,27 @@ final readonly class EventCreationContextDTO
         public ?int $earlyAccessDaysBefore = null,
     ) {}
 
+    /**
+     * @param  array<int, int|null>  $tablesLeft  tables each slot still takes, by slot position (null without a limit)
+     */
     public static function fromConfig(
         EventGameTableConfig $config,
         ?string $eventLocation = null,
         ?DateTimeImmutable $eventStartDate = null,
         ?DateTimeImmutable $eventEndDate = null,
+        array $tablesLeft = [],
     ): self {
         $timezone = app(TimezoneServiceInterface::class);
 
         $availableTimeSlots = array_map(
-            fn (TimeSlotDefinition $slot): array => [
+            fn (TimeSlotDefinition $slot, int $index): array => [
                 ...$slot->toArray(),
                 'start_time' => (string) $timezone->iso($slot->startTime),
                 'end_time' => (string) $timezone->iso($slot->endTime),
+                'available_slots' => $tablesLeft[$index] ?? null,
             ],
-            $config->timeSlots()
+            $config->timeSlots(),
+            array_keys($config->timeSlots()),
         );
 
         // Calculate early access dates

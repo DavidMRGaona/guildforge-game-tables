@@ -12,6 +12,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\Rule;
+use Modules\GameTables\Application\Services\EventGameTableConfigServiceInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Application\Support\FormDateTime;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
@@ -22,6 +23,7 @@ use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableType;
 use Modules\GameTables\Domain\Enums\Tone;
+use Modules\GameTables\Domain\Exceptions\TimeSlotUnavailableException;
 use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Http\Support\AuthorLockRedirect;
@@ -102,6 +104,35 @@ final class FrontendCreateGameTableRequest extends FormRequest
 
                     if ($startsAt instanceof DateTimeImmutable && $startsAt <= CarbonImmutable::now()) {
                         $fail(__('game-tables::messages.validation.starts_at_future'));
+                    }
+                },
+                // On an event scheduled by time slots, one of its slots with room, as the form
+                // offers them. The table being edited keeps the event and start it already has,
+                // even if an admin has changed the slots or lowered their limit since.
+                function (string $attribute, mixed $value, Closure $fail): void {
+                    $eventId = $this->input('event_id');
+
+                    // The event_id rule reports an event the form does not offer
+                    if (! is_string($value) || ! is_string($eventId) || ! in_array($eventId, $this->allowedEventIds(), true)) {
+                        return;
+                    }
+
+                    try {
+                        $startsAt = FormDateTime::read($value);
+                    } catch (Exception) {
+                        return;
+                    }
+
+                    $table = $this->editableTable();
+
+                    if ($table instanceof GameTableModel && $table->event_id === $eventId && $table->starts_at->getTimestamp() === $startsAt->getTimestamp()) {
+                        return;
+                    }
+
+                    try {
+                        app(EventGameTableConfigServiceInterface::class)->ensureSlotTakes($eventId, $startsAt, $table?->id);
+                    } catch (TimeSlotUnavailableException $e) {
+                        $fail($e->getMessage());
                     }
                 },
             ],

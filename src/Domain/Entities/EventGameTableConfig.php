@@ -84,6 +84,21 @@ final class EventGameTableConfig
     }
 
     /**
+     * The slot that starts at $startsAt, compared as an instant whatever zone either is written in;
+     * null when no slot starts then.
+     */
+    public function slotStartingAt(DateTimeImmutable $startsAt): ?TimeSlotDefinition
+    {
+        foreach ($this->timeSlots as $slot) {
+            if ($slot->startTime->getTimestamp() === $startsAt->getTimestamp()) {
+                return $slot;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Check if the user needs to input a location.
      */
     public function requiresLocationInput(): bool

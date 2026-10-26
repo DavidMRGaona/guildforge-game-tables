@@ -553,6 +553,15 @@ final class GameTable
     }
 
     /**
+     * Whether the table takes a place in its event's time slot: every table does but a cancelled
+     * one and a rejected one, which gets its place back only when it is sent again.
+     */
+    public function takesTimeSlotPlace(): bool
+    {
+        return $this->status !== TableStatus::Cancelled && $this->rejectionReason() === null;
+    }
+
+    /**
      * Why the table was rejected, while it is back in the author's hands; null otherwise. Only a
      * rejection leaves notes on a draft (submitting clears them, approval notes go with Approved).
      */
