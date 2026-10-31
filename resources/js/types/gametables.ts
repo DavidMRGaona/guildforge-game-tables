@@ -663,16 +663,16 @@ export interface TableRegistrationsPage {
     pending_count: number;
 }
 
-/** A survey of the table one person can reach, through the core's survey links contract */
-export interface TableSurveyLink {
+/** A survey of a table, session or campaign one person can reach, through the core's survey links contract */
+export interface SubjectSurveyLink {
     title: string;
     url: string;
     action: 'respond' | 'view_results';
 }
 
-/** The table's surveys for the person viewing it: null without a surveys module or nothing to link */
-export interface TableSurveyLinks {
-    /** The table's surveys page, for its directors */
+/** The subject's surveys for the person viewing it: null without a surveys module or nothing to link */
+export interface SubjectSurveyLinks {
+    /** The subject's surveys page, for its directors */
     manageUrl: string | null;
-    surveys: TableSurveyLink[];
+    surveys: SubjectSurveyLink[];
 }

@@ -3,10 +3,11 @@ import { Calendar, ChevronLeft, Clipboard, Clock, MapPin, TriangleAlert, User } 
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import type { GameTable, GameMaster, TableSurveyLinks } from '../../types/gametables';
+import type { GameTable, GameMaster, SubjectSurveyLinks } from '../../types/gametables';
 import type { CampaignSessionInfo } from '../../types/registration';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import CapacityBar from '../../components/CapacityBar.vue';
+import SurveyLinks from '../../components/SurveyLinks.vue';
 import FormatBadge from '../../components/FormatBadge.vue';
 import StatusBadge from '../../components/StatusBadge.vue';
 import ContentWarningBadge from '../../components/ContentWarningBadge.vue';
@@ -22,7 +23,7 @@ interface Props {
     /** A director of a table that delegates its registrations: offers «Gestionar inscritos» */
     canManageRegistrations?: boolean;
     /** Its surveys for this person, when a surveys module offers any */
-    surveyLinks?: TableSurveyLinks | null;
+    surveyLinks?: SubjectSurveyLinks | null;
 }
 
 const props = defineProps<Props>();
@@ -247,31 +248,15 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                         >
                             {{ t('gameTables.myTables.manageRegistrations') }}
                         </Link>
-                        <!-- Plain links: the surveys' pages belong to another module -->
-                        <a
-                            v-if="surveyLinks?.manageUrl"
-                            :href="surveyLinks.manageUrl"
-                            class="inline-flex min-h-[44px] items-center justify-center rounded-md border border-default px-4 py-2 text-sm font-medium text-base-primary transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
-                        >
-                            {{ t('gameTables.surveys.manage') }}
-                        </a>
-                        <a
-                            v-for="survey in surveyLinks?.surveys ?? []"
-                            :key="survey.url"
-                            :href="survey.url"
-                            class="inline-flex min-h-[44px] items-center justify-center rounded-md px-4 py-2 text-center text-sm font-medium break-words transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
-                            :class="
-                                survey.action === 'respond'
-                                    ? 'bg-primary text-white hover:bg-primary-700'
-                                    : 'border border-default text-base-primary hover:bg-muted'
+                        <SurveyLinks
+                            v-if="surveyLinks"
+                            :links="surveyLinks"
+                            :manage-label="
+                                table.campaignId
+                                    ? t('gameTables.surveys.manageSession')
+                                    : t('gameTables.surveys.manage')
                             "
-                        >
-                            {{
-                                survey.action === 'respond'
-                                    ? t('gameTables.surveys.respond', { title: survey.title })
-                                    : t('gameTables.surveys.results', { title: survey.title })
-                            }}
-                        </a>
+                        />
                     </div>
                 </div>
 

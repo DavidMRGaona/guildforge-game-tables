@@ -22,10 +22,14 @@ return [
 
     'surveys' => [
         'source_label' => 'Game table',
+        'campaign_session_label' => 'Campaign session',
+        'campaign_label' => 'Campaign',
         'attributes' => [
             'game_system' => 'Game system',
             'table_format' => 'Format',
             'table_type' => 'Table type',
+            'campaign' => 'Campaign',
+            'frequency' => 'Frequency',
         ],
     ],
 

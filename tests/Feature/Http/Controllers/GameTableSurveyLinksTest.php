@@ -98,7 +98,7 @@ final class GameTableSurveyLinksTest extends ModuleTestCase
         $this->assertSame([], $this->asked->getArrayCopy());
     }
 
-    public function test_a_campaign_session_is_not_asked_about(): void
+    public function test_a_campaign_session_is_asked_about_as_such(): void
     {
         $session = $this->table(['campaign_id' => CampaignModel::create([
             'id' => (string) Str::uuid(),
@@ -108,12 +108,13 @@ final class GameTableSurveyLinksTest extends ModuleTestCase
             'slug' => Str::random(10),
             'status' => 'recruiting',
         ])->id]);
-        $this->fakeLinks(new SurveySubjectLinksDTO(manageUrl: 'https://example.com/x'));
+        $user = UserModel::factory()->create();
+        $this->fakeLinks(new SurveySubjectLinksDTO(manageUrl: 'https://example.com/encuestas/sujeto/campaign-session/'.$session->id));
 
-        $this->actingAs(UserModel::factory()->create())->get(route('gametables.show', $session->slug))
-            ->assertInertia(fn (Assert $page) => $page->where('surveyLinks', null));
+        $this->actingAs($user)->get(route('gametables.show', $session->slug))
+            ->assertInertia(fn (Assert $page) => $page->where('surveyLinks.manageUrl', 'https://example.com/encuestas/sujeto/campaign-session/'.$session->id));
 
-        $this->assertSame([], $this->asked->getArrayCopy());
+        $this->assertSame([['campaign-session', $session->id, $user->id]], $this->asked->getArrayCopy());
     }
 
     private function fakeLinks(SurveySubjectLinksDTO $links): void

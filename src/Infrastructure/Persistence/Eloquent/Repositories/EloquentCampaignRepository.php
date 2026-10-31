@@ -48,7 +48,8 @@ final readonly class EloquentCampaignRepository implements CampaignRepositoryInt
 
     public function delete(CampaignId $id): void
     {
-        CampaignModel::query()->where('id', $id->value)->delete();
+        // Through the model, so its observers hear of it whatever path deletes a campaign
+        CampaignModel::query()->whereKey($id->value)->first()?->delete();
     }
 
     /**

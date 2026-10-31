@@ -30,10 +30,14 @@ return [
 
     'surveys' => [
         'source_label' => 'Mesa',
+        'campaign_session_label' => 'Sesión de campaña',
+        'campaign_label' => 'Campaña',
         'attributes' => [
             'game_system' => 'Sistema de juego',
             'table_format' => 'Formato',
             'table_type' => 'Tipo de mesa',
+            'campaign' => 'Campaña',
+            'frequency' => 'Frecuencia',
         ],
     ],
 

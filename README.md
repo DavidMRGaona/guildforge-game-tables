@@ -17,7 +17,7 @@ Módulo de GuildForge para gestionar mesas de rol y campañas: inscripciones de 
 - **Creación desde la web**: los usuarios crean mesas y campañas y las envían a revisión; quien puede moderarlas recibe un correo y las aprueba o rechaza desde el panel.
 - **Integración con eventos**: configuración de mesas por evento, enlace a las mesas del evento y botón para crear una mesa desde su página.
 - **Calendario**: vista `/mesas/calendario` y mesas en el calendario del core, cuya ficha muestra imagen, sinopsis, lugar, sistema, director, plazas y modalidad.
-- **Encuestas**: cada mesa suelta es un sujeto encuestable del core; con un módulo de encuestas instalado, su director prepara la encuesta, sale al terminar la mesa y la ficha lleva a ella (ver [Encuestas](#encuestas)).
+- **Encuestas**: las mesas sueltas, las sesiones de campaña y las campañas son sujetos encuestables del core; con un módulo de encuestas instalado, su director prepara la encuesta, sale al terminar y la ficha lleva a ella (ver [Encuestas](#encuestas)).
 - **Perfil**: pestañas con las mesas en las que participa el usuario, las que ha creado y sus campañas.
 - **Correos** de inscripción, confirmación, rechazo, lista de espera, cancelación y moderación.
 - **Zonas horarias**: las fechas se guardan en la zona de almacenamiento del sitio (UTC cuando el sitio lo usa) y todo lo que ve o escribe una persona (correos, panel, web, horas de los turnos de un evento) está en la zona de visualización del sitio (por defecto Europe/Madrid); los días (calendario del mes, acceso anticipado, plazos de invitación) son días de ese calendario.
@@ -214,16 +214,22 @@ Las mesas y campañas creadas desde el panel no tienen estado de moderación.
 
 ## Encuestas
 
-Las mesas sueltas son sujetos encuestables a través del contrato del core (`SurveySubjectSourceInterface`, tipo `game-table`). El módulo no depende de ningún módulo de encuestas: sin uno instalado, nada cambia.
+Las mesas sueltas, las sesiones de campaña y las campañas son sujetos encuestables a través del contrato del core (`SurveySubjectSourceInterface`), cada uno con su tipo: `game-table`, `campaign-session` y `campaign`. Así las sesiones no cuentan como mesas sueltas en las estadísticas, y cada tipo tiene su plantilla y su forma de envío en los ajustes del módulo de encuestas. El módulo no depende de ningún módulo de encuestas: sin uno instalado, nada cambia.
 
-- **De qué va la encuesta**: título, inicio y fin de la franja, directores y, para las estadísticas, el sistema de juego, el formato y el tipo de mesa. El módulo de encuestas guarda esos datos, así que siguen ahí aunque se borre la mesa.
-- **Quién la recibe**: los jugadores confirmados con cuenta (no las anonimizadas) y los invitados que confirmaron su correo. Los directores no la reciben, salvo que también se hayan apuntado como jugadores; tampoco los espectadores, los pendientes, la lista de espera ni los no presentados.
-- **Quién la gestiona**: los directores de la mesa, comprobado en el momento.
-- **Fin**: al completarse la mesa (botón **Completar** o cambio de estado automático) se avisa al módulo de encuestas, después de guardar. Si se completa tarde, el fin es el de la franja; si se completa antes, el momento de completarla.
-- **Cancelación**: al cancelar una mesa, o al borrarla antes de que termine, se avisa también, para que las encuestas preparadas para su final no se queden esperando.
-- **Ficha**: el director ve **Encuestas de la mesa** en cualquier estado de la mesa (desde ahí prepara la encuesta antes de que termine); cada jugador ve **Responder** mientras puede responder y **Resultados** cuando la encuesta los comparte con quien responde.
+| | Mesa suelta | Sesión de campaña | Campaña |
+|---|---|---|---|
+| **De qué va** | título, franja, directores; sistema, formato y tipo de mesa | lo mismo que la mesa, más el título de la campaña | título, de la primera a la última sesión (sin borradores ni canceladas), directores; sistema y frecuencia |
+| **Quién la recibe** | los jugadores confirmados con cuenta (no las anonimizadas) y los invitados que confirmaron su correo | igual que la mesa | el plantel (no las cuentas anonimizadas) |
+| **Quién la gestiona** | los directores de la mesa | los directores de la sesión (los de la campaña que hereda y los suyos) | los directores de la campaña |
+| **Fin** | al completarse | al completarse | al pasar a **Completada** |
 
-Las sesiones de campaña no cuentan como mesas sueltas: no son sujeto de este tipo ni avisan al módulo de encuestas.
+- **Datos guardados**: el módulo de encuestas guarda lo que dice «De qué va», así que sigue ahí aunque se borre la mesa o la campaña.
+- **Organizadores**: los directores no reciben la encuesta salvo que también hayan jugado (mesa y sesión) o estén en el plantel (campaña). Tampoco la reciben los espectadores, los pendientes, la lista de espera ni los no presentados. Quién gestiona se comprueba en el momento.
+- **Fin de mesas y sesiones**: con el botón **Completar**, el estado del formulario del panel o el cambio de estado automático se avisa al módulo de encuestas, después de guardar. Si se completa tarde, el fin es el de la franja; si se completa antes, el momento de completarla.
+- **Fin de la campaña**: el cambio de estado en el panel avisa al guardar, y el módulo despacha además su evento `CampaignStatusChanged`. Reabrirla y volver a completarla no envía otra encuesta.
+- **Cancelación**: se avisa también al cancelar una mesa, una sesión o una campaña, o al borrarlas antes de que terminen, para que las encuestas preparadas para su final no se queden esperando. Al borrar una campaña, sus sesiones pendientes también se dan por canceladas, aunque queden como mesas sueltas.
+- **Envío**: por defecto, todo va a un clic (el director recibe el aviso al terminar) hasta que se active el envío automático del tipo en los ajustes de encuestas. Es lo recomendable para las sesiones, para no saturar a los jugadores.
+- **Fichas**: el director ve **Encuestas de la mesa**, **Encuestas de la sesión** o **Encuestas de la campaña** en cualquier estado (desde ahí prepara la encuesta antes de que termine). Cada persona que la recibió ve **Responder** mientras puede responder y **Resultados** cuando la encuesta los comparte con quien responde.
 
 ## Creación desde la web
 

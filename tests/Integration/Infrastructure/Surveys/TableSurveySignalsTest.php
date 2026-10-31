@@ -24,7 +24,8 @@ use Tests\Support\Modules\ModuleTestCase;
 
 /**
  * What a table tells the surveys module (through the core's events) when it ends, is cancelled
- * or is deleted before it ended. Campaign sessions say nothing: they are another kind of subject.
+ * or is deleted before it ended: as a table on its own or, for a campaign session, as a subject
+ * of that other kind.
  */
 final class TableSurveySignalsTest extends ModuleTestCase
 {
@@ -106,17 +107,91 @@ final class TableSurveySignalsTest extends ModuleTestCase
         Event::assertNotDispatched(SurveySubjectEnded::class);
     }
 
-    public function test_campaign_sessions_announce_nothing_to_surveys(): void
+    public function test_completing_a_session_announces_a_campaign_session_end(): void
     {
         $session = $this->table(TableStatus::InProgress, campaign: true);
-        $other = $this->table(TableStatus::Scheduled, campaign: true);
+        $this->travelTo(new DateTimeImmutable('2030-03-10T23:30:00+00:00'));
 
         $this->service->complete($session->id);
-        $this->service->cancel($other->id);
-        $this->service->delete($this->table(TableStatus::Scheduled, campaign: true)->id);
+
+        Event::assertDispatchedTimes(SurveySubjectEnded::class, 1);
+        Event::assertDispatched(SurveySubjectEnded::class, fn (SurveySubjectEnded $event): bool => $event->sourceType === 'campaign-session'
+            && $event->subjectId === $session->id
+            && $event->endedAt == new DateTimeImmutable('2030-03-10T22:00:00+00:00'));
+    }
+
+    public function test_cancelling_a_session_announces_its_cancellation(): void
+    {
+        $session = $this->table(TableStatus::Scheduled, campaign: true);
+
+        $this->service->cancel($session->id);
+
+        Event::assertDispatchedTimes(SurveySubjectCancelled::class, 1);
+        Event::assertDispatched(SurveySubjectCancelled::class, fn (SurveySubjectCancelled $event): bool => $event->sourceType === 'campaign-session'
+            && $event->subjectId === $session->id);
+    }
+
+    public function test_deleting_an_unfinished_session_announces_its_cancellation(): void
+    {
+        $session = $this->table(TableStatus::Scheduled, campaign: true);
+
+        $this->service->delete($session->id);
+        $this->service->delete($this->table(TableStatus::Completed, campaign: true)->id);
+
+        Event::assertDispatchedTimes(SurveySubjectCancelled::class, 1);
+        Event::assertDispatched(SurveySubjectCancelled::class, fn (SurveySubjectCancelled $event): bool => $event->sourceType === 'campaign-session'
+            && $event->subjectId === $session->id);
+    }
+
+    public function test_changing_the_status_to_completed_from_the_panel_announces_the_end_once(): void
+    {
+        $table = $this->table(TableStatus::InProgress);
+        $session = $this->table(TableStatus::InProgress, campaign: true);
+        $this->travelTo(new DateTimeImmutable('2030-03-10T20:00:00+00:00'));
+
+        $this->service->changeStatus($table->id, TableStatus::Completed);
+        $this->service->changeStatus($session->id, TableStatus::Completed);
+
+        Event::assertDispatchedTimes(SurveySubjectEnded::class, 2);
+        Event::assertDispatched(SurveySubjectEnded::class, fn (SurveySubjectEnded $event): bool => $event->sourceType === 'game-table'
+            && $event->subjectId === $table->id
+            && $event->endedAt == new DateTimeImmutable('2030-03-10T20:00:00+00:00'));
+        Event::assertDispatched(SurveySubjectEnded::class, fn (SurveySubjectEnded $event): bool => $event->sourceType === 'campaign-session'
+            && $event->subjectId === $session->id);
+    }
+
+    public function test_changing_the_status_to_cancelled_from_the_panel_announces_the_cancellation(): void
+    {
+        $table = $this->table(TableStatus::Scheduled);
+
+        $this->service->changeStatus($table->id, TableStatus::Cancelled);
+
+        Event::assertDispatchedTimes(SurveySubjectCancelled::class, 1);
+        Event::assertDispatched(SurveySubjectCancelled::class, fn (SurveySubjectCancelled $event): bool => $event->sourceType === 'game-table'
+            && $event->subjectId === $table->id);
+    }
+
+    public function test_changing_to_another_status_announces_nothing(): void
+    {
+        $this->service->changeStatus($this->table(TableStatus::Scheduled)->id, TableStatus::InProgress);
+        $this->service->changeStatus($this->table(TableStatus::Draft, campaign: true)->id, TableStatus::Scheduled);
 
         Event::assertNotDispatched(SurveySubjectEnded::class);
         Event::assertNotDispatched(SurveySubjectCancelled::class);
+    }
+
+    public function test_a_refused_status_change_announces_nothing(): void
+    {
+        $table = $this->table(TableStatus::Cancelled);
+
+        try {
+            $this->service->changeStatus($table->id, TableStatus::Completed);
+            $this->fail('A cancelled table was completed');
+        } catch (InvalidStatusTransitionException) {
+            // expected
+        }
+
+        Event::assertNotDispatched(SurveySubjectEnded::class);
     }
 
     public function test_cancelling_announces_the_subject_will_never_end(): void
