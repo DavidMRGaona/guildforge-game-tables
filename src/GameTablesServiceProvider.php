@@ -17,6 +17,7 @@ use App\Application\Modules\DTOs\SlotRegistrationDTO;
 use App\Application\Services\EventQueryServiceInterface;
 use App\Application\Services\SiteBrandingServiceInterface;
 use App\Application\Services\TimezoneServiceInterface;
+use App\Application\Surveys\Contracts\SurveySubjectSourceInterface;
 use App\Filament\Resources\EventResource;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
@@ -160,6 +161,7 @@ use Modules\GameTables\Infrastructure\Services\RegistrationService;
 use Modules\GameTables\Infrastructure\Services\TableDirection;
 use Modules\GameTables\Infrastructure\Services\TableRegistrationsQuery;
 use Modules\GameTables\Infrastructure\Services\UserModelAccountLookup;
+use Modules\GameTables\Infrastructure\Surveys\GameTableSurveySubjectSource;
 use Modules\GameTables\Listeners\NotifyAdminsOnCampaignModerationSubmission;
 use Modules\GameTables\Listeners\NotifyAdminsOnModerationSubmission;
 use Modules\GameTables\Listeners\NotifyDirectionOfInvitationAccepted;
@@ -1324,6 +1326,19 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     {
         return [
             GameTableCalendarSource::class,
+        ];
+    }
+
+    /**
+     * Tables on their own as survey subjects (core contract): asked only when a surveys module
+     * is installed.
+     *
+     * @return array<class-string<SurveySubjectSourceInterface>>
+     */
+    public function registerSurveySubjectSources(): array
+    {
+        return [
+            GameTableSurveySubjectSource::class,
         ];
     }
 

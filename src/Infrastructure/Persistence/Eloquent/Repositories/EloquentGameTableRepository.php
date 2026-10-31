@@ -82,7 +82,8 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
 
     public function delete(GameTableId $id): void
     {
-        GameTableModel::query()->where('id', $id->value)->delete();
+        // Through the model, so its observers hear of it whatever path deletes a table
+        GameTableModel::query()->whereKey($id->value)->first()?->delete();
     }
 
     /**

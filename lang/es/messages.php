@@ -28,6 +28,15 @@ return [
         'campaigns' => 'Campañas',
     ],
 
+    'surveys' => [
+        'source_label' => 'Mesa',
+        'attributes' => [
+            'game_system' => 'Sistema de juego',
+            'table_format' => 'Formato',
+            'table_type' => 'Tipo de mesa',
+        ],
+    ],
+
     'calendar' => [
         'source_label' => 'Partidas',
         'meta' => [

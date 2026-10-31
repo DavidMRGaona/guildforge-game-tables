@@ -3,7 +3,7 @@ import { Calendar, ChevronLeft, Clipboard, Clock, MapPin, TriangleAlert, User } 
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import type { GameTable, GameMaster } from '../../types/gametables';
+import type { GameTable, GameMaster, TableSurveyLinks } from '../../types/gametables';
 import type { CampaignSessionInfo } from '../../types/registration';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import CapacityBar from '../../components/CapacityBar.vue';
@@ -21,6 +21,8 @@ interface Props {
     campaignSession?: CampaignSessionInfo | null;
     /** A director of a table that delegates its registrations: offers «Gestionar inscritos» */
     canManageRegistrations?: boolean;
+    /** Its surveys for this person, when a surveys module offers any */
+    surveyLinks?: TableSurveyLinks | null;
 }
 
 const props = defineProps<Props>();
@@ -234,13 +236,43 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                         {{ table.gameSystemName }}
                     </p>
 
-                    <Link
-                        v-if="canManageRegistrations"
-                        :href="`/mesas/mis-mesas/${table.slug}/inscritos`"
-                        class="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-md border border-default px-4 py-2 text-sm font-medium text-base-primary transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
+                    <div
+                        v-if="canManageRegistrations || surveyLinks"
+                        class="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap"
                     >
-                        {{ t('gameTables.myTables.manageRegistrations') }}
-                    </Link>
+                        <Link
+                            v-if="canManageRegistrations"
+                            :href="`/mesas/mis-mesas/${table.slug}/inscritos`"
+                            class="inline-flex min-h-[44px] items-center justify-center rounded-md border border-default px-4 py-2 text-sm font-medium text-base-primary transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
+                        >
+                            {{ t('gameTables.myTables.manageRegistrations') }}
+                        </Link>
+                        <!-- Plain links: the surveys' pages belong to another module -->
+                        <a
+                            v-if="surveyLinks?.manageUrl"
+                            :href="surveyLinks.manageUrl"
+                            class="inline-flex min-h-[44px] items-center justify-center rounded-md border border-default px-4 py-2 text-sm font-medium text-base-primary transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
+                        >
+                            {{ t('gameTables.surveys.manage') }}
+                        </a>
+                        <a
+                            v-for="survey in surveyLinks?.surveys ?? []"
+                            :key="survey.url"
+                            :href="survey.url"
+                            class="inline-flex min-h-[44px] items-center justify-center rounded-md px-4 py-2 text-center text-sm font-medium break-words transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
+                            :class="
+                                survey.action === 'respond'
+                                    ? 'bg-primary text-white hover:bg-primary-700'
+                                    : 'border border-default text-base-primary hover:bg-muted'
+                            "
+                        >
+                            {{
+                                survey.action === 'respond'
+                                    ? t('gameTables.surveys.respond', { title: survey.title })
+                                    : t('gameTables.surveys.results', { title: survey.title })
+                            }}
+                        </a>
+                    </div>
                 </div>
 
                 <!-- Section 2: Key Information -->

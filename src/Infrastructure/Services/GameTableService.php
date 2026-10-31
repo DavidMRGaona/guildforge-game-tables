@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Services;
 
+use App\Domain\Surveys\Events\SurveySubjectCancelled;
+use App\Domain\Surveys\Events\SurveySubjectEnded;
+use Illuminate\Support\Facades\DB;
 use Modules\GameTables\Application\DTOs\CreateGameTableDTO;
 use Modules\GameTables\Application\DTOs\GameTableListDTO;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
@@ -24,6 +27,7 @@ use Modules\GameTables\Domain\ValueObjects\GameSystemId;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Domain\ValueObjects\TimeSlot;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
+use Modules\GameTables\Infrastructure\Surveys\GameTableSurveySubjectSource;
 
 final readonly class GameTableService implements GameTableServiceInterface
 {
@@ -202,6 +206,7 @@ final readonly class GameTableService implements GameTableServiceInterface
         $this->gameTableRepository->saveIfStatusIs($gameTable, $readStatus);
 
         GameTableCompleted::dispatch($gameTable->id->value, $gameTable->title);
+        $this->announceEndToSurveys($gameTable);
 
         return GameTableResponseDTO::fromEntity($gameTable);
     }
@@ -215,8 +220,38 @@ final readonly class GameTableService implements GameTableServiceInterface
         $this->gameTableRepository->saveIfStatusIs($gameTable, $readStatus);
 
         GameTableCancelled::dispatch($gameTable->id->value, $gameTable->title, $gameTable->timeSlot->startsAt);
+        $this->announceCancellationToSurveys($gameTable);
 
         return GameTableResponseDTO::fromEntity($gameTable);
+    }
+
+    /**
+     * Tells a surveys module, if any, that the table ended (core event, after the commit): when
+     * the director completes it early, now; when it is completed late (the automatic update may
+     * run behind), the end of its slot. Campaign sessions are another kind of subject.
+     */
+    private function announceEndToSurveys(GameTable $gameTable): void
+    {
+        if ($gameTable->campaignId instanceof CampaignId) {
+            return;
+        }
+
+        $now = now()->toDateTimeImmutable();
+        $slotEnd = $gameTable->timeSlot->endsAt();
+        $endedAt = $slotEnd < $now ? $slotEnd : $now;
+
+        DB::afterCommit(static fn () => event(new SurveySubjectEnded(GameTableSurveySubjectSource::TYPE, $gameTable->id->value, $endedAt)));
+    }
+
+    private function announceCancellationToSurveys(GameTable $gameTable): void
+    {
+        if ($gameTable->campaignId instanceof CampaignId) {
+            return;
+        }
+
+        $cancelledAt = now()->toDateTimeImmutable();
+
+        DB::afterCommit(static fn () => event(new SurveySubjectCancelled(GameTableSurveySubjectSource::TYPE, $gameTable->id->value, $cancelledAt)));
     }
 
     public function changeStatus(string $id, TableStatus $status): GameTableResponseDTO
