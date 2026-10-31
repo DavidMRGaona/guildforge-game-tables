@@ -9,6 +9,8 @@ use App\Application\Seo\DTOs\SeoScheduleDTO;
 use App\Application\Seo\Services\SeoMetadataFactoryInterface;
 use App\Application\Services\SlugRedirectServiceInterface;
 use App\Application\Services\TimezoneServiceInterface;
+use App\Application\Surveys\Contracts\SurveySubjectLinksInterface;
+use App\Application\Surveys\DTOs\SurveyLinkDTO;
 use App\Http\Concerns\BuildsPaginatedResponse;
 use App\Http\Controllers\Controller;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
@@ -37,6 +39,7 @@ use Modules\GameTables\Http\Resources\GameTableResource;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Services\GuestConfirmationPolicy;
 use Modules\GameTables\Infrastructure\Services\SeatCounter;
+use Modules\GameTables\Infrastructure\Surveys\GameTableSurveySubjectSource;
 
 final class GameTableController extends Controller
 {
@@ -55,6 +58,7 @@ final class GameTableController extends Controller
         private readonly GameTableRepositoryInterface $gameTableRepository,
         private readonly GuestConfirmationPolicy $guestConfirmationPolicy,
         private readonly CampaignRosterQueryInterface $rosterQuery,
+        private readonly SurveySubjectLinksInterface $surveyLinks,
     ) {}
 
     public function index(Request $request): Response
@@ -252,8 +256,37 @@ final class GameTableController extends Controller
                 && Gate::forUser($user)->allows('manageRegistrations', GameTableModel::query()->findOrFail($table->id)),
             // A campaign session: whether it is closed to outsiders and where a roster member stands
             'campaignSession' => $this->rosterQuery->sessionBox($table->id, $user !== null ? (string) $user->id : null, $now)?->toArray(),
+            // Its surveys, through the core: a surveys module answers, and without one nothing shows
+            'surveyLinks' => $user instanceof UserModel ? $this->surveyLinksFor($table, (string) $user->id) : null,
             'seo' => $this->tableSeo($table),
         ]);
+    }
+
+    /**
+     * What the person reaches from the page: the table's surveys page when they direct it, and
+     * the surveys sent to them. Campaign sessions are not offered as tables.
+     *
+     * @return array{manageUrl: string|null, surveys: list<array{title: string, url: string, action: string}>}|null
+     */
+    private function surveyLinksFor(GameTableResponseDTO $table, string $userId): ?array
+    {
+        if ($table->campaignId !== null) {
+            return null;
+        }
+
+        $links = $this->surveyLinks->forSubject(GameTableSurveySubjectSource::TYPE, $table->id, $userId);
+        if ($links->isEmpty()) {
+            return null;
+        }
+
+        return [
+            'manageUrl' => $links->manageUrl,
+            'surveys' => array_map(static fn (SurveyLinkDTO $link): array => [
+                'title' => $link->title,
+                'url' => $link->url,
+                'action' => $link->action->value,
+            ], $links->surveys),
+        ];
     }
 
     /**

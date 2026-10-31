@@ -17,6 +17,7 @@ Módulo de GuildForge para gestionar mesas de rol y campañas: inscripciones de 
 - **Creación desde la web**: los usuarios crean mesas y campañas y las envían a revisión; quien puede moderarlas recibe un correo y las aprueba o rechaza desde el panel.
 - **Integración con eventos**: configuración de mesas por evento, enlace a las mesas del evento y botón para crear una mesa desde su página.
 - **Calendario**: vista `/mesas/calendario` y mesas en el calendario del core, cuya ficha muestra imagen, sinopsis, lugar, sistema, director, plazas y modalidad.
+- **Encuestas**: cada mesa suelta es un sujeto encuestable del core; con un módulo de encuestas instalado, su director prepara la encuesta, sale al terminar la mesa y la ficha lleva a ella (ver [Encuestas](#encuestas)).
 - **Perfil**: pestañas con las mesas en las que participa el usuario, las que ha creado y sus campañas.
 - **Correos** de inscripción, confirmación, rechazo, lista de espera, cancelación y moderación.
 - **Zonas horarias**: las fechas se guardan en la zona de almacenamiento del sitio (UTC cuando el sitio lo usa) y todo lo que ve o escribe una persona (correos, panel, web, horas de los turnos de un evento) está en la zona de visualización del sitio (por defecto Europe/Madrid); los días (calendario del mes, acceso anticipado, plazos de invitación) son días de ese calendario.
@@ -210,6 +211,19 @@ Un invitado se inscribe con nombre, email y consentimiento, y su inscripción qu
 | Rechazada | `rejected` | Solo en filas rechazadas antes de la versión 2.10.0; se trata como un borrador hasta que se convierte |
 
 Las mesas y campañas creadas desde el panel no tienen estado de moderación.
+
+## Encuestas
+
+Las mesas sueltas son sujetos encuestables a través del contrato del core (`SurveySubjectSourceInterface`, tipo `game-table`). El módulo no depende de ningún módulo de encuestas: sin uno instalado, nada cambia.
+
+- **De qué va la encuesta**: título, inicio y fin de la franja, directores y, para las estadísticas, el sistema de juego, el formato y el tipo de mesa. El módulo de encuestas guarda esos datos, así que siguen ahí aunque se borre la mesa.
+- **Quién la recibe**: los jugadores confirmados con cuenta (no las anonimizadas) y los invitados que confirmaron su correo. Los directores no la reciben, salvo que también se hayan apuntado como jugadores; tampoco los espectadores, los pendientes, la lista de espera ni los no presentados.
+- **Quién la gestiona**: los directores de la mesa, comprobado en el momento.
+- **Fin**: al completarse la mesa (botón **Completar** o cambio de estado automático) se avisa al módulo de encuestas, después de guardar. Si se completa tarde, el fin es el de la franja; si se completa antes, el momento de completarla.
+- **Cancelación**: al cancelar una mesa, o al borrarla antes de que termine, se avisa también, para que las encuestas preparadas para su final no se queden esperando.
+- **Ficha**: el director ve **Encuestas de la mesa** en cualquier estado de la mesa (desde ahí prepara la encuesta antes de que termine); cada jugador ve **Responder** mientras puede responder y **Resultados** cuando la encuesta los comparte con quien responde.
+
+Las sesiones de campaña no cuentan como mesas sueltas: no son sujeto de este tipo ni avisan al módulo de encuestas.
 
 ## Creación desde la web
 

@@ -290,6 +290,12 @@ export default {
                 players: 'players',
             },
         },
+        surveys: {
+            heading: 'Surveys',
+            manage: 'Table surveys',
+            respond: 'Answer “{title}”',
+            results: 'Results of “{title}”',
+        },
         myTables: {
             title: 'My tables',
             subtitle: 'Manage your game tables',

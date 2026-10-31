@@ -71,7 +71,7 @@ final class GameTableSurveySubjectSourceTest extends ModuleTestCase
         $this->assertSame('Sistema de ejemplo', $subject->attribute('game_system')?->value);
         $this->assertSame(__('game-tables::messages.enums.table_format.online'), $subject->attribute('table_format')?->value);
         $this->assertSame(__('game-tables::messages.enums.table_type.one_shot'), $subject->attribute('table_type')?->value);
-        $this->assertSame(__('game-tables::messages.surveys.attributes.game_system'), $subject->attribute('game_system')?->label);
+        $this->assertSame(__('game-tables::messages.surveys.attributes.game_system'), $subject->attribute('game_system')->label);
         $this->assertSame(SurveySubjectStatus::Active, $subject->status);
     }
 

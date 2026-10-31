@@ -289,6 +289,12 @@ export default {
                 players: 'jugadores',
             },
         },
+        surveys: {
+            heading: 'Encuestas',
+            manage: 'Encuestas de la mesa',
+            respond: 'Responder «{title}»',
+            results: 'Resultados de «{title}»',
+        },
         myTables: {
             title: 'Mis mesas',
             subtitle: 'Administra tus mesas de juego',

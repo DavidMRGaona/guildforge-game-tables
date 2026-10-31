@@ -232,7 +232,7 @@ final readonly class GameTableService implements GameTableServiceInterface
      */
     private function announceEndToSurveys(GameTable $gameTable): void
     {
-        if ($gameTable->campaignId !== null) {
+        if ($gameTable->campaignId instanceof CampaignId) {
             return;
         }
 
@@ -245,7 +245,7 @@ final readonly class GameTableService implements GameTableServiceInterface
 
     private function announceCancellationToSurveys(GameTable $gameTable): void
     {
-        if ($gameTable->campaignId !== null) {
+        if ($gameTable->campaignId instanceof CampaignId) {
             return;
         }
 

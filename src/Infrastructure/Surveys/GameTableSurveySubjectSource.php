@@ -20,6 +20,7 @@ use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Repositories\GameSystemRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
+use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
 
 /**
@@ -105,7 +106,7 @@ final readonly class GameTableSurveySubjectSource implements SurveySubjectSource
                     displayName: self::guestName($guest),
                     email: (string) $guest->email,
                 ),
-                array_filter($players, static fn (Participant $player): bool => self::isReachableGuest($player)),
+                array_filter($players, $this->isReachableGuest(...)),
             )),
         );
     }
@@ -128,14 +129,14 @@ final readonly class GameTableSurveySubjectSource implements SurveySubjectSource
 
         $table = $this->tables->find(new GameTableId($subjectId));
 
-        return $table instanceof GameTable && $table->campaignId === null ? $table : null;
+        return $table instanceof GameTable && ! $table->campaignId instanceof CampaignId ? $table : null;
     }
 
     /**
      * A guest the survey can reach: no account, and an email they confirmed that is a valid
      * address (an invalid one would make the whole audience fail).
      */
-    private static function isReachableGuest(Participant $player): bool
+    private function isReachableGuest(Participant $player): bool
     {
         return $player->userId === null
             && $player->emailConfirmedAt instanceof \DateTimeImmutable

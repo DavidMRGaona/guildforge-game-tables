@@ -662,3 +662,17 @@ export interface TableRegistrationsPage {
     rows: TableRegistrationRow[];
     pending_count: number;
 }
+
+/** A survey of the table one person can reach, through the core's survey links contract */
+export interface TableSurveyLink {
+    title: string;
+    url: string;
+    action: 'respond' | 'view_results';
+}
+
+/** The table's surveys for the person viewing it: null without a surveys module or nothing to link */
+export interface TableSurveyLinks {
+    /** The table's surveys page, for its directors */
+    manageUrl: string | null;
+    surveys: TableSurveyLink[];
+}
