@@ -24,7 +24,7 @@ Módulo de GuildForge para gestionar mesas de rol y campañas: inscripciones de 
 
 ## Requisitos
 
-- GuildForge core `^3.22` (almacenamiento de fechas en UTC y zona horaria de visualización; antes, pestañas del perfil que se ocultan, avisos legales editables de los correos y si la cuenta debe verificar su email; ver [Verificación de email](#verificación-de-email))
+- GuildForge core `^3.29` (contrato de encuestas: sujetos encuestables, enlaces desde la ficha y aviso de cancelación; antes, almacenamiento de fechas en UTC y zona horaria de visualización, pestañas del perfil que se ocultan, avisos legales editables de los correos y si la cuenta debe verificar su email; ver [Verificación de email](#verificación-de-email))
 - PHP >= 8.5, Laravel >= 13, Filament 5
 
 El core rechaza el módulo si no se cumplen (`module.json` → `requires`).
