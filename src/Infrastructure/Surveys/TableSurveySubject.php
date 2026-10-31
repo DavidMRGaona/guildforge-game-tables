@@ -49,6 +49,14 @@ final readonly class TableSurveySubject
         );
     }
 
+    /**
+     * The kind of subject a table is: a campaign session or a table on its own.
+     */
+    public static function sourceType(bool $inCampaign): string
+    {
+        return $inCampaign ? CampaignSessionSurveySubjectSource::TYPE : GameTableSurveySubjectSource::TYPE;
+    }
+
     public static function status(TableStatus $status): SurveySubjectStatus
     {
         return match ($status) {
