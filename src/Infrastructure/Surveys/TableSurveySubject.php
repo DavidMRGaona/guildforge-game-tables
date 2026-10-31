@@ -44,7 +44,7 @@ final readonly class TableSurveySubject
                     displayName: self::guestName($guest),
                     email: (string) $guest->email,
                 ),
-                array_filter($players, self::isReachableGuest(...)),
+                array_filter($players, $this->isReachableGuest(...)),
             )),
         );
     }
@@ -70,7 +70,7 @@ final readonly class TableSurveySubject
      * A guest the survey can reach: no account, and an email they confirmed that is a valid
      * address (an invalid one would make the whole audience fail).
      */
-    private static function isReachableGuest(Participant $player): bool
+    private function isReachableGuest(Participant $player): bool
     {
         return $player->userId === null
             && $player->emailConfirmedAt instanceof \DateTimeImmutable

@@ -293,6 +293,8 @@ export default {
         surveys: {
             heading: 'Surveys',
             manage: 'Table surveys',
+            manageSession: 'Session surveys',
+            manageCampaign: 'Campaign surveys',
             respond: 'Answer “{title}”',
             results: 'Results of “{title}”',
         },

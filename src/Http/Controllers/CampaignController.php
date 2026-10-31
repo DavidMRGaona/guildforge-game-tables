@@ -19,6 +19,8 @@ use Modules\GameTables\Application\Services\CampaignQueryServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterQueryInterface;
 use Modules\GameTables\Http\Concerns\ReadsListFilters;
 use Modules\GameTables\Http\Resources\CampaignResource;
+use Modules\GameTables\Http\Support\SubjectSurveyLinks;
+use Modules\GameTables\Infrastructure\Surveys\CampaignSurveySubjectSource;
 
 final class CampaignController extends Controller
 {
@@ -32,6 +34,7 @@ final class CampaignController extends Controller
         private readonly SlugRedirectServiceInterface $slugRedirectService,
         private readonly SeoMetadataFactoryInterface $seo,
         private readonly CampaignRosterQueryInterface $rosterQuery,
+        private readonly SubjectSurveyLinks $surveyLinks,
     ) {}
 
     public function index(Request $request): Response
@@ -87,6 +90,10 @@ final class CampaignController extends Controller
                 'campaign' => CampaignResource::make($campaign)->resolve(),
                 // What the viewer can do with the roster: ask to join, withdraw, leave or manage it
                 'joinBox' => $this->rosterQuery->joinBox($campaign->id, auth()->id() !== null ? (string) auth()->id() : null)->toArray(),
+                // Its surveys, through the core: a surveys module answers, and without one nothing shows
+                'surveyLinks' => auth()->id() !== null
+                    ? $this->surveyLinks->for(CampaignSurveySubjectSource::TYPE, $campaign->id, (string) auth()->id())
+                    : null,
                 'seo' => $this->seo->forPage(new SeoPageDTO(
                     title: $campaign->title,
                     description: $campaign->description,

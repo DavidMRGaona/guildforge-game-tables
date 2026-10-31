@@ -3,7 +3,7 @@ import { Calendar, ChevronLeft, Clock, User } from '@lucide/vue';
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import type { Campaign, JoinBox } from '../../types/gametables';
+import type { Campaign, JoinBox, SubjectSurveyLinks } from '../../types/gametables';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import StatusBadge from '../../components/StatusBadge.vue';
 import SafetyToolBadge from '../../components/SafetyToolBadge.vue';
@@ -11,6 +11,7 @@ import ContentWarningBadge from '../../components/ContentWarningBadge.vue';
 import GameTableCard from '../../components/GameTableCard.vue';
 import CampaignJoinBox from '../../components/campaigns/CampaignJoinBox.vue';
 import CapacityBar from '../../components/CapacityBar.vue';
+import SurveyLinks from '../../components/SurveyLinks.vue';
 import ModuleSlot from '@/components/layout/ModuleSlot.vue';
 import { buildHeroImageUrl } from '@/utils/cloudinary';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
@@ -19,6 +20,8 @@ interface Props {
     campaign: Campaign;
     // What the viewer can do with the roster
     joinBox: JoinBox;
+    // Its surveys for this person, when a surveys module offers any
+    surveyLinks?: SubjectSurveyLinks | null;
 }
 
 const props = defineProps<Props>();
@@ -317,6 +320,13 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                         :join-box="joinBox"
                         :campaign-title="campaign.title"
                         :campaign-slug="campaign.slug"
+                    />
+                </div>
+
+                <div v-if="surveyLinks" class="mb-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                    <SurveyLinks
+                        :links="surveyLinks"
+                        :manage-label="t('gameTables.surveys.manageCampaign')"
                     />
                 </div>
 

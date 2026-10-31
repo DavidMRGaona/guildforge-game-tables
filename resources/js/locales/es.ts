@@ -292,6 +292,8 @@ export default {
         surveys: {
             heading: 'Encuestas',
             manage: 'Encuestas de la mesa',
+            manageSession: 'Encuestas de la sesión',
+            manageCampaign: 'Encuestas de la campaña',
             respond: 'Responder «{title}»',
             results: 'Resultados de «{title}»',
         },

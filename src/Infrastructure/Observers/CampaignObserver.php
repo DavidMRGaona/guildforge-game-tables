@@ -36,8 +36,8 @@ final class CampaignObserver
             return;
         }
 
-        $previous = CampaignStatus::from(self::statusValue($campaign->getOriginal('status')));
-        $current = CampaignStatus::from(self::statusValue($campaign->status));
+        $previous = CampaignStatus::from($this->statusValue($campaign->getOriginal('status')));
+        $current = CampaignStatus::from($this->statusValue($campaign->status));
         $id = (string) $campaign->getKey();
         $now = now()->toDateTimeImmutable();
 
@@ -76,7 +76,7 @@ final class CampaignObserver
         unset(self::$pendingSessions[$campaign]);
 
         $id = (string) $campaign->getKey();
-        $unfinished = ! CampaignStatus::from(self::statusValue($campaign->status))->isFinal();
+        $unfinished = ! CampaignStatus::from($this->statusValue($campaign->status))->isFinal();
         $now = now()->toDateTimeImmutable();
 
         DB::afterCommit(static function () use ($id, $unfinished, $sessions, $now): void {
@@ -90,7 +90,7 @@ final class CampaignObserver
         });
     }
 
-    private static function statusValue(mixed $status): string
+    private function statusValue(mixed $status): string
     {
         return $status instanceof CampaignStatus ? $status->value : (string) $status;
     }
