@@ -20,6 +20,15 @@ return [
         'config' => 'Configuration',
     ],
 
+    'surveys' => [
+        'source_label' => 'Game table',
+        'attributes' => [
+            'game_system' => 'Game system',
+            'table_format' => 'Format',
+            'table_type' => 'Table type',
+        ],
+    ],
+
     'calendar' => [
         'source_label' => 'Game tables',
         'meta' => [

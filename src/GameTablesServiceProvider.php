@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables;
 
 use App\Application\Calendar\Contracts\CalendarEntrySourceInterface;
+use App\Application\Surveys\Contracts\SurveySubjectSourceInterface;
 use App\Application\Cookies\DTOs\DeclaredCookieDTO;
 use App\Application\Cookies\Services\CookieDeclarationRegistryInterface;
 use App\Application\Legal\DTOs\LegalMailNoticeDTO;
@@ -108,6 +109,7 @@ use Modules\GameTables\Filament\Widgets\PendingModerationWidget;
 use Modules\GameTables\Http\Controllers\CampaignInvitationController;
 use Modules\GameTables\Http\Controllers\GuestConfirmationController;
 use Modules\GameTables\Infrastructure\Calendar\GameTableCalendarSource;
+use Modules\GameTables\Infrastructure\Surveys\GameTableSurveySubjectSource;
 use Modules\GameTables\Infrastructure\Listeners\CancelParticipantsOnTableCancellation;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnCancellation;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnGuestRegistration;
@@ -1324,6 +1326,19 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     {
         return [
             GameTableCalendarSource::class,
+        ];
+    }
+
+    /**
+     * Tables on their own as survey subjects (core contract): asked only when a surveys module
+     * is installed.
+     *
+     * @return array<class-string<SurveySubjectSourceInterface>>
+     */
+    public function registerSurveySubjectSources(): array
+    {
+        return [
+            GameTableSurveySubjectSource::class,
         ];
     }
 
