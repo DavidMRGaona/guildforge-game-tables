@@ -161,6 +161,8 @@ use Modules\GameTables\Infrastructure\Services\RegistrationService;
 use Modules\GameTables\Infrastructure\Services\TableDirection;
 use Modules\GameTables\Infrastructure\Services\TableRegistrationsQuery;
 use Modules\GameTables\Infrastructure\Services\UserModelAccountLookup;
+use Modules\GameTables\Infrastructure\Surveys\CampaignSessionSurveySubjectSource;
+use Modules\GameTables\Infrastructure\Surveys\CampaignSurveySubjectSource;
 use Modules\GameTables\Infrastructure\Surveys\GameTableSurveySubjectSource;
 use Modules\GameTables\Listeners\NotifyAdminsOnCampaignModerationSubmission;
 use Modules\GameTables\Listeners\NotifyAdminsOnModerationSubmission;
@@ -1330,8 +1332,8 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     }
 
     /**
-     * Tables on their own as survey subjects (core contract): asked only when a surveys module
-     * is installed.
+     * Tables on their own, campaign sessions and whole campaigns as survey subjects (core
+     * contract): asked only when a surveys module is installed.
      *
      * @return array<class-string<SurveySubjectSourceInterface>>
      */
@@ -1339,6 +1341,8 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     {
         return [
             GameTableSurveySubjectSource::class,
+            CampaignSessionSurveySubjectSource::class,
+            CampaignSurveySubjectSource::class,
         ];
     }
 
