@@ -24,7 +24,7 @@ Módulo de GuildForge para gestionar mesas de rol y campañas: inscripciones de 
 
 ## Requisitos
 
-- GuildForge core `^3.29` (contrato de encuestas: sujetos encuestables, enlaces desde la ficha y aviso de cancelación; antes, almacenamiento de fechas en UTC y zona horaria de visualización, pestañas del perfil que se ocultan, avisos legales editables de los correos y si la cuenta debe verificar su email; ver [Verificación de email](#verificación-de-email))
+- GuildForge core `^3.31` (contrato de encuestas: sujetos encuestables, enlaces desde la ficha, aviso de cancelación y campo «Encuesta al terminar»; antes, almacenamiento de fechas en UTC y zona horaria de visualización, pestañas del perfil que se ocultan, avisos legales editables de los correos y si la cuenta debe verificar su email; ver [Verificación de email](#verificación-de-email))
 - PHP >= 8.5, Laravel >= 13, Filament 5
 
 El core rechaza el módulo si no se cumplen (`module.json` → `requires`).
@@ -230,6 +230,7 @@ Las mesas sueltas, las sesiones de campaña y las campañas son sujetos encuesta
 - **Cancelación**: se avisa también al cancelar una mesa, una sesión o una campaña, o al borrarlas antes de que terminen, para que las encuestas preparadas para su final no se queden esperando. Al borrar una campaña, sus sesiones pendientes también se dan por canceladas, aunque queden como mesas sueltas.
 - **Envío**: por defecto, todo va a un clic (el director recibe el aviso al terminar) hasta que se active el envío automático del tipo en los ajustes de encuestas. Es lo recomendable para las sesiones, para no saturar a los jugadores.
 - **Fichas**: el director ve **Encuestas de la mesa**, **Encuestas de la sesión** o **Encuestas de la campaña** en cualquier estado (desde ahí prepara la encuesta antes de que termine). Cada persona que la recibió ve **Responder** mientras puede responder y **Resultados** cuando la encuesta los comparte con quien responde.
+- **Encuesta al terminar**: los formularios de mesa y de campaña del panel (pestaña **Publicación**) llevan el campo «Encuesta al terminar» del core, para elegir la plantilla del tipo (por defecto), otra plantilla, una encuesta propia o ninguna. Una mesa con campaña elige como sesión de campaña. Sin el módulo de encuestas no aparece. Los directores eligen lo mismo en la web, desde la página de encuestas de su mesa o campaña.
 
 ## Creación desde la web
 

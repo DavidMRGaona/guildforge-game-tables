@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Filament\Resources;
 
 use App\Filament\Concerns\ChecksPermissions;
+use App\Filament\Forms\Components\EndSurveyField;
 use App\Filament\Resources\BaseResource;
 use Closure;
 use Filament\Actions\Action;
@@ -49,6 +50,7 @@ use Modules\GameTables\Filament\Resources\CampaignResource\RelationManagers\Rost
 use Modules\GameTables\Filament\Support\PublicationLock;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
+use Modules\GameTables\Infrastructure\Surveys\CampaignSurveySubjectSource;
 
 final class CampaignResource extends BaseResource
 {
@@ -209,6 +211,9 @@ final class CampaignResource extends BaseResource
                                     ->disabled(fn (?Model $record): bool => PublicationLock::isLocked($record))
                                     ->helperText(fn (?Model $record): string => PublicationLock::hint($record) ?? __('game-tables::messages.fields.is_published_campaign_help'))
                                     ->default(false),
+
+                                // Which survey goes out when the campaign ends; hidden without the surveys module
+                                EndSurveyField::forSubject(CampaignSurveySubjectSource::TYPE)->columnSpanFull(),
                             ])
                             ->columns(2),
                     ])

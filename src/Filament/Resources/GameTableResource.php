@@ -6,6 +6,7 @@ namespace Modules\GameTables\Filament\Resources;
 
 use App\Application\Services\TimezoneServiceInterface;
 use App\Filament\Concerns\ChecksPermissions;
+use App\Filament\Forms\Components\EndSurveyField;
 use App\Filament\Resources\BaseResource;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Carbon\CarbonImmutable;
@@ -71,6 +72,8 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterMode
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
+use Modules\GameTables\Infrastructure\Surveys\CampaignSessionSurveySubjectSource;
+use Modules\GameTables\Infrastructure\Surveys\GameTableSurveySubjectSource;
 
 final class GameTableResource extends BaseResource
 {
@@ -450,6 +453,13 @@ final class GameTableResource extends BaseResource
                                     ->label(__('game-tables::messages.fields.notes'))
                                     ->rows(2)
                                     ->maxLength(1000)
+                                    ->columnSpanFull(),
+
+                                // Which survey goes out when it ends (a table of a campaign is a session of it);
+                                // hidden without the surveys module
+                                EndSurveyField::forSubject(fn (Get $get): string => filled($get('campaign_id'))
+                                    ? CampaignSessionSurveySubjectSource::TYPE
+                                    : GameTableSurveySubjectSource::TYPE)
                                     ->columnSpanFull(),
                             ])
                             ->columns(2),
