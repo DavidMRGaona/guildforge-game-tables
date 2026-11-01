@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Surveys;
 
+use App\Application\Surveys\Contracts\SurveySubjectAttributeValuesInterface;
 use App\Application\Surveys\Contracts\SurveySubjectSourceInterface;
 use App\Application\Surveys\DTOs\SurveyAudienceDTO;
 use App\Application\Surveys\DTOs\SurveySubjectAttributeDTO;
@@ -13,13 +14,11 @@ use DateTimeImmutable;
 use Illuminate\Support\Str;
 use Modules\GameTables\Application\Services\CampaignDirectionInterface;
 use Modules\GameTables\Domain\Entities\Campaign;
-use Modules\GameTables\Domain\Entities\GameSystem;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
-use Modules\GameTables\Domain\Repositories\GameSystemRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 
@@ -28,7 +27,7 @@ use Modules\GameTables\Domain\ValueObjects\CampaignId;
  * (accounts only, anonymized ones never listed) and its directors manage its surveys. Its dates
  * span its sessions that took or will take place.
  */
-final readonly class CampaignSurveySubjectSource implements SurveySubjectSourceInterface
+final readonly class CampaignSurveySubjectSource implements SurveySubjectAttributeValuesInterface, SurveySubjectSourceInterface
 {
     /** Stored by surveys and their statistics: never changes. */
     public const string TYPE = 'campaign';
@@ -36,7 +35,7 @@ final readonly class CampaignSurveySubjectSource implements SurveySubjectSourceI
     public function __construct(
         private CampaignRepositoryInterface $campaigns,
         private GameTableRepositoryInterface $tables,
-        private GameSystemRepositoryInterface $systems,
+        private GameSystemSurveyAttribute $gameSystem,
         private CampaignRosterRepositoryInterface $roster,
         private CampaignDirectionInterface $direction,
     ) {}
@@ -58,7 +57,6 @@ final readonly class CampaignSurveySubjectSource implements SurveySubjectSourceI
             return null;
         }
 
-        $system = $this->systems->find($campaign->gameSystemId);
         [$startsAt, $endsAt] = $this->span($campaign->id);
 
         return new SurveySubjectDTO(
@@ -69,7 +67,7 @@ final readonly class CampaignSurveySubjectSource implements SurveySubjectSourceI
             endsAt: $endsAt,
             organizerIds: $this->direction->directorUserIds($campaign->id->value),
             attributes: [
-                new SurveySubjectAttributeDTO('game_system', __('game-tables::messages.surveys.attributes.game_system'), $system instanceof GameSystem ? $system->name : null),
+                $this->gameSystem->of($campaign->gameSystemId),
                 new SurveySubjectAttributeDTO('frequency', __('game-tables::messages.surveys.attributes.frequency'), $campaign->frequency?->label()),
             ],
             url: route('campaigns.show', $campaign->slug),
@@ -96,6 +94,11 @@ final readonly class CampaignSurveySubjectSource implements SurveySubjectSourceI
         $campaign = $this->campaign($subjectId);
 
         return $campaign instanceof Campaign && $this->direction->isDirector($campaign->id->value, $userId);
+    }
+
+    public function attributeValues(string $key): array
+    {
+        return $this->gameSystem->values($key);
     }
 
     private function campaign(string $subjectId): ?Campaign

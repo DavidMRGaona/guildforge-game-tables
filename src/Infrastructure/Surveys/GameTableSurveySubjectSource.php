@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Surveys;
 
+use App\Application\Surveys\Contracts\SurveySubjectAttributeValuesInterface;
 use App\Application\Surveys\Contracts\SurveySubjectSourceInterface;
 use App\Application\Surveys\DTOs\SurveyAudienceDTO;
 use App\Application\Surveys\DTOs\SurveySubjectAttributeDTO;
 use App\Application\Surveys\DTOs\SurveySubjectDTO;
 use Illuminate\Support\Str;
 use Modules\GameTables\Application\Services\TableDirectionInterface;
-use Modules\GameTables\Domain\Entities\GameSystem;
 use Modules\GameTables\Domain\Entities\GameTable;
-use Modules\GameTables\Domain\Repositories\GameSystemRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
@@ -23,14 +22,14 @@ use Modules\GameTables\Domain\ValueObjects\GameTableId;
  * their own kind of subject). The players who confirmed are asked to answer (TableSurveySubject);
  * the table's directors manage its surveys.
  */
-final readonly class GameTableSurveySubjectSource implements SurveySubjectSourceInterface
+final readonly class GameTableSurveySubjectSource implements SurveySubjectAttributeValuesInterface, SurveySubjectSourceInterface
 {
     /** Stored by surveys and their statistics: never changes. */
     public const string TYPE = 'game-table';
 
     public function __construct(
         private GameTableRepositoryInterface $tables,
-        private GameSystemRepositoryInterface $systems,
+        private GameSystemSurveyAttribute $gameSystem,
         private TableSurveySubject $subjects,
         private TableDirectionInterface $direction,
     ) {}
@@ -52,8 +51,6 @@ final readonly class GameTableSurveySubjectSource implements SurveySubjectSource
             return null;
         }
 
-        $system = $this->systems->find($table->gameSystemId);
-
         return new SurveySubjectDTO(
             sourceType: self::TYPE,
             subjectId: $table->id->value,
@@ -62,7 +59,7 @@ final readonly class GameTableSurveySubjectSource implements SurveySubjectSource
             endsAt: $table->timeSlot->endsAt(),
             organizerIds: $this->direction->directorUserIds($table->id->value),
             attributes: [
-                new SurveySubjectAttributeDTO('game_system', __('game-tables::messages.surveys.attributes.game_system'), $system instanceof GameSystem ? $system->name : null),
+                $this->gameSystem->of($table->gameSystemId),
                 new SurveySubjectAttributeDTO('table_format', __('game-tables::messages.surveys.attributes.table_format'), $table->tableFormat->label()),
                 new SurveySubjectAttributeDTO('table_type', __('game-tables::messages.surveys.attributes.table_type'), $table->tableType->label()),
             ],
@@ -83,6 +80,11 @@ final readonly class GameTableSurveySubjectSource implements SurveySubjectSource
         $table = $this->table($subjectId);
 
         return $table instanceof GameTable && $this->direction->isDirector($table->id->value, $userId);
+    }
+
+    public function attributeValues(string $key): array
+    {
+        return $this->gameSystem->values($key);
     }
 
     /**
