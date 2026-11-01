@@ -80,6 +80,7 @@ final class CampaignSessionSurveySubjectSourceTest extends ModuleTestCase
         $this->assertSame([$director->id], $subject->organizerIds);
         $this->assertSame(route('gametables.show', $session->slug), $subject->url);
         $this->assertSame('Sistema de ejemplo', $subject->attribute('game_system')?->value);
+        $this->assertSame($this->system->id, $subject->attribute('game_system')->valueId);
         $this->assertSame('Campaña de ejemplo', $subject->attribute('campaign')?->value);
         $this->assertSame(__('game-tables::messages.surveys.attributes.campaign'), $subject->attribute('campaign')->label);
         $this->assertSame(__('game-tables::messages.enums.table_format.online'), $subject->attribute('table_format')?->value);
@@ -159,6 +160,21 @@ final class CampaignSessionSurveySubjectSourceTest extends ModuleTestCase
         $this->direct($table, $director);
 
         $this->assertFalse($this->source->canManage($director->id, $table->id));
+    }
+
+    public function test_it_lists_every_game_system_by_id_for_the_survey_settings(): void
+    {
+        $other = GameSystemModel::create(['id' => (string) Str::uuid(), 'name' => 'Otro sistema de ejemplo', 'slug' => Str::random(10), 'is_active' => false]);
+
+        $labels = [];
+        foreach ($this->source->attributeValues('game_system') as $value) {
+            $labels[$value->id] = $value->label;
+        }
+
+        $this->assertSame(GameSystemModel::query()->orderBy('name')->pluck('name', 'id')->all(), $labels);
+        $this->assertSame('Sistema de ejemplo', $labels[$this->system->id] ?? null);
+        $this->assertSame('Otro sistema de ejemplo', $labels[$other->id] ?? null);
+        $this->assertSame([], $this->source->attributeValues('table_format'));
     }
 
     /**
