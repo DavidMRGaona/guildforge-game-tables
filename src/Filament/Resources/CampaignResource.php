@@ -55,6 +55,7 @@ use Modules\GameTables\Filament\Resources\CampaignResource\Pages\ListCampaigns;
 use Modules\GameTables\Filament\Resources\CampaignResource\RelationManagers\InvitationsRelationManager;
 use Modules\GameTables\Filament\Resources\CampaignResource\RelationManagers\JoinRequestsRelationManager;
 use Modules\GameTables\Filament\Resources\CampaignResource\RelationManagers\RosterRelationManager;
+use Modules\GameTables\Filament\Support\PlaceRequirement;
 use Modules\GameTables\Filament\Support\PublicationLock;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ContentWarningModel;
@@ -240,12 +241,15 @@ final class CampaignResource extends BaseResource
                                 TextInput::make('location')
                                     ->label(__('game-tables::messages.fields.location'))
                                     ->maxLength(500)
+                                    ->required(PlaceRequirement::location())
                                     ->visible(fn (Get $get): bool => self::formatAllows($get('table_format'), TableFormat::Online)),
 
                                 TextInput::make('online_url')
                                     ->label(__('game-tables::messages.fields.online_url'))
                                     ->url()
                                     ->maxLength(500)
+                                    ->required(PlaceRequirement::onlineUrl())
+                                    ->live(onBlur: true)
                                     ->visible(fn (Get $get): bool => self::formatAllows($get('table_format'), TableFormat::InPerson)),
                             ])
                             ->columns(2),

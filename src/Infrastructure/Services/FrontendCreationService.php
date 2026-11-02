@@ -285,7 +285,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
      *     genres: array<string, string>,
      *     languages: array<string, string>,
      *     campaign_frequencies: array<string, string>,
-     *     events: list<array{id: string, name: string, start_date: string}>,
+     *     events: list<array{id: string, name: string, start_date: string, creation_context: array<string, mixed>}>,
      *     campaigns: list<array{id: string, name: string, game_system_id: string, max_players: int|null, roster_count: int, table_format: string|null, location: string|null, online_url: string|null}>,
      *     defaults: array{duration_minutes: int, min_players: int, max_players: int, max_spectators: int},
      *     limits: array{max_players: int, max_spectators: int, max_duration_minutes: int}
@@ -351,11 +351,13 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             'languages' => Language::options(),
             'campaign_frequencies' => CampaignFrequency::options(),
             'events' => array_values($events->map(
-                static fn ($event): array => [
+                fn ($event): array => [
                     'id' => $event->id()->value,
                     'name' => $event->title(),
                     // The value of a datetime-local field: the site's wall time
                     'start_date' => $timezone->toDisplayWallTime($event->startDate()),
+                    // Its slots and fixed location, so choosing it in the form offers them as «Crear partida» does
+                    'creation_context' => $this->eventConfigService->getCreationContext($event->id()->value)->toArray(),
                 ],
             )->all()),
             'campaigns' => $campaigns,

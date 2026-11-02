@@ -501,6 +501,7 @@ final class CampaignRosterPanelTest extends ModuleTestCase
     private function campaign(?int $maxPlayers = null): CampaignModel
     {
         return CampaignModel::create([
+            'location' => 'Local de la asociación',
             'id' => (string) Str::uuid(),
             'game_system_id' => $this->system->id,
             'created_by' => $this->admin->id,

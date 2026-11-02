@@ -496,6 +496,7 @@ final class ReviewWorkflowTest extends ModuleTestCase
             'duration_minutes' => 240,
             'table_type' => 'one_shot',
             'table_format' => 'in_person',
+            'location' => 'Local de la asociación',
             'min_players' => 2,
             'max_players' => 5,
             'language' => 'es',
@@ -516,6 +517,7 @@ final class ReviewWorkflowTest extends ModuleTestCase
             'duration_minutes' => 240,
             'table_type' => 'one_shot',
             'table_format' => 'in_person',
+            'location' => 'Local de la asociación',
             // The panel offers no "draft" table status: what it creates is scheduled until published
             'status' => $published || $creationStatus === null ? 'scheduled' : 'draft',
             'min_players' => 1,
@@ -535,6 +537,7 @@ final class ReviewWorkflowTest extends ModuleTestCase
     private function campaign(?string $creationStatus, bool $published = false, string $slug = 'campana-del-autor', ?string $notes = null): CampaignModel
     {
         return CampaignModel::create([
+            'location' => 'Local de la asociación',
             'id' => (string) Str::uuid(),
             'game_system_id' => $this->gameSystem->id,
             'created_by' => $this->author->id,

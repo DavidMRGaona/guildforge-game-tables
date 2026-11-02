@@ -41,7 +41,7 @@ final class DisplayTimezoneSourceTest extends TestCase
         $this->assertStringContainsString('timeZone: VENUE_TIMEZONE', $source);
 
         foreach (['resources/js/pages/GameTables/Create.vue', 'resources/js/pages/GameTables/Edit.vue'] as $file) {
-            $this->assertStringContainsString('useTimeSlotOptions(() => props.eventContext?.available_time_slots)', $this->source($file), $file);
+            $this->assertStringContainsString('useTimeSlotOptions(() => activeEventContext.value?.available_time_slots)', $this->source($file), $file);
         }
     }
 

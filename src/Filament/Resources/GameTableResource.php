@@ -65,6 +65,7 @@ use Modules\GameTables\Filament\Resources\GameTableResource\Pages\EditGameTable;
 use Modules\GameTables\Filament\Resources\GameTableResource\Pages\ListGameTables;
 use Modules\GameTables\Filament\Resources\GameTableResource\RelationManagers\ParticipantsRelationManager;
 use Modules\GameTables\Filament\Resources\GameTableResource\RelationManagers\StatusLogRelationManager;
+use Modules\GameTables\Filament\Support\PlaceRequirement;
 use Modules\GameTables\Filament\Support\PublicationLock;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ContentWarningModel;
@@ -278,12 +279,15 @@ final class GameTableResource extends BaseResource
                                 TextInput::make('location')
                                     ->label(__('game-tables::messages.fields.location'))
                                     ->maxLength(500)
+                                    ->required(PlaceRequirement::location())
                                     ->visible(fn (Get $get): bool => in_array($get('table_format'), [TableFormat::InPerson->value, TableFormat::Hybrid->value])),
 
                                 TextInput::make('online_url')
                                     ->label(__('game-tables::messages.fields.online_url'))
                                     ->url()
                                     ->maxLength(500)
+                                    ->required(PlaceRequirement::onlineUrl())
+                                    ->live(onBlur: true)
                                     ->visible(fn (Get $get): bool => in_array($get('table_format'), [TableFormat::Online->value, TableFormat::Hybrid->value])),
                             ])
                             ->columns(2),

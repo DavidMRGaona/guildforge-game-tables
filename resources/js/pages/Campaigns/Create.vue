@@ -20,6 +20,7 @@ import type { FormTab } from '../../components/FormTabs.vue';
 import FormErrorSummary from '../../components/FormErrorSummary.vue';
 import { useFormErrorSummary } from '../../composables/useFormErrorSummary';
 import { fieldStateClass } from '../../utils/fieldStateClass';
+import { needsLocation, needsOnlineUrl } from '../../utils/placeRequirement';
 
 type OptionsInput =
     Record<string, string> | Array<{ value: string; label: string }> | null | undefined;
@@ -165,6 +166,10 @@ const isHybrid = computed(() => form.table_format === 'hybrid');
 
 const showLocation = computed(() => isInPerson.value || isHybrid.value);
 const showOnlineUrl = computed(() => isOnline.value || isHybrid.value);
+
+// Marked as the server requires them: the location in person, the link online, one of them when hybrid
+const locationRequired = computed(() => needsLocation(form.table_format, form.online_url));
+const onlineUrlRequired = computed(() => needsOnlineUrl(form.table_format));
 
 // Transform game systems for combobox
 const gameSystemOptions = computed(() =>
@@ -724,18 +729,23 @@ function submit(): void {
                                     class="block text-sm font-medium text-base-secondary"
                                 >
                                     {{ t('campaigns.create.fields.location') }}
+                                    <span v-if="locationRequired" class="text-error">*</span>
                                 </label>
                                 <input
                                     id="location"
                                     v-model="form.location"
                                     type="text"
                                     name="location"
+                                    :required="locationRequired"
                                     :aria-invalid="!!form.errors.location"
                                     :class="fieldStateClass(!!form.errors.location)"
                                     class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5 text-base-primary placeholder-base-muted focus:outline-none focus:ring-2"
                                 />
                                 <p class="mt-1 text-xs text-base-muted">
                                     {{ t('campaigns.create.fields.locationHelp') }}
+                                </p>
+                                <p v-if="isHybrid" class="mt-1 text-xs text-base-muted">
+                                    {{ t('campaigns.create.fields.placeHybridHelp') }}
                                 </p>
                                 <p v-if="form.errors.location" class="mt-1 text-sm text-error">
                                     {{ form.errors.location }}
@@ -749,12 +759,14 @@ function submit(): void {
                                     class="block text-sm font-medium text-base-secondary"
                                 >
                                     {{ t('campaigns.create.fields.onlineUrl') }}
+                                    <span v-if="onlineUrlRequired" class="text-error">*</span>
                                 </label>
                                 <input
                                     id="online_url"
                                     v-model="form.online_url"
                                     type="url"
                                     name="online_url"
+                                    :required="onlineUrlRequired"
                                     :aria-invalid="!!form.errors.online_url"
                                     placeholder="https://..."
                                     :class="fieldStateClass(!!form.errors.online_url)"

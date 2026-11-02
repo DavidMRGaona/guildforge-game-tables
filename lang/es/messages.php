@@ -840,6 +840,7 @@ return [
         'experience_level_required' => 'El nivel de experiencia es obligatorio',
         'character_creation_required' => 'El tipo de creación de personajes es obligatorio',
         'campaign_required' => 'Elige la campaña de la sesión.',
+        'location_or_online_url_required' => 'Indica la ubicación o el enlace de la sesión online.',
         'co_director_first_name_required' => 'El nombre del co-director es obligatorio.',
         'co_director_email_required' => 'El email del co-director es obligatorio.',
         'co_directors_consent_required' => 'Confirma que tienes el consentimiento de los co-directores.',

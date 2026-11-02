@@ -125,6 +125,7 @@ final class EndSurveyFieldTest extends ModuleTestCase
     private function campaign(): CampaignModel
     {
         return CampaignModel::create([
+            'location' => 'Local de la asociación',
             'id' => (string) Str::uuid(),
             'game_system_id' => $this->gameSystem->id,
             'created_by' => $this->adminId,
@@ -147,6 +148,7 @@ final class EndSurveyFieldTest extends ModuleTestCase
             'duration_minutes' => 240,
             'table_type' => $campaign instanceof CampaignModel ? 'campaign_session' : 'one_shot',
             'table_format' => 'in_person',
+            'location' => 'Local de la asociación',
             'status' => 'scheduled',
             'min_players' => 2,
             'max_players' => 5,

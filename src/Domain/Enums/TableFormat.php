@@ -10,6 +10,22 @@ enum TableFormat: string
     case Online = 'online';
     case Hybrid = 'hybrid';
 
+    /**
+     * Where a table or campaign is played must be told: the location in person, the link online,
+     * and at least one of the two when hybrid or, for a campaign saved before its format was
+     * stored, without a format (the location is asked for while there is no link).
+     */
+    public static function needsLocation(?self $format, ?string $onlineUrl): bool
+    {
+        return $format === self::InPerson
+            || ($format !== self::Online && ($onlineUrl === null || trim($onlineUrl) === ''));
+    }
+
+    public static function needsOnlineUrl(?self $format): bool
+    {
+        return $format === self::Online;
+    }
+
     public function label(): string
     {
         return match ($this) {

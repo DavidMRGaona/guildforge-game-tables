@@ -112,6 +112,7 @@ final class FrontendCampaignLanguageExperienceTest extends ModuleTestCase
             'min_players' => 2,
             'max_players' => 5,
             'table_format' => 'in_person',
+            'location' => 'Local de la asociación',
             'language' => $language,
             'experience_level' => $experienceLevel,
         ], static fn (mixed $value): bool => $value !== null);
