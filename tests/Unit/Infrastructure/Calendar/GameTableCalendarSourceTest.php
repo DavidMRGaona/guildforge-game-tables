@@ -66,6 +66,36 @@ final class GameTableCalendarSourceTest extends TestCase
         $this->assertSame('/mesas/epic-adventure', $entry->url);
     }
 
+    public function test_find_entry_maps_the_listed_table(): void
+    {
+        $queryService = $this->createMock(GameTableQueryServiceInterface::class);
+        $queryService->expects($this->once())
+            ->method('findPubliclyListed')
+            ->with('table-1')
+            ->willReturn($this->makeListDTO([
+                'id' => 'table-1',
+                'title' => 'Epic Adventure',
+                'slug' => 'epic-adventure',
+                'startsAt' => new DateTimeImmutable('2026-09-15 10:00:00'),
+                'durationMinutes' => 120,
+            ]));
+
+        $entry = (new GameTableCalendarSource($queryService))->findEntry('table-1');
+
+        $this->assertInstanceOf(CalendarEntryDTO::class, $entry);
+        $this->assertSame('table-1', $entry->id);
+        $this->assertEquals(new DateTimeImmutable('2026-09-15 12:00:00'), $entry->end);
+        $this->assertSame('/mesas/epic-adventure', $entry->url);
+    }
+
+    public function test_find_entry_is_null_when_the_table_is_not_listed(): void
+    {
+        $queryService = $this->createStub(GameTableQueryServiceInterface::class);
+        $queryService->method('findPubliclyListed')->willReturn(null);
+
+        $this->assertNull((new GameTableCalendarSource($queryService))->findEntry('table-1'));
+    }
+
     public function test_find_by_date_range_discards_entries_with_null_starts_at(): void
     {
         $dto = $this->makeListDTO([
@@ -210,6 +240,29 @@ final class GameTableCalendarSourceTest extends TestCase
         $players = array_first(array_filter($meta, fn (array $row): bool => $row['icon'] === 'users'));
 
         $this->assertSame('6/6 · '.__('game-tables::messages.enums.table_status.full'), $players['value']);
+    }
+
+    // «Completa» set by hand: full whatever seats are left free (#184)
+    public function test_a_table_marked_full_is_full_with_its_seats_still_counted(): void
+    {
+        $dto = $this->makeListDTO([
+            'status' => TableStatus::Full,
+            'currentPlayers' => 2,
+            'maxPlayers' => 6,
+        ]);
+
+        $queryService = $this->createStub(GameTableQueryServiceInterface::class);
+        $queryService->method('getUpcomingTables')->willReturn([$dto]);
+
+        $details = (new GameTableCalendarSource($queryService))->findByDateRange(
+            new DateTimeImmutable('2026-09-01'),
+            new DateTimeImmutable('2026-09-30'),
+        )[0]->details;
+
+        $players = array_first(array_filter($details['meta'], fn (array $row): bool => $row['icon'] === 'users'));
+
+        $this->assertTrue($details['isFull']);
+        $this->assertSame('2/6 · '.__('game-tables::messages.enums.table_status.full'), $players['value']);
     }
 
     public function test_details_meta_skips_rows_without_a_value(): void

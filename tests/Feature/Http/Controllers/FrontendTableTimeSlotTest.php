@@ -262,10 +262,15 @@ final class FrontendTableTimeSlotTest extends ModuleTestCase
         $this->assertStringContainsString("timeSlotFull: '{label} (completo)'", $es);
         $this->assertStringContainsString("timeSlotTablesLeft: '{label} ({count} table left) | {label} ({count} tables left)'", $en);
         $this->assertStringContainsString("timeSlotFull: '{label} (full)'", $en);
+        $this->assertStringContainsString("timeSlotWithDay: '{day} · {label}'", $es);
+        $this->assertStringContainsString("timeSlotWithDay: '{day} · {label}'", $en);
 
+        // Both pages build their slot options with the same composable
+        $options = (string) file_get_contents(__DIR__.'/../../../../resources/js/composables/useTimeSlotOptions.ts');
+        $this->assertStringContainsString('optionLabel(slot, withDay)', $options);
         foreach (['Create.vue', 'Edit.vue'] as $page) {
             $source = (string) file_get_contents(__DIR__.'/../../../../resources/js/pages/GameTables/'.$page);
-            $this->assertStringContainsString('timeSlotLabel(slot)', $source, $page);
+            $this->assertStringContainsString('useTimeSlotOptions(', $source, $page);
         }
     }
 

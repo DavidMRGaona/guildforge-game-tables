@@ -802,6 +802,18 @@ return [
         'campaign_status_already_changed' => 'La campaña ya no está en un estado que permita este cambio',
     ],
 
+    'game_system_deletion' => [
+        'tables' => '1 mesa|:count mesas',
+        'campaigns' => '1 campaña|:count campañas',
+        'and' => ':first y :second',
+        'in_use' => 'Lo usan :usage, así que no se puede borrar. Desactívalo para que deje de ofrecerse en las mesas y campañas nuevas; las que ya lo usan no cambian.',
+        'in_use_inactive' => 'Lo usan :usage, así que no se puede borrar. Ya está desactivado: no se ofrece en las mesas y campañas nuevas.',
+        'deactivate' => 'Desactivar',
+        'deactivated' => 'Sistema de juego desactivado',
+        'not_deleted' => 'No se ha borrado: lo usan mesas o campañas',
+        'bulk_not_deleted' => ':count sistema no se ha borrado porque lo usan mesas o campañas. Desactívalo en su lugar.|:count sistemas no se han borrado porque los usan mesas o campañas. Desactívalos en su lugar.',
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Validation Messages
@@ -951,6 +963,7 @@ return [
         'scheduling_mode' => 'Modo de programación',
         'time_slots' => 'Turnos',
         'time_slot_label' => 'Nombre del turno',
+        'time_slot_day' => 'Día',
         'start_time' => 'Hora de inicio',
         'end_time' => 'Hora de fin',
         'max_tables' => 'Máximo de mesas',
@@ -1011,6 +1024,10 @@ return [
             'not_accepting' => 'Esta campaña no acepta jugadores nuevos.',
             'roster_full' => 'La plantilla está completa.',
             'members_only' => 'Esta campaña solo admite solicitudes de socios.',
+            'invite_not_accepting' => 'La campaña no acepta jugadores nuevos: no se pueden enviar invitaciones mientras siga así.',
+            'invite_members_only' => 'Esta campaña solo admite socios y esa cuenta no es de un socio.',
+            'invitee_not_accepting' => 'Esta campaña no acepta jugadores nuevos ahora mismo, así que no puedes aceptar la invitación. Seguirá disponible hasta que caduque.',
+            'invitee_members_only' => 'Esta campaña solo admite socios, así que no puedes aceptar la invitación mientras no lo seas. Seguirá disponible hasta que caduque.',
             'already_member' => 'Ya formas parte de la plantilla.',
             'account_already_member' => 'Esa cuenta ya forma parte de la plantilla.',
             'request_pending' => 'Ya tienes una solicitud pendiente.',

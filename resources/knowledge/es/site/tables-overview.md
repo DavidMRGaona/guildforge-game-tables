@@ -79,6 +79,8 @@ En una mesa con confirmación manual, quien pasa de la lista queda **Pendiente**
 
 Sin lista de espera, una mesa sin plazas libres no admite más jugadores.
 
+Una mesa en estado **Completa** no da plazas libres a nadie nuevo, aunque le queden: los jugadores solo pueden apuntarse a la lista de espera (si la web la tiene) y nadie pasa de ella solo; quien dirige la mesa da las plazas. Los espectadores siguen pudiendo inscribirse si quedan plazas de espectador.
+
 ## Apertura y cierre de inscripciones
 
 - Si la mesa tiene **Apertura de inscripciones**, antes de esa fecha el botón dice «Las inscripciones abren el …».

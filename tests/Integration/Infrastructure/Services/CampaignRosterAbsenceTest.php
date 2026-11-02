@@ -11,6 +11,7 @@ use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Modules\GameTables\Application\Services\CampaignRosterSessionSyncInterface;
+use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Modules\GameTables\Domain\Enums\GameMasterRole;
 use Modules\GameTables\Domain\Exceptions\RosterActionRefusedException;
 use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
@@ -20,6 +21,7 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterMode
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
+use Modules\GameTables\Notifications\CampaignSessionAbsenceNotification;
 use Modules\GameTables\Notifications\CancellationConfirmation;
 use Modules\GameTables\Notifications\OrganizationCancellationNotification;
 use Modules\GameTables\Notifications\ParticipantCancelledNotification;
@@ -94,9 +96,53 @@ final class CampaignRosterAbsenceTest extends ModuleTestCase
         $this->assertSame('cancelled', $row->status->value);
         $this->assertSame('session_absence', $row->getRawOriginal('cancellation_reason'));
         $this->assertTrue($this->roster()->contains($this->campaignId, $this->jane->id));
-        $this->assertMailedTo(OrganizationCancellationNotification::class, 'jane@example.com');
+        $this->assertMailedTo(CampaignSessionAbsenceNotification::class, 'jane@example.com');
+        Notification::assertSentTimes(CampaignSessionAbsenceNotification::class, 1);
+        Notification::assertSentTimes(OrganizationCancellationNotification::class, 0);
         Notification::assertSentTimes(CancellationConfirmation::class, 0);
         Notification::assertSentTimes(ParticipantCancelledNotification::class, 0);
+    }
+
+    // Not «la organización ha cancelado tu inscripción»: the member is still in the campaign
+    public function test_the_absence_email_names_the_campaign_and_the_way_back(): void
+    {
+        $this->sync()->markAbsence($this->campaign->id, $this->session->id, $this->jane->id);
+
+        Notification::assertSentOnDemand(
+            CampaignSessionAbsenceNotification::class,
+            function (CampaignSessionAbsenceNotification $notification, array $channels, AnonymousNotifiable $notifiable): bool {
+                $mail = $notification->toMail($notifiable);
+                $lines = array_map(static fn (mixed $line): string => html_entity_decode(strip_tags((string) $line)), $mail->introLines);
+
+                return $mail->subject === 'Ausencia anotada: Sesión 1'
+                    && $mail->greeting === '¡Hola, Jane Doe!'
+                    && in_array('Hemos anotado que no vas a ir a esta sesión de la campaña «La cripta olvidada». Sigues en la campaña y en las demás sesiones.', $lines, true)
+                    && in_array(__('game-tables::emails.campaign_session_absence.rejoin_hint'), $lines, true)
+                    && $mail->actionUrl === url('/mesas/'.$this->session->id);
+            },
+        );
+    }
+
+    // What the email promises: the member takes the seat back from the session page
+    public function test_after_the_absence_email_the_member_can_take_the_seat_back(): void
+    {
+        $this->sync()->markAbsence($this->campaign->id, $this->session->id, $this->jane->id);
+
+        $this->actingAs($this->jane)
+            ->post(route('gametables.register', $this->session->slug), ['role' => 'player'])
+            ->assertSessionHas('success', __('game-tables::messages.roster.success.rejoined'));
+
+        $this->assertSame('confirmed', $this->rowOf($this->session, $this->jane)->status->value);
+    }
+
+    public function test_a_member_who_drops_the_session_themselves_gets_the_usual_confirmation(): void
+    {
+        $this->app->make(RegistrationServiceInterface::class)->cancelByUser($this->session->id, $this->jane->id);
+
+        $this->assertSame('session_absence', $this->rowOf($this->session, $this->jane)->getRawOriginal('cancellation_reason'));
+        $this->assertMailedTo(CancellationConfirmation::class, 'jane@example.com');
+        Notification::assertSentTimes(CampaignSessionAbsenceNotification::class, 0);
+        Notification::assertSentTimes(OrganizationCancellationNotification::class, 0);
     }
 
     public function test_clearing_an_absence_re_enrols_and_confirms_by_email(): void
@@ -175,7 +221,7 @@ final class CampaignRosterAbsenceTest extends ModuleTestCase
             'No hay nada que cambiar en esa sesión.',
             fn () => $this->sync()->markAbsence($this->campaign->id, $this->session->id, $this->jane->id),
         );
-        Notification::assertSentTimes(OrganizationCancellationNotification::class, 1);
+        Notification::assertSentTimes(CampaignSessionAbsenceNotification::class, 1);
     }
 
     public function test_clearing_without_absence_is_refused(): void

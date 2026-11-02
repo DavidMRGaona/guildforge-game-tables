@@ -209,7 +209,8 @@ final class FrontendCreateGameTableRequest extends FormRequest
             // Where it is played: the location in person, the link online, one of them when hybrid
             'location' => ['nullable', 'string', 'max:500', $this->locationRequired()],
             'online_url' => ['nullable', 'url', 'max:500', $this->onlineUrlRequired()],
-            'minimum_age' => ['nullable', 'integer', 'min:0', 'max:21'],
+            // The same range as the panel
+            'minimum_age' => ['nullable', 'integer', 'min:1', 'max:99'],
             'language' => ['required', 'string', 'size:2'],
             'genres' => ['nullable', 'array'],
             'genres.*' => ['string', Rule::in(Genre::values())],

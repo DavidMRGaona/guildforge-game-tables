@@ -7,6 +7,7 @@ namespace Modules\GameTables\Infrastructure\Listeners;
 use App\Application\Services\TimezoneServiceInterface;
 use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Domain\Entities\GameTable;
+use Modules\GameTables\Domain\Enums\ParticipantStatus;
 use Modules\GameTables\Domain\Events\ParticipantRegistered;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
@@ -15,7 +16,7 @@ use Modules\GameTables\Notifications\ParticipantRegisteredNotification;
 
 final readonly class NotifyOnRegistration
 {
-    use NotifiesRegistrationRecipients;
+    use NotifiesOrganisation;
 
     public function __construct(
         private GameTableSettingsReader $settingsReader,
@@ -39,7 +40,7 @@ final readonly class NotifyOnRegistration
         $tableDate = app(TimezoneServiceInterface::class)->format($gameTable->timeSlot->startsAt);
         $tableLocation = $gameTable->location;
 
-        $this->notifyRecipients($gameTable, $event->status, fn (?string $manageUrl): ParticipantRegisteredNotification => new ParticipantRegisteredNotification(
+        $this->notifyOrganisation($gameTable, $event->status === ParticipantStatus::Pending, fn (?string $manageUrl): ParticipantRegisteredNotification => new ParticipantRegisteredNotification(
             participantName: $participantName,
             tableId: $event->gameTableId,
             tableTitle: $gameTable->title,

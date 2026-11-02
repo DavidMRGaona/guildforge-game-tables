@@ -88,8 +88,14 @@ interface EligibilityServiceInterface
 
     /**
      * The reason checkEligibility() would refuse this user with for this role, or null when the
-     * user is eligible or the only obstacle is that the seats are taken (table_full,
-     * spectators_full): the account rules without the seat rules. The caller gives "now".
+     * user is eligible or the only obstacle is the seats (taken, or closed to newcomers on a table
+     * marked full): the account rules without the seat rules. The caller gives "now".
      */
     public function userRulesRefusal(string $gameTableId, string $userId, ParticipantRole $role = ParticipantRole::Player, ?DateTimeImmutable $now = null): ?string;
+
+    /**
+     * The same for a guest without the email: the reason canGuestRegister() would refuse with, or
+     * null when the only obstacle is the seats.
+     */
+    public function guestRulesRefusal(string $gameTableId, ParticipantRole $role = ParticipantRole::Player): ?string;
 }

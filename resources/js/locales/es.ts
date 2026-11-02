@@ -165,6 +165,8 @@ export default {
                 'La mesa está completa. Si se libera una plaza antes del inicio de la partida (o del cierre de inscripciones, si es anterior), pasarás a ella automáticamente por orden de lista y te avisaremos por correo.',
             waitingListHelpManual:
                 'La mesa está completa. Si se libera una plaza antes del inicio de la partida (o del cierre de inscripciones, si es anterior), pasarás a ella por orden de lista, pendiente de que el director te confirme, y te avisaremos por correo.',
+            waitingListHelpMarkedFull:
+                'La mesa está completa: las plazas que se liberen las asigna quien dirige la partida. Si te da una, te avisaremos por correo.',
             spectatorOnly: 'Las plazas de jugador están completas: te inscribirás como espectador',
             selectRole: 'Selecciona tu rol',
             addNotes: 'Añadir notas (opcional)',
@@ -403,6 +405,7 @@ export default {
                 timeSlotHelp: 'Selecciona uno de los horarios disponibles para este evento',
                 timeSlotTablesLeft: '{label} (queda {count} mesa) | {label} (quedan {count} mesas)',
                 timeSlotFull: '{label} (completo)',
+                timeSlotWithDay: '{day} · {label}',
                 duration: 'Duración (minutos)',
                 durationHelp: 'Duración estimada en minutos (por ejemplo: 240 para 4 horas)',
                 tableType: 'Tipo de partida',

@@ -94,9 +94,33 @@ final class ProfileCampaignInvitationsTest extends ModuleTestCase
                 ->where('profileCampaignInvitations.invitations.0.inviter_name', 'Mary Major')
                 ->has('profileCampaignInvitations.invitations.0.id')
                 ->has('profileCampaignInvitations.invitations.0.expires_at')
+                ->where('profileCampaignInvitations.invitations.0.can_accept', true)
+                ->where('profileCampaignInvitations.invitations.0.accept_refusal', null)
                 ->missing('profileCampaignInvitations.invitations.0.email')
                 ->missing('profileCampaignInvitations.invitations.0.send_count')
                 ->missing('profileCampaignInvitations.invitations.0.can_resend'));
+    }
+
+    public function test_an_invitation_that_cannot_be_accepted_now_says_why(): void
+    {
+        $this->invite('john@example.com');
+        $this->campaign->update(['accepts_new_players' => false]);
+
+        $this->actingAs($this->john)
+            ->get('/perfil')
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('profileCampaignInvitations.invitations', 1)
+                ->where('profileCampaignInvitations.invitations.0.can_accept', false)
+                ->where('profileCampaignInvitations.invitations.0.accept_refusal', 'Esta campaña no acepta jugadores nuevos ahora mismo, así que no puedes aceptar la invitación. Seguirá disponible hasta que caduque.'));
+
+        $id = (string) CampaignInvitationModel::query()->value('id');
+        $this->actingAs($this->john)
+            ->post('/campanas/invitaciones/perfil/'.$id.'/aceptar')
+            ->assertRedirect('/perfil?tab=gametables-invitations')
+            ->assertSessionHas('error');
+
+        $this->assertFalse($this->isMember($this->john, $this->campaign));
+        $this->assertSame(1, CampaignInvitationModel::query()->count());
     }
 
     public function test_the_slot_registers_the_tab_with_its_keys(): void

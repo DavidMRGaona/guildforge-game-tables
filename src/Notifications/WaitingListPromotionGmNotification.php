@@ -21,6 +21,9 @@ final class WaitingListPromotionGmNotification extends Notification implements S
         private readonly ?string $tableLocation,
         // False on tables with manual confirmation: the game master has to confirm it
         private readonly bool $confirmed = true,
+        // A pending promotion on a table that delegates its registrations, for its linked
+        // directors: they approve or reject it on «Gestionar inscritos», not in the panel
+        private readonly ?string $manageUrl = null,
     ) {}
 
     /**
@@ -41,8 +44,12 @@ final class WaitingListPromotionGmNotification extends Notification implements S
                 'tableTitle' => $this->tableTitle,
             ]));
 
+        $manageUrl = $this->confirmed ? null : $this->manageUrl;
+
         if (! $this->confirmed) {
-            $message->line(__('game-tables::emails.waiting_list_promotion_gm.pending'));
+            $message->line(__($manageUrl !== null
+                ? 'game-tables::emails.waiting_list_promotion_gm.pending_manage'
+                : 'game-tables::emails.waiting_list_promotion_gm.pending'));
         }
 
         $message->line('**'.__('game-tables::emails.waiting_list_promotion_gm.table_title').':** '.$this->tableTitle);
@@ -53,6 +60,10 @@ final class WaitingListPromotionGmNotification extends Notification implements S
 
         if ($this->tableLocation !== null) {
             $message->line('**'.__('game-tables::emails.waiting_list_promotion_gm.table_location').':** '.$this->tableLocation);
+        }
+
+        if ($manageUrl !== null) {
+            return $message->action(__('game-tables::emails.waiting_list_promotion_gm.manage'), $manageUrl);
         }
 
         $tableUrl = url("/mesas/{$this->tableId}");

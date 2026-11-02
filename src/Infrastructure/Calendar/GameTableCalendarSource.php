@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Calendar;
 
+use App\Application\Calendar\Contracts\CalendarEntryLookupInterface;
 use App\Application\Calendar\Contracts\CalendarEntrySourceInterface;
 use App\Application\Calendar\DTOs\CalendarEntryDTO;
 use App\Domain\Calendar\Enums\CalendarSourceColor;
@@ -12,7 +13,7 @@ use DateTimeImmutable;
 use Modules\GameTables\Application\DTOs\GameTableListDTO;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 
-final readonly class GameTableCalendarSource implements CalendarEntrySourceInterface
+final readonly class GameTableCalendarSource implements CalendarEntryLookupInterface, CalendarEntrySourceInterface
 {
     public function __construct(
         private GameTableQueryServiceInterface $gameTableQueryService,
@@ -53,6 +54,13 @@ final readonly class GameTableCalendarSource implements CalendarEntrySourceInter
         return $entries;
     }
 
+    public function findEntry(string $id): ?CalendarEntryDTO
+    {
+        $table = $this->gameTableQueryService->findPubliclyListed($id);
+
+        return $table instanceof GameTableListDTO ? $this->toEntry($table) : null;
+    }
+
     private function toEntry(GameTableListDTO $table): ?CalendarEntryDTO
     {
         if (! $table->startsAt instanceof \DateTimeInterface || $table->slug === null) {
@@ -75,7 +83,7 @@ final readonly class GameTableCalendarSource implements CalendarEntrySourceInter
                 'gameSystemName' => $table->gameSystemName,
                 'currentPlayers' => $table->currentPlayers,
                 'maxPlayers' => $table->maxPlayers,
-                'isFull' => $table->currentPlayers >= $table->maxPlayers,
+                'isFull' => $table->isFull(),
                 'status' => $table->status->value,
                 'tags' => [],
                 'description' => $table->synopsis ?? '',
@@ -94,10 +102,9 @@ final readonly class GameTableCalendarSource implements CalendarEntrySourceInter
      */
     private function meta(GameTableListDTO $table): array
     {
-        $isFull = $table->currentPlayers >= $table->maxPlayers;
         $players = "{$table->currentPlayers}/{$table->maxPlayers}";
 
-        if ($isFull) {
+        if ($table->isFull()) {
             $players .= ' · '.__('game-tables::messages.enums.table_status.full');
         }
 

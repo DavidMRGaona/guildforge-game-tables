@@ -154,6 +154,8 @@ export default {
                 'The table is full. If a seat is freed before the table starts (or before registrations close, if that comes first), you will take it automatically, in waiting list order, and we will let you know by email.',
             waitingListHelpManual:
                 'The table is full. If a seat is freed before the table starts (or before registrations close, if that comes first), you will take it in waiting list order, pending confirmation by the game master, and we will let you know by email.',
+            waitingListHelpMarkedFull:
+                'The table is full: the game master hands out any seat that frees up. If you get one, we will let you know by email.',
             spectatorOnly: 'Player seats are taken: you will register as a spectator',
             selectRole: 'Select your role',
             addNotes: 'Add notes (optional)',
@@ -404,6 +406,7 @@ export default {
                 timeSlotHelp: 'Select one of the available time slots for this event',
                 timeSlotTablesLeft: '{label} ({count} table left) | {label} ({count} tables left)',
                 timeSlotFull: '{label} (full)',
+                timeSlotWithDay: '{day} · {label}',
                 duration: 'Duration (minutes)',
                 durationHelp: 'Estimated duration in minutes (e.g., 240 for 4 hours)',
                 tableType: 'Session type',

@@ -7,6 +7,8 @@ import { useI18n } from 'vue-i18n';
 import type { GameTable, GameMaster, SubjectSurveyLinks } from '../../types/gametables';
 import type { CampaignSessionInfo } from '../../types/registration';
 import BaseButton from '@/components/ui/BaseButton.vue';
+import AddToCalendarMenu from '@/components/calendar/AddToCalendarMenu.vue';
+import type { AddToCalendarLinks } from '@/types/models';
 import CapacityBar from '../../components/CapacityBar.vue';
 import SurveyLinks from '../../components/SurveyLinks.vue';
 import FormatBadge from '../../components/FormatBadge.vue';
@@ -25,6 +27,8 @@ interface Props {
     canManageRegistrations?: boolean;
     /** Its surveys for this person, when a surveys module offers any */
     surveyLinks?: SubjectSurveyLinks | null;
+    /** «Añadir al calendario» links from the core; null when the public calendar does not show the table */
+    calendarLinks?: AddToCalendarLinks | null;
 }
 
 const props = defineProps<Props>();
@@ -56,6 +60,13 @@ const formattedTime = computed(() => {
         hour: '2-digit',
         minute: '2-digit',
     });
+});
+
+// Adding a table that is already over to a personal calendar is of no use
+const calendarLinks = computed(() => {
+    if (!props.calendarLinks) return null;
+    const endsAt = new Date(props.table.startsAt).getTime() + props.table.durationMinutes * 60_000;
+    return endsAt > Date.now() ? props.calendarLinks : null;
 });
 
 const durationHours = computed(() => {
@@ -388,6 +399,10 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                             </p>
                         </div>
                     </div>
+
+                    <div v-if="calendarLinks" class="mt-4">
+                        <AddToCalendarMenu :links="calendarLinks" />
+                    </div>
                 </div>
 
                 <!-- Section 3: Capacity -->
@@ -420,7 +435,11 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                             :label="t('gameTables.roles.players')"
                             size="md"
                         />
-                        <p v-if="table.spotsAvailable > 0" class="mt-1 text-sm text-success">
+                        <!-- «Completa» set by hand offers no free seat, whatever the bar shows -->
+                        <p
+                            v-if="table.spotsAvailable > 0 && table.status !== 'full'"
+                            class="mt-1 text-sm text-success"
+                        >
                             {{ table.spotsAvailable }} {{ t('gameTables.spotsAvailable') }}
                         </p>
                         <p v-else class="mt-1 text-sm font-medium text-error">

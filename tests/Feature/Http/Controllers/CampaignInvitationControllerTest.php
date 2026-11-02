@@ -159,6 +159,71 @@ final class CampaignInvitationControllerTest extends ModuleTestCase
         $this->assertSame(0, CampaignInvitationModel::query()->count());
     }
 
+    public function test_the_matching_account_is_told_it_can_accept(): void
+    {
+        $token = $this->tokenFor('john@example.com');
+
+        $this->actingAs($this->john)
+            ->get('/campanas/invitaciones/'.$token)
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('state', 'match')
+                ->where('invitation.can_accept', true)
+                ->where('invitation.accept_refusal', null));
+    }
+
+    public function test_a_campaign_that_takes_no_new_players_cannot_be_accepted_and_keeps_the_invitation(): void
+    {
+        $refusal = 'Esta campaña no acepta jugadores nuevos ahora mismo, así que no puedes aceptar la invitación. Seguirá disponible hasta que caduque.';
+        $token = $this->tokenFor('john@example.com');
+        $this->campaign->update(['accepts_new_players' => false]);
+
+        $this->actingAs($this->john)
+            ->get('/campanas/invitaciones/'.$token)
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('state', 'match')
+                ->where('invitation.can_accept', false)
+                ->where('invitation.accept_refusal', $refusal));
+
+        $this->actingAs($this->john)
+            ->post('/campanas/invitaciones/'.$token.'/aceptar')
+            ->assertRedirect(route('campaigns.invitation.show', $token))
+            ->assertSessionHas('error', $refusal);
+
+        $this->assertFalse($this->isMember($this->john));
+        $this->assertSame(1, CampaignInvitationModel::query()->count());
+    }
+
+    public function test_a_members_only_campaign_cannot_be_accepted_by_someone_who_is_not_a_socio(): void
+    {
+        $token = $this->tokenFor('john@example.com');
+        $this->campaign->update(['roster_access' => 'members_only']);
+
+        $this->actingAs($this->john)
+            ->get('/campanas/invitaciones/'.$token)
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('invitation.can_accept', false)
+                ->where('invitation.accept_refusal', 'Esta campaña solo admite socios, así que no puedes aceptar la invitación mientras no lo seas. Seguirá disponible hasta que caduque.'));
+    }
+
+    public function test_other_states_do_not_get_the_acceptance_check(): void
+    {
+        $token = $this->tokenFor('john@example.com');
+        $this->campaign->update(['accepts_new_players' => false]);
+
+        $this->get('/campanas/invitaciones/'.$token)
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('state', 'guest')
+                ->missing('invitation.can_accept')
+                ->missing('invitation.accept_refusal'));
+
+        $this->actingAs($this->jane)
+            ->get('/campanas/invitaciones/'.$token)
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('state', 'mismatch')
+                ->missing('invitation.can_accept')
+                ->missing('invitation.accept_refusal'));
+    }
+
     public function test_accepting_needs_an_account(): void
     {
         $token = $this->tokenFor('john@example.com');

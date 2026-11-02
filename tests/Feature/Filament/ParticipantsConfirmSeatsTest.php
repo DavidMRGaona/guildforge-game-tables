@@ -138,6 +138,20 @@ final class ParticipantsConfirmSeatsTest extends ModuleTestCase
         }
     }
 
+    // «Completa» set by hand stops the automatic promotion, not the director's (#184)
+    #[DataProvider('waitingListSetting')]
+    public function test_promoting_a_player_into_a_free_seat_of_a_table_marked_full(bool $waitingList): void
+    {
+        $this->setWaitingList($waitingList);
+        $table = $this->table(['max_players' => 2, 'status' => 'full']);
+        $this->participant($table, 'confirmed', 'player');
+        $waiting = $this->participant($table, 'waiting_list', 'player', ['waiting_list_position' => 1]);
+
+        $this->participants($table)->callTableAction('promote', $waiting);
+
+        $this->assertSame('confirmed', $waiting->refresh()->status->value);
+    }
+
     // Characterization: a pending player confirmed on a manual table only needs a seat among the confirmed
     #[DataProvider('waitingListSetting')]
     public function test_confirming_a_pending_player_who_holds_a_seat(bool $waitingList): void

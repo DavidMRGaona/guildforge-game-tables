@@ -17,7 +17,6 @@ use Modules\GameTables\Application\DTOs\RosterPageDTO;
 use Modules\GameTables\Application\Services\CampaignDirectionInterface;
 use Modules\GameTables\Application\Services\CampaignInvitationServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterQueryInterface;
-use Modules\GameTables\Application\Services\MembershipCheckerInterface;
 use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Entities\CampaignJoinRequest;
 use Modules\GameTables\Domain\Entities\GameTable;
@@ -39,7 +38,7 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
         private CampaignRosterRepositoryInterface $roster,
         private CampaignJoinRequestRepositoryInterface $requests,
         private CampaignDirectionInterface $direction,
-        private MembershipCheckerInterface $membership,
+        private CampaignRosterGuard $guard,
         private GameTableRepositoryInterface $gameTables,
         private ParticipantRepositoryInterface $participants,
         private SeatCounter $seats,
@@ -109,6 +108,8 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
             ], $sessions),
             players: $players,
             canAdd: ! $campaign->isFinished() && $campaign->hasRoomFor($rosterCount),
+            // A finished campaign's roster no longer changes at all: the page says so elsewhere
+            inviteRefusal: $campaign->isFinished() ? null : $this->guard->newcomerRefusalMessage($campaign, null, CampaignRosterGuard::INVITER),
             removalNotice: $this->settings->isCampaignNotificationEnabled('roster_removed'),
             invitations: $invitations,
             // No seat is reserved: whoever accepts first enters, so the direction is told
@@ -141,12 +142,13 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
             }
         }
 
+        // The rules a request meets (CampaignRosterService::requestToJoin()), in the same order
         return new JoinBoxDTO(match (true) {
             $campaign->isFinished() => 'finished',
-            ! $campaign->canAcceptNewPlayers() => 'not_accepting',
+            $this->guard->newcomerRefusal($campaign, null) === 'not_accepting' => 'not_accepting',
             ! $campaign->hasRoomFor($this->roster->count($campaign->id)) => 'full',
             $userId === null => 'guest',
-            $campaign->rosterAccess === RosterAccess::MembersOnly && ! $this->membership->isActiveMember($userId) => 'members_only',
+            $this->guard->newcomerRefusal($campaign, $userId) === 'members_only' => 'members_only',
             default => 'can_request',
         });
     }

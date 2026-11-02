@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import HelpLink from '@/components/knowledge/HelpLink.vue';
 import { Mail } from '@lucide/vue';
-import { computed, ref } from 'vue';
+import { computed, ref, useId } from 'vue';
 import { router, Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import BaseButton from '@/components/ui/BaseButton.vue';
@@ -22,6 +22,7 @@ const { t, locale } = useI18n();
 const { success: flashSuccess, error: flashError } = useFlashMessages();
 
 const isAccepting = ref(false);
+const acceptRefusalId = useId();
 const isRejecting = ref(false);
 const showRejectDialog = ref(false);
 
@@ -209,12 +210,28 @@ function handleReject(): void {
                         </a>
                     </div>
 
+                    <!-- The campaign's rules turn the account away for now: the invitation stays -->
+                    <div
+                        v-if="state === 'match' && invitation.accept_refusal"
+                        :id="acceptRefusalId"
+                        class="mb-6 rounded-lg bg-warning-light p-4 text-center"
+                        role="status"
+                    >
+                        <p class="text-sm text-base-primary">
+                            {{ invitation.accept_refusal }}
+                        </p>
+                    </div>
+
                     <div class="flex flex-col gap-4 sm:flex-row">
                         <BaseButton
                             v-if="state === 'match'"
                             variant="primary"
                             class="flex-1"
                             :loading="isAccepting"
+                            :disabled="invitation.can_accept === false"
+                            :aria-describedby="
+                                invitation.accept_refusal ? acceptRefusalId : undefined
+                            "
                             @click="handleAccept"
                         >
                             {{ t('campaigns.invitation.accept') }}

@@ -714,6 +714,18 @@ return [
         'guest_confirmation_sent_unguaranteed' => 'We have sent you an email to confirm the registration. Your seat is not guaranteed until you confirm it.',
     ],
 
+    'game_system_deletion' => [
+        'tables' => '1 table|:count tables',
+        'campaigns' => '1 campaign|:count campaigns',
+        'and' => ':first and :second',
+        'in_use' => 'It is used by :usage, so it cannot be deleted. Deactivate it so it is no longer offered for new tables and campaigns; those already using it do not change.',
+        'in_use_inactive' => 'It is used by :usage, so it cannot be deleted. It is already deactivated: it is not offered for new tables and campaigns.',
+        'deactivate' => 'Deactivate',
+        'deactivated' => 'Game system deactivated',
+        'not_deleted' => 'Not deleted: tables or campaigns use it',
+        'bulk_not_deleted' => ':count system was not deleted because tables or campaigns use it. Deactivate it instead.|:count systems were not deleted because tables or campaigns use them. Deactivate them instead.',
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Validation Messages
@@ -877,6 +889,7 @@ return [
         'scheduling_mode' => 'Scheduling mode',
         'time_slots' => 'Time slots',
         'time_slot_label' => 'Slot name',
+        'time_slot_day' => 'Day',
         'start_time' => 'Start time',
         'end_time' => 'End time',
         'max_tables' => 'Maximum tables',
@@ -937,6 +950,10 @@ return [
             'not_accepting' => 'This campaign is not accepting new players.',
             'roster_full' => 'The roster is full.',
             'members_only' => 'This campaign only accepts requests from members.',
+            'invite_not_accepting' => 'This campaign is not accepting new players: no invitations can be sent while that holds.',
+            'invite_members_only' => 'This campaign only admits members, and that account is not a member.',
+            'invitee_not_accepting' => 'This campaign is not accepting new players right now, so you cannot accept the invitation. It stays available until it expires.',
+            'invitee_members_only' => 'This campaign only admits members, so you cannot accept the invitation until you are one. It stays available until it expires.',
             'already_member' => 'You are already part of the roster.',
             'account_already_member' => 'That account is already part of the roster.',
             'request_pending' => 'You already have a pending request.',

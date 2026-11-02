@@ -6,7 +6,9 @@ namespace Modules\GameTables\Tests\Feature\Infrastructure\Services;
 
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Carbon\CarbonImmutable;
 use DateTimeImmutable;
+use DateTimeZone;
 use Illuminate\Support\Str;
 use Modules\GameTables\Application\DTOs\FrontendCreateGameTableDTO;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
@@ -21,12 +23,15 @@ use Modules\GameTables\Domain\Repositories\EventGameTableConfigRepositoryInterfa
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Tests\Support\Modules\ModuleTestCase;
+use Tests\Support\Time\UsesUtcStorage;
 
 /**
  * Tables created from the public form take the panel defaults.
  */
 final class FrontendCreationSettingsTest extends ModuleTestCase
 {
+    use UsesUtcStorage;
+
     protected ?string $moduleName = 'game-tables';
 
     protected bool $autoEnableModule = true;
@@ -89,6 +94,54 @@ final class FrontendCreationSettingsTest extends ModuleTestCase
         $this->assertSame('2030-02-10 18:00:00', $this->closingDateOf($table));
     }
 
+    public function test_a_table_on_a_later_day_of_the_event_closes_at_its_own_start(): void
+    {
+        $table = $this->createForAnEvent(eventStart: '2030-02-10 18:00:00', tableStart: '2030-02-11 10:00:00', eventEnd: '2030-02-12 20:00:00');
+
+        $this->assertSame('2030-02-11 10:00:00', $this->closingDateOf($table));
+    }
+
+    public function test_a_table_on_the_first_day_of_a_multi_day_event_closes_at_the_event_start(): void
+    {
+        $table = $this->createForAnEvent(eventStart: '2030-02-10 10:00:00', tableStart: '2030-02-10 21:00:00', eventEnd: '2030-02-12 20:00:00');
+
+        $this->assertSame('2030-02-10 10:00:00', $this->closingDateOf($table));
+    }
+
+    public function test_the_first_day_of_the_event_is_a_day_of_the_site_calendar(): void
+    {
+        $this->useUtcStorage();
+
+        // 00:30 on the 11th of July in Madrid, still the 10th in UTC: the table is on the first day
+        $table = $this->createForAnEvent(eventStart: '2030-07-10T22:30:00Z', tableStart: '2030-07-11T08:00:00Z', eventEnd: '2030-07-12T20:00:00Z');
+        $this->assertSame('2030-07-10T22:30:00+00:00', $this->closingInstantOf($table));
+
+        // 00:30 on the 11th in Madrid is the second day of an event that starts at 22:00 on the 10th
+        $table = $this->createForAnEvent(eventStart: '2030-07-10T20:00:00Z', tableStart: '2030-07-10T22:30:00Z', eventEnd: '2030-07-12T20:00:00Z');
+        $this->assertSame('2030-07-10T22:30:00+00:00', $this->closingInstantOf($table));
+    }
+
+    public function test_a_draft_given_a_later_day_of_the_event_closes_at_its_own_start(): void
+    {
+        $event = $this->eventWithTables('2030-02-10 18:00:00', '2030-02-12 20:00:00');
+        $table = $this->createFromTheWeb(new DateTimeImmutable('2030-02-01 18:00:00'));
+        $this->assertNull($table->registration_closes_at);
+
+        $this->updateDraftStart($table, new DateTimeImmutable('2030-02-11 10:00:00'), $event->id);
+
+        $this->assertSame('2030-02-11 10:00:00', $this->closingDateOf($table->refresh()));
+    }
+
+    public function test_a_draft_given_the_first_day_of_the_event_closes_at_the_event_start(): void
+    {
+        $event = $this->eventWithTables('2030-02-10 18:00:00', '2030-02-12 20:00:00');
+        $table = $this->createFromTheWeb(new DateTimeImmutable('2030-02-01 18:00:00'));
+
+        $this->updateDraftStart($table, new DateTimeImmutable('2030-02-10 20:00:00'), $event->id);
+
+        $this->assertSame('2030-02-10 18:00:00', $this->closingDateOf($table->refresh()));
+    }
+
     public function test_moving_a_draft_earlier_caps_its_kept_closing_date_to_the_new_start(): void
     {
         $table = $this->createForAnEvent(eventStart: '2030-02-10 18:00:00', tableStart: '2030-02-10 20:00:00');
@@ -115,7 +168,14 @@ final class FrontendCreationSettingsTest extends ModuleTestCase
         return $table->registration_closes_at->format('Y-m-d H:i:s');
     }
 
-    private function updateDraftStart(GameTableModel $table, DateTimeImmutable $startsAt): void
+    private function closingInstantOf(GameTableModel $table): string
+    {
+        $this->assertNotNull($table->registration_closes_at);
+
+        return CarbonImmutable::instance($table->registration_closes_at)->setTimezone(new DateTimeZone('UTC'))->format('c');
+    }
+
+    private function updateDraftStart(GameTableModel $table, DateTimeImmutable $startsAt, ?string $eventId = null): void
     {
         app(FrontendCreationServiceInterface::class)->updateDraft($table->id, new FrontendCreateGameTableDTO(
             createdBy: (string) $table->created_by,
@@ -127,15 +187,25 @@ final class FrontendCreationSettingsTest extends ModuleTestCase
             tableFormat: TableFormat::InPerson,
             minPlayers: 3,
             maxPlayers: 5,
-            eventId: $table->event_id,
+            eventId: $eventId ?? $table->event_id,
             experienceLevel: ExperienceLevel::cases()[0],
             characterCreation: CharacterCreation::cases()[0],
         ));
     }
 
-    private function createForAnEvent(string $eventStart, string $tableStart): GameTableModel
+    private function createForAnEvent(string $eventStart, string $tableStart, ?string $eventEnd = null): GameTableModel
     {
-        $event = EventModel::factory()->create(['start_date' => $eventStart]);
+        $event = $this->eventWithTables($eventStart, $eventEnd);
+
+        return $this->createFromTheWeb(new DateTimeImmutable($tableStart), $event->id);
+    }
+
+    private function eventWithTables(string $start, ?string $end = null): EventModel
+    {
+        $event = EventModel::factory()->create([
+            'start_date' => CarbonImmutable::parse($start),
+            'end_date' => CarbonImmutable::parse($end ?? $start)->addHours($end === null ? 6 : 0),
+        ]);
         app(EventGameTableConfigRepositoryInterface::class)->save(new EventGameTableConfig(
             eventId: $event->id,
             tablesEnabled: true,
@@ -144,16 +214,15 @@ final class FrontendCreationSettingsTest extends ModuleTestCase
             locationMode: LocationMode::FreeChoice,
         ));
 
-        return $this->createFromTheWeb(new DateTimeImmutable($tableStart), $event->id);
+        return $event;
     }
 
     private function createFromTheWeb(?DateTimeImmutable $startsAt = null, ?string $eventId = null): GameTableModel
     {
         $user = UserModel::factory()->create();
-        $system = GameSystemModel::create([
+        $system = GameSystemModel::query()->firstOrCreate(['slug' => 'sistema-de-prueba'], [
             'id' => (string) Str::uuid(),
             'name' => 'Sistema de prueba',
-            'slug' => 'sistema-de-prueba',
             'is_active' => true,
         ]);
 

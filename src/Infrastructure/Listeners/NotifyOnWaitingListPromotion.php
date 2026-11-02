@@ -17,6 +17,8 @@ use Modules\GameTables\Notifications\WaitingListPromotionNotification;
 
 final readonly class NotifyOnWaitingListPromotion
 {
+    use NotifiesOrganisation;
+
     public function __construct(
         private GameTableSettingsReader $settingsReader,
         private NotificationRecipientResolverInterface $recipientResolver,
@@ -54,27 +56,16 @@ final readonly class NotifyOnWaitingListPromotion
             return;
         }
 
-        // Notify GMs and table notification email
-        $gmNotification = new WaitingListPromotionGmNotification(
+        // Directors of a table that delegates its registrations approve a pending promotion on
+        // «Gestionar inscritos»; game masters and the table's email keep the panel's wording
+        $this->notifyOrganisation($gameTable, ! $event->confirmed, fn (?string $manageUrl): WaitingListPromotionGmNotification => new WaitingListPromotionGmNotification(
             participantName: $participantName,
             tableId: $event->gameTableId,
             tableTitle: $gameTable->title,
             tableDate: $tableDate,
             tableLocation: $tableLocation,
             confirmed: $event->confirmed,
-        );
-
-        $emails = $this->recipientResolver->getGameMasterEmails($event->gameTableId);
-        $tableEmail = $this->recipientResolver->getTableNotificationEmail($event->gameTableId);
-
-        if ($tableEmail !== null) {
-            $emails[] = $tableEmail;
-        }
-
-        $emails = array_unique($emails);
-
-        foreach ($emails as $email) {
-            Notification::route('mail', $email)->notify($gmNotification);
-        }
+            manageUrl: $manageUrl,
+        ));
     }
 }

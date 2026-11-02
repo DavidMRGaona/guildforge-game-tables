@@ -6,6 +6,7 @@ namespace Modules\GameTables\Infrastructure\Services;
 
 use App\Application\Services\TimezoneServiceInterface;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Str;
 use Modules\GameTables\Application\DTOs\GameMasterResponseDTO;
 use Modules\GameTables\Application\DTOs\GameTableListDTO;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
@@ -74,6 +75,22 @@ final readonly class GameTableQueryService implements GameTableQueryServiceInter
             ->get();
 
         return $tables->map(fn (GameTableModel $table): GameTableListDTO => $this->toListDTO($table))->all();
+    }
+
+    public function findPubliclyListed(string $id): ?GameTableListDTO
+    {
+        // Ids are UUIDs: anything else would be a query error on PostgreSQL.
+        if (! Str::isUuid($id)) {
+            return null;
+        }
+
+        $table = SeatCounter::withPlayerSeatCounts(GameTableModel::query())
+            ->with(['gameSystem', 'creator', 'event', 'gameMasters.user'])
+            ->publiclyListed()
+            ->whereKey($id)
+            ->first();
+
+        return $table instanceof GameTableModel ? $this->toListDTO($table) : null;
     }
 
     public function findPublished(string $id): ?GameTableResponseDTO

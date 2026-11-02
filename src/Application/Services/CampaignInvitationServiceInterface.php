@@ -12,7 +12,9 @@ use Modules\GameTables\Domain\Exceptions\RosterActionRefusedException;
 interface CampaignInvitationServiceInterface
 {
     /**
-     * Invites an email address to the campaign; a pending invitation for it is resent instead.
+     * Invites an email address to the campaign; a pending invitation for it is resent instead. As
+     * for a request, the campaign must take new players, and on a members-only roster an email
+     * with an account must be a socio's (one without is checked when accepted).
      *
      * @throws CampaignNotFoundException
      * @throws RosterActionRefusedException
@@ -45,7 +47,16 @@ interface CampaignInvitationServiceInterface
     public function viewByToken(string $token, DateTimeImmutable $now): ?CampaignInvitationViewDTO;
 
     /**
-     * Joins the campaign with the emailed token. The account must hold the invited email.
+     * Why the account cannot accept an invitation to the campaign right now, worded for the
+     * invitee: the campaign takes no new players, or only socios and the account is not one. Null
+     * when neither holds (or the campaign is gone). Such a refusal keeps the invitation.
+     */
+    public function acceptRefusal(string $campaignId, string $userId): ?string;
+
+    /**
+     * Joins the campaign with the emailed token. The account must hold the invited email, and it
+     * meets the rules of a request (CampaignRosterServiceInterface::addInvitee()); a refusal for
+     * a full roster, a campaign taking no new players or members only keeps the invitation.
      *
      * @throws CampaignNotFoundException when the campaign was deleted meanwhile
      * @throws RosterActionRefusedException invitation_not_found, invitation_other_account, or the roster's own refusals

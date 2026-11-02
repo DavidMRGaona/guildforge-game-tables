@@ -55,7 +55,7 @@ Se respeta lo que ya había: quien estaba inscrito sigue como estaba, y no se vu
 Si en la configuración está activado **Sesión programada (a la plantilla)**, cada jugador inscrito recibe el correo «Nueva sesión de (campaña): (fecha)». Si entró en la lista de espera, el correo se lo dice.
 
 > [!IMPORTANT]
-> En el panel, **Cancelar inscripción** sobre un jugador de la plantilla cuenta como una ausencia a esa sesión: sigue en la campaña, pero no se le vuelve a inscribir en ella aunque despubliques y vuelvas a publicar. Puede volver a apuntarse desde la web mientras haya plaza.
+> En el panel, **Cancelar inscripción** sobre un jugador de la plantilla cuenta como una ausencia a esa sesión: sigue en la campaña, pero no se le vuelve a inscribir en ella aunque despubliques y vuelvas a publicar. Recibe el correo «Ausencia anotada: (sesión)», y puede volver a apuntarse desde la web mientras haya plaza.
 
 ## Cuando la plantilla cambia
 

@@ -85,6 +85,17 @@ final class ListSeatsTest extends ModuleTestCase
         $this->assertSeatsEverywhere($table, taken: 3, free: 0, full: true);
     }
 
+    // «Completa» set by hand reads as full everywhere; the seats are still counted as they are (#184)
+    #[DataProvider('waitingListSetting')]
+    public function test_a_table_marked_full_is_full_on_every_card(bool $waitingList): void
+    {
+        $this->setWaitingList($waitingList);
+        $table = $this->table(['max_players' => 4, 'status' => 'full']);
+        $this->participants($table, 'player', 'confirmed', 1);
+
+        $this->assertSeatsEverywhere($table, taken: 1, free: 3, full: true);
+    }
+
     public function test_with_the_waiting_list_on_pending_players_hold_seats_on_manual_tables_on_every_card(): void
     {
         $this->setWaitingList(true);

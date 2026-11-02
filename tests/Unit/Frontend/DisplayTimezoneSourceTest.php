@@ -32,6 +32,19 @@ final class DisplayTimezoneSourceTest extends TestCase
         $this->assertStringNotContainsString('slot.start_time === tableStartTime', $source);
     }
 
+    public function test_the_slot_options_name_their_day_in_the_site_zone(): void
+    {
+        $source = $this->source('resources/js/composables/useTimeSlotOptions.ts');
+
+        // Days are told apart and named in the site's calendar, not the browser's
+        $this->assertStringContainsString('venueDayKey(new Date(slot.start_time))', $source);
+        $this->assertStringContainsString('timeZone: VENUE_TIMEZONE', $source);
+
+        foreach (['resources/js/pages/GameTables/Create.vue', 'resources/js/pages/GameTables/Edit.vue'] as $file) {
+            $this->assertStringContainsString('useTimeSlotOptions(() => props.eventContext?.available_time_slots)', $this->source($file), $file);
+        }
+    }
+
     public function test_the_not_eligible_pages_show_the_opening_in_the_site_zone(): void
     {
         foreach (['resources/js/pages/GameTables/CreateNotEligible.vue', 'resources/js/pages/Campaigns/CreateNotEligible.vue'] as $file) {
