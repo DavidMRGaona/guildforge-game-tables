@@ -74,9 +74,21 @@ final class GameTable
         public ?DateTimeImmutable $updatedAt = null,
     ) {}
 
+    /**
+     * A draft becomes scheduled; a table created in the panel without publishing keeps its status.
+     *
+     * @throws InvalidStatusTransitionException once the table is in progress, completed or cancelled
+     */
     public function publish(): void
     {
-        $this->status = TableStatus::Scheduled;
+        if (! $this->status->allowsPublishing()) {
+            throw InvalidStatusTransitionException::fromTo($this->status->value, TableStatus::Scheduled->value);
+        }
+
+        if ($this->status === TableStatus::Draft) {
+            $this->status = TableStatus::Scheduled;
+        }
+
         $this->isPublished = true;
         $this->publishedAt = new DateTimeImmutable;
     }

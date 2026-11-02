@@ -677,6 +677,11 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         // Only what the author sent to review is approved (and so published)
         $this->assertInReview($table->frontendCreationStatus);
 
+        // Cancelled while in review: publishing it would reopen it
+        if (! $table->status->allowsPublishing()) {
+            throw NotEditableException::forStatus($table->status->value);
+        }
+
         // Refused before anything is saved: the table stays in review
         $this->gameTableService->ensureFitsRoster($tableId);
 

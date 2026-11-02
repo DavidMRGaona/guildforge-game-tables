@@ -20,7 +20,8 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
 /**
- * Tables and campaigns created from the web that wait for a moderator.
+ * Tables and campaigns created from the web that wait for a moderator. Each person sees only
+ * what they may moderate: tables with «Editar mesas», campaigns with «Editar campañas».
  */
 final class PendingModerationWidget extends BaseWidget
 {
@@ -30,8 +31,10 @@ final class PendingModerationWidget extends BaseWidget
 
     public static function canView(): bool
     {
-        return GameTableModel::query()->where('frontend_creation_status', FrontendCreationStatus::PendingReview->value)->exists()
-            || CampaignModel::query()->where('frontend_creation_status', FrontendCreationStatus::PendingReview->value)->exists();
+        $pending = FrontendCreationStatus::PendingReview->value;
+
+        return (GameTableResource::canModerate() && GameTableModel::query()->where('frontend_creation_status', $pending)->exists())
+            || (CampaignResource::canModerate() && CampaignModel::query()->where('frontend_creation_status', $pending)->exists());
     }
 
     public function table(Table $table): Table
@@ -82,7 +85,7 @@ final class PendingModerationWidget extends BaseWidget
     {
         $pending = FrontendCreationStatus::PendingReview->value;
 
-        $tables = GameTableModel::query()
+        $tables = ! GameTableResource::canModerate() ? collect() : GameTableModel::query()
             ->where('frontend_creation_status', $pending)
             ->with(['gameSystem', 'creator'])
             ->get()
@@ -97,7 +100,7 @@ final class PendingModerationWidget extends BaseWidget
                 'url' => GameTableResource::getUrl('edit', ['record' => $table]),
             ]);
 
-        $campaigns = CampaignModel::query()
+        $campaigns = ! CampaignResource::canModerate() ? collect() : CampaignModel::query()
             ->where('frontend_creation_status', $pending)
             ->with(['gameSystem', 'creator'])
             ->get()
