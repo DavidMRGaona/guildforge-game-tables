@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Infrastructure\Services;
 
 use App\Application\Authorization\Services\AuthorizationServiceInterface;
-use App\Application\Services\TimezoneServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
-use DateTimeImmutable;
 use Modules\GameTables\Application\DTOs\CreationEligibilityDTO;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
 use Modules\GameTables\Domain\Enums\CreationAccessLevel;
@@ -95,54 +93,6 @@ final readonly class CreationEligibilityService implements CreationEligibilitySe
         };
     }
 
-    public function getCreationOpenDate(?string $userId, DateTimeImmutable $eventStartDate): DateTimeImmutable
-    {
-        $tier = $this->getUserPriorityTier($userId);
-        if ($tier === null) {
-            return $eventStartDate; // No priority, opens at event start
-        }
-
-        $tiers = $this->settingsReader->getPriorityTiers();
-        foreach ($tiers as $tierConfig) {
-            if ($tierConfig['tier'] === $tier) {
-                // Calendar days of the site, whatever the storage zone
-                $timezone = app(TimezoneServiceInterface::class);
-
-                return $timezone->toStorage($timezone->toDisplay($eventStartDate)->modify("-{$tierConfig['days_before']} days"));
-            }
-        }
-
-        return $eventStartDate;
-    }
-
-    public function getUserPriorityTier(?string $userId): ?int
-    {
-        if ($userId === null) {
-            return null;
-        }
-
-        $tiers = $this->settingsReader->getPriorityTiers();
-        $user = $this->getUser($userId);
-
-        if (! $user instanceof UserModel) {
-            return null;
-        }
-
-        foreach ($tiers as $tierConfig) {
-            $matches = match ($tierConfig['type']) {
-                'role' => $this->authorizationService->hasRole($user, $tierConfig['value'] ?? ''),
-                'permission' => $this->authorizationService->can($user, $tierConfig['value'] ?? ''),
-                default => false,
-            };
-
-            if ($matches) {
-                return $tierConfig['tier'];
-            }
-        }
-
-        return null;
-    }
-
     public function isTableCreationEnabled(): bool
     {
         return $this->settingsReader->isFrontendCreationEnabled()
@@ -162,10 +112,7 @@ final readonly class CreationEligibilityService implements CreationEligibilitySe
             return CreationEligibilityDTO::notEligible('user_not_found');
         }
 
-        $userTier = $this->getUserPriorityTier($userId);
-
         return CreationEligibilityDTO::eligible(
-            userTier: $userTier,
             canCreateTables: true,
             canCreateCampaigns: $this->settingsReader->canCreateCampaigns(),
         );
@@ -187,10 +134,7 @@ final readonly class CreationEligibilityService implements CreationEligibilitySe
             return CreationEligibilityDTO::notEligible('role_not_allowed');
         }
 
-        $userTier = $this->getUserPriorityTier($userId);
-
         return CreationEligibilityDTO::eligible(
-            userTier: $userTier,
             canCreateTables: true,
             canCreateCampaigns: $this->settingsReader->canCreateCampaigns(),
         );
@@ -212,10 +156,7 @@ final readonly class CreationEligibilityService implements CreationEligibilitySe
             return CreationEligibilityDTO::notEligible('permission_denied');
         }
 
-        $userTier = $this->getUserPriorityTier($userId);
-
         return CreationEligibilityDTO::eligible(
-            userTier: $userTier,
             canCreateTables: true,
             canCreateCampaigns: $this->settingsReader->canCreateCampaigns(),
         );
@@ -228,10 +169,7 @@ final readonly class CreationEligibilityService implements CreationEligibilitySe
             return CreationEligibilityDTO::notEligible('user_not_found');
         }
 
-        $userTier = $this->getUserPriorityTier($userId);
-
         return CreationEligibilityDTO::eligible(
-            userTier: $userTier,
             canCreateTables: $this->settingsReader->canCreateTables(),
             canCreateCampaigns: true,
         );
@@ -253,10 +191,7 @@ final readonly class CreationEligibilityService implements CreationEligibilitySe
             return CreationEligibilityDTO::notEligible('role_not_allowed');
         }
 
-        $userTier = $this->getUserPriorityTier($userId);
-
         return CreationEligibilityDTO::eligible(
-            userTier: $userTier,
             canCreateTables: $this->settingsReader->canCreateTables(),
             canCreateCampaigns: true,
         );
@@ -278,10 +213,7 @@ final readonly class CreationEligibilityService implements CreationEligibilitySe
             return CreationEligibilityDTO::notEligible('permission_denied');
         }
 
-        $userTier = $this->getUserPriorityTier($userId);
-
         return CreationEligibilityDTO::eligible(
-            userTier: $userTier,
             canCreateTables: $this->settingsReader->canCreateTables(),
             canCreateCampaigns: true,
         );

@@ -8,6 +8,8 @@ use App\Application\Modules\Services\ModuleManagerServiceInterface;
 use App\Domain\Modules\ValueObjects\ModuleName;
 use App\Filament\Concerns\ChecksPermissions;
 use App\Filament\Concerns\SafeModuleNavigation;
+use App\Infrastructure\Persistence\Eloquent\Models\PermissionModel;
+use App\Infrastructure\Persistence\Eloquent\Models\RoleModel;
 use Closure;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
@@ -357,11 +359,61 @@ final class GameTablesSettings extends Page implements HasForms
                             'role_based' => __('game-tables::messages.settings.publication_mode.role_based'),
                         ])
                         ->native(false)
+                        ->live()
                         ->visible(fn (Get $get): bool => (bool) $get('frontend_creation.enabled')),
+
+                    Select::make('frontend_creation.publication.auto_publish_roles')
+                        ->label(__('game-tables::messages.settings.fields.auto_publish_roles'))
+                        ->helperText(__('game-tables::messages.settings.fields.auto_publish_roles_help'))
+                        ->multiple()
+                        ->options(fn (): array => self::roleOptions())
+                        ->native(false)
+                        // The mode is useless without a role or a permission: everything would go to review
+                        ->required(fn (Get $get): bool => self::isRoleBased($get)
+                            && blank($get('frontend_creation.publication.auto_publish_permissions')))
+                        ->validationMessages(['required' => __('game-tables::messages.settings.validation.auto_publish_needs_one')])
+                        ->visible(fn (Get $get): bool => self::isRoleBased($get)),
+
+                    Select::make('frontend_creation.publication.auto_publish_permissions')
+                        ->label(__('game-tables::messages.settings.fields.auto_publish_permissions'))
+                        ->helperText(__('game-tables::messages.settings.fields.auto_publish_permissions_help'))
+                        ->multiple()
+                        ->options(fn (): array => self::permissionOptions())
+                        ->native(false)
+                        ->live()
+                        ->visible(fn (Get $get): bool => self::isRoleBased($get)),
                 ])
                 ->columns(2)
                 ->collapsible(),
         ];
+    }
+
+    private static function isRoleBased(Get $get): bool
+    {
+        return (bool) $get('frontend_creation.enabled')
+            && $get('frontend_creation.publication.mode') === 'role_based';
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private static function roleOptions(): array
+    {
+        return RoleModel::query()
+            ->orderBy('display_name')
+            ->pluck('display_name', 'name')
+            ->all();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private static function permissionOptions(): array
+    {
+        return PermissionModel::query()
+            ->orderBy('label')
+            ->pluck('label', 'key')
+            ->all();
     }
 
     /**

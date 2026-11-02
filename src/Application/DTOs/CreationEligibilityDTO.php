@@ -12,7 +12,6 @@ final readonly class CreationEligibilityDTO
     public function __construct(
         public bool $eligible,
         public ?string $reason,
-        public ?int $userTier,
         public ?DateTimeImmutable $canCreateAt,
         public bool $canCreateTables,
         public bool $canCreateCampaigns,
@@ -22,7 +21,6 @@ final readonly class CreationEligibilityDTO
     ) {}
 
     public static function eligible(
-        ?int $userTier = null,
         bool $canCreateTables = true,
         bool $canCreateCampaigns = false,
         bool $hasEarlyAccess = false,
@@ -30,7 +28,6 @@ final readonly class CreationEligibilityDTO
         return new self(
             eligible: true,
             reason: null,
-            userTier: $userTier,
             canCreateAt: null,
             canCreateTables: $canCreateTables,
             canCreateCampaigns: $canCreateCampaigns,
@@ -46,7 +43,6 @@ final readonly class CreationEligibilityDTO
         return new self(
             eligible: false,
             reason: $reason,
-            userTier: null,
             canCreateAt: null,
             canCreateTables: false,
             canCreateCampaigns: false,
@@ -57,14 +53,12 @@ final readonly class CreationEligibilityDTO
 
     public static function eligibleAt(
         DateTimeImmutable $canCreateAt,
-        ?int $userTier = null,
         bool $hasEarlyAccess = false,
         ?DateTimeImmutable $publicOpenDate = null,
     ): self {
         return new self(
             eligible: false,
             reason: null,
-            userTier: $userTier,
             canCreateAt: $canCreateAt,
             canCreateTables: false,
             canCreateCampaigns: false,
@@ -84,7 +78,6 @@ final readonly class CreationEligibilityDTO
         return [
             'eligible' => $this->eligible,
             'reason' => $this->reason,
-            'user_tier' => $this->userTier,
             'can_create_at' => $timezone->iso($this->canCreateAt),
             'can_create_tables' => $this->canCreateTables,
             'can_create_campaigns' => $this->canCreateCampaigns,

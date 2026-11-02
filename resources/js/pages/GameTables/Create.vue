@@ -73,7 +73,6 @@ interface Eligibility {
     eligible: boolean;
     reason: string | null;
     canCreateAt: string | null;
-    userTier: string | null;
 }
 
 interface TimeSlot {

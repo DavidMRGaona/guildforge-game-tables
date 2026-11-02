@@ -19,7 +19,6 @@ interface EventCreationEligibility {
     eligible: boolean;
     reason: string | null;
     can_create_at: string | null;
-    user_tier: number | null;
     can_create_tables: boolean;
     can_create_campaigns: boolean;
     has_early_access: boolean;

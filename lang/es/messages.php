@@ -542,8 +542,13 @@ return [
             'required_permission_help' => 'Nombre del permiso necesario para crear',
             'publication_mode' => 'Modo de publicación',
             'publication_mode_help' => 'Cómo se publican las mesas creadas por usuarios',
+            'auto_publish_roles' => 'Roles que publican sin revisión',
+            'auto_publish_roles_help' => 'Lo que crea en la web quien tiene alguno de estos roles se publica al enviarlo; lo de los demás pasa por revisión.',
+            'auto_publish_permissions' => 'Permisos que publican sin revisión',
+            'auto_publish_permissions_help' => 'También se publica sin revisión lo que crea quien tiene alguno de estos permisos.',
         ],
         'validation' => [
+            'auto_publish_needs_one' => 'Elige al menos un rol o un permiso que publique sin revisión.',
             'above_players_limit' => 'No puede superar el límite máximo de jugadores (:limit)',
             'above_spectators_limit' => 'No puede superar el límite máximo de espectadores (:limit)',
             'above_duration_limit' => 'No puede superar la duración máxima (:limit minutos)',

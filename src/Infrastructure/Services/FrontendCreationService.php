@@ -493,11 +493,9 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         // Sent to review: clears the reason of an earlier rejection
         $table->submitForModeration();
 
-        // In 'auto' mode, or for a user who may publish without review, it is approved and
-        // published at once, as a campaign is
-        $mode = $this->settingsReader->getPublicationMode();
-
-        if ($mode === 'auto' || $this->checkAutoPublishEligibility($userId)) {
+        // For a user who may publish without review it is approved and published at once, as a
+        // campaign is
+        if ($this->publishesWithoutReview($userId)) {
             // Refused before anything is saved: the table stays a draft
             $this->gameTableService->ensureFitsRoster($tableId);
 
@@ -847,10 +845,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         // Submit for moderation
         $campaign->submitForModeration();
 
-        // Check if auto-publish eligible
-        $mode = $this->settingsReader->getPublicationMode();
-
-        $autoPublish = $mode === 'auto' || $this->checkAutoPublishEligibility($userId);
+        $autoPublish = $this->publishesWithoutReview($userId);
 
         if ($autoPublish) {
             $campaign->approveFrontendCreation();
@@ -1163,15 +1158,21 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
 
     private function determineInitialStatus(string $userId): FrontendCreationStatus
     {
-        $mode = $this->settingsReader->getPublicationMode();
+        return $this->publishesWithoutReview($userId)
+            ? FrontendCreationStatus::Approved
+            : FrontendCreationStatus::Draft;
+    }
 
-        return match ($mode) {
-            'auto' => FrontendCreationStatus::Approved,
-            'approval' => FrontendCreationStatus::Draft,
-            'role_based' => $this->checkAutoPublishEligibility($userId)
-                ? FrontendCreationStatus::Approved
-                : FrontendCreationStatus::Draft,
-            default => FrontendCreationStatus::Draft,
+    /**
+     * Whether what this user creates or sends skips review. The roles and permissions chosen for
+     * the 'role_based' mode stay stored when the mode changes, so they count in that mode only.
+     */
+    private function publishesWithoutReview(string $userId): bool
+    {
+        return match ($this->settingsReader->getPublicationMode()) {
+            'auto' => true,
+            'role_based' => $this->checkAutoPublishEligibility($userId),
+            default => false,
         };
     }
 
