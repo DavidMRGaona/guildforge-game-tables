@@ -58,8 +58,10 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
             $campaign = $this->campaigns->findOrFail(new CampaignId($campaignId));
 
             $this->guard->ensureCanChange($campaign);
+            $this->guard->ensureAdmitsNewcomer($campaign, null, CampaignRosterGuard::INVITER);
             $this->guard->ensureRoomIn($campaign);
 
+            // An email without an account meets the membership rule when it is accepted
             $account = $this->accounts->findByEmail($email);
             if ($account instanceof AccountDTO) {
                 if ($this->direction->isDirector($campaignId, $account->userId)) {
@@ -69,6 +71,8 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
                 if ($this->roster->contains($campaign->id, $account->userId)) {
                     throw RosterActionRefusedException::because('account_already_member');
                 }
+
+                $this->guard->ensureAdmitsNewcomer($campaign, $account->userId, CampaignRosterGuard::INVITER);
             }
 
             $now = CarbonImmutable::now()->toDateTimeImmutable();
@@ -118,7 +122,9 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
             $campaign = $this->campaigns->findOrFail(new CampaignId($campaignId));
 
             $this->guard->ensureCanChange($campaign);
+            $this->guard->ensureAdmitsNewcomer($campaign, null, CampaignRosterGuard::INVITER);
             $this->guard->ensureRoomIn($campaign);
+            $this->guard->ensureAdmitsNewcomer($campaign, $this->accounts->findByEmail($invitation->email)?->userId, CampaignRosterGuard::INVITER);
 
             $now = CarbonImmutable::now()->toDateTimeImmutable();
             $this->ensureWithinLimits($campaignId, $invitation->email, $now);
@@ -190,6 +196,15 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
         return $this->viewOf($invitation, $campaign->title, $campaign->slug, false);
     }
 
+    public function acceptRefusal(string $campaignId, string $userId): ?string
+    {
+        $campaign = Str::isUuid($campaignId) ? $this->campaigns->find(new CampaignId($campaignId)) : null;
+
+        return $campaign instanceof Campaign
+            ? $this->guard->newcomerRefusalMessage($campaign, $userId, CampaignRosterGuard::INVITEE)
+            : null;
+    }
+
     public function accept(string $token, string $userId): void
     {
         $invitation = $this->liveByToken($token, CarbonImmutable::now()->toDateTimeImmutable())
@@ -234,9 +249,10 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
         $campaignId = $invitation->campaignId->value;
 
         try {
-            $this->rosterService->addUser($campaignId, $userId, $invitation->invitedBy ?? $userId);
+            $this->rosterService->addInvitee($campaignId, $userId, $invitation->invitedBy ?? $userId);
         } catch (RosterActionRefusedException $e) {
-            // A full roster may have room later; these will not change
+            // A full roster may have room later, a closed campaign reopen and an invitee become a
+            // socio; these will not change
             if (in_array($e->reason, ['unavailable', 'finished', 'account_already_member'], true)) {
                 $this->invitations->delete($invitation->id);
             }

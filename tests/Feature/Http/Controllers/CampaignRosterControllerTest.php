@@ -97,6 +97,7 @@ final class CampaignRosterControllerTest extends ModuleTestCase
                 ->where('roster_access_options.anyone', 'Cualquier cuenta')
                 ->has('max_players_limit')
                 ->where('can_add', true)
+                ->where('invite_refusal', null)
                 ->where('removal_notice', true)
                 ->has('invitations', 0)
                 ->where('more_invitations_than_seats', false)
@@ -476,6 +477,40 @@ final class CampaignRosterControllerTest extends ModuleTestCase
                 ->where('can_add', false)
                 ->has('invitations', 1)
                 ->where('more_invitations_than_seats', true));
+    }
+
+    public function test_the_page_says_why_nobody_can_be_invited_while_the_campaign_takes_no_new_players(): void
+    {
+        $refusal = 'La campaña no acepta jugadores nuevos: no se pueden enviar invitaciones mientras siga así.';
+        $this->campaign->update(['accepts_new_players' => false]);
+
+        $this->asDirector()
+            ->get($this->rosterUrl())
+            ->assertInertia(fn (Assert $page) => $page->where('invite_refusal', $refusal));
+
+        $this->asDirector()
+            ->post($this->rosterUrl().'/invitaciones', ['email' => 'ana@example.com', 'consent' => true])
+            ->assertRedirect($this->rosterUrl())
+            ->assertSessionHas('error', $refusal);
+        $this->assertSame(0, DB::table('gametables_campaign_invitations')->count());
+
+        // A finished campaign says so elsewhere: its roster no longer changes at all
+        $this->campaign->update(['status' => 'completed']);
+        $this->asDirector()
+            ->get($this->rosterUrl())
+            ->assertInertia(fn (Assert $page) => $page->where('can_add', false)->where('invite_refusal', null));
+    }
+
+    public function test_inviting_someone_who_is_not_a_socio_to_a_members_only_campaign_flashes_the_refusal(): void
+    {
+        $this->campaign->update(['roster_access' => 'members_only']);
+
+        $this->asDirector()
+            ->post($this->rosterUrl().'/invitaciones', ['email' => 'richard@example.com', 'consent' => true])
+            ->assertRedirect($this->rosterUrl())
+            ->assertSessionHas('error', 'Esta campaña solo admite socios y esa cuenta no es de un socio.');
+
+        $this->assertSame(0, DB::table('gametables_campaign_invitations')->count());
     }
 
     public function test_only_the_direction_invites(): void

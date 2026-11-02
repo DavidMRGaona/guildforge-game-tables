@@ -104,6 +104,14 @@ function confirmReject(): void {
                             })
                         }}
                     </p>
+                    <!-- The campaign's rules turn the account away for now: the invitation stays -->
+                    <p
+                        v-if="invitation.accept_refusal"
+                        :id="`invitation-refusal-${invitation.id}`"
+                        class="mt-2 text-sm text-warning"
+                    >
+                        {{ invitation.accept_refusal }}
+                    </p>
                 </div>
 
                 <div class="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
@@ -112,7 +120,12 @@ function confirmReject(): void {
                         size="sm"
                         class="w-full sm:w-auto"
                         :loading="busyId === invitation.id"
-                        :disabled="busyId !== null"
+                        :disabled="busyId !== null || !invitation.can_accept"
+                        :aria-describedby="
+                            invitation.accept_refusal
+                                ? `invitation-refusal-${invitation.id}`
+                                : undefined
+                        "
                         @click="send(invitation.id, 'aceptar')"
                     >
                         {{ t('gameTables.profile.invitations.accept') }}

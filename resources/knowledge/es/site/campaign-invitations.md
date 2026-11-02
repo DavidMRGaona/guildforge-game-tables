@@ -10,7 +10,7 @@ related: [game-tables.join-campaign, game-tables.campaigns-overview, core.accoun
 ---
 La dirección de una campaña puede invitarte a su plantilla con tu email. Te llega un correo «… te invita a la campaña «…»» con el botón **Ver invitación**.
 
-Una invitación te deja entrar aunque la campaña no admita solicitudes o las limite a un rol: solo hace falta que quede sitio en la plantilla. Caduca a los 14 días; la fecha va en el correo.
+Una invitación sigue las mismas reglas que una solicitud: la campaña tiene que aceptar jugadores nuevos y, si solo admite a quien tiene el rol {{association_role}}, tienes que tenerlo. Además tiene que quedar sitio en la plantilla. Caduca a los 14 días; la fecha va en el correo.
 
 ## Si ya tienes cuenta con ese email
 
@@ -56,6 +56,8 @@ Si no la ves, la dirección puede reenviártela, con un día de espera entre env
 - **«Esta invitación es para otro email. Cierra sesión y entra con la cuenta correcta.»**: has entrado con otra cuenta. Pulsa **Cerrar sesión** y entra con la del email invitado.
 - **«Verifica tu email para ver y aceptar tus invitaciones.»**: verifica el email de tu cuenta.
 - **«La plantilla está completa.»**: no queda sitio ahora. La invitación sigue valiendo mientras no caduque, por si se libera una plaza.
+- **«Esta campaña no acepta jugadores nuevos ahora mismo, así que no puedes aceptar la invitación. Seguirá disponible hasta que caduque.»**: la campaña ha dejado de buscar jugadores. El botón **Aceptar** aparece desactivado con este motivo; podrás aceptar si la dirección vuelve a abrirla antes de que caduque.
+- **«Esta campaña solo admite socios, así que no puedes aceptar la invitación mientras no lo seas. Seguirá disponible hasta que caduque.»**: la campaña es solo para quien tiene el rol {{association_role}}. Podrás aceptar cuando lo tengas, si la invitación no ha caducado.
 - **«La campaña ha terminado: su plantilla ya no cambia.»**: la campaña ya no admite jugadores.
 - **«Esa cuenta ya forma parte de la plantilla.»**: ya estás dentro.
 - **No te llega el correo**: mira en la carpeta de correo no deseado y pide a la dirección que compruebe tu email.

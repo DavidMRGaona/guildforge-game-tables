@@ -24,8 +24,8 @@ Arriba de la página ves «N de M plazas» y quién puede solicitar.
 
 | Ajuste | Qué hace |
 |---|---|
-| **Acepta jugadores nuevos** | Si lo desactivas, nadie puede solicitar unirse y las sesiones quedan **Solo para la plantilla de la campaña** para quien no es de ella. |
-| **Quién puede solicitar** | **Cualquier cuenta**, o solo quien tiene el rol de {{association_role}}. |
+| **Acepta jugadores nuevos** | Si lo desactivas, nadie puede solicitar unirse ni aceptar una invitación, no puedes enviar ni reenviar invitaciones y las sesiones quedan **Solo para la plantilla de la campaña** para quien no es de ella. |
+| **Quién puede solicitar** | **Cualquier cuenta**, o solo quien tiene el rol de {{association_role}}. Vale también para las invitaciones. |
 | **Máximo de jugadores** | Las plazas de la plantilla. Déjalo vacío para no poner límite. No puede ser menor que la plantilla actual ni pasar del límite de la web. |
 
 Pulsa **Guardar ajustes**. Verás «Ajustes guardados.». Con la campaña terminada no hay ajustes: «La campaña ha terminado: ya no se pueden añadir jugadores.».
@@ -41,13 +41,13 @@ Para aceptar hace falta sitio en la plantilla.
 
 ## Invitar a alguien
 
-En **Invitar jugador** (solo mientras quede sitio):
+En **Invitar jugador** (solo mientras quede sitio y la campaña acepte jugadores nuevos; si no los acepta, verás el motivo en lugar del formulario):
 
 1. Escribe el **Email de la persona**.
 2. Marca **Confirmo que esta persona me ha dado permiso para usar su email para invitarla a la campaña.**
 3. Pulsa **Enviar invitación**.
 
-Verás «Invitación enviada a …». Le llega un correo para aceptar; si no tiene cuenta, puede crearla desde el enlace. La invitación caduca a los 14 días y le deja entrar aunque la campaña no acepte solicitudes o las limite a un rol.
+Verás «Invitación enviada a …». Le llega un correo para aceptar; si no tiene cuenta, puede crearla desde el enlace. La invitación caduca a los 14 días. Para aceptarla, la persona tiene que cumplir las mismas reglas que para solicitar unirse: si la campaña deja de aceptar jugadores nuevos, o es solo para el rol de {{association_role}} y la persona no lo tiene, no puede aceptarla mientras siga así.
 
 En **Invitaciones pendientes** ves cada una con quién la envió, cuándo caduca y cuántos envíos lleva:
 
@@ -96,6 +96,8 @@ Según la configuración de la web, te llega un correo cuando alguien solicita u
 - **«Han de pasar 24 horas desde el último envío para volver a enviarla.»**: espera para reenviar.
 - **«Ya no se pueden enviar más invitaciones a este email en esta campaña por ahora.»**: has llegado al máximo de envíos, o esa persona rechazó la invitación hace poco.
 - **«Esa cuenta ya forma parte de la plantilla.»**: ya está dentro.
+- **«La campaña no acepta jugadores nuevos: no se pueden enviar invitaciones mientras siga así.»**: activa **Acepta jugadores nuevos** para invitar.
+- **«Esta campaña solo admite socios y esa cuenta no es de un socio.»**: la campaña es solo para quien tiene el rol de {{association_role}} y esa cuenta no lo tiene.
 - **«Quien dirige la campaña no puede entrar en la plantilla como jugador.»**: esa persona dirige la campaña.
 - **«Has enviado demasiadas invitaciones seguidas. Espera un minuto y vuelve a intentarlo.»**: espera un momento.
 - **«Esta solicitud ya no está pendiente.»**: la persona la ha retirado o ya se ha respondido.

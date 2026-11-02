@@ -56,7 +56,12 @@ final class CampaignInvitationController extends Controller
             return $this->page('mismatch', $invitation, $token);
         }
 
-        return $this->page($this->verification->mustVerify($user) ? 'must_verify' : 'match', $invitation, $token);
+        if ($this->verification->mustVerify($user)) {
+            return $this->page('must_verify', $invitation, $token);
+        }
+
+        // Accept is disabled with the reason while the campaign's rules turn the account away
+        return $this->page('match', $invitation, $token, $this->invitations->acceptRefusal($invitation->campaignId, (string) $user->id));
     }
 
     /**
@@ -190,12 +195,13 @@ final class CampaignInvitationController extends Controller
      * id or its send count.
      *
      * @param  'invalid'|'rejected'|'guest'|'match'|'mismatch'|'must_verify'  $state
+     * @param  string|null  $acceptRefusal  why the account cannot accept now (state match only)
      */
-    private function page(string $state, ?CampaignInvitationViewDTO $invitation, string $token): Response
+    private function page(string $state, ?CampaignInvitationViewDTO $invitation, string $token, ?string $acceptRefusal = null): Response
     {
         return Inertia::render('Campaigns/Invitation', [
             'state' => $state,
-            'invitation' => $this->props($state, $invitation),
+            'invitation' => $this->props($state, $invitation, $acceptRefusal),
             'token' => $token,
             'seo' => $this->seo->forPage(new SeoPageDTO(
                 title: (string) __('game-tables::messages.seo.campaign_invitation_title'),
@@ -205,9 +211,9 @@ final class CampaignInvitationController extends Controller
     }
 
     /**
-     * @return array{campaign_title: string, campaign_slug: string, inviter_name: string, email?: string, expires_at?: string}|null
+     * @return array{campaign_title: string, campaign_slug: string, inviter_name: string, email?: string, expires_at?: string, can_accept?: bool, accept_refusal?: string|null}|null
      */
-    private function props(string $state, ?CampaignInvitationViewDTO $invitation): ?array
+    private function props(string $state, ?CampaignInvitationViewDTO $invitation, ?string $acceptRefusal): ?array
     {
         if (! $invitation instanceof CampaignInvitationViewDTO || in_array($state, ['invalid', 'rejected'], true)) {
             return null;
@@ -223,6 +229,12 @@ final class CampaignInvitationController extends Controller
             return $props;
         }
 
-        return $props + ['email' => $invitation->email, 'expires_at' => $invitation->expiresAt];
+        $props += ['email' => $invitation->email, 'expires_at' => $invitation->expiresAt];
+
+        if ($state !== 'match') {
+            return $props;
+        }
+
+        return $props + ['can_accept' => $acceptRefusal === null, 'accept_refusal' => $acceptRefusal];
     }
 }

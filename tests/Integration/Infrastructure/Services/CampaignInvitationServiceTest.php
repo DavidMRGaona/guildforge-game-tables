@@ -15,6 +15,7 @@ use Illuminate\Support\Testing\Fakes\EventFake;
 use Modules\GameTables\Application\Services\CampaignInvitationSendLogInterface;
 use Modules\GameTables\Application\Services\CampaignInvitationServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterServiceInterface;
+use Modules\GameTables\Application\Services\MembershipCheckerInterface;
 use Modules\GameTables\Domain\Entities\CampaignInvitation;
 use Modules\GameTables\Domain\Enums\RosterAccess;
 use Modules\GameTables\Domain\Events\CampaignInvitationAccepted;
@@ -110,6 +111,37 @@ final class CampaignInvitationServiceTest extends ModuleTestCase
         return $invitation;
     }
 
+    private function assertRefusedWith(string $reason, string $message, Closure $action): void
+    {
+        try {
+            $action();
+            $this->fail("Expected the action to be refused with {$reason}");
+        } catch (RosterActionRefusedException $e) {
+            $this->assertSame($reason, $e->reason);
+            $this->assertSame($message, $e->getMessage());
+        }
+    }
+
+    /**
+     * These accounts hold the association member role; nobody else does.
+     */
+    private function socios(UserModel ...$users): void
+    {
+        $ids = array_values(array_map(fn (UserModel $user): string => $user->id, $users));
+        $this->app->instance(MembershipCheckerInterface::class, new readonly class($ids) implements MembershipCheckerInterface
+        {
+            /**
+             * @param  list<string>  $ids
+             */
+            public function __construct(private array $ids) {}
+
+            public function isActiveMember(string $userId): bool
+            {
+                return in_array($userId, $this->ids, true);
+            }
+        });
+    }
+
     private function assertRefused(string $reason, Closure $action): void
     {
         try {
@@ -199,6 +231,76 @@ final class CampaignInvitationServiceTest extends ModuleTestCase
         $this->assertRefused('finished', fn () => $this->invite('ana@example.com'));
 
         Event::assertNotDispatched(CampaignInvitationSent::class);
+    }
+
+    public function test_inviting_while_the_campaign_takes_no_new_players_refuses(): void
+    {
+        $this->campaign->update(['accepts_new_players' => false]);
+
+        $this->assertRefusedWith(
+            'not_accepting',
+            'La campaña no acepta jugadores nuevos: no se pueden enviar invitaciones mientras siga así.',
+            fn () => $this->invite('ana@example.com'),
+        );
+
+        $this->campaign->update(['accepts_new_players' => true, 'status' => 'on_hold']);
+        $this->assertRefused('not_accepting', fn () => $this->invite('john@example.com'));
+
+        $this->assertSame([], $this->invitations()->pendingFor($this->campaignId));
+        $this->assertSame(0, $this->sendLog()->sendsSince($this->campaign->id, 'ana@example.com', CarbonImmutable::now()->subDay()->toDateTimeImmutable()));
+        Event::assertNotDispatched(CampaignInvitationSent::class);
+    }
+
+    public function test_inviting_an_account_that_is_not_a_socio_to_a_members_only_campaign_refuses(): void
+    {
+        $this->campaign->update(['roster_access' => RosterAccess::MembersOnly->value]);
+
+        $this->assertRefusedWith(
+            'members_only',
+            'Esta campaña solo admite socios y esa cuenta no es de un socio.',
+            fn () => $this->invite('John@example.com'),
+        );
+
+        $this->assertSame([], $this->invitations()->pendingFor($this->campaignId));
+        Event::assertNotDispatched(CampaignInvitationSent::class);
+    }
+
+    public function test_a_members_only_campaign_invites_socios_and_emails_without_an_account(): void
+    {
+        $this->campaign->update(['roster_access' => RosterAccess::MembersOnly->value]);
+        $this->socios($this->john);
+
+        $this->invite('john@example.com');
+        // Without an account nobody can tell yet: it is checked when accepting
+        $this->invite('ana@example.com');
+
+        $this->pending('john@example.com');
+        $this->pending('ana@example.com');
+        Event::assertDispatchedTimes(CampaignInvitationSent::class, 2);
+    }
+
+    public function test_resending_follows_the_same_rules(): void
+    {
+        $this->invite('john@example.com');
+        $id = $this->pending('john@example.com')->id->value;
+        $this->travel(25)->hours();
+
+        $this->campaign->update(['accepts_new_players' => false]);
+        $this->assertRefusedWith(
+            'not_accepting',
+            'La campaña no acepta jugadores nuevos: no se pueden enviar invitaciones mientras siga así.',
+            fn () => $this->service()->resend($this->campaign->id, $id, $this->mary->id),
+        );
+
+        $this->campaign->update(['accepts_new_players' => true, 'roster_access' => RosterAccess::MembersOnly->value]);
+        $this->assertRefused('members_only', fn () => $this->service()->resend($this->campaign->id, $id, $this->mary->id));
+
+        $this->assertSame(1, $this->pending('john@example.com')->sendCount);
+        Event::assertDispatchedTimes(CampaignInvitationSent::class, 1);
+
+        $this->socios($this->john);
+        $this->service()->resend($this->campaign->id, $id, $this->mary->id);
+        $this->assertSame(2, $this->pending('john@example.com')->sendCount);
     }
 
     public function test_inviting_to_an_unknown_campaign_fails(): void
@@ -523,14 +625,105 @@ final class CampaignInvitationServiceTest extends ModuleTestCase
         $this->assertNull($this->invitations()->findPending($this->campaignId, 'john@example.com'));
     }
 
-    public function test_accept_skips_members_only(): void
+    public function test_accepting_while_the_campaign_takes_no_new_players_refuses_and_keeps_the_invitation(): void
     {
-        $this->campaign->update(['roster_access' => RosterAccess::MembersOnly->value]);
         $token = $this->tokenFor('john@example.com');
+        $this->campaign->update(['accepts_new_players' => false]);
 
+        $this->assertRefusedWith(
+            'not_accepting',
+            'Esta campaña no acepta jugadores nuevos ahora mismo, así que no puedes aceptar la invitación. Seguirá disponible hasta que caduque.',
+            fn () => $this->service()->accept($token, $this->john->id),
+        );
+
+        $this->assertNotNull($this->invitations()->findPending($this->campaignId, 'john@example.com'));
+        $this->assertFalse($this->isMember($this->john));
+        Event::assertNotDispatched(CampaignInvitationAccepted::class);
+
+        // Once the campaign takes new players again, the same invitation works
+        $this->campaign->update(['accepts_new_players' => true]);
         $this->service()->accept($token, $this->john->id);
 
         $this->assertTrue($this->isMember($this->john));
+    }
+
+    public function test_accepting_while_the_campaign_is_on_hold_refuses_and_keeps_the_invitation(): void
+    {
+        $token = $this->tokenFor('john@example.com');
+        $this->campaign->update(['status' => 'on_hold']);
+
+        $this->assertRefused('not_accepting', fn () => $this->service()->accept($token, $this->john->id));
+
+        $this->assertNotNull($this->invitations()->findPending($this->campaignId, 'john@example.com'));
+    }
+
+    public function test_accepting_a_members_only_campaign_without_being_a_socio_refuses_and_keeps_the_invitation(): void
+    {
+        $token = $this->tokenFor('john@example.com');
+        $this->campaign->update(['roster_access' => RosterAccess::MembersOnly->value]);
+
+        $this->assertRefusedWith(
+            'members_only',
+            'Esta campaña solo admite socios, así que no puedes aceptar la invitación mientras no lo seas. Seguirá disponible hasta que caduque.',
+            fn () => $this->service()->accept($token, $this->john->id),
+        );
+
+        $this->assertNotNull($this->invitations()->findPending($this->campaignId, 'john@example.com'));
+        $this->assertFalse($this->isMember($this->john));
+
+        // Once a socio, the same invitation works
+        $this->socios($this->john);
+        $this->service()->accept($token, $this->john->id);
+
+        $this->assertTrue($this->isMember($this->john));
+    }
+
+    public function test_accepting_by_id_follows_the_same_rules(): void
+    {
+        $this->tokenFor('john@example.com');
+        $id = $this->pending('john@example.com')->id->value;
+
+        $this->campaign->update(['accepts_new_players' => false]);
+        $this->assertRefused('not_accepting', fn () => $this->service()->acceptById($id, $this->john->id));
+
+        $this->campaign->update(['accepts_new_players' => true, 'roster_access' => RosterAccess::MembersOnly->value]);
+        $this->assertRefused('members_only', fn () => $this->service()->acceptById($id, $this->john->id));
+
+        $this->assertNotNull($this->invitations()->find(new CampaignInvitationId($id)));
+        $this->assertFalse($this->isMember($this->john));
+    }
+
+    public function test_accepting_when_already_a_member_of_a_closed_campaign_still_deletes(): void
+    {
+        $token = $this->tokenFor('john@example.com');
+        $this->app->make(CampaignRosterRepositoryInterface::class)->add($this->campaignId, $this->john->id, CarbonImmutable::now());
+        $this->campaign->update(['accepts_new_players' => false]);
+
+        $this->assertRefused('account_already_member', fn () => $this->service()->accept($token, $this->john->id));
+
+        $this->assertNull($this->invitations()->findPending($this->campaignId, 'john@example.com'));
+    }
+
+    public function test_accept_refusal_says_why_the_account_cannot_accept_now(): void
+    {
+        $this->assertNull($this->service()->acceptRefusal($this->campaign->id, $this->john->id));
+
+        $this->campaign->update(['roster_access' => RosterAccess::MembersOnly->value]);
+        $this->assertSame(
+            'Esta campaña solo admite socios, así que no puedes aceptar la invitación mientras no lo seas. Seguirá disponible hasta que caduque.',
+            $this->service()->acceptRefusal($this->campaign->id, $this->john->id),
+        );
+
+        $this->socios($this->john);
+        $this->assertNull($this->service()->acceptRefusal($this->campaign->id, $this->john->id));
+
+        $this->campaign->update(['accepts_new_players' => false]);
+        $this->assertSame(
+            'Esta campaña no acepta jugadores nuevos ahora mismo, así que no puedes aceptar la invitación. Seguirá disponible hasta que caduque.',
+            $this->service()->acceptRefusal($this->campaign->id, $this->john->id),
+        );
+
+        $this->assertNull($this->service()->acceptRefusal((string) Str::uuid(), $this->john->id));
     }
 
     public function test_accept_uses_the_account_when_the_inviter_is_gone(): void

@@ -433,6 +433,9 @@ export interface ProfileCampaignInvitation {
     inviter_name: string;
     // ISO 8601
     expires_at: string;
+    // False while the campaign's rules turn the account away; the invitation stays
+    can_accept: boolean;
+    accept_refusal: string | null;
 }
 
 export interface ProfileCampaignInvitationsData {
@@ -616,6 +619,8 @@ export interface RosterPage {
     sessions: RosterSession[];
     players: RosterPlayer[];
     can_add: boolean;
+    // Why nobody can be invited now (the campaign takes no new players); null otherwise
+    invite_refusal: string | null;
     // Whether removing a player emails them
     removal_notice: boolean;
     invitations: RosterInvitation[];
@@ -656,6 +661,9 @@ export interface CampaignInvitationView {
     email?: string;
     // ISO 8601
     expires_at?: string;
+    // State match only: false, with the reason, while the campaign's rules turn the account away
+    can_accept?: boolean;
+    accept_refusal?: string | null;
 }
 
 export type TableRegistrationStatus =

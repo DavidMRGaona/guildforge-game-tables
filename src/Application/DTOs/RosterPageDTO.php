@@ -33,6 +33,8 @@ final readonly class RosterPageDTO
         public array $sessions,
         public array $players,
         public bool $canAdd,
+        // Why nobody can be invited now (the campaign takes no new players), worded for the direction
+        public ?string $inviteRefusal,
         // Whether removing a player emails them (the roster_removed notice is on)
         public bool $removalNotice,
         public array $invitations = [],
@@ -41,7 +43,7 @@ final readonly class RosterPageDTO
     ) {}
 
     /**
-     * @return array{campaign: RosterCampaign, roster_access_options: array<string, string>, max_players_limit: int, requests: list<RosterRequest>, sessions: list<RosterSession>, players: list<RosterPlayer>, can_add: bool, removal_notice: bool, invitations: list<RosterInvitation>, more_invitations_than_seats: bool}
+     * @return array{campaign: RosterCampaign, roster_access_options: array<string, string>, max_players_limit: int, requests: list<RosterRequest>, sessions: list<RosterSession>, players: list<RosterPlayer>, can_add: bool, invite_refusal: string|null, removal_notice: bool, invitations: list<RosterInvitation>, more_invitations_than_seats: bool}
      */
     public function toArray(): array
     {
@@ -53,6 +55,7 @@ final readonly class RosterPageDTO
             'sessions' => $this->sessions,
             'players' => $this->players,
             'can_add' => $this->canAdd,
+            'invite_refusal' => $this->inviteRefusal,
             'removal_notice' => $this->removalNotice,
             'invitations' => $this->invitations,
             'more_invitations_than_seats' => $this->moreInvitationsThanSeats,

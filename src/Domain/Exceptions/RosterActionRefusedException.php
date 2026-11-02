@@ -15,9 +15,10 @@ final class RosterActionRefusedException extends DomainException
 
     /**
      * @param  array<string, mixed>  $replace
+     * @param  string  $copy  prefix of the message key, when the same reason is worded for another reader
      */
-    public static function because(string $reason, array $replace = []): self
+    public static function because(string $reason, array $replace = [], string $copy = ''): self
     {
-        return new self(__('game-tables::messages.roster.errors.'.$reason, $replace), $reason);
+        return new self(__('game-tables::messages.roster.errors.'.$copy.$reason, $replace), $reason);
     }
 }

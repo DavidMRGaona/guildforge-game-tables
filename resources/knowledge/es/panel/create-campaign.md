@@ -38,7 +38,7 @@ Los directores de la campaña pasan solos a sus sesiones. Quienes tienen cuenta 
 
 - **Frecuencia**: **Semanal**, **Quincenal**, **Mensual** o **Irregular**.
 - **Mínimo de jugadores** y **Máximo de jugadores**: el máximo son las plazas de la plantilla. Vacío, la plantilla no tiene límite. Ninguno puede pasar del **Límite máximo de jugadores** de la configuración, el mismo que tienen las mesas.
-- **Quién puede solicitar**: **Cualquier cuenta** o **Solo socios** (solo quienes tienen el rol {{association_role}}). Decide quién puede pedir entrar en la plantilla desde la web.
+- **Quién puede solicitar**: **Cualquier cuenta** o **Solo socios** (solo quienes tienen el rol {{association_role}}). Decide quién puede pedir entrar en la plantilla desde la web y a quién se puede invitar.
 - **Número de sesiones**: las previstas. Vacío si no está definido.
 - **Sesión actual**: por cuál vais. Usa 0 si aún no ha empezado. No avanza sola: cámbiala tú.
 
@@ -56,7 +56,7 @@ Al crear una sesión de la campaña, el formulario de la mesa propone este forma
 
 ## Publicación
 
-- **Acepta nuevos jugadores**: indica que la campaña busca gente. Activado, se puede pedir entrar desde la web y las plazas libres de sus sesiones quedan abiertas a cualquiera. Desactivado, nadie puede pedir entrar y sus sesiones son solo para la plantilla.
+- **Acepta nuevos jugadores**: indica que la campaña busca gente. Activado, se puede pedir entrar desde la web y las plazas libres de sus sesiones quedan abiertas a cualquiera. Desactivado, nadie puede pedir entrar ni aceptar una invitación, no se pueden enviar invitaciones y sus sesiones son solo para la plantilla.
 - **Publicado**: decide si la campaña se ve en la web.
 - **Encuesta al terminar**: si tu web tiene encuestas, elige aquí qué encuesta sale cuando la campaña termine. El campo tiene su propia ayuda.
 

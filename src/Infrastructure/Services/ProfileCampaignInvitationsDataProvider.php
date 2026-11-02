@@ -19,9 +19,10 @@ final readonly class ProfileCampaignInvitationsDataProvider
     ) {}
 
     /**
-     * Only what the section shows: no email, send count or resend flag.
+     * Only what the section shows: no email, send count or resend flag. An invitation the account
+     * cannot accept now says why, and stays listed.
      *
-     * @return array{invitations: list<array{id: string, campaign_title: string, campaign_slug: string, inviter_name: string, expires_at: string}>, total: int}|null
+     * @return array{invitations: list<array{id: string, campaign_title: string, campaign_slug: string, inviter_name: string, expires_at: string, can_accept: bool, accept_refusal: string|null}>, total: int}|null
      */
     public function getDataForUser(UserModel $user): ?array
     {
@@ -31,12 +32,15 @@ final readonly class ProfileCampaignInvitationsDataProvider
 
         $items = [];
         foreach ($this->invitations->pendingForEmail($user->email, CarbonImmutable::now()->toDateTimeImmutable()) as $invitation) {
+            $refusal = $this->invitations->acceptRefusal($invitation->campaignId, (string) $user->id);
             $items[] = [
                 'id' => $invitation->id,
                 'campaign_title' => $invitation->campaignTitle,
                 'campaign_slug' => $invitation->campaignSlug,
                 'inviter_name' => $invitation->inviterName,
                 'expires_at' => $invitation->expiresAt,
+                'can_accept' => $refusal === null,
+                'accept_refusal' => $refusal,
             ];
         }
 
