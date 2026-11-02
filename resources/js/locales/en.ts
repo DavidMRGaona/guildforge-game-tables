@@ -422,6 +422,8 @@ export default {
                 selectTone: 'Select tone',
                 location: 'Physical location',
                 locationFixedByEvent: 'Location is set by the event',
+                placeHybridHelp: 'A hybrid table needs the location, the link or both.',
+                gameSystemFromCampaign: 'Set by the campaign of the session.',
                 onlineUrl: 'Online session link',
                 onlineUrlHelp: 'URL for Discord, Roll20, Foundry VTT, etc.',
                 safetyTools: 'Safety tools',

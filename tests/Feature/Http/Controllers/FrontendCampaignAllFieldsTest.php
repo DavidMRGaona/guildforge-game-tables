@@ -93,6 +93,8 @@ final class FrontendCampaignAllFieldsTest extends ModuleTestCase
                 'min_players' => 1,
                 'max_players' => 4,
                 'table_format' => 'online',
+                // Online, the link is required
+                'online_url' => 'https://example.com/mesa',
             ])
             ->assertSessionHasNoErrors();
 
@@ -100,7 +102,6 @@ final class FrontendCampaignAllFieldsTest extends ModuleTestCase
 
         $this->assertSame(TableFormat::Online, $campaign->table_format);
         $this->assertNull($campaign->location);
-        $this->assertNull($campaign->online_url);
         $this->assertNull($campaign->schedule_notes);
         $this->assertNull($campaign->genres);
         $this->assertNull($campaign->tone);

@@ -16,6 +16,7 @@ use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\Tone;
+use Modules\GameTables\Http\Concerns\ValidatesPlace;
 use Modules\GameTables\Http\Support\AuthorLockRedirect;
 use Modules\GameTables\Http\Support\FormAttributes;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
@@ -23,6 +24,8 @@ use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 
 final class FrontendCreateCampaignRequest extends FormRequest
 {
+    use ValidatesPlace;
+
     private ?RedirectResponse $lockedAuthorRedirect = null;
 
     /**
@@ -70,8 +73,9 @@ final class FrontendCreateCampaignRequest extends FormRequest
             'min_players' => ['required', 'integer', 'min:1', 'max:'.$maxPlayers],
             'max_players' => ['required', 'integer', 'min:1', 'max:'.$maxPlayers, 'gte:min_players'],
             'table_format' => ['required', 'string', Rule::in(TableFormat::values())],
-            'location' => ['nullable', 'string', 'max:500'],
-            'online_url' => ['nullable', 'url', 'max:500'],
+            // Where it is played: the location in person, the link online, one of them when hybrid
+            'location' => ['nullable', 'string', 'max:500', $this->locationRequired()],
+            'online_url' => ['nullable', 'url', 'max:500', $this->onlineUrlRequired()],
             'language' => ['sometimes', 'string', 'size:2'],
             'genres' => ['nullable', 'array'],
             'genres.*' => ['string', Rule::in(Genre::values())],
@@ -93,6 +97,7 @@ final class FrontendCreateCampaignRequest extends FormRequest
     public function messages(): array
     {
         return [
+            ...$this->placeMessages(),
             'title.required' => __('game-tables::messages.validation.title_required'),
             'title.min' => __('game-tables::messages.validation.title_min'),
             'max_players.gte' => __('game-tables::messages.validation.max_players_gte_min'),

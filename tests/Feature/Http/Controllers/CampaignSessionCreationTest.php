@@ -78,6 +78,25 @@ final class CampaignSessionCreationTest extends ModuleTestCase
         $this->assertSame('campaign_session', $table->table_type->value);
     }
 
+    // The panel locks it; the web form must not let a session play another system
+    public function test_a_session_always_plays_the_system_of_its_campaign(): void
+    {
+        $campaign = $this->campaignDirectedAsGm('Campaña de Jane');
+        $other = GameSystemModel::create([
+            'id' => (string) Str::uuid(),
+            'name' => 'Otro sistema',
+            'slug' => 'otro-sistema',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($this->jane)
+            ->post(route('gametables.store'), [...$this->sessionData('Sesión uno', $campaign->id), 'game_system_id' => $other->id])
+            ->assertSessionHasNoErrors();
+
+        $table = GameTableModel::query()->where('title', 'Sesión uno')->sole();
+        $this->assertSame($campaign->game_system_id, $table->game_system_id);
+    }
+
     public function test_the_same_user_cannot_create_a_one_shot(): void
     {
         $campaign = $this->campaignDirectedAsGm('Campaña de Jane');
@@ -627,6 +646,7 @@ final class CampaignSessionCreationTest extends ModuleTestCase
             'duration_minutes' => 240,
             'table_type' => 'campaign_session',
             'table_format' => 'in_person',
+            'location' => 'Local de la asociación',
             'min_players' => 2,
             'max_players' => 5,
             'language' => 'es',

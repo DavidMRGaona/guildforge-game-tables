@@ -11,6 +11,7 @@ use Exception;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Modules\GameTables\Application\Services\EventGameTableConfigServiceInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
@@ -24,8 +25,10 @@ use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableType;
 use Modules\GameTables\Domain\Enums\Tone;
 use Modules\GameTables\Domain\Exceptions\TimeSlotUnavailableException;
+use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
+use Modules\GameTables\Http\Concerns\ValidatesPlace;
 use Modules\GameTables\Http\Support\AuthorLockRedirect;
 use Modules\GameTables\Http\Support\FormAttributes;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
@@ -34,6 +37,8 @@ use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 
 final class FrontendCreateGameTableRequest extends FormRequest
 {
+    use ValidatesPlace;
+
     private ?GameTableModel $routeTable = null;
 
     private bool $routeTableResolved = false;
@@ -70,12 +75,24 @@ final class FrontendCreateGameTableRequest extends FormRequest
     }
 
     /**
-     * Only a campaign session belongs to a campaign: any other type drops it.
+     * Only a campaign session belongs to a campaign: any other type drops it. A session always
+     * plays its campaign's system, as the panel locks it (an unknown campaign fails its own rule).
      */
     protected function prepareForValidation(): void
     {
         if ($this->input('table_type') !== TableType::CampaignSession->value) {
             $this->merge(['campaign_id' => null]);
+
+            return;
+        }
+
+        $campaignId = $this->input('campaign_id');
+        $campaign = is_string($campaignId) && Str::isUuid($campaignId)
+            ? app(CampaignRepositoryInterface::class)->find(new CampaignId($campaignId))
+            : null;
+
+        if ($campaign !== null) {
+            $this->merge(['game_system_id' => $campaign->gameSystemId->value]);
         }
     }
 
@@ -189,8 +206,9 @@ final class FrontendCreateGameTableRequest extends FormRequest
                 },
             ],
             'synopsis' => ['nullable', 'string', 'max:5000'],
-            'location' => ['nullable', 'string', 'max:500'],
-            'online_url' => ['nullable', 'url', 'max:500'],
+            // Where it is played: the location in person, the link online, one of them when hybrid
+            'location' => ['nullable', 'string', 'max:500', $this->locationRequired()],
+            'online_url' => ['nullable', 'url', 'max:500', $this->onlineUrlRequired()],
             'minimum_age' => ['nullable', 'integer', 'min:0', 'max:21'],
             'language' => ['required', 'string', 'size:2'],
             'genres' => ['nullable', 'array'],
@@ -230,6 +248,7 @@ final class FrontendCreateGameTableRequest extends FormRequest
     public function messages(): array
     {
         return [
+            ...$this->placeMessages(),
             'title.required' => __('game-tables::messages.validation.title_required'),
             'title.min' => __('game-tables::messages.validation.title_min'),
             'max_players.gte' => __('game-tables::messages.validation.max_players_gte_min'),

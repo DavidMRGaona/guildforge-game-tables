@@ -229,6 +229,26 @@ final class FrontendTableTimeSlotTest extends ModuleTestCase
                 ->where('eventContext.available_time_slots.0.available_slots', 2));
     }
 
+    /**
+     * «Crear mesa» without an event in the address offers every open event: each one carries its
+     * slots, so choosing a slot-based event in the form offers them as «Crear partida» does.
+     */
+    public function test_the_plain_form_offers_the_slots_of_each_event(): void
+    {
+        $event = $this->slotEvent();
+        $this->tableAt($event->id, self::EVENING, 'Mesa de tarde');
+
+        $this->actingAs($this->author)
+            ->get(route('gametables.create'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('GameTables/Create', false)
+                ->where('eventContext', null)
+                ->where('formData.events.0.id', $event->id)
+                ->where('formData.events.0.creation_context.is_slot_based', true)
+                ->where('formData.events.0.creation_context.available_time_slots.0.label', 'Tarde')
+                ->where('formData.events.0.creation_context.available_time_slots.0.available_slots', 1));
+    }
+
     public function test_the_slot_choices_and_refusals_are_translated_in_both_languages(): void
     {
         $this->assertSame(self::NOT_A_SLOT, trans('game-tables::messages.validation.starts_at_not_a_slot', [], 'es'));
@@ -289,6 +309,7 @@ final class FrontendTableTimeSlotTest extends ModuleTestCase
             'duration_minutes' => 240,
             'table_type' => 'one_shot',
             'table_format' => 'in_person',
+            'location' => 'Local de la asociación',
             'status' => $status,
             'min_players' => 1,
             'max_players' => 5,
@@ -315,6 +336,7 @@ final class FrontendTableTimeSlotTest extends ModuleTestCase
             'duration_minutes' => 240,
             'table_type' => 'one_shot',
             'table_format' => 'in_person',
+            'location' => 'Local de la asociación',
             'min_players' => 2,
             'max_players' => 5,
             'language' => 'es',

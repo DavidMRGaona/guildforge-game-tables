@@ -420,6 +420,7 @@ final class AuthorChangesTest extends ModuleTestCase
             'duration_minutes' => 240,
             'table_type' => 'one_shot',
             'table_format' => 'in_person',
+            'location' => 'Local de la asociación',
             'min_players' => 2,
             'max_players' => 5,
             'language' => 'es',
@@ -440,6 +441,7 @@ final class AuthorChangesTest extends ModuleTestCase
             'min_players' => 2,
             'max_players' => 5,
             'table_format' => 'in_person',
+            'location' => 'Local de la asociación',
         ];
     }
 
@@ -476,6 +478,7 @@ final class AuthorChangesTest extends ModuleTestCase
             'duration_minutes' => 240,
             'table_type' => 'one_shot',
             'table_format' => 'in_person',
+            'location' => 'Local de la asociación',
             'status' => $published ? 'scheduled' : 'draft',
             'min_players' => 1,
             'max_players' => 5,

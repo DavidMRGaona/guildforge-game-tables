@@ -57,6 +57,7 @@ final class DelegatedRegistrationsFormTest extends ModuleTestCase
             ->assertFormFieldIsVisible('delegates_registrations');
 
         $campaign = CampaignModel::create([
+            'location' => 'Local de la asociación',
             'id' => (string) Str::uuid(),
             'game_system_id' => $this->gameSystem->id,
             'created_by' => $this->admin->id,
@@ -102,6 +103,7 @@ final class DelegatedRegistrationsFormTest extends ModuleTestCase
     public function test_joining_a_campaign_drops_the_delegation(): void
     {
         $campaign = CampaignModel::create([
+            'location' => 'Local de la asociación',
             'id' => (string) Str::uuid(),
             'game_system_id' => $this->gameSystem->id,
             'created_by' => $this->admin->id,
@@ -146,6 +148,7 @@ final class DelegatedRegistrationsFormTest extends ModuleTestCase
                 'duration_minutes' => 120,
                 'table_type' => 'one_shot',
                 'table_format' => 'in_person',
+                'location' => 'Local de la asociación',
                 'min_players' => 1,
                 'max_players' => 4,
                 'language' => 'es',
@@ -196,6 +199,7 @@ final class DelegatedRegistrationsFormTest extends ModuleTestCase
             'duration_minutes' => 240,
             'table_type' => 'one_shot',
             'table_format' => 'in_person',
+            'location' => 'Local de la asociación',
             'status' => 'scheduled',
             'min_players' => 2,
             'max_players' => 5,

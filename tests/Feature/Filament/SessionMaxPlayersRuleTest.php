@@ -61,6 +61,7 @@ final class SessionMaxPlayersRuleTest extends ModuleTestCase
             'duration_minutes' => 240,
             'table_type' => 'campaign_session',
             'table_format' => 'in_person',
+            'location' => 'Local de la asociación',
             'status' => 'draft',
             'min_players' => 1,
             'max_players' => 5,
@@ -156,6 +157,7 @@ final class SessionMaxPlayersRuleTest extends ModuleTestCase
     private function campaign(?int $maxPlayers, int $rosterSize): CampaignModel
     {
         $campaign = CampaignModel::create([
+            'location' => 'Local de la asociación',
             'id' => (string) Str::uuid(),
             'game_system_id' => $this->system->id,
             'created_by' => $this->admin->id,

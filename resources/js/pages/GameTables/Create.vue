@@ -30,6 +30,7 @@ import type { FormTab } from '../../components/FormTabs.vue';
 import FormErrorSummary from '../../components/FormErrorSummary.vue';
 import { useFormErrorSummary } from '../../composables/useFormErrorSummary';
 import { fieldStateClass } from '../../utils/fieldStateClass';
+import { needsLocation, needsOnlineUrl } from '../../utils/placeRequirement';
 
 type OptionsInput =
     Record<string, string> | Array<{ value: string; label: string }> | null | undefined;
@@ -51,6 +52,8 @@ interface ContentWarning {
 interface ContextOption {
     id: string;
     name: string;
+    // An event's slots and location, offered when the event is chosen in the form
+    creation_context?: EventContext;
 }
 
 interface FormData {
@@ -281,6 +284,8 @@ const contextType = ref<ContextType>('independent');
 // A session needs its campaign: the field shows right under the type, and the form is not sent without it
 const isCampaignSession = computed(() => form.table_type === 'campaign_session');
 const sessionWithoutCampaign = computed(() => isCampaignSession.value && !form.campaign_id);
+// A session plays its campaign's system: the server takes it from the campaign, as the panel does
+const systemFromCampaign = computed(() => isCampaignSession.value && !!form.campaign_id);
 
 // Another type takes no campaign: clear it (the field hides)
 watch(
@@ -297,12 +302,34 @@ function applyCampaign(values: SessionCampaignFill): void {
     // Where the campaign is played, as a proposal: what it leaves blank keeps what was typed, and
     // the place an event gives its tables wins over the campaign's
     if (values.tableFormat) form.table_format = values.tableFormat;
-    if (values.location && !props.eventContext?.effective_location) form.location = values.location;
+    if (values.location && !activeEventContext.value?.effective_location)
+        form.location = values.location;
     if (values.onlineUrl) form.online_url = values.onlineUrl;
 }
 
 // Selected time slot for slot-based scheduling
 const selectedTimeSlot = ref<string | null>(null);
+
+// The event's slots and location: the one the page came with, or the event chosen in the form
+const activeEventContext = computed<EventContext | null>(
+    () =>
+        props.eventContext ??
+        props.formData.events.find((e) => e.id === form.event_id)?.creation_context ??
+        null
+);
+
+// Another event chosen in the form: its slots replace the chosen one, and a location it fixes is used
+watch(
+    () => form.event_id,
+    () => {
+        if (isEventContextMode.value) return;
+        selectedTimeSlot.value = null;
+        const context = activeEventContext.value;
+        if (context?.effective_location && !context.requires_location_input) {
+            form.location = context.effective_location;
+        }
+    }
+);
 
 // Whether we're creating a table for a specific event (from event page)
 const isEventContextMode = computed(
@@ -325,8 +352,8 @@ onMounted(() => {
 
 // When a time slot is selected, update the starts_at field
 watch(selectedTimeSlot, (slotIndex) => {
-    if (slotIndex !== null && props.eventContext?.available_time_slots) {
-        const slot = props.eventContext.available_time_slots[Number(slotIndex)];
+    if (slotIndex !== null && activeEventContext.value?.available_time_slots) {
+        const slot = activeEventContext.value.available_time_slots[Number(slotIndex)];
         if (slot) {
             form.starts_at = slot.start_time;
         }
@@ -359,8 +386,8 @@ function timeSlotLabel(slot: TimeSlot): string {
 
 // Transform time slots for select component
 const timeSlotOptions = computed(() => {
-    if (!props.eventContext?.available_time_slots) return [];
-    return props.eventContext.available_time_slots.map((slot, index) => ({
+    if (!activeEventContext.value?.available_time_slots) return [];
+    return activeEventContext.value.available_time_slots.map((slot, index) => ({
         value: String(index),
         label: timeSlotLabel(slot),
     }));
@@ -368,11 +395,7 @@ const timeSlotOptions = computed(() => {
 
 // Whether location field should be disabled (fixed by event config)
 const isLocationDisabled = computed(() => {
-    return (
-        props.eventContext !== null &&
-        props.eventContext !== undefined &&
-        !props.eventContext.requires_location_input
-    );
+    return activeEventContext.value !== null && !activeEventContext.value.requires_location_input;
 });
 
 // Filter context options based on available data
@@ -404,6 +427,10 @@ const isHybrid = computed(() => form.table_format === 'hybrid');
 
 const showLocation = computed(() => isInPerson.value || isHybrid.value);
 const showOnlineUrl = computed(() => isOnline.value || isHybrid.value);
+
+// Marked as the server requires them: the location in person, the link online, one of them when hybrid
+const locationRequired = computed(() => needsLocation(form.table_format, form.online_url));
+const onlineUrlRequired = computed(() => needsOnlineUrl(form.table_format));
 
 // Transform game systems for combobox
 const gameSystemOptions = computed(() =>
@@ -585,8 +612,12 @@ function submit(): void {
                                     option-value="id"
                                     :placeholder="t('gameTables.create.fields.selectGameSystem')"
                                     :error="form.errors.game_system_id"
+                                    :disabled="systemFromCampaign"
                                     class="mt-1"
                                 />
+                                <p v-if="systemFromCampaign" class="mt-1 text-xs text-base-muted">
+                                    {{ t('gameTables.create.fields.gameSystemFromCampaign') }}
+                                </p>
                                 <p
                                     v-if="form.errors.game_system_id"
                                     class="mt-1 text-sm text-error"
@@ -627,7 +658,11 @@ function submit(): void {
                             </div>
 
                             <!-- Starts At - Time Slot selector for slot-based events -->
-                            <div v-if="eventContext?.is_slot_based && timeSlotOptions.length > 0">
+                            <div
+                                v-if="
+                                    activeEventContext?.is_slot_based && timeSlotOptions.length > 0
+                                "
+                            >
                                 <label
                                     for="time_slot"
                                     class="block text-sm font-medium text-base-secondary"
@@ -1162,7 +1197,7 @@ function submit(): void {
                                 >
                                     {{ t('gameTables.create.fields.location') }}
                                     <span
-                                        v-if="isInPerson && !isLocationDisabled"
+                                        v-if="locationRequired && !isLocationDisabled"
                                         class="text-error"
                                         >*</span
                                     >
@@ -1172,7 +1207,7 @@ function submit(): void {
                                     v-model="form.location"
                                     type="text"
                                     name="location"
-                                    :required="isInPerson && !isLocationDisabled"
+                                    :required="locationRequired && !isLocationDisabled"
                                     :disabled="isLocationDisabled"
                                     :aria-invalid="!!form.errors.location"
                                     :class="[
@@ -1188,6 +1223,9 @@ function submit(): void {
                                 <p v-if="isLocationDisabled" class="mt-1 text-xs text-base-muted">
                                     {{ t('gameTables.create.fields.locationFixedByEvent') }}
                                 </p>
+                                <p v-else-if="isHybrid" class="mt-1 text-xs text-base-muted">
+                                    {{ t('gameTables.create.fields.placeHybridHelp') }}
+                                </p>
                                 <p v-if="form.errors.location" class="mt-1 text-sm text-error">
                                     {{ form.errors.location }}
                                 </p>
@@ -1200,14 +1238,14 @@ function submit(): void {
                                     class="block text-sm font-medium text-base-secondary"
                                 >
                                     {{ t('gameTables.create.fields.onlineUrl') }}
-                                    <span v-if="isOnline" class="text-error">*</span>
+                                    <span v-if="onlineUrlRequired" class="text-error">*</span>
                                 </label>
                                 <input
                                     id="online_url"
                                     v-model="form.online_url"
                                     type="url"
                                     name="online_url"
-                                    :required="isOnline"
+                                    :required="onlineUrlRequired"
                                     :aria-invalid="!!form.errors.online_url"
                                     placeholder="https://..."
                                     :class="fieldStateClass(!!form.errors.online_url)"

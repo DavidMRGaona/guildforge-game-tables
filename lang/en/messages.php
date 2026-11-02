@@ -751,6 +751,7 @@ return [
         'experience_level_required' => 'Experience level is required',
         'character_creation_required' => 'Character creation type is required',
         'campaign_required' => 'Choose the campaign of the session.',
+        'location_or_online_url_required' => 'Give the location or the online session link.',
         'co_director_first_name_required' => 'The co-GM first name is required.',
         'email_required' => 'The email is required.',
         'email_invalid' => 'The email is not valid.',
