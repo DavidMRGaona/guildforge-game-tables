@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpLink from '@/components/knowledge/HelpLink.vue';
 import { Info, TriangleAlert } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
@@ -294,6 +295,7 @@ function submit(): void {
         <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <h1 class="text-3xl font-bold tracking-tight text-base-primary">
                 {{ t('campaigns.edit.title') }}
+                <HelpLink guide="game-tables.create-campaign" class="ml-1 align-middle" />
             </h1>
             <p class="mt-2 text-lg text-base-secondary">
                 {{ t('campaigns.edit.subtitle') }}

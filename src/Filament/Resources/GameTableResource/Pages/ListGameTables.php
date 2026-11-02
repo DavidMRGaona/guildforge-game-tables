@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources\GameTableResource\Pages;
 
+use App\Filament\Concerns\HasKnowledgeGuideAction;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Schemas\Components\Tabs\Tab;
@@ -14,14 +15,17 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel
 
 final class ListGameTables extends ListRecords
 {
+    use HasKnowledgeGuideAction;
+
     protected static string $resource = GameTableResource::class;
 
     protected function getHeaderActions(): array
     {
-        return [
+        return array_filter([
             CreateAction::make()
                 ->label(__('game-tables::messages.pages.create_table')),
-        ];
+            $this->knowledgeGuideAction('game-tables.panel.overview'),
+        ]);
     }
 
     /**

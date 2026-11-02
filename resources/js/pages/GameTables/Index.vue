@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpLink from '@/components/knowledge/HelpLink.vue';
 import { ref, computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
@@ -61,6 +62,7 @@ function handleNext(): void {
                 <div class="min-w-0">
                     <h1 class="text-3xl font-bold tracking-tight text-base-primary">
                         {{ t('gameTables.title') }}
+                        <HelpLink guide="game-tables.tables-overview" class="ml-1 align-middle" />
                     </h1>
                     <p class="mt-2 text-lg text-base-secondary">
                         {{ t('gameTables.description') }}

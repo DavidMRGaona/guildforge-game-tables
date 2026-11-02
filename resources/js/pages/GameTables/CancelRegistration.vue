@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpLink from '@/components/knowledge/HelpLink.vue';
 import { TriangleAlert } from '@lucide/vue';
 import { computed } from 'vue';
 import { router, Link } from '@inertiajs/vue3';
@@ -74,6 +75,7 @@ function handleCancel(): void {
                 </div>
                 <h1 class="text-2xl font-bold text-base-primary">
                     {{ t('cancelRegistration.title') }}
+                    <HelpLink guide="game-tables.cancel-sign-up" class="ml-1 align-middle" />
                 </h1>
             </div>
 

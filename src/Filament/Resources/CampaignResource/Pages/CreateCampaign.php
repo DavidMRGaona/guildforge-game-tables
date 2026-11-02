@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources\CampaignResource\Pages;
 
+use App\Filament\Concerns\HasKnowledgeGuideAction;
+use Filament\Actions\Action;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Auth;
 use Modules\GameTables\Application\Services\GameMasterServiceInterface;
@@ -15,6 +17,8 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
  */
 final class CreateCampaign extends CreateRecord
 {
+    use HasKnowledgeGuideAction;
+
     protected static string $resource = CampaignResource::class;
 
     /**
@@ -50,5 +54,15 @@ final class CreateCampaign extends CreateRecord
         /** @var GameMasterServiceInterface $gameMasterService */
         $gameMasterService = app(GameMasterServiceInterface::class);
         $gameMasterService->syncCampaignGameMasters($this->record->id, $this->gameMastersData);
+    }
+
+    /**
+     * @return array<Action>
+     */
+    protected function getHeaderActions(): array
+    {
+        return array_filter([
+            $this->knowledgeGuideAction('game-tables.panel.create-campaign'),
+        ]);
     }
 }

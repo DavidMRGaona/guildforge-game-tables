@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpLink from '@/components/knowledge/HelpLink.vue';
 import { computed, nextTick, ref, useId, watch } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
@@ -127,6 +128,7 @@ const badgeClass =
             </Link>
             <h1 class="mt-3 text-3xl font-bold tracking-tight text-base-primary">
                 {{ t('gameTables.registrations.title') }}
+                <HelpLink guide="game-tables.manage-registrations" class="ml-1 align-middle" />
             </h1>
             <p class="mt-2 break-words text-base text-base-secondary">
                 <Link

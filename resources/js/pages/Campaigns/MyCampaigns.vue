@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpLink from '@/components/knowledge/HelpLink.vue';
 import { CircleArrowRight, Clock, Users } from '@lucide/vue';
 import { computed } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
@@ -122,6 +123,10 @@ function getCampaignLink(campaign: CampaignResponseDTO): string {
                     </Link>
                     <h1 class="text-3xl font-bold tracking-tight text-base-primary">
                         {{ t('campaigns.myCampaigns.title') }}
+                        <HelpLink
+                            guide="game-tables.review-and-publish"
+                            class="ml-1 align-middle"
+                        />
                     </h1>
                     <p class="mt-2 text-lg text-base-secondary">
                         {{ t('campaigns.myCampaigns.subtitle') }}

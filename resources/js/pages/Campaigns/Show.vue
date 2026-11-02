@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpLink from '@/components/knowledge/HelpLink.vue';
 import { Calendar, ChevronLeft, Clock, Globe, MapPin, TriangleAlert, User } from '@lucide/vue';
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
@@ -143,6 +144,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
 
                 <h1 class="mb-4 text-3xl font-bold text-base-primary sm:text-4xl">
                     {{ campaign.title }}
+                    <HelpLink guide="game-tables.join-campaign" class="ml-1 align-middle" />
                 </h1>
 
                 <!-- Game System -->

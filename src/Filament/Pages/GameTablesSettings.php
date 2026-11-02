@@ -7,6 +7,7 @@ namespace Modules\GameTables\Filament\Pages;
 use App\Application\Modules\Services\ModuleManagerServiceInterface;
 use App\Domain\Modules\ValueObjects\ModuleName;
 use App\Filament\Concerns\ChecksPermissions;
+use App\Filament\Concerns\HasKnowledgeGuideAction;
 use App\Filament\Concerns\SafeModuleNavigation;
 use App\Infrastructure\Persistence\Eloquent\Models\PermissionModel;
 use App\Infrastructure\Persistence\Eloquent\Models\RoleModel;
@@ -31,6 +32,7 @@ use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 final class GameTablesSettings extends Page implements HasForms
 {
     use ChecksPermissions;
+    use HasKnowledgeGuideAction;
     use InteractsWithForms;
     use SafeModuleNavigation;
 
@@ -465,5 +467,15 @@ final class GameTablesSettings extends Page implements HasForms
                 ->label(__('common.save'))
                 ->submit('save'),
         ];
+    }
+
+    /**
+     * @return array<Action>
+     */
+    protected function getHeaderActions(): array
+    {
+        return array_filter([
+            $this->knowledgeGuideAction('game-tables.panel.settings'),
+        ]);
     }
 }
