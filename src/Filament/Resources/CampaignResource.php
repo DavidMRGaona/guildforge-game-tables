@@ -12,8 +12,10 @@ use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -21,6 +23,7 @@ use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -33,10 +36,15 @@ use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Domain\Enums\CampaignFrequency;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
+use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
+use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\Language;
 use Modules\GameTables\Domain\Enums\RosterAccess;
+use Modules\GameTables\Domain\Enums\SafetyTool;
+use Modules\GameTables\Domain\Enums\TableFormat;
+use Modules\GameTables\Domain\Enums\Tone;
 use Modules\GameTables\Domain\Exceptions\NotEditableException;
 use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
@@ -49,7 +57,9 @@ use Modules\GameTables\Filament\Resources\CampaignResource\RelationManagers\Join
 use Modules\GameTables\Filament\Resources\CampaignResource\RelationManagers\RosterRelationManager;
 use Modules\GameTables\Filament\Support\PublicationLock;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ContentWarningModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
+use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 use Modules\GameTables\Infrastructure\Surveys\CampaignSurveySubjectSource;
 
 final class CampaignResource extends BaseResource
@@ -92,6 +102,9 @@ final class CampaignResource extends BaseResource
 
     public static function form(Schema $schema): Schema
     {
+        // The same limit tables have
+        $maxPlayersLimit = app(GameTableSettingsReader::class)->maxPlayersLimit();
+
         return $schema
             ->components([
                 Tabs::make('CampaignTabs')
@@ -131,6 +144,11 @@ final class CampaignResource extends BaseResource
                                     ->options(ExperienceLevel::options())
                                     ->native(false),
 
+                                Select::make('character_creation')
+                                    ->label(__('game-tables::messages.fields.character_creation'))
+                                    ->options(CharacterCreation::options())
+                                    ->native(false),
+
                                 Textarea::make('description')
                                     ->label(__('game-tables::messages.fields.description'))
                                     ->rows(3)
@@ -167,11 +185,18 @@ final class CampaignResource extends BaseResource
                                     ->options(CampaignFrequency::options())
                                     ->native(false),
 
+                                TextInput::make('min_players')
+                                    ->label(__('game-tables::messages.fields.min_players'))
+                                    ->numeric()
+                                    ->minValue(1)
+                                    ->maxValue($maxPlayersLimit)
+                                    ->rules([self::notAboveTheMaximum()]),
+
                                 TextInput::make('max_players')
                                     ->label(__('game-tables::messages.fields.max_players'))
                                     ->numeric()
                                     ->minValue(1)
-                                    ->maxValue(20)
+                                    ->maxValue($maxPlayersLimit)
                                     ->rules([self::fitsTheRoster()]),
 
                                 Select::make('roster_access')
@@ -194,6 +219,71 @@ final class CampaignResource extends BaseResource
                                     ->minValue(0)
                                     ->default(0)
                                     ->helperText(__('game-tables::messages.fields.current_session_help')),
+                            ])
+                            ->columns(2),
+
+                        Tab::make(__('game-tables::messages.tabs.schedule'))
+                            ->icon('heroicon-o-clock')
+                            ->schema([
+                                Select::make('table_format')
+                                    ->label(__('game-tables::messages.fields.table_format'))
+                                    ->options(TableFormat::options())
+                                    ->native(false)
+                                    ->live(),
+
+                                Textarea::make('schedule_notes')
+                                    ->label(__('game-tables::messages.fields.schedule_notes'))
+                                    ->rows(2)
+                                    ->maxLength(500),
+
+                                // Without a format (campaigns created before it was stored) both show
+                                TextInput::make('location')
+                                    ->label(__('game-tables::messages.fields.location'))
+                                    ->maxLength(500)
+                                    ->visible(fn (Get $get): bool => self::formatAllows($get('table_format'), TableFormat::Online)),
+
+                                TextInput::make('online_url')
+                                    ->label(__('game-tables::messages.fields.online_url'))
+                                    ->url()
+                                    ->maxLength(500)
+                                    ->visible(fn (Get $get): bool => self::formatAllows($get('table_format'), TableFormat::InPerson)),
+                            ])
+                            ->columns(2),
+
+                        Tab::make(__('game-tables::messages.tabs.content'))
+                            ->icon('heroicon-o-shield-exclamation')
+                            ->schema([
+                                CheckboxList::make('genres')
+                                    ->label(__('game-tables::messages.fields.genres'))
+                                    ->options(Genre::options())
+                                    ->columns(4)
+                                    ->columnSpanFull(),
+
+                                Select::make('tone')
+                                    ->label(__('game-tables::messages.fields.tone'))
+                                    ->options(Tone::options())
+                                    ->native(false),
+
+                                CheckboxList::make('safety_tools')
+                                    ->label(__('game-tables::messages.fields.safety_tools'))
+                                    ->options(SafetyTool::options())
+                                    ->columns(4)
+                                    ->columnSpanFull(),
+
+                                Select::make('contentWarnings')
+                                    ->label(__('game-tables::messages.fields.content_warnings'))
+                                    ->multiple()
+                                    ->relationship('contentWarnings', 'name')
+                                    ->options(ContentWarningModel::query()->where('is_active', true)->pluck('name', 'id'))
+                                    ->searchable()
+                                    ->native(false)
+                                    ->preload()
+                                    ->columnSpanFull(),
+
+                                TagsInput::make('custom_warnings')
+                                    ->label(__('game-tables::messages.fields.custom_warnings'))
+                                    ->placeholder(__('game-tables::messages.fields.custom_warnings_placeholder'))
+                                    ->columnSpanFull(),
                             ])
                             ->columns(2),
 
@@ -350,6 +440,30 @@ final class CampaignResource extends BaseResource
             JoinRequestsRelationManager::class,
             InvitationsRelationManager::class,
         ];
+    }
+
+    /**
+     * Whether a location (or online link) field applies: any format but the one without it, and no format at all.
+     */
+    private static function formatAllows(mixed $format, TableFormat $without): bool
+    {
+        $format = $format instanceof TableFormat ? $format : TableFormat::tryFrom(is_string($format) ? $format : '');
+
+        return $format !== $without;
+    }
+
+    /**
+     * The minimum never goes above the maximum, when both are given.
+     */
+    private static function notAboveTheMaximum(): Closure
+    {
+        return fn (Get $get): Closure => function (string $attribute, mixed $value, Closure $fail) use ($get): void {
+            $maximum = $get('max_players');
+
+            if (is_numeric($value) && is_numeric($maximum) && (int) $value > (int) $maximum) {
+                $fail(__('game-tables::messages.validation.min_players_lte_max'));
+            }
+        };
     }
 
     /**
