@@ -5,6 +5,7 @@ import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import type { CampaignListItem } from '../types/gametables';
 import CapacityBar from './CapacityBar.vue';
+import FormatBadge from './FormatBadge.vue';
 import StatusBadge from './StatusBadge.vue';
 import { buildCardImageUrl } from '@/utils/cloudinary';
 
@@ -142,6 +143,14 @@ const scheduleLine = computed(() =>
                         }}</span>
                     </span>
                 </div>
+
+                <!-- Format badge, as on the table card (campaigns created before it was stored have none) -->
+                <FormatBadge
+                    v-if="campaign.tableFormat && campaign.tableFormatLabel"
+                    :format="campaign.tableFormat"
+                    :label="campaign.tableFormatLabel"
+                    :color="campaign.tableFormatColor ?? 'gray'"
+                />
             </div>
         </div>
     </Link>

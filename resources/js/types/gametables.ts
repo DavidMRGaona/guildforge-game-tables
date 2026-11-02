@@ -172,6 +172,10 @@ export interface CampaignListItem {
     imagePublicId: string | null;
     gameMasters: CampaignGameMaster[];
     mainGameMasterName: string;
+    // Null for campaigns created before it was stored
+    tableFormat: string | null;
+    tableFormatLabel: string | null;
+    tableFormatColor: string | null;
 }
 
 export interface Campaign {
@@ -203,7 +207,22 @@ export interface Campaign {
     themes: string[];
     safetyTools: string[];
     contentWarnings: string[];
+    customWarnings: string[];
     minimumAge: number | null;
+    // Null (or empty) for campaigns created before these were stored
+    minPlayers: number | null;
+    tableFormat: string | null;
+    tableFormatLabel: string | null;
+    tableFormatColor: string | null;
+    location: string | null;
+    // Only for its directors and roster; null for anybody else
+    onlineUrl: string | null;
+    scheduleNotes: string | null;
+    genres: string[];
+    tone: string | null;
+    toneLabel: string | null;
+    characterCreation: string | null;
+    characterCreationLabel: string | null;
     language: string | null;
     languageLabel: string | null;
     experienceLevel: string | null;
@@ -464,6 +483,19 @@ export interface SessionCampaignOption {
     game_system_id: string;
     max_players: number | null;
     roster_count: number;
+    // Where the campaign is played, proposed to its new sessions; null when it has none
+    table_format: string | null;
+    location: string | null;
+    online_url: string | null;
+}
+
+/** What choosing the campaign of a session fills in the table form; null leaves the field as it is. */
+export interface SessionCampaignFill {
+    gameSystemId: string;
+    maxPlayers: number;
+    tableFormat: string | null;
+    location: string | null;
+    onlineUrl: string | null;
 }
 
 /** What «Añadir sesión» (`/mesas/crear?campaign={id}`) fills in the table form. */
@@ -522,6 +554,10 @@ export interface RosterCampaign {
     roster_access: RosterAccessValue;
     max_players: number | null;
     roster_count: number;
+    // Where the campaign is played, proposed to its new sessions; null when it has none
+    table_format: string | null;
+    location: string | null;
+    online_url: string | null;
 }
 
 export interface RosterRequest {

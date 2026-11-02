@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { Calendar, ChevronLeft, Clock, User } from '@lucide/vue';
+import { Calendar, ChevronLeft, Clock, Globe, MapPin, TriangleAlert, User } from '@lucide/vue';
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import type { Campaign, JoinBox, SubjectSurveyLinks } from '../../types/gametables';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import StatusBadge from '../../components/StatusBadge.vue';
+import FormatBadge from '../../components/FormatBadge.vue';
 import SafetyToolBadge from '../../components/SafetyToolBadge.vue';
 import ContentWarningBadge from '../../components/ContentWarningBadge.vue';
 import GameTableCard from '../../components/GameTableCard.vue';
@@ -80,6 +81,12 @@ const coGameMasters = computed(() => {
     return props.campaign.gameMasters.filter((gm) => !gm.isMain);
 });
 
+// Where it is played: its address, or «Online» for a campaign played only online (as the table page)
+const placeLabel = computed(() => {
+    if (props.campaign.location) return props.campaign.location;
+    return props.campaign.tableFormat === 'online' ? t('gameTables.online') : null;
+});
+
 const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId));
 </script>
 
@@ -112,6 +119,13 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                         :status="campaign.status"
                         :label="campaign.statusLabel"
                         :color="campaign.statusColor"
+                        size="md"
+                    />
+                    <FormatBadge
+                        v-if="campaign.tableFormat && campaign.tableFormatLabel"
+                        :format="campaign.tableFormat"
+                        :label="campaign.tableFormatLabel"
+                        :color="campaign.tableFormatColor ?? 'gray'"
                         size="md"
                     />
                     <span
@@ -149,6 +163,60 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                             <Calendar class="mr-2 h-5 w-5 text-primary" aria-hidden="true" />
                             <span>{{ campaign.frequencyLabel }}</span>
                         </div>
+                        <p
+                            v-if="campaign.scheduleNotes"
+                            class="mt-1 whitespace-pre-line text-sm text-base-secondary"
+                        >
+                            {{ campaign.scheduleNotes }}
+                        </p>
+                    </div>
+
+                    <!-- Schedule notes, when there is no frequency to go with -->
+                    <div v-if="!campaign.frequencyLabel && campaign.scheduleNotes">
+                        <h3 class="mb-1 text-sm font-semibold text-base-primary">
+                            {{ t('campaigns.scheduleNotes') }}
+                        </h3>
+                        <p class="whitespace-pre-line text-base-secondary">
+                            {{ campaign.scheduleNotes }}
+                        </p>
+                    </div>
+
+                    <!-- Location -->
+                    <div v-if="placeLabel">
+                        <h3 class="mb-1 text-sm font-semibold text-base-primary">
+                            {{ t('gameTables.location') }}
+                        </h3>
+                        <div class="flex items-center text-base-secondary">
+                            <MapPin class="mr-2 h-5 w-5 text-primary" aria-hidden="true" />
+                            <span>{{ placeLabel }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Online link: only its directors and roster get it -->
+                    <div v-if="campaign.onlineUrl">
+                        <h3 class="mb-1 text-sm font-semibold text-base-primary">
+                            {{ t('campaigns.onlineLink') }}
+                        </h3>
+                        <div class="flex items-center text-base-secondary">
+                            <Globe class="mr-2 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                            <a
+                                :href="campaign.onlineUrl"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="break-all text-primary underline underline-offset-2 hover:no-underline focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                >{{ campaign.onlineUrl }}</a
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Format -->
+                    <div v-if="campaign.tableFormatLabel">
+                        <h3 class="mb-1 text-sm font-semibold text-base-primary">
+                            {{ t('gameTables.filters.format') }}
+                        </h3>
+                        <p class="text-base-secondary">
+                            {{ campaign.tableFormatLabel }}
+                        </p>
                     </div>
 
                     <!-- Duration -->
@@ -271,6 +339,14 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                                         max: campaign.maxPlayers,
                                     })
                                 }}
+                                <span v-if="campaign.minPlayers !== null" class="text-base-muted">
+                                    ({{
+                                        t('gameTables.playersRequired', {
+                                            min: campaign.minPlayers,
+                                            max: campaign.maxPlayers,
+                                        })
+                                    }})
+                                </span>
                             </p>
                             <p v-if="spotsAvailable !== null" class="text-sm">
                                 {{ spotsAvailable }} {{ t('campaigns.spotsAvailable') }}
@@ -311,6 +387,24 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                             {{ t('campaigns.language') }}
                         </h3>
                         <p class="text-base-secondary">{{ campaign.languageLabel }}</p>
+                    </div>
+
+                    <!-- Character Creation -->
+                    <div v-if="campaign.characterCreationLabel">
+                        <h3 class="mb-1 text-sm font-semibold text-base-primary">
+                            {{ t('gameTables.characterCreation') }}
+                        </h3>
+                        <p class="text-base-secondary">
+                            {{ campaign.characterCreationLabel }}
+                        </p>
+                    </div>
+
+                    <!-- Tone -->
+                    <div v-if="campaign.toneLabel">
+                        <h3 class="mb-1 text-sm font-semibold text-base-primary">
+                            {{ t('gameTables.tone') }}
+                        </h3>
+                        <p class="text-base-secondary">{{ campaign.toneLabel }}</p>
                     </div>
                 </div>
 
@@ -358,6 +452,22 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                         </div>
                     </div>
 
+                    <!-- Genres -->
+                    <div v-if="campaign.genres.length > 0">
+                        <h3 class="mb-2 text-sm font-semibold text-base-primary">
+                            {{ t('gameTables.genres') }}
+                        </h3>
+                        <div class="flex flex-wrap gap-2">
+                            <span
+                                v-for="(genre, index) in campaign.genres"
+                                :key="index"
+                                class="rounded-full bg-muted px-3 py-1 text-sm text-base-secondary"
+                            >
+                                {{ genre }}
+                            </span>
+                        </div>
+                    </div>
+
                     <!-- Safety Tools -->
                     <div v-if="campaign.safetyTools.length > 0">
                         <h3 class="mb-2 text-sm font-semibold text-base-primary">
@@ -384,6 +494,22 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                                 :warning="warning"
                             />
                         </div>
+                    </div>
+
+                    <!-- Custom Warnings (highlighted amber, as on the table page) -->
+                    <div
+                        v-if="campaign.customWarnings.length > 0"
+                        class="rounded-lg border border-warning bg-warning-light p-4"
+                    >
+                        <h3 class="mb-2 flex items-center text-sm font-semibold text-warning">
+                            <TriangleAlert class="mr-2 h-5 w-5 text-warning" aria-hidden="true" />
+                            {{ t('gameTables.customWarningsTitle') }}
+                        </h3>
+                        <ul class="list-inside list-disc space-y-1 text-sm text-warning">
+                            <li v-for="(warning, index) in campaign.customWarnings" :key="index">
+                                {{ warning }}
+                            </li>
+                        </ul>
                     </div>
 
                     <!-- Minimum Age -->
