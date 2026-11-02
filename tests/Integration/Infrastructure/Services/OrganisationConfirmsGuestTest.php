@@ -149,6 +149,22 @@ final class OrganisationConfirmsGuestTest extends ModuleTestCase
         Notification::assertSentOnDemandTimes(ParticipantConfirmedNotification::class, 0);
     }
 
+    // «Completa» set by hand closes the seats to newcomers, not to the organisation's approval (#184)
+    public function test_approving_a_wait_guest_on_a_table_marked_full_places_it_in_a_free_seat(): void
+    {
+        config()->set('modules.settings.game-tables.guest_confirmation.mode', 'wait');
+        $this->table->update(['auto_confirm' => false]);
+        $guest = $this->submit('invitada@example.test');
+        $this->table->update(['status' => 'full']);
+
+        $this->service()->confirm($guest->id);
+
+        $row = $this->row($guest);
+        $this->assertSame('confirmed', $row->status->value);
+        $this->assertNull($row->waiting_list_position);
+        $this->assertNotNull($row->email_confirmed_at);
+    }
+
     public function test_approving_a_wait_guest_without_a_free_seat_changes_nothing(): void
     {
         config()->set('modules.settings.game-tables.guest_confirmation.mode', 'wait');

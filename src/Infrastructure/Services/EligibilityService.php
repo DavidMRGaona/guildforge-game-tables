@@ -53,7 +53,8 @@ final readonly class EligibilityService implements EligibilityServiceInterface
     }
 
     /**
-     * Every rule of a user registration; refusals are exceptions.
+     * Every rule of a user registration; refusals are exceptions. Without $seats the seat rules
+     * (checkSeats()) are left out.
      *
      * @return bool whether the registration goes to the waiting list
      *
@@ -68,6 +69,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
         bool $isMember,
         ?DateTimeImmutable $now,
         ParticipantRole $role,
+        bool $seats = true,
     ): bool {
         $now ??= CarbonImmutable::now()->toDateTimeImmutable();
 
@@ -111,19 +113,21 @@ final readonly class EligibilityService implements EligibilityServiceInterface
             throw AlreadyRegisteredException::forTable($userId, $gameTable->id->value);
         }
 
-        return $this->checkSeats($gameTable, $role, $now);
+        return $seats && $this->checkSeats($gameTable, $role, $now);
     }
 
     /**
      * Spectators need a free spectator seat, whatever the player seats; they have no waiting list.
      * Players need a free player seat or, when the setting is on and the waiting list is still
      * open (not once the table has started, also on tables that admit registrations in play), go
-     * to the waiting list.
+     * to the waiting list. A table marked full by hand offers players only its waiting list, and
+     * without one its registrations are closed, whatever seats are left free.
      * Taken seats are those of SeatCounter, the count the table page shows.
      *
      * @return bool whether a player registration goes to the waiting list
      *
      * @throws TableFullException
+     * @throws RegistrationClosedException on a table marked full without an open waiting list
      */
     private function checkSeats(GameTable $gameTable, ParticipantRole $role, DateTimeImmutable $now): bool
     {
@@ -133,15 +137,19 @@ final readonly class EligibilityService implements EligibilityServiceInterface
             return false;
         }
 
-        if ($gameTable->hasCapacity($this->seats->takenPlayerSeats($gameTable))) {
+        $seatsOpen = $gameTable->admitsNewPlayersToSeats();
+
+        if ($seatsOpen && $gameTable->hasCapacity($this->seats->takenPlayerSeats($gameTable))) {
             return false;
         }
 
-        if (! $this->settings->isWaitingListEnabled() || ! $gameTable->isWaitingListOpen($now)) {
-            throw TableFullException::forTable($gameTable->id->value);
+        if ($this->settings->isWaitingListEnabled() && $gameTable->isWaitingListOpen($now)) {
+            return true;
         }
 
-        return true;
+        throw $seatsOpen
+            ? TableFullException::forTable($gameTable->id->value)
+            : RegistrationClosedException::forTable($gameTable->id->value);
     }
 
     /**
@@ -198,8 +206,16 @@ final readonly class EligibilityService implements EligibilityServiceInterface
         ?DateTimeImmutable $now = null,
         ParticipantRole $role = ParticipantRole::Player,
     ): array {
+        return $this->outcome($gameTable, $userId, $isMember, $now, $role, seats: true);
+    }
+
+    /**
+     * @return array{eligible: bool, reason: string|null, waitingList: bool}
+     */
+    private function outcome(GameTable $gameTable, string $userId, bool $isMember, ?DateTimeImmutable $now, ParticipantRole $role, bool $seats): array
+    {
         try {
-            $waitingList = $this->evaluate($gameTable, $userId, $isMember, $now, $role);
+            $waitingList = $this->evaluate($gameTable, $userId, $isMember, $now, $role, $seats);
 
             return ['eligible' => true, 'reason' => null, 'waitingList' => $waitingList];
         } catch (RegistrationClosedException|MembersOnlyException|AlreadyRegisteredException|TableFullException $e) {
@@ -344,6 +360,21 @@ final readonly class EligibilityService implements EligibilityServiceInterface
      */
     public function canGuestRegister(string $gameTableId, ?string $email, ParticipantRole $role = ParticipantRole::Player): array
     {
+        return $this->guestOutcome($gameTableId, $email, $role, seats: true);
+    }
+
+    public function guestRulesRefusal(string $gameTableId, ParticipantRole $role = ParticipantRole::Player): ?string
+    {
+        return $this->guestOutcome($gameTableId, null, $role, seats: false)['reason'];
+    }
+
+    /**
+     * Every rule of a guest registration; without $seats the seat rules (checkSeats()) are left out.
+     *
+     * @return array{eligible: bool, reason: string|null, message: string|null, waitingList: bool}
+     */
+    private function guestOutcome(string $gameTableId, ?string $email, ParticipantRole $role, bool $seats): array
+    {
         $tableId = new GameTableId($gameTableId);
         $gameTable = $this->gameTableRepository->find($tableId);
 
@@ -400,8 +431,8 @@ final readonly class EligibilityService implements EligibilityServiceInterface
         }
 
         try {
-            $waitingList = $this->checkSeats($gameTable, $role, $now);
-        } catch (TableFullException $e) {
+            $waitingList = $seats && $this->checkSeats($gameTable, $role, $now);
+        } catch (TableFullException|RegistrationClosedException $e) {
             return $this->guestRefusal($e->reason);
         }
 
@@ -458,12 +489,6 @@ final readonly class EligibilityService implements EligibilityServiceInterface
             return 'not_found';
         }
 
-        $result = $this->canRegister($gameTable, $userId, $this->checkMembership($userId), null, $now ?? CarbonImmutable::now()->toDateTimeImmutable(), $role);
-
-        if ($result['eligible'] || in_array($result['reason'], ['table_full', 'spectators_full'], true)) {
-            return null;
-        }
-
-        return $result['reason'];
+        return $this->outcome($gameTable, $userId, $this->checkMembership($userId), $now ?? CarbonImmutable::now()->toDateTimeImmutable(), $role, seats: false)['reason'];
     }
 }

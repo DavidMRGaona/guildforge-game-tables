@@ -30,7 +30,7 @@ El módulo de mesas organiza las partidas de rol de {{site_name}}: partidas suel
 |---|---|---|
 | **Borrador** | No se ve en la web. Es el estado de una mesa creada en la web que aún no se ha publicado, o de una mesa que has despublicado. | **Programada** (al publicarla) o **Cancelada** |
 | **Programada** | A la espera de jugarse. Si está publicada, admite inscripciones según sus fechas. | **Completa**, **En progreso** o **Cancelada** |
-| **Completa** | Una marca que pones a mano para indicar que ya no buscas gente. | **Programada**, **En progreso** o **Cancelada** |
+| **Completa** | Una marca que pones a mano para indicar que ya no buscas gente: nadie nuevo ocupa una plaza libre. | **Programada**, **En progreso** o **Cancelada** |
 | **En progreso** | La partida se está jugando. | **Completada** o **Cancelada** |
 | **Completada** | La partida terminó. Es definitivo. | Ninguno |
 | **Cancelada** | La partida no se juega. Es definitivo. | Ninguno |
@@ -38,7 +38,7 @@ El módulo de mesas organiza las partidas de rol de {{site_name}}: partidas suel
 Si en **Configuración** está activado **Actualizar el estado de las mesas automáticamente** (viene activado), cada cinco minutos las mesas programadas o completas pasan a **En progreso** a su hora de inicio, y las que están en progreso pasan a **Completada** al terminar (inicio más duración). Ese cambio no envía correos. Si lo desactivas, el estado solo cambia con los botones **Iniciar** y **Completar**.
 
 > [!IMPORTANT]
-> **Completa** no cierra las inscripciones: si quedan plazas libres, la gente puede seguir apuntándose. Lo que decide si hay sitio son las plazas de la mesa.
+> **Completa** cierra las plazas de jugador aunque queden libres: los jugadores nuevos solo pueden apuntarse a la lista de espera, si está activada; sin ella, las inscripciones de jugador quedan cerradas. Nadie pasa solo de la lista mientras la mesa está **Completa**: tú das las plazas con **Promover** o aprobando inscripciones pendientes. Los espectadores siguen con sus propias plazas, y la plantilla de una campaña se inscribe en sus sesiones como siempre.
 
 ## Estados de una inscripción
 

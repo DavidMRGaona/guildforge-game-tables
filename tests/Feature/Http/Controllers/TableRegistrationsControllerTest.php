@@ -303,6 +303,20 @@ final class TableRegistrationsControllerTest extends ModuleTestCase
         Notification::assertNothingSent();
     }
 
+    // «Completa» set by hand closes new registrations, not the director's answer to the pending ones (#184)
+    public function test_approving_a_pending_user_on_a_table_marked_full_with_a_free_seat(): void
+    {
+        $this->table->forceFill(['status' => 'full'])->save();
+        $jane = $this->userRow($this->table, $this->jane, 'pending', CarbonImmutable::parse('2026-10-30 12:00:00', 'Europe/Madrid'));
+
+        $this->asDirector()
+            ->post($this->actionUrl($jane, 'aprobar'))
+            ->assertRedirect($this->pageUrl())
+            ->assertSessionHas('success', 'Has aprobado la inscripción de Jane Doe.');
+
+        $this->assertSame('confirmed', $jane->refresh()->status->value);
+    }
+
     public function test_approving_on_a_completed_table_is_refused(): void
     {
         $jane = $this->userRow($this->table, $this->jane, 'pending', CarbonImmutable::parse('2026-10-30 12:00:00', 'Europe/Madrid'));

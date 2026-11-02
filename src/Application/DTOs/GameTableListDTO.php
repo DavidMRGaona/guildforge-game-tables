@@ -71,6 +71,15 @@ final readonly class GameTableListDTO
     }
 
     /**
+     * No free player seat for newcomers: every seat is taken, or the table is marked full by hand
+     * (GameTable::admitsNewPlayersToSeats()). The seats themselves are still counted as they are.
+     */
+    public function isFull(): bool
+    {
+        return $this->currentPlayers >= $this->maxPlayers || ! $this->status->admitsNewPlayersToSeats();
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function toArray(): array
@@ -98,7 +107,7 @@ final readonly class GameTableListDTO
             'max_players' => $this->maxPlayers,
             'current_players' => $this->currentPlayers,
             'spots_available' => max(0, $this->maxPlayers - $this->currentPlayers),
-            'is_full' => $this->currentPlayers >= $this->maxPlayers,
+            'is_full' => $this->isFull(),
             'is_published' => $this->isPublished,
             'creator_name' => $this->creatorName,
             'main_game_master_name' => $this->mainGameMasterName,

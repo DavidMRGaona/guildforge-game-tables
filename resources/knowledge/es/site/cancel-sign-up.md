@@ -33,7 +33,7 @@ Puedes cancelar hasta que empieza la partida, también en las mesas que admiten 
 
 ## Qué pasa con tu plaza
 
-- Si la web tiene lista de espera, antes del inicio de la partida (o del cierre de inscripciones, si es anterior) la plaza pasa automáticamente al primero de la lista, que recibe un correo.
+- Si la web tiene lista de espera, antes del inicio de la partida (o del cierre de inscripciones, si es anterior) la plaza pasa automáticamente al primero de la lista, que recibe un correo. En una mesa **Completa** no pasa sola: la da quien dirige la mesa.
 - Según la configuración de la web, los directores de la mesa reciben un aviso de tu baja.
 - Si quedan plazas, puedes volver a apuntarte más adelante, como cualquier otra persona.
 

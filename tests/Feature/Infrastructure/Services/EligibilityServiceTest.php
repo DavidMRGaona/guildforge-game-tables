@@ -432,11 +432,12 @@ final class EligibilityServiceTest extends TestCase
         $this->assertTrue($result['waitingList']);
     }
 
+    // The seat rules are left out: the seats are not even counted
     public function test_user_rules_refusal_is_null_for_an_eligible_user(): void
     {
         $table = $this->tableForUserRules();
         $this->participantRepository->expects($this->atLeastOnce())->method('findByTableAndUser')->willReturn(null);
-        $this->participantRepository->expects($this->atLeastOnce())->method('countConfirmedPlayers')->willReturn(1);
+        $this->participantRepository->expects($this->never())->method('countConfirmedPlayers');
 
         $this->assertNull($this->service->userRulesRefusal($table->id->value, 'user-1'));
     }
@@ -445,7 +446,16 @@ final class EligibilityServiceTest extends TestCase
     {
         $table = $this->tableForUserRules(maxPlayers: 2);
         $this->participantRepository->expects($this->atLeastOnce())->method('findByTableAndUser')->willReturn(null);
-        $this->participantRepository->expects($this->atLeastOnce())->method('countConfirmedPlayers')->willReturn(2);
+        $this->participantRepository->method('countConfirmedPlayers')->willReturn(2);
+
+        $this->assertNull($this->service->userRulesRefusal($table->id->value, 'user-1'));
+    }
+
+    // «Completa» set by hand closes the seats, a seat rule too (#184)
+    public function test_user_rules_refusal_is_null_on_a_table_marked_full(): void
+    {
+        $table = $this->tableForUserRules(status: TableStatus::Full);
+        $this->participantRepository->expects($this->atLeastOnce())->method('findByTableAndUser')->willReturn(null);
 
         $this->assertNull($this->service->userRulesRefusal($table->id->value, 'user-1'));
     }
@@ -454,7 +464,7 @@ final class EligibilityServiceTest extends TestCase
     {
         $table = $this->tableForUserRules();
         $this->participantRepository->expects($this->atLeastOnce())->method('findByTableAndUser')->willReturn(null);
-        $this->participantRepository->expects($this->atLeastOnce())->method('countConfirmedSpectators')->willReturn(99);
+        $this->participantRepository->method('countConfirmedSpectators')->willReturn(99);
 
         $this->assertNull($this->service->userRulesRefusal($table->id->value, 'user-1', ParticipantRole::Spectator));
     }

@@ -229,6 +229,16 @@ final class GameTable
         return $this->registrationType->requiresInvitation();
     }
 
+    /**
+     * A table marked full by hand takes no new player into a free seat: newcomers only join the
+     * waiting list and nobody is promoted automatically; the director moves people in by hand.
+     * Spectators and the roster of a campaign are not affected.
+     */
+    public function admitsNewPlayersToSeats(): bool
+    {
+        return $this->status->admitsNewPlayersToSeats();
+    }
+
     public function hasCapacity(int $confirmedPlayers): bool
     {
         return $confirmedPlayers < $this->maxPlayers;
