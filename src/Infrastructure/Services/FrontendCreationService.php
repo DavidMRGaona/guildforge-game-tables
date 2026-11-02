@@ -237,6 +237,17 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
             frontendCreationStatus: $creationStatus,
             language: $dto->language,
             experienceLevel: $dto->experienceLevel,
+            minPlayers: $dto->minPlayers,
+            tableFormat: $dto->tableFormat,
+            location: $dto->location,
+            onlineUrl: $dto->onlineUrl,
+            scheduleNotes: $dto->scheduleNotes,
+            genres: $dto->genres,
+            tone: $dto->tone,
+            characterCreation: $dto->characterCreation,
+            safetyTools: $dto->safetyTools,
+            contentWarningIds: $dto->contentWarningIds ?? [],
+            customWarnings: $dto->customWarnings,
         );
 
         // 4. Persist the campaign
@@ -263,7 +274,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
      *     languages: array<string, string>,
      *     campaign_frequencies: array<string, string>,
      *     events: list<array{id: string, name: string, start_date: string}>,
-     *     campaigns: list<array{id: string, name: string, game_system_id: string, max_players: int|null, roster_count: int}>,
+     *     campaigns: list<array{id: string, name: string, game_system_id: string, max_players: int|null, roster_count: int, table_format: string|null, location: string|null, online_url: string|null}>,
      *     defaults: array{duration_minutes: int, min_players: int, max_players: int, max_spectators: int},
      *     limits: array{max_players: int, max_spectators: int, max_duration_minutes: int}
      * }
@@ -814,6 +825,18 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         $campaign->maxPlayers = $dto->maxPlayers;
         $campaign->language = $dto->language;
         $campaign->experienceLevel = $dto->experienceLevel;
+        $campaign->minPlayers = $dto->minPlayers;
+        $campaign->tableFormat = $dto->tableFormat;
+        $campaign->location = $dto->location;
+        $campaign->onlineUrl = $dto->onlineUrl;
+        $campaign->scheduleNotes = $dto->scheduleNotes;
+        $campaign->genres = $dto->genres;
+        $campaign->tone = $dto->tone;
+        $campaign->characterCreation = $dto->characterCreation;
+        $campaign->safetyTools = $dto->safetyTools;
+        // The form sends every warning it keeps: none chosen removes the stored ones
+        $campaign->contentWarningIds = $dto->contentWarningIds ?? [];
+        $campaign->customWarnings = $dto->customWarnings;
 
         // A campaign rejected before 2.10.0 (legacy status) becomes a draft on edit, keeping the reason
         if ($campaign->frontendCreationStatus === FrontendCreationStatus::Rejected) {

@@ -7,15 +7,26 @@ namespace Modules\GameTables\Domain\Entities;
 use DateTimeImmutable;
 use Modules\GameTables\Domain\Enums\CampaignFrequency;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
+use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
+use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\RosterAccess;
+use Modules\GameTables\Domain\Enums\SafetyTool;
+use Modules\GameTables\Domain\Enums\TableFormat;
+use Modules\GameTables\Domain\Enums\Tone;
 use Modules\GameTables\Domain\Exceptions\RosterActionRefusedException;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\GameSystemId;
 
 final class Campaign
 {
+    /**
+     * @param  array<Genre>|null  $genres
+     * @param  array<SafetyTool>|null  $safetyTools
+     * @param  array<string>|null  $contentWarningIds  null leaves the stored ones as they are
+     * @param  array<string>|null  $customWarnings
+     */
     public function __construct(
         public readonly CampaignId $id,
         public readonly GameSystemId $gameSystemId,
@@ -39,6 +50,18 @@ final class Campaign
         // Null when the creator was never asked (campaigns created before they were stored)
         public ?string $language = null,
         public ?ExperienceLevel $experienceLevel = null,
+        // What the web form asks for besides; null for campaigns created before they were stored
+        public ?int $minPlayers = null,
+        public ?TableFormat $tableFormat = null,
+        public ?string $location = null,
+        public ?string $onlineUrl = null,
+        public ?string $scheduleNotes = null,
+        public ?array $genres = null,
+        public ?Tone $tone = null,
+        public ?CharacterCreation $characterCreation = null,
+        public ?array $safetyTools = null,
+        public ?array $contentWarningIds = null,
+        public ?array $customWarnings = null,
     ) {}
 
     public function updateInfo(

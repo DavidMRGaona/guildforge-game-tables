@@ -17,9 +17,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Modules\GameTables\Domain\Enums\CampaignFrequency;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
+use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\RosterAccess;
+use Modules\GameTables\Domain\Enums\TableFormat;
+use Modules\GameTables\Domain\Enums\Tone;
 
 /**
  * @property string $id
@@ -41,6 +44,16 @@ use Modules\GameTables\Domain\Enums\RosterAccess;
  * @property RosterAccess $roster_access
  * @property string|null $language
  * @property ExperienceLevel|null $experience_level
+ * @property int|null $min_players
+ * @property TableFormat|null $table_format
+ * @property string|null $location
+ * @property string|null $online_url
+ * @property string|null $schedule_notes
+ * @property array<string>|null $genres
+ * @property Tone|null $tone
+ * @property CharacterCreation|null $character_creation
+ * @property array<string>|null $safety_tools
+ * @property array<string>|null $custom_warnings
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -85,6 +98,16 @@ final class CampaignModel extends Model
         'roster_access',
         'language',
         'experience_level',
+        'min_players',
+        'table_format',
+        'location',
+        'online_url',
+        'schedule_notes',
+        'genres',
+        'tone',
+        'character_creation',
+        'safety_tools',
+        'custom_warnings',
     ];
 
     /**
@@ -103,6 +126,13 @@ final class CampaignModel extends Model
             'frontend_creation_status' => FrontendCreationStatus::class,
             'roster_access' => RosterAccess::class,
             'experience_level' => ExperienceLevel::class,
+            'min_players' => 'integer',
+            'table_format' => TableFormat::class,
+            'genres' => 'array',
+            'tone' => Tone::class,
+            'character_creation' => CharacterCreation::class,
+            'safety_tools' => 'array',
+            'custom_warnings' => 'array',
         ];
     }
 
@@ -144,6 +174,19 @@ final class CampaignModel extends Model
             'campaign_id',
             'user_id',
         )->withTimestamps();
+    }
+
+    /**
+     * @return BelongsToMany<ContentWarningModel, $this>
+     */
+    public function contentWarnings(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            ContentWarningModel::class,
+            'gametables_campaign_content_warnings',
+            'campaign_id',
+            'content_warning_id',
+        );
     }
 
     /**

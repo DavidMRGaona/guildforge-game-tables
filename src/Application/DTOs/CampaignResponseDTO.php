@@ -9,15 +9,25 @@ use DateTimeInterface;
 use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Enums\CampaignFrequency;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
+use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
+use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\RosterAccess;
+use Modules\GameTables\Domain\Enums\SafetyTool;
+use Modules\GameTables\Domain\Enums\TableFormat;
+use Modules\GameTables\Domain\Enums\Tone;
 
 final readonly class CampaignResponseDTO
 {
     /**
      * @param  array<CampaignGameMasterResponseDTO>  $gameMasters
      * @param  array<GameTableListDTO>  $gameTables
+     * @param  array<Genre>  $genres
+     * @param  array<SafetyTool>  $safetyTools
+     * @param  array<string>  $contentWarningIds
+     * @param  array<string>  $contentWarnings  their names, for the campaign page
+     * @param  array<string>  $customWarnings
      */
     public function __construct(
         public string $id,
@@ -54,6 +64,18 @@ final readonly class CampaignResponseDTO
         public RosterAccess $rosterAccess = RosterAccess::Anyone,
         public ?string $language = null,
         public ?ExperienceLevel $experienceLevel = null,
+        public ?int $minPlayers = null,
+        public ?TableFormat $tableFormat = null,
+        public ?string $location = null,
+        public ?string $onlineUrl = null,
+        public ?string $scheduleNotes = null,
+        public array $genres = [],
+        public ?Tone $tone = null,
+        public ?CharacterCreation $characterCreation = null,
+        public array $safetyTools = [],
+        public array $contentWarningIds = [],
+        public array $contentWarnings = [],
+        public array $customWarnings = [],
     ) {}
 
     /**
@@ -107,6 +129,17 @@ final readonly class CampaignResponseDTO
             rosterAccess: $campaign->rosterAccess,
             language: $campaign->language,
             experienceLevel: $campaign->experienceLevel,
+            minPlayers: $campaign->minPlayers,
+            tableFormat: $campaign->tableFormat,
+            location: $campaign->location,
+            onlineUrl: $campaign->onlineUrl,
+            scheduleNotes: $campaign->scheduleNotes,
+            genres: $campaign->genres ?? [],
+            tone: $campaign->tone,
+            characterCreation: $campaign->characterCreation,
+            safetyTools: $campaign->safetyTools ?? [],
+            contentWarningIds: $campaign->contentWarningIds ?? [],
+            customWarnings: $campaign->customWarnings ?? [],
         );
     }
 
@@ -155,6 +188,17 @@ final readonly class CampaignResponseDTO
             'roster_access_label' => $this->rosterAccess->label(),
             'language' => $this->language,
             'experience_level' => $this->experienceLevel?->value,
+            'min_players' => $this->minPlayers,
+            'table_format' => $this->tableFormat?->value,
+            'location' => $this->location,
+            'online_url' => $this->onlineUrl,
+            'schedule_notes' => $this->scheduleNotes,
+            'genres' => array_map(static fn (Genre $genre): string => $genre->value, $this->genres),
+            'tone' => $this->tone?->value,
+            'character_creation' => $this->characterCreation?->value,
+            'safety_tools' => array_map(static fn (SafetyTool $tool): string => $tool->value, $this->safetyTools),
+            'content_warning_ids' => $this->contentWarningIds,
+            'custom_warnings' => $this->customWarnings,
             'created_at' => $timezone->iso($this->createdAt),
             'updated_at' => $timezone->iso($this->updatedAt),
         ];

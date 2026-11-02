@@ -48,6 +48,8 @@ interface FormData {
     safety_tools: Record<string, string>;
     content_warnings: ContentWarning[];
     campaign_frequencies: Record<string, string>;
+    // The maximum of players the settings allow, the same as tables
+    limits: { max_players: number };
 }
 
 interface Eligibility {
@@ -458,7 +460,7 @@ function submit(): void {
                                             v-model="form.min_players"
                                             name="min_players"
                                             :min="1"
-                                            :max="12"
+                                            :max="props.formData.limits.max_players"
                                             required
                                             :error="form.errors.min_players"
                                             class="mt-1"
@@ -483,7 +485,7 @@ function submit(): void {
                                             v-model="form.max_players"
                                             name="max_players"
                                             :min="1"
-                                            :max="12"
+                                            :max="props.formData.limits.max_players"
                                             required
                                             :error="form.errors.max_players"
                                             class="mt-1"

@@ -7,7 +7,9 @@ namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories;
 use DateTimeImmutable;
 use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
+use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\RosterAccess;
+use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Exceptions\CampaignNotFoundException;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
@@ -18,10 +20,15 @@ final readonly class EloquentCampaignRepository implements CampaignRepositoryInt
 {
     public function save(Campaign $campaign): void
     {
-        CampaignModel::query()->updateOrCreate(
+        $model = CampaignModel::query()->updateOrCreate(
             ['id' => $campaign->id->value],
             $this->toArray($campaign),
         );
+
+        // Null leaves them as they are: only a list (empty included) replaces the stored ones
+        if ($campaign->contentWarningIds !== null) {
+            $model->contentWarnings()->sync($campaign->contentWarningIds);
+        }
     }
 
     public function find(CampaignId $id): ?Campaign
@@ -128,6 +135,7 @@ final readonly class EloquentCampaignRepository implements CampaignRepositoryInt
                         ->orderedByStart();
                 },
                 'gameMasters.user',
+                'contentWarnings',
             ])
             ->withCount(['players' => fn ($players) => $players->whereNull('users.anonymized_at')])
             ->where('id', $id)
@@ -147,6 +155,7 @@ final readonly class EloquentCampaignRepository implements CampaignRepositoryInt
                         ->orderedByStart();
                 },
                 'gameMasters.user',
+                'contentWarnings',
             ])
             ->withCount(['players' => fn ($players) => $players->whereNull('users.anonymized_at')])
             ->where('slug', $slug)
@@ -182,6 +191,20 @@ final readonly class EloquentCampaignRepository implements CampaignRepositoryInt
             rosterAccess: $model->roster_access ?? RosterAccess::Anyone,
             language: $model->language,
             experienceLevel: $model->experience_level,
+            minPlayers: $model->min_players,
+            tableFormat: $model->table_format,
+            location: $model->location,
+            onlineUrl: $model->online_url,
+            scheduleNotes: $model->schedule_notes,
+            genres: $model->genres !== null ? array_map(Genre::from(...), $model->genres) : null,
+            tone: $model->tone,
+            characterCreation: $model->character_creation,
+            safetyTools: $model->safety_tools !== null ? array_map(SafetyTool::from(...), $model->safety_tools) : null,
+            // From the loaded relation when a list eager-loaded it
+            contentWarningIds: $model->relationLoaded('contentWarnings')
+                ? $model->contentWarnings->pluck('id')->all()
+                : $model->contentWarnings()->pluck('id')->all(),
+            customWarnings: $model->custom_warnings,
         );
     }
 
@@ -210,6 +233,20 @@ final readonly class EloquentCampaignRepository implements CampaignRepositoryInt
             'roster_access' => $campaign->rosterAccess->value,
             'language' => $campaign->language,
             'experience_level' => $campaign->experienceLevel?->value,
+            'min_players' => $campaign->minPlayers,
+            'table_format' => $campaign->tableFormat?->value,
+            'location' => $campaign->location,
+            'online_url' => $campaign->onlineUrl,
+            'schedule_notes' => $campaign->scheduleNotes,
+            'genres' => $campaign->genres !== null
+                ? array_map(static fn (Genre $genre): string => $genre->value, $campaign->genres)
+                : null,
+            'tone' => $campaign->tone?->value,
+            'character_creation' => $campaign->characterCreation?->value,
+            'safety_tools' => $campaign->safetyTools !== null
+                ? array_map(static fn (SafetyTool $tool): string => $tool->value, $campaign->safetyTools)
+                : null,
+            'custom_warnings' => $campaign->customWarnings,
         ];
     }
 }
