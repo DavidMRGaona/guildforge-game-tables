@@ -29,6 +29,11 @@ const props = defineProps<Props>();
 
 const { t, locale } = useI18n();
 
+// Only web links become a link: the forms already refuse other schemes, this keeps it so for any stored value
+const safeOnlineUrl = computed(() =>
+    /^https?:\/\//i.test(props.campaign.onlineUrl ?? '') ? props.campaign.onlineUrl : null
+);
+
 const formattedStartDate = computed(() => {
     if (!props.campaign.startDate) return null;
     const date = new Date(props.campaign.startDate);
@@ -193,18 +198,18 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                     </div>
 
                     <!-- Online link: only its directors and roster get it -->
-                    <div v-if="campaign.onlineUrl">
+                    <div v-if="safeOnlineUrl">
                         <h3 class="mb-1 text-sm font-semibold text-base-primary">
                             {{ t('campaigns.onlineLink') }}
                         </h3>
                         <div class="flex items-center text-base-secondary">
                             <Globe class="mr-2 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
                             <a
-                                :href="campaign.onlineUrl"
+                                :href="safeOnlineUrl"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 class="break-all text-primary underline underline-offset-2 hover:no-underline focus:outline-none focus:ring-2 focus:ring-primary-500"
-                                >{{ campaign.onlineUrl }}</a
+                                >{{ safeOnlineUrl }}</a
                             >
                         </div>
                     </div>

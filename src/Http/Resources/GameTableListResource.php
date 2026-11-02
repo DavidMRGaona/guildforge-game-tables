@@ -43,7 +43,7 @@ final class GameTableListResource extends JsonResource
                 'color' => $this->status->color(),
             ],
             'location' => $this->location,
-            'onlineUrl' => $this->onlineUrl,
+            // No online session link: these pages are public, and nothing on them shows it
             'minPlayers' => $this->minPlayers,
             'maxPlayers' => $this->maxPlayers,
             'currentPlayers' => $this->currentPlayers,
