@@ -250,15 +250,6 @@ final class GameTableSettingsReader
         return is_string($value) && $value !== '' ? $value : null;
     }
 
-    /**
-     * @return array<array{tier: int, type: string, value: ?string, days_before: int}>
-     */
-    public function getPriorityTiers(): array
-    {
-        /** @var array<array{tier: int, type: string, value: ?string, days_before: int}> */
-        return $this->array('frontend_creation.priority_tiers');
-    }
-
     public function getPublicationMode(): string
     {
         return $this->string('frontend_creation.publication.mode', 'approval');

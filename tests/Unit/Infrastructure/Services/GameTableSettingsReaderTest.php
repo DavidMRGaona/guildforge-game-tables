@@ -73,7 +73,6 @@ final class GameTableSettingsReaderTest extends TestCase
         $this->assertSame('approval', $this->reader->getPublicationMode());
         $this->assertSame([], $this->reader->getAllowedRoles());
         $this->assertNull($this->reader->getRequiredPermission());
-        $this->assertSame([], $this->reader->getPriorityTiers());
         $this->assertSame([], $this->reader->getAutoPublishRoles());
         $this->assertSame([], $this->reader->getAutoPublishPermissions());
         $this->assertSame(240, $this->reader->defaultDurationMinutes());
