@@ -476,6 +476,10 @@ return [
             'guest_rate_per_minute' => 'Guest registrations per minute and connection',
             'guest_rate_per_hour' => 'Guest registrations per hour and connection',
             'duplicate_window_hours' => '"Possible duplicate" window (hours)',
+            'auto_publish_roles' => 'Roles that publish without review',
+            'auto_publish_roles_help' => 'What people with any of these roles create on the site is published when they send it; everybody else\'s goes to review.',
+            'auto_publish_permissions' => 'Permissions that publish without review',
+            'auto_publish_permissions_help' => 'What people with any of these permissions create is published without review too.',
         ],
         'guest_confirmation_mode' => [
             'hold' => 'Holds the seat with a deadline',
@@ -486,6 +490,7 @@ return [
             'allow_guest' => 'Allow as a guest unless that account is already registered',
         ],
         'validation' => [
+            'auto_publish_needs_one' => 'Choose at least one role or permission that publishes without review.',
             'above_players_limit' => 'It cannot exceed the maximum players limit (:limit)',
             'above_spectators_limit' => 'It cannot exceed the maximum spectators limit (:limit)',
             'above_duration_limit' => 'It cannot exceed the maximum duration (:limit minutes)',

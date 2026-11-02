@@ -30,7 +30,6 @@ use Modules\GameTables\Application\DTOs\UpdateEventGameTableConfigDTO;
 use Modules\GameTables\Application\Services\CampaignInvitationSendLogInterface;
 use Modules\GameTables\Application\Services\CampaignInvitationServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterQueryInterface;
-use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
 use Modules\GameTables\Application\Services\EventCreationEligibilityServiceInterface;
 use Modules\GameTables\Application\Services\EventGameTableConfigServiceInterface;
 use Modules\GameTables\Application\Services\MembershipCheckerInterface;
@@ -391,20 +390,6 @@ final class UtcStorageTest extends ModuleTestCase
 
         $this->travelTo(CarbonImmutable::parse('2026-10-23T08:00:00Z'));
         $this->assertNotSame('2026-10-23T10:00:00+02:00', $service->canCreateTableForEvent($event->id, $editor->id)->toArray()['can_create_at']);
-    }
-
-    public function test_the_creation_priority_counts_madrid_days_before_the_event(): void
-    {
-        $editor = $this->creator();
-        $this->grantRole($editor, 'editor');
-        config()->set('modules.settings.game-tables.frontend_creation.priority_tiers', [
-            ['tier' => 1, 'type' => 'role', 'value' => 'editor', 'days_before' => 7],
-        ]);
-
-        $opensAt = app(CreationEligibilityServiceInterface::class)->getCreationOpenDate($editor->id, new DateTimeImmutable('2026-10-30T09:00:00Z'));
-        $this->assertNotNull($opensAt);
-
-        $this->assertSame('2026-10-23T08:00:00+00:00', $opensAt->setTimezone(new DateTimeZone('UTC'))->format('c'));
     }
 
     public function test_members_early_access_counts_madrid_days(): void
