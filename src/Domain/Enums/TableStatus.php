@@ -77,6 +77,15 @@ enum TableStatus: string
     }
 
     /**
+     * Whether an unpublished table in this status may be published: only before it starts, since
+     * publishing a cancelled or finished table would reopen it.
+     */
+    public function allowsPublishing(): bool
+    {
+        return in_array($this, [self::Draft, self::Scheduled, self::Full], true);
+    }
+
+    /**
      * Validates if a transition to the given status is allowed.
      */
     public function canTransitionTo(self $newStatus): bool

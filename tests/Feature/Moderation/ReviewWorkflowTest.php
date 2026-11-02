@@ -186,6 +186,23 @@ final class ReviewWorkflowTest extends ModuleTestCase
         $this->assertTrue($table->is_published);
     }
 
+    // Cancelled while in review: approving it would publish it again
+    public function test_approving_a_table_cancelled_in_review_warns_and_leaves_it_cancelled(): void
+    {
+        $this->actingAsPanelAdmin();
+        $table = $this->table('pending_review');
+        $table->update(['status' => 'cancelled']);
+
+        Livewire::test(EditGameTable::class, ['record' => $table->getRouteKey()])
+            ->callAction('approveModeration')
+            ->assertNotified('La mesa ya no está en un estado que permita este cambio');
+
+        $table->refresh();
+        $this->assertSame('pending_review', $table->frontend_creation_status?->value);
+        $this->assertSame('cancelled', $table->status->value);
+        $this->assertFalse($table->is_published);
+    }
+
     public function test_only_items_in_review_can_be_approved_or_rejected(): void
     {
         $service = app(FrontendCreationServiceInterface::class);

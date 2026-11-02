@@ -68,8 +68,8 @@ interface GameTableRepositoryInterface
     public function getUpcoming(int $limit = 10): array;
 
     /**
-     * Ids of the tables in one of the given statuses whose start time is at or before $now,
-     * earliest first.
+     * Ids of the published tables in one of the given statuses whose start time is at or before
+     * $now, earliest first.
      *
      * @param  list<TableStatus>  $statuses
      * @return list<string>

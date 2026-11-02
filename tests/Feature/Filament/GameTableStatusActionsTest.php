@@ -65,6 +65,45 @@ final class GameTableStatusActionsTest extends ModuleTestCase
         Event::assertDispatched(GameTablePublished::class, fn (GameTablePublished $event): bool => $event->gameTableId === $table->id);
     }
 
+    // A cancelled table stays cancelled: «Publicar» would reopen it
+    public function test_a_cancelled_table_does_not_offer_the_publishing(): void
+    {
+        $table = $this->table(TableStatus::Cancelled, published: false);
+
+        Livewire::test(EditGameTable::class, ['record' => $table->getRouteKey()])
+            ->assertActionHidden('publish');
+    }
+
+    public function test_the_service_does_not_publish_a_cancelled_table(): void
+    {
+        Event::fake([GameTablePublished::class]);
+        $table = $this->table(TableStatus::Cancelled, published: false);
+
+        try {
+            app(GameTableServiceInterface::class)->publish($table->id);
+            $this->fail('A cancelled table was published');
+        } catch (InvalidStatusTransitionException $e) {
+            $this->assertSame('cancelled', $e->from);
+        }
+
+        $table->refresh();
+        $this->assertFalse($table->is_published);
+        $this->assertSame(TableStatus::Cancelled, $table->status);
+        Event::assertNotDispatched(GameTablePublished::class);
+    }
+
+    // An unpublished table that filled up stays full once published
+    public function test_publishing_a_full_table_keeps_it_full(): void
+    {
+        $table = $this->table(TableStatus::Full, published: false);
+
+        app(GameTableServiceInterface::class)->publish($table->id);
+
+        $table->refresh();
+        $this->assertTrue($table->is_published);
+        $this->assertSame(TableStatus::Full, $table->status);
+    }
+
     /**
      * @return array<string, array{TableStatus}>
      */

@@ -193,6 +193,8 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
         /** @var array<int, string> $ids */
         $ids = GameTableModel::query()
             ->whereIn('status', array_map(static fn (TableStatus $status): string => $status->value, $statuses))
+            // A table created in the panel without publishing is already scheduled: it never moves on its own
+            ->where('is_published', true)
             // Bound in the storage zone: bindings skip the model's conversion
             ->where('starts_at', '<=', app(TimezoneServiceInterface::class)->toStorage($now))
             ->orderBy('starts_at')
