@@ -7,6 +7,7 @@ namespace Modules\GameTables;
 use App\Application\Calendar\Contracts\CalendarEntrySourceInterface;
 use App\Application\Cookies\DTOs\DeclaredCookieDTO;
 use App\Application\Cookies\Services\CookieDeclarationRegistryInterface;
+use App\Application\Knowledge\Contracts\KnowledgeCapabilityInterface;
 use App\Application\Legal\DTOs\LegalMailNoticeDTO;
 use App\Application\Legal\Services\LegalMailNoticeRegistryInterface;
 use App\Application\Modules\DTOs\ModuleRouteDTO;
@@ -110,6 +111,12 @@ use Modules\GameTables\Filament\Widgets\PendingModerationWidget;
 use Modules\GameTables\Http\Controllers\CampaignInvitationController;
 use Modules\GameTables\Http\Controllers\GuestConfirmationController;
 use Modules\GameTables\Infrastructure\Calendar\GameTableCalendarSource;
+use Modules\GameTables\Infrastructure\Knowledge\AddsCampaignSessionsCapability;
+use Modules\GameTables\Infrastructure\Knowledge\CreatesAnythingCapability;
+use Modules\GameTables\Infrastructure\Knowledge\CreatesCampaignsCapability;
+use Modules\GameTables\Infrastructure\Knowledge\CreatesTablesCapability;
+use Modules\GameTables\Infrastructure\Knowledge\ManagesRegistrationsCapability;
+use Modules\GameTables\Infrastructure\Knowledge\ManagesRosterCapability;
 use Modules\GameTables\Infrastructure\Listeners\CancelParticipantsOnTableCancellation;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnCancellation;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnGuestRegistration;
@@ -1368,6 +1375,23 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
             GameTableSurveySubjectSource::class,
             CampaignSessionSurveySubjectSource::class,
             CampaignSurveySubjectSource::class,
+        ];
+    }
+
+    /**
+     * Who sees each of the module's help guides: the same rules as the pages they describe.
+     *
+     * @return array<class-string<KnowledgeCapabilityInterface>>
+     */
+    public function registerKnowledgeCapabilities(): array
+    {
+        return [
+            CreatesTablesCapability::class,
+            CreatesCampaignsCapability::class,
+            CreatesAnythingCapability::class,
+            ManagesRegistrationsCapability::class,
+            AddsCampaignSessionsCapability::class,
+            ManagesRosterCapability::class,
         ];
     }
 

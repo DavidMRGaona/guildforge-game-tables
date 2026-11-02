@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources\CampaignResource\Pages;
 
+use App\Filament\Concerns\HasKnowledgeGuideAction;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
@@ -14,6 +15,8 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 
 final class EditCampaign extends EditRecord
 {
+    use HasKnowledgeGuideAction;
+
     protected static string $resource = CampaignResource::class;
 
     public function getTitle(): string
@@ -86,8 +89,9 @@ final class EditCampaign extends EditRecord
 
     protected function getHeaderActions(): array
     {
-        return [
+        return array_filter([
             DeleteAction::make(),
-        ];
+            $this->knowledgeGuideAction('game-tables.panel.campaign-roster'),
+        ]);
     }
 }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpLink from '@/components/knowledge/HelpLink.vue';
 import { Mail } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import { router, Link } from '@inertiajs/vue3';
@@ -140,6 +141,10 @@ function handleReject(): void {
                         {{
                             t('campaigns.invitation.title', { campaign: invitation.campaign_title })
                         }}
+                        <HelpLink
+                            guide="game-tables.campaign-invitations"
+                            class="ml-1 align-middle"
+                        />
                     </h1>
                 </div>
 

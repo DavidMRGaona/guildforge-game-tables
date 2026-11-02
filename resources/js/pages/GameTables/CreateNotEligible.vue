@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpLink from '@/components/knowledge/HelpLink.vue';
 import { Lock } from '@lucide/vue';
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
@@ -66,6 +67,7 @@ const formattedCanCreateAt = computed((): string | null => {
             <!-- Title -->
             <h1 class="mt-6 text-3xl font-bold tracking-tight text-base-primary">
                 {{ t('gameTables.createNotEligible.title') }}
+                <HelpLink guide="game-tables.tables-overview" class="ml-1 align-middle" />
             </h1>
 
             <!-- Reason description -->
