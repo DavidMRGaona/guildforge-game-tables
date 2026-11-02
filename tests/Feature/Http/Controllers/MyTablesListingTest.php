@@ -98,19 +98,8 @@ final class MyTablesListingTest extends ModuleTestCase
                 ->where('published.0.pending_registrations', null));
     }
 
-    public function test_campaign_sessions_unpublished_tables_and_old_tables_never_appear_in_published(): void
+    public function test_unpublished_tables_and_old_tables_never_appear_in_published(): void
     {
-        $campaign = CampaignModel::create([
-            'id' => (string) Str::uuid(),
-            'title' => 'Campaña',
-            'slug' => 'campana',
-            'game_system_id' => $this->system->id,
-            'created_by' => $this->john->id,
-            'is_published' => true,
-            'status' => 'recruiting',
-        ]);
-        $session = $this->table('Sesión de campaña', $this->john, delegates: true, attributes: ['campaign_id' => $campaign->id]);
-        $this->linkDirector($session, $this->john);
         $draft = $this->table('Borrador', $this->john, delegates: true, attributes: ['is_published' => false]);
         $this->linkDirector($draft, $this->john);
         $old = $this->table('Mesa antigua', $this->john, delegates: true, attributes: ['starts_at' => CarbonImmutable::parse('2026-09-01 18:00:00')]);
@@ -128,7 +117,62 @@ final class MyTablesListingTest extends ModuleTestCase
                 ->where('drafts.0.title', 'Borrador')
                 ->has('published', 2)
                 ->where('published.0.title', 'Mesa reciente')
+                ->where('published.0.campaign', null)
                 ->where('published.1.title', 'Mesa próxima'));
+    }
+
+    // Published, a session left the drafts: it stays in «Mis mesas», with a link to its campaign
+    public function test_the_author_of_a_published_session_sees_it_with_its_campaign(): void
+    {
+        $campaign = $this->campaign($this->mary);
+        $session = $this->table('Sesión de campaña', $this->john, delegates: false, attributes: ['campaign_id' => $campaign->id]);
+
+        $this->actingAs($this->john)
+            ->get(route('gametables.my-tables'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('published', 1)
+                ->where('published.0.id', $session->id)
+                ->where('published.0.campaign.title', 'La campaña')
+                ->where('published.0.campaign.slug', 'la-campana'));
+    }
+
+    // Directing the campaign directs its sessions, even those someone else created
+    public function test_a_director_of_the_campaign_sees_its_published_sessions(): void
+    {
+        $campaign = $this->campaign($this->mary);
+        $gm = GameMasterModel::create([
+            'id' => (string) Str::uuid(),
+            'user_id' => $this->john->id,
+            'first_name' => 'GM',
+            'role' => GameMasterRole::Main,
+            'notify_by_email' => true,
+            'is_name_public' => true,
+        ]);
+        $campaign->gameMasters()->attach($gm->id, ['sort_order' => 1]);
+        $session = $this->table('Sesión de campaña', $this->mary, delegates: false, attributes: ['campaign_id' => $campaign->id]);
+        $this->table('Sesión sin publicar', $this->mary, delegates: false, attributes: ['campaign_id' => $campaign->id, 'is_published' => false]);
+
+        $this->actingAs($this->john)
+            ->get(route('gametables.my-tables'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('published', 1)
+                ->where('published.0.id', $session->id)
+                ->where('published.0.campaign.slug', 'la-campana'));
+    }
+
+    private function campaign(UserModel $creator): CampaignModel
+    {
+        return CampaignModel::create([
+            'id' => (string) Str::uuid(),
+            'title' => 'La campaña',
+            'slug' => 'la-campana',
+            'game_system_id' => $this->system->id,
+            'created_by' => $creator->id,
+            'is_published' => true,
+            'status' => 'recruiting',
+        ]);
     }
 
     /**

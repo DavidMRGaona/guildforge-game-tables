@@ -432,8 +432,9 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         $timezone = app(TimezoneServiceInterface::class);
         $directed = $this->tableDirection->tableIdsDirectedBy($userId);
 
+        // Single tables and campaign sessions alike: published, a session leaves the drafts
         $models = GameTableModel::query()
-            ->whereNull('campaign_id')
+            ->with('campaign:id,title,slug')
             ->where('is_published', true)
             // Thirty days back on the site's calendar, bound in the storage zone
             ->where('starts_at', '>=', $timezone->toStorage($timezone->toDisplay(now())->modify('-30 days')))
@@ -469,6 +470,8 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
                 statusColor: $model->status->color(),
                 managesRegistrations: $manages,
                 pendingRegistrations: $manages ? (int) ($pending[$model->id] ?? 0) : null,
+                campaignTitle: $model->campaign?->title,
+                campaignSlug: $model->campaign?->slug,
             );
         })->values()->all();
 

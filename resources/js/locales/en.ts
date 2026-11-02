@@ -310,6 +310,7 @@ export default {
             drafts: 'Drafts',
             published: 'Published',
             manageRegistrations: 'Manage registrations',
+            sessionOf: 'Session of the campaign',
             pendingCount: '{count} pending | {count} pending',
             emptyPublished: 'You have no published tables.',
             emptyDrafts: 'You have no drafts.',

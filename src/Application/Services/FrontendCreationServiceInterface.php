@@ -89,8 +89,8 @@ interface FrontendCreationServiceInterface
     public function getUserDrafts(string $userId): array;
 
     /**
-     * What «Mis mesas» lists: the person's drafts, and the published single tables (from 30 days ago
-     * onwards) they created or direct, by start date.
+     * What «Mis mesas» lists: the person's drafts, and the published tables and campaign sessions
+     * (from 30 days ago onwards) they created or direct, by start date.
      *
      * @return array{drafts: list<GameTableResponseDTO>, published: list<MyPublishedTableDTO>}
      */
