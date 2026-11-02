@@ -7,6 +7,7 @@ namespace Modules\GameTables\Tests\Feature\Filament;
 use Filament\Actions\Action;
 use Filament\Actions\Testing\TestAction;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Modules\GameTables\Filament\Resources\GameSystemResource;
@@ -101,7 +102,8 @@ final class GameSystemDeletionTest extends ModuleTestCase
         $this->assertModelExists($system);
 
         try {
-            GameSystemModel::query()->whereKey($system->id)->delete();
+            // In a savepoint: PostgreSQL aborts the test's transaction on the refused delete
+            DB::transaction(fn (): mixed => GameSystemModel::query()->whereKey($system->id)->delete());
             $this->fail('The database deleted a game system in use');
         } catch (QueryException) {
         }
