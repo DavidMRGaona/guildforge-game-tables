@@ -309,6 +309,7 @@ export default {
             drafts: 'Borradores',
             published: 'Publicadas',
             manageRegistrations: 'Gestionar inscritos',
+            sessionOf: 'Sesión de la campaña',
             pendingCount: '{count} pendiente | {count} pendientes',
             emptyPublished: 'No tienes partidas publicadas.',
             emptyDrafts: 'No tienes borradores.',

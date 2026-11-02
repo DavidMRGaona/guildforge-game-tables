@@ -49,6 +49,8 @@ interface PublishedTable {
     manages_registrations: boolean;
     // Pending requests; null when the person does not manage the registrations
     pending_registrations: number | null;
+    // The campaign of a session; null for a single table
+    campaign: { title: string; slug: string | null } | null;
 }
 
 interface Props {
@@ -286,7 +288,7 @@ function getTableLink(table: GameTableResponseDTO): string {
             </div>
         </section>
 
-        <!-- Published single tables the person created or directs -->
+        <!-- Published tables and campaign sessions the person created or directs -->
         <section v-if="hasTables" class="mt-10" aria-labelledby="my-tables-published">
             <h2 id="my-tables-published" class="mb-4 text-xl font-semibold text-base-primary">
                 {{ t('gameTables.myTables.published') }}
@@ -316,6 +318,17 @@ function getTableLink(table: GameTableResponseDTO): string {
                             </div>
                             <p class="text-sm text-base-secondary">
                                 {{ formatDate(table.starts_at) }}
+                            </p>
+                            <p v-if="table.campaign" class="mt-1 text-sm text-base-secondary">
+                                {{ t('gameTables.myTables.sessionOf') }}
+                                <Link
+                                    v-if="table.campaign.slug"
+                                    :href="`/campanas/${table.campaign.slug}`"
+                                    class="font-medium text-primary hover:underline"
+                                >
+                                    {{ table.campaign.title }}
+                                </Link>
+                                <span v-else class="font-medium">{{ table.campaign.title }}</span>
                             </p>
                             <span
                                 v-if="
