@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources\GameTableResource\Pages;
 
+use App\Filament\Concerns\HasKnowledgeGuideAction;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\Checkbox;
@@ -30,6 +31,8 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel
  */
 final class EditGameTable extends EditRecord
 {
+    use HasKnowledgeGuideAction;
+
     protected static string $resource = GameTableResource::class;
 
     /**
@@ -195,7 +198,7 @@ final class EditGameTable extends EditRecord
 
     protected function getHeaderActions(): array
     {
-        return [
+        return array_filter([
             Action::make('approveModeration')
                 ->authorize(fn (): bool => GameTableResource::canModerate())
                 ->label(__('game-tables::messages.moderation.approve'))
@@ -379,7 +382,8 @@ final class EditGameTable extends EditRecord
 
             DeleteAction::make()
                 ->schema([$this->secondConfirmation('delete')]),
-        ];
+            $this->knowledgeGuideAction('game-tables.panel.table-lifecycle'),
+        ]);
     }
 
     /**

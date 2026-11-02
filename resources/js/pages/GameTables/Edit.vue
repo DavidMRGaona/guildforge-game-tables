@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpLink from '@/components/knowledge/HelpLink.vue';
 import { Calendar } from '@lucide/vue';
 import { computed, onMounted, ref, watch } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
@@ -521,6 +522,7 @@ function cancel(): void {
         <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <h1 class="text-3xl font-bold tracking-tight text-base-primary">
                 {{ t('gameTables.edit.title') }}
+                <HelpLink guide="game-tables.create-table" class="ml-1 align-middle" />
             </h1>
             <p class="mt-2 text-lg text-base-secondary">
                 {{ t('gameTables.edit.subtitle') }}

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpLink from '@/components/knowledge/HelpLink.vue';
 import { Calendar, Clock } from '@lucide/vue';
 import { computed } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
@@ -131,6 +132,10 @@ function getTableLink(table: GameTableResponseDTO): string {
                     </Link>
                     <h1 class="text-3xl font-bold tracking-tight text-base-primary">
                         {{ t('gameTables.myTables.title') }}
+                        <HelpLink
+                            guide="game-tables.review-and-publish"
+                            class="ml-1 align-middle"
+                        />
                     </h1>
                     <p class="mt-2 text-lg text-base-secondary">
                         {{ t('gameTables.myTables.subtitle') }}

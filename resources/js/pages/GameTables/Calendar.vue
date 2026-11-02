@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpLink from '@/components/knowledge/HelpLink.vue';
 import { Calendar, ChevronLeft, ChevronRight } from '@lucide/vue';
 import { ref, computed } from 'vue';
 import { router, Link } from '@inertiajs/vue3';
@@ -111,6 +112,7 @@ function goToNextMonth(): void {
                 <div class="min-w-0">
                     <h1 class="text-3xl font-bold tracking-tight text-base-primary">
                         {{ t('gameTables.calendar') }}
+                        <HelpLink guide="game-tables.tables-overview" class="ml-1 align-middle" />
                     </h1>
                     <p class="mt-2 text-lg text-base-secondary">
                         {{ t('gameTables.description') }}

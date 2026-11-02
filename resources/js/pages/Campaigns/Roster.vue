@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpLink from '@/components/knowledge/HelpLink.vue';
 import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from 'vue';
 import { Link, router, useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
@@ -495,6 +496,7 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
             </Link>
             <h1 class="mt-3 break-words text-3xl font-bold tracking-tight text-base-primary">
                 {{ t('campaigns.roster.title', { title: campaign.title }) }}
+                <HelpLink guide="game-tables.manage-roster" class="ml-1 align-middle" />
             </h1>
             <p class="mt-2 text-base text-base-secondary">
                 {{ subtitle }}

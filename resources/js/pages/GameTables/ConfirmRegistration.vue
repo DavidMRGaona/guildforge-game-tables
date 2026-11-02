@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpLink from '@/components/knowledge/HelpLink.vue';
 import { Mail } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import { router, Link } from '@inertiajs/vue3';
@@ -101,6 +102,7 @@ function handleConfirm(): void {
                 </div>
                 <h1 class="text-2xl font-bold text-base-primary">
                     {{ t('confirmRegistration.title') }}
+                    <HelpLink guide="game-tables.sign-up" class="ml-1 align-middle" />
                 </h1>
             </div>
 
