@@ -82,11 +82,13 @@ Quién crea mesas en el panel lo decide el permiso `gametables.create` (ver [Per
 El formulario de eventos tiene la pestaña **Configuración de mesas**:
 
 - **Habilitar mesas para este evento**: sin esto no se pueden crear mesas desde la web para el evento.
-- **Programación**: horario libre o por turnos (nombre, hora de inicio y fin, máximo de mesas por turno).
+- **Programación**: horario libre o por turnos (nombre, hora de inicio y fin, máximo de mesas por turno). En un evento de varios días cada turno tiene además su día (el primero por defecto); en uno de un solo día, los turnos van en ese día. Un turno cuya hora de fin no es posterior a la de inicio acaba al día siguiente.
 - **Ubicación**: elección libre, ubicación fija o la del evento.
 - **Apertura de la creación** de mesas.
 - **Elegibilidad propia** del evento (nivel de acceso, roles o permiso), en lugar de la global.
 - **Acceso anticipado** por roles o permiso, con los días de antelación.
+
+Una mesa creada desde la web en el evento cierra sus inscripciones al empezar el evento si se juega su primer día, y a su propia hora de inicio si se juega un día posterior; nunca después de empezar la mesa. Los días son los del calendario del sitio.
 
 ## Estados
 

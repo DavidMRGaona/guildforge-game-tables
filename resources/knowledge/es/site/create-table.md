@@ -94,7 +94,7 @@ Estas opciones toman los valores que tenga configurados la web, y solo la organi
 - Quién puede inscribirse (abierto a todos, solo quien tiene el rol de {{association_role}} o solo por invitación).
 - Si las inscripciones se confirman solas o necesitan aprobación.
 - Los días de acceso anticipado para quien tiene el rol de {{association_role}}.
-- Las fechas de inscripción: se abren al publicarse la mesa y se cierran al empezar la partida (en un evento, como muy tarde al empezar el evento).
+- Las fechas de inscripción: se abren al publicarse la mesa y se cierran al empezar la partida (en un evento, al empezar el evento si la partida es su primer día).
 - Si tú, como director, gestionas las inscripciones desde la web.
 
 Si necesitas otra cosa, pídesela a la organización de {{site_name}}.
