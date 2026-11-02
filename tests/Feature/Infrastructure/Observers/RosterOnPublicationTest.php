@@ -195,6 +195,7 @@ final class RosterOnPublicationTest extends ModuleTestCase
                 'starts_at' => '2026-11-09 18:00:00',
                 'duration_minutes' => 240,
                 'table_format' => 'in_person',
+                'location' => 'Local de la asociación',
                 'table_type' => 'campaign_session',
                 'min_players' => 1,
                 'max_players' => 5,
@@ -451,6 +452,7 @@ final class RosterOnPublicationTest extends ModuleTestCase
     private function campaign(string $title): CampaignModel
     {
         return CampaignModel::create([
+            'location' => 'Local de la asociación',
             'id' => (string) Str::uuid(),
             'game_system_id' => $this->system->id,
             'created_by' => $this->author->id,
@@ -490,6 +492,7 @@ final class RosterOnPublicationTest extends ModuleTestCase
             'duration_minutes' => 240,
             'table_type' => 'campaign_session',
             'table_format' => 'in_person',
+            'location' => 'Local de la asociación',
             'status' => $status,
             'min_players' => 1,
             'max_players' => $maxPlayers,

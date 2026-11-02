@@ -583,6 +583,7 @@ final class UtcStorageTest extends ModuleTestCase
             'duration_minutes' => 240,
             'table_type' => 'one_shot',
             'table_format' => 'in_person',
+            'location' => 'Local de la asociación',
             'min_players' => 2,
             'max_players' => 5,
             'language' => 'es',
@@ -892,6 +893,7 @@ final class UtcStorageTest extends ModuleTestCase
             'duration_minutes' => 240,
             'table_type' => 'one_shot',
             'table_format' => 'in_person',
+            'location' => 'Local de la asociación',
             'min_players' => 1,
             'max_players' => 4,
             'language' => 'es',
@@ -1026,6 +1028,7 @@ final class UtcStorageTest extends ModuleTestCase
             'duration_minutes' => 240,
             'table_type' => 'one_shot',
             'table_format' => 'in_person',
+            'location' => 'Local de la asociación',
             'status' => 'scheduled',
             'min_players' => 1,
             'max_players' => 5,
@@ -1047,6 +1050,7 @@ final class UtcStorageTest extends ModuleTestCase
     private function campaign(array $attributes = []): CampaignModel
     {
         return CampaignModel::create([
+            'location' => 'Local de la asociación',
             'id' => (string) Str::uuid(),
             'game_system_id' => $this->system()->id,
             'created_by' => $this->creator()->id,
