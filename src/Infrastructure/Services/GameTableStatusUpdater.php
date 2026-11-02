@@ -16,9 +16,9 @@ use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Throwable;
 
 /**
- * Moves tables along with the clock, as the panel's «Iniciar» and «Completar» do: scheduled or
- * full tables start at their start time and tables in progress complete at their end (start plus
- * duration). Each table is read again and handled on its own: one changed or deleted by hand
+ * Moves published tables along with the clock, as the panel's «Iniciar» and «Completar» do:
+ * scheduled or full tables start at their start time and tables in progress complete at their end
+ * (start plus duration). An unpublished table keeps its status. Each table is read again and handled on its own: one changed or deleted by hand
  * meanwhile is skipped, and one that fails is logged without stopping the rest.
  */
 final readonly class GameTableStatusUpdater
@@ -79,7 +79,7 @@ final readonly class GameTableStatusUpdater
             // Read again: someone may have changed the table by hand since the list was read
             $table = $this->gameTableRepository->find(new GameTableId($id));
 
-            if (! $table instanceof GameTable || ! $table->status->canTransitionTo($to)) {
+            if (! $table instanceof GameTable || ! $table->isPublished || ! $table->status->canTransitionTo($to)) {
                 return self::SKIPPED;
             }
 

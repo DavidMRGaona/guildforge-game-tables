@@ -45,6 +45,8 @@ final class EloquentGameTableRepositoryStartedTest extends ModuleTestCase
         $this->table(TableStatus::Draft, '2030-03-01 18:00:00');
         $this->table(TableStatus::Cancelled, '2030-03-01 18:00:00');
         $this->table(TableStatus::InProgress, '2030-03-01 18:00:00');
+        // Created in the panel without publishing: scheduled, but never moved on its own
+        $this->table(TableStatus::Scheduled, '2030-03-01 18:00:00')->update(['is_published' => false]);
 
         $ids = app(GameTableRepositoryInterface::class)->idsStartedInStatuses(
             [TableStatus::Scheduled, TableStatus::Full],

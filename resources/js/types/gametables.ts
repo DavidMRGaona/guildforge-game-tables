@@ -56,7 +56,6 @@ export interface GameTableListItem {
         color: string;
     };
     location: string | null;
-    onlineUrl: string | null;
     minPlayers: number;
     maxPlayers: number;
     currentPlayers: number;
@@ -111,7 +110,6 @@ export interface GameTable {
     startsAt: string;
     durationMinutes: number;
     location: string | null;
-    onlineUrl: string | null;
     minPlayers: number;
     maxPlayers: number;
     maxSpectators: number;
