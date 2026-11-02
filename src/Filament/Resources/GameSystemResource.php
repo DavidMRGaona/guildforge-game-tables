@@ -162,10 +162,41 @@ final class GameSystemResource extends BaseResource
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    // The model refuses to delete a system in use: the rest are still deleted
+                    DeleteBulkAction::make()
+                        ->missingBulkProcessingFailureNotificationMessage(fn (int $failureCount): string => trans_choice(
+                            'game-tables::messages.game_system_deletion.bulk_not_deleted',
+                            $failureCount,
+                            ['count' => $failureCount],
+                        )),
                 ]),
             ])
             ->defaultSort('name', 'asc');
+    }
+
+    /**
+     * Why a system in use cannot be deleted, with what uses it; null when nothing does.
+     */
+    public static function usageDescription(GameSystemModel $record): ?string
+    {
+        $usage = $record->usage();
+        $parts = array_values(array_filter([
+            $usage['tables'] > 0 ? trans_choice('game-tables::messages.game_system_deletion.tables', $usage['tables'], ['count' => $usage['tables']]) : null,
+            $usage['campaigns'] > 0 ? trans_choice('game-tables::messages.game_system_deletion.campaigns', $usage['campaigns'], ['count' => $usage['campaigns']]) : null,
+        ]));
+
+        if ($parts === []) {
+            return null;
+        }
+
+        $text = count($parts) === 2
+            ? __('game-tables::messages.game_system_deletion.and', ['first' => $parts[0], 'second' => $parts[1]])
+            : $parts[0];
+
+        return __(
+            $record->is_active ? 'game-tables::messages.game_system_deletion.in_use' : 'game-tables::messages.game_system_deletion.in_use_inactive',
+            ['usage' => $text],
+        );
     }
 
     public static function getPages(): array

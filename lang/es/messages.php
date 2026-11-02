@@ -802,6 +802,18 @@ return [
         'campaign_status_already_changed' => 'La campaña ya no está en un estado que permita este cambio',
     ],
 
+    'game_system_deletion' => [
+        'tables' => '1 mesa|:count mesas',
+        'campaigns' => '1 campaña|:count campañas',
+        'and' => ':first y :second',
+        'in_use' => 'Lo usan :usage, así que no se puede borrar. Desactívalo para que deje de ofrecerse en las mesas y campañas nuevas; las que ya lo usan no cambian.',
+        'in_use_inactive' => 'Lo usan :usage, así que no se puede borrar. Ya está desactivado: no se ofrece en las mesas y campañas nuevas.',
+        'deactivate' => 'Desactivar',
+        'deactivated' => 'Sistema de juego desactivado',
+        'not_deleted' => 'No se ha borrado: lo usan mesas o campañas',
+        'bulk_not_deleted' => ':count sistema no se ha borrado porque lo usan mesas o campañas. Desactívalo en su lugar.|:count sistemas no se han borrado porque los usan mesas o campañas. Desactívalos en su lugar.',
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Validation Messages

@@ -89,4 +89,22 @@ final class GameSystemModel extends Model
     {
         return $this->hasMany(CampaignModel::class, 'game_system_id');
     }
+
+    /**
+     * Tables and campaigns that use this system: while there is any, it is deactivated, never deleted.
+     *
+     * @return array{tables: int, campaigns: int}
+     */
+    public function usage(): array
+    {
+        return [
+            'tables' => $this->gameTables()->count(),
+            'campaigns' => $this->campaigns()->count(),
+        ];
+    }
+
+    public function isInUse(): bool
+    {
+        return $this->gameTables()->exists() || $this->campaigns()->exists();
+    }
 }
