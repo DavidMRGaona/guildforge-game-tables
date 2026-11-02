@@ -66,6 +66,36 @@ final class GameTableCalendarSourceTest extends TestCase
         $this->assertSame('/mesas/epic-adventure', $entry->url);
     }
 
+    public function test_find_entry_maps_the_listed_table(): void
+    {
+        $queryService = $this->createMock(GameTableQueryServiceInterface::class);
+        $queryService->expects($this->once())
+            ->method('findPubliclyListed')
+            ->with('table-1')
+            ->willReturn($this->makeListDTO([
+                'id' => 'table-1',
+                'title' => 'Epic Adventure',
+                'slug' => 'epic-adventure',
+                'startsAt' => new DateTimeImmutable('2026-09-15 10:00:00'),
+                'durationMinutes' => 120,
+            ]));
+
+        $entry = (new GameTableCalendarSource($queryService))->findEntry('table-1');
+
+        $this->assertInstanceOf(CalendarEntryDTO::class, $entry);
+        $this->assertSame('table-1', $entry->id);
+        $this->assertEquals(new DateTimeImmutable('2026-09-15 12:00:00'), $entry->end);
+        $this->assertSame('/mesas/epic-adventure', $entry->url);
+    }
+
+    public function test_find_entry_is_null_when_the_table_is_not_listed(): void
+    {
+        $queryService = $this->createStub(GameTableQueryServiceInterface::class);
+        $queryService->method('findPubliclyListed')->willReturn(null);
+
+        $this->assertNull((new GameTableCalendarSource($queryService))->findEntry('table-1'));
+    }
+
     public function test_find_by_date_range_discards_entries_with_null_starts_at(): void
     {
         $dto = $this->makeListDTO([
