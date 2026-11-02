@@ -399,10 +399,11 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                             </p>
                         </div>
                     </div>
+                </div>
 
-                    <div v-if="calendarLinks" class="mt-4">
-                        <AddToCalendarMenu :links="calendarLinks" />
-                    </div>
+                <!-- An action, not a detail: on the card's surface, where the button stands out from it -->
+                <div v-if="calendarLinks" class="mb-6">
+                    <AddToCalendarMenu :links="calendarLinks" />
                 </div>
 
                 <!-- Section 3: Capacity -->
