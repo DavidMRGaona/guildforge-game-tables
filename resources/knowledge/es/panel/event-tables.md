@@ -33,7 +33,7 @@ En **Modo de programación**:
 - **Horario libre**: cada mesa elige su hora dentro del evento.
 - **Por turnos**: cada mesa elige uno de los turnos que definas.
 
-Con **Por turnos**, añade cada turno en **Turnos** con su **Nombre del turno** (por ejemplo «Mañana»), su **Hora de inicio**, su **Hora de fin** y, si quieres, un **Máximo de mesas**. Cuando un turno llega a su máximo, la web lo da por completo y no deja crear más mesas en él. Las horas se toman en el día de inicio del evento.
+Con **Por turnos**, añade cada turno en **Turnos** con su **Nombre del turno** (por ejemplo «Mañana»), su **Hora de inicio**, su **Hora de fin** y, si quieres, un **Máximo de mesas**. Cuando un turno llega a su máximo, la web lo da por completo y no deja crear más mesas en él. Si el evento dura varios días, elige también el **Día** de cada turno (el primero, si no eliges otro); en un evento de un solo día, los turnos van en ese día. Si la **Hora de fin** no es posterior a la **Hora de inicio**, el turno acaba al día siguiente: por ejemplo, de 22:00 a 02:00.
 
 ## Ubicación
 
@@ -47,7 +47,7 @@ En **Modo de ubicación**:
 
 **Fecha de apertura general** es obligatoria: desde ese momento, quien pueda crear mesas ya puede crearlas en este evento. Antes de esa fecha, la web le dice desde cuándo podrá.
 
-Las mesas que se crean en el evento desde la web cierran sus inscripciones al empezar el evento (o al empezar la mesa, si es antes).
+Las mesas que se crean en el evento desde la web cierran sus inscripciones al empezar el evento si se juegan su primer día, y al empezar la mesa si se juegan otro día (o si empiezan antes que el evento).
 
 ## Quién puede crear: regla propia
 

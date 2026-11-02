@@ -29,7 +29,7 @@ Si no ves nada de esto, el evento no admite mesas o tu cuenta no puede crearlas 
 
 1. Pulsa **Crear partida**. El formulario se abre con el aviso «Creando partida para el evento:» y su nombre.
 2. Rellena el formulario como el de cualquier mesa (lo explica la guía «Crear una mesa»), con estas diferencias:
-   - Si el evento va **por turnos**, en lugar de la fecha eliges el **Horario de la partida**. Cada turno dice cuántas mesas admite aún, por ejemplo «Mañana (quedan 3 mesas)», o «(completo)» si ya no admite más.
+   - Si el evento va **por turnos**, en lugar de la fecha eliges el **Horario de la partida**. Cada turno dice cuántas mesas admite aún, por ejemplo «Mañana (quedan 3 mesas)», o «(completo)» si ya no admite más. Si los turnos caen en días distintos, cada uno lleva delante su día, por ejemplo «sáb 15 · Mañana».
    - Si el evento fija la ubicación, el campo **Ubicación física** viene relleno y bloqueado: «La ubicación está definida por el evento».
 3. Pulsa **Crear mesa**.
 
@@ -42,7 +42,7 @@ Si no ves nada de esto, el evento no admite mesas o tu cuenta no puede crearlas 
 - **Cuándo se abre la creación**: una fecha de apertura general y, a veces, unos días antes para ciertos roles o permisos.
 - **Los turnos**: cada turno tiene su hora y, a veces, un máximo de mesas. Una mesa rechazada en la revisión deja libre su sitio en el turno, y al reenviarla solo lo recupera si el turno sigue teniendo hueco.
 - **La ubicación**: libre, fija para todas las mesas o la del evento.
-- **El cierre de inscripciones**: las inscripciones a las mesas del evento cierran como muy tarde cuando empieza el evento, aunque tu partida sea más tarde.
+- **El cierre de inscripciones**: si tu partida es el primer día del evento, sus inscripciones cierran cuando empieza el evento, aunque la partida sea más tarde; si es otro día, cierran cuando empieza la partida.
 
 Después, la mesa pasa por la misma revisión que cualquier otra. Lo explica la guía «Revisión y publicación de lo que creas».
 

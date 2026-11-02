@@ -28,6 +28,8 @@ import SessionCampaignField from '../../components/SessionCampaignField.vue';
 import FormTabs from '../../components/FormTabs.vue';
 import type { FormTab } from '../../components/FormTabs.vue';
 import FormErrorSummary from '../../components/FormErrorSummary.vue';
+import { useTimeSlotOptions } from '../../composables/useTimeSlotOptions';
+import type { EventTimeSlot } from '../../composables/useTimeSlotOptions';
 import { useFormErrorSummary } from '../../composables/useFormErrorSummary';
 import { fieldStateClass } from '../../utils/fieldStateClass';
 
@@ -77,20 +79,11 @@ interface Eligibility {
     canCreateAt: string | null;
 }
 
-interface TimeSlot {
-    label: string;
-    start_time: string;
-    end_time: string;
-    max_tables: number | null;
-    // Tables the slot still takes; null without a limit
-    available_slots: number | null;
-}
-
 interface EventContext {
     event_id: string;
     tables_enabled: boolean;
     is_slot_based: boolean;
-    available_time_slots: TimeSlot[];
+    available_time_slots: EventTimeSlot[];
     requires_location_input: boolean;
     effective_location: string | null;
     event_start_date: string | null;
@@ -345,26 +338,8 @@ const selectedEventName = computed(() => {
     return event?.name ?? null;
 });
 
-// A slot with a limit shows the tables it still takes (the server refuses a full one)
-function timeSlotLabel(slot: TimeSlot): string {
-    const left = slot.available_slots;
-    if (left === null) return slot.label;
-    if (left === 0) return t('gameTables.create.fields.timeSlotFull', { label: slot.label });
-    return t(
-        'gameTables.create.fields.timeSlotTablesLeft',
-        { label: slot.label, count: left },
-        left
-    );
-}
-
-// Transform time slots for select component
-const timeSlotOptions = computed(() => {
-    if (!props.eventContext?.available_time_slots) return [];
-    return props.eventContext.available_time_slots.map((slot, index) => ({
-        value: String(index),
-        label: timeSlotLabel(slot),
-    }));
-});
+// Time slots for the select component (with their day when the event spans several)
+const timeSlotOptions = useTimeSlotOptions(() => props.eventContext?.available_time_slots);
 
 // Whether location field should be disabled (fixed by event config)
 const isLocationDisabled = computed(() => {

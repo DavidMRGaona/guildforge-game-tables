@@ -95,6 +95,18 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
     ) {}
 
     /**
+     * A table on the event's first day (in the site's calendar) closes its registrations when the
+     * event starts; one on a later day of a multi-day event, when it starts itself.
+     */
+    private function defaultClosingDate(Event $event, \DateTimeImmutable $tableStart): \DateTimeImmutable
+    {
+        $timezone = app(TimezoneServiceInterface::class);
+        $onFirstDay = $timezone->toDisplayWallTime($event->startDate(), 'Y-m-d') === $timezone->toDisplayWallTime($tableStart, 'Y-m-d');
+
+        return $onFirstDay ? $this->cappedToTableStart($event->startDate(), $tableStart) : $tableStart;
+    }
+
+    /**
      * Registrations close at the start of the table at the latest (the panel refuses a later date),
      * so the event start is only a valid default when the table does not start before it.
      */
@@ -125,12 +137,12 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
      */
     private function persistNewTable(FrontendCreateGameTableDTO $dto, FrontendCreationStatus $creationStatus): GameTableResponseDTO
     {
-        // 2. Get registration closes date from event if applicable
+        // 2. Default registration close for a table of an event
         $registrationClosesAt = null;
         if ($dto->eventId !== null) {
             $event = $this->eventRepository->findById(new EventId($dto->eventId));
             if ($event instanceof Event) {
-                $registrationClosesAt = $this->cappedToTableStart($event->startDate(), $dto->startsAt);
+                $registrationClosesAt = $this->defaultClosingDate($event, $dto->startsAt);
             }
         }
 
@@ -547,12 +559,12 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
         // The same rules as creating it, for the table as it will be saved
         $this->ensureMayCreate($dto->createdBy, $dto->eventId, $dto->tableType, $dto->campaignId);
 
-        // Default registration closes at to event start date if event is set and no existing value
+        // Default registration close for a table of an event, when it has none yet
         $registrationClosesAt = $table->registrationClosesAt;
         if ($dto->eventId !== null && ! $registrationClosesAt instanceof \DateTimeImmutable) {
             $event = $this->eventRepository->findById(new EventId($dto->eventId));
             if ($event instanceof Event) {
-                $registrationClosesAt = $this->cappedToTableStart($event->startDate(), $dto->startsAt);
+                $registrationClosesAt = $this->defaultClosingDate($event, $dto->startsAt);
             }
         }
 

@@ -405,6 +405,7 @@ export default {
                 timeSlotHelp: 'Selecciona uno de los horarios disponibles para este evento',
                 timeSlotTablesLeft: '{label} (queda {count} mesa) | {label} (quedan {count} mesas)',
                 timeSlotFull: '{label} (completo)',
+                timeSlotWithDay: '{day} · {label}',
                 duration: 'Duración (minutos)',
                 durationHelp: 'Duración estimada en minutos (por ejemplo: 240 para 4 horas)',
                 tableType: 'Tipo de partida',

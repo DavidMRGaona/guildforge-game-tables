@@ -962,6 +962,7 @@ return [
         'scheduling_mode' => 'Modo de programación',
         'time_slots' => 'Turnos',
         'time_slot_label' => 'Nombre del turno',
+        'time_slot_day' => 'Día',
         'start_time' => 'Hora de inicio',
         'end_time' => 'Hora de fin',
         'max_tables' => 'Máximo de mesas',

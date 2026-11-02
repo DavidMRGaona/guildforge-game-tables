@@ -888,6 +888,7 @@ return [
         'scheduling_mode' => 'Scheduling mode',
         'time_slots' => 'Time slots',
         'time_slot_label' => 'Slot name',
+        'time_slot_day' => 'Day',
         'start_time' => 'Start time',
         'end_time' => 'End time',
         'max_tables' => 'Maximum tables',
