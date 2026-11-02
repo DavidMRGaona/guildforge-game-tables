@@ -93,8 +93,7 @@ final readonly class CampaignQueryService implements CampaignQueryServiceInterfa
                 'gameTables',
                 'players' => fn ($players) => $players->whereNull('users.anonymized_at'),
             ])
-            ->where('is_published', true)
-            ->whereNotIn('status', [CampaignStatus::Cancelled->value]);
+            ->publiclyListed();
 
         if ($gameSystemIds !== null && count($gameSystemIds) > 0) {
             $query->whereIn('game_system_id', $gameSystemIds);

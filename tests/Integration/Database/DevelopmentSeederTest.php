@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Tests\Integration\Database;
 
+use App\Application\Search\Services\SearchIndexerInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
+use Mockery;
 use Modules\GameTables\Database\Seeders\DevelopmentSeeder;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\GuestConfirmationMode;
@@ -118,6 +120,10 @@ final class DevelopmentSeederTest extends ModuleTestCase
         Mail::fake();
         Queue::fake();
         Event::fake([RosterMemberEnrolledInSession::class]);
+        // The seeded tables and campaigns ask the site search for a refresh, which the indexer queues:
+        // expected, and kept apart so any other queued work still fails the test
+        $indexer = Mockery::spy(SearchIndexerInterface::class);
+        $this->app->instance(SearchIndexerInterface::class, $indexer);
 
         $this->runSeeder();
 
@@ -125,6 +131,7 @@ final class DevelopmentSeederTest extends ModuleTestCase
         Mail::assertNothingOutgoing();
         Queue::assertNothingPushed();
         Event::assertNotDispatched(RosterMemberEnrolledInSession::class);
+        $indexer->shouldHaveReceived('refresh')->with('gametables.tables', Mockery::type('string'))->atLeast()->once();
     }
 
     public function test_the_sample_people_have_verified_accounts_with_the_base_role(): void

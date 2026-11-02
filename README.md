@@ -18,13 +18,14 @@ Módulo de GuildForge para gestionar mesas de rol y campañas: inscripciones de 
 - **Integración con eventos**: configuración de mesas por evento, enlace a las mesas del evento y botón para crear una mesa desde su página.
 - **Calendario**: vista `/mesas/calendario` y mesas en el calendario del core, cuya ficha muestra imagen, sinopsis, lugar, sistema, director, plazas y modalidad.
 - **Encuestas**: las mesas sueltas, las sesiones de campaña y las campañas son sujetos encuestables del core; con un módulo de encuestas instalado, su director prepara la encuesta, sale al terminar y la ficha lleva a ella (ver [Encuestas](#encuestas)).
+- **Buscador del sitio**: las mesas y campañas del listado público aparecen en `/buscar` y en las sugerencias de la cabecera (tipos `gametables.tables` y `gametables.campaigns`). Las mesas pasadas siguen saliendo, marcadas como «Jugada»; las campañas completadas, como «Terminada». Nunca se indexan borradores, mesas o campañas sin publicar o canceladas, ni las notas internas o de moderación. Guardar o borrar una mesa o campaña actualiza su resultado, y renombrar un sistema de juego actualiza sus mesas y campañas.
 - **Perfil**: pestañas con las mesas en las que participa el usuario, las que ha creado y sus campañas.
 - **Correos** de inscripción, confirmación, rechazo, lista de espera, cancelación y moderación.
 - **Zonas horarias**: las fechas se guardan en la zona de almacenamiento del sitio (UTC cuando el sitio lo usa) y todo lo que ve o escribe una persona (correos, panel, web, horas de los turnos de un evento) está en la zona de visualización del sitio (por defecto Europe/Madrid); los días (calendario del mes, acceso anticipado, plazos de invitación) son días de ese calendario.
 
 ## Requisitos
 
-- GuildForge core `^3.31` (contrato de encuestas: sujetos encuestables, enlaces desde la ficha, aviso de cancelación y campo «Encuesta al terminar»; antes, almacenamiento de fechas en UTC y zona horaria de visualización, pestañas del perfil que se ocultan, avisos legales editables de los correos y si la cuenta debe verificar su email; ver [Verificación de email](#verificación-de-email))
+- GuildForge core `^3.36` (fuentes del buscador del sitio; antes, contrato de encuestas: sujetos encuestables, enlaces desde la ficha, aviso de cancelación y campo «Encuesta al terminar»; almacenamiento de fechas en UTC y zona horaria de visualización, pestañas del perfil que se ocultan, avisos legales editables de los correos y si la cuenta debe verificar su email; ver [Verificación de email](#verificación-de-email))
 - PHP >= 8.5, Laravel >= 13, Filament 5
 
 El core rechaza el módulo si no se cumplen (`module.json` → `requires`).

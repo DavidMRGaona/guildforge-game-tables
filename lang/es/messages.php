@@ -28,6 +28,20 @@ return [
         'campaigns' => 'Campañas',
     ],
 
+    // Site search (core): group, one result and the tag of results that are over
+    'search' => [
+        'tables' => [
+            'label' => 'Mesas',
+            'item' => 'Mesa',
+            'past' => 'Jugada',
+        ],
+        'campaigns' => [
+            'label' => 'Campañas',
+            'item' => 'Campaña',
+            'past' => 'Terminada',
+        ],
+    ],
+
     'surveys' => [
         'source_label' => 'Mesa',
         'campaign_session_label' => 'Sesión de campaña',
