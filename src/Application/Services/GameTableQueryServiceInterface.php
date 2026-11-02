@@ -46,6 +46,12 @@ interface GameTableQueryServiceInterface
     public function getUpcomingTables(\DateTimeInterface $from, \DateTimeInterface $to): array;
 
     /**
+     * Find a table the public calendar shows (published, neither a draft nor
+     * cancelled) by ID, as the calendar lists it; null for anything else.
+     */
+    public function findPubliclyListed(string $id): ?GameTableListDTO;
+
+    /**
      * Find a published game table by ID.
      */
     public function findPublished(string $id): ?GameTableResponseDTO;

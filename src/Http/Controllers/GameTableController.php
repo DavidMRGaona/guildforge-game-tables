@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Http\Controllers;
 
+use App\Application\Calendar\DTOs\CalendarEntryDTO;
+use App\Application\Calendar\Services\AddToCalendarLinksFactoryInterface;
+use App\Application\Calendar\Services\CalendarAggregatorServiceInterface;
 use App\Application\Seo\DTOs\SeoPageDTO;
 use App\Application\Seo\DTOs\SeoScheduleDTO;
 use App\Application\Seo\Services\SeoMetadataFactoryInterface;
@@ -58,6 +61,8 @@ final class GameTableController extends Controller
         private readonly GuestConfirmationPolicy $guestConfirmationPolicy,
         private readonly CampaignRosterQueryInterface $rosterQuery,
         private readonly SubjectSurveyLinks $surveyLinks,
+        private readonly CalendarAggregatorServiceInterface $calendar,
+        private readonly AddToCalendarLinksFactoryInterface $calendarLinks,
     ) {}
 
     public function index(Request $request): Response
@@ -259,8 +264,20 @@ final class GameTableController extends Controller
             'surveyLinks' => $user instanceof UserModel
                 ? $this->surveyLinks->for(TableSurveySubject::sourceType($table->campaignId !== null), $table->id, (string) $user->id)
                 : null,
+            // «Añadir al calendario»: the entry the public calendar shows, through the core
+            'calendarLinks' => $this->calendarLinksFor($table->id),
             'seo' => $this->tableSeo($table),
         ]);
+    }
+
+    /**
+     * @return array{google: string, outlook: string, ics: string|null}|null
+     */
+    private function calendarLinksFor(string $gameTableId): ?array
+    {
+        $entry = $this->calendar->findEntry('game-table', $gameTableId);
+
+        return $entry instanceof CalendarEntryDTO ? $this->calendarLinks->for($entry)->toArray() : null;
     }
 
     /**

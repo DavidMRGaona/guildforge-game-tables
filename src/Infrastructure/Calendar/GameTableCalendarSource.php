@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Calendar;
 
+use App\Application\Calendar\Contracts\CalendarEntryLookupInterface;
 use App\Application\Calendar\Contracts\CalendarEntrySourceInterface;
 use App\Application\Calendar\DTOs\CalendarEntryDTO;
 use App\Domain\Calendar\Enums\CalendarSourceColor;
@@ -12,7 +13,7 @@ use DateTimeImmutable;
 use Modules\GameTables\Application\DTOs\GameTableListDTO;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 
-final readonly class GameTableCalendarSource implements CalendarEntrySourceInterface
+final readonly class GameTableCalendarSource implements CalendarEntryLookupInterface, CalendarEntrySourceInterface
 {
     public function __construct(
         private GameTableQueryServiceInterface $gameTableQueryService,
@@ -51,6 +52,13 @@ final readonly class GameTableCalendarSource implements CalendarEntrySourceInter
         }
 
         return $entries;
+    }
+
+    public function findEntry(string $id): ?CalendarEntryDTO
+    {
+        $table = $this->gameTableQueryService->findPubliclyListed($id);
+
+        return $table instanceof GameTableListDTO ? $this->toEntry($table) : null;
     }
 
     private function toEntry(GameTableListDTO $table): ?CalendarEntryDTO
