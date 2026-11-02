@@ -8,7 +8,10 @@ use App\Application\Services\TimezoneServiceInterface;
 use App\Filament\Forms\Components\TimePicker;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\RoleModel;
+use Carbon\CarbonImmutable;
+use DateTimeImmutable;
 use DateTimeInterface;
+use DateTimeZone;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -22,12 +25,15 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
+use Livewire\Attributes\Locked;
 use Modules\GameTables\Application\DTOs\UpdateEventGameTableConfigDTO;
 use Modules\GameTables\Application\Services\EventGameTableConfigServiceInterface;
 use Modules\GameTables\Domain\Enums\CreationAccessLevel;
 use Modules\GameTables\Domain\Enums\LocationMode;
 use Modules\GameTables\Domain\Enums\SchedulingMode;
 use Modules\GameTables\Domain\Repositories\EventGameTableConfigRepositoryInterface;
+use Modules\GameTables\Domain\ValueObjects\TimeSlotDefinition;
 
 /**
  * @property Schema $configForm
@@ -43,6 +49,15 @@ final class EventGameTableConfigRelationManager extends RelationManager
 
     /** @var array<string, mixed> */
     public array $configData = [];
+
+    /**
+     * Days of stored slots that fall outside the event (moved after they were saved): offered too,
+     * so saving does not move those slots without the admin seeing it.
+     *
+     * @var list<string>
+     */
+    #[Locked]
+    public array $slotDaysOutsideEvent = [];
 
     public static function getTitle(Model $ownerRecord, string $pageClass): string
     {
@@ -67,13 +82,19 @@ final class EventGameTableConfigRelationManager extends RelationManager
 
         $earlyAccessTier = $config->earlyAccessTier();
         $timezone = app(TimezoneServiceInterface::class);
+        $slotDay = static fn (TimeSlotDefinition $slot): string => $timezone->toDisplayWallTime($slot->startTime, 'Y-m-d');
+        $this->slotDaysOutsideEvent = array_values(array_diff(
+            array_unique(array_map($slotDay, $config->timeSlots())),
+            $this->eventDays(),
+        ));
 
         $this->configForm->fill([
             'tables_enabled' => $config->isEnabled(),
             'scheduling_mode' => $config->schedulingMode()->value,
-            // The hours the admin typed: the site's wall time
-            'time_slots' => array_map(fn ($slot): array => [
+            // The day and hours the admin typed: the site's calendar and wall time
+            'time_slots' => array_map(fn (TimeSlotDefinition $slot): array => [
                 'label' => $slot->label,
+                'day' => $slotDay($slot),
                 'start_time' => $timezone->toDisplayWallTime($slot->startTime, 'H:i'),
                 'end_time' => $timezone->toDisplayWallTime($slot->endTime, 'H:i'),
                 'max_tables' => $slot->maxTables,
@@ -136,6 +157,14 @@ final class EventGameTableConfigRelationManager extends RelationManager
                                 ->required()
                                 ->maxLength(50)
                                 ->columnSpan(2),
+                            Select::make('day')
+                                ->label(__('game-tables::messages.event_config.time_slot_day'))
+                                ->options(fn (): array => $this->slotDayOptions())
+                                ->in(fn (): array => array_keys($this->slotDayOptions()))
+                                ->default(fn (): string => $this->eventDays()[0])
+                                ->selectablePlaceholder(false)
+                                ->native(false)
+                                ->visible(fn (): bool => $this->isMultiDayEvent()),
                             TimePicker::make('start_time')
                                 ->label(__('game-tables::messages.event_config.start_time'))
                                 ->seconds(false)
@@ -150,7 +179,7 @@ final class EventGameTableConfigRelationManager extends RelationManager
                                 ->minValue(1)
                                 ->nullable(),
                         ])
-                        ->columns(5)
+                        ->columns(fn (): int => $this->isMultiDayEvent() ? 6 : 5)
                         ->defaultItems(0)
                         ->reorderable()
                         ->collapsible()
@@ -310,7 +339,6 @@ final class EventGameTableConfigRelationManager extends RelationManager
 
         // tables_enabled is true — all fieldsets are visible, getState() is safe
         $formData = $this->configForm->getState();
-        $event = $this->getOwnerRecord();
 
         // Build eligibility override if enabled
         $eligibilityOverride = null;
@@ -322,24 +350,29 @@ final class EventGameTableConfigRelationManager extends RelationManager
             ];
         }
 
-        // Build time slots with full datetime (using event date as reference)
+        // Build time slots with full datetime (using the chosen day of the event as reference)
         $timeSlots = [];
         if ($formData['scheduling_mode'] === SchedulingMode::SlotBased->value && ! empty($formData['time_slots'])) {
-            // The hours are the site's wall time on the event's day there, saved as instants with
-            // their offset
+            // The hours are the site's wall time on the slot's day there (the event's first day
+            // unless it spans several), saved as instants with their offset
             $timezone = app(TimezoneServiceInterface::class);
-            $eventStart = $event->getAttribute('start_date');
-            $eventDate = $eventStart instanceof DateTimeInterface
-                ? $timezone->toDisplayWallTime($eventStart, 'Y-m-d')
-                : $timezone->today()->format('Y-m-d');
+            $firstDay = $this->eventDays()[0];
+            $choosesDay = $this->isMultiDayEvent();
             foreach ($formData['time_slots'] as $slot) {
                 if (empty($slot['label']) || empty($slot['start_time']) || empty($slot['end_time'])) {
                     continue;
                 }
+                $day = $choosesDay && ! empty($slot['day']) ? (string) $slot['day'] : $firstDay;
+                $start = $timezone->fromDisplayWallTime($day.' '.$slot['start_time']);
+                $end = $timezone->fromDisplayWallTime($day.' '.$slot['end_time']);
+                // An end hour not after the start hour is on the next day: the slot crosses midnight
+                if ($end <= $start) {
+                    $end = $timezone->fromDisplayWallTime($this->nextDay($day).' '.$slot['end_time']);
+                }
                 $timeSlots[] = [
                     'label' => $slot['label'],
-                    'start_time' => $timezone->iso($timezone->fromDisplayWallTime($eventDate.' '.$slot['start_time'])),
-                    'end_time' => $timezone->iso($timezone->fromDisplayWallTime($eventDate.' '.$slot['end_time'])),
+                    'start_time' => $timezone->iso($start),
+                    'end_time' => $timezone->iso($end),
                     'max_tables' => $slot['max_tables'] ?? null,
                 ];
             }
@@ -375,6 +408,63 @@ final class EventGameTableConfigRelationManager extends RelationManager
             ->title(__('game-tables::messages.event_config.saved'))
             ->success()
             ->send();
+    }
+
+    /**
+     * Days of the event in the site's calendar (`Y-m-d`), from the day it starts to the day it ends.
+     *
+     * @return non-empty-list<string>
+     */
+    private function eventDays(): array
+    {
+        $timezone = app(TimezoneServiceInterface::class);
+        $event = $this->getOwnerRecord();
+        $start = $event->getAttribute('start_date');
+        $end = $event->getAttribute('end_date');
+
+        $first = $start instanceof DateTimeInterface
+            ? $timezone->toDisplayWallTime($start, 'Y-m-d')
+            : $timezone->today()->format('Y-m-d');
+        $last = $end instanceof DateTimeInterface ? $timezone->toDisplayWallTime($end, 'Y-m-d') : $first;
+
+        $days = [$first];
+        for ($day = $this->nextDay($first); $day <= $last; $day = $this->nextDay($day)) {
+            $days[] = $day;
+        }
+
+        return $days;
+    }
+
+    private function isMultiDayEvent(): bool
+    {
+        return count($this->eventDays()) > 1;
+    }
+
+    /**
+     * The event's days, plus those of stored slots left outside it, named in the site's language.
+     *
+     * @return array<string, string>
+     */
+    private function slotDayOptions(): array
+    {
+        $days = array_unique([...$this->eventDays(), ...$this->slotDaysOutsideEvent]);
+        sort($days);
+
+        $options = [];
+        foreach ($days as $day) {
+            $date = CarbonImmutable::createFromFormat('!Y-m-d', $day, new DateTimeZone('UTC'));
+            $options[$day] = $date instanceof CarbonImmutable
+                ? Str::ucfirst($date->settings(['locale' => app()->getLocale()])->isoFormat('dddd LL'))
+                : $day;
+        }
+
+        return $options;
+    }
+
+    /** The calendar day after a `Y-m-d` day, counted on dates alone so no clock change gets in the way. */
+    private function nextDay(string $day): string
+    {
+        return (new DateTimeImmutable($day, new DateTimeZone('UTC')))->modify('+1 day')->format('Y-m-d');
     }
 
     /**
