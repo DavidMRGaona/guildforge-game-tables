@@ -656,6 +656,26 @@ function submit(): void {
                                 </p>
                             </div>
 
+                            <!-- Genres -->
+                            <fieldset id="genres" class="min-w-0">
+                                <legend class="block text-sm font-medium text-base-secondary mb-3">
+                                    {{ t('gameTables.genres') }}
+                                </legend>
+                                <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                    <FormCheckboxWithTooltip
+                                        v-for="genre in objectToOptions(props.formData.genres)"
+                                        :id="`genre_${genre.value}`"
+                                        :key="genre.value"
+                                        v-model="form.genres"
+                                        :value="genre.value"
+                                        :label="genre.label"
+                                    />
+                                </div>
+                                <p v-if="form.errors.genres" class="mt-2 text-sm text-error">
+                                    {{ form.errors.genres }}
+                                </p>
+                            </fieldset>
+
                             <!-- Character Creation -->
                             <div>
                                 <label
