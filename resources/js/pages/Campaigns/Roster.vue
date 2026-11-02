@@ -686,12 +686,23 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
             </ul>
         </section>
 
-        <!-- Invite a player -->
-        <section v-if="can_add" :class="sectionClass" aria-labelledby="roster-invite-title">
+        <!-- Invite a player; while the campaign takes no new players, the reason instead of the form -->
+        <section
+            v-if="can_add || invite_refusal"
+            :class="sectionClass"
+            aria-labelledby="roster-invite-title"
+        >
             <h2 id="roster-invite-title" class="text-lg font-semibold text-base-primary">
                 {{ t('campaigns.roster.invite.title') }}
             </h2>
-            <form class="mt-4 flex flex-col gap-3" @submit.prevent="invitePlayer">
+            <p
+                v-if="invite_refusal"
+                class="mt-4 rounded-lg bg-warning-light p-4 text-sm text-base-primary"
+                role="status"
+            >
+                {{ invite_refusal }}
+            </p>
+            <form v-else class="mt-4 flex flex-col gap-3" @submit.prevent="invitePlayer">
                 <div class="flex flex-col gap-2 sm:flex-row sm:items-start">
                     <div class="min-w-0 flex-1">
                         <label :for="inviteEmailId" class="sr-only">{{

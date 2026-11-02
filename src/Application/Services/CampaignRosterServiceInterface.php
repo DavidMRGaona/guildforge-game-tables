@@ -56,6 +56,16 @@ interface CampaignRosterServiceInterface
     public function addUser(string $campaignId, string $userId, string $actorUserId): void;
 
     /**
+     * Like addUser() for someone accepting an invitation: they meet the rules of a request too, so
+     * the campaign must take new players and, on a members-only roster, they must be a socio.
+     *
+     * @throws CampaignNotFoundException
+     * @throws RosterActionRefusedException addUser()'s refusals, not_accepting or members_only
+     *                                      (worded for the invitee)
+     */
+    public function addInvitee(string $campaignId, string $userId, string $inviterUserId): void;
+
+    /**
      * The direction removes a player, also once the campaign has finished. Their roster rows in
      * the sessions not started yet are cancelled (left_roster), and the removal is announced with
      * CampaignRosterMemberRemoved so the player can be told.

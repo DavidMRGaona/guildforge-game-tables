@@ -12,7 +12,6 @@ use Modules\GameTables\Application\Services\AccountLookupInterface;
 use Modules\GameTables\Application\Services\CampaignDirectionInterface;
 use Modules\GameTables\Application\Services\CampaignRosterServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterSessionSyncInterface;
-use Modules\GameTables\Application\Services\MembershipCheckerInterface;
 use Modules\GameTables\Application\Services\RegistrationLockInterface;
 use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Entities\CampaignJoinRequest;
@@ -40,7 +39,6 @@ final readonly class CampaignRosterService implements CampaignRosterServiceInter
         private CampaignRosterGuard $guard,
         private CampaignJoinRequestRepositoryInterface $requests,
         private CampaignDirectionInterface $direction,
-        private MembershipCheckerInterface $membership,
         private AccountLookupInterface $accounts,
         private RegistrationLockInterface $lock,
         private CampaignRosterSessionSyncInterface $sessions,
@@ -67,15 +65,10 @@ final readonly class CampaignRosterService implements CampaignRosterServiceInter
                 throw RosterActionRefusedException::because('request_pending');
             }
 
-            if (! $campaign->canAcceptNewPlayers()) {
-                throw RosterActionRefusedException::because('not_accepting');
-            }
-
+            // The campaign's rule, the room, then the person's (as the join box reads them)
+            $this->guard->ensureAdmitsNewcomer($campaign, null);
             $this->guard->ensureRoomIn($campaign);
-
-            if ($campaign->rosterAccess === RosterAccess::MembersOnly && ! $this->membership->isActiveMember($userId)) {
-                throw RosterActionRefusedException::because('members_only');
-            }
+            $this->guard->ensureAdmitsNewcomer($campaign, $userId);
 
             $request = new CampaignJoinRequest(
                 id: JoinRequestId::generate(),
@@ -154,7 +147,21 @@ final readonly class CampaignRosterService implements CampaignRosterServiceInter
 
     public function addUser(string $campaignId, string $userId, string $actorUserId): void
     {
-        $this->lock->forCampaign($campaignId, function () use ($campaignId, $userId, $actorUserId): void {
+        $this->add($campaignId, $userId, $actorUserId, asInvitee: false);
+    }
+
+    public function addInvitee(string $campaignId, string $userId, string $inviterUserId): void
+    {
+        $this->add($campaignId, $userId, $inviterUserId, asInvitee: true);
+    }
+
+    /**
+     * The direction adds whoever it wants; an invitee meets the rules of a request, checked under
+     * the same lock as the room.
+     */
+    private function add(string $campaignId, string $userId, string $actorUserId, bool $asInvitee): void
+    {
+        $this->lock->forCampaign($campaignId, function () use ($campaignId, $userId, $actorUserId, $asInvitee): void {
             $campaign = $this->campaigns->findOrFail(new CampaignId($campaignId));
 
             $this->guard->ensureCanChange($campaign);
@@ -172,7 +179,15 @@ final readonly class CampaignRosterService implements CampaignRosterServiceInter
                 throw RosterActionRefusedException::because('account_already_member');
             }
 
+            if ($asInvitee) {
+                $this->guard->ensureAdmitsNewcomer($campaign, null, CampaignRosterGuard::INVITEE);
+            }
+
             $this->guard->ensureRoomIn($campaign);
+
+            if ($asInvitee) {
+                $this->guard->ensureAdmitsNewcomer($campaign, $userId, CampaignRosterGuard::INVITEE);
+            }
 
             $now = CarbonImmutable::now();
             $this->roster->add($campaign->id, $userId, $now);

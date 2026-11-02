@@ -13,10 +13,12 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Modules\GameTables\Application\Services\CampaignInvitationServiceInterface;
+use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Filament\Resources\CampaignResource\RelationManagers\Concerns\ManagesCampaignRoster;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignInvitationModel;
+use Modules\GameTables\Infrastructure\Services\CampaignRosterGuard;
 
 /**
  * The pending invitations of a campaign. Inviting, resending and cancelling go through the
@@ -39,10 +41,11 @@ final class InvitationsRelationManager extends RelationManager
             // An expired invitation the daily cleanup has not removed yet is not shown, as on the web
             ->modifyQueryUsing(fn (Builder $query): Builder => $query->where('expires_at', '>', now()))
             ->defaultSort('created_at', 'desc')
-            // No seat is reserved: whoever accepts first enters, so the direction is told (as on the web)
-            ->description(fn (): ?string => $this->moreInvitationsThanSeats()
+            // Why nobody can be invited now, else whether invitations outnumber the free seats: no
+            // seat is reserved, whoever accepts first enters, so the direction is told (as on the web)
+            ->description(fn (): ?string => $this->inviteRefusal() ?? ($this->moreInvitationsThanSeats()
                 ? (string) __('game-tables::messages.relation_managers.invitations.more_than_seats')
-                : null)
+                : null))
             ->columns([
                 TextColumn::make('email')
                     ->label(__('game-tables::messages.relation_managers.invitations.email'))
@@ -63,6 +66,8 @@ final class InvitationsRelationManager extends RelationManager
                     ->label(__('game-tables::messages.relation_managers.invitations.invite'))
                     ->icon('heroicon-o-user-plus')
                     ->authorize(fn (): bool => $this->canManage())
+                    ->disabled(fn (): bool => $this->inviteRefusal() !== null)
+                    ->tooltip(fn (): ?string => $this->inviteRefusal())
                     ->schema([
                         TextInput::make('email')
                             ->label(__('game-tables::messages.relation_managers.invitations.email'))
@@ -111,6 +116,19 @@ final class InvitationsRelationManager extends RelationManager
                         ), 'invitation_cancelled');
                     }),
             ]);
+    }
+
+    /**
+     * The service refuses the same (CampaignRosterGuard); a finished campaign is left to its own
+     * refusal, as on the web roster page.
+     */
+    private function inviteRefusal(): ?string
+    {
+        $campaign = app(CampaignRepositoryInterface::class)->findOrFail(new CampaignId((string) $this->getOwnerRecord()->getKey()));
+
+        return $campaign->isFinished()
+            ? null
+            : app(CampaignRosterGuard::class)->newcomerRefusalMessage($campaign, null, CampaignRosterGuard::INVITER);
     }
 
     private function moreInvitationsThanSeats(): bool
