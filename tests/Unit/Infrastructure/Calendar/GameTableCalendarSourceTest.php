@@ -212,6 +212,29 @@ final class GameTableCalendarSourceTest extends TestCase
         $this->assertSame('6/6 · '.__('game-tables::messages.enums.table_status.full'), $players['value']);
     }
 
+    // «Completa» set by hand: full whatever seats are left free (#184)
+    public function test_a_table_marked_full_is_full_with_its_seats_still_counted(): void
+    {
+        $dto = $this->makeListDTO([
+            'status' => TableStatus::Full,
+            'currentPlayers' => 2,
+            'maxPlayers' => 6,
+        ]);
+
+        $queryService = $this->createStub(GameTableQueryServiceInterface::class);
+        $queryService->method('getUpcomingTables')->willReturn([$dto]);
+
+        $details = (new GameTableCalendarSource($queryService))->findByDateRange(
+            new DateTimeImmutable('2026-09-01'),
+            new DateTimeImmutable('2026-09-30'),
+        )[0]->details;
+
+        $players = array_first(array_filter($details['meta'], fn (array $row): bool => $row['icon'] === 'users'));
+
+        $this->assertTrue($details['isFull']);
+        $this->assertSame('2/6 · '.__('game-tables::messages.enums.table_status.full'), $players['value']);
+    }
+
     public function test_details_meta_skips_rows_without_a_value(): void
     {
         $dto = $this->makeListDTO([

@@ -12,7 +12,9 @@ use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
+use Modules\GameTables\Application\Services\EligibilityServiceInterface;
 use Modules\GameTables\Application\Services\MembershipCheckerInterface;
+use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
@@ -72,13 +74,58 @@ final class RegistrationEligibilityTest extends ModuleTestCase
         $this->assertRefused($this->table(['status' => 'cancelled']), 'registration_closed');
     }
 
-    public function test_a_full_status_table_with_free_seats_accepts_registrations(): void
+    // «Completa» set by hand closes the seats whatever is left free (#184)
+    public function test_a_full_status_table_with_free_seats_refuses_players_without_a_waiting_list(): void
     {
+        $this->assertRefused($this->table(['status' => 'full']), 'registration_closed');
+    }
+
+    public function test_a_full_status_table_with_free_seats_puts_players_on_the_waiting_list(): void
+    {
+        config()->set('modules.settings.game-tables.registration.waiting_list_enabled', true);
         $table = $this->table(['status' => 'full']);
 
         $this->register($table)->assertRedirect();
 
-        $this->assertSame(1, $this->registrations($table));
+        $this->assertSame(['waiting_list'], $this->statuses($table));
+    }
+
+    public function test_a_full_status_table_refuses_players_once_its_waiting_list_has_closed(): void
+    {
+        config()->set('modules.settings.game-tables.registration.waiting_list_enabled', true);
+
+        $this->assertRefused($this->table(['status' => 'full', 'registration_closes_at' => now()->subHour()]), 'registration_closed');
+    }
+
+    // Spectators keep their own seats
+    public function test_a_full_status_table_still_accepts_spectators(): void
+    {
+        $table = $this->table(['status' => 'full', 'max_spectators' => 1]);
+
+        $this->register($table, 'spectator')->assertRedirect();
+
+        $this->assertSame(['confirmed'], $this->statuses($table));
+    }
+
+    public function test_the_table_page_offers_a_full_status_table_only_through_its_waiting_list(): void
+    {
+        $table = $this->table(['status' => 'full', 'max_spectators' => 1]);
+        $eligibility = app(EligibilityServiceInterface::class);
+
+        $closed = $eligibility->canRegisterById($table->id, (string) $this->user->id);
+        $this->assertFalse($closed['eligible']);
+        $this->assertSame('registration_closed', $closed['reason']);
+        $this->assertTrue($closed['spectator']['eligible']);
+
+        config()->set('modules.settings.game-tables.registration.waiting_list_enabled', true);
+
+        $waiting = $eligibility->canRegisterById($table->id, (string) $this->user->id);
+        $this->assertTrue($waiting['eligible']);
+        $this->assertTrue($waiting['waitingList']);
+
+        $guest = $eligibility->guestEligibility($table->id);
+        $this->assertTrue($guest['eligible']);
+        $this->assertTrue($guest['waitingList']);
     }
 
     public function test_registration_before_the_window_opens_is_refused(): void
@@ -377,11 +424,36 @@ final class RegistrationEligibilityTest extends ModuleTestCase
         $this->assertSame(0, $this->registrations($table));
     }
 
-    public function test_a_guest_registers_to_a_full_status_table_with_free_seats(): void
+    public function test_a_guest_cannot_take_a_free_seat_of_a_full_status_table(): void
     {
         $table = $this->table(['status' => 'full']);
 
+        $this->registerGuest($table)
+            ->assertStatus(422)
+            ->assertJsonPath('errors.registration.0', __('game-tables::messages.errors.registration_closed'));
+
+        $this->assertSame(0, $this->registrations($table));
+    }
+
+    public function test_a_guest_joins_the_waiting_list_of_a_full_status_table_with_free_seats(): void
+    {
+        config()->set('modules.settings.game-tables.registration.waiting_list_enabled', true);
+        $table = $this->table(['status' => 'full']);
+
         $this->registerGuest($table)->assertRedirect();
+
+        // Placed as soon as the email is confirmed: until then, wait mode holds nothing
+        $guest = ParticipantModel::query()->where('game_table_id', $table->id)->sole();
+        app(RegistrationServiceInterface::class)->confirmGuestEmail((string) $guest->confirmation_token);
+
+        $this->assertSame(['waiting_list'], $this->statuses($table));
+    }
+
+    public function test_a_guest_spectator_registers_to_a_full_status_table(): void
+    {
+        $table = $this->table(['status' => 'full', 'max_spectators' => 1]);
+
+        $this->registerGuest($table, 'spectator')->assertRedirect();
 
         $this->assertSame(1, $this->registrations($table));
     }
@@ -493,6 +565,18 @@ final class RegistrationEligibilityTest extends ModuleTestCase
     private function registrations(GameTableModel $table): int
     {
         return ParticipantModel::query()->where('game_table_id', $table->id)->count();
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function statuses(GameTableModel $table): array
+    {
+        return array_values(ParticipantModel::query()
+            ->where('game_table_id', $table->id)
+            ->get()
+            ->map(fn (ParticipantModel $participant): string => $participant->status->value)
+            ->all());
     }
 
     private function confirmed(GameTableModel $table, string $role, int $count): void

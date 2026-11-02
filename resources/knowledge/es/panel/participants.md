@@ -35,7 +35,7 @@ Puedes filtrar por **Rol**, por **Estado** y por **Email sin confirmar**.
 Desde el panel no se aplican las reglas de inscripción: puedes añadir a alguien con las inscripciones cerradas, en una mesa **Solo socios** o **Solo por invitación**. Lo que sí cuenta son las plazas y la confirmación de la mesa:
 
 - Si hay plaza y la mesa confirma sola, queda **Confirmado**. Si no confirma sola, queda **Pendiente**.
-- Si la mesa está llena, va a la **Lista de espera**.
+- Si la mesa está llena, o en estado **Completa**, un jugador va a la **Lista de espera**; luego puedes darle una plaza libre con **Promover**.
 
 Una persona externa añadida desde el panel no tiene que confirmar su email. Quien se inscribe recibe su correo de inscripción y, si los avisos están activados, también la dirección.
 
@@ -56,7 +56,7 @@ Desde el panel puedes dar de baja a alguien en cualquier momento, también con l
 
 ## La lista de espera
 
-La lista de espera existe si está activada en la configuración. Cuando se libera una plaza de jugador, el primero de la lista pasa a ella solo, hasta el inicio de la partida o hasta el cierre de inscripciones, si es anterior. Después ya no corre sola: usa **Promover**.
+La lista de espera existe si está activada en la configuración. Cuando se libera una plaza de jugador, el primero de la lista pasa a ella solo, hasta el inicio de la partida o hasta el cierre de inscripciones, si es anterior. Después, o mientras la mesa está **Completa**, ya no corre sola: usa **Promover**.
 
 - En una mesa que confirma sola, el promovido queda **Confirmado**.
 - En una mesa con confirmación manual, queda **Pendiente** hasta que alguien lo confirme, salvo que sea de la plantilla de la campaña.

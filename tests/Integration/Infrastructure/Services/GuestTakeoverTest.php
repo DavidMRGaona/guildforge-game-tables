@@ -210,6 +210,55 @@ final class GuestTakeoverTest extends ModuleTestCase
             && $event->waitingListPosition === 1);
     }
 
+    // «Completa» set by hand closes the seats to newcomers (#184), not to the row already holding one
+    public function test_a_guest_row_holding_a_seat_is_taken_over_on_a_table_marked_full(): void
+    {
+        $guest = $this->guestByAdmin('cuenta@example.test');
+        $this->table->update(['status' => 'full']);
+        $user = UserModel::factory()->create(['email' => 'cuenta@example.test']);
+
+        $result = $this->register($user);
+
+        $this->assertSame($guest->id, $result->id);
+        $this->assertTrue($result->linkedFromGuest);
+        $this->assertSame(ParticipantStatus::Confirmed, $result->status);
+    }
+
+    // A wait row holds nothing yet: on a table marked full it only finds the waiting list
+    public function test_a_wait_guest_on_a_table_marked_full_is_placed_on_the_waiting_list(): void
+    {
+        config()->set('modules.settings.game-tables.guest_confirmation.mode', 'wait');
+        config()->set('modules.settings.game-tables.registration.waiting_list_enabled', true);
+        $guest = $this->submit('cuenta@example.test');
+        $this->table->update(['status' => 'full']);
+        $user = UserModel::factory()->create(['email' => 'cuenta@example.test']);
+
+        $result = $this->register($user);
+
+        $this->assertSame($guest->id, $result->id);
+        $this->assertSame(ParticipantStatus::WaitingList, $result->status);
+    }
+
+    public function test_a_wait_guest_on_a_table_marked_full_without_list_is_refused_and_stays_a_guest(): void
+    {
+        config()->set('modules.settings.game-tables.guest_confirmation.mode', 'wait');
+        config()->set('modules.settings.game-tables.registration.waiting_list_enabled', false);
+        $guest = $this->submit('cuenta@example.test');
+        $this->table->update(['status' => 'full']);
+        $user = UserModel::factory()->create(['email' => 'cuenta@example.test']);
+
+        try {
+            $this->register($user);
+            $this->fail('No seat for newcomers: the takeover must be refused');
+        } catch (TableFullException $e) {
+            $this->assertSame('table_full', $e->reason);
+        }
+
+        $row = ParticipantModel::query()->findOrFail($guest->id);
+        $this->assertNull($row->user_id);
+        $this->assertSame('pending', $row->status->value);
+    }
+
     public function test_the_account_rules_refuse_first_and_the_row_stays_a_guest(): void
     {
         $guest = $this->guestByAdmin('cuenta@example.test');

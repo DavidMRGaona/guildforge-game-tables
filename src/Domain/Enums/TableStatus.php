@@ -62,6 +62,16 @@ enum TableStatus: string
         return in_array($this, [self::Scheduled, self::Full], true);
     }
 
+    /**
+     * Whether a newcomer may take a free player seat. «Completa» is set by hand: it closes the
+     * seats whatever is left free, while the status still admits registrations (isRegistrable()),
+     * so new players can only join the waiting list and the director fills seats by hand.
+     */
+    public function admitsNewPlayersToSeats(): bool
+    {
+        return $this !== self::Full;
+    }
+
     public function isFinal(): bool
     {
         return in_array($this, [self::Completed, self::Cancelled], true);

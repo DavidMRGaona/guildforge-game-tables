@@ -235,7 +235,9 @@ const withdrawalClosedText = computed(() =>
         : t('gameTables.registration.withdrawalClosed')
 );
 
-const isTableFull = computed(() => spotsAvailable.value <= 0);
+// «Completa» set by hand closes the free seats too: newcomers can only join the waiting list
+const isMarkedFull = computed(() => tableData.value?.status === 'full');
+const isTableFull = computed(() => isMarkedFull.value || spotsAvailable.value <= 0);
 
 // A signed-in roster member handles their seat in the campaign's box instead of this flow. An
 // active spectator row of theirs is not a roster seat: it keeps the usual flow
@@ -299,13 +301,16 @@ const roleDialogTitleId = computed(() => `role-dialog-title-${resolvedTableId.va
 const playerOptionHelpId = computed(() => `role-player-help-${resolvedTableId.value}`);
 const spectatorOptionHelpId = computed(() => `role-spectator-help-${resolvedTableId.value}`);
 
+// A table marked full promotes nobody by itself: its director hands out the seats
 const waitingListHelp = computed(() => {
+    if (isMarkedFull.value) return t('gameTables.registration.waitingListHelpMarkedFull');
     return tableData.value?.autoConfirm === false
         ? t('gameTables.registration.waitingListHelpManual')
         : t('gameTables.registration.waitingListHelp');
 });
 
-// Reasons that close the registrations for everyone, whatever the seats
+// Reasons that close the registrations for everyone, whatever the seats (on a table marked full,
+// registration_closed only closes the player seats: spectators may still register)
 const CLOSED_REASONS: readonly string[] = [
     'registration_closed',
     'table_started',
@@ -317,7 +322,12 @@ const CLOSED_REASONS: readonly string[] = [
 const isRegistrationClosed = computed(() => {
     if (!eligibility.value) return true;
     const reason = eligibility.value.reason;
-    return !eligibility.value.eligible && reason !== null && CLOSED_REASONS.includes(reason);
+    return (
+        !eligibility.value.eligible &&
+        !spectatorEligible.value &&
+        reason !== null &&
+        CLOSED_REASONS.includes(reason)
+    );
 });
 
 const registrationOpensAt = computed(() => {

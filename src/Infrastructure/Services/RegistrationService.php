@@ -561,7 +561,8 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     /**
      * The rules of a user registration with their usual refusal, except the seats (as
      * userRulesRefusal()): the guest row taken over already holds its place or is placed by the
-     * caller.
+     * caller. A refusal the rules without the seats would not make is a seat refusal (seats taken,
+     * or closed to newcomers on a table marked full).
      *
      * @throws RegistrationNotAllowedException
      */
@@ -570,7 +571,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         try {
             $this->eligibilityService->ensureUserCanRegister($gameTableId, $userId, $role);
         } catch (RegistrationNotAllowedException $e) {
-            if (! in_array($e->reason, ['table_full', 'spectators_full'], true)) {
+            if ($this->eligibilityService->userRulesRefusal($gameTableId, $userId, $role) !== null) {
                 throw $e;
             }
         }
@@ -753,13 +754,17 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
     /**
      * A free seat (confirmed when the table confirms automatically, pending otherwise) or the
-     * next position of the waiting list. Taken seats are those of SeatCounter.
+     * next position of the waiting list. Taken seats are those of SeatCounter; a table marked full
+     * by hand has no free player seat for newcomers.
+     *
+     * @param  bool  $byHand  the organisation's approval, which may fill a free seat of a table marked full
      */
-    private function seat(Participant $participant, GameTable $gameTable): void
+    private function seat(Participant $participant, GameTable $gameTable, bool $byHand = false): void
     {
         $shouldWaitList = false;
         if ($participant->role === ParticipantRole::Player) {
-            $shouldWaitList = ! $gameTable->hasCapacity($this->seats->takenPlayerSeats($gameTable));
+            $seatsOpen = $byHand || $gameTable->admitsNewPlayersToSeats();
+            $shouldWaitList = ! $seatsOpen || ! $gameTable->hasCapacity($this->seats->takenPlayerSeats($gameTable));
         } elseif ($participant->role === ParticipantRole::Spectator) {
             $shouldWaitList = $gameTable->availableSpectatorSlots($this->seats->takenSpectatorSeats($gameTable)) === 0;
         }
@@ -984,7 +989,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
     /**
      * Moves the first waiting player into a freed seat, while the waiting list is open and a
-     * player seat is free. Runs under the table lock.
+     * player seat is free, unless the table is marked full by hand. Runs under the table lock.
      */
     private function promoteNext(GameTableId $gameTableId, bool $freedByPending = false): ?Participant
     {
@@ -999,6 +1004,11 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
         // Closed with the registrations: the director promotes by hand from the panel
         if (! $gameTable instanceof GameTable || ! $gameTable->isWaitingListOpen(CarbonImmutable::now()->toDateTimeImmutable())) {
+            return null;
+        }
+
+        // Marked full by hand: the director decides who takes the seat
+        if (! $gameTable->admitsNewPlayersToSeats()) {
             return null;
         }
 
@@ -1538,8 +1548,9 @@ final readonly class RegistrationService implements RegistrationServiceInterface
     /**
      * The rules the table page applies to guests (also without email). The duplicate rule is left
      * to registerGuest(): an unconfirmed guest sending the form again gets their email again. A
-     * seat refusal is returned, not thrown: seats are the last rule, after the account and the
-     * duplicate checks.
+     * seat refusal (one the rules without the seats would not make: seats taken, or closed to
+     * newcomers on a table marked full) is returned, not thrown: seats are the last rule, after
+     * the account and the duplicate checks.
      *
      * @throws RegistrationNotAllowedException for any other refusal
      */
@@ -1548,7 +1559,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
         try {
             $this->eligibilityService->ensureGuestCanRegister($gameTableId, null, $role);
         } catch (RegistrationNotAllowedException $e) {
-            if (! in_array($e->reason, ['table_full', 'spectators_full'], true)) {
+            if ($this->eligibilityService->guestRulesRefusal($gameTableId, $role) !== null) {
                 throw $e;
             }
 
@@ -1681,7 +1692,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
                 return null;
             }
 
-            $this->seat($participant, $gameTable);
+            $this->seat($participant, $gameTable, byHand: $seatOnly);
             $participant->confirmEmail($now);
             $this->participantRepository->save($participant);
 
@@ -1707,12 +1718,13 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
     /**
      * A seat, or (unless $seatOnly) a place at the end of an open waiting list for a player; the
-     * same counts as seat().
+     * same counts as seat(), so a table marked full by hand has only its waiting list, except for
+     * the organisation's approval ($seatOnly).
      */
     private function hasRoomForGuest(Participant $participant, GameTable $gameTable, DateTimeImmutable $now, bool $seatOnly = false): bool
     {
         if ($participant->isPlayer()) {
-            return $gameTable->hasCapacity($this->seats->takenPlayerSeats($gameTable))
+            return (($seatOnly || $gameTable->admitsNewPlayersToSeats()) && $gameTable->hasCapacity($this->seats->takenPlayerSeats($gameTable)))
                 || (! $seatOnly && $this->settings->isWaitingListEnabled() && $gameTable->isWaitingListOpen($now));
         }
 

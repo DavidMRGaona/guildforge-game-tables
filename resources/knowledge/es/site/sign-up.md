@@ -24,11 +24,11 @@ Verás «Te has inscrito correctamente» y, encima del botón, **Tu inscripción
 | Botón o aviso | Qué significa |
 |---|---|
 | **Inscribirse** | Hay sitio: pulsa para apuntarte. |
-| **Apuntarse a la lista de espera** | No quedan plazas de jugador, pero la web tiene lista de espera. Pasarás a la mesa si se libera una plaza. |
+| **Apuntarse a la lista de espera** | No quedan plazas de jugador, o la mesa está **Completa**, pero la web tiene lista de espera. Pasarás a la mesa si se libera una plaza; en una mesa **Completa**, si quien la dirige te la da. |
 | **Inscribirse como espectador** | Las plazas de jugador están completas y quedan plazas de espectador. |
 | «Las inscripciones abren el …» | Aún no se puede: vuelve ese día. |
 | **Cancelar inscripción** | Ya estás inscrito. La guía «Cancelar tu inscripción» lo explica. |
-| **Inscripciones cerradas** | Ha pasado el cierre de inscripciones. |
+| **Inscripciones cerradas** | Ha pasado el cierre de inscripciones, o la mesa está **Completa** y no hay lista de espera. |
 | **Inicia sesión para inscribirte** | No has iniciado sesión y no puedes apuntarte como invitado: la mesa no admite invitados o no le quedan plazas para ti. |
 
 ### El estado de tu inscripción

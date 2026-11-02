@@ -411,6 +411,48 @@ final class GuestSubmissionTest extends ModuleTestCase
         $this->assertSame(1, ParticipantModel::query()->count());
     }
 
+    // «Completa» set by hand closes the seats (#184): the guest already holding one still gets the email
+    public function test_resubmitting_on_a_table_marked_full_meanwhile_still_resends(): void
+    {
+        $first = $this->submit('invitada@example.test');
+        $this->table->update(['status' => 'full']);
+
+        $this->travelTo(CarbonImmutable::parse('2026-11-02 10:10:00', 'Europe/Madrid'));
+        $second = $this->submit('invitada@example.test');
+
+        $this->assertSame($first->id, $second->id);
+        $this->assertTrue($second->confirmationResent);
+        Event::assertDispatchedTimes(GuestConfirmationRequested::class, 2);
+    }
+
+    public function test_on_a_table_marked_full_a_confirmed_guest_still_gets_the_duplicate(): void
+    {
+        $this->submit('invitada@example.test');
+        ParticipantModel::query()->update(['email_confirmed_at' => now()]);
+        $this->table->update(['status' => 'full']);
+
+        try {
+            $this->submit('invitada@example.test');
+            $this->fail('A confirmed guest on a table marked full was not told about the duplicate');
+        } catch (AlreadyRegisteredException $e) {
+            $this->assertSame('guest_already_registered', $e->reason);
+        }
+    }
+
+    public function test_on_a_table_marked_full_a_new_guest_is_told_registrations_are_closed(): void
+    {
+        $this->table->update(['status' => 'full']);
+
+        try {
+            $this->submit('segunda@example.test');
+            $this->fail('A new guest took a free seat of a table marked full');
+        } catch (RegistrationNotAllowedException $e) {
+            $this->assertSame('registration_closed', $e->reason);
+        }
+
+        $this->assertSame(0, ParticipantModel::query()->count());
+    }
+
     // Past the deadline, before the expiry command runs: never an email with a deadline already gone
     public function test_resubmitting_past_the_deadline_expires_the_row_and_registers_again(): void
     {

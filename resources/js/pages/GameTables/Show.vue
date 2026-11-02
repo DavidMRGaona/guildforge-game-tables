@@ -420,7 +420,11 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                             :label="t('gameTables.roles.players')"
                             size="md"
                         />
-                        <p v-if="table.spotsAvailable > 0" class="mt-1 text-sm text-success">
+                        <!-- «Completa» set by hand offers no free seat, whatever the bar shows -->
+                        <p
+                            v-if="table.spotsAvailable > 0 && table.status !== 'full'"
+                            class="mt-1 text-sm text-success"
+                        >
                             {{ table.spotsAvailable }} {{ t('gameTables.spotsAvailable') }}
                         </p>
                         <p v-else class="mt-1 text-sm font-medium text-error">

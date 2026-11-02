@@ -438,6 +438,22 @@ final class GameTableTest extends TestCase
         $this->assertFalse($inProgress->isWaitingListOpen(new DateTimeImmutable('2026-01-20 10:00:00')));
     }
 
+    // «Completa» set by hand closes the seats, not the registrations: newcomers may still wait
+    public function test_a_table_marked_full_admits_no_new_players_into_seats_but_keeps_its_waiting_list(): void
+    {
+        $full = $this->publishedTable(status: TableStatus::Full);
+        $now = new DateTimeImmutable('2026-01-20 10:00:00');
+
+        $this->assertFalse($full->admitsNewPlayersToSeats());
+        $this->assertTrue($full->canRegister());
+        $this->assertTrue($full->isWaitingListOpen($now));
+    }
+
+    public function test_a_scheduled_table_admits_new_players_into_seats(): void
+    {
+        $this->assertTrue($this->publishedTable()->admitsNewPlayersToSeats());
+    }
+
     // Members registered during the early access may already be waiting before the public opening
     public function test_the_waiting_list_does_not_wait_for_the_public_opening(): void
     {

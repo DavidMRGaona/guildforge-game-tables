@@ -19,6 +19,7 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Modules\GameTables\Notifications\WaitingListPromotionGmNotification;
 use Modules\GameTables\Notifications\WaitingListPromotionNotification;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\Modules\ModuleTestCase;
 
 /**
@@ -256,6 +257,67 @@ final class WaitingListPromotionTest extends ModuleTestCase
         app(RegistrationServiceInterface::class)->promoteParticipant($waiting->id);
 
         $this->assertSame('confirmed', $waiting->refresh()->status->value);
+    }
+
+    // «Completa» set by hand: the director decides who takes a freed seat (#184)
+    public function test_on_a_table_marked_full_a_cancellation_promotes_nobody(): void
+    {
+        config()->set('modules.settings.game-tables.registration.waiting_list_enabled', true);
+        $this->table->update(['status' => 'full']);
+        $leaving = $this->participant('player', 'confirmed');
+        $this->participant('player', 'confirmed');
+        $waiting = $this->participant('player', 'waiting_list', 1);
+
+        app(RegistrationServiceInterface::class)->cancel($leaving->id);
+
+        $this->assertSame('cancelled', $leaving->refresh()->status->value);
+        $this->assertSame('waiting_list', $waiting->refresh()->status->value);
+        $this->assertNull(app(RegistrationServiceInterface::class)->promoteFromWaitingList($this->table->id));
+        $this->assertSame('waiting_list', $waiting->refresh()->status->value);
+        Notification::assertSentOnDemandTimes(WaitingListPromotionNotification::class, 0);
+    }
+
+    /**
+     * @return array<string, array{bool}>
+     */
+    public static function waitingListSetting(): array
+    {
+        return ['waiting list off' => [false], 'waiting list on' => [true]];
+    }
+
+    #[DataProvider('waitingListSetting')]
+    public function test_on_a_table_marked_full_the_director_still_promotes_by_hand(bool $waitingList): void
+    {
+        config()->set('modules.settings.game-tables.registration.waiting_list_enabled', $waitingList);
+        $this->table->update(['status' => 'full']);
+        $this->participant('player', 'confirmed');
+        $waiting = $this->participant('player', 'waiting_list', 1);
+
+        app(RegistrationServiceInterface::class)->promoteParticipant($waiting->id);
+
+        $this->assertSame('confirmed', $waiting->refresh()->status->value);
+    }
+
+    // Registering from the panel places as the table does: the free seat stays the director's call
+    public function test_on_a_table_marked_full_the_organisation_registers_a_player_onto_the_waiting_list(): void
+    {
+        $this->table->update(['status' => 'full']);
+        $this->participant('player', 'confirmed');
+
+        $player = app(RegistrationServiceInterface::class)->registerByAdmin(new RegisterParticipantDTO(
+            gameTableId: $this->table->id,
+            userId: UserModel::factory()->create()->id,
+            role: ParticipantRole::Player,
+        ));
+        $spectator = app(RegistrationServiceInterface::class)->registerByAdmin(new RegisterParticipantDTO(
+            gameTableId: $this->table->id,
+            userId: UserModel::factory()->create()->id,
+            role: ParticipantRole::Spectator,
+        ));
+
+        $this->assertSame('waiting_list', $player->status->value);
+        $this->assertSame(1, $player->waitingListPosition);
+        $this->assertSame('confirmed', $spectator->status->value);
     }
 
     // With the waiting list on, a table with manual confirmation counts pending players as taken seats

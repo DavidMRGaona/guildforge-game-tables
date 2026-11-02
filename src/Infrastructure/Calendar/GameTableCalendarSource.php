@@ -75,7 +75,7 @@ final readonly class GameTableCalendarSource implements CalendarEntrySourceInter
                 'gameSystemName' => $table->gameSystemName,
                 'currentPlayers' => $table->currentPlayers,
                 'maxPlayers' => $table->maxPlayers,
-                'isFull' => $table->currentPlayers >= $table->maxPlayers,
+                'isFull' => $table->isFull(),
                 'status' => $table->status->value,
                 'tags' => [],
                 'description' => $table->synopsis ?? '',
@@ -94,10 +94,9 @@ final readonly class GameTableCalendarSource implements CalendarEntrySourceInter
      */
     private function meta(GameTableListDTO $table): array
     {
-        $isFull = $table->currentPlayers >= $table->maxPlayers;
         $players = "{$table->currentPlayers}/{$table->maxPlayers}";
 
-        if ($isFull) {
+        if ($table->isFull()) {
             $players .= ' · '.__('game-tables::messages.enums.table_status.full');
         }
 
