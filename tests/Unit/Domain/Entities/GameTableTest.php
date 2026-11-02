@@ -129,6 +129,48 @@ final class GameTableTest extends TestCase
         $this->assertNotNull($gameTable->publishedAt);
     }
 
+    // A table created in the panel without publishing is already scheduled, and may be full
+    public function test_publishing_an_unpublished_table_that_has_not_started_keeps_its_status(): void
+    {
+        foreach ([TableStatus::Scheduled, TableStatus::Full] as $status) {
+            $gameTable = $this->createGameTable(status: $status);
+
+            $gameTable->publish();
+
+            $this->assertSame($status, $gameTable->status);
+            $this->assertTrue($gameTable->isPublished);
+        }
+    }
+
+    /**
+     * @return array<string, array{TableStatus}>
+     */
+    public static function statusesThatCannotPublish(): array
+    {
+        return [
+            'in progress' => [TableStatus::InProgress],
+            'completed' => [TableStatus::Completed],
+            'cancelled' => [TableStatus::Cancelled],
+        ];
+    }
+
+    #[DataProvider('statusesThatCannotPublish')]
+    public function test_a_table_that_started_ended_or_was_cancelled_is_not_published(TableStatus $status): void
+    {
+        $gameTable = $this->createGameTable(status: $status);
+
+        try {
+            $gameTable->publish();
+            $this->fail("A {$status->value} table was published");
+        } catch (InvalidStatusTransitionException $e) {
+            $this->assertSame($status->value, $e->from);
+        }
+
+        $this->assertSame($status, $gameTable->status);
+        $this->assertFalse($gameTable->isPublished);
+        $this->assertNull($gameTable->publishedAt);
+    }
+
     public function test_it_can_mark_as_full(): void
     {
         $gameTable = $this->createGameTable(status: TableStatus::Scheduled);

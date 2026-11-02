@@ -161,8 +161,10 @@ final readonly class GameTableService implements GameTableServiceInterface
 
         $this->guardRoster($gameTable);
 
+        $readStatus = $gameTable->status;
         $gameTable->publish();
-        $this->gameTableRepository->save($gameTable);
+        // Refused if the table was cancelled or changed meanwhile
+        $this->gameTableRepository->saveIfStatusIs($gameTable, $readStatus);
 
         GameTablePublished::dispatch($gameTable->id->value, $gameTable->title);
 

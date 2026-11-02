@@ -59,7 +59,7 @@ final class GameTableResource extends JsonResource
             'startsAt' => $timezone->iso($this->startsAt),
             'durationMinutes' => $this->durationMinutes,
             'location' => $this->location,
-            'onlineUrl' => $this->onlineUrl,
+            // No online session link: these pages are public, and nothing on them shows it
             'minPlayers' => $this->minPlayers,
             'maxPlayers' => $this->maxPlayers,
             'maxSpectators' => $this->maxSpectators,
