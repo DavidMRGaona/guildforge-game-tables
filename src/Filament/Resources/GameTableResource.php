@@ -155,6 +155,19 @@ final class GameTableResource extends BaseResource
                                             self::rosterSize($campaign->id),
                                         ));
 
+                                        // Propose where the campaign is played; what it leaves blank keeps what was typed
+                                        if ($campaign->table_format !== null) {
+                                            $set('table_format', $campaign->table_format->value);
+                                        }
+
+                                        if (filled($campaign->location)) {
+                                            $set('location', $campaign->location);
+                                        }
+
+                                        if (filled($campaign->online_url)) {
+                                            $set('online_url', $campaign->online_url);
+                                        }
+
                                         // Do not overwrite game masters if there are already real ones
                                         /** @var array<int, array<string, mixed>> $currentGameMasters */
                                         $currentGameMasters = $get('gameMasters') ?? [];

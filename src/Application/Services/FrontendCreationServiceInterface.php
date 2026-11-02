@@ -58,7 +58,7 @@ interface FrontendCreationServiceInterface
      *     languages: array<string, string>,
      *     campaign_frequencies: array<string, string>,
      *     events: list<array{id: string, name: string, start_date: string}>,
-     *     campaigns: list<array{id: string, name: string, game_system_id: string, max_players: int|null, roster_count: int}>,
+     *     campaigns: list<array{id: string, name: string, game_system_id: string, max_players: int|null, roster_count: int, table_format: string|null, location: string|null, online_url: string|null}>,
      *     defaults: array{duration_minutes: int, min_players: int, max_players: int, max_spectators: int},
      *     limits: array{max_players: int, max_spectators: int, max_duration_minutes: int}
      * }

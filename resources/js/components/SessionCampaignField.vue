@@ -1,11 +1,12 @@
 <script setup lang="ts">
 // The campaign of a «Sesión de campaña», shown right under the type of the table form. Choosing
-// one fills the game system and the maximum of players (emitted as `fill`); without campaigns it
+// one fills the game system and the maximum of players, and proposes the format, location and
+// online link the campaign has (emitted as `fill`, null when it has none); without campaigns it
 // explains why and links to the campaign form in another tab, so the table form is not lost.
 import { computed, onMounted, ref, useId, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { FormSelect } from '@/components/form';
-import type { SessionCampaignOption } from '../types/gametables';
+import type { SessionCampaignFill, SessionCampaignOption } from '../types/gametables';
 
 interface Props {
     campaigns: SessionCampaignOption[];
@@ -24,7 +25,7 @@ const props = withDefaults(defineProps<Props>(), {
 const campaignId = defineModel<string | null>({ required: true });
 
 const emit = defineEmits<{
-    fill: [values: { gameSystemId: string; maxPlayers: number }];
+    fill: [values: SessionCampaignFill];
 }>();
 
 const { t } = useI18n();
@@ -64,7 +65,13 @@ function fill(campaign: SessionCampaignOption): void {
     const maxPlayers =
         campaign.max_players ?? Math.max(props.defaultMaxPlayers, campaign.roster_count);
     filledMax.value = maxPlayers;
-    emit('fill', { gameSystemId: campaign.game_system_id, maxPlayers });
+    emit('fill', {
+        gameSystemId: campaign.game_system_id,
+        maxPlayers,
+        tableFormat: campaign.table_format,
+        location: campaign.location,
+        onlineUrl: campaign.online_url,
+    });
 }
 
 function choose(value: string | number | null): void {
