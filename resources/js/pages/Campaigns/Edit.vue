@@ -48,6 +48,8 @@ interface FormData {
     safety_tools: Record<string, string>;
     content_warnings: ContentWarning[];
     campaign_frequencies: Record<string, string>;
+    // The maximum of players the settings allow, the same as tables
+    limits: { max_players: number };
 }
 
 interface CampaignData {
@@ -58,9 +60,20 @@ interface CampaignData {
     game_system_name: string;
     frequency: string | null;
     max_players: number | null;
-    // Null for campaigns created before these were stored
+    // Null (or empty) for campaigns created before these were stored
     language: string | null;
     experience_level: string | null;
+    min_players: number | null;
+    table_format: string | null;
+    location: string | null;
+    online_url: string | null;
+    schedule_notes: string | null;
+    genres: string[];
+    tone: string | null;
+    character_creation: string | null;
+    safety_tools: string[];
+    content_warning_ids: string[];
+    custom_warnings: string[];
     frontend_creation_status: string | null;
     frontend_creation_status_label: string | null;
     moderation_notes: string | null;
@@ -145,20 +158,20 @@ const form = useForm({
     title: props.campaign.title,
     synopsis: props.campaign.description ?? '',
     frequency: props.campaign.frequency as string | null,
-    schedule_notes: '',
-    min_players: 3,
+    schedule_notes: props.campaign.schedule_notes ?? '',
+    min_players: props.campaign.min_players ?? 3,
     max_players: props.campaign.max_players ?? 5,
-    table_format: 'in_person',
-    location: '',
-    online_url: '',
+    table_format: props.campaign.table_format ?? 'in_person',
+    location: props.campaign.location ?? '',
+    online_url: props.campaign.online_url ?? '',
     language: props.campaign.language ?? 'es',
     experience_level: props.campaign.experience_level as string | null,
-    character_creation: null as string | null,
-    genres: [] as string[],
-    tone: null as string | null,
-    safety_tools: [] as string[],
-    content_warning_ids: [] as string[],
-    custom_warnings: [] as string[],
+    character_creation: props.campaign.character_creation as string | null,
+    genres: [...props.campaign.genres],
+    tone: props.campaign.tone as string | null,
+    safety_tools: [...props.campaign.safety_tools],
+    content_warning_ids: [...props.campaign.content_warning_ids],
+    custom_warnings: [...props.campaign.custom_warnings],
 });
 
 // Errors per tab (badges) and the summary shown after a failed save
@@ -500,7 +513,7 @@ function submit(): void {
                                             v-model="form.min_players"
                                             name="min_players"
                                             :min="1"
-                                            :max="12"
+                                            :max="props.formData.limits.max_players"
                                             required
                                             :disabled="!props.campaign.can_edit"
                                             :error="form.errors.min_players"
@@ -526,7 +539,7 @@ function submit(): void {
                                             v-model="form.max_players"
                                             name="max_players"
                                             :min="1"
-                                            :max="12"
+                                            :max="props.formData.limits.max_players"
                                             required
                                             :disabled="!props.campaign.can_edit"
                                             :error="form.errors.max_players"
@@ -642,6 +655,26 @@ function submit(): void {
                                     {{ form.errors.tone }}
                                 </p>
                             </div>
+
+                            <!-- Genres -->
+                            <fieldset id="genres" class="min-w-0">
+                                <legend class="block text-sm font-medium text-base-secondary mb-3">
+                                    {{ t('gameTables.genres') }}
+                                </legend>
+                                <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                    <FormCheckboxWithTooltip
+                                        v-for="genre in objectToOptions(props.formData.genres)"
+                                        :id="`genre_${genre.value}`"
+                                        :key="genre.value"
+                                        v-model="form.genres"
+                                        :value="genre.value"
+                                        :label="genre.label"
+                                    />
+                                </div>
+                                <p v-if="form.errors.genres" class="mt-2 text-sm text-error">
+                                    {{ form.errors.genres }}
+                                </p>
+                            </fieldset>
 
                             <!-- Character Creation -->
                             <div>

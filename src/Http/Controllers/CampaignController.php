@@ -29,6 +29,13 @@ final class CampaignController extends Controller
 
     private const int PER_PAGE = 12;
 
+    /**
+     * The join box states of the people who may see the link of the online session.
+     *
+     * @var list<string>
+     */
+    private const array ONLINE_URL_STATES = ['director', 'member'];
+
     public function __construct(
         private readonly CampaignQueryServiceInterface $queryService,
         private readonly SlugRedirectServiceInterface $slugRedirectService,
@@ -86,10 +93,13 @@ final class CampaignController extends Controller
         $campaign = $this->queryService->findPublishedBySlug($identifier);
 
         if ($campaign instanceof CampaignResponseDTO) {
+            // What the viewer can do with the roster: ask to join, withdraw, leave or manage it
+            $joinBox = $this->rosterQuery->joinBox($campaign->id, auth()->id() !== null ? (string) auth()->id() : null);
+
             return Inertia::render('Campaigns/Show', [
-                'campaign' => CampaignResource::make($campaign)->resolve(),
-                // What the viewer can do with the roster: ask to join, withdraw, leave or manage it
-                'joinBox' => $this->rosterQuery->joinBox($campaign->id, auth()->id() !== null ? (string) auth()->id() : null)->toArray(),
+                // The link of the online session only reaches the directors and the roster
+                'campaign' => new CampaignResource($campaign, revealsOnlineUrl: in_array($joinBox->state, self::ONLINE_URL_STATES, true))->resolve(),
+                'joinBox' => $joinBox->toArray(),
                 // Its surveys, through the core: a surveys module answers, and without one nothing shows
                 'surveyLinks' => auth()->id() !== null
                     ? $this->surveyLinks->for(CampaignSurveySubjectSource::TYPE, $campaign->id, (string) auth()->id())

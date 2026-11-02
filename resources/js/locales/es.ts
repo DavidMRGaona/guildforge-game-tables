@@ -507,6 +507,8 @@ export default {
         viewUpcomingTables: 'Ver próximas mesas',
         noTables: 'Esta campaña no tiene mesas publicadas',
         // Flat keys used by components
+        scheduleNotes: 'Notas de horario',
+        onlineLink: 'Enlace de la sesión online',
         frequency: 'Frecuencia',
         expectedDuration: 'Duración esperada',
         monthsCount: '{count} meses',

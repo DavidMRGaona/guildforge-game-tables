@@ -19,6 +19,7 @@ use Modules\GameTables\Domain\Enums\Tone;
 use Modules\GameTables\Http\Support\AuthorLockRedirect;
 use Modules\GameTables\Http\Support\FormAttributes;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
+use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 
 final class FrontendCreateCampaignRequest extends FormRequest
 {
@@ -57,14 +58,17 @@ final class FrontendCreateCampaignRequest extends FormRequest
      */
     public function rules(): array
     {
+        // The same limit tables have
+        $maxPlayers = app(GameTableSettingsReader::class)->maxPlayersLimit();
+
         return [
             'game_system_id' => ['required', 'uuid', 'exists:gametables_game_systems,id'],
             'title' => ['required', 'string', 'min:5', 'max:200'],
             'synopsis' => ['nullable', 'string', 'max:5000'],
             'frequency' => ['required', 'string', Rule::in(CampaignFrequency::values())],
             'schedule_notes' => ['nullable', 'string', 'max:500'],
-            'min_players' => ['required', 'integer', 'min:1', 'max:12'],
-            'max_players' => ['required', 'integer', 'min:1', 'max:12', 'gte:min_players'],
+            'min_players' => ['required', 'integer', 'min:1', 'max:'.$maxPlayers],
+            'max_players' => ['required', 'integer', 'min:1', 'max:'.$maxPlayers, 'gte:min_players'],
             'table_format' => ['required', 'string', Rule::in(TableFormat::values())],
             'location' => ['nullable', 'string', 'max:500'],
             'online_url' => ['nullable', 'url', 'max:500'],

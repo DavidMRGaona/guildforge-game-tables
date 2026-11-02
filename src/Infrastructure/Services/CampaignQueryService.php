@@ -11,6 +11,8 @@ use Modules\GameTables\Application\DTOs\CampaignResponseDTO;
 use Modules\GameTables\Application\DTOs\GameTableListDTO;
 use Modules\GameTables\Application\Services\CampaignQueryServiceInterface;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
+use Modules\GameTables\Domain\Enums\Genre;
+use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameSystemRepositoryInterface;
@@ -88,7 +90,7 @@ final readonly class CampaignQueryService implements CampaignQueryServiceInterfa
         ?string $status = null,
     ): Builder {
         $query = CampaignModel::query()
-            ->with(['gameSystem', 'creator', 'gameMasters.user'])
+            ->with(['gameSystem', 'creator', 'gameMasters.user', 'contentWarnings'])
             ->withCount([
                 'gameTables',
                 'players' => fn ($players) => $players->whereNull('users.anonymized_at'),
@@ -139,6 +141,18 @@ final readonly class CampaignQueryService implements CampaignQueryServiceInterfa
             updatedAt: $campaign->updated_at,
             language: $campaign->language,
             experienceLevel: $campaign->experience_level,
+            minPlayers: $campaign->min_players,
+            tableFormat: $campaign->table_format,
+            location: $campaign->location,
+            onlineUrl: $campaign->online_url,
+            scheduleNotes: $campaign->schedule_notes,
+            genres: array_map(Genre::from(...), $campaign->genres ?? []),
+            tone: $campaign->tone,
+            characterCreation: $campaign->character_creation,
+            safetyTools: array_map(SafetyTool::from(...), $campaign->safety_tools ?? []),
+            contentWarningIds: $campaign->contentWarnings->pluck('id')->all(),
+            contentWarnings: $campaign->contentWarnings->pluck('name')->all(),
+            customWarnings: $campaign->custom_warnings ?? [],
         );
     }
 
@@ -181,6 +195,18 @@ final readonly class CampaignQueryService implements CampaignQueryServiceInterfa
             updatedAt: $campaign->updated_at,
             language: $campaign->language,
             experienceLevel: $campaign->experience_level,
+            minPlayers: $campaign->min_players,
+            tableFormat: $campaign->table_format,
+            location: $campaign->location,
+            onlineUrl: $campaign->online_url,
+            scheduleNotes: $campaign->schedule_notes,
+            genres: array_map(Genre::from(...), $campaign->genres ?? []),
+            tone: $campaign->tone,
+            characterCreation: $campaign->character_creation,
+            safetyTools: array_map(SafetyTool::from(...), $campaign->safety_tools ?? []),
+            contentWarningIds: $campaign->contentWarnings->pluck('id')->all(),
+            contentWarnings: $campaign->contentWarnings->pluck('name')->all(),
+            customWarnings: $campaign->custom_warnings ?? [],
         );
     }
 

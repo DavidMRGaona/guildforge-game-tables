@@ -18,6 +18,7 @@ import type {
     EditableGameMaster,
     GameSystem,
     GameTableEditData,
+    SessionCampaignFill,
     SessionCampaignOption,
     TableFormDefaults,
     TableFormLimits,
@@ -295,9 +296,13 @@ watch(
 );
 
 // Choosing the campaign fills what the session takes from it
-function applyCampaign(values: { gameSystemId: string; maxPlayers: number }): void {
+function applyCampaign(values: SessionCampaignFill): void {
     form.game_system_id = values.gameSystemId;
     form.max_players = values.maxPlayers;
+    // Where the campaign is played, as a proposal: what it leaves blank keeps what was typed
+    if (values.tableFormat) form.table_format = values.tableFormat;
+    if (values.location) form.location = values.location;
+    if (values.onlineUrl) form.online_url = values.onlineUrl;
 }
 
 // Selected time slot for slot-based scheduling

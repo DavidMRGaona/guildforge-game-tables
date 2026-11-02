@@ -203,11 +203,31 @@ final class CampaignSessionCreationTest extends ModuleTestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('GameTables/Create', false)
                 ->where('formData.campaigns', [
-                    ['id' => $alpha->id, 'name' => 'Alfa, creada en la web', 'game_system_id' => $this->gameSystem->id, 'max_players' => 6, 'roster_count' => 2],
-                    ['id' => $zeta->id, 'name' => 'Zeta, campaña dirigida', 'game_system_id' => $this->gameSystem->id, 'max_players' => null, 'roster_count' => 0],
+                    ['id' => $alpha->id, 'name' => 'Alfa, creada en la web', 'game_system_id' => $this->gameSystem->id, 'max_players' => 6, 'roster_count' => 2, 'table_format' => null, 'location' => null, 'online_url' => null],
+                    ['id' => $zeta->id, 'name' => 'Zeta, campaña dirigida', 'game_system_id' => $this->gameSystem->id, 'max_players' => null, 'roster_count' => 0, 'table_format' => null, 'location' => null, 'online_url' => null],
                 ])
                 ->where('sessionOnly', false)
                 ->where('prefill', null));
+    }
+
+    public function test_the_form_offers_the_format_location_and_link_of_each_campaign(): void
+    {
+        $this->configure('registered');
+        $campaign = $this->campaignDirectedAsGm('Campaña de Jane');
+        $campaign->update([
+            'table_format' => 'hybrid',
+            'location' => 'Local de la asociación',
+            'online_url' => 'https://example.com/mesa',
+        ]);
+
+        // The form proposes them when the campaign is chosen; the person may change them
+        $this->actingAs($this->jane)
+            ->get(route('gametables.create'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('GameTables/Create', false)
+                ->where('formData.campaigns.0.table_format', 'hybrid')
+                ->where('formData.campaigns.0.location', 'Local de la asociación')
+                ->where('formData.campaigns.0.online_url', 'https://example.com/mesa'));
     }
 
     public function test_add_session_prefills_type_and_campaign(): void
@@ -287,8 +307,9 @@ final class CampaignSessionCreationTest extends ModuleTestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('GameTables/Edit', false)
                 ->where('formData.campaigns', [
-                    ['id' => $own->id, 'name' => 'Campaña de Jane', 'game_system_id' => $this->gameSystem->id, 'max_players' => 5, 'roster_count' => 0],
-                    ['id' => $linkedByAdmin->id, 'name' => 'Campaña del panel', 'game_system_id' => $this->gameSystem->id, 'max_players' => 4, 'roster_count' => 1],
+                    ['id' => $own->id, 'name' => 'Campaña de Jane', 'game_system_id' => $this->gameSystem->id, 'max_players' => 5, 'roster_count' => 0, 'table_format' => null, 'location' => null, 'online_url' => null],
+                    // Not one the author directs: nothing of its place is proposed
+                    ['id' => $linkedByAdmin->id, 'name' => 'Campaña del panel', 'game_system_id' => $this->gameSystem->id, 'max_players' => 4, 'roster_count' => 1, 'table_format' => null, 'location' => null, 'online_url' => null],
                 ]));
     }
 

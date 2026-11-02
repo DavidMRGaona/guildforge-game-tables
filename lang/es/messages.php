@@ -195,6 +195,7 @@ return [
         'notes' => 'Notas',
 
         // Campaign fields
+        'schedule_notes' => 'Notas de horario',
         'session_count' => 'Número de sesiones',
         'session_count_help' => 'Número total de sesiones previstas. Dejar vacío si no está definido.',
         'current_session' => 'Sesión actual',
@@ -821,6 +822,7 @@ return [
         'starts_at_future' => 'La fecha de inicio debe ser posterior a ahora',
         'starts_at_not_a_slot' => 'Elige uno de los horarios del evento',
         'time_slot_full' => 'El horario «:slot» ya no admite más mesas',
+        'min_players_lte_max' => 'El mínimo de jugadores no puede ser mayor que el máximo',
         'max_players_gte_min' => 'El máximo de jugadores debe ser mayor o igual al mínimo',
         'language_required' => 'El idioma es obligatorio',
         'experience_level_required' => 'El nivel de experiencia es obligatorio',

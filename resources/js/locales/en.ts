@@ -507,6 +507,8 @@ export default {
         viewUpcomingTables: 'View upcoming tables',
         noTables: 'This campaign has no published tables',
         // Flat keys used by components
+        scheduleNotes: 'Schedule notes',
+        onlineLink: 'Online session link',
         frequency: 'Frequency',
         expectedDuration: 'Expected duration',
         monthsCount: '{count} months',

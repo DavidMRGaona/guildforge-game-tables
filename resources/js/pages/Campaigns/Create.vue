@@ -48,6 +48,8 @@ interface FormData {
     safety_tools: Record<string, string>;
     content_warnings: ContentWarning[];
     campaign_frequencies: Record<string, string>;
+    // The maximum of players the settings allow, the same as tables
+    limits: { max_players: number };
 }
 
 interface Eligibility {
@@ -457,7 +459,7 @@ function submit(): void {
                                             v-model="form.min_players"
                                             name="min_players"
                                             :min="1"
-                                            :max="12"
+                                            :max="props.formData.limits.max_players"
                                             required
                                             :error="form.errors.min_players"
                                             class="mt-1"
@@ -482,7 +484,7 @@ function submit(): void {
                                             v-model="form.max_players"
                                             name="max_players"
                                             :min="1"
-                                            :max="12"
+                                            :max="props.formData.limits.max_players"
                                             required
                                             :error="form.errors.max_players"
                                             class="mt-1"
@@ -593,6 +595,26 @@ function submit(): void {
                                     {{ form.errors.tone }}
                                 </p>
                             </div>
+
+                            <!-- Genres -->
+                            <fieldset id="genres" class="min-w-0">
+                                <legend class="block text-sm font-medium text-base-secondary mb-3">
+                                    {{ t('gameTables.genres') }}
+                                </legend>
+                                <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                    <FormCheckboxWithTooltip
+                                        v-for="genre in objectToOptions(props.formData.genres)"
+                                        :id="`genre_${genre.value}`"
+                                        :key="genre.value"
+                                        v-model="form.genres"
+                                        :value="genre.value"
+                                        :label="genre.label"
+                                    />
+                                </div>
+                                <p v-if="form.errors.genres" class="mt-2 text-sm text-error">
+                                    {{ form.errors.genres }}
+                                </p>
+                            </fieldset>
 
                             <!-- Character Creation -->
                             <div>
