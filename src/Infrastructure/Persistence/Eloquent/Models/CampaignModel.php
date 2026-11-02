@@ -8,6 +8,7 @@ use App\Infrastructure\Persistence\Eloquent\Concerns\DeletesCloudinaryImages;
 use App\Infrastructure\Persistence\Eloquent\Concerns\HasSlug;
 use App\Infrastructure\Persistence\Eloquent\Concerns\StoresInstantsInStorageTimezone;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -172,6 +173,20 @@ final class CampaignModel extends Model
             'campaign_id',
             'game_master_id',
         )->withPivot('sort_order')->withTimestamps()->orderByPivot('sort_order');
+    }
+
+    /**
+     * The campaigns the public listing shows: published and not cancelled. The site search offers the
+     * same ones, so both read this rule.
+     *
+     * @param  Builder<CampaignModel>  $query
+     * @return Builder<CampaignModel>
+     */
+    public function scopePubliclyListed(Builder $query): Builder
+    {
+        return $query
+            ->where('is_published', true)
+            ->whereNotIn('status', [CampaignStatus::Cancelled->value]);
     }
 
     /**

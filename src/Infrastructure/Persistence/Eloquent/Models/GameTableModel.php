@@ -338,6 +338,21 @@ final class GameTableModel extends Model
     }
 
     /**
+     * The tables the public listing shows, before its date cut: published and neither draft nor cancelled
+     * (tables created from the site stay unpublished until approved). The site search offers the same
+     * ones, past tables included, so both read this rule.
+     *
+     * @param  Builder<GameTableModel>  $query
+     * @return Builder<GameTableModel>
+     */
+    public function scopePubliclyListed(Builder $query): Builder
+    {
+        return $query
+            ->where('is_published', true)
+            ->whereNotIn('status', [TableStatus::Cancelled->value, TableStatus::Draft->value]);
+    }
+
+    /**
      * Get the entity type for slug redirects.
      */
     public function getSlugEntityType(): string

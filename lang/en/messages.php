@@ -20,6 +20,20 @@ return [
         'config' => 'Configuration',
     ],
 
+    // Site search (core): group, one result and the tag of results that are over
+    'search' => [
+        'tables' => [
+            'label' => 'Tables',
+            'item' => 'Table',
+            'past' => 'Played',
+        ],
+        'campaigns' => [
+            'label' => 'Campaigns',
+            'item' => 'Campaign',
+            'past' => 'Finished',
+        ],
+    ],
+
     'surveys' => [
         'source_label' => 'Game table',
         'campaign_session_label' => 'Campaign session',

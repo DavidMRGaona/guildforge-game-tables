@@ -16,7 +16,6 @@ use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\GameMasterRole;
 use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\SafetyTool;
-use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Repositories\GameSystemRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
@@ -68,8 +67,7 @@ final readonly class GameTableQueryService implements GameTableQueryServiceInter
         // Everything the calendar cards read, loaded with the list (no query per table)
         $tables = SeatCounter::withPlayerSeatCounts(GameTableModel::query())
             ->with(['gameSystem', 'creator', 'event', 'gameMasters.user'])
-            ->where('is_published', true)
-            ->whereNotIn('status', [TableStatus::Cancelled->value, TableStatus::Draft->value])
+            ->publiclyListed()
             // Bound in the storage zone: the callers may give the bounds in another one
             ->whereBetween('starts_at', [$timezone->toStorage($from), $timezone->toStorage($to)])
             ->orderedByStart()
@@ -125,8 +123,7 @@ final readonly class GameTableQueryService implements GameTableQueryServiceInter
     ): Builder {
         $query = SeatCounter::withPlayerSeatCounts(GameTableModel::query())
             ->with(['gameSystem', 'creator', 'event', 'gameMasters.user'])
-            ->where('is_published', true)
-            ->whereNotIn('status', [TableStatus::Cancelled->value, TableStatus::Draft->value]);
+            ->publiclyListed();
 
         // When browsing by event or campaign, show all tables (the context page controls visibility).
         // When browsing general listing, only show future tables.

@@ -14,6 +14,7 @@ use App\Application\Modules\DTOs\NavigationItemDTO;
 use App\Application\Modules\DTOs\PagePrefixDTO;
 use App\Application\Modules\DTOs\PermissionDTO;
 use App\Application\Modules\DTOs\SlotRegistrationDTO;
+use App\Application\Search\Contracts\IndexedSearchSourceInterface;
 use App\Application\Services\EventQueryServiceInterface;
 use App\Application\Services\SiteBrandingServiceInterface;
 use App\Application\Services\TimezoneServiceInterface;
@@ -133,6 +134,9 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\Eloquent
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentGameSystemRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentGameTableRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentParticipantRepository;
+use Modules\GameTables\Infrastructure\Search\CampaignSearchSource;
+use Modules\GameTables\Infrastructure\Search\GameTableSearchSource;
+use Modules\GameTables\Infrastructure\Search\RefreshesSearchDocuments;
 use Modules\GameTables\Infrastructure\Services\AssociationRoleMembershipChecker;
 use Modules\GameTables\Infrastructure\Services\CampaignDirection;
 use Modules\GameTables\Infrastructure\Services\CampaignInvitationService;
@@ -709,6 +713,9 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         ParticipantModel::observe(
             ParticipantStatusObserver::class
         );
+
+        // Site search (core contract): tables and campaigns follow their rows
+        RefreshesSearchDocuments::register();
     }
 
     /**
@@ -1333,6 +1340,19 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     {
         return [
             GameTableCalendarSource::class,
+        ];
+    }
+
+    /**
+     * Listed tables (past ones included) and campaigns in the site search (core contract).
+     *
+     * @return array<class-string<IndexedSearchSourceInterface>>
+     */
+    public function registerSearchSources(): array
+    {
+        return [
+            GameTableSearchSource::class,
+            CampaignSearchSource::class,
         ];
     }
 
