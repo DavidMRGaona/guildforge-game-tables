@@ -49,6 +49,8 @@ final class TableRegistrationsCopyTest extends TestCase
         'rejection.outro',
         'registration.manage',
         'registration.pending_intro',
+        'waiting_list_promotion_gm.pending_manage',
+        'waiting_list_promotion_gm.manage',
     ];
 
     private const array LOCALE_KEYS = [

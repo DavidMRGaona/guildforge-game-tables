@@ -21,6 +21,7 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterMode
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
+use Modules\GameTables\Notifications\CampaignSessionAbsenceNotification;
 use Modules\GameTables\Notifications\CancellationConfirmation;
 use Modules\GameTables\Notifications\GuestCancellationConfirmation;
 use Modules\GameTables\Notifications\OrganizationCancellationNotification;
@@ -126,6 +127,25 @@ final class ParticipantsCancelAndNoShowTest extends ModuleTestCase
         $this->assertNotNull($row->cancelled_at);
         $this->assertMailedTo(OrganizationCancellationNotification::class, 'jugadora@example.test');
         Notification::assertSentTimes(OrganizationCancellationNotification::class, 1);
+        Notification::assertSentTimes(CampaignSessionAbsenceNotification::class, 0);
+        Notification::assertSentTimes(CancellationConfirmation::class, 0);
+        Notification::assertSentTimes(ParticipantCancelledNotification::class, 0);
+    }
+
+    // A roster row cancelled so is an absence from this session: the member stays in the campaign
+    public function test_cancelling_a_roster_row_sends_the_absence_notice_instead(): void
+    {
+        $table = $this->tableWithDirector();
+        $user = UserModel::factory()->create(['email' => 'jugadora@example.test']);
+        $row = $this->participant($table, 'confirmed', ['user_id' => $user->id, 'from_roster' => true]);
+
+        $this->participants($table)->callTableAction('cancelRegistration', $row)->assertHasNoTableActionErrors();
+
+        $this->assertSame('cancelled', $row->refresh()->status->value);
+        $this->assertSame('session_absence', $row->getRawOriginal('cancellation_reason'));
+        $this->assertMailedTo(CampaignSessionAbsenceNotification::class, 'jugadora@example.test');
+        Notification::assertSentTimes(CampaignSessionAbsenceNotification::class, 1);
+        Notification::assertSentTimes(OrganizationCancellationNotification::class, 0);
         Notification::assertSentTimes(CancellationConfirmation::class, 0);
         Notification::assertSentTimes(ParticipantCancelledNotification::class, 0);
     }

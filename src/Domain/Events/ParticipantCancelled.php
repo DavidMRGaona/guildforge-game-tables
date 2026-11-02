@@ -6,6 +6,7 @@ namespace Modules\GameTables\Domain\Events;
 
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Modules\GameTables\Domain\Enums\ParticipantCancellationReason;
 
 final readonly class ParticipantCancelled
 {
@@ -20,5 +21,7 @@ final readonly class ParticipantCancelled
         // True when the organisation cancelled it from the panel: the participant gets its own
         // notice and the directors none
         public bool $byOrganization = false,
+        // Why it was cancelled, when there is a reason (a roster member's session absence)
+        public ?ParticipantCancellationReason $reason = null,
     ) {}
 }

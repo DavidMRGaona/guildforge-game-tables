@@ -7,11 +7,16 @@ namespace Modules\GameTables\Listeners;
 use App\Application\Services\TimezoneServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Facades\Notification;
+use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Entities\GameTable;
+use Modules\GameTables\Domain\Enums\ParticipantCancellationReason;
 use Modules\GameTables\Domain\Events\ParticipantCancelled;
+use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
+use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
+use Modules\GameTables\Notifications\CampaignSessionAbsenceNotification;
 use Modules\GameTables\Notifications\CancellationConfirmation;
 use Modules\GameTables\Notifications\GuestCancellationConfirmation;
 use Modules\GameTables\Notifications\OrganizationCancellationNotification;
@@ -21,6 +26,7 @@ final readonly class SendCancellationConfirmation
     public function __construct(
         private GameTableRepositoryInterface $gameTableRepository,
         private NotificationRecipientResolver $recipientResolver,
+        private CampaignRepositoryInterface $campaignRepository,
     ) {}
 
     public function handle(ParticipantCancelled $event): void
@@ -45,6 +51,22 @@ final readonly class SendCancellationConfirmation
             $participantName = $event->userId !== null
                 ? (UserModel::find($event->userId)->name ?? $this->recipientResolver->getParticipantDisplayName($event->participantId))
                 : $this->recipientResolver->getParticipantDisplayName($event->participantId);
+
+            // A roster member's seat (the direction marking an absence, or the panel): they miss
+            // this session only and stay in the campaign
+            if ($event->reason === ParticipantCancellationReason::SessionAbsence && $event->userId !== null) {
+                Notification::route('mail', $email)
+                    ->notify(new CampaignSessionAbsenceNotification(
+                        userName: $participantName,
+                        campaignTitle: $this->campaignTitleOf($gameTable),
+                        tableId: $event->gameTableId,
+                        tableTitle: $gameTable->title,
+                        tableDate: $tableDate,
+                        tableLocation: $tableLocation,
+                    ));
+
+                return;
+            }
 
             Notification::route('mail', $email)
                 ->notify(new OrganizationCancellationNotification(
@@ -84,5 +106,16 @@ final readonly class SendCancellationConfirmation
                     tableLocation: $tableLocation,
                 ));
         }
+    }
+
+    private function campaignTitleOf(GameTable $gameTable): ?string
+    {
+        if (! $gameTable->campaignId instanceof CampaignId) {
+            return null;
+        }
+
+        $campaign = $this->campaignRepository->find($gameTable->campaignId);
+
+        return $campaign instanceof Campaign ? $campaign->title : null;
     }
 }

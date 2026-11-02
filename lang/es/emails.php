@@ -121,10 +121,12 @@ return [
         'greeting' => '¡Hola!',
         'intro' => ':name ha sido promovido/a desde la lista de espera en la mesa «:tableTitle».',
         'pending' => 'La mesa tiene confirmación manual: la inscripción queda pendiente hasta que la confirmes o la rechaces en el panel.',
+        'pending_manage' => 'La mesa tiene confirmación manual: la inscripción queda pendiente hasta que la apruebes o la rechaces desde la página de inscritos.',
         'table_title' => 'Mesa',
         'table_date' => 'Fecha',
         'table_location' => 'Ubicación',
         'view_table' => 'Ver mesa',
+        'manage' => 'Gestionar inscritos',
     ],
 
     'table_cancelled' => [
@@ -250,6 +252,18 @@ return [
         'table_date' => 'Fecha',
         'table_location' => 'Ubicación',
         'absence_hint' => 'Si no puedes ir a una sesión, date de baja desde su ficha: seguirás en la campaña.',
+        'view_session' => 'Ver sesión',
+    ],
+
+    'campaign_session_absence' => [
+        'subject' => 'Ausencia anotada: :tableTitle',
+        'greeting' => '¡Hola, :name!',
+        'intro' => 'Hemos anotado que no vas a ir a esta sesión de la campaña «:campaignTitle». Sigues en la campaña y en las demás sesiones.',
+        'intro_no_campaign' => 'Hemos anotado que no vas a ir a esta sesión. Sigues en la campaña y en las demás sesiones.',
+        'table_title' => 'Mesa',
+        'table_date' => 'Fecha',
+        'table_location' => 'Ubicación',
+        'rejoin_hint' => 'Si al final puedes ir, vuelve a apuntarte desde la página de la sesión con «Volver a apuntarme» mientras queden plazas libres y las inscripciones sigan abiertas.',
         'view_session' => 'Ver sesión',
     ],
 
