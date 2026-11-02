@@ -277,7 +277,7 @@ final class GameTableResource extends BaseResource
 
                                 TextInput::make('location')
                                     ->label(__('game-tables::messages.fields.location'))
-                                    ->maxLength(255)
+                                    ->maxLength(500)
                                     ->visible(fn (Get $get): bool => in_array($get('table_format'), [TableFormat::InPerson->value, TableFormat::Hybrid->value])),
 
                                 TextInput::make('online_url')

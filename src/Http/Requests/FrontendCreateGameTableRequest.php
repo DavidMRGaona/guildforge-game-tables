@@ -191,7 +191,8 @@ final class FrontendCreateGameTableRequest extends FormRequest
             'synopsis' => ['nullable', 'string', 'max:5000'],
             'location' => ['nullable', 'string', 'max:500'],
             'online_url' => ['nullable', 'url', 'max:500'],
-            'minimum_age' => ['nullable', 'integer', 'min:0', 'max:21'],
+            // The same range as the panel
+            'minimum_age' => ['nullable', 'integer', 'min:1', 'max:99'],
             'language' => ['required', 'string', 'size:2'],
             'genres' => ['nullable', 'array'],
             'genres.*' => ['string', Rule::in(Genre::values())],
