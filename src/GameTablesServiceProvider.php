@@ -123,6 +123,7 @@ use Modules\GameTables\Infrastructure\Listeners\NotifyOnGuestRegistration;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnRegistration;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnWaitingListPromotion;
 use Modules\GameTables\Infrastructure\Observers\CampaignObserver;
+use Modules\GameTables\Infrastructure\Observers\GameSystemObserver;
 use Modules\GameTables\Infrastructure\Observers\GameTableObserver;
 use Modules\GameTables\Infrastructure\Observers\ParticipantStatusObserver;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
@@ -715,6 +716,10 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
 
         CampaignModel::observe(
             CampaignObserver::class
+        );
+
+        GameSystemModel::observe(
+            GameSystemObserver::class
         );
 
         ParticipantModel::observe(

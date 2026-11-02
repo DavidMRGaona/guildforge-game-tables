@@ -714,6 +714,18 @@ return [
         'guest_confirmation_sent_unguaranteed' => 'We have sent you an email to confirm the registration. Your seat is not guaranteed until you confirm it.',
     ],
 
+    'game_system_deletion' => [
+        'tables' => '1 table|:count tables',
+        'campaigns' => '1 campaign|:count campaigns',
+        'and' => ':first and :second',
+        'in_use' => 'It is used by :usage, so it cannot be deleted. Deactivate it so it is no longer offered for new tables and campaigns; those already using it do not change.',
+        'in_use_inactive' => 'It is used by :usage, so it cannot be deleted. It is already deactivated: it is not offered for new tables and campaigns.',
+        'deactivate' => 'Deactivate',
+        'deactivated' => 'Game system deactivated',
+        'not_deleted' => 'Not deleted: tables or campaigns use it',
+        'bulk_not_deleted' => ':count system was not deleted because tables or campaigns use it. Deactivate it instead.|:count systems were not deleted because tables or campaigns use them. Deactivate them instead.',
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Validation Messages
