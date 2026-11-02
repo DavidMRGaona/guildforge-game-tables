@@ -14,6 +14,7 @@ use Modules\GameTables\Notifications\CampaignJoinRequestRejectedNotification;
 use Modules\GameTables\Notifications\CampaignPlayerLeftNotification;
 use Modules\GameTables\Notifications\CampaignRosterAddedNotification;
 use Modules\GameTables\Notifications\CampaignRosterRemovedNotification;
+use Modules\GameTables\Notifications\CampaignSessionAbsenceNotification;
 use Modules\GameTables\Notifications\CampaignSessionScheduledNotification;
 use Tests\Support\Modules\ModuleTestCase;
 
@@ -33,7 +34,7 @@ final class CampaignRosterNotificationsTest extends ModuleTestCase
     }
 
     /**
-     * @param  CampaignSessionScheduledNotification|CampaignJoinRequestReceivedNotification|CampaignJoinRequestAcceptedNotification|CampaignJoinRequestRejectedNotification|CampaignRosterAddedNotification|CampaignRosterRemovedNotification|CampaignPlayerLeftNotification  $notification
+     * @param  CampaignSessionScheduledNotification|CampaignSessionAbsenceNotification|CampaignJoinRequestReceivedNotification|CampaignJoinRequestAcceptedNotification|CampaignJoinRequestRejectedNotification|CampaignRosterAddedNotification|CampaignRosterRemovedNotification|CampaignPlayerLeftNotification  $notification
      */
     private function mail(Notification $notification): MailMessage
     {
@@ -199,7 +200,7 @@ final class CampaignRosterNotificationsTest extends ModuleTestCase
 
     public function test_the_english_copy_exists_for_every_email(): void
     {
-        foreach (['campaign_sessions', 'campaign_session_scheduled', 'campaign_join_request_received', 'campaign_join_request_accepted', 'campaign_join_request_rejected', 'campaign_roster_added', 'campaign_roster_removed', 'campaign_player_left'] as $block) {
+        foreach (['campaign_sessions', 'campaign_session_scheduled', 'campaign_join_request_received', 'campaign_join_request_accepted', 'campaign_join_request_rejected', 'campaign_roster_added', 'campaign_roster_removed', 'campaign_player_left', 'campaign_session_absence'] as $block) {
             $es = require dirname(__DIR__, 3).'/lang/es/emails.php';
             $en = require dirname(__DIR__, 3).'/lang/en/emails.php';
             $this->assertSame(array_keys($es[$block]), array_keys($en[$block]), $block);
@@ -244,6 +245,58 @@ final class CampaignRosterNotificationsTest extends ModuleTestCase
         $this->assertStringNotContainsString('<strong>URGENTE', $html);
         $this->assertStringNotContainsString('<b>Sala</b>', $html);
         // The label stays bold (the mail theme inlines a style into <strong>)
+        $this->assertStringContainsString('Mesa:</strong> [Pulsa aquí](https://evil.example) **URGENTE** &lt;b&gt;Sala&lt;/b&gt;', $html);
+        $this->assertStringContainsString('Ubicación:</strong> [Pulsa aquí](https://evil.example) **URGENTE** &lt;b&gt;Sala&lt;/b&gt;', $html);
+    }
+
+    public function test_the_session_absence_email_keeps_the_member_in_the_campaign_and_says_how_to_come_back(): void
+    {
+        $notification = new CampaignSessionAbsenceNotification(
+            userName: 'John Doe',
+            campaignTitle: 'Campaña de prueba',
+            tableId: 'table-1',
+            tableTitle: 'Sesión 2',
+            tableDate: '08/11/2026 18:00',
+            tableLocation: 'Sala de juegos',
+        );
+        $mail = $this->mail($notification);
+
+        $this->assertSame('Ausencia anotada: Sesión 2', $mail->subject);
+        $this->assertSame('¡Hola, John Doe!', $mail->greeting);
+        $lines = $this->lines($mail);
+        $this->assertContains('Hemos anotado que no vas a ir a esta sesión de la campaña «Campaña de prueba». Sigues en la campaña y en las demás sesiones.', $lines);
+        $this->assertContains('Mesa: Sesión 2', $lines);
+        $this->assertContains('**Fecha:** 08/11/2026 18:00', $lines);
+        $this->assertContains('Ubicación: Sala de juegos', $lines);
+        $this->assertContains('Si al final puedes ir, vuelve a apuntarte desde la página de la sesión con «Volver a apuntarme» mientras queden plazas libres y las inscripciones sigan abiertas.', $lines);
+        $this->assertSame('Ver sesión', $mail->actionText);
+        $this->assertSame(url('/mesas/table-1'), $mail->actionUrl);
+        $this->assertSame(['mail'], $notification->via(new AnonymousNotifiable));
+        foreach ($lines as $line) {
+            $this->assertStringNotContainsString('cancelado', $line);
+        }
+    }
+
+    public function test_the_session_absence_email_without_a_campaign_or_location(): void
+    {
+        $mail = $this->mail(new CampaignSessionAbsenceNotification('John Doe', null, 'table-1', 'Sesión 2', '08/11/2026 18:00', null));
+
+        $lines = $this->lines($mail);
+        $this->assertContains('Hemos anotado que no vas a ir a esta sesión. Sigues en la campaña y en las demás sesiones.', $lines);
+        foreach ($lines as $line) {
+            $this->assertStringNotContainsString('Ubicación', $line);
+        }
+    }
+
+    public function test_the_session_absence_email_shows_the_directors_text_literally(): void
+    {
+        $evil = '[Pulsa aquí](https://evil.example) **URGENTE** <b>Sala</b>';
+        $html = (string) $this->mail(new CampaignSessionAbsenceNotification('John Doe', $evil, 'table-1', $evil, '08/11/2026 18:00', $evil))->render();
+
+        $this->assertStringNotContainsString('<a href="https://evil.example"', $html);
+        $this->assertStringNotContainsString('<strong>URGENTE', $html);
+        $this->assertStringNotContainsString('<b>Sala</b>', $html);
+        $this->assertStringContainsString('campaña «[Pulsa aquí](https://evil.example) **URGENTE** &lt;b&gt;Sala&lt;/b&gt;»', $html);
         $this->assertStringContainsString('Mesa:</strong> [Pulsa aquí](https://evil.example) **URGENTE** &lt;b&gt;Sala&lt;/b&gt;', $html);
         $this->assertStringContainsString('Ubicación:</strong> [Pulsa aquí](https://evil.example) **URGENTE** &lt;b&gt;Sala&lt;/b&gt;', $html);
     }

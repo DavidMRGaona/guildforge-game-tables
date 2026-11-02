@@ -121,10 +121,12 @@ return [
         'greeting' => 'Hello,',
         'intro' => ':name has been promoted from the waiting list for the table :tableTitle.',
         'pending' => 'The table has manual confirmation: the registration is pending until you confirm or reject it in the panel.',
+        'pending_manage' => 'The table has manual confirmation: the registration is pending until you approve or reject it from the registrations page.',
         'table_title' => 'Table',
         'table_date' => 'Date',
         'table_location' => 'Location',
         'view_table' => 'View table',
+        'manage' => 'Manage registrations',
     ],
 
     /*
@@ -228,6 +230,18 @@ return [
         'table_date' => 'Date',
         'table_location' => 'Location',
         'absence_hint' => 'If you cannot make a session, withdraw from it on its page: you will stay in the campaign.',
+        'view_session' => 'View session',
+    ],
+
+    'campaign_session_absence' => [
+        'subject' => 'Absence noted: :tableTitle',
+        'greeting' => 'Hello, :name!',
+        'intro' => 'We have noted that you will not attend this session of the campaign ":campaignTitle". You are still in the campaign and its other sessions.',
+        'intro_no_campaign' => 'We have noted that you will not attend this session. You are still in the campaign and its other sessions.',
+        'table_title' => 'Table',
+        'table_date' => 'Date',
+        'table_location' => 'Location',
+        'rejoin_hint' => 'If you can make it after all, sign up again on the session page with "Sign me up again" while there are free seats and registrations are still open.',
         'view_session' => 'View session',
     ],
 

@@ -905,7 +905,8 @@ final readonly class RegistrationService implements RegistrationServiceInterface
 
     /**
      * The same cancellation as the participant's own (lock, seat freed, promotion); only the
-     * emails differ: the participant is told the organisation cancelled it, the directors nothing.
+     * emails differ: the participant is told the organisation cancelled it (a roster member, that
+     * they miss this session), the directors nothing.
      */
     public function cancelByAdmin(string $participantId): ParticipantResponseDTO
     {
@@ -961,6 +962,7 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             $userId,
             $wasConfirmed,
             $byOrganization,
+            $participant->cancellationReason,
         );
 
         if ($promoted instanceof Participant) {

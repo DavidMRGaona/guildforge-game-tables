@@ -16,7 +16,7 @@ En algunas mesas, la organización deja que sus directores aprueben o rechacen l
 
 - En **Mis mesas**, lista **Publicadas**: pulsa **Gestionar inscritos** en la mesa. Al lado verás cuántas solicitudes tienes pendientes.
 - En la ficha de la mesa, pulsa **Gestionar inscritos**.
-- En el correo «Nueva inscripción en mesa», pulsa **Gestionar inscritos**.
+- En el correo «Nueva inscripción en mesa» o «Promoción de lista de espera en mesa», pulsa **Gestionar inscritos**.
 
 ## La página
 

@@ -86,7 +86,7 @@ Esta pestaña decide quién se apunta, cuándo y quién confirma las plazas.
 Con **Confirmar automáticamente** desactivado, cada inscripción queda **Pendiente**. La confirman:
 
 - En el panel, quien tiene el permiso **Editar mesa**, con **Confirmar** en la pestaña **Participantes**.
-- En la web, los directores con cuenta, si la mesa tiene **El director gestiona las inscripciones**. Reciben el aviso de cada solicitud con un enlace a **Gestionar inscritos**.
+- En la web, los directores con cuenta, si la mesa tiene **El director gestiona las inscripciones**. Reciben el aviso de cada solicitud, y de cada persona que pasa pendiente desde la lista de espera, con un enlace a **Gestionar inscritos**.
 
 Si la lista de espera está activada en la configuración, en las mesas con confirmación manual las inscripciones pendientes ocupan plaza: quien llega después va a la lista de espera.
 
