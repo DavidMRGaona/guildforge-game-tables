@@ -427,6 +427,11 @@ final class EventGameTableConfigRelationManager extends RelationManager
             : $timezone->today()->format('Y-m-d');
         $last = $end instanceof DateTimeInterface ? $timezone->toDisplayWallTime($end, 'Y-m-d') : $first;
 
+        // An event ending at midnight ends with the day before
+        if ($end instanceof DateTimeInterface && $last > $first && $timezone->toDisplayWallTime($end, 'H:i') === '00:00') {
+            $last = (new DateTimeImmutable($last, new DateTimeZone('UTC')))->modify('-1 day')->format('Y-m-d');
+        }
+
         $days = [$first];
         for ($day = $this->nextDay($first); $day <= $last; $day = $this->nextDay($day)) {
             $days[] = $day;

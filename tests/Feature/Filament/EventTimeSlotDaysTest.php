@@ -144,6 +144,16 @@ final class EventTimeSlotDaysTest extends ModuleTestCase
         $this->assertSame([['2026-11-14T17:00:00+00:00', '2026-11-14T21:00:00+00:00']], $this->storedSlots($event));
     }
 
+    public function test_an_event_ending_at_midnight_does_not_take_the_next_day(): void
+    {
+        // 18:00 to 00:00 in the site's zone
+        $event = $this->event('2026-11-14T17:00:00Z', '2026-11-14T23:00:00Z');
+
+        $this->configTab($event)
+            ->set('configData.time_slots', ['slot' => $this->slot()])
+            ->assertFormFieldHidden('time_slots.slot.day', 'configForm');
+    }
+
     public function test_the_tab_shows_the_stored_day_of_each_slot(): void
     {
         $event = $this->event('2026-11-14T09:00:00Z', '2026-11-15T19:00:00Z');
