@@ -40,7 +40,7 @@ Aquí llegan las peticiones de quienes pulsan **Solicitar unirse** en la web. La
 - **Aceptar**: confirma y la persona entra en la plantilla, si queda sitio.
 - **Rechazar**: puedes escribir un **Motivo (opcional)**, que se le envía por correo.
 
-Solo pueden pedir entrar quienes cumplen **Quién puede solicitar**, y solo mientras la campaña acepta jugadores nuevos y le quedan plazas.
+Solo pueden pedir entrar quienes cumplen **Quién puede solicitar**, y solo mientras la campaña acepta jugadores nuevos y le quedan plazas. Las invitaciones siguen las mismas reglas.
 
 ## Invitaciones
 
@@ -55,6 +55,8 @@ La persona recibe el correo «(quien invita) te invita a la campaña «(campaña
 
 - **Reenviar**: manda el correo otra vez. Han de pasar 24 horas desde el último envío, y a un mismo email no se le pueden mandar más de tres en 30 días por campaña. Si la persona la rechazó, no se le puede volver a invitar durante 30 días.
 - **Cancelar**: la invitación deja de valer.
+
+Mientras la campaña no acepta jugadores nuevos, **Invitar jugador** y **Reenviar** aparecen desactivados y la pestaña explica por qué; las invitaciones pendientes no se pueden aceptar hasta que vuelva a aceptarlos. Si la campaña es solo para el rol {{association_role}}, no se puede invitar a una cuenta que no lo tenga, y quien no tiene cuenta tendrá que tenerlo al aceptar.
 
 Una invitación no reserva plaza. Si hay más invitaciones pendientes que plazas libres, la pestaña lo avisa: entrará quien acepte primero.
 
@@ -88,6 +90,8 @@ Cada correo se puede apagar en **Configuración** → **Notificaciones de campa�
 - **«La plantilla está completa.»**: sube el **Máximo de jugadores** de la campaña o quita a alguien.
 - **«Quien dirige la campaña no puede entrar en la plantilla como jugador.»**: esa cuenta es de un director.
 - **«Esa cuenta ya forma parte de la plantilla.»**: ya está dentro.
+- **«La campaña no acepta jugadores nuevos: no se pueden enviar invitaciones mientras siga así.»**: activa **Acepta nuevos jugadores** en la campaña para invitar.
+- **«Esta campaña solo admite socios y esa cuenta no es de un socio.»**: la campaña es solo para el rol {{association_role}} y esa cuenta no lo tiene.
 - **«Han de pasar 24 horas desde el último envío para volver a enviarla.»**: espera y reenvíala después.
 - **«Ya no se pueden enviar más invitaciones a este email en esta campaña por ahora.»**: se alcanzó el límite de envíos o la persona la rechazó hace poco.
 - **«Esta solicitud ya no está pendiente.»**: alguien la ha resuelto o la persona la retiró.
