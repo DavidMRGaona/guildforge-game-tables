@@ -115,6 +115,37 @@ final class GameTableStatusUpdaterTest extends ModuleTestCase
         Event::assertNotDispatched(GameTableCompleted::class);
     }
 
+    // Created in the panel without publishing, a table is already scheduled: it must not start or end
+    public function test_unpublished_tables_are_never_touched(): void
+    {
+        $scheduled = $this->table(TableStatus::Scheduled, '2030-03-10 18:00:00', attributes: ['is_published' => false]);
+        $inProgress = $this->table(TableStatus::InProgress, '2030-03-10 18:00:00', attributes: ['is_published' => false]);
+
+        $this->assertSame($this->counts(), $this->update('2030-03-12 09:00:00'));
+
+        $this->assertSame(TableStatus::Scheduled, $scheduled->refresh()->status);
+        $this->assertSame(TableStatus::InProgress, $inProgress->refresh()->status);
+        Event::assertNotDispatched(GameTableCompleted::class);
+    }
+
+    // The list was read before someone unpublished the table by hand: it is read again and skipped
+    public function test_a_table_unpublished_after_the_query_is_skipped(): void
+    {
+        $unpublished = $this->table(TableStatus::Scheduled, '2030-03-10 18:00:00', attributes: ['is_published' => false]);
+        $real = app(GameTableRepositoryInterface::class);
+        $repository = $this->createStub(GameTableRepositoryInterface::class);
+        $repository->method('idsStartedInStatuses')->willReturnCallback(
+            fn (array $statuses): array => $statuses === [TableStatus::Scheduled, TableStatus::Full] ? [$unpublished->id] : [],
+        );
+        $repository->method('find')->willReturnCallback(fn (GameTableId $id): ?GameTable => $real->find($id));
+
+        $counts = (new GameTableStatusUpdater($repository, app(GameTableServiceInterface::class)))
+            ->update(new DateTimeImmutable('2030-03-10 18:05:00'));
+
+        $this->assertSame($this->counts(skipped: 1), $counts);
+        $this->assertSame(TableStatus::Scheduled, $unpublished->refresh()->status);
+    }
+
     // The list was read before someone cancelled the table by hand: it is read again and skipped
     public function test_a_table_changed_by_hand_after_the_query_is_skipped(): void
     {

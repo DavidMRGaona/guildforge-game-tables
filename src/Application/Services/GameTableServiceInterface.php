@@ -26,6 +26,7 @@ interface GameTableServiceInterface
 
     /**
      * @throws SessionBelowRosterException when a campaign session has fewer seats than its roster
+     * @throws InvalidStatusTransitionException when the table is in progress, completed or cancelled
      */
     public function publish(string $id): GameTableResponseDTO;
 
