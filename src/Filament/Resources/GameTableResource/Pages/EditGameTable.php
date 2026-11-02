@@ -276,8 +276,11 @@ final class EditGameTable extends EditRecord
                 ->label(__('game-tables::messages.actions.publish'))
                 ->icon('heroicon-o-eye')
                 ->color('success')
-                // A web-created table the author has not sent, or one awaiting review, is published by approving it
-                ->visible(fn (): bool => ! $this->record->is_published && ! PublicationLock::isLocked($this->getRecord()))
+                // A web-created table the author has not sent, or one awaiting review, is published by approving
+                // it; a cancelled or finished one is never reopened
+                ->visible(fn (): bool => ! $this->record->is_published
+                    && $this->record->status->allowsPublishing()
+                    && ! PublicationLock::isLocked($this->getRecord()))
                 ->action(function (): void {
                     /** @var GameTableServiceInterface $service */
                     $service = app(GameTableServiceInterface::class);
@@ -287,6 +290,11 @@ final class EditGameTable extends EditRecord
                         $service->publish((string) $this->getRecord()->getKey());
                     } catch (SessionBelowRosterException $e) {
                         $this->refuseBelowRoster($e);
+
+                        return;
+                    } catch (InvalidStatusTransitionException) {
+                        // Cancelled or started meanwhile
+                        $this->warnStatusAlreadyChanged();
 
                         return;
                     }
