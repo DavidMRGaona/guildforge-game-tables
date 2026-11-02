@@ -178,7 +178,7 @@ function formatExpiry(invitation: RosterInvitation): string {
 }
 
 function resendInvitation(invitation: RosterInvitation): void {
-    if (processing.value || !invitation.can_resend) return;
+    if (processing.value || !invitation.can_resend || props.invite_refusal !== null) return;
 
     router.post(`${baseUrl.value}/invitaciones/${invitation.id}/reenviar`, {}, visitOptions());
 }
@@ -804,7 +804,8 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                             <BaseButton
                                 variant="secondary"
                                 size="sm"
-                                :disabled="!invitation.can_resend"
+                                :disabled="!invitation.can_resend || invite_refusal !== null"
+                                :title="invite_refusal ?? undefined"
                                 :aria-disabled="processing ? 'true' : undefined"
                                 class="w-full aria-disabled:cursor-not-allowed aria-disabled:opacity-50 sm:w-auto"
                                 @click="resendInvitation(invitation)"

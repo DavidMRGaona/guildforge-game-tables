@@ -94,6 +94,8 @@ final class InvitationsRelationManager extends RelationManager
                     ->label(__('game-tables::messages.relation_managers.invitations.resend'))
                     ->icon('heroicon-o-paper-airplane')
                     ->authorize(fn (): bool => $this->canManage())
+                    ->disabled(fn (): bool => $this->inviteRefusal() !== null)
+                    ->tooltip(fn (): ?string => $this->inviteRefusal())
                     ->action(function (CampaignInvitationModel $record): void {
                         $this->run(fn () => app(CampaignInvitationServiceInterface::class)->resend(
                             (string) $this->getOwnerRecord()->getKey(),

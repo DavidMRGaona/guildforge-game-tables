@@ -60,15 +60,15 @@ final class RosterPageSourceTest extends TestCase
 
     /**
      * Pending invitations stay listed (to resend or cancel them) when the roster is full: only the
-     * invite form depends on can_add.
+     * invite section depends on can_add (or on the reason the campaign takes no new players).
      */
     public function test_pending_invitations_do_not_depend_on_room_in_the_roster(): void
     {
         $source = $this->source();
 
         $this->assertCodeContains('<section v-if="invitations.length > 0"', $source);
-        $this->assertCodeContains('<section v-if="can_add" :class="sectionClass" aria-labelledby="roster-invite-title">', $source);
-        $this->assertSame(1, substr_count($source, 'v-if="can_add"'));
+        $this->assertCodeContains('<section v-if="can_add || invite_refusal" :class="sectionClass" aria-labelledby="roster-invite-title">', $source);
+        $this->assertSame(1, substr_count($source, 'v-if="can_add'));
     }
 
     /**

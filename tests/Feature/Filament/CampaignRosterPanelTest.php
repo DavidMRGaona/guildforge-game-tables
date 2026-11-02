@@ -146,6 +146,18 @@ final class CampaignRosterPanelTest extends ModuleTestCase
             ->assertSee($refusal);
     }
 
+    public function test_the_resend_action_is_unavailable_while_the_campaign_takes_no_new_players(): void
+    {
+        $campaign = $this->campaign();
+        $invitation = $this->invitation($campaign, 'john@example.com', CarbonImmutable::now()->addDays(7));
+
+        $this->invitations($campaign)->assertTableActionEnabled('resend', $invitation);
+
+        $campaign->update(['accepts_new_players' => false]);
+
+        $this->invitations($campaign)->assertTableActionDisabled('resend', $invitation);
+    }
+
     public function test_panel_invite_of_someone_who_is_not_a_socio_to_a_members_only_campaign_is_refused(): void
     {
         $campaign = $this->campaign();
