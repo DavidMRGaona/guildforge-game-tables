@@ -56,6 +56,7 @@ final class GameTableSurveyLinksTest extends ModuleTestCase
         $this->fakeLinks(new SurveySubjectLinksDTO(
             manageUrl: 'https://example.com/encuestas/sujeto/game-table/'.$table->id,
             surveys: [new SurveyLinkDTO('Valoración de la partida', 'https://example.com/encuestas/1', SurveyLinkAction::Respond)],
+            guideId: 'surveys.organizer-end-survey',
         ));
 
         $this->actingAs($user)->get(route('gametables.show', $table->slug))
@@ -63,7 +64,8 @@ final class GameTableSurveyLinksTest extends ModuleTestCase
                 ->where('surveyLinks.manageUrl', 'https://example.com/encuestas/sujeto/game-table/'.$table->id)
                 ->where('surveyLinks.surveys.0.title', 'Valoración de la partida')
                 ->where('surveyLinks.surveys.0.url', 'https://example.com/encuestas/1')
-                ->where('surveyLinks.surveys.0.action', 'respond'));
+                ->where('surveyLinks.surveys.0.action', 'respond')
+                ->where('surveyLinks.guideId', 'surveys.organizer-end-survey'));
 
         $this->assertSame([['game-table', $table->id, $user->id]], $this->asked->getArrayCopy());
     }

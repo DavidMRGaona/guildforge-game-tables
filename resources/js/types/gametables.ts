@@ -675,4 +675,6 @@ export interface SubjectSurveyLinks {
     /** The subject's surveys page, for its directors */
     manageUrl: string | null;
     surveys: SubjectSurveyLink[];
+    /** The help guide on these surveys for this person, from the surveys module */
+    guideId: string | null;
 }

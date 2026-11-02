@@ -19,7 +19,7 @@ final readonly class SubjectSurveyLinks
     ) {}
 
     /**
-     * @return array{manageUrl: string|null, surveys: list<array{title: string, url: string, action: string}>}|null
+     * @return array{manageUrl: string|null, surveys: list<array{title: string, url: string, action: string}>, guideId: string|null}|null
      */
     public function for(string $sourceType, string $subjectId, string $userId): ?array
     {
@@ -35,6 +35,8 @@ final readonly class SubjectSurveyLinks
                 'url' => $link->url,
                 'action' => $link->action->value,
             ], $links->surveys),
+            // The help guide the surveys module picks for this person
+            'guideId' => $links->guideId,
         ];
     }
 }

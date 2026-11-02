@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
+import HelpLink from '@/components/knowledge/HelpLink.vue';
 import type { SubjectSurveyLinks } from '../types/gametables';
 
 interface Props {
@@ -39,4 +40,5 @@ const { t } = useI18n();
                 : t('gameTables.surveys.results', { title: survey.title })
         }}
     </a>
+    <HelpLink v-if="links.guideId" :guide="links.guideId" class="self-center" />
 </template>
