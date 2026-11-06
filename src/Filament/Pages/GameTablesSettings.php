@@ -72,7 +72,17 @@ final class GameTablesSettings extends Page implements HasForms
     public function mount(GameTableSettingsReader $settings): void
     {
         // Saved values over the shipped defaults (config/settings.php)
-        $this->form->fill($settings->all());
+        $data = $settings->all();
+
+        // Values saved before the lists: "everyone" opens as registered users, and the roles typed as
+        // comma-separated names become the ones that still exist (a missing role granted nothing)
+        data_set($data, 'frontend_creation.access_level', $settings->getAccessLevel()->value);
+        data_set($data, 'frontend_creation.allowed_roles', array_values(array_intersect(
+            $settings->getAllowedRoles(),
+            array_keys(self::roleOptions()),
+        )));
+
+        $this->form->fill($data);
     }
 
     /**
@@ -328,7 +338,6 @@ final class GameTablesSettings extends Page implements HasForms
                         ->label(__('game-tables::messages.settings.fields.access_level'))
                         ->helperText(__('game-tables::messages.settings.fields.access_level_help'))
                         ->options([
-                            'everyone' => __('game-tables::messages.settings.access_level.everyone'),
                             'registered' => __('game-tables::messages.settings.access_level.registered'),
                             'role' => __('game-tables::messages.settings.access_level.role'),
                             'permission' => __('game-tables::messages.settings.access_level.permission'),
@@ -337,18 +346,26 @@ final class GameTablesSettings extends Page implements HasForms
                         ->live()
                         ->visible(fn (Get $get): bool => (bool) $get('frontend_creation.enabled')),
 
-                    TextInput::make('frontend_creation.allowed_roles')
+                    Select::make('frontend_creation.allowed_roles')
                         ->label(__('game-tables::messages.settings.fields.allowed_roles'))
                         ->helperText(__('game-tables::messages.settings.fields.allowed_roles_help'))
-                        ->placeholder('socio, colaborador')
+                        ->multiple()
+                        ->options(fn (): array => self::roleOptions())
+                        ->native(false)
+                        ->required(fn (Get $get): bool => (bool) $get('frontend_creation.enabled')
+                            && $get('frontend_creation.access_level') === 'role')
                         ->visible(fn (Get $get): bool => (bool) $get('frontend_creation.enabled') &&
                             $get('frontend_creation.access_level') === 'role'
                         ),
 
-                    TextInput::make('frontend_creation.required_permission')
+                    Select::make('frontend_creation.required_permission')
                         ->label(__('game-tables::messages.settings.fields.required_permission'))
                         ->helperText(__('game-tables::messages.settings.fields.required_permission_help'))
-                        ->placeholder('gametables:create')
+                        ->options(fn (): array => self::permissionOptions())
+                        ->searchable()
+                        ->native(false)
+                        ->required(fn (Get $get): bool => (bool) $get('frontend_creation.enabled')
+                            && $get('frontend_creation.access_level') === 'permission')
                         ->visible(fn (Get $get): bool => (bool) $get('frontend_creation.enabled') &&
                             $get('frontend_creation.access_level') === 'permission'
                         ),

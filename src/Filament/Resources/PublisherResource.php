@@ -86,6 +86,7 @@ final class PublisherResource extends BaseResource
 
                         Toggle::make('is_active')
                             ->label(__('game-tables::messages.fields.is_active'))
+                            ->helperText(__('game-tables::messages.fields.publisher_is_active_help'))
                             ->default(true),
                     ])
                     ->columns(2),

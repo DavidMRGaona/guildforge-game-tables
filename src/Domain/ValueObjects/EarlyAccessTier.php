@@ -84,7 +84,7 @@ final readonly class EarlyAccessTier
     public static function fromArray(array $data): self
     {
         return new self(
-            accessType: CreationAccessLevel::from($data['access_type']),
+            accessType: CreationAccessLevel::fromStored($data['access_type']),
             allowedRoles: $data['allowed_roles'] ?? null,
             requiredPermission: $data['required_permission'] ?? null,
             daysBeforeOpening: $data['days_before_opening'],

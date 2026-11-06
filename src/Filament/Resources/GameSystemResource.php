@@ -17,6 +17,7 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Modules\GameTables\Filament\Resources\GameSystemResource\Pages\CreateGameSystem;
 use Modules\GameTables\Filament\Resources\GameSystemResource\Pages\EditGameSystem;
 use Modules\GameTables\Filament\Resources\GameSystemResource\Pages\ListGameSystems;
@@ -69,7 +70,12 @@ final class GameSystemResource extends BaseResource
 
                         Select::make('publisher_id')
                             ->label(__('game-tables::messages.fields.publisher'))
-                            ->relationship('publisher', 'name')
+                            // Active publishers, plus the one the system already has even if it is inactive now
+                            ->relationship('publisher', 'name', modifyQueryUsing: static fn (Builder $query, ?GameSystemModel $record): Builder => $query
+                                ->where(static fn (Builder $query): Builder => $query
+                                    ->where('is_active', true)
+                                    ->when($record?->publisher_id, static fn (Builder $query, string $id): Builder => $query->orWhereKey($id)))
+                                ->orderBy('name'))
                             ->searchable()
                             ->preload()
                             ->createOptionForm([

@@ -19,17 +19,32 @@ final readonly class CampaignGameMasterResponseDTO
         public bool $isNamePublic,
     ) {}
 
-    public static function fromModel(GameMasterModel $model): self
+    /**
+     * @param  string|null  $defaultTitle  The game system's title for its game masters, shown for the main game master without one of
+     *                                     their own (a co-GM keeps the label of their role, which tells them apart)
+     */
+    public static function fromModel(GameMasterModel $model, ?string $defaultTitle = null): self
     {
         return new self(
             id: $model->id,
             userId: $model->user_id,
             displayName: $model->display_name,
             role: $model->role,
-            customTitle: $model->custom_title,
+            customTitle: self::title($model->custom_title, $model->role === GameMasterRole::Main ? $defaultTitle : null),
             isMain: $model->role === GameMasterRole::Main,
             isNamePublic: $model->is_name_public,
         );
+    }
+
+    private static function title(?string $own, ?string $default): ?string
+    {
+        foreach ([$own, $default] as $title) {
+            if ($title !== null && trim($title) !== '') {
+                return $title;
+            }
+        }
+
+        return null;
     }
 
     /**

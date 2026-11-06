@@ -111,7 +111,7 @@ final readonly class CampaignQueryService implements CampaignQueryServiceInterfa
     private function toDTO(CampaignModel $campaign): CampaignResponseDTO
     {
         $gameMasters = $campaign->gameMasters->map(
-            fn (GameMasterModel $gm) => CampaignGameMasterResponseDTO::fromModel($gm)
+            fn (GameMasterModel $gm) => CampaignGameMasterResponseDTO::fromModel($gm, $campaign->gameSystem?->game_master_title)
         )->all();
 
         return new CampaignResponseDTO(
@@ -159,7 +159,7 @@ final readonly class CampaignQueryService implements CampaignQueryServiceInterfa
     private function toDetailDTO(CampaignModel $campaign): CampaignResponseDTO
     {
         $gameMasters = $campaign->gameMasters->map(
-            fn (GameMasterModel $gm) => CampaignGameMasterResponseDTO::fromModel($gm)
+            fn (GameMasterModel $gm) => CampaignGameMasterResponseDTO::fromModel($gm, $campaign->gameSystem?->game_master_title)
         )->all();
 
         $gameTables = $campaign->gameTables->map(

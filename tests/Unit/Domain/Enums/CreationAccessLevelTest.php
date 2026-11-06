@@ -11,7 +11,6 @@ final class CreationAccessLevelTest extends TestCase
 {
     public function test_it_has_correct_values(): void
     {
-        $this->assertEquals('everyone', CreationAccessLevel::Everyone->value);
         $this->assertEquals('registered', CreationAccessLevel::Registered->value);
         $this->assertEquals('role', CreationAccessLevel::Role->value);
         $this->assertEquals('permission', CreationAccessLevel::Permission->value);
@@ -28,8 +27,8 @@ final class CreationAccessLevelTest extends TestCase
     {
         $options = CreationAccessLevel::options();
 
-        $this->assertCount(4, $options);
-        $this->assertArrayHasKey('everyone', $options);
+        $this->assertCount(3, $options);
+        $this->assertArrayNotHasKey('everyone', $options);
         $this->assertArrayHasKey('registered', $options);
         $this->assertArrayHasKey('role', $options);
         $this->assertArrayHasKey('permission', $options);
@@ -39,30 +38,23 @@ final class CreationAccessLevelTest extends TestCase
     {
         $values = CreationAccessLevel::values();
 
-        $this->assertCount(4, $values);
-        $this->assertContains('everyone', $values);
+        $this->assertCount(3, $values);
+        $this->assertNotContains('everyone', $values);
         $this->assertContains('registered', $values);
         $this->assertContains('role', $values);
         $this->assertContains('permission', $values);
     }
 
-    public function test_it_requires_authentication_returns_false_for_everyone(): void
+    public function test_a_stored_everyone_reads_as_registered_users(): void
     {
-        $this->assertFalse(CreationAccessLevel::Everyone->requiresAuthentication());
+        // Offered until it turned out that creating always needed a session
+        $this->assertSame(CreationAccessLevel::Registered, CreationAccessLevel::fromStored('everyone'));
     }
 
-    public function test_it_requires_authentication_returns_true_for_registered(): void
+    public function test_other_stored_levels_read_as_themselves(): void
     {
-        $this->assertTrue(CreationAccessLevel::Registered->requiresAuthentication());
-    }
-
-    public function test_it_requires_authentication_returns_true_for_role(): void
-    {
-        $this->assertTrue(CreationAccessLevel::Role->requiresAuthentication());
-    }
-
-    public function test_it_requires_authentication_returns_true_for_permission(): void
-    {
-        $this->assertTrue(CreationAccessLevel::Permission->requiresAuthentication());
+        foreach (CreationAccessLevel::cases() as $level) {
+            $this->assertSame($level, CreationAccessLevel::fromStored($level->value));
+        }
     }
 }
