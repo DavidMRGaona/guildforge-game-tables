@@ -99,7 +99,7 @@ final class CampaignController extends Controller
 
             return Inertia::render('Campaigns/Show', [
                 // The link of the online session only reaches the directors and the roster
-                'campaign' => new CampaignResource($campaign, revealsOnlineUrl: in_array($joinBox->state, self::ONLINE_URL_STATES, true))->resolve(),
+                'campaign' => CampaignResource::forViewer($campaign, in_array($joinBox->state, self::ONLINE_URL_STATES, true))->resolve(),
                 'joinBox' => $joinBox->toArray(),
                 // The site's association member role, named by a members-only join box
                 'associationRole' => app(AssociationRoleNameInterface::class)->displayName(),
