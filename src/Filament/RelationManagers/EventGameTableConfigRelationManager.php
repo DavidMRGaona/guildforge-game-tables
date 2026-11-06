@@ -7,6 +7,7 @@ namespace Modules\GameTables\Filament\RelationManagers;
 use App\Application\Services\TimezoneServiceInterface;
 use App\Filament\Forms\Components\TimePicker;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
+use App\Infrastructure\Persistence\Eloquent\Models\PermissionModel;
 use App\Infrastructure\Persistence\Eloquent\Models\RoleModel;
 use Carbon\CarbonImmutable;
 use DateTimeImmutable;
@@ -246,9 +247,12 @@ final class EventGameTableConfigRelationManager extends RelationManager
                             && $get('eligibility_access_level') === CreationAccessLevel::Role->value)
                         ->required(fn (Get $get): bool => $get('eligibility_access_level') === CreationAccessLevel::Role->value),
 
-                    TextInput::make('eligibility_required_permission')
+                    Select::make('eligibility_required_permission')
                         ->label(__('game-tables::messages.event_config.eligibility_required_permission'))
                         ->helperText(__('game-tables::messages.event_config.eligibility_required_permission_help'))
+                        ->options($this->getPermissionOptions())
+                        ->searchable()
+                        ->native(false)
                         ->visible(fn (Get $get): bool => (bool) $get('eligibility_override_enabled')
                             && $get('eligibility_access_level') === CreationAccessLevel::Permission->value)
                         ->required(fn (Get $get): bool => $get('eligibility_access_level') === CreationAccessLevel::Permission->value),
@@ -284,9 +288,12 @@ final class EventGameTableConfigRelationManager extends RelationManager
                             && $get('early_access_type') === CreationAccessLevel::Role->value)
                         ->required(fn (Get $get): bool => $get('early_access_type') === CreationAccessLevel::Role->value),
 
-                    TextInput::make('early_access_permission')
+                    Select::make('early_access_permission')
                         ->label(__('game-tables::messages.event_config.early_access_permission'))
                         ->helperText(__('game-tables::messages.event_config.early_access_permission_help'))
+                        ->options($this->getPermissionOptions())
+                        ->searchable()
+                        ->native(false)
                         ->visible(fn (Get $get): bool => (bool) $get('early_access_enabled')
                             && $get('early_access_type') === CreationAccessLevel::Permission->value)
                         ->required(fn (Get $get): bool => $get('early_access_type') === CreationAccessLevel::Permission->value),
@@ -482,6 +489,19 @@ final class EventGameTableConfigRelationManager extends RelationManager
         return RoleModel::query()
             ->orderBy('name')
             ->pluck('display_name', 'name')
+            ->all();
+    }
+
+    /**
+     * Registered permissions by their label, as the role editor shows them.
+     *
+     * @return array<string, string>
+     */
+    private function getPermissionOptions(): array
+    {
+        return PermissionModel::query()
+            ->orderBy('label')
+            ->pluck('label', 'key')
             ->all();
     }
 }

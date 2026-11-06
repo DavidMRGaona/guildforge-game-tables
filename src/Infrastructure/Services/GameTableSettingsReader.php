@@ -217,7 +217,7 @@ final class GameTableSettingsReader
 
     public function getAccessLevel(): CreationAccessLevel
     {
-        return CreationAccessLevel::from($this->string('frontend_creation.access_level', 'registered'));
+        return CreationAccessLevel::fromStored($this->string('frontend_creation.access_level', 'registered'));
     }
 
     /**

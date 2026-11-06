@@ -142,15 +142,7 @@ final readonly class EventCreationEligibilityService implements EventCreationEli
 
     private function checkWithOverride(EligibilityOverride $override, ?string $userId): CreationEligibilityDTO
     {
-        // Check based on the override's access level
-        if ($override->accessLevel === CreationAccessLevel::Everyone) {
-            return CreationEligibilityDTO::eligible(
-                canCreateTables: true,
-                canCreateCampaigns: false,
-            );
-        }
-
-        // For all other levels, user must be authenticated
+        // Every level needs a session
         if ($userId === null) {
             return CreationEligibilityDTO::notEligible(
                 reason: 'authentication_required',

@@ -11,13 +11,11 @@ use PHPUnit\Framework\TestCase;
 
 final class EligibilityOverrideTest extends TestCase
 {
-    public function test_it_creates_override_for_everyone_access(): void
+    public function test_a_stored_everyone_override_reads_as_registered_users(): void
     {
-        $override = new EligibilityOverride(
-            accessLevel: CreationAccessLevel::Everyone,
-        );
+        $override = EligibilityOverride::fromArray(['access_level' => 'everyone']);
 
-        $this->assertEquals(CreationAccessLevel::Everyone, $override->accessLevel);
+        $this->assertSame(CreationAccessLevel::Registered, $override->accessLevel);
         $this->assertNull($override->allowedRoles);
         $this->assertNull($override->requiredPermission);
     }
@@ -93,20 +91,6 @@ final class EligibilityOverrideTest extends TestCase
             accessLevel: CreationAccessLevel::Permission,
             requiredPermission: '',
         );
-    }
-
-    public function test_requires_authentication_returns_correct_value(): void
-    {
-        $everyoneOverride = EligibilityOverride::create(
-            accessLevel: CreationAccessLevel::Everyone,
-        );
-
-        $registeredOverride = EligibilityOverride::create(
-            accessLevel: CreationAccessLevel::Registered,
-        );
-
-        $this->assertFalse($everyoneOverride->requiresAuthentication());
-        $this->assertTrue($registeredOverride->requiresAuthentication());
     }
 
     public function test_is_role_based_returns_correct_value(): void

@@ -108,7 +108,7 @@ final readonly class UpdateEventGameTableConfigDTO
             return null;
         }
 
-        $accessLevel = CreationAccessLevel::from($data['access_level']);
+        $accessLevel = CreationAccessLevel::fromStored($data['access_level']);
 
         return EligibilityOverride::create(
             accessLevel: $accessLevel,
@@ -126,7 +126,7 @@ final readonly class UpdateEventGameTableConfigDTO
             return null;
         }
 
-        $accessType = CreationAccessLevel::from($data['access_type']);
+        $accessType = CreationAccessLevel::fromStored($data['access_type']);
 
         return EarlyAccessTier::create(
             accessType: $accessType,

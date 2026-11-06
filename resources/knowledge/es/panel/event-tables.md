@@ -54,8 +54,8 @@ Las mesas que se crean en el evento desde la web cierran sus inscripciones al em
 Por defecto, el evento usa las reglas generales de **Configuración** → **Creación desde web**. Para que este evento tenga las suyas, abre **Sobrescribir elegibilidad**:
 
 1. Activa **Usar configuración de evento**.
-2. Elige el **Nivel de acceso**: **Cualquier persona**, **Usuarios registrados**, **Usuarios con rol específico** o **Usuarios con permiso**.
-3. Con roles, elígelos en **Roles permitidos**. Con permiso, escribe el **Permiso requerido**.
+2. Elige el **Nivel de acceso**: **Usuarios registrados**, **Usuarios con rol específico** o **Usuarios con permiso**.
+3. Con roles, elígelos en **Roles permitidos**. Con permiso, elígelo en **Permiso requerido**.
 
 > [!IMPORTANT]
 > Con una regla propia, el evento decide solo quién crea sus mesas: sirve aunque la creación desde la web esté desactivada o limitada en la configuración general. Solo afecta a las mesas de este evento, nunca a las campañas.
@@ -68,7 +68,7 @@ Para dejar que algunas personas creen mesas antes de la **Fecha de apertura gene
 
 1. Activa **Habilitar acceso anticipado**.
 2. En **Tipo de acceso anticipado**, elige **Usuarios con rol específico** o **Usuarios con permiso**.
-3. Elige los **Roles con acceso anticipado** o escribe el **Permiso de acceso anticipado**.
+3. Elige los **Roles con acceso anticipado** o el **Permiso de acceso anticipado**.
 4. En **Días de ventaja**, di cuántos días antes pueden crear (de 1 a 30).
 
 Por ejemplo: con apertura el día 10 y 3 días de ventaja, la junta puede crear mesas desde el día 7 y el resto desde el 10. Quien tiene acceso anticipado tiene que cumplir además la regla de quién puede crear.

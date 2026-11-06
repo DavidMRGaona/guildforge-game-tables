@@ -32,14 +32,7 @@ final readonly class CreationEligibilityService implements CreationEligibilitySe
         // 3. Check access level
         $accessLevel = $this->settingsReader->getAccessLevel();
 
-        if ($accessLevel === CreationAccessLevel::Everyone) {
-            return CreationEligibilityDTO::eligible(
-                canCreateTables: true,
-                canCreateCampaigns: $this->settingsReader->canCreateCampaigns(),
-            );
-        }
-
-        // For all other levels, user must be authenticated
+        // Every level needs a session
         if ($userId === null) {
             return CreationEligibilityDTO::notEligible(
                 reason: 'authentication_required',
@@ -70,14 +63,7 @@ final readonly class CreationEligibilityService implements CreationEligibilitySe
         // 3. Check access level
         $accessLevel = $this->settingsReader->getAccessLevel();
 
-        if ($accessLevel === CreationAccessLevel::Everyone) {
-            return CreationEligibilityDTO::eligible(
-                canCreateTables: $this->settingsReader->canCreateTables(),
-                canCreateCampaigns: true,
-            );
-        }
-
-        // For all other levels, user must be authenticated
+        // Every level needs a session
         if ($userId === null) {
             return CreationEligibilityDTO::notEligible(
                 reason: 'authentication_required',

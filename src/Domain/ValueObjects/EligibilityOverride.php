@@ -48,15 +48,10 @@ final readonly class EligibilityOverride
     public static function fromArray(array $data): self
     {
         return new self(
-            accessLevel: CreationAccessLevel::from($data['access_level']),
+            accessLevel: CreationAccessLevel::fromStored($data['access_level']),
             allowedRoles: $data['allowed_roles'] ?? null,
             requiredPermission: $data['required_permission'] ?? null,
         );
-    }
-
-    public function requiresAuthentication(): bool
-    {
-        return $this->accessLevel->requiresAuthentication();
     }
 
     public function isRoleBased(): bool

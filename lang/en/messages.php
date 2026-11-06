@@ -205,11 +205,12 @@ return [
         'gm_role' => 'Role',
         'custom_title' => 'Custom title',
         'custom_title_placeholder' => 'E.g.: Dungeon Master, Narrator...',
-        'custom_title_help' => 'Leave empty to use the game system title',
+        'custom_title_help' => 'Left empty, the main game master uses the game system title and a co-GM, «Co-GM»',
         'notify_by_email' => 'Notify by email',
         'is_name_public' => 'Name publicly visible',
         'game_master_title' => 'Game master title',
-        'game_master_title_help' => 'E.g.: Dungeon Master, Keeper, Narrator, Referee...',
+        'game_master_title_help' => 'Shown for the main game master of its tables and campaigns when they have no title of their own. E.g.: Dungeon Master, Keeper, Narrator, Referee...',
+        'publisher_is_active_help' => 'Only active publishers are offered when choosing the publisher of a game system; systems that already have it keep it',
 
         // Participant type fields
         'participant_type' => 'Type',
@@ -913,7 +914,7 @@ return [
         'eligibility_access_level' => 'Access level',
         'eligibility_allowed_roles' => 'Allowed roles',
         'eligibility_required_permission' => 'Required permission',
-        'eligibility_required_permission_help' => 'Permission name required to create tables in this event',
+        'eligibility_required_permission_help' => 'Only people holding this permission can create tables in this event',
 
         // Table creation
         'table_creation' => 'Table creation',

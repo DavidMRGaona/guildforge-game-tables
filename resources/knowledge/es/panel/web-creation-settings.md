@@ -24,12 +24,12 @@ La web puede dejar que la gente cree sus propias mesas y campañas, sin entrar e
 1. Activa **Habilitar creación desde web**. Desactivado, nadie crea nada desde la web, salvo en los eventos que tienen su propia regla.
 2. En **Contenido permitido**, elige **Solo mesas**, **Solo campañas** o **Mesas y campañas**.
 3. En **Nivel de acceso**, elige quién:
-   - **Cualquier persona** o **Usuarios registrados**: cualquiera con cuenta. Crear siempre exige iniciar sesión, así que en la práctica las dos opciones son iguales.
-   - **Usuarios con rol específico**: escribe en **Roles permitidos** el **Nombre** de cada rol (el identificador interno que ves en **Roles**, no el nombre para mostrar), separados por comas.
-   - **Usuarios con permiso específico**: escribe en **Permiso requerido** el permiso necesario, tal como pide la ayuda del campo.
+   - **Usuarios registrados**: cualquiera con cuenta. Crear siempre exige iniciar sesión.
+   - **Usuarios con rol específico**: elige en **Roles permitidos** uno o varios roles de la lista.
+   - **Usuarios con permiso específico**: elige en **Permiso requerido** el permiso de la lista, con el mismo nombre que ves en **Roles**.
 
 > [!TIP]
-> Para que solo quienes tienen el rol {{association_role}} creen mesas, elige **Usuarios con rol específico** y escribe el **Nombre** interno de ese rol.
+> Para que solo quienes tienen el rol {{association_role}} creen mesas, elige **Usuarios con rol específico** y, en **Roles permitidos**, ese rol.
 
 Hay una excepción: quien dirige una campaña aprobada o publicada, que no haya terminado, puede crear sesiones de esa campaña aunque no cumpla el nivel de acceso. Solo hace falta que **Habilitar creación desde web** esté activado.
 

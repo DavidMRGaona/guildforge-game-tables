@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Domain\Enums;
 
+/**
+ * Who may create tables or campaigns from the web. Creating always needs a session, so there is no
+ * level for people without an account: the old "everyone" is read as Registered (fromStored()).
+ */
 enum CreationAccessLevel: string
 {
-    case Everyone = 'everyone';
     case Registered = 'registered';
     case Role = 'role';
     case Permission = 'permission';
@@ -14,19 +17,19 @@ enum CreationAccessLevel: string
     public function label(): string
     {
         return match ($this) {
-            self::Everyone => __('game-tables::messages.enums.creation_access_level.everyone'),
             self::Registered => __('game-tables::messages.enums.creation_access_level.registered'),
             self::Role => __('game-tables::messages.enums.creation_access_level.role'),
             self::Permission => __('game-tables::messages.enums.creation_access_level.permission'),
         };
     }
 
-    public function requiresAuthentication(): bool
+    /**
+     * A level as saved in the settings or an event's configuration. "everyone" was offered until it was
+     * found to work as "registered" (creating always needed a session), so it is read as that.
+     */
+    public static function fromStored(string $value): self
     {
-        return match ($this) {
-            self::Everyone => false,
-            self::Registered, self::Role, self::Permission => true,
-        };
+        return $value === 'everyone' ? self::Registered : self::from($value);
     }
 
     /**

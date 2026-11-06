@@ -234,11 +234,12 @@ return [
         'gm_role' => 'Rol',
         'custom_title' => 'Título personalizado',
         'custom_title_placeholder' => 'Ej: Dungeon Master, Narrador...',
-        'custom_title_help' => 'Deja vacío para usar el título del sistema de juego',
+        'custom_title_help' => 'Si lo dejas vacío, el director principal usa el título del sistema de juego y el co-director, «Co-director»',
         'notify_by_email' => 'Notificar por email',
         'is_name_public' => 'Nombre visible públicamente',
         'game_master_title' => 'Título del director de juego',
-        'game_master_title_help' => 'Ej: Dungeon Master, Keeper, Narrador, Árbitro...',
+        'game_master_title_help' => 'Lo que se muestra del director principal de sus mesas y campañas cuando no tiene un título propio. Ej: Dungeon Master, Keeper, Narrador, Árbitro...',
+        'publisher_is_active_help' => 'Solo las editoriales activas se ofrecen al elegir la editorial de un sistema de juego; los sistemas que ya la tienen la conservan',
 
         // Participant type fields
         'participant_type' => 'Tipo',
@@ -408,7 +409,6 @@ return [
             'severe' => 'Severa',
         ],
         'creation_access_level' => [
-            'everyone' => 'Cualquier persona',
             'registered' => 'Usuarios registrados',
             'role' => 'Usuarios con rol específico',
             'permission' => 'Usuarios con permiso',
@@ -541,9 +541,9 @@ return [
             'access_level' => 'Nivel de acceso',
             'access_level_help' => 'Quién puede crear contenido desde la web',
             'allowed_roles' => 'Roles permitidos',
-            'allowed_roles_help' => 'Lista de roles separados por coma',
+            'allowed_roles_help' => 'Solo quien tenga alguno de estos roles podrá crear desde la web',
             'required_permission' => 'Permiso requerido',
-            'required_permission_help' => 'Nombre del permiso necesario para crear',
+            'required_permission_help' => 'Solo quien tenga este permiso podrá crear desde la web',
             'publication_mode' => 'Modo de publicación',
             'publication_mode_help' => 'Cómo se publican las mesas creadas por usuarios',
             'auto_publish_roles' => 'Roles que publican sin revisión',
@@ -572,7 +572,6 @@ return [
             'both' => 'Mesas y campañas',
         ],
         'access_level' => [
-            'everyone' => 'Cualquier persona',
             'registered' => 'Usuarios registrados',
             'role' => 'Usuarios con rol específico',
             'permission' => 'Usuarios con permiso específico',
@@ -987,7 +986,7 @@ return [
         'eligibility_access_level' => 'Nivel de acceso',
         'eligibility_allowed_roles' => 'Roles permitidos',
         'eligibility_required_permission' => 'Permiso requerido',
-        'eligibility_required_permission_help' => 'Nombre del permiso necesario para crear mesas en este evento',
+        'eligibility_required_permission_help' => 'Solo quien tenga este permiso podrá crear mesas en este evento',
 
         // Table creation
         'table_creation' => 'Creación de partidas',
