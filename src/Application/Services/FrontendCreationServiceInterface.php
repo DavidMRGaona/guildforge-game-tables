@@ -109,6 +109,12 @@ interface FrontendCreationServiceInterface
     public function submitForReview(string $tableId, string $userId): void;
 
     /**
+     * Whether what this user creates or sends from the web is published at once instead of going
+     * to review (publication mode «auto», or «role_based» with one of its roles or permissions).
+     */
+    public function publishesWithoutReview(string $userId): bool;
+
+    /**
      * Update a draft table.
      *
      * @throws GameTableNotFoundException

@@ -141,7 +141,7 @@ final class FrontendGameTableController extends Controller
         ]);
 
         try {
-            $this->creationService->createGameTable($dto);
+            $table = $this->creationService->createGameTable($dto);
         } catch (NotEligibleToCreateException) {
             abort(403);
         } catch (SessionBelowRosterException $e) {
@@ -149,9 +149,12 @@ final class FrontendGameTableController extends Controller
             return back()->withErrors(['max_players' => $e->getMessage()])->withInput();
         }
 
+        // Without review (automatic mode, or an author who may publish directly) it is already visible
         return redirect()
             ->route('gametables.my-tables')
-            ->with('success', __('game-tables::messages.frontend.table_created'));
+            ->with('success', __($table->isPublished
+                ? 'game-tables::messages.frontend.table_created_published'
+                : 'game-tables::messages.frontend.table_created'));
     }
 
     /**
@@ -175,6 +178,8 @@ final class FrontendGameTableController extends Controller
                 $tables['published']
             ),
             'canCreate' => $eligibility->eligible,
+            // Sending a draft publishes it instead of sending it to review: the dialog says which
+            'publishesWithoutReview' => $this->creationService->publishesWithoutReview((string) $user->id),
             'seo' => $this->seo->forPage(new SeoPageDTO(
                 title: (string) __('game-tables::messages.seo.my_tables_title'),
                 noindex: true,

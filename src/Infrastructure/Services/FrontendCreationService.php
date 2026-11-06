@@ -1209,10 +1209,10 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
     }
 
     /**
-     * Whether what this user creates or sends skips review. The roles and permissions chosen for
-     * the 'role_based' mode stay stored when the mode changes, so they count in that mode only.
+     * The roles and permissions chosen for the 'role_based' mode stay stored when the mode
+     * changes, so they count in that mode only.
      */
-    private function publishesWithoutReview(string $userId): bool
+    public function publishesWithoutReview(string $userId): bool
     {
         return match ($this->settingsReader->getPublicationMode()) {
             'auto' => true,

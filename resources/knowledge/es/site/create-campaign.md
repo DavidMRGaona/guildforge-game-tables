@@ -53,7 +53,7 @@ El enlace online solo lo ven en la ficha de la campaña la dirección y los juga
 
 ## Guardar
 
-Pulsa **Crear campaña**. Verás «Campaña creada correctamente» y llegarás a **Mis campañas**.
+Pulsa **Crear campaña** y llegarás a **Mis campañas**. Verás «Campaña creada correctamente» si queda como borrador, o «Campaña creada y publicada: ya es visible.» si se publica en ese momento.
 
 Según la configuración de la web y tu rol, la campaña se publica en ese momento o queda como borrador para que la envíes a revisión. La guía «Revisión y publicación de lo que creas» lo explica. Mientras sea borrador, puedes cambiarla con **Editar** y **Guardar cambios**.
 

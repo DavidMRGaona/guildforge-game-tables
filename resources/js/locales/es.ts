@@ -14,7 +14,7 @@ export default {
         tables: 'mesas',
         // Reason next to an action closed until the account verifies its email (the core has the others)
         verificationGate: {
-            edit: 'Para editar, enviar a revisión o eliminar, verifica tu email.',
+            edit: 'Para editar, enviar o eliminar, verifica tu email.',
         },
         // «Mis mesas» / «Mis campañas» back to their profile tab
         backToProfile: 'Volver a mi perfil',
@@ -307,6 +307,11 @@ export default {
             noTablesDescription: 'Aún no has creado ninguna mesa de juego.',
             submitForReview: 'Enviar a revisión',
             submitForReviewTitle: 'Enviar mesa a revisión',
+            // Sending publishes at once (publication without review for this author)
+            publish: 'Publicar',
+            publishTitle: 'Publicar mesa',
+            confirmPublish:
+                'La mesa se publicará y será visible en la web en cuanto confirmes. ¿Deseas continuar?',
             viewPublic: 'Ver mesa pública',
             drafts: 'Borradores',
             published: 'Publicadas',
@@ -587,6 +592,11 @@ export default {
             noCampaignsDescription: 'Aún no has creado ninguna campaña.',
             submitForReview: 'Enviar a revisión',
             submitForReviewTitle: 'Enviar campaña a revisión',
+            // Sending publishes at once (publication without review for this author)
+            publish: 'Publicar',
+            publishTitle: 'Publicar campaña',
+            confirmPublish:
+                'La campaña se publicará y será visible en la web en cuanto confirmes. ¿Deseas continuar?',
             viewPublic: 'Ver campaña pública',
             pendingReviewMessage: 'En revisión',
             confirmSubmit:

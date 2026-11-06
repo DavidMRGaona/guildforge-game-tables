@@ -82,11 +82,14 @@ final class FrontendCampaignController extends Controller
             'created_by' => (string) $user->id,
         ]);
 
-        $this->creationService->createCampaign($dto);
+        $campaign = $this->creationService->createCampaign($dto);
 
+        // Without review (automatic mode, or an author who may publish directly) it is already visible
         return redirect()
             ->route('campaigns.my-campaigns')
-            ->with('success', __('game-tables::messages.frontend.campaign_created'));
+            ->with('success', __($campaign->isPublished
+                ? 'game-tables::messages.frontend.campaign_created_published'
+                : 'game-tables::messages.frontend.campaign_created'));
     }
 
     /**
@@ -107,6 +110,8 @@ final class FrontendCampaignController extends Controller
                 $campaigns,
             ),
             'canCreate' => $eligibility->eligible,
+            // Sending a draft publishes it instead of sending it to review: the dialog says which
+            'publishesWithoutReview' => $this->creationService->publishesWithoutReview((string) $user->id),
             'seo' => $this->seo->forPage(new SeoPageDTO(
                 title: (string) __('game-tables::messages.seo.my_campaigns_title'),
                 noindex: true,

@@ -20,11 +20,14 @@ interface Props {
     returnTo?: 'profile' | null;
     /** Id of the line saying why the actions are closed (an email to verify) */
     disabledReasonId?: string | null;
+    /** Sending publishes at once instead of going to review (the server's publication rule) */
+    publishesWithoutReview?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
     returnTo: null,
     disabledReasonId: null,
+    publishesWithoutReview: false,
 });
 
 const { t } = useI18n();
@@ -36,6 +39,13 @@ const showDeleteDialog = ref(false);
 
 const keys = computed(() =>
     props.kind === 'table' ? 'gameTables.myTables' : 'campaigns.myCampaigns'
+);
+
+// What sending does for this author: published at once, or reviewed by a moderator first
+const sendTexts = computed(() =>
+    props.publishesWithoutReview
+        ? { action: 'publish', title: 'publishTitle', message: 'confirmPublish' }
+        : { action: 'submitForReview', title: 'submitForReviewTitle', message: 'confirmSubmit' }
 );
 
 const baseUrl = computed(() =>
@@ -97,7 +107,7 @@ function confirmDelete(): void {
             :aria-describedby="gate.blocked.value ? (disabledReasonId ?? undefined) : undefined"
             @click="showSubmitDialog = true"
         >
-            {{ t(`${keys}.submitForReview`) }}
+            {{ t(`${keys}.${sendTexts.action}`) }}
         </BaseButton>
 
         <BaseButton
@@ -113,9 +123,9 @@ function confirmDelete(): void {
 
         <ConfirmDialog
             v-model="showSubmitDialog"
-            :title="t(`${keys}.submitForReviewTitle`)"
-            :message="t(`${keys}.confirmSubmit`)"
-            :confirm-label="t(`${keys}.submitForReview`)"
+            :title="t(`${keys}.${sendTexts.title}`)"
+            :message="t(`${keys}.${sendTexts.message}`)"
+            :confirm-label="t(`${keys}.${sendTexts.action}`)"
             :cancel-label="t('common.cancel')"
             confirm-variant="primary"
             @confirm="confirmSubmitForReview"

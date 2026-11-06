@@ -57,12 +57,15 @@ interface Props {
     drafts?: GameTableResponseDTO[];
     published?: PublishedTable[];
     canCreate?: boolean;
+    /** Sending a draft publishes it at once instead of sending it to review */
+    publishesWithoutReview?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
     drafts: () => [],
     published: () => [],
     canCreate: false,
+    publishesWithoutReview: false,
 });
 
 // What the last action did (created, saved, sent, deleted) or why it was refused (e.g. a table
@@ -280,6 +283,7 @@ function getTableLink(table: GameTableResponseDTO): string {
                                     kind="table"
                                     :route-key="table.slug!"
                                     :title="table.title"
+                                    :publishes-without-review="props.publishesWithoutReview"
                                 />
                             </div>
                         </div>

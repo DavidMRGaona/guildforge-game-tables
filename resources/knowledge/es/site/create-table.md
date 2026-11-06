@@ -83,7 +83,7 @@ Para añadir a alguien que dirige contigo, pulsa **Añadir co-director de juego*
 
 ## Guardar
 
-Pulsa **Crear mesa**. Verás «Mesa creada correctamente» y llegarás a **Mis mesas**.
+Pulsa **Crear mesa** y llegarás a **Mis mesas**. Verás «Mesa creada correctamente» si queda en **Borradores**, o «Mesa creada y publicada: ya es visible.» si se publica en ese momento.
 
 Según la configuración de la web y tu rol, la mesa se publica en ese momento o queda en **Borradores** para que la envíes a revisión. La guía «Revisión y publicación de lo que creas» explica los dos casos y qué puedes cambiar después.
 

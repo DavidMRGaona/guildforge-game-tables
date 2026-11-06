@@ -15,11 +15,14 @@ interface Props {
     showActions?: boolean;
     /** Id of the section's line saying why the actions are disabled (shown once per drafts list) */
     actionsReasonId?: string | null;
+    /** Sending a draft publishes it at once instead of sending it to review */
+    publishesWithoutReview?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
     showActions: false,
     actionsReasonId: null,
+    publishesWithoutReview: false,
 });
 
 const { t } = useI18n();
@@ -158,6 +161,7 @@ const playersText = computed(() => {
             :title="campaign.title"
             return-to="profile"
             :disabled-reason-id="actionsReasonId"
+            :publishes-without-review="publishesWithoutReview"
             class="mt-3"
         />
     </div>
