@@ -42,6 +42,15 @@ describe('EventCreateTableButton', () => {
         expect(text).toContain('20');
     });
 
+    it('tells a guest there is early access without saying who has it', () => {
+        page.props.eventCreationEligibility = waitingEligibility(false);
+
+        const text = mount(EventCreateTableButton, { props: { event } }).text();
+
+        expect(text).toContain('Acceso anticipado: inicia sesión para ver tu fecha');
+        expect(text).not.toContain('socios');
+    });
+
     it('tells a guest when table creation opens, not registration', () => {
         page.props.eventCreationEligibility = {
             ...waitingEligibility(false),

@@ -10,6 +10,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\GameTables\Application\DTOs\GameMasterResponseDTO;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
 use Modules\GameTables\Application\DTOs\TableSeatsDTO;
+use Modules\GameTables\Application\Services\AssociationRoleNameInterface;
 use Modules\GameTables\Domain\Enums\Language;
 
 /**
@@ -77,7 +78,7 @@ final class GameTableResource extends JsonResource
             'contentWarnings' => $this->contentWarnings,
             'customWarnings' => $this->customWarnings,
             'registrationType' => $this->registrationType->value,
-            'registrationTypeLabel' => $this->registrationType->label(),
+            'registrationTypeLabel' => $this->registrationType->label(app(AssociationRoleNameInterface::class)->displayName()),
             'membersEarlyAccessDays' => $this->membersEarlyAccessDays,
             'registrationOpensAt' => $timezone->iso($this->registrationOpensAt),
             'registrationClosesAt' => $timezone->iso($this->registrationClosesAt),

@@ -37,7 +37,7 @@ Según la configuración de la web, algunos de estos correos pueden no enviarse:
 | **Plantilla completa** | No quedan plazas en la plantilla. |
 | **No acepta jugadores nuevos** | La campaña no admite solicitudes ahora. |
 | **Campaña finalizada** | La campaña ha terminado o se ha cancelado. |
-| **Solo para socios** | Solo pueden solicitar quienes tienen el rol de {{association_role}}. |
+| **Solo para el rol {{association_role}}** | Solo pueden solicitar quienes tienen el rol de {{association_role}}. |
 
 Aunque no puedas entrar en la plantilla, si la campaña acepta jugadores nuevos y está **Reclutando** o **Activa** puedes apuntarte a una sesión suelta desde su ficha, como a cualquier mesa.
 
@@ -75,7 +75,7 @@ Verás «Has salido de la campaña.». Pierdes tus plazas en las sesiones que a�
 - **«Esta campaña no acepta jugadores nuevos.»** o **«La plantilla está completa.»**: no se admiten solicitudes ahora.
 - **«La campaña ha terminado: su plantilla ya no cambia.»**: ya no se puede entrar.
 - **«Esta campaña no está publicada.»**: aún no se puede solicitar.
-- **«Esta campaña solo admite solicitudes de socios.»**: solo pueden solicitar quienes tienen el rol de {{association_role}}.
+- **«Esta campaña solo admite solicitudes del rol {{association_role}}.»**: solo pueden solicitar quienes tienen el rol de {{association_role}}.
 - **«Ya formas parte de la plantilla.»** o **«Ya tienes una solicitud pendiente.»**: no hace falta repetirla.
 - **«Quien dirige la campaña no puede entrar en la plantilla como jugador.»**: diriges esta campaña.
 - **«Esta solicitud ya no está pendiente.»**: la dirección la ha respondido antes.

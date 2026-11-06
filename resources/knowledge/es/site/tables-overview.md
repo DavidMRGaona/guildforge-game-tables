@@ -47,7 +47,7 @@ Si la web lo tiene activado, el paso a **En progreso** a la hora de inicio y a *
 En la ficha, la sección **Inscripción** muestra el **Tipo**:
 
 - **Abierto a todos**: cualquier persona con cuenta y también sin cuenta, como invitada.
-- **Solo socios**: solo para quien tiene el rol de {{association_role}}. Al resto, el botón le dice «Esta mesa es solo para socios». Sin cuenta no se puede.
+- **Solo el rol {{association_role}}**: solo para quien tiene el rol de {{association_role}}. Al resto, el botón le dice «Esta mesa es solo para el rol {{association_role}}». Sin cuenta no se puede.
 - **Solo por invitación**: nadie se apunta desde la web; la organización inscribe a los jugadores.
 - **Solo para la plantilla de la campaña**: una sesión de una campaña que no acepta jugadores nuevos, está en pausa o ha terminado. Solo pueden ir los jugadores de su plantilla.
 

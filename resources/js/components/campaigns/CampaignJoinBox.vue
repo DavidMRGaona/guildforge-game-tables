@@ -17,6 +17,8 @@ interface Props {
     joinBox: JoinBox;
     campaignTitle: string;
     campaignSlug: string;
+    /** Visible name of the site's association member role, for a members-only roster */
+    associationRole?: string;
 }
 
 const props = defineProps<Props>();
@@ -290,8 +292,12 @@ const closedMessage = computed<string | null>(() => {
 
         <!-- Members only, and the viewer is not one -->
         <template v-else-if="joinBox.state === 'members_only'">
-            <p class="font-semibold text-base-primary">{{ t('campaigns.join.membersOnly') }}</p>
-            <p class="mt-1 text-base-secondary">{{ t('campaigns.join.membersOnlyHint') }}</p>
+            <p class="font-semibold text-base-primary">
+                {{ t('campaigns.join.membersOnly', { role: associationRole ?? '' }) }}
+            </p>
+            <p class="mt-1 text-base-secondary">
+                {{ t('campaigns.join.membersOnlyHint', { role: associationRole ?? '' }) }}
+            </p>
         </template>
 
         <!-- Full, closed or finished -->

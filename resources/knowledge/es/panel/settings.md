@@ -17,9 +17,9 @@ La configuración del módulo decide cómo se comportan todas las mesas y campa�
 
 En el menú lateral, abre **Mesas de rol** y elige **Configuración**. La página se llama **Configuración del módulo**. Al terminar, pulsa **Guardar**.
 
-## Acceso anticipado para socios
+## Acceso anticipado para el rol {{association_role}}
 
-- **Acceso anticipado para socios**: activado, quienes tienen el rol {{association_role}} pueden apuntarse antes de la apertura de cada mesa, tantos días como diga su campo **Días de acceso anticipado para socios**. Desactivado, nadie se adelanta.
+- **Acceso anticipado para el rol {{association_role}}**: activado, quienes tienen el rol {{association_role}} pueden apuntarse antes de la apertura de cada mesa, tantos días como diga su campo **Días de acceso anticipado para el rol {{association_role}}**. Desactivado, nadie se adelanta.
 - **Días de acceso anticipado**: el valor con que empieza ese campo en cada mesa nueva (de 0 a 30). Las mesas creadas desde la web usan este valor.
 
 El acceso anticipado solo cuenta en las mesas que tienen **Apertura de inscripciones**. El rol se elige en la configuración del sitio.
@@ -58,7 +58,7 @@ Son los valores con que empieza cada mesa nueva. Cambiarlos no toca las mesas qu
 
 - **Duración por defecto (minutos)**, **Mínimo de jugadores por defecto**, **Máximo de jugadores por defecto** y **Máximo de espectadores por defecto**.
 - **Confirmar inscripciones automáticamente**: si las mesas nuevas confirman solas.
-- **Tipo de inscripción por defecto**: **Abierto a todos** o **Solo socios**.
+- **Tipo de inscripción por defecto**: **Abierto a todos** o **Solo el rol {{association_role}}**.
 
 Las mesas creadas desde la web no eligen su confirmación ni su tipo de inscripción: toman estos dos valores. Desde el panel se pueden cambiar después en cada mesa.
 

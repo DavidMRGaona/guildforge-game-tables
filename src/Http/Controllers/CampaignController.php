@@ -15,6 +15,7 @@ use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\GameTables\Application\DTOs\CampaignResponseDTO;
+use Modules\GameTables\Application\Services\AssociationRoleNameInterface;
 use Modules\GameTables\Application\Services\CampaignQueryServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterQueryInterface;
 use Modules\GameTables\Http\Concerns\ReadsListFilters;
@@ -100,6 +101,8 @@ final class CampaignController extends Controller
                 // The link of the online session only reaches the directors and the roster
                 'campaign' => new CampaignResource($campaign, revealsOnlineUrl: in_array($joinBox->state, self::ONLINE_URL_STATES, true))->resolve(),
                 'joinBox' => $joinBox->toArray(),
+                // The site's association member role, named by a members-only join box
+                'associationRole' => app(AssociationRoleNameInterface::class)->displayName(),
                 // Its surveys, through the core: a surveys module answers, and without one nothing shows
                 'surveyLinks' => auth()->id() !== null
                     ? $this->surveyLinks->for(CampaignSurveySubjectSource::TYPE, $campaign->id, (string) auth()->id())

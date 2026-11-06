@@ -27,6 +27,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
 use Modules\GameTables\Application\DTOs\ParticipantResponseDTO;
+use Modules\GameTables\Application\Services\AssociationRoleNameInterface;
 use Modules\GameTables\Application\Services\CampaignRosterQueryInterface;
 use Modules\GameTables\Application\Services\EligibilityServiceInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
@@ -251,6 +252,8 @@ final class GameTableController extends Controller
         return Inertia::render('GameTables/Show', [
             // Seats counted by the server with the rule it applies on registration
             'table' => GameTableResource::make($table, $this->seatCounter->forTable($table))->resolve(),
+            // The site's association member role, named by the early access line
+            'associationRole' => app(AssociationRoleNameInterface::class)->displayName(),
             'eligibility' => $eligibility,
             'guestEligibility' => $guestEligibility,
             'userRegistration' => $userRegistration,

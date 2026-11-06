@@ -272,7 +272,7 @@ final class CampaignRosterServiceTest extends ModuleTestCase
     {
         $this->campaign->update(['roster_access' => 'members_only']);
 
-        $this->assertRequestRefused('members_only', 'Esta campaña solo admite solicitudes de socios.', $this->john);
+        $this->assertRequestRefused('members_only', 'Esta campaña solo admite solicitudes del rol Socio.', $this->john);
     }
 
     public function test_a_members_only_campaign_takes_requests_from_socios(): void
@@ -404,7 +404,7 @@ final class CampaignRosterServiceTest extends ModuleTestCase
 
         $this->assertRefused(
             'members_only',
-            'Esta campaña solo admite socios y esa cuenta no es de un socio, así que no se puede aceptar la solicitud. Seguirá pendiente.',
+            'Esta campaña solo admite el rol Socio y esa cuenta no lo tiene, así que no se puede aceptar la solicitud. Seguirá pendiente.',
             fn () => $this->service()->acceptRequest($request->id->value, $this->mary->id),
         );
 

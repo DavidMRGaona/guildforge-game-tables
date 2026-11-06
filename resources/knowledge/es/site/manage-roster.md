@@ -92,14 +92,14 @@ Según la configuración de la web, te llega un correo cuando alguien solicita u
 
 - **«La plantilla está completa.»**: sube el **Máximo de jugadores** o quita a alguien.
 - **«Esta campaña no acepta jugadores nuevos ahora mismo, así que no se puede aceptar la solicitud. Seguirá pendiente hasta que vuelva a aceptarlos.»**: activa **Acepta jugadores nuevos** en los ajustes de la campaña y vuelve a aceptarla.
-- **«Esta campaña solo admite socios y esa cuenta no es de un socio, así que no se puede aceptar la solicitud. Seguirá pendiente.»**: la persona ha dejado de tener el rol {{association_role}} desde que lo pidió.
+- **«Esta campaña solo admite el rol {{association_role}} y esa cuenta no lo tiene, así que no se puede aceptar la solicitud. Seguirá pendiente.»**: la persona ha dejado de tener el rol {{association_role}} desde que lo pidió.
 - **«El máximo de jugadores no puede ser menor que la plantilla actual (N).»**: pon un máximo mayor.
 - **«Confirma que esta persona te ha dado permiso para invitarla.»**: marca la casilla del permiso.
 - **«Han de pasar 24 horas desde el último envío para volver a enviarla.»**: espera para reenviar.
 - **«Ya no se pueden enviar más invitaciones a este email en esta campaña por ahora.»**: has llegado al máximo de envíos, o esa persona rechazó la invitación hace poco.
 - **«Esa cuenta ya forma parte de la plantilla.»**: ya está dentro.
 - **«La campaña no acepta jugadores nuevos: no se pueden enviar invitaciones mientras siga así.»**: activa **Acepta jugadores nuevos** para invitar.
-- **«Esta campaña solo admite socios y esa cuenta no es de un socio.»**: la campaña es solo para quien tiene el rol de {{association_role}} y esa cuenta no lo tiene.
+- **«Esta campaña solo admite el rol {{association_role}} y esa cuenta no lo tiene.»**: la campaña es solo para quien tiene el rol de {{association_role}} y esa cuenta no lo tiene.
 - **«Quien dirige la campaña no puede entrar en la plantilla como jugador.»**: esa persona dirige la campaña.
 - **«Has enviado demasiadas invitaciones seguidas. Espera un minuto y vuelve a intentarlo.»**: espera un momento.
 - **«Esta solicitud ya no está pendiente.»**: la persona la ha retirado o ya se ha respondido.

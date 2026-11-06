@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Services;
 
+use Modules\GameTables\Application\Services\AssociationRoleNameInterface;
 use Modules\GameTables\Application\Services\MembershipCheckerInterface;
 use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Enums\RosterAccess;
@@ -24,6 +25,7 @@ final readonly class CampaignRosterGuard
     public function __construct(
         private CampaignRosterRepositoryInterface $roster,
         private MembershipCheckerInterface $membership,
+        private AssociationRoleNameInterface $associationRole,
     ) {}
 
     public function ensureCanChange(Campaign $campaign): void
@@ -77,7 +79,7 @@ final readonly class CampaignRosterGuard
         $reason = $this->newcomerRefusal($campaign, $userId);
 
         if ($reason !== null) {
-            throw RosterActionRefusedException::because($reason, copy: $copy);
+            throw $this->refusal($reason, $copy);
         }
     }
 
@@ -89,6 +91,12 @@ final readonly class CampaignRosterGuard
     {
         $reason = $this->newcomerRefusal($campaign, $userId);
 
-        return $reason === null ? null : RosterActionRefusedException::because($reason, copy: $copy)->getMessage();
+        return $reason === null ? null : $this->refusal($reason, $copy)->getMessage();
+    }
+
+    /** The members-only messages name the site's association member role */
+    private function refusal(string $reason, string $copy): RosterActionRefusedException
+    {
+        return RosterActionRefusedException::because($reason, ['role' => $this->associationRole->displayName()], $copy);
     }
 }

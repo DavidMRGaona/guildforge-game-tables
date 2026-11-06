@@ -202,7 +202,7 @@ final class CampaignInvitationControllerTest extends ModuleTestCase
             ->get('/campanas/invitaciones/'.$token)
             ->assertInertia(fn (Assert $page) => $page
                 ->where('invitation.can_accept', false)
-                ->where('invitation.accept_refusal', 'Esta campaña solo admite socios, así que no puedes aceptar la invitación mientras no lo seas. Seguirá disponible hasta que caduque.'));
+                ->where('invitation.accept_refusal', 'Esta campaña solo admite el rol Socio, así que no puedes aceptar la invitación mientras no lo tengas. Seguirá disponible hasta que caduque.'));
     }
 
     public function test_other_states_do_not_get_the_acceptance_check(): void

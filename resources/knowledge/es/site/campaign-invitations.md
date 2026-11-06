@@ -57,7 +57,7 @@ Si no la ves, la dirección puede reenviártela, con un día de espera entre env
 - **«Verifica tu email para ver y aceptar tus invitaciones.»**: verifica el email de tu cuenta.
 - **«La plantilla está completa.»**: no queda sitio ahora. La invitación sigue valiendo mientras no caduque, por si se libera una plaza.
 - **«Esta campaña no acepta jugadores nuevos ahora mismo, así que no puedes aceptar la invitación. Seguirá disponible hasta que caduque.»**: la campaña ha dejado de buscar jugadores. El botón **Aceptar** aparece desactivado con este motivo; podrás aceptar si la dirección vuelve a abrirla antes de que caduque.
-- **«Esta campaña solo admite socios, así que no puedes aceptar la invitación mientras no lo seas. Seguirá disponible hasta que caduque.»**: la campaña es solo para quien tiene el rol {{association_role}}. Podrás aceptar cuando lo tengas, si la invitación no ha caducado.
+- **«Esta campaña solo admite el rol {{association_role}}, así que no puedes aceptar la invitación mientras no lo tengas. Seguirá disponible hasta que caduque.»**: la campaña es solo para quien tiene el rol {{association_role}}. Podrás aceptar cuando lo tengas, si la invitación no ha caducado.
 - **«La campaña ha terminado: su plantilla ya no cambia.»**: la campaña ya no admite jugadores.
 - **«Esa cuenta ya forma parte de la plantilla.»**: ya estás dentro.
 - **No te llega el correo**: mira en la carpeta de correo no deseado y pide a la dirección que compruebe tu email.
