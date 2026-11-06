@@ -37,7 +37,7 @@ En el panel no hay un botón para añadir directamente: la gente entra aceptando
 
 Aquí llegan las peticiones de quienes pulsan **Solicitar unirse** en la web. La lista enseña al principio las pendientes; cambia el filtro **Estado** para ver las **Aceptada**, **Rechazada** o **Retirada**.
 
-- **Aceptar**: confirma y la persona entra en la plantilla, si queda sitio.
+- **Aceptar**: confirma y la persona entra en la plantilla, si queda sitio y la campaña sigue aceptando jugadores nuevos. En una campaña solo para el rol {{association_role}}, la persona tiene que seguir teniéndolo. Si no se cumple, la solicitud sigue pendiente.
 - **Rechazar**: puedes escribir un **Motivo (opcional)**, que se le envía por correo.
 
 Solo pueden pedir entrar quienes cumplen **Quién puede solicitar**, y solo mientras la campaña acepta jugadores nuevos y le quedan plazas. Las invitaciones siguen las mismas reglas.
@@ -95,5 +95,7 @@ Cada correo se puede apagar en **Configuración** → **Notificaciones de campa�
 - **«Han de pasar 24 horas desde el último envío para volver a enviarla.»**: espera y reenvíala después.
 - **«Ya no se pueden enviar más invitaciones a este email en esta campaña por ahora.»**: se alcanzó el límite de envíos o la persona la rechazó hace poco.
 - **«Esta solicitud ya no está pendiente.»**: alguien la ha resuelto o la persona la retiró.
+- **«Esta campaña no acepta jugadores nuevos ahora mismo, así que no se puede aceptar la solicitud. Seguirá pendiente hasta que vuelva a aceptarlos.»**: activa **Acepta nuevos jugadores** en la campaña (o sácala de **En pausa**) y vuelve a aceptarla.
+- **«Esta campaña solo admite socios y esa cuenta no es de un socio, así que no se puede aceptar la solicitud. Seguirá pendiente.»**: la persona ha dejado de tener el rol {{association_role}} desde que lo pidió.
 
 [[action:filament.admin.resources.campaigns.index|Ver las campañas|if=gametables:campaigns.view_any]]

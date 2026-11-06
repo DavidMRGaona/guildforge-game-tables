@@ -954,6 +954,8 @@ return [
             'invite_members_only' => 'This campaign only admits members, and that account is not a member.',
             'invitee_not_accepting' => 'This campaign is not accepting new players right now, so you cannot accept the invitation. It stays available until it expires.',
             'invitee_members_only' => 'This campaign only admits members, so you cannot accept the invitation until you are one. It stays available until it expires.',
+            'accept_not_accepting' => 'This campaign is not accepting new players right now, so the request cannot be accepted. It stays pending until the campaign accepts them again.',
+            'accept_members_only' => 'This campaign only admits members, and that account is not a member, so the request cannot be accepted. It stays pending.',
             'already_member' => 'You are already part of the roster.',
             'account_already_member' => 'That account is already part of the roster.',
             'request_pending' => 'You already have a pending request.',

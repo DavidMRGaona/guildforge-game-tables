@@ -312,6 +312,23 @@ final class CampaignRosterPanelTest extends ModuleTestCase
         Event::assertDispatched(CampaignJoinRequestAccepted::class);
     }
 
+    public function test_a_request_is_not_accepted_while_the_campaign_takes_no_new_players(): void
+    {
+        Event::fake([CampaignJoinRequestAccepted::class]);
+        $campaign = $this->campaign();
+        $user = $this->user('John Doe');
+        $request = $this->request($campaign, $user);
+        $campaign->update(['accepts_new_players' => false]);
+
+        $this->requests($campaign)
+            ->callTableAction('accept', $request)
+            ->assertNotified('Esta campaña no acepta jugadores nuevos ahora mismo, así que no se puede aceptar la solicitud. Seguirá pendiente hasta que vuelva a aceptarlos.');
+
+        $this->assertSame(JoinRequestStatus::Pending, $request->refresh()->status);
+        $this->assertFalse(app(CampaignRosterRepositoryInterface::class)->contains(new CampaignId($campaign->id), $user->id));
+        Event::assertNotDispatched(CampaignJoinRequestAccepted::class);
+    }
+
     public function test_rejecting_a_request_keeps_the_reason(): void
     {
         Event::fake([CampaignJoinRequestRejected::class]);
