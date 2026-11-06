@@ -99,6 +99,7 @@ final class EventCreationEligibilityServiceTest extends TestCase
         $this->assertNull($result->reason);
         $this->assertNotNull($result->canCreateAt);
         $this->assertEquals($openDate->format('Y-m-d'), $result->canCreateAt->format('Y-m-d'));
+        $this->assertFalse($result->userHasEarlyAccess);
     }
 
     public function test_returns_eligible_at_for_user_without_early_access_role(): void
@@ -138,6 +139,49 @@ final class EventCreationEligibilityServiceTest extends TestCase
         $this->assertNotNull($result->canCreateAt);
         // User without early access gets the general open date
         $this->assertEquals($generalOpenDate->format('Y-m-d'), $result->canCreateAt->format('Y-m-d'));
+        // The event has early access, but not for this user
+        $this->assertTrue($result->hasEarlyAccess);
+        $this->assertFalse($result->userHasEarlyAccess);
+        $this->assertFalse($result->toArray()['user_has_early_access']);
+    }
+
+    public function test_tells_a_user_with_early_access_before_it_opens(): void
+    {
+        $eventId = 'event-123';
+        $user = UserModel::factory()->create();
+        $generalOpenDate = CarbonImmutable::now()->toDateTimeImmutable()->modify('+7 days');
+        $earlyAccessTier = EarlyAccessTier::create(
+            accessType: CreationAccessLevel::Role,
+            allowedRoles: ['vip'],
+            daysBeforeOpening: 3,
+        );
+
+        $config = $this->createConfig(
+            tablesEnabled: true,
+            earlyAccessEnabled: true,
+            creationOpensAt: $generalOpenDate,
+            earlyAccessTier: $earlyAccessTier,
+        );
+
+        $this->configRepository
+            ->shouldReceive('findByEvent')
+            ->with($eventId)
+            ->once()
+            ->andReturn($config);
+
+        $this->authorizationService
+            ->shouldReceive('hasAnyRole')
+            ->with(Mockery::type(UserModel::class), ['vip'])
+            ->once()
+            ->andReturn(true);
+
+        $result = $this->service->canCreateTableForEvent($eventId, $user->id);
+
+        $this->assertFalse($result->eligible);
+        $this->assertNotNull($result->canCreateAt);
+        $this->assertLessThan($generalOpenDate, $result->canCreateAt);
+        $this->assertTrue($result->userHasEarlyAccess);
+        $this->assertTrue($result->toArray()['user_has_early_access']);
     }
 
     public function test_allows_early_access_for_user_with_matching_role(): void

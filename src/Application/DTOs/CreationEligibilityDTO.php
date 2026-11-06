@@ -15,9 +15,12 @@ final readonly class CreationEligibilityDTO
         public ?DateTimeImmutable $canCreateAt,
         public bool $canCreateTables,
         public bool $canCreateCampaigns,
+        // The event has an early access tier, whoever reads it
         public bool $hasEarlyAccess = false,
         public ?DateTimeImmutable $publicOpenDate = null,
         public bool $requiresAuthentication = false,
+        // The reader is in that tier: they may create before the general opening
+        public bool $userHasEarlyAccess = false,
     ) {}
 
     public static function eligible(
@@ -55,6 +58,7 @@ final readonly class CreationEligibilityDTO
         DateTimeImmutable $canCreateAt,
         bool $hasEarlyAccess = false,
         ?DateTimeImmutable $publicOpenDate = null,
+        bool $userHasEarlyAccess = false,
     ): self {
         return new self(
             eligible: false,
@@ -65,6 +69,7 @@ final readonly class CreationEligibilityDTO
             hasEarlyAccess: $hasEarlyAccess,
             publicOpenDate: $publicOpenDate,
             requiresAuthentication: false,
+            userHasEarlyAccess: $userHasEarlyAccess,
         );
     }
 
@@ -84,6 +89,7 @@ final readonly class CreationEligibilityDTO
             'has_early_access' => $this->hasEarlyAccess,
             'public_open_date' => $timezone->iso($this->publicOpenDate),
             'requires_authentication' => $this->requiresAuthentication,
+            'user_has_early_access' => $this->userHasEarlyAccess,
         ];
     }
 }

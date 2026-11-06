@@ -30,7 +30,7 @@ export default {
             loginToCreate: 'Log in to create tables',
             earlyAccessForMembers: 'Early access for members',
             generalOpeningAt: 'General opening: {date}',
-            publicOpeningAt: 'Registration opens: {date}',
+            publicOpeningAt: 'Game creation opens: {date}',
             earlyAccessActiveFrom: 'Early access active from {date}',
         },
         // Flat keys used by components

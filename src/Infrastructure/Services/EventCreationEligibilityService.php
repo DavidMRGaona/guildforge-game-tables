@@ -90,6 +90,8 @@ final readonly class EventCreationEligibilityService implements EventCreationEli
                 canCreateAt: $effectiveOpenDate,
                 hasEarlyAccess: $hasEarlyAccessTier,
                 publicOpenDate: $generalOpenDate,
+                // Only someone in the tier opens before everyone else
+                userHasEarlyAccess: $effectiveOpenDate < $generalOpenDate,
             );
         }
 
