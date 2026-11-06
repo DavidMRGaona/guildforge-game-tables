@@ -680,11 +680,7 @@ function cancelRoleSelect(): void {
                                                 {{ waitingListHelp }}
                                                 <template v-if="waitingListCount > 0">
                                                     ({{ waitingListCount }}
-                                                    {{
-                                                        t(
-                                                            'gameTables.participants.waitingList'
-                                                        ).toLowerCase()
-                                                    }})
+                                                    {{ t('gameTables.waitingList').toLowerCase() }})
                                                 </template>
                                             </template>
                                             <template v-else-if="playerEligible">
@@ -901,7 +897,7 @@ function cancelRoleSelect(): void {
                 </template>
                 <template v-if="waitingListCount > 0">
                     · {{ waitingListCount }}
-                    {{ t('gameTables.participants.waitingList').toLowerCase() }}
+                    {{ t('gameTables.waitingList').toLowerCase() }}
                 </template>
             </div>
 

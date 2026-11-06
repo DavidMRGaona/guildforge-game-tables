@@ -94,7 +94,7 @@ const showPosition = computed(() => {
             <!-- Position in waiting list -->
             <div v-if="showPosition" class="text-right">
                 <p class="text-sm text-base-secondary">
-                    {{ t('gameTables.participants.waitingList') }}
+                    {{ t('gameTables.waitingList') }}
                 </p>
                 <p class="text-2xl font-bold text-base-primary">
                     #{{ registration.waitingListPosition }}
