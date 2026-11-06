@@ -18,6 +18,9 @@ final readonly class CampaignRosterGuard
     /** Message prefix of the newcomer refusals for the invitee accepting it */
     public const string INVITEE = 'invitee_';
 
+    /** Message prefix of the newcomer refusals for the direction accepting a request */
+    public const string ACCEPTER = 'accept_';
+
     public function __construct(
         private CampaignRosterRepositoryInterface $roster,
         private MembershipCheckerInterface $membership,

@@ -1028,6 +1028,8 @@ return [
             'invite_members_only' => 'Esta campaña solo admite socios y esa cuenta no es de un socio.',
             'invitee_not_accepting' => 'Esta campaña no acepta jugadores nuevos ahora mismo, así que no puedes aceptar la invitación. Seguirá disponible hasta que caduque.',
             'invitee_members_only' => 'Esta campaña solo admite socios, así que no puedes aceptar la invitación mientras no lo seas. Seguirá disponible hasta que caduque.',
+            'accept_not_accepting' => 'Esta campaña no acepta jugadores nuevos ahora mismo, así que no se puede aceptar la solicitud. Seguirá pendiente hasta que vuelva a aceptarlos.',
+            'accept_members_only' => 'Esta campaña solo admite socios y esa cuenta no es de un socio, así que no se puede aceptar la solicitud. Seguirá pendiente.',
             'already_member' => 'Ya formas parte de la plantilla.',
             'account_already_member' => 'Esa cuenta ya forma parte de la plantilla.',
             'request_pending' => 'Ya tienes una solicitud pendiente.',

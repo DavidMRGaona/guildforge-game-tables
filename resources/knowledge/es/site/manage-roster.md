@@ -24,7 +24,7 @@ Arriba de la página ves «N de M plazas» y quién puede solicitar.
 
 | Ajuste | Qué hace |
 |---|---|
-| **Acepta jugadores nuevos** | Si lo desactivas, nadie puede solicitar unirse ni aceptar una invitación, no puedes enviar ni reenviar invitaciones y las sesiones quedan **Solo para la plantilla de la campaña** para quien no es de ella. |
+| **Acepta jugadores nuevos** | Si lo desactivas, nadie puede solicitar unirse ni aceptar una invitación, no puedes aceptar las solicitudes pendientes, no puedes enviar ni reenviar invitaciones y las sesiones quedan **Solo para la plantilla de la campaña** para quien no es de ella. |
 | **Quién puede solicitar** | **Cualquier cuenta**, o solo quien tiene el rol de {{association_role}}. Vale también para las invitaciones. |
 | **Máximo de jugadores** | Las plazas de la plantilla. Déjalo vacío para no poner límite. No puede ser menor que la plantilla actual ni pasar del límite de la web. |
 
@@ -37,7 +37,7 @@ En **Solicitudes pendientes** ves quién quiere entrar, cuándo lo pidió y su m
 - **Aceptar**: entra en la plantilla («Solicitud aceptada.»). Queda inscrito en las sesiones publicadas que aún admiten inscripciones y recibe un correo con ellas.
 - **Rechazar**: escribe si quieres un **Motivo (opcional)** y pulsa **Rechazar** («Solicitud rechazada.»). Le llega un correo con el motivo.
 
-Para aceptar hace falta sitio en la plantilla.
+Para aceptar hace falta sitio en la plantilla y que la campaña siga aceptando jugadores nuevos. Si la campaña es solo para el rol {{association_role}}, la persona tiene que seguir teniéndolo. Si no se cumple, la solicitud sigue pendiente.
 
 ## Invitar a alguien
 
@@ -91,6 +91,8 @@ Según la configuración de la web, te llega un correo cuando alguien solicita u
 ## Si algo no sale bien
 
 - **«La plantilla está completa.»**: sube el **Máximo de jugadores** o quita a alguien.
+- **«Esta campaña no acepta jugadores nuevos ahora mismo, así que no se puede aceptar la solicitud. Seguirá pendiente hasta que vuelva a aceptarlos.»**: activa **Acepta jugadores nuevos** en los ajustes de la campaña y vuelve a aceptarla.
+- **«Esta campaña solo admite socios y esa cuenta no es de un socio, así que no se puede aceptar la solicitud. Seguirá pendiente.»**: la persona ha dejado de tener el rol {{association_role}} desde que lo pidió.
 - **«El máximo de jugadores no puede ser menor que la plantilla actual (N).»**: pon un máximo mayor.
 - **«Confirma que esta persona te ha dado permiso para invitarla.»**: marca la casilla del permiso.
 - **«Han de pasar 24 horas desde el último envío para volver a enviarla.»**: espera para reenviar.

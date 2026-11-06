@@ -31,6 +31,7 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
+use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
 use Tests\Support\Modules\ModuleTestCase;
 
@@ -147,6 +148,25 @@ final class CampaignRosterServiceTest extends ModuleTestCase
             'is_published' => true,
             'auto_confirm' => false,
         ]);
+    }
+
+    /**
+     * Makes the given people, and nobody else, the active members (socios).
+     */
+    private function membershipOf(UserModel ...$members): void
+    {
+        $this->app->instance(MembershipCheckerInterface::class, new readonly class(array_values(array_map(static fn (UserModel $member): string => $member->id, $members))) implements MembershipCheckerInterface
+        {
+            /**
+             * @param  list<string>  $members
+             */
+            public function __construct(private array $members) {}
+
+            public function isActiveMember(string $userId): bool
+            {
+                return in_array($userId, $this->members, true);
+            }
+        });
     }
 
     private function assertRefused(string $reason, string $message, Closure $action): void
@@ -338,20 +358,72 @@ final class CampaignRosterServiceTest extends ModuleTestCase
         Event::assertNotDispatched(CampaignJoinRequestAccepted::class);
     }
 
-    public function test_accepting_in_a_closed_campaign_is_allowed(): void
+    /**
+     * Accepting meets the rules of asking (#187): the request stays pending until the campaign
+     * takes new players again.
+     *
+     * @return array<string, array{array<string, mixed>}>
+     */
+    public static function campaignsNotTakingNewPlayers(): array
+    {
+        return [
+            'closed to new players' => [['accepts_new_players' => false]],
+            'on hold' => [['status' => 'on_hold']],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $change
+     */
+    #[DataProvider('campaignsNotTakingNewPlayers')]
+    public function test_accepting_while_the_campaign_takes_no_new_players_is_refused(array $change): void
     {
         $this->service()->requestToJoin($this->campaign->id, $this->john->id, null);
         $request = $this->pendingOf($this->john);
-        $this->campaign->update(['accepts_new_players' => false]);
+        $this->campaign->update($change);
+
+        $this->assertRefused(
+            'not_accepting',
+            'Esta campaña no acepta jugadores nuevos ahora mismo, así que no se puede aceptar la solicitud. Seguirá pendiente hasta que vuelva a aceptarlos.',
+            fn () => $this->service()->acceptRequest($request->id->value, $this->mary->id),
+        );
+
+        $this->assertSame(JoinRequestStatus::Pending, $this->pendingOf($this->john)->status);
+        $this->assertFalse($this->roster()->contains($this->campaignId, $this->john->id));
+        Event::assertNotDispatched(CampaignJoinRequestAccepted::class);
+    }
+
+    public function test_accepting_someone_who_is_no_longer_a_socio_in_a_members_only_campaign_is_refused(): void
+    {
+        $this->campaign->update(['roster_access' => 'members_only']);
+        $this->membershipOf($this->john);
+        $this->service()->requestToJoin($this->campaign->id, $this->john->id, null);
+        $request = $this->pendingOf($this->john);
+        // John stops being a socio while the request is pending
+        $this->membershipOf();
+
+        $this->assertRefused(
+            'members_only',
+            'Esta campaña solo admite socios y esa cuenta no es de un socio, así que no se puede aceptar la solicitud. Seguirá pendiente.',
+            fn () => $this->service()->acceptRequest($request->id->value, $this->mary->id),
+        );
+
+        $this->assertSame(JoinRequestStatus::Pending, $this->pendingOf($this->john)->status);
+        $this->assertFalse($this->roster()->contains($this->campaignId, $this->john->id));
+        Event::assertNotDispatched(CampaignJoinRequestAccepted::class);
+    }
+
+    public function test_accepting_a_socio_in_a_members_only_campaign_is_allowed(): void
+    {
+        $this->campaign->update(['roster_access' => 'members_only']);
+        $this->membershipOf($this->john);
+        $this->service()->requestToJoin($this->campaign->id, $this->john->id, null);
+        $request = $this->pendingOf($this->john);
 
         $this->service()->acceptRequest($request->id->value, $this->mary->id);
 
         $this->assertTrue($this->roster()->contains($this->campaignId, $this->john->id));
-        $this->assertSame(JoinRequestStatus::Accepted, $this->requests()->find($request->id)?->status);
-        Event::assertDispatched(
-            CampaignJoinRequestAccepted::class,
-            fn (CampaignJoinRequestAccepted $event): bool => $event->sessions === [],
-        );
+        Event::assertDispatched(CampaignJoinRequestAccepted::class);
     }
 
     public function test_accepting_in_a_finished_campaign_is_refused(): void

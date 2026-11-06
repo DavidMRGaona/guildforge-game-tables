@@ -115,7 +115,11 @@ final readonly class CampaignRosterService implements CampaignRosterServiceInter
                 throw RosterActionRefusedException::because('already_member');
             }
 
+            // The rules of asking still hold when the request is accepted: the campaign may have
+            // stopped taking new players, or the person stopped being a socio, since it was sent
+            $this->guard->ensureAdmitsNewcomer($campaign, null, CampaignRosterGuard::ACCEPTER);
             $this->guard->ensureRoomIn($campaign);
+            $this->guard->ensureAdmitsNewcomer($campaign, $request->userId, CampaignRosterGuard::ACCEPTER);
 
             $now = CarbonImmutable::now();
             $this->roster->add($campaign->id, $request->userId, $now);
