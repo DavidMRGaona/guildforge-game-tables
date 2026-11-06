@@ -74,7 +74,7 @@ Si la web tiene activado el acceso anticipado y tienes el rol de {{association_r
 
 ## Mesas solo para un rol o por invitación
 
-- Las mesas **Solo socios** son solo para quien tiene el rol de {{association_role}}: no admiten a nadie más, tampoco invitados.
+- Las mesas **Solo el rol {{association_role}}** son solo para quien tiene el rol de {{association_role}}: no admiten a nadie más, tampoco invitados.
 - En las mesas **Solo por invitación** no hay botón: la organización inscribe a los jugadores.
 
 ## Sesiones de campaña
@@ -93,7 +93,7 @@ Si la mesa es una sesión de una campaña:
 - **«La mesa está completa»**: no quedan plazas y la web no tiene lista de espera.
 - **«No quedan plazas de espectador disponibles»**: elige jugador, si quedan plazas.
 - **«Ya estás inscrito en esta mesa»**: tu inscripción ya existe; mírala en tu perfil.
-- **«Esta mesa es solo para socios»**: es solo para quien tiene el rol de {{association_role}}.
+- **«Esta mesa es solo para el rol {{association_role}}»**: es solo para quien tiene el rol de {{association_role}}.
 - **«Esta mesa es solo por invitación: la organización inscribe a los jugadores»**: pide plaza a la organización.
 - **«Solo para la plantilla de la campaña»**: la campaña no acepta jugadores nuevos, está en pausa o ha terminado.
 - **«Esta mesa no permite inscripciones de invitados»**: inicia sesión con tu cuenta.

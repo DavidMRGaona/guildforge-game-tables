@@ -166,7 +166,7 @@ final class CampaignRosterPanelTest extends ModuleTestCase
 
         $this->invitations($campaign)
             ->callAction(TestAction::make('invite')->table(), data: ['email' => 'john@example.com', 'consent' => true])
-            ->assertNotified('Esta campaña solo admite socios y esa cuenta no es de un socio.');
+            ->assertNotified('Esta campaña solo admite el rol Socio y esa cuenta no lo tiene.');
 
         $this->assertSame(0, CampaignInvitationModel::query()->count());
     }

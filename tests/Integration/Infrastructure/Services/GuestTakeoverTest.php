@@ -271,7 +271,7 @@ final class GuestTakeoverTest extends ModuleTestCase
             $this->fail('The members-only rule must refuse the user');
         } catch (RegistrationNotAllowedException $e) {
             $this->assertSame('members_only', $e->reason);
-            $this->assertSame('Esta mesa es solo para socios', $e->getMessage());
+            $this->assertSame('Esta mesa es solo para el rol Socio', $e->getMessage());
         }
 
         $row = ParticipantModel::query()->findOrFail($guest->id);
@@ -287,7 +287,7 @@ final class GuestTakeoverTest extends ModuleTestCase
         $user = UserModel::factory()->unverified()->create(['email' => 'cuenta@example.test']);
 
         $this->expectException(RegistrationNotAllowedException::class);
-        $this->expectExceptionMessage('Esta mesa es solo para socios');
+        $this->expectExceptionMessage('Esta mesa es solo para el rol Socio');
 
         $this->register($user);
     }

@@ -72,8 +72,8 @@ Esta pestaña decide quién se apunta, cuándo y quién confirma las plazas.
 
 | Campo | Qué hace |
 |---|---|
-| **Tipo de inscripción** | **Abierto a todos**: cualquier cuenta y también personas sin cuenta, que se apuntan con su email y lo confirman con un enlace. **Solo socios**: solo quienes tienen el rol {{association_role}}, y nunca personas sin cuenta. **Solo por invitación**: nadie se apunta solo; la organización añade a cada persona desde la pestaña **Participantes**. |
-| **Días de acceso anticipado para socios** | Cuántos días antes de la **Apertura de inscripciones** pueden apuntarse quienes tienen el rol {{association_role}}. Solo cuenta si la mesa tiene apertura y si el acceso anticipado está activado en la configuración. |
+| **Tipo de inscripción** | **Abierto a todos**: cualquier cuenta y también personas sin cuenta, que se apuntan con su email y lo confirman con un enlace. **Solo el rol {{association_role}}**: solo quienes tienen el rol {{association_role}}, y nunca personas sin cuenta. **Solo por invitación**: nadie se apunta solo; la organización añade a cada persona desde la pestaña **Participantes**. |
+| **Días de acceso anticipado para el rol {{association_role}}** | Cuántos días antes de la **Apertura de inscripciones** pueden apuntarse quienes tienen el rol {{association_role}}. Solo cuenta si la mesa tiene apertura y si el acceso anticipado está activado en la configuración. |
 | **Apertura de inscripciones** | Desde cuándo se puede apuntar la gente. Vacío: desde que la mesa se publica. |
 | **Cierre de inscripciones** | Hasta cuándo. Vacío: hasta el inicio de la mesa (o hasta su final, si admite inscripciones durante la partida). No puede ser posterior a ese límite. |
 | **Confirmar automáticamente** | Activado: quien se apunta y tiene plaza queda **Confirmado** al momento. Desactivado: queda **Pendiente** hasta que alguien lo confirme. |

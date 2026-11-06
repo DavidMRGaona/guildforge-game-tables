@@ -10,11 +10,17 @@ enum RegistrationType: string
     case MembersOnly = 'members_only';
     case Invite = 'invite';
 
-    public function label(): string
+    /**
+     * @param  string|null  $associationRole  visible name of the site's association member role
+     *                                        (AssociationRoleNameInterface), named by «members only»
+     */
+    public function label(?string $associationRole = null): string
     {
         return match ($this) {
             self::Everyone => __('game-tables::messages.enums.registration_type.everyone'),
-            self::MembersOnly => __('game-tables::messages.enums.registration_type.members_only'),
+            self::MembersOnly => __('game-tables::messages.enums.registration_type.members_only', [
+                'role' => $associationRole ?? __('game-tables::messages.association_role_fallback'),
+            ]),
             self::Invite => __('game-tables::messages.enums.registration_type.invite'),
         };
     }
@@ -50,11 +56,11 @@ enum RegistrationType: string
     /**
      * @return array<string, string>
      */
-    public static function options(): array
+    public static function options(?string $associationRole = null): array
     {
         return array_combine(
             array_column(self::cases(), 'value'),
-            array_map(fn (self $case): string => $case->label(), self::cases()),
+            array_map(fn (self $case): string => $case->label($associationRole), self::cases()),
         );
     }
 

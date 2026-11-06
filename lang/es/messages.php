@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 return [
+    // The association member role when the site has none usable (AssociationRoleNameInterface)
+    'association_role_fallback' => 'socio',
+
     /*
     |--------------------------------------------------------------------------
     | Navigation & UI Labels
@@ -174,7 +177,7 @@ return [
         'content_warnings' => 'Avisos de contenido',
         'custom_warnings' => 'Avisos personalizados',
         'registration_type' => 'Tipo de inscripción',
-        'members_early_access_days' => 'Días de acceso anticipado para socios',
+        'members_early_access_days' => 'Días de acceso anticipado para el rol :role',
         'registration_opens_at' => 'Apertura de inscripciones',
         'registration_closes_at' => 'Cierre de inscripciones',
         'registration_closes_at_help' => 'Como muy tarde, el inicio de la mesa (o su final, si admite inscripciones durante la partida). Las bajas de los participantes se cierran siempre al inicio.',
@@ -354,7 +357,7 @@ return [
         ],
         'registration_type' => [
             'everyone' => 'Abierto a todos',
-            'members_only' => 'Solo socios',
+            'members_only' => 'Solo el rol :role',
             'invite' => 'Solo por invitación',
         ],
         'participant_role' => [
@@ -385,7 +388,7 @@ return [
         ],
         'roster_access' => [
             'anyone' => 'Cualquier cuenta',
-            'members_only' => 'Solo socios',
+            'members_only' => 'Solo el rol :role',
         ],
         'join_request_status' => [
             'pending' => 'Pendiente',
@@ -477,7 +480,7 @@ return [
     'settings' => [
         'title' => 'Configuración del módulo',
         'sections' => [
-            'membership' => 'Acceso anticipado para socios',
+            'membership' => 'Acceso anticipado para el rol :role',
             'registration' => 'Inscripciones',
             'guest_registrations' => 'Inscripciones de invitados',
             'automation' => 'Automatización',
@@ -490,14 +493,14 @@ return [
             'frontend_creation_description' => 'Permite que los usuarios creen mesas y campañas desde el frontend público',
         ],
         'fields' => [
-            'membership_enabled' => 'Acceso anticipado para socios',
+            'membership_enabled' => 'Acceso anticipado para el rol :role',
             'membership_enabled_help' => 'Quienes tienen el rol de socio elegido en la configuración del sitio pueden inscribirse antes de la apertura, según los días de acceso anticipado de cada mesa. No depende del módulo de gestión de socios',
             'waiting_list_enabled' => 'Lista de espera',
             'waiting_list_enabled_help' => 'Con las plazas de jugador completas, los jugadores pueden apuntarse a la lista de espera. Cada plaza liberada pasa automáticamente al primero de la lista hasta el inicio de la partida (o hasta el cierre de inscripciones, si es anterior); después, la promoción automática se detiene y el director puede promover a mano. En las mesas con confirmación manual los pendientes ocupan plaza y el promovido queda pendiente de que el director lo confirme. Los espectadores no tienen lista de espera',
             'auto_status_enabled' => 'Actualizar el estado de las mesas automáticamente',
             'auto_status_enabled_help' => 'Cada cinco minutos, las mesas programadas o completas pasan a «En progreso» a su hora de inicio y las mesas en progreso pasan a «Completada» al terminar (inicio más duración). No se envían correos. Los borradores y las mesas canceladas no cambian. Desactivado, el estado solo cambia con las acciones Iniciar y Completar del panel',
             'early_access_days' => 'Días de acceso anticipado',
-            'early_access_days_help' => 'Valor inicial de los días de ventaja de los socios en cada mesa nueva',
+            'early_access_days_help' => 'Valor inicial de los días de ventaja del rol :role en cada mesa nueva',
             'default_duration' => 'Duración por defecto (minutos)',
             'default_min_players' => 'Mínimo de jugadores por defecto',
             'default_max_players' => 'Máximo de jugadores por defecto',
@@ -690,7 +693,7 @@ return [
             'already_registered' => 'Ya estás inscrito en esta mesa',
             'table_full' => 'La mesa está completa',
             'registration_closed' => 'Las inscripciones están cerradas',
-            'members_only' => 'Esta mesa es solo para socios',
+            'members_only' => 'Esta mesa es solo para el rol :role',
             'minimum_age' => 'No cumples con la edad mínima requerida',
         ],
         'table' => [
@@ -704,7 +707,7 @@ return [
             'opens_in' => 'Abre en :days días',
             'open_until' => 'Abierta hasta :date',
             'closed' => 'Cerrada',
-            'member_early_access' => 'Acceso anticipado para socios activo',
+            'member_early_access' => 'Acceso anticipado activo para el rol :role',
         ],
     ],
 
@@ -752,7 +755,7 @@ return [
         'guest_already_registered' => 'Ya existe una inscripción con este email',
         'email_registered_as_guest' => 'Ya hay una inscripción con tu email.',
         'email_has_account' => 'Este email pertenece a una cuenta. Inicia sesión para inscribirte.',
-        'members_only' => 'Esta mesa es solo para socios',
+        'members_only' => 'Esta mesa es solo para el rol :role',
         'invitation_only' => 'Esta mesa es solo por invitación: la organización inscribe a los jugadores',
         'campaign_roster_only' => 'Solo para la plantilla de la campaña',
         'guests_not_allowed' => 'Esta mesa no permite inscripciones de invitados',
@@ -946,7 +949,7 @@ return [
     */
     'registration_types' => [
         'everyone' => 'Abierto a todos',
-        'members_only' => 'Solo socios',
+        'members_only' => 'Solo el rol :role',
     ],
 
     /*
@@ -1025,13 +1028,13 @@ return [
             'finished' => 'La campaña ha terminado: su plantilla ya no cambia.',
             'not_accepting' => 'Esta campaña no acepta jugadores nuevos.',
             'roster_full' => 'La plantilla está completa.',
-            'members_only' => 'Esta campaña solo admite solicitudes de socios.',
+            'members_only' => 'Esta campaña solo admite solicitudes del rol :role.',
             'invite_not_accepting' => 'La campaña no acepta jugadores nuevos: no se pueden enviar invitaciones mientras siga así.',
-            'invite_members_only' => 'Esta campaña solo admite socios y esa cuenta no es de un socio.',
+            'invite_members_only' => 'Esta campaña solo admite el rol :role y esa cuenta no lo tiene.',
             'invitee_not_accepting' => 'Esta campaña no acepta jugadores nuevos ahora mismo, así que no puedes aceptar la invitación. Seguirá disponible hasta que caduque.',
-            'invitee_members_only' => 'Esta campaña solo admite socios, así que no puedes aceptar la invitación mientras no lo seas. Seguirá disponible hasta que caduque.',
+            'invitee_members_only' => 'Esta campaña solo admite el rol :role, así que no puedes aceptar la invitación mientras no lo tengas. Seguirá disponible hasta que caduque.',
             'accept_not_accepting' => 'Esta campaña no acepta jugadores nuevos ahora mismo, así que no se puede aceptar la solicitud. Seguirá pendiente hasta que vuelva a aceptarlos.',
-            'accept_members_only' => 'Esta campaña solo admite socios y esa cuenta no es de un socio, así que no se puede aceptar la solicitud. Seguirá pendiente.',
+            'accept_members_only' => 'Esta campaña solo admite el rol :role y esa cuenta no lo tiene, así que no se puede aceptar la solicitud. Seguirá pendiente.',
             'already_member' => 'Ya formas parte de la plantilla.',
             'account_already_member' => 'Esa cuenta ya forma parte de la plantilla.',
             'request_pending' => 'Ya tienes una solicitud pendiente.',

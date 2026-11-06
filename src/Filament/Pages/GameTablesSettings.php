@@ -24,6 +24,7 @@ use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
+use Modules\GameTables\Application\Services\AssociationRoleNameInterface;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 
 /**
@@ -82,15 +83,15 @@ final class GameTablesSettings extends Page implements HasForms
     public static function getFormSchemaComponents(): array
     {
         return [
-            Section::make(__('game-tables::messages.settings.sections.membership'))
+            Section::make(__('game-tables::messages.settings.sections.membership', ['role' => app(AssociationRoleNameInterface::class)->displayName()]))
                 ->schema([
                     Toggle::make('membership_integration.enabled')
-                        ->label(__('game-tables::messages.settings.fields.membership_enabled'))
+                        ->label(__('game-tables::messages.settings.fields.membership_enabled', ['role' => app(AssociationRoleNameInterface::class)->displayName()]))
                         ->helperText(__('game-tables::messages.settings.fields.membership_enabled_help')),
 
                     TextInput::make('defaults.members_early_access_days')
                         ->label(__('game-tables::messages.settings.fields.early_access_days'))
-                        ->helperText(__('game-tables::messages.settings.fields.early_access_days_help'))
+                        ->helperText(__('game-tables::messages.settings.fields.early_access_days_help', ['role' => app(AssociationRoleNameInterface::class)->displayName()]))
                         ->numeric()
                         ->minValue(0)
                         ->maxValue(30),
@@ -220,7 +221,7 @@ final class GameTablesSettings extends Page implements HasForms
                         ->label(__('game-tables::messages.settings.fields.default_registration_type'))
                         ->options([
                             'everyone' => __('game-tables::messages.registration_types.everyone'),
-                            'members_only' => __('game-tables::messages.registration_types.members_only'),
+                            'members_only' => __('game-tables::messages.registration_types.members_only', ['role' => app(AssociationRoleNameInterface::class)->displayName()]),
                         ])
                         ->native(false),
                 ])

@@ -43,6 +43,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Modules\GameTables\Application\Services\AssociationRoleNameInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
@@ -395,13 +396,13 @@ final class GameTableResource extends BaseResource
                             ->schema([
                                 Select::make('registration_type')
                                     ->label(__('game-tables::messages.fields.registration_type'))
-                                    ->options(RegistrationType::options())
+                                    ->options(RegistrationType::options(app(AssociationRoleNameInterface::class)->displayName()))
                                     ->default($settings->defaultRegistrationType()->value)
                                     ->native(false)
                                     ->required(),
 
                                 TextInput::make('members_early_access_days')
-                                    ->label(__('game-tables::messages.fields.members_early_access_days'))
+                                    ->label(__('game-tables::messages.fields.members_early_access_days', ['role' => app(AssociationRoleNameInterface::class)->displayName()]))
                                     ->numeric()
                                     ->minValue(0)
                                     ->maxValue(30)

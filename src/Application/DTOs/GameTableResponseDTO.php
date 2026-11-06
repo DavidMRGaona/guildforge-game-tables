@@ -6,6 +6,7 @@ namespace Modules\GameTables\Application\DTOs;
 
 use App\Application\Services\TimezoneServiceInterface;
 use DateTimeInterface;
+use Modules\GameTables\Application\Services\AssociationRoleNameInterface;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
@@ -195,7 +196,7 @@ final readonly class GameTableResponseDTO
             'content_warnings' => $this->contentWarnings,
             'custom_warnings' => $this->customWarnings,
             'registration_type' => $this->registrationType->value,
-            'registration_type_label' => $this->registrationType->label(),
+            'registration_type_label' => $this->registrationType->label(app(AssociationRoleNameInterface::class)->displayName()),
             'members_early_access_days' => $this->membersEarlyAccessDays,
             'registration_opens_at' => $timezone->iso($this->registrationOpensAt),
             'registration_closes_at' => $timezone->iso($this->registrationClosesAt),

@@ -22,6 +22,8 @@ interface Props {
     campaign: Campaign;
     // What the viewer can do with the roster
     joinBox: JoinBox;
+    // Visible name of the site's association member role, named by a members-only join box
+    associationRole?: string;
     // Its surveys for this person, when a surveys module offers any
     surveyLinks?: SubjectSurveyLinks | null;
 }
@@ -421,6 +423,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                         :join-box="joinBox"
                         :campaign-title="campaign.title"
                         :campaign-slug="campaign.slug"
+                        :association-role="associationRole ?? ''"
                     />
                 </div>
 

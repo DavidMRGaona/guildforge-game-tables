@@ -12,6 +12,8 @@ use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
+use Inertia\Testing\AssertableInertia as Assert;
+use Modules\GameTables\Application\Services\AssociationRoleNameInterface;
 use Modules\GameTables\Application\Services\EligibilityServiceInterface;
 use Modules\GameTables\Application\Services\MembershipCheckerInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
@@ -192,6 +194,19 @@ final class RegistrationEligibilityTest extends ModuleTestCase
         $this->register($table)->assertRedirect();
 
         $this->assertSame(1, $this->registrations($table));
+    }
+
+    public function test_a_members_only_table_page_names_the_configured_role(): void
+    {
+        RoleModel::query()->create(['name' => 'miembro', 'display_name' => 'Miembros']);
+        $this->configureAssociationRole('miembro');
+        $table = $this->table(['registration_type' => 'members_only', 'slug' => 'mesa-solo-miembros']);
+
+        $this->get(route('gametables.show', $table->slug))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('table.registrationTypeLabel', 'Solo el rol Miembros')
+                ->where('associationRole', 'Miembros'));
     }
 
     // A base role in the setting means nobody is an association member: the general rules apply
@@ -534,7 +549,7 @@ final class RegistrationEligibilityTest extends ModuleTestCase
 
         $this->register($table, $role, json: true)
             ->assertStatus(422)
-            ->assertJsonPath('errors.registration.0', $message ?? __('game-tables::messages.errors.'.$reason));
+            ->assertJsonPath('errors.registration.0', $message ?? __('game-tables::messages.errors.'.$reason, ['role' => app(AssociationRoleNameInterface::class)->displayName()]));
         $this->assertSame($before, $this->registrations($table));
     }
 

@@ -32,7 +32,7 @@ Puedes filtrar por **Rol**, por **Estado** y por **Email sin confirmar**.
 3. Elige el **Rol** y, si quieres, añade **Notas**.
 4. Pulsa **Crear**.
 
-Desde el panel no se aplican las reglas de inscripción: puedes añadir a alguien con las inscripciones cerradas, en una mesa **Solo socios** o **Solo por invitación**. Lo que sí cuenta son las plazas y la confirmación de la mesa:
+Desde el panel no se aplican las reglas de inscripción: puedes añadir a alguien con las inscripciones cerradas, en una mesa **Solo el rol {{association_role}}** o **Solo por invitación**. Lo que sí cuenta son las plazas y la confirmación de la mesa:
 
 - Si hay plaza y la mesa confirma sola, queda **Confirmado**. Si no confirma sola, queda **Pendiente**.
 - Si la mesa está llena, o en estado **Completa**, un jugador va a la **Lista de espera**; luego puedes darle una plaza libre con **Promover**.

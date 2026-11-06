@@ -38,7 +38,7 @@ Los directores de la campaña pasan solos a sus sesiones. Quienes tienen cuenta 
 
 - **Frecuencia**: **Semanal**, **Quincenal**, **Mensual** o **Irregular**.
 - **Mínimo de jugadores** y **Máximo de jugadores**: el máximo son las plazas de la plantilla. Vacío, la plantilla no tiene límite. Ninguno puede pasar del **Límite máximo de jugadores** de la configuración, el mismo que tienen las mesas.
-- **Quién puede solicitar**: **Cualquier cuenta** o **Solo socios** (solo quienes tienen el rol {{association_role}}). Decide quién puede pedir entrar en la plantilla desde la web y a quién se puede invitar.
+- **Quién puede solicitar**: **Cualquier cuenta** o **Solo el rol {{association_role}}** (solo quienes tienen el rol {{association_role}}). Decide quién puede pedir entrar en la plantilla desde la web y a quién se puede invitar.
 - **Número de sesiones**: las previstas. Vacío si no está definido.
 - **Sesión actual**: por cuál vais. Usa 0 si aún no ha empezado. No avanza sola: cámbiala tú.
 

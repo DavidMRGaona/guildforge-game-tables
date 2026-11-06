@@ -14,6 +14,7 @@ use Modules\GameTables\Application\DTOs\CampaignInvitationViewDTO;
 use Modules\GameTables\Application\DTOs\CampaignSessionBoxDTO;
 use Modules\GameTables\Application\DTOs\JoinBoxDTO;
 use Modules\GameTables\Application\DTOs\RosterPageDTO;
+use Modules\GameTables\Application\Services\AssociationRoleNameInterface;
 use Modules\GameTables\Application\Services\CampaignDirectionInterface;
 use Modules\GameTables\Application\Services\CampaignInvitationServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterQueryInterface;
@@ -91,7 +92,7 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
                 'max_players' => $campaign->maxPlayers,
                 'roster_count' => $rosterCount,
             ],
-            rosterAccessOptions: RosterAccess::options(),
+            rosterAccessOptions: RosterAccess::options(app(AssociationRoleNameInterface::class)->displayName()),
             maxPlayersLimit: $this->settings->maxPlayersLimit(),
             requests: $this->pendingRequests($campaign),
             sessions: array_map(fn (GameTable $session): array => [

@@ -33,6 +33,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Modules\GameTables\Application\Services\AssociationRoleNameInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Domain\Enums\CampaignFrequency;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
@@ -203,7 +204,7 @@ final class CampaignResource extends BaseResource
                                 Select::make('roster_access')
                                     ->label(__('game-tables::messages.fields.roster_access'))
                                     ->helperText(__('game-tables::messages.fields.roster_access_help'))
-                                    ->options(RosterAccess::options())
+                                    ->options(RosterAccess::options(app(AssociationRoleNameInterface::class)->displayName()))
                                     ->default(RosterAccess::Anyone->value)
                                     ->native(false)
                                     ->required(),

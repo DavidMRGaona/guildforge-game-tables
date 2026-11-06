@@ -508,7 +508,7 @@ final class CampaignRosterControllerTest extends ModuleTestCase
         $this->asDirector()
             ->post($this->rosterUrl().'/invitaciones', ['email' => 'richard@example.com', 'consent' => true])
             ->assertRedirect($this->rosterUrl())
-            ->assertSessionHas('error', 'Esta campaña solo admite socios y esa cuenta no es de un socio.');
+            ->assertSessionHas('error', 'Esta campaña solo admite el rol Socio y esa cuenta no lo tiene.');
 
         $this->assertSame(0, DB::table('gametables_campaign_invitations')->count());
     }

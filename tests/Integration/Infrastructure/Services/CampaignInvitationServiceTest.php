@@ -257,7 +257,7 @@ final class CampaignInvitationServiceTest extends ModuleTestCase
 
         $this->assertRefusedWith(
             'members_only',
-            'Esta campaña solo admite socios y esa cuenta no es de un socio.',
+            'Esta campaña solo admite el rol Socio y esa cuenta no lo tiene.',
             fn () => $this->invite('John@example.com'),
         );
 
@@ -664,7 +664,7 @@ final class CampaignInvitationServiceTest extends ModuleTestCase
 
         $this->assertRefusedWith(
             'members_only',
-            'Esta campaña solo admite socios, así que no puedes aceptar la invitación mientras no lo seas. Seguirá disponible hasta que caduque.',
+            'Esta campaña solo admite el rol Socio, así que no puedes aceptar la invitación mientras no lo tengas. Seguirá disponible hasta que caduque.',
             fn () => $this->service()->accept($token, $this->john->id),
         );
 
@@ -710,7 +710,7 @@ final class CampaignInvitationServiceTest extends ModuleTestCase
 
         $this->campaign->update(['roster_access' => RosterAccess::MembersOnly->value]);
         $this->assertSame(
-            'Esta campaña solo admite socios, así que no puedes aceptar la invitación mientras no lo seas. Seguirá disponible hasta que caduque.',
+            'Esta campaña solo admite el rol Socio, así que no puedes aceptar la invitación mientras no lo tengas. Seguirá disponible hasta que caduque.',
             $this->service()->acceptRefusal($this->campaign->id, $this->john->id),
         );
 

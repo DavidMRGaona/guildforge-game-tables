@@ -67,7 +67,7 @@ final class GameTablesSettingsLabelsTest extends ModuleTestCase
         Livewire::test(GameTablesSettings::class)
             ->assertOk()
             ->assertFormFieldExists('membership_integration.enabled')
-            ->assertSee(__('game-tables::messages.settings.fields.membership_enabled'));
+            ->assertSee('Acceso anticipado para el rol Socio');
     }
 
     /**

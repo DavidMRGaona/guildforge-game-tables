@@ -8,6 +8,7 @@ use App\Application\Services\TimezoneServiceInterface;
 use Carbon\CarbonImmutable;
 use DateMalformedStringException;
 use DateTimeImmutable;
+use Modules\GameTables\Application\Services\AssociationRoleNameInterface;
 use Modules\GameTables\Application\Services\EligibilityServiceInterface;
 use Modules\GameTables\Application\Services\MembershipCheckerInterface;
 use Modules\GameTables\Domain\Entities\Campaign;
@@ -340,7 +341,7 @@ final readonly class EligibilityService implements EligibilityServiceInterface
         return match ($reason) {
             'registration_closed' => __('game-tables::messages.errors.registration_closed'),
             'registration_not_open' => __('game-tables::messages.errors.registration_not_open'),
-            'members_only' => __('game-tables::messages.errors.members_only'),
+            'members_only' => __('game-tables::messages.errors.members_only', ['role' => app(AssociationRoleNameInterface::class)->displayName()]),
             'invitation_only' => __('game-tables::messages.errors.invitation_only'),
             'campaign_roster_only' => __('game-tables::messages.errors.campaign_roster_only'),
             'table_started' => __('game-tables::messages.errors.table_started'),

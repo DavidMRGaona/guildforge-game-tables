@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 return [
+    // The association member role when the site has none usable (AssociationRoleNameInterface)
+    'association_role_fallback' => 'member',
+
     /*
     |--------------------------------------------------------------------------
     | Navigation & UI Labels
@@ -151,7 +154,7 @@ return [
         'content_warnings' => 'Content warnings',
         'custom_warnings' => 'Custom warnings',
         'registration_type' => 'Registration type',
-        'members_early_access_days' => 'Member early access days',
+        'members_early_access_days' => 'Early access days for the :role role',
         'registration_opens_at' => 'Registration opens',
         'registration_closes_at' => 'Registration closes',
         'registration_closes_at_help' => 'At the latest, the start of the table (or its end, if it admits registrations in play). Participants can always cancel only until the start.',
@@ -313,7 +316,7 @@ return [
         ],
         'registration_type' => [
             'everyone' => 'Open to everyone',
-            'members_only' => 'Members only',
+            'members_only' => 'Only the :role role',
             'invite' => 'Invite only',
         ],
         'participant_role' => [
@@ -344,7 +347,7 @@ return [
         ],
         'roster_access' => [
             'anyone' => 'Any account',
-            'members_only' => 'Members only',
+            'members_only' => 'Only the :role role',
         ],
         'join_request_status' => [
             'pending' => 'Pending',
@@ -424,7 +427,7 @@ return [
     'settings' => [
         'title' => 'Module settings',
         'sections' => [
-            'membership' => 'Early access for association members',
+            'membership' => 'Early access for the :role role',
             'registration' => 'Registrations',
             'guest_registrations' => 'Guest registrations',
             'automation' => 'Automation',
@@ -435,14 +438,14 @@ return [
             'limits' => 'Limits',
         ],
         'fields' => [
-            'membership_enabled' => 'Early access for association members',
+            'membership_enabled' => 'Early access for the :role role',
             'membership_enabled_help' => 'Holders of the association member role chosen in the site settings can register before opening, by the early access days of each table. It does not depend on the memberships module',
             'waiting_list_enabled' => 'Waiting list',
             'waiting_list_enabled_help' => 'When the player seats are taken, players can join the waiting list. Each freed seat goes automatically to the first in the list until the table starts (or until registrations close, if that comes first); after that, automatic promotion stops and the game master can promote by hand. On tables with manual confirmation pending players hold seats and the promoted player waits for the game master to confirm them. Spectators have no waiting list',
             'auto_status_enabled' => 'Update the status of tables automatically',
             'auto_status_enabled_help' => 'Every five minutes, scheduled or full tables move to «In progress» at their start time and tables in progress move to «Completed» when they end (start plus duration). No emails are sent. Drafts and cancelled tables never change. When off, the status only changes with the Start and Complete actions of the panel',
             'early_access_days' => 'Early access days',
-            'early_access_days_help' => 'Initial member early access days of each new table',
+            'early_access_days_help' => 'Initial early access days of the :role role in each new table',
             'default_duration' => 'Default duration (minutes)',
             'default_min_players' => 'Default minimum players',
             'default_max_players' => 'Default maximum players',
@@ -617,7 +620,7 @@ return [
             'already_registered' => 'You are already registered for this table',
             'table_full' => 'The table is full',
             'registration_closed' => 'Registration is closed',
-            'members_only' => 'This table is for members only',
+            'members_only' => 'This table is only for the :role role',
             'minimum_age' => 'You do not meet the minimum age requirement',
         ],
         'table' => [
@@ -631,7 +634,7 @@ return [
             'opens_in' => 'Opens in :days days',
             'open_until' => 'Open until :date',
             'closed' => 'Closed',
-            'member_early_access' => 'Member early access active',
+            'member_early_access' => 'Early access active for the :role role',
         ],
     ],
 
@@ -676,7 +679,7 @@ return [
         'table_full' => 'The table is full',
         'spectators_full' => 'No spectator seats are left',
         'already_registered' => 'You are already registered for this table',
-        'members_only' => 'This table is for members only',
+        'members_only' => 'This table is only for the :role role',
         'invitation_only' => 'This table is by invitation only: the organisation registers the players',
         'campaign_roster_only' => 'Only for the campaign roster',
         'minimum_age' => 'You do not meet the minimum age requirement',
@@ -872,7 +875,7 @@ return [
     */
     'registration_types' => [
         'everyone' => 'Open to everyone',
-        'members_only' => 'Members only',
+        'members_only' => 'Only the :role role',
     ],
 
     /*
@@ -951,13 +954,13 @@ return [
             'finished' => 'The campaign has ended: its roster no longer changes.',
             'not_accepting' => 'This campaign is not accepting new players.',
             'roster_full' => 'The roster is full.',
-            'members_only' => 'This campaign only accepts requests from members.',
+            'members_only' => 'This campaign only accepts requests from the :role role.',
             'invite_not_accepting' => 'This campaign is not accepting new players: no invitations can be sent while that holds.',
-            'invite_members_only' => 'This campaign only admits members, and that account is not a member.',
+            'invite_members_only' => 'This campaign only admits the :role role, and that account does not have it.',
             'invitee_not_accepting' => 'This campaign is not accepting new players right now, so you cannot accept the invitation. It stays available until it expires.',
-            'invitee_members_only' => 'This campaign only admits members, so you cannot accept the invitation until you are one. It stays available until it expires.',
+            'invitee_members_only' => 'This campaign only admits the :role role, so you cannot accept the invitation until you have it. It stays available until it expires.',
             'accept_not_accepting' => 'This campaign is not accepting new players right now, so the request cannot be accepted. It stays pending until the campaign accepts them again.',
-            'accept_members_only' => 'This campaign only admits members, and that account is not a member, so the request cannot be accepted. It stays pending.',
+            'accept_members_only' => 'This campaign only admits the :role role, and that account does not have it, so the request cannot be accepted. It stays pending.',
             'already_member' => 'You are already part of the roster.',
             'account_already_member' => 'That account is already part of the roster.',
             'request_pending' => 'You already have a pending request.',

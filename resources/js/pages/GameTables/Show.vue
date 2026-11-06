@@ -21,6 +21,8 @@ import { VENUE_TIMEZONE } from '@/utils/datetime';
 
 interface Props {
     table: GameTable;
+    /** Visible name of the site's association member role, named by the early access line */
+    associationRole?: string;
     /** Set on a campaign session: whether the campaign is closed to people outside its roster */
     campaignSession?: CampaignSessionInfo | null;
     /** A director of a table that delegates its registrations: offers «Gestionar inscritos» */
@@ -514,6 +516,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                             {{
                                 t('gameTables.registration.earlyAccessDays', {
                                     days: table.membersEarlyAccessDays,
+                                    role: associationRole ?? '',
                                 })
                             }}
                         </p>

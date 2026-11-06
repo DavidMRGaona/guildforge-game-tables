@@ -6,6 +6,7 @@ namespace Modules\GameTables\Application\DTOs;
 
 use App\Application\Services\TimezoneServiceInterface;
 use DateTimeInterface;
+use Modules\GameTables\Application\Services\AssociationRoleNameInterface;
 use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Enums\CampaignFrequency;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
@@ -185,7 +186,7 @@ final readonly class CampaignResponseDTO
             'directed_by_viewer' => $this->directedByViewer,
             'can_add_session' => $this->acceptsSessions,
             'roster_access' => $this->rosterAccess->value,
-            'roster_access_label' => $this->rosterAccess->label(),
+            'roster_access_label' => $this->rosterAccess->label(app(AssociationRoleNameInterface::class)->displayName()),
             'language' => $this->language,
             'experience_level' => $this->experienceLevel?->value,
             'min_players' => $this->minPlayers,
