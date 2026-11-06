@@ -21,9 +21,24 @@ use Modules\GameTables\Domain\Enums\SafetyTool;
  */
 final class CampaignResource extends JsonResource
 {
-    public function __construct(CampaignResponseDTO $resource, private readonly bool $revealsOnlineUrl = false)
+    private bool $revealsOnlineUrl = false;
+
+    /**
+     * Only the campaign: `collection()` builds each item with `new static($item, $index)`, so a
+     * second constructor parameter would take the list index (any index but 0 read as true).
+     */
+    public function __construct(CampaignResponseDTO $resource)
     {
         parent::__construct($resource);
+    }
+
+    /** The campaign page: the link goes out when the viewer may have it (its directors and roster) */
+    public static function forViewer(CampaignResponseDTO $resource, bool $revealsOnlineUrl): self
+    {
+        $instance = new self($resource);
+        $instance->revealsOnlineUrl = $revealsOnlineUrl;
+
+        return $instance;
     }
 
     /**

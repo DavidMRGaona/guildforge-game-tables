@@ -142,6 +142,23 @@ final class CampaignDetailsPageTest extends ModuleTestCase
                 ->where('campaigns.data', fn (iterable $items): bool => $this->cardsMatch($items)));
     }
 
+    public function test_no_card_of_the_list_gets_the_online_link_whatever_its_place(): void
+    {
+        // Several cards with a link: each one is built with its index, which must never reveal it
+        foreach (['El faro del norte', 'La torre del sur', 'El bosque del este'] as $title) {
+            $this->campaign($title, Str::slug($title), $this->details());
+        }
+
+        $this->get('/campanas')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('campaigns.data', 3)
+                ->where('campaigns.data.0.onlineUrl', null)
+                ->where('campaigns.data.1.onlineUrl', null)
+                ->where('campaigns.data.2.onlineUrl', null))
+            ->assertDontSee('https://example.com/mesa');
+    }
+
     /**
      * @param  iterable<array<string, mixed>>  $items
      */
@@ -207,10 +224,9 @@ final class CampaignDetailsPageTest extends ModuleTestCase
         ]);
 
         if ($attributes !== []) {
-            $warning = ContentWarningModel::create([
+            $warning = ContentWarningModel::query()->firstOrCreate(['slug' => 'violencia'], [
                 'id' => (string) Str::uuid(),
                 'name' => 'Violencia',
-                'slug' => 'violencia',
                 'label' => 'Violencia',
                 'severity' => 'mild',
                 'is_active' => true,
