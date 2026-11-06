@@ -30,7 +30,7 @@ export default {
             loginToCreate: 'Inicia sesión para crear partidas',
             earlyAccessForMembers: 'Acceso anticipado para socios',
             generalOpeningAt: 'Apertura general: {date}',
-            publicOpeningAt: 'Apertura de inscripciones: {date}',
+            publicOpeningAt: 'Apertura de la creación de partidas: {date}',
             earlyAccessActiveFrom: 'Acceso anticipado activo desde {date}',
         },
         // Flat keys used by components

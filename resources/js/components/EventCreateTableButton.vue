@@ -21,9 +21,12 @@ interface EventCreationEligibility {
     can_create_at: string | null;
     can_create_tables: boolean;
     can_create_campaigns: boolean;
+    // The event has an early access tier, whoever reads it
     has_early_access: boolean;
     public_open_date: string | null;
     requires_authentication: boolean;
+    // The reader is in that tier: they may create before the general opening
+    user_has_early_access: boolean;
 }
 
 const props = defineProps<Props>();
@@ -73,7 +76,7 @@ const showGeneralOpeningPending = computed(() => {
     );
 });
 
-// State: Logged in, waiting (with or without early access privilege)
+// State: Logged in, waiting (in the early access tier or not)
 const showWaitingAuthenticated = computed(() => {
     if (!eligibility.value) return false;
     return isAuthenticated.value && hasFutureDateRestriction.value;
@@ -177,9 +180,9 @@ const createTableUrl = computed(() => {
         <span>{{ t('gameTables.eventActions.publicOpeningAt', { date: formattedUserDate }) }}</span>
     </div>
 
-    <!-- State 4: Logged in, waiting with early access privilege -->
+    <!-- State 4: Logged in, waiting, in the early access tier -->
     <div
-        v-else-if="showWaitingAuthenticated && eligibility?.has_early_access"
+        v-else-if="showWaitingAuthenticated && eligibility?.user_has_early_access"
         class="inline-flex items-center gap-2 rounded-lg border border-info/40 bg-info-light px-4 py-2.5 text-sm text-base-primary"
         role="status"
     >
