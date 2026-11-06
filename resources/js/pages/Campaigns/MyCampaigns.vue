@@ -15,11 +15,14 @@ import type { CampaignResponseDTO } from '../../types/gametables';
 interface Props {
     campaigns?: CampaignResponseDTO[];
     canCreate?: boolean;
+    /** Sending a draft publishes it at once instead of sending it to review */
+    publishesWithoutReview?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
     campaigns: () => [],
     canCreate: false,
+    publishesWithoutReview: false,
 });
 
 // What the last action did (created, saved, sent, deleted) or why it was refused (e.g. a campaign
@@ -311,6 +314,7 @@ function getCampaignLink(campaign: CampaignResponseDTO): string {
                                 kind="campaign"
                                 :route-key="campaign.id"
                                 :title="campaign.title"
+                                :publishes-without-review="props.publishesWithoutReview"
                             />
                         </div>
                     </div>

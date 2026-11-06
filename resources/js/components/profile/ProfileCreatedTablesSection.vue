@@ -149,6 +149,9 @@ function toggleDraftsSection(): void {
                     :table="table"
                     :show-actions="true"
                     :actions-reason-id="actionsReasonId"
+                    :publishes-without-review="
+                        props.profileCreatedTables?.publishesWithoutReview ?? false
+                    "
                 />
             </div>
         </section>

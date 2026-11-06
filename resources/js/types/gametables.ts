@@ -305,6 +305,8 @@ export interface ProfileCreatedTablesData {
     drafts: ProfileCreatedTable[];
     total: number;
     canCreate: boolean;
+    /** Sending a draft publishes it at once instead of sending it to review */
+    publishesWithoutReview: boolean;
 }
 
 /**
@@ -423,6 +425,8 @@ export interface ProfileCreatedCampaignsData {
     drafts: ProfileCreatedCampaign[];
     total: number;
     canCreate: boolean;
+    /** Sending a draft publishes it at once instead of sending it to review */
+    publishesWithoutReview: boolean;
 }
 
 /** A pending invitation in the profile: only what the section shows */

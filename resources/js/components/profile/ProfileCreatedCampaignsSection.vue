@@ -151,6 +151,9 @@ function toggleDraftsSection(): void {
                     :campaign="campaign"
                     :show-actions="true"
                     :actions-reason-id="actionsReasonId"
+                    :publishes-without-review="
+                        props.profileCreatedCampaigns?.publishesWithoutReview ?? false
+                    "
                 />
             </div>
         </section>

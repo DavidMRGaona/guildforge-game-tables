@@ -7,6 +7,7 @@ namespace Modules\GameTables\Infrastructure\Services;
 use App\Application\Services\TimezoneServiceInterface;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
+use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 
 final readonly class ProfileCreatedTablesDataProvider
@@ -14,13 +15,14 @@ final readonly class ProfileCreatedTablesDataProvider
     public function __construct(
         private GameTableRepositoryInterface $gameTableRepository,
         private CreationEligibilityServiceInterface $eligibilityService,
+        private FrontendCreationServiceInterface $creationService,
         private SeatCounter $seatCounter,
     ) {}
 
     /**
      * Get created tables data for a user's profile page.
      *
-     * @return array{tables: array<array<string, mixed>>, drafts: array<array<string, mixed>>, total: int, canCreate: bool}|null
+     * @return array{tables: array<array<string, mixed>>, drafts: array<array<string, mixed>>, total: int, canCreate: bool, publishesWithoutReview: bool}|null
      */
     public function getDataForUser(?string $userId): ?array
     {
@@ -30,6 +32,8 @@ final readonly class ProfileCreatedTablesDataProvider
 
         $eligibility = $this->eligibilityService->canCreateTable($userId);
         $canCreate = $eligibility->eligible && $eligibility->canCreateTables;
+        // Sending a draft publishes it instead of sending it to review: the dialog says which
+        $publishesWithoutReview = $this->creationService->publishesWithoutReview($userId);
 
         $tables = $this->gameTableRepository->getByCreator($userId);
 
@@ -39,6 +43,7 @@ final readonly class ProfileCreatedTablesDataProvider
                 'drafts' => [],
                 'total' => 0,
                 'canCreate' => $canCreate,
+                'publishesWithoutReview' => $publishesWithoutReview,
             ];
         }
 
@@ -61,6 +66,7 @@ final readonly class ProfileCreatedTablesDataProvider
             'drafts' => $drafts,
             'total' => count($tables),
             'canCreate' => $canCreate,
+            'publishesWithoutReview' => $publishesWithoutReview,
         ];
     }
 

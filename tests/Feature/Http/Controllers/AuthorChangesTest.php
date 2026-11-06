@@ -8,9 +8,13 @@ use App\Infrastructure\Persistence\Eloquent\Models\PermissionModel;
 use App\Infrastructure\Persistence\Eloquent\Models\RoleModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Str;
+use Inertia\Testing\AssertableInertia as Assert;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
+use Modules\GameTables\Infrastructure\Services\ProfileCreatedCampaignsDataProvider;
+use Modules\GameTables\Infrastructure\Services\ProfileCreatedTablesDataProvider;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\Modules\ModuleTestCase;
 
 /**
@@ -289,6 +293,87 @@ final class AuthorChangesTest extends ModuleTestCase
             ->assertSessionHas('success', 'Campaña publicada correctamente');
 
         $this->assertTrue($campaign->refresh()->is_published);
+    }
+
+    /**
+     * @return array<string, array{string, bool}>
+     */
+    public static function publicationModes(): array
+    {
+        return [
+            'with review' => ['approval', false],
+            'published directly' => ['auto', true],
+        ];
+    }
+
+    #[DataProvider('publicationModes')]
+    public function test_my_tables_and_my_campaigns_say_whether_sending_publishes(string $mode, bool $publishes): void
+    {
+        config()->set('modules.settings.game-tables.frontend_creation.publication.mode', $mode);
+
+        $this->actingAs($this->author)
+            ->get(route('gametables.my-tables'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('publishesWithoutReview', $publishes));
+
+        $this->actingAs($this->author)
+            ->get(route('campaigns.my-campaigns'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('publishesWithoutReview', $publishes));
+    }
+
+    #[DataProvider('publicationModes')]
+    public function test_the_profile_drafts_say_whether_sending_publishes(string $mode, bool $publishes): void
+    {
+        config()->set('modules.settings.game-tables.frontend_creation.publication.mode', $mode);
+
+        $this->assertSame($publishes, app(ProfileCreatedTablesDataProvider::class)->getDataForUser($this->author->id)['publishesWithoutReview'] ?? null);
+        $this->assertSame($publishes, app(ProfileCreatedCampaignsDataProvider::class)->getDataForUser($this->author->id)['publishesWithoutReview'] ?? null);
+    }
+
+    public function test_with_roles_that_publish_only_their_holders_are_told_it_publishes(): void
+    {
+        config()->set('modules.settings.game-tables.frontend_creation.publication', ['mode' => 'role_based', 'auto_publish_roles' => ['trusted_gm']]);
+        $trusted = UserModel::factory()->create();
+        $trusted->roles()->attach(RoleModel::create(['name' => 'trusted_gm', 'display_name' => 'Trusted GM'])->id);
+
+        $this->actingAs($trusted)
+            ->get(route('gametables.my-tables'))
+            ->assertInertia(fn (Assert $page) => $page->where('publishesWithoutReview', true));
+
+        $this->actingAs($this->author)
+            ->get(route('gametables.my-tables'))
+            ->assertInertia(fn (Assert $page) => $page->where('publishesWithoutReview', false));
+    }
+
+    public function test_a_table_created_without_review_says_it_is_already_published(): void
+    {
+        config()->set('modules.settings.game-tables.frontend_creation.publication.mode', 'auto');
+
+        $this->actingAs($this->author)
+            ->post(route('gametables.store'), $this->tableData('Mesa directa'))
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('gametables.my-tables'))
+            ->assertSessionHas('success', 'Mesa creada y publicada: ya es visible.');
+    }
+
+    public function test_a_table_created_for_review_says_it_was_created(): void
+    {
+        $this->actingAs($this->author)
+            ->post(route('gametables.store'), $this->tableData('Mesa en borrador'))
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success', 'Mesa creada correctamente');
+    }
+
+    public function test_a_campaign_created_without_review_says_it_is_already_published(): void
+    {
+        config()->set('modules.settings.game-tables.frontend_creation.publication.mode', 'auto');
+
+        $this->actingAs($this->author)
+            ->post(route('campaigns.frontend-store'), $this->campaignData('Campaña directa'))
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('campaigns.my-campaigns'))
+            ->assertSessionHas('success', 'Campaña creada y publicada: ya es visible.');
     }
 
     public function test_the_published_message_follows_the_locale(): void

@@ -23,7 +23,7 @@ Lo que creas en la web pasa por unos estados antes de publicarse. Según la conf
 
 | Estado | Qué significa | Qué puedes hacer |
 |---|---|---|
-| **Borrador** | Guardada, sin enviar. | **Editar**, **Enviar a revisión** o **Eliminar**. |
+| **Borrador** | Guardada, sin enviar. | **Editar**, **Enviar a revisión** (o **Publicar**, si publicas sin revisión) o **Eliminar**. |
 | **Pendiente de revisión** | Enviada. La organización la está revisando. Verás **En revisión**. | Nada: espera la respuesta. |
 | **Aprobada** | Revisada y publicada. | Abrirla con **Ver mesa pública** o **Ver campaña pública**. |
 
@@ -34,12 +34,9 @@ Si la organización la rechaza, vuelve a **Borrador** con el **Motivo del rechaz
 1. En **Borradores**, pulsa **Enviar a revisión** en la mesa o la campaña.
 2. Confirma con **Enviar a revisión**.
 
-Verás uno de estos mensajes:
+Verás «Mesa enviada para revisión» o «Campaña enviada para revisión»: queda **Pendiente de revisión**. La organización recibe un aviso para revisarla.
 
-- «Mesa enviada para revisión» o «Campaña enviada para revisión»: queda **Pendiente de revisión**. La organización recibe un aviso para revisarla.
-- «Mesa publicada correctamente» o «Campaña publicada correctamente»: la configuración te deja publicar sin revisión, y ya está publicada.
-
-Si puedes publicar sin revisión, la mesa o la campaña puede publicarse ya al crearla, sin pasar por **Borradores**.
+Si la configuración te deja publicar sin revisión, el botón se llama **Publicar** y el diálogo te avisa de que será visible en cuanto confirmes. Al confirmar verás «Mesa publicada correctamente» o «Campaña publicada correctamente». En ese caso, lo que creas se publica ya al crearlo, sin pasar por **Borradores**: verás «Mesa creada y publicada: ya es visible.» o «Campaña creada y publicada: ya es visible.».
 
 ## La respuesta
 

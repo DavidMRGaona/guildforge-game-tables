@@ -642,11 +642,13 @@ return [
     */
     'frontend' => [
         'table_created' => 'Table created successfully',
+        'table_created_published' => 'Table created and published: it is already visible.',
         'table_updated' => 'Table updated successfully',
         'table_deleted' => 'Table deleted successfully',
         'submitted_for_review' => 'Table sent for review',
         'table_published' => 'Table published successfully',
         'campaign_created' => 'Campaign created successfully',
+        'campaign_created_published' => 'Campaign created and published: it is already visible.',
         'campaign_updated' => 'Campaign updated successfully',
         'campaign_deleted' => 'Campaign deleted successfully',
         'campaign_submitted_for_review' => 'Campaign sent for review',

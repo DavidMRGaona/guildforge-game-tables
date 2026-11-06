@@ -715,11 +715,13 @@ return [
     */
     'frontend' => [
         'table_created' => 'Mesa creada correctamente',
+        'table_created_published' => 'Mesa creada y publicada: ya es visible.',
         'table_updated' => 'Mesa actualizada correctamente',
         'table_deleted' => 'Mesa eliminada correctamente',
         'submitted_for_review' => 'Mesa enviada para revisión',
         'table_published' => 'Mesa publicada correctamente',
         'campaign_created' => 'Campaña creada correctamente',
+        'campaign_created_published' => 'Campaña creada y publicada: ya es visible.',
         'campaign_updated' => 'Campaña actualizada correctamente',
         'campaign_deleted' => 'Campaña eliminada correctamente',
         'campaign_submitted_for_review' => 'Campaña enviada para revisión',

@@ -14,7 +14,7 @@ export default {
         tables: 'tables',
         // Reason next to an action closed until the account verifies its email (the core has the others)
         verificationGate: {
-            edit: 'To edit, send for review or delete, verify your email.',
+            edit: 'To edit, send or delete, verify your email.',
         },
         // «Mis mesas» / «Mis campañas» back to their profile tab
         backToProfile: 'Back to my profile',
@@ -308,6 +308,11 @@ export default {
             noTablesDescription: 'You have not created any game tables yet.',
             submitForReview: 'Submit for review',
             submitForReviewTitle: 'Submit table for review',
+            // Sending publishes at once (publication without review for this author)
+            publish: 'Publish',
+            publishTitle: 'Publish table',
+            confirmPublish:
+                'The table will be published and visible on the site as soon as you confirm. Do you want to continue?',
             viewPublic: 'View public table',
             drafts: 'Drafts',
             published: 'Published',
@@ -587,6 +592,11 @@ export default {
             noCampaignsDescription: 'You have not created any campaigns yet.',
             submitForReview: 'Submit for review',
             submitForReviewTitle: 'Submit campaign for review',
+            // Sending publishes at once (publication without review for this author)
+            publish: 'Publish',
+            publishTitle: 'Publish campaign',
+            confirmPublish:
+                'The campaign will be published and visible on the site as soon as you confirm. Do you want to continue?',
             viewPublic: 'View public campaign',
             pendingReviewMessage: 'Under review',
             confirmSubmit:

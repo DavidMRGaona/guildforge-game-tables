@@ -7,6 +7,7 @@ namespace Modules\GameTables\Infrastructure\Services;
 use Modules\GameTables\Application\DTOs\CampaignResponseDTO;
 use Modules\GameTables\Application\Services\CampaignDirectionInterface;
 use Modules\GameTables\Application\Services\CreationEligibilityServiceInterface;
+use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Repositories\CampaignJoinRequestRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
@@ -18,6 +19,7 @@ final readonly class ProfileCreatedCampaignsDataProvider
     public function __construct(
         private CampaignRepositoryInterface $campaignRepository,
         private CreationEligibilityServiceInterface $eligibilityService,
+        private FrontendCreationServiceInterface $creationService,
         private CampaignRosterRepositoryInterface $roster,
         private CampaignDirectionInterface $direction,
         private CampaignJoinRequestRepositoryInterface $joinRequests,
@@ -26,7 +28,7 @@ final readonly class ProfileCreatedCampaignsDataProvider
     /**
      * Get created campaigns data for a user's profile page.
      *
-     * @return array{campaigns: array<array<string, mixed>>, drafts: array<array<string, mixed>>, total: int, canCreate: bool}|null
+     * @return array{campaigns: array<array<string, mixed>>, drafts: array<array<string, mixed>>, total: int, canCreate: bool, publishesWithoutReview: bool}|null
      */
     public function getDataForUser(?string $userId): ?array
     {
@@ -36,6 +38,8 @@ final readonly class ProfileCreatedCampaignsDataProvider
 
         $eligibility = $this->eligibilityService->canCreateCampaign($userId);
         $canCreate = $eligibility->eligible && $eligibility->canCreateCampaigns;
+        // Sending a draft publishes it instead of sending it to review: the dialog says which
+        $publishesWithoutReview = $this->creationService->publishesWithoutReview($userId);
 
         $campaigns = $this->campaignRepository->getByCreator($userId);
 
@@ -45,6 +49,7 @@ final readonly class ProfileCreatedCampaignsDataProvider
                 'drafts' => [],
                 'total' => 0,
                 'canCreate' => $canCreate,
+                'publishesWithoutReview' => $publishesWithoutReview,
             ];
         }
 
@@ -88,6 +93,7 @@ final readonly class ProfileCreatedCampaignsDataProvider
             'drafts' => $drafts,
             'total' => count($campaigns),
             'canCreate' => $canCreate,
+            'publishesWithoutReview' => $publishesWithoutReview,
         ];
     }
 
