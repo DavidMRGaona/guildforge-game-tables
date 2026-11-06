@@ -6,7 +6,6 @@ namespace Modules\GameTables\Infrastructure\Services;
 
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Modules\GameTables\Application\Services\EventWithTablesQueryInterface;
-use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
 final class EventWithTablesQuery implements EventWithTablesQueryInterface
@@ -21,8 +20,7 @@ final class EventWithTablesQuery implements EventWithTablesQueryInterface
         $tableCount = GameTableModel::query()
             ->selectRaw('count(*)')
             ->whereColumn((new GameTableModel)->qualifyColumn('event_id'), (new EventModel)->getQualifiedKeyName())
-            ->where('is_published', true)
-            ->whereNotIn('status', [TableStatus::Cancelled->value, TableStatus::Draft->value]);
+            ->publiclyListed();
 
         return EventModel::query()
             ->where('is_published', true)

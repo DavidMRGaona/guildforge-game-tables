@@ -152,6 +152,29 @@ final class CampaignSearchSourceTest extends ModuleTestCase
         $this->assertNull($this->stored($campaign->id));
     }
 
+    public function test_deleting_the_creator_for_good_forgets_the_campaigns_document(): void
+    {
+        // The campaign goes with its creator through the foreign key, without model events
+        $creator = UserModel::factory()->create();
+        $campaign = $this->campaign(['created_by' => $creator->id]);
+        $other = $this->campaign();
+
+        $creator->forceDelete();
+
+        $this->assertNull($this->stored($campaign->id));
+        $this->assertNotNull($this->stored($other->id));
+    }
+
+    public function test_a_soft_deleted_creator_keeps_the_campaigns_document(): void
+    {
+        $creator = UserModel::factory()->create();
+        $campaign = $this->campaign(['created_by' => $creator->id]);
+
+        $creator->delete();
+
+        $this->assertNotNull($this->stored($campaign->id));
+    }
+
     public function test_renaming_the_game_system_refreshes_its_campaigns(): void
     {
         $campaign = $this->campaign();

@@ -188,6 +188,29 @@ final class GameTableSearchSourceTest extends ModuleTestCase
         $this->assertNull($this->stored($table->id));
     }
 
+    public function test_deleting_the_creator_for_good_forgets_the_tables_document(): void
+    {
+        // The table goes with its creator through the foreign key, without model events
+        $creator = UserModel::factory()->create();
+        $table = $this->table(['created_by' => $creator->id]);
+        $other = $this->table();
+
+        $creator->forceDelete();
+
+        $this->assertNull($this->stored($table->id));
+        $this->assertNotNull($this->stored($other->id));
+    }
+
+    public function test_a_soft_deleted_creator_keeps_the_tables_document(): void
+    {
+        $creator = UserModel::factory()->create();
+        $table = $this->table(['created_by' => $creator->id]);
+
+        $creator->delete();
+
+        $this->assertNotNull($this->stored($table->id));
+    }
+
     public function test_renaming_the_game_system_refreshes_its_tables(): void
     {
         $table = $this->table();

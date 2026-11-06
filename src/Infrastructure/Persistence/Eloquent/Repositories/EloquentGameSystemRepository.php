@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories;
 
 use DateTimeImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Modules\GameTables\Domain\Entities\GameSystem;
-use Modules\GameTables\Domain\Enums\CampaignStatus;
-use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Exceptions\GameSystemNotFoundException;
 use Modules\GameTables\Domain\Repositories\GameSystemRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameSystemId;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
 final readonly class EloquentGameSystemRepository implements GameSystemRepositoryInterface
 {
@@ -98,9 +99,9 @@ final readonly class EloquentGameSystemRepository implements GameSystemRepositor
     {
         return GameSystemModel::query()
             ->where('is_active', true)
-            ->withCount(['gameTables' => function ($query): void {
-                $query->where('is_published', true)
-                    ->whereNotIn('status', [TableStatus::Cancelled->value, TableStatus::Draft->value]);
+            ->withCount(['gameTables' => static function (Builder $query): void {
+                /** @var Builder<GameTableModel> $query */
+                $query->publiclyListed();
             }])
             ->orderBy('name')
             ->get()
@@ -118,9 +119,9 @@ final readonly class EloquentGameSystemRepository implements GameSystemRepositor
     {
         return GameSystemModel::query()
             ->where('is_active', true)
-            ->withCount(['campaigns' => function ($query): void {
-                $query->where('is_published', true)
-                    ->whereNotIn('status', [CampaignStatus::Cancelled->value]);
+            ->withCount(['campaigns' => static function (Builder $query): void {
+                /** @var Builder<CampaignModel> $query */
+                $query->publiclyListed();
             }])
             ->orderBy('name')
             ->get()
