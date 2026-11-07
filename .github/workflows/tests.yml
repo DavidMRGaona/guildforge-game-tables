@@ -18,7 +18,7 @@ jobs:
     with:
       module_name: 'game-tables'
       # Host branch, tag or SHA to test against (main when the variable is unset)
-      host_ref: ${{ vars.GUILDFORGE_HOST_REF || 'main' }}
+      host_ref: 'feat/355-module-test-parts'
       # The core's quality tools (Rector, Pint, PHPStan, ESLint, Prettier, vue-tsc, Vitest)
       quality: true
     permissions:
