@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables;
 
+use App\Application\Calendar\Contracts\CalendarAttendanceSourceInterface;
 use App\Application\Calendar\Contracts\CalendarEntrySourceInterface;
 use App\Application\Cookies\DTOs\DeclaredCookieDTO;
 use App\Application\Cookies\Services\CookieDeclarationRegistryInterface;
@@ -111,6 +112,7 @@ use Modules\GameTables\Filament\Resources\PublisherResource;
 use Modules\GameTables\Filament\Widgets\PendingModerationWidget;
 use Modules\GameTables\Http\Controllers\CampaignInvitationController;
 use Modules\GameTables\Http\Controllers\GuestConfirmationController;
+use Modules\GameTables\Infrastructure\Calendar\GameTableAttendanceSource;
 use Modules\GameTables\Infrastructure\Calendar\GameTableCalendarSource;
 use Modules\GameTables\Infrastructure\Knowledge\AddsCampaignSessionsCapability;
 use Modules\GameTables\Infrastructure\Knowledge\CreatesAnythingCapability;
@@ -1355,6 +1357,18 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     {
         return [
             GameTableCalendarSource::class,
+        ];
+    }
+
+    /**
+     * Tables each person takes part in, for the personal calendar (core ≥ 3.38).
+     *
+     * @return array<class-string<CalendarAttendanceSourceInterface>>
+     */
+    public function registerCalendarAttendanceSources(): array
+    {
+        return [
+            GameTableAttendanceSource::class,
         ];
     }
 

@@ -6,7 +6,7 @@ category: events-and-games
 audience: site
 order: 20
 keywords: [apuntarme, apuntarse, inscribirme, inscribirse, inscripción, reservar plaza, plaza, jugar, quiero jugar, partida, mesa, espectador, jugador, lista de espera, invitado, sin cuenta, confirmar inscripción, pendiente, confirmado, acceso anticipado, notas para el director, incribirme, apuntrame]
-related: [game-tables.tables-overview, game-tables.cancel-sign-up, game-tables.join-campaign, core.account.verify-email]
+related: [game-tables.tables-overview, game-tables.cancel-sign-up, game-tables.join-campaign, core.account.verify-email, core.events.personal-calendar]
 ---
 Te apuntas desde la ficha de la mesa, en la sección **Inscripción**. El botón cambia según la mesa y tu situación, y debajo indica cuántas plazas quedan.
 
@@ -39,7 +39,7 @@ Verás «Te has inscrito correctamente» y, encima del botón, **Tu inscripción
 | **Pendiente** | La mesa confirma a mano: espera a que la organización o el director aprueben tu inscripción. Te llegará un correo con la respuesta. |
 | **Lista de espera** | Estás en la cola, con tu posición. Si se libera una plaza antes del inicio (o del cierre de inscripciones, si es anterior), pasas a la mesa y te avisamos por correo. En una mesa con confirmación manual pasas como **Pendiente**. |
 
-También verás tus inscripciones en tu perfil, pestaña **Mesas**: **Próximas partidas** y **Partidas pasadas**.
+También verás tus inscripciones en tu perfil, pestaña **Mesas**: **Próximas partidas** y **Partidas pasadas**. Las mesas en las que estás confirmado, o que diriges, aparecen además en tu calendario personal; la guía «Tu calendario personal» explica cómo verlo y suscribirte.
 
 ### Correos que recibes
 
