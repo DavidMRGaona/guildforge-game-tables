@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Filament\RelationManagers;
 
 use App\Application\Services\TimezoneServiceInterface;
+use App\Filament\Concerns\ChecksPermissions;
 use App\Filament\Forms\Components\TimePicker;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\PermissionModel;
@@ -26,6 +27,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Locked;
 use Modules\GameTables\Application\DTOs\UpdateEventGameTableConfigDTO;
@@ -35,12 +37,15 @@ use Modules\GameTables\Domain\Enums\LocationMode;
 use Modules\GameTables\Domain\Enums\SchedulingMode;
 use Modules\GameTables\Domain\Repositories\EventGameTableConfigRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\TimeSlotDefinition;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
 /**
  * @property Schema $configForm
  */
 final class EventGameTableConfigRelationManager extends RelationManager
 {
+    use ChecksPermissions;
+
     protected static string $relationship = 'gameTableConfig';
 
     protected static ?string $recordTitleAttribute = 'event_id';
@@ -66,11 +71,22 @@ final class EventGameTableConfigRelationManager extends RelationManager
     }
 
     /**
-     * Always show the config tab so admins can configure game tables.
+     * Editing the event is not enough: the tab follows the game tables permissions. Whoever sees
+     * the tables sees it; whoever may save it (the module's settings) too.
      */
     public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
     {
-        return $ownerRecord instanceof EventModel;
+        return $ownerRecord instanceof EventModel
+            && (Gate::allows('viewAny', GameTableModel::class) || self::userCan('gametables:gametables.settings'));
+    }
+
+    /**
+     * Whether the tab may be saved. Its rules (who creates tables, early access) stand in for the
+     * module's creation settings for this event, so it takes the permission of those settings.
+     */
+    public function canSaveConfig(): bool
+    {
+        return self::userCan('gametables:gametables.settings');
     }
 
     public function mount(): void
@@ -121,7 +137,8 @@ final class EventGameTableConfigRelationManager extends RelationManager
     {
         return $schema
             ->components($this->getFormSchema())
-            ->statePath('configData');
+            ->statePath('configData')
+            ->disabled(fn (): bool => ! $this->canSaveConfig());
     }
 
     /**
@@ -317,6 +334,9 @@ final class EventGameTableConfigRelationManager extends RelationManager
 
     public function save(): void
     {
+        // A Livewire method can be called without the save button: check it on the server
+        abort_unless($this->canSaveConfig(), 403);
+
         $eventId = $this->getOwnerRecord()->getKey();
         $service = app(EventGameTableConfigServiceInterface::class);
 

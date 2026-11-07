@@ -170,6 +170,14 @@ final class GameTablesGuidesTest extends ModuleTestCase
             'game-tables.panel.web-creation-settings',
         ], $this->visiblePanelGuides($this->userWith('gametables:gametables.settings')));
 
+        // The event's tables tab needs both: editing the event and the module's settings
+        $this->assertSame([], $this->visiblePanelGuides($this->userWith('events.update')));
+        $this->assertSame([
+            'game-tables.panel.event-tables',
+            'game-tables.panel.settings',
+            'game-tables.panel.web-creation-settings',
+        ], $this->visiblePanelGuides($this->userWith('events.update', 'gametables:gametables.settings')));
+
         $this->assertSame(['game-tables.panel.catalog'], $this->visiblePanelGuides($this->userWith('gametables:gamesystems.view_any')));
 
         $this->assertSame([], $this->visiblePanelGuides(UserModel::factory()->editor()->create()));

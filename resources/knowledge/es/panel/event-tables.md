@@ -9,7 +9,7 @@ keywords: [evento, eventos, jornada, jornadas, quedada, convención, mesas del e
 related: [core.panel.manage-events, game-tables.panel.web-creation-settings, game-tables.panel.create-table, game-tables.panel.moderation]
 conditions:
   permissions:
-    all: ['events.update']
+    all: ['events.update', 'gametables:gametables.settings']
 ---
 Un evento puede reunir varias mesas: una jornada de rol, unas jornadas abiertas o una quedada. Desde el panel puedes vincular cualquier mesa a un evento con su campo **Evento**. Esta guía explica cómo abrir además el evento para que la gente cree sus mesas desde la web, con las reglas que tú pongas.
 
@@ -19,6 +19,8 @@ Un evento puede reunir varias mesas: una jornada de rol, unas jornadas abiertas 
 2. Entra en el evento.
 3. Baja hasta la pestaña **Configuración de mesas**.
 4. Al terminar, pulsa **Guardar configuración**. Sale el aviso «Configuración guardada».
+
+La pestaña aparece si puedes ver las mesas o cambiar la configuración del módulo de mesas. Para cambiarla necesitas el permiso de esa configuración: sin él, ves los campos bloqueados y no aparece el botón **Guardar configuración**.
 
 ## Activar las mesas
 
