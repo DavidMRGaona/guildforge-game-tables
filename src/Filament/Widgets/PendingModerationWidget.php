@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Modules\GameTables\Filament\Widgets;
 
 use App\Application\Services\DashboardWidgetConfigServiceInterface;
+use App\Filament\Actions\RowDetailsAction;
 use DateTimeInterface;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Support\ArrayRecord;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -67,11 +69,15 @@ final class PendingModerationWidget extends BaseWidget
                     ->dateTime('d/m/Y H:i')
                     ->visibleFrom('md'),
             ])
+            // «Ver detalles» shows what narrow screens hide; with «Ver» they share one menu
             ->recordActions([
-                Action::make('view')
-                    ->label(__('game-tables::messages.actions.view'))
-                    ->icon('heroicon-o-eye')
-                    ->url(fn (array $record): string => $record['url']),
+                ActionGroup::make([
+                    RowDetailsAction::make(),
+                    Action::make('view')
+                        ->label(__('game-tables::messages.actions.view'))
+                        ->icon('heroicon-o-arrow-top-right-on-square')
+                        ->url(fn (array $record): string => $record['url']),
+                ]),
             ])
             ->emptyStateHeading(__('game-tables::messages.widgets.pending_moderation.no_pending'))
             ->emptyStateIcon('heroicon-o-check-circle')
