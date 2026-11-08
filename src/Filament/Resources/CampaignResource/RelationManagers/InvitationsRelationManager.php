@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources\CampaignResource\RelationManagers;
 
+use App\Filament\Actions\RowDetailsAction;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Forms\Components\Checkbox;
@@ -58,6 +59,7 @@ final class InvitationsRelationManager extends RelationManager
 
                 TextColumn::make('send_count')
                     ->label(__('game-tables::messages.relation_managers.invitations.send_count'))
+                    ->alignCenter()
                     ->visibleFrom('lg'),
 
                 TextColumn::make('expires_at')
@@ -96,6 +98,7 @@ final class InvitationsRelationManager extends RelationManager
             // One menu: two labelled actions made the table overflow its container
             ->recordActions([
                 ActionGroup::make([
+                    RowDetailsAction::make(),
                     Action::make('resend')
                         ->label(__('game-tables::messages.relation_managers.invitations.resend'))
                         ->icon('heroicon-o-paper-airplane')

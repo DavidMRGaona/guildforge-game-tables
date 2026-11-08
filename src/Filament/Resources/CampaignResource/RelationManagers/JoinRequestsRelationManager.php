@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources\CampaignResource\RelationManagers;
 
+use App\Filament\Actions\RowDetailsAction;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Forms\Components\Textarea;
@@ -71,6 +72,7 @@ final class JoinRequestsRelationManager extends RelationManager
             // One menu: two labelled actions made the table overflow its container
             ->recordActions([
                 ActionGroup::make([
+                    RowDetailsAction::make(),
                     Action::make('accept')
                         ->label(__('game-tables::messages.relation_managers.join_requests.accept'))
                         ->icon('heroicon-o-check')

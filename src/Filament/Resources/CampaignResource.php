@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources;
 
+use App\Filament\Actions\RowDetailsAction;
 use App\Filament\Concerns\ChecksPermissions;
 use App\Filament\Forms\Components\EndSurveyField;
 use App\Filament\Resources\BaseResource;
@@ -351,6 +352,7 @@ final class CampaignResource extends BaseResource
 
                 TextColumn::make('current_session')
                     ->label(__('game-tables::messages.fields.current_session'))
+                    ->alignCenter()
                     ->numeric()
                     ->sortable()
                     ->wrapHeader()
@@ -376,6 +378,7 @@ final class CampaignResource extends BaseResource
                     ->visibleFrom('2xl'),
 
                 TextColumn::make('created_at')
+                    ->label(__('game-tables::messages.fields.created_at'))
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -397,6 +400,7 @@ final class CampaignResource extends BaseResource
             // One menu: the moderation actions and «Editar» as labelled links made the table overflow its container
             ->recordActions([
                 ActionGroup::make([
+                    RowDetailsAction::make(),
                     Action::make('approve')
                         ->authorize(fn (): bool => self::canModerate())
                         ->label(__('game-tables::messages.moderation.approve'))

@@ -130,6 +130,7 @@ return [
     |--------------------------------------------------------------------------
     */
     'fields' => [
+        'created_at' => 'Creado',
         // GameSystem fields
         'name' => 'Nombre',
         'slug' => 'Slug',

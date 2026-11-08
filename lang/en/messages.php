@@ -116,6 +116,7 @@ return [
     |--------------------------------------------------------------------------
     */
     'fields' => [
+        'created_at' => 'Created',
         'name' => 'Name',
         'slug' => 'Slug',
         'description' => 'Description',

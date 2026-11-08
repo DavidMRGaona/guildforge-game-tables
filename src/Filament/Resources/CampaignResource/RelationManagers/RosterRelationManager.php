@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources\CampaignResource\RelationManagers;
 
+use App\Filament\Actions\RowDetailsAction;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -49,20 +51,23 @@ final class RosterRelationManager extends RelationManager
                     ->visibleFrom('md'),
             ])
             ->recordActions([
-                Action::make('remove')
-                    ->label(__('game-tables::messages.relation_managers.roster.remove'))
-                    ->icon('heroicon-o-user-minus')
-                    ->color('danger')
-                    ->authorize(fn (): bool => $this->canManage())
-                    ->requiresConfirmation()
-                    ->modalDescription(__('game-tables::messages.relation_managers.roster.remove_description'))
-                    ->action(function (UserModel $record): void {
-                        $this->run(fn () => app(CampaignRosterServiceInterface::class)->removeMember(
-                            (string) $this->getOwnerRecord()->getKey(),
-                            $record->id,
-                            (string) auth()->id(),
-                        ), 'removed');
-                    }),
+                ActionGroup::make([
+                    RowDetailsAction::make(),
+                    Action::make('remove')
+                        ->label(__('game-tables::messages.relation_managers.roster.remove'))
+                        ->icon('heroicon-o-user-minus')
+                        ->color('danger')
+                        ->authorize(fn (): bool => $this->canManage())
+                        ->requiresConfirmation()
+                        ->modalDescription(__('game-tables::messages.relation_managers.roster.remove_description'))
+                        ->action(function (UserModel $record): void {
+                            $this->run(fn () => app(CampaignRosterServiceInterface::class)->removeMember(
+                                (string) $this->getOwnerRecord()->getKey(),
+                                $record->id,
+                                (string) auth()->id(),
+                            ), 'removed');
+                        }),
+                ]),
             ]);
     }
 }
