@@ -1028,17 +1028,6 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     }
 
     /**
-     * The module's entries sit in the core's groups (PanelNavigationGroup) and its settings page in
-     * the core's «Configuración» cluster, so it adds no group of its own.
-     *
-     * @return array<string, array{icon?: string, sort?: int}>
-     */
-    public function registerNavigationGroups(): array
-    {
-        return [];
-    }
-
-    /**
      * @return array<PermissionDTO>
      */
     public function registerPermissions(): array
