@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources\GameTableResource\RelationManagers;
 
+use App\Filament\Actions\RowDetailsAction;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -90,6 +91,9 @@ final class StatusLogRelationManager extends RelationManager
                     ->placeholder('—')
                     ->wrap()
                     ->visibleFrom('md'),
+            ])
+            ->recordActions([
+                RowDetailsAction::makeIconButton(),
             ])
             ->defaultSort('created_at', 'desc');
     }

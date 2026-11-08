@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Filament\Resources;
 
 use App\Application\Services\TimezoneServiceInterface;
+use App\Filament\Actions\RowDetailsAction;
 use App\Filament\Concerns\ChecksPermissions;
 use App\Filament\Forms\Components\EndSurveyField;
 use App\Filament\Resources\BaseResource;
@@ -550,6 +551,7 @@ final class GameTableResource extends BaseResource
 
                 TextColumn::make('participants_count')
                     ->label(__('game-tables::messages.model.participant.plural'))
+                    ->alignCenter()
                     ->counts('participants')
                     ->sortable()
                     ->wrapHeader()
@@ -596,6 +598,7 @@ final class GameTableResource extends BaseResource
             // One menu: the moderation actions and «Editar» as labelled links made the table overflow its container
             ->recordActions([
                 ActionGroup::make([
+                    RowDetailsAction::make(),
                     Action::make('approve')
                         ->authorize(fn (): bool => self::canModerate())
                         ->label(__('game-tables::messages.moderation.approve'))

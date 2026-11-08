@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Filament\Resources;
 
+use App\Filament\Actions\RowDetailsAction;
 use App\Filament\Resources\BaseResource;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -111,6 +113,7 @@ final class PublisherResource extends BaseResource
 
                 TextColumn::make('game_systems_count')
                     ->label(__('game-tables::messages.fields.game_systems_count'))
+                    ->alignCenter()
                     ->counts('gameSystems')
                     ->sortable()
                     ->visibleFrom('md'),
@@ -130,7 +133,10 @@ final class PublisherResource extends BaseResource
                     ->label(__('game-tables::messages.fields.is_active')),
             ])
             ->recordActions([
-                EditAction::make(),
+                ActionGroup::make([
+                    RowDetailsAction::make(),
+                    EditAction::make(),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

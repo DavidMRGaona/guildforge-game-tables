@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Tests\Feature\Filament;
 
+use App\Filament\Actions\RowDetailsAction;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Filament\Actions\ActionGroup;
+use Filament\Support\Enums\Alignment;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
@@ -82,12 +84,49 @@ final class PanelTablesTest extends ModuleTestCase
     public static function tablesWithSeveralActions(): array
     {
         return [
-            'tables' => ['tables', ['approve', 'reject', 'edit']],
-            'campaigns' => ['campaigns', ['approve', 'reject', 'edit']],
-            'participants' => ['participants', ['confirm', 'confirmEmail', 'reject', 'promote', 'cancelRegistration', 'markNoShow', 'edit', 'delete']],
-            'join requests' => ['join_requests', ['accept', 'reject']],
-            'invitations' => ['invitations', ['resend', 'cancel']],
+            'tables' => ['tables', [RowDetailsAction::NAME, 'approve', 'reject', 'edit']],
+            'campaigns' => ['campaigns', [RowDetailsAction::NAME, 'approve', 'reject', 'edit']],
+            'participants' => ['participants', [RowDetailsAction::NAME, 'confirm', 'confirmEmail', 'reject', 'promote', 'cancelRegistration', 'markNoShow', 'edit', 'delete']],
+            'join requests' => ['join_requests', [RowDetailsAction::NAME, 'accept', 'reject']],
+            'invitations' => ['invitations', [RowDetailsAction::NAME, 'resend', 'cancel']],
+            'publishers' => ['publishers', [RowDetailsAction::NAME, 'edit']],
+            'game systems' => ['game_systems', [RowDetailsAction::NAME, 'edit']],
+            'content warnings' => ['content_warnings', [RowDetailsAction::NAME, 'edit']],
+            'roster' => ['roster', [RowDetailsAction::NAME, 'remove']],
         ];
+    }
+
+    public function test_the_status_log_offers_only_the_details_icon(): void
+    {
+        $actions = $this->table('status_log')->getRecordActions();
+
+        $this->assertCount(1, $actions);
+        $this->assertSame(RowDetailsAction::NAME, $actions[0]->getName());
+        $this->assertTrue($actions[0]->isIconButton());
+    }
+
+    /**
+     * @param  list<string>  $expected
+     */
+    #[DataProvider('tablesWithSeveralActions')]
+    public function test_row_details_comes_first_in_the_menu(string $key, array $expected): void
+    {
+        $actions = $this->table($key)->getRecordActions();
+
+        $this->assertSame(RowDetailsAction::NAME, array_key_first($actions[0]->getFlatActions()));
+    }
+
+    public function test_short_counters_are_centred(): void
+    {
+        foreach ([
+            'tables' => 'participants_count',
+            'publishers' => 'game_systems_count',
+            'invitations' => 'send_count',
+            'campaigns' => 'current_session',
+            'participants' => 'waiting_list_position',
+        ] as $key => $column) {
+            $this->assertSame(Alignment::Center, $this->table($key)->getColumn($column)?->getAlignment(), "Column {$column} of {$key}");
+        }
     }
 
     /**

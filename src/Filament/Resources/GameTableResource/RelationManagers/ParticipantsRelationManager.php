@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Filament\Resources\GameTableResource\RelationManagers;
 
 use App\Application\Services\TimezoneServiceInterface;
+use App\Filament\Actions\RowDetailsAction;
 use Closure;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -410,6 +411,7 @@ final class ParticipantsRelationManager extends RelationManager
 
                 TextColumn::make('waiting_list_position')
                     ->label(__('game-tables::messages.fields.waiting_list_position'))
+                    ->alignCenter()
                     // The place among those waiting for the same role: stored positions keep gaps
                     ->state(fn (ParticipantModel $record): ?int => $record->status === ParticipantStatus::WaitingList
                         ? ($this->waitingListPlaces()[$record->id] ?? null)
@@ -488,6 +490,7 @@ final class ParticipantsRelationManager extends RelationManager
             // One menu: up to eight labelled actions per row made the table overflow its container
             ->recordActions([
                 ActionGroup::make([
+                    RowDetailsAction::make(),
                     Action::make('confirm')
                         ->label(__('game-tables::messages.relation_managers.participants.confirm'))
                         ->icon('heroicon-o-check')
