@@ -10,6 +10,7 @@ use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Auth;
 use Modules\GameTables\Application\Services\GameMasterServiceInterface;
 use Modules\GameTables\Filament\Resources\GameTableResource;
+use Modules\GameTables\Filament\Support\CampaignSessionType;
 use Modules\GameTables\Filament\Support\DelegatedDirectors;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
@@ -40,6 +41,7 @@ final class CreateGameTable extends CreateRecord
         // Refused before anything is written
         DelegatedDirectors::ensureLinked($data);
         $data = DelegatedDirectors::dropForCampaign($data);
+        $data = CampaignSessionType::guardFormData($data);
 
         $data['created_by'] = Auth::id();
 

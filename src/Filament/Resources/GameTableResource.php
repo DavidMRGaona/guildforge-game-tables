@@ -22,6 +22,7 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
@@ -39,6 +40,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
@@ -133,14 +135,24 @@ final class GameTableResource extends BaseResource
                                     ->maxLength(255)
                                     ->columnSpanFull(),
 
+                                // The type the form had before a campaign made it a session, given back when the campaign is removed
+                                Hidden::make('type_before_campaign')
+                                    ->dehydrated(false),
+
                                 Select::make('campaign_id')
                                     ->label(__('game-tables::messages.fields.campaign'))
-                                    ->options(CampaignModel::query()->pluck('title', 'id'))
+                                    ->options(fn (?Model $record): array => self::linkableCampaigns($record))
                                     ->searchable()
                                     ->native(false)
+                                    // As on the site, a campaign session has its campaign
+                                    ->required(fn (Get $get): bool => $get('table_type') === TableType::CampaignSession->value)
                                     ->live()
                                     ->afterStateUpdated(function (?string $state, Set $set, Get $get): void {
                                         if ($state === null) {
+                                            // No longer a session: the type it had before, or one to choose
+                                            $set('table_type', $get('type_before_campaign'));
+                                            $set('type_before_campaign', null);
+
                                             return;
                                         }
 
@@ -148,6 +160,13 @@ final class GameTableResource extends BaseResource
                                         if ($campaign === null) {
                                             return;
                                         }
+
+                                        // A table with a campaign is a campaign session; switching campaigns keeps the type to give back
+                                        if ($get('table_type') !== TableType::CampaignSession->value) {
+                                            $set('type_before_campaign', $get('table_type'));
+                                        }
+
+                                        $set('table_type', TableType::CampaignSession->value);
 
                                         // Copy game system from campaign
                                         $set('game_system_id', $campaign->game_system_id);
@@ -302,6 +321,11 @@ final class GameTableResource extends BaseResource
                                     ->options(TableType::options())
                                     ->default(TableType::OneShot->value)
                                     ->native(false)
+                                    // Set by the campaign while there is one (the save forces it too)
+                                    ->disabled(fn (Get $get): bool => filled($get('campaign_id')))
+                                    ->dehydrated()
+                                    ->helperText(fn (Get $get): ?string => filled($get('campaign_id')) ? (string) __('game-tables::messages.fields.table_type_from_campaign') : null)
+                                    ->live()
                                     ->required(),
 
                                 TextInput::make('min_players')
@@ -831,6 +855,29 @@ final class GameTableResource extends BaseResource
         return $table->status->isFinal()
             || $table->status === TableStatus::InProgress
             || $table->starts_at <= CarbonImmutable::now();
+    }
+
+    /**
+     * The campaigns a table may be linked to: those created in the panel and approved web ones. A
+     * web campaign still in draft or in review is left out, except the one the table already has.
+     *
+     * @return array<string, string>
+     */
+    private static function linkableCampaigns(?Model $record): array
+    {
+        $linked = $record instanceof GameTableModel ? $record->campaign_id : null;
+
+        /** @var array<string, string> $campaigns */
+        $campaigns = CampaignModel::query()
+            ->where(fn (Builder $query): Builder => $query
+                ->whereNull('frontend_creation_status')
+                ->orWhere('frontend_creation_status', FrontendCreationStatus::Approved->value)
+                ->when($linked !== null, fn (Builder $query): Builder => $query->orWhere('id', $linked)))
+            ->orderBy('title')
+            ->pluck('title', 'id')
+            ->all();
+
+        return $campaigns;
     }
 
     private static function rosterSize(string $campaignId): int

@@ -349,7 +349,7 @@ final class ReviewWorkflowTest extends ModuleTestCase
 
         Livewire::test(EditCampaign::class, ['record' => $pending->getRouteKey()])
             ->assertFormFieldDisabled('is_published')
-            ->assertSee('Está pendiente de revisión: apruébala o recházala desde la lista de campañas.')
+            ->assertSee('Está pendiente de revisión: apruébala o recházala con «Aprobar» o «Rechazar».')
             ->set('data.is_published', true)
             ->call('save')
             ->assertHasNoFormErrors();
@@ -445,6 +445,25 @@ final class ReviewWorkflowTest extends ModuleTestCase
             ->assertNotified('La campaña ya no está en un estado que permita este cambio')
             ->callTableAction('reject', $campaign, ['reason' => 'Motivo'])
             ->assertNotified('La campaña ya no está en un estado que permita este cambio');
+
+        Livewire::test(EditCampaign::class, ['record' => $campaign->getRouteKey()])
+            ->callAction('approveModeration')
+            ->assertNotified('La campaña ya no está en un estado que permita este cambio')
+            ->callAction('rejectModeration', ['reason' => 'Motivo'])
+            ->assertNotified('La campaña ya no está en un estado que permita este cambio');
+
+        Livewire::test(ListCampaigns::class)
+            ->callTableBulkAction('approve', [$campaign])
+            ->assertNotified('La campaña ya no está en un estado que permita este cambio')
+            ->callTableBulkAction('reject', [$campaign], ['reason' => 'Motivo'])
+            ->assertNotified('La campaña ya no está en un estado que permita este cambio');
+
+        // Every selected campaign skipped: the warning alone, never a "0 approved" success
+        Livewire::test(ListCampaigns::class)
+            ->callTableBulkAction('approve', [$campaign])
+            ->assertNotNotified('0 campaña(s) aprobada(s)')
+            ->callTableBulkAction('reject', [$campaign], ['reason' => 'Motivo'])
+            ->assertNotNotified('0 campaña(s) rechazada(s)');
     }
 
     public function test_an_admin_saves_the_content_of_a_web_draft_table_without_changing_its_status(): void

@@ -10,6 +10,7 @@ use App\Filament\Resources\BaseResource;
 use Closure;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -31,7 +32,9 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Modules\GameTables\Application\Services\AssociationRoleNameInterface;
@@ -364,6 +367,14 @@ final class CampaignResource extends BaseResource
                     ->boolean()
                     ->visibleFrom('lg'),
 
+                IconColumn::make('frontend_creation_status')
+                    ->label(__('game-tables::messages.fields.created_from_web'))
+                    ->icon(fn (?FrontendCreationStatus $state): ?string => $state?->icon())
+                    ->color(fn (?FrontendCreationStatus $state): ?string => $state?->color())
+                    ->tooltip(fn (?FrontendCreationStatus $state): ?string => $state?->label())
+                    ->wrapHeader()
+                    ->visibleFrom('2xl'),
+
                 TextColumn::make('created_at')
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
@@ -378,6 +389,10 @@ final class CampaignResource extends BaseResource
                     ->options(GameSystemModel::query()->where('is_active', true)->pluck('name', 'id')),
                 TernaryFilter::make('is_published')
                     ->label(__('game-tables::messages.fields.is_published')),
+                SelectFilter::make('frontend_creation_status')
+                    ->label(__('game-tables::messages.fields.frontend_creation_status'))
+                    // Rejected is no longer written (the enum case stays for old code paths that may still read it)
+                    ->options(Arr::except(FrontendCreationStatus::options(), [FrontendCreationStatus::Rejected->value])),
             ])
             // One menu: the moderation actions and «Editar» as labelled links made the table overflow its container
             ->recordActions([
@@ -439,9 +454,86 @@ final class CampaignResource extends BaseResource
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
+                    BulkAction::make('approve')
+                        ->authorize(fn (): bool => self::canModerate())
+                        ->label(__('game-tables::messages.bulk_actions.approve'))
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->action(function (Collection $records): void {
+                            $service = app(FrontendCreationServiceInterface::class);
+
+                            self::moderateInBulk(
+                                $records,
+                                fn (CampaignModel $record) => $service->approveCampaign($record->id),
+                                'game-tables::messages.bulk_actions.campaigns_approved_count',
+                            );
+                        })
+                        ->deselectRecordsAfterCompletion(),
+                    BulkAction::make('reject')
+                        ->authorize(fn (): bool => self::canModerate())
+                        ->label(__('game-tables::messages.bulk_actions.reject'))
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->schema([
+                            Textarea::make('reason')
+                                ->label(__('game-tables::messages.moderation.rejection_reason'))
+                                ->placeholder(__('game-tables::messages.moderation.campaign_rejection_reason_placeholder'))
+                                ->required(),
+                        ])
+                        ->action(function (Collection $records, array $data): void {
+                            $service = app(FrontendCreationServiceInterface::class);
+
+                            self::moderateInBulk(
+                                $records,
+                                fn (CampaignModel $record) => $service->rejectCampaign($record->id, (string) $data['reason']),
+                                'game-tables::messages.bulk_actions.campaigns_rejected_count',
+                            );
+                        })
+                        ->deselectRecordsAfterCompletion(),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
+    }
+
+    /**
+     * Approves or rejects the selected campaigns that await review; the others are left as they are.
+     *
+     * @param  Collection<int, Model>  $records
+     * @param  Closure(CampaignModel): void  $moderate
+     */
+    private static function moderateInBulk(Collection $records, Closure $moderate, string $countKey): void
+    {
+        $count = 0;
+        $skipped = false;
+
+        foreach ($records as $record) {
+            // Only what the author sent to review: never a draft, an approved or a panel campaign
+            if (! $record instanceof CampaignModel || $record->frontend_creation_status !== FrontendCreationStatus::PendingReview) {
+                continue;
+            }
+
+            try {
+                $moderate($record);
+                $count++;
+            } catch (NotEditableException) {
+                // Another moderator got there first
+                $skipped = true;
+            }
+        }
+
+        // Nothing moderated and a warning shown: the warning says it all
+        if ($count > 0 || ! $skipped) {
+            Notification::make()
+                ->title(__($countKey, ['count' => $count]))
+                ->success()
+                ->send();
+        }
+
+        if ($skipped) {
+            self::warnStatusAlreadyChanged();
+        }
     }
 
     private static function warnStatusAlreadyChanged(): void

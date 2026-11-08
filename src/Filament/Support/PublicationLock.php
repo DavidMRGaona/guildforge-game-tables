@@ -43,9 +43,7 @@ final class PublicationLock
         }
 
         if ($record->frontend_creation_status === FrontendCreationStatus::PendingReview) {
-            return $record instanceof CampaignModel
-                ? (string) __('game-tables::messages.fields.is_published_campaign_pending_review')
-                : (string) __('game-tables::messages.fields.is_published_pending_review');
+            return (string) __('game-tables::messages.fields.is_published_pending_review');
         }
 
         return (string) __('game-tables::messages.fields.is_published_not_submitted');

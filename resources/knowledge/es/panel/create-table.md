@@ -25,7 +25,7 @@ Los campos marcados como obligatorios no dejan guardar si están vacíos. Si una
 ## Información básica
 
 - **Título**: el nombre de la partida.
-- **Campaña**: déjalo vacío para una mesa suelta. Si eliges una campaña, la mesa pasa a ser una sesión de esa campaña.
+- **Campaña**: déjalo vacío para una mesa suelta. Si eliges una campaña, la mesa pasa a ser una sesión de esa campaña y su **Tipo de mesa**, **Sesión de campaña**. Las campañas de la web solo salen una vez aprobadas.
 - **Sistema de juego**: solo salen los sistemas activos. Si eliges una campaña, se copia el suyo y no se puede cambiar.
 - **Evento**: si la mesa forma parte de una jornada, elige el evento. Solo salen los eventos publicados que aún no han empezado.
 - **Sinopsis**: el gancho de la partida, hasta 2000 caracteres.
@@ -51,7 +51,7 @@ Pulsa **Añadir director de juego** por cada persona que dirige. Una mesa puede 
 
 ## Capacidad y requisitos
 
-- **Tipo de mesa**: **One-shot**, **Aventura**, **Sesión de campaña**, **Demo** o **Tutorial**.
+- **Tipo de mesa**: **One-shot**, **Aventura**, **Sesión de campaña**, **Demo** o **Tutorial**. Con una campaña elegida queda fijado en **Sesión de campaña**; para elegir otro, vacía **Campaña**. Una **Sesión de campaña** necesita su campaña.
 - **Mínimo de jugadores** y **Máximo de jugadores**: el máximo son las plazas de jugador. Ninguno puede pasar del **Límite máximo de jugadores** de la configuración.
 - **Máximo de espectadores**: con 0, no se admiten espectadores.
 - **Edad mínima**: es orientativa. Sale en la ficha, pero no se comprueba al inscribirse, porque las cuentas no guardan la fecha de nacimiento.

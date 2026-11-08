@@ -5,14 +5,23 @@ declare(strict_types=1);
 namespace Modules\GameTables\Filament\Resources\CampaignResource\Pages;
 
 use App\Filament\Concerns\HasKnowledgeGuideAction;
+use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
+use Filament\Forms\Components\Textarea;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
+use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Application\Services\GameMasterServiceInterface;
+use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
+use Modules\GameTables\Domain\Exceptions\NotEditableException;
 use Modules\GameTables\Filament\Resources\CampaignResource;
 use Modules\GameTables\Filament\Support\PublicationLock;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 
+/**
+ * @property CampaignModel $record
+ */
 final class EditCampaign extends EditRecord
 {
     use HasKnowledgeGuideAction;
@@ -90,8 +99,86 @@ final class EditCampaign extends EditRecord
     protected function getHeaderActions(): array
     {
         return array_filter([
+            Action::make('approveModeration')
+                ->authorize(fn (): bool => CampaignResource::canModerate())
+                ->label(__('game-tables::messages.moderation.approve'))
+                ->icon('heroicon-o-check-circle')
+                ->color('success')
+                ->requiresConfirmation()
+                ->modalHeading(__('game-tables::messages.moderation.campaign_approve_confirmation'))
+                ->modalDescription(__('game-tables::messages.moderation.campaign_approve_description'))
+                ->visible(fn (): bool => $this->record->frontend_creation_status === FrontendCreationStatus::PendingReview)
+                ->action(function (): void {
+                    try {
+                        app(FrontendCreationServiceInterface::class)->approveCampaign($this->record->id);
+                    } catch (NotEditableException) {
+                        // Another moderator got there first
+                        $this->warnStatusAlreadyChanged();
+
+                        return;
+                    }
+
+                    Notification::make()
+                        ->title(__('game-tables::messages.notifications.campaign_approved'))
+                        ->success()
+                        ->send();
+
+                    $this->showModerationOutcome();
+                }),
+
+            Action::make('rejectModeration')
+                ->authorize(fn (): bool => CampaignResource::canModerate())
+                ->label(__('game-tables::messages.moderation.reject'))
+                ->icon('heroicon-o-x-circle')
+                ->color('danger')
+                ->modalHeading(__('game-tables::messages.moderation.campaign_reject_confirmation'))
+                ->modalDescription(__('game-tables::messages.moderation.campaign_reject_description'))
+                ->schema([
+                    Textarea::make('reason')
+                        ->label(__('game-tables::messages.moderation.rejection_reason'))
+                        ->placeholder(__('game-tables::messages.moderation.campaign_rejection_reason_placeholder'))
+                        ->required(),
+                ])
+                ->visible(fn (): bool => $this->record->frontend_creation_status === FrontendCreationStatus::PendingReview)
+                ->action(function (array $data): void {
+                    try {
+                        app(FrontendCreationServiceInterface::class)->rejectCampaign($this->record->id, (string) $data['reason']);
+                    } catch (NotEditableException) {
+                        $this->warnStatusAlreadyChanged();
+
+                        return;
+                    }
+
+                    Notification::make()
+                        ->title(__('game-tables::messages.notifications.campaign_rejected'))
+                        ->success()
+                        ->send();
+
+                    $this->showModerationOutcome();
+                }),
+
             DeleteAction::make(),
             $this->knowledgeGuideAction('game-tables.panel.campaign-roster'),
         ]);
+    }
+
+    private function warnStatusAlreadyChanged(): void
+    {
+        Notification::make()
+            ->title(__('game-tables::messages.notifications.campaign_status_already_changed'))
+            ->warning()
+            ->send();
+
+        // Show what the campaign is now, so the moderation buttons follow it
+        $this->showModerationOutcome();
+    }
+
+    /**
+     * The service saved through its own model instance: reload the record and the fields it changed.
+     */
+    private function showModerationOutcome(): void
+    {
+        $this->getRecord()->refresh();
+        $this->refreshFormData(['frontend_creation_status', 'is_published']);
     }
 }
