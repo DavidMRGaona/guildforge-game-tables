@@ -40,11 +40,13 @@ final class RosterRelationManager extends RelationManager
 
                 TextColumn::make('email')
                     ->label(__('game-tables::messages.relation_managers.roster.email'))
-                    ->searchable(),
+                    ->searchable()
+                    ->visibleFrom('sm'),
 
                 TextColumn::make('pivot.created_at')
                     ->label(__('game-tables::messages.relation_managers.roster.since'))
-                    ->dateTime('d/m/Y H:i'),
+                    ->dateTime('d/m/Y H:i')
+                    ->visibleFrom('md'),
             ])
             ->recordActions([
                 Action::make('remove')

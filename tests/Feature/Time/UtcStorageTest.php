@@ -364,12 +364,14 @@ final class UtcStorageTest extends ModuleTestCase
     {
         $editor = $this->creator();
         $this->grantRole($editor, 'editor');
-        // 10:00 in Madrid (CET); seven days earlier is 10:00 CEST, before the clocks go back
+        // 10:00 in Madrid (CET); seven days earlier is 10:00 CEST, before the clocks go back.
+        // The event starts far ahead: the event page also reads the real clock, and an event of
+        // 7 Nov 2026 had already ended by 8 Nov 2026
         $event = $this->eventWithTables([
             'creation_opens_at' => CarbonImmutable::parse('2026-10-30T09:00:00Z'),
             'early_access_enabled' => true,
             'early_access_tier' => ['access_type' => 'role', 'allowed_roles' => ['editor'], 'required_permission' => null, 'days_before_opening' => 7],
-        ], start: '2026-11-07T17:00:00Z');
+        ], start: '2035-11-07T17:00:00Z');
         $service = app(EventCreationEligibilityServiceInterface::class);
 
         $this->travelTo(CarbonImmutable::parse('2026-10-23T07:59:00Z'));

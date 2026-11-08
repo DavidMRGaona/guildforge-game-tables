@@ -25,20 +25,20 @@ Según el **Modo de publicación** de la configuración, a algunas personas no l
 
 - En el escritorio, el widget **Pendientes de moderación** junta mesas y campañas, las más antiguas primero. **Ver** abre cada una.
 - En **Mesas de rol** → **Mesas**, la pestaña **Pendientes de moderación** muestra solo las mesas en revisión, con su número.
-- En **Mesas de rol** → **Campañas**, las campañas en revisión muestran **Aprobar** y **Rechazar** en su fila.
+- En **Mesas de rol** → **Campañas**, las campañas en revisión muestran **Aprobar** y **Rechazar** en el menú **⋯** de su fila.
 
 En la lista de mesas, la columna **Creado desde web** marca con un icono lo que llegó de la web, y el filtro **Estado de moderación** separa **Borrador**, **Pendiente de revisión** y **Aprobada**.
 
 ## Aprobar
 
-1. Pulsa **Aprobar** en la fila o, en una mesa, también arriba en su ficha.
+1. Abre el menú **⋯** de la fila y pulsa **Aprobar** o, en una mesa, pulsa **Aprobar** arriba en su ficha.
 2. Confirma. El aviso dice «La mesa será publicada y visible para todos los usuarios.».
 
 La mesa o la campaña queda aprobada y publicada, y el autor recibe «Tu mesa ha sido aprobada: (título)» o «Tu campaña ha sido aprobada: (título)». Si es una sesión de campaña, su plantilla queda inscrita al momento. Si es una mesa, las inscripciones se abren según sus fechas.
 
 ## Rechazar
 
-1. Pulsa **Rechazar**.
+1. Pulsa **Rechazar** en el menú **⋯** de la fila o, en una mesa, arriba en su ficha.
 2. Escribe el **Motivo del rechazo**. Es obligatorio: el autor lo va a leer.
 3. Confirma.
 

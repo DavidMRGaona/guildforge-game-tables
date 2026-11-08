@@ -41,6 +41,8 @@ Una persona externa añadida desde el panel no tiene que confirmar su email. Qui
 
 ## Las acciones de cada fila
 
+Se abren con el menú **⋯** al final de la fila. Solo salen las que tienen sentido para esa inscripción. En una pantalla estrecha la lista oculta algunas columnas (el rol, los avisos y las fechas) para que quepa; se ven al ensanchar la ventana.
+
 | Acción | Cuándo sale | Qué hace | Correo |
 |---|---|---|---|
 | **Confirmar** | Inscripción **Pendiente** | Le da la plaza. Si es una persona sin cuenta que no había confirmado el email, lo da también por confirmado. | «Inscripción confirmada: (mesa)» |

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Filament\Resources\CampaignResource\RelationManagers;
 
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -52,14 +53,17 @@ final class InvitationsRelationManager extends RelationManager
                     ->searchable(),
 
                 TextColumn::make('inviter_name')
-                    ->label(__('game-tables::messages.relation_managers.invitations.invited_by')),
+                    ->label(__('game-tables::messages.relation_managers.invitations.invited_by'))
+                    ->visibleFrom('lg'),
 
                 TextColumn::make('send_count')
-                    ->label(__('game-tables::messages.relation_managers.invitations.send_count')),
+                    ->label(__('game-tables::messages.relation_managers.invitations.send_count'))
+                    ->visibleFrom('lg'),
 
                 TextColumn::make('expires_at')
                     ->label(__('game-tables::messages.relation_managers.invitations.expires_at'))
-                    ->dateTime('d/m/Y H:i'),
+                    ->dateTime('d/m/Y H:i')
+                    ->visibleFrom('sm'),
             ])
             ->headerActions([
                 Action::make('invite')
@@ -89,34 +93,37 @@ final class InvitationsRelationManager extends RelationManager
                         ), 'invited', ['email' => $email]);
                     }),
             ])
+            // One menu: two labelled actions made the table overflow its container
             ->recordActions([
-                Action::make('resend')
-                    ->label(__('game-tables::messages.relation_managers.invitations.resend'))
-                    ->icon('heroicon-o-paper-airplane')
-                    ->authorize(fn (): bool => $this->canManage())
-                    ->disabled(fn (): bool => $this->inviteRefusal() !== null)
-                    ->tooltip(fn (): ?string => $this->inviteRefusal())
-                    ->action(function (CampaignInvitationModel $record): void {
-                        $this->run(fn () => app(CampaignInvitationServiceInterface::class)->resend(
-                            (string) $this->getOwnerRecord()->getKey(),
-                            $record->id,
-                            (string) auth()->id(),
-                        ), 'invitation_resent');
-                    }),
+                ActionGroup::make([
+                    Action::make('resend')
+                        ->label(__('game-tables::messages.relation_managers.invitations.resend'))
+                        ->icon('heroicon-o-paper-airplane')
+                        ->authorize(fn (): bool => $this->canManage())
+                        ->disabled(fn (): bool => $this->inviteRefusal() !== null)
+                        ->tooltip(fn (): ?string => $this->inviteRefusal())
+                        ->action(function (CampaignInvitationModel $record): void {
+                            $this->run(fn () => app(CampaignInvitationServiceInterface::class)->resend(
+                                (string) $this->getOwnerRecord()->getKey(),
+                                $record->id,
+                                (string) auth()->id(),
+                            ), 'invitation_resent');
+                        }),
 
-                Action::make('cancel')
-                    ->label(__('game-tables::messages.relation_managers.invitations.cancel'))
-                    ->icon('heroicon-o-x-mark')
-                    ->color('danger')
-                    ->authorize(fn (): bool => $this->canManage())
-                    ->requiresConfirmation()
-                    ->modalDescription(__('game-tables::messages.relation_managers.invitations.cancel_description'))
-                    ->action(function (CampaignInvitationModel $record): void {
-                        $this->run(fn () => app(CampaignInvitationServiceInterface::class)->cancel(
-                            (string) $this->getOwnerRecord()->getKey(),
-                            $record->id,
-                        ), 'invitation_cancelled');
-                    }),
+                    Action::make('cancel')
+                        ->label(__('game-tables::messages.relation_managers.invitations.cancel'))
+                        ->icon('heroicon-o-x-mark')
+                        ->color('danger')
+                        ->authorize(fn (): bool => $this->canManage())
+                        ->requiresConfirmation()
+                        ->modalDescription(__('game-tables::messages.relation_managers.invitations.cancel_description'))
+                        ->action(function (CampaignInvitationModel $record): void {
+                            $this->run(fn () => app(CampaignInvitationServiceInterface::class)->cancel(
+                                (string) $this->getOwnerRecord()->getKey(),
+                                $record->id,
+                            ), 'invitation_cancelled');
+                        }),
+                ]),
             ]);
     }
 

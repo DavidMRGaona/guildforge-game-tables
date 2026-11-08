@@ -14,6 +14,7 @@ use Closure;
 use DateTimeInterface;
 use DateTimeZone;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -493,22 +494,28 @@ final class GameTableResource extends BaseResource
                 TextColumn::make('title')
                     ->label(__('game-tables::messages.fields.title'))
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->wrap(),
 
                 TextColumn::make('gameSystem.name')
                     ->label(__('game-tables::messages.fields.game_system'))
-                    ->sortable(),
+                    ->sortable()
+                    ->wrap()
+                    ->visibleFrom('2xl'),
 
                 TextColumn::make('starts_at')
                     ->label(__('game-tables::messages.fields.start_time'))
                     ->dateTime('d/m/Y H:i')
-                    ->sortable(),
+                    ->sortable()
+                    ->wrapHeader()
+                    ->visibleFrom('md'),
 
                 TextColumn::make('table_format')
                     ->label(__('game-tables::messages.fields.table_format'))
                     ->badge()
                     ->color(fn (TableFormat $state): string => $state->color())
-                    ->formatStateUsing(fn (TableFormat $state): string => $state->label()),
+                    ->formatStateUsing(fn (TableFormat $state): string => $state->label())
+                    ->visibleFrom('2xl'),
 
                 TextColumn::make('status')
                     ->label(__('game-tables::messages.fields.table_status'))
@@ -520,11 +527,15 @@ final class GameTableResource extends BaseResource
                 TextColumn::make('participants_count')
                     ->label(__('game-tables::messages.model.participant.plural'))
                     ->counts('participants')
-                    ->sortable(),
+                    ->sortable()
+                    ->wrapHeader()
+                    ->visibleFrom('xl'),
 
                 IconColumn::make('is_published')
                     ->label(__('game-tables::messages.fields.is_published'))
-                    ->boolean(),
+                    ->boolean()
+                    ->wrapHeader()
+                    ->visibleFrom('xl'),
 
                 IconColumn::make('frontend_creation_status')
                     ->label(__('game-tables::messages.fields.created_from_web'))
@@ -532,6 +543,8 @@ final class GameTableResource extends BaseResource
                     ->color(fn (?FrontendCreationStatus $state): ?string => $state?->color())
                     ->tooltip(fn (?FrontendCreationStatus $state): ?string => $state?->label())
                     ->visible(fn (): bool => true)
+                    ->wrapHeader()
+                    ->visibleFrom('2xl')
                     ->toggleable(isToggledHiddenByDefault: false),
 
                 TextColumn::make('created_at')
@@ -556,66 +569,69 @@ final class GameTableResource extends BaseResource
                     // Rejected is no longer written (the enum case stays for old code paths that may still read it)
                     ->options(Arr::except(FrontendCreationStatus::options(), [FrontendCreationStatus::Rejected->value])),
             ])
+            // One menu: the moderation actions and «Editar» as labelled links made the table overflow its container
             ->recordActions([
-                Action::make('approve')
-                    ->authorize(fn (): bool => self::canModerate())
-                    ->label(__('game-tables::messages.moderation.approve'))
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
-                    ->requiresConfirmation()
-                    ->modalHeading(__('game-tables::messages.moderation.approve_confirmation'))
-                    ->modalDescription(__('game-tables::messages.moderation.approve_description'))
-                    ->visible(fn (GameTableModel $record): bool => $record->frontend_creation_status === FrontendCreationStatus::PendingReview)
-                    ->action(function (GameTableModel $record): void {
-                        $service = app(FrontendCreationServiceInterface::class);
-                        try {
-                            $service->approveFrontendCreation($record->id);
-                        } catch (NotEditableException) {
-                            self::warnStatusAlreadyChanged();
+                ActionGroup::make([
+                    Action::make('approve')
+                        ->authorize(fn (): bool => self::canModerate())
+                        ->label(__('game-tables::messages.moderation.approve'))
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->modalHeading(__('game-tables::messages.moderation.approve_confirmation'))
+                        ->modalDescription(__('game-tables::messages.moderation.approve_description'))
+                        ->visible(fn (GameTableModel $record): bool => $record->frontend_creation_status === FrontendCreationStatus::PendingReview)
+                        ->action(function (GameTableModel $record): void {
+                            $service = app(FrontendCreationServiceInterface::class);
+                            try {
+                                $service->approveFrontendCreation($record->id);
+                            } catch (NotEditableException) {
+                                self::warnStatusAlreadyChanged();
 
-                            return;
-                        } catch (SessionBelowRosterException $e) {
-                            self::refuseBelowRoster($e);
+                                return;
+                            } catch (SessionBelowRosterException $e) {
+                                self::refuseBelowRoster($e);
 
-                            return;
-                        }
+                                return;
+                            }
 
-                        Notification::make()
-                            ->title(__('game-tables::messages.notifications.table_approved'))
-                            ->success()
-                            ->send();
-                    }),
-                Action::make('reject')
-                    ->authorize(fn (): bool => self::canModerate())
-                    ->label(__('game-tables::messages.moderation.reject'))
-                    ->icon('heroicon-o-x-circle')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->modalHeading(__('game-tables::messages.moderation.reject_confirmation'))
-                    ->modalDescription(__('game-tables::messages.moderation.reject_description'))
-                    ->schema([
-                        Textarea::make('reason')
-                            ->label(__('game-tables::messages.moderation.rejection_reason'))
-                            ->placeholder(__('game-tables::messages.moderation.rejection_reason_placeholder'))
-                            ->required(),
-                    ])
-                    ->visible(fn (GameTableModel $record): bool => $record->frontend_creation_status === FrontendCreationStatus::PendingReview)
-                    ->action(function (GameTableModel $record, array $data): void {
-                        $service = app(FrontendCreationServiceInterface::class);
-                        try {
-                            $service->rejectFrontendCreation($record->id, $data['reason']);
-                        } catch (NotEditableException) {
-                            self::warnStatusAlreadyChanged();
+                            Notification::make()
+                                ->title(__('game-tables::messages.notifications.table_approved'))
+                                ->success()
+                                ->send();
+                        }),
+                    Action::make('reject')
+                        ->authorize(fn (): bool => self::canModerate())
+                        ->label(__('game-tables::messages.moderation.reject'))
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->modalHeading(__('game-tables::messages.moderation.reject_confirmation'))
+                        ->modalDescription(__('game-tables::messages.moderation.reject_description'))
+                        ->schema([
+                            Textarea::make('reason')
+                                ->label(__('game-tables::messages.moderation.rejection_reason'))
+                                ->placeholder(__('game-tables::messages.moderation.rejection_reason_placeholder'))
+                                ->required(),
+                        ])
+                        ->visible(fn (GameTableModel $record): bool => $record->frontend_creation_status === FrontendCreationStatus::PendingReview)
+                        ->action(function (GameTableModel $record, array $data): void {
+                            $service = app(FrontendCreationServiceInterface::class);
+                            try {
+                                $service->rejectFrontendCreation($record->id, $data['reason']);
+                            } catch (NotEditableException) {
+                                self::warnStatusAlreadyChanged();
 
-                            return;
-                        }
+                                return;
+                            }
 
-                        Notification::make()
-                            ->title(__('game-tables::messages.notifications.table_rejected'))
-                            ->success()
-                            ->send();
-                    }),
-                EditAction::make(),
+                            Notification::make()
+                                ->title(__('game-tables::messages.notifications.table_rejected'))
+                                ->success()
+                                ->send();
+                        }),
+                    EditAction::make(),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

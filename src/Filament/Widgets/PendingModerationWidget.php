@@ -54,15 +54,18 @@ final class PendingModerationWidget extends BaseWidget
 
                 TextColumn::make('game_system')
                     ->label(__('game-tables::messages.fields.game_system'))
-                    ->limit(20),
+                    ->limit(20)
+                    ->visibleFrom('xl'),
 
                 TextColumn::make('creator')
                     ->label(__('game-tables::messages.fields.user'))
-                    ->limit(20),
+                    ->limit(20)
+                    ->visibleFrom('xl'),
 
                 TextColumn::make('created_at')
                     ->label(__('game-tables::messages.fields.registered_at'))
-                    ->dateTime('d/m/Y H:i'),
+                    ->dateTime('d/m/Y H:i')
+                    ->visibleFrom('md'),
             ])
             ->recordActions([
                 Action::make('view')

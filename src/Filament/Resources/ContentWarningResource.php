@@ -104,22 +104,26 @@ final class ContentWarningResource extends BaseResource
                 TextColumn::make('name')
                     ->label(__('game-tables::messages.fields.name'))
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->wrap(),
 
                 TextColumn::make('label')
                     ->label(__('game-tables::messages.fields.label'))
-                    ->searchable(),
+                    ->searchable()
+                    ->visibleFrom('sm'),
 
                 TextColumn::make('severity')
                     ->label(__('game-tables::messages.fields.severity'))
                     ->badge()
                     ->color(fn (WarningSeverity $state): string => $state->color())
                     ->formatStateUsing(fn (WarningSeverity $state): string => $state->label())
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('md'),
 
                 IconColumn::make('is_active')
                     ->label(__('game-tables::messages.fields.is_active'))
-                    ->boolean(),
+                    ->boolean()
+                    ->wrapHeader(),
 
                 TextColumn::make('created_at')
                     ->dateTime('d/m/Y H:i')
