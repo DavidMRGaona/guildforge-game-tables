@@ -15,7 +15,7 @@ La configuración del módulo decide cómo se comportan todas las mesas y campa�
 
 ## Abrir la configuración
 
-En el menú lateral, abre **Mesas de rol** y elige **Configuración**. La página se llama **Configuración del módulo**. Al terminar, pulsa **Guardar**.
+En el menú lateral, abre **Sistema**, luego **Configuración** y elige **Mesas**. La página se llama **Configuración del módulo**. Al terminar, pulsa **Guardar**.
 
 ## Acceso anticipado para el rol {{association_role}}
 
@@ -84,4 +84,4 @@ Los valores por defecto no pueden pasar de estos límites.
 - **«No puede superar el límite máximo de jugadores (…)»** (o de espectadores, o la duración máxima): baja el valor por defecto o sube el límite en la misma pantalla.
 - **«No puede superar el máximo de jugadores por defecto (…)»**: el mínimo por defecto es mayor que el máximo por defecto.
 
-[[action:filament.admin.pages.game-tables-settings|Abrir la configuración de mesas]]
+[[action:filament.admin.configuracion.pages.game-tables-settings|Abrir la configuración de mesas]]

@@ -24,7 +24,7 @@ Según el **Modo de publicación** de la configuración, a algunas personas no l
 ## Dónde encontrarlo
 
 - En el escritorio, el widget **Pendientes de moderación** junta mesas y campañas, las más antiguas primero. **Ver** abre cada una.
-- En **Mesas de rol** → **Mesas** y en **Mesas de rol** → **Campañas**, la pestaña **Pendientes de moderación** muestra solo lo que está en revisión, con su número.
+- En **Actividades** → **Mesas** y en su entrada **Campañas**, la pestaña **Pendientes de moderación** muestra solo lo que está en revisión, con su número.
 
 En las dos listas, la columna **Creado desde web** marca con un icono lo que llegó de la web (se ve en pantallas anchas), y el filtro **Estado de moderación** separa **Borrador**, **Pendiente de revisión** y **Aprobada**.
 

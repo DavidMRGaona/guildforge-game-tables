@@ -53,7 +53,7 @@ Las mesas que se crean en el evento desde la web cierran sus inscripciones al em
 
 ## Quién puede crear: regla propia
 
-Por defecto, el evento usa las reglas generales de **Configuración** → **Creación desde web**. Para que este evento tenga las suyas, abre **Sobrescribir elegibilidad**:
+Por defecto, el evento usa las reglas generales de **Sistema** → **Configuración** → **Mesas**, sección **Creación desde web**. Para que este evento tenga las suyas, abre **Sobrescribir elegibilidad**:
 
 1. Activa **Usar configuración de evento**.
 2. Elige el **Nivel de acceso**: **Usuarios registrados**, **Usuarios con rol específico** o **Usuarios con permiso**.

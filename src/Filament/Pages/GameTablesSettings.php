@@ -6,6 +6,7 @@ namespace Modules\GameTables\Filament\Pages;
 
 use App\Application\Modules\Services\ModuleManagerServiceInterface;
 use App\Domain\Modules\ValueObjects\ModuleName;
+use App\Filament\Clusters\SettingsCluster;
 use App\Filament\Concerns\ChecksPermissions;
 use App\Filament\Concerns\HasKnowledgeGuideAction;
 use App\Filament\Concerns\SafeModuleNavigation;
@@ -39,7 +40,9 @@ final class GameTablesSettings extends Page implements HasForms
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-cog-6-tooth';
 
-    protected static ?int $navigationSort = 99;
+    protected static ?string $cluster = SettingsCluster::class;
+
+    protected static ?int $navigationSort = 130;
 
     protected string $view = 'filament.pages.simple-settings';
 
@@ -47,11 +50,6 @@ final class GameTablesSettings extends Page implements HasForms
      * @var array<string, mixed>
      */
     public ?array $data = [];
-
-    public static function getNavigationGroup(): string
-    {
-        return (string) __('game-tables::messages.navigation.group');
-    }
 
     public static function getNavigationLabel(): string
     {

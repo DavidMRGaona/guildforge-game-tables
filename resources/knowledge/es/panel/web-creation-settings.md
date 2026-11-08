@@ -15,7 +15,7 @@ La web puede dejar que la gente cree sus propias mesas y campañas, sin entrar e
 
 ## Abrir los ajustes
 
-1. En el menú lateral, abre **Mesas de rol** y elige **Configuración**.
+1. En el menú lateral, abre **Sistema**, luego **Configuración** y elige **Mesas**.
 2. Baja hasta la sección **Creación desde web** y despliégala si está plegada.
 3. Al terminar, pulsa **Guardar**.
 
@@ -71,4 +71,4 @@ Cada evento puede tener sus propias reglas para las mesas que se crean en él: s
 - **«Elige al menos un rol o un permiso que publique sin revisión.»**: con **Según el rol del usuario**, rellena **Roles que publican sin revisión** o **Permisos que publican sin revisión**.
 - Alguien con el rol correcto no ve **Crear mesa** en la web: comprueba que el nombre del rol en **Roles permitidos** está bien escrito y que **Contenido permitido** incluye lo que quiere crear.
 
-[[action:filament.admin.pages.game-tables-settings|Abrir la configuración de mesas]]
+[[action:filament.admin.configuracion.pages.game-tables-settings|Abrir la configuración de mesas]]

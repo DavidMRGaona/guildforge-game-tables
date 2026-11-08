@@ -15,7 +15,7 @@ Una mesa avanza por sus estados con los botones de la parte de arriba de su fich
 
 ## Los botones
 
-Abre la mesa desde **Mesas de rol** → **Mesas**. Arriba verás, según el caso:
+Abre la mesa desde **Actividades** → **Mesas**. Arriba verás, según el caso:
 
 | Botón | Cuándo sale | Qué hace |
 |---|---|---|

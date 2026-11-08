@@ -17,7 +17,7 @@ Para verlas hace falta **Ver sistemas de juego** (también para las editoriales)
 
 ## Sistemas de juego
 
-Están en **Catálogo de juegos** → **Sistemas de juego**. Pulsa **Crear sistema de juego** y rellena:
+Están en **Catálogos** → **Sistemas de juego**. Pulsa **Crear sistema de juego** y rellena:
 
 - **Nombre** y **Slug**: obligatorios. El slug es el nombre en minúsculas y con guiones, por ejemplo `la-llamada-de-cthulhu`, y no se puede repetir.
 - **Editorial**: elígela de la lista o créala ahí mismo con el botón **+** del campo.
@@ -27,11 +27,11 @@ Están en **Catálogo de juegos** → **Sistemas de juego**. Pulsa **Crear siste
 
 ## Editoriales
 
-Están en **Catálogo de juegos** → **Editoriales**. Se crean con **Crear editorial** y tienen **Nombre**, **Slug**, **Descripción**, **País**, **Sitio web**, **Logo** y **Activo**. La lista dice cuántos **Sistemas** tiene cada una. Sirven para ordenar el catálogo de sistemas de juego. Al elegir la editorial de un sistema solo salen las activas, además de la que ese sistema ya tenga.
+Están en **Catálogos** → **Editoriales**. Se crean con **Crear editorial** y tienen **Nombre**, **Slug**, **Descripción**, **País**, **Sitio web**, **Logo** y **Activo**. La lista dice cuántos **Sistemas** tiene cada una. Sirven para ordenar el catálogo de sistemas de juego. Al elegir la editorial de un sistema solo salen las activas, además de la que ese sistema ya tenga.
 
 ## Avisos de contenido
 
-Están en **Mesas de rol** → **Avisos de contenido** y se crean con **Crear aviso de contenido**. Son los temas delicados que una partida puede tocar (violencia, terror, arañas…), para que cada persona sepa a qué se apunta.
+Están en **Catálogos** → **Avisos de contenido** y se crean con **Crear aviso de contenido**. Son los temas delicados que una partida puede tocar (violencia, terror, arañas…), para que cada persona sepa a qué se apunta.
 
 - **Nombre** y **Slug**: obligatorios. El nombre es lo que se elige en los formularios.
 - **Etiqueta**: obligatoria.

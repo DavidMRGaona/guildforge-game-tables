@@ -8,6 +8,7 @@ use App\Filament\Actions\RowDetailsAction;
 use App\Filament\Concerns\ChecksPermissions;
 use App\Filament\Forms\Components\EndSurveyField;
 use App\Filament\Resources\BaseResource;
+use App\Filament\Support\PanelNavigationGroup;
 use Closure;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -77,7 +78,7 @@ final class CampaignResource extends BaseResource
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-book-open';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 10;
 
     /**
      * Approving or rejecting needs the update permission: seeing the campaign or being its author is not enough.
@@ -89,12 +90,20 @@ final class CampaignResource extends BaseResource
 
     public static function getNavigationGroup(): string
     {
-        return (string) __('game-tables::messages.navigation.group');
+        return PanelNavigationGroup::Activities->getLabel();
     }
 
     public static function getNavigationLabel(): string
     {
         return __('game-tables::messages.navigation.campaigns');
+    }
+
+    /**
+     * Campaigns are listed under tables: Filament shows them there while one of them is open.
+     */
+    public static function getNavigationParentItem(): string
+    {
+        return GameTableResource::getNavigationLabel();
     }
 
     public static function getModelLabel(): string

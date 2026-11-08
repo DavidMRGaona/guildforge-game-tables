@@ -6,6 +6,7 @@ namespace Modules\GameTables\Filament\Resources;
 
 use App\Filament\Actions\RowDetailsAction;
 use App\Filament\Resources\BaseResource;
+use App\Filament\Support\PanelNavigationGroup;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -32,11 +33,11 @@ final class ContentWarningResource extends BaseResource
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-exclamation-triangle';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 30;
 
     public static function getNavigationGroup(): string
     {
-        return __('game-tables::messages.navigation.group');
+        return PanelNavigationGroup::Catalogues->getLabel();
     }
 
     public static function getNavigationLabel(): string

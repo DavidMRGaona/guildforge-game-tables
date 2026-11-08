@@ -15,7 +15,7 @@ Una campaña reúne su ficha, su dirección y su plantilla de jugadores fijos. S
 
 ## Crear la campaña
 
-1. En el menú lateral, abre **Mesas de rol** y elige **Campañas**.
+1. En el menú lateral, abre **Actividades** → **Mesas** y elige **Campañas**, que sale debajo de **Mesas**.
 2. Pulsa **Crear campaña**.
 3. Recorre las pestañas. Cada una se explica abajo.
 4. Pulsa **Crear**.
