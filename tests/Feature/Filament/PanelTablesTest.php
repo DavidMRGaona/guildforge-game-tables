@@ -6,6 +6,7 @@ namespace Modules\GameTables\Tests\Feature\Filament;
 
 use App\Filament\Actions\RowDetailsAction;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Support\Enums\Alignment;
 use Filament\Tables\Contracts\HasTable;
@@ -101,6 +102,7 @@ final class PanelTablesTest extends ModuleTestCase
         $actions = $this->table('status_log')->getRecordActions();
 
         $this->assertCount(1, $actions);
+        $this->assertInstanceOf(Action::class, $actions[0]);
         $this->assertSame(RowDetailsAction::NAME, $actions[0]->getName());
         $this->assertTrue($actions[0]->isIconButton());
     }
@@ -113,6 +115,7 @@ final class PanelTablesTest extends ModuleTestCase
     {
         $actions = $this->table($key)->getRecordActions();
 
+        $this->assertInstanceOf(ActionGroup::class, $actions[0]);
         $this->assertSame(RowDetailsAction::NAME, array_key_first($actions[0]->getFlatActions()));
     }
 
@@ -190,6 +193,29 @@ final class PanelTablesTest extends ModuleTestCase
         foreach ($primary as $name) {
             $this->assertNull($table->getColumn($name)?->getVisibleFrom(), "Column {$name} of {$key} is always visible");
         }
+    }
+
+    /**
+     * «Ver detalles» shows every column with its label, so a column without one read «Created at».
+     *
+     * @return array<string, array{string}>
+     */
+    public static function tablesWithCreatedAt(): array
+    {
+        return [
+            'tables' => ['tables'],
+            'campaigns' => ['campaigns'],
+            'publishers' => ['publishers'],
+            'game systems' => ['game_systems'],
+            'content warnings' => ['content_warnings'],
+        ];
+    }
+
+    #[DataProvider('tablesWithCreatedAt')]
+    public function test_the_creation_date_column_has_a_translated_label(string $key): void
+    {
+        $this->assertSame(__('game-tables::messages.fields.created_at'), $this->table($key)->getColumn('created_at')?->getLabel());
+        $this->assertSame('Creado', __('game-tables::messages.fields.created_at', [], 'es'));
     }
 
     private function table(string $key): Table

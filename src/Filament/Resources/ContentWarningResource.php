@@ -128,6 +128,7 @@ final class ContentWarningResource extends BaseResource
                     ->wrapHeader(),
 
                 TextColumn::make('created_at')
+                    ->label(__('game-tables::messages.fields.created_at'))
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

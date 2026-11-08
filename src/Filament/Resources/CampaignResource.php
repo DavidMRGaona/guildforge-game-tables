@@ -378,6 +378,7 @@ final class CampaignResource extends BaseResource
                     ->visibleFrom('2xl'),
 
                 TextColumn::make('created_at')
+                    ->label(__('game-tables::messages.fields.created_at'))
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
