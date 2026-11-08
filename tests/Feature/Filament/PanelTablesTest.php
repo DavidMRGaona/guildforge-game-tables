@@ -118,7 +118,7 @@ final class PanelTablesTest extends ModuleTestCase
             ], ['title', 'status']],
             'campaigns' => ['campaigns', [
                 'is_published' => 'lg', 'accepts_new_players' => 'lg', 'gameSystem.name' => 'xl',
-                'frequency' => '2xl', 'current_session' => '2xl',
+                'frequency' => '2xl', 'current_session' => '2xl', 'frontend_creation_status' => '2xl',
             ], ['title', 'status']],
             'publishers' => ['publishers', ['country' => 'sm', 'game_systems_count' => 'md'], ['name', 'is_active']],
             'game systems' => ['game_systems', ['publisher.name' => 'sm', 'edition' => 'xl', 'year' => 'xl'], ['name', 'is_active']],

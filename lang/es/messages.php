@@ -167,6 +167,7 @@ return [
         'minimum_age' => 'Edad mínima',
         'language' => 'Idioma',
         'table_type' => 'Tipo de mesa',
+        'table_type_from_campaign' => 'Al tener campaña, es una sesión de campaña. Quita la campaña para elegir otro tipo.',
         'table_format' => 'Formato',
         'table_status' => 'Estado',
         'genres' => 'Géneros',
@@ -193,7 +194,6 @@ return [
         'is_published_campaign_help' => 'Controla la visibilidad pública de la campaña.',
         'is_published_not_submitted' => 'El autor aún no la ha enviado a revisión.',
         'is_published_pending_review' => 'Está pendiente de revisión: apruébala o recházala con «Aprobar» o «Rechazar».',
-        'is_published_campaign_pending_review' => 'Está pendiente de revisión: apruébala o recházala desde la lista de campañas.',
         'published_at' => 'Fecha de publicación',
         'notes' => 'Notas',
 
@@ -648,6 +648,8 @@ return [
         'reject' => 'Rechazar',
         'approved_count' => ':count mesa(s) aprobada(s)',
         'rejected_count' => ':count mesa(s) rechazada(s)',
+        'campaigns_approved_count' => ':count campaña(s) aprobada(s)',
+        'campaigns_rejected_count' => ':count campaña(s) rechazada(s)',
     ],
 
     'table_tabs' => [

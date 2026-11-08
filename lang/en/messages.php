@@ -144,6 +144,7 @@ return [
         'minimum_age' => 'Minimum age',
         'language' => 'Language',
         'table_type' => 'Table type',
+        'table_type_from_campaign' => 'With a campaign, it is a campaign session. Remove the campaign to choose another type.',
         'table_format' => 'Format',
         'table_status' => 'Status',
         'genres' => 'Genres',
@@ -168,7 +169,6 @@ return [
         'is_published_campaign_help' => 'Controls the public visibility of the campaign.',
         'is_published_not_submitted' => 'The author has not sent it to review yet.',
         'is_published_pending_review' => 'It is awaiting review: approve or reject it with “Approve” or “Reject”.',
-        'is_published_campaign_pending_review' => 'It is awaiting review: approve or reject it from the campaign list.',
         'published_at' => 'Published date',
         'notes' => 'Notes',
         'schedule_notes' => 'Schedule notes',
@@ -567,6 +567,8 @@ return [
         'reject' => 'Reject',
         'approved_count' => ':count table(s) approved',
         'rejected_count' => ':count table(s) rejected',
+        'campaigns_approved_count' => ':count campaign(s) approved',
+        'campaigns_rejected_count' => ':count campaign(s) rejected',
     ],
 
     'table_tabs' => [

@@ -12,6 +12,7 @@ use Livewire\Livewire;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Domain\Exceptions\NotEditableException;
 use Modules\GameTables\Filament\Resources\CampaignResource;
+use Modules\GameTables\Filament\Resources\CampaignResource\Pages\EditCampaign;
 use Modules\GameTables\Filament\Resources\CampaignResource\Pages\ListCampaigns;
 use Modules\GameTables\Filament\Resources\GameTableResource;
 use Modules\GameTables\Filament\Resources\GameTableResource\Pages\EditGameTable;
@@ -51,18 +52,39 @@ final class ModerationPermissionTest extends ModuleTestCase
 
         Livewire::test(ListCampaigns::class)
             ->assertTableActionHidden('approve', $campaign)
-            ->assertTableActionHidden('reject', $campaign);
+            ->assertTableActionHidden('reject', $campaign)
+            ->assertTableBulkActionHidden('approve')
+            ->assertTableBulkActionHidden('reject');
 
         $this->assertSame('pending_review', $campaign->refresh()->frontend_creation_status?->value);
     }
 
+    // The edit page, where the header actions live, stays closed to a viewer while the campaign is in review
+    public function test_a_campaign_viewer_cannot_reach_the_moderation_of_the_edit_page(): void
+    {
+        $viewer = $this->editorWith(['gametables:campaigns.view_any', 'gametables:campaigns.view']);
+        $campaign = $this->campaign($viewer);
+        $this->actingAs($viewer);
+
+        Livewire::test(EditCampaign::class, ['record' => $campaign->getRouteKey()])->assertForbidden();
+    }
+
     public function test_a_campaign_editor_approves_campaigns(): void
     {
-        $this->actingAs($this->editorWith(['gametables:campaigns.view_any', 'gametables:campaigns.update']));
+        $this->actingAs($this->editorWith(['gametables:campaigns.view_any', 'gametables:campaigns.view', 'gametables:campaigns.update']));
         $campaign = $this->campaign(UserModel::factory()->create());
 
         Livewire::test(ListCampaigns::class)
             ->assertTableActionVisible('approve', $campaign)
+            ->assertTableActionVisible('reject', $campaign)
+            ->assertTableBulkActionVisible('approve')
+            ->assertTableBulkActionVisible('reject');
+
+        Livewire::test(EditCampaign::class, ['record' => $campaign->getRouteKey()])
+            ->assertActionVisible('approveModeration')
+            ->assertActionVisible('rejectModeration');
+
+        Livewire::test(ListCampaigns::class)
             ->callTableAction('approve', $campaign);
 
         $this->assertSame('approved', $campaign->refresh()->frontend_creation_status?->value);

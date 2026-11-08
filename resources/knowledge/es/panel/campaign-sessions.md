@@ -18,20 +18,24 @@ Una sesión de campaña es una mesa vinculada a una campaña. Se crea con el mis
 1. En el menú lateral, abre **Mesas de rol** y elige **Mesas**.
 2. Pulsa **Crear mesa**.
 3. Escribe el **Título**, por ejemplo «Sesión 4: el puerto».
-4. En **Campaña**, elige la campaña. El formulario se rellena como se explica abajo.
-5. En **Capacidad y requisitos**, elige **Sesión de campaña** en **Tipo de mesa**. Elegir la campaña no lo cambia solo.
-6. Revisa la **Fecha y hora de inicio**, la **Duración (minutos)** y el resto de pestañas, como en cualquier mesa.
-7. En **Publicación**, activa **Publicado** si quieres que la plantilla quede inscrita ya. Si no, publícala después con **Publicar**.
-8. Pulsa **Crear**.
+4. En **Campaña**, elige la campaña. El formulario se rellena como se explica abajo, y el **Tipo de mesa** pasa solo a **Sesión de campaña**.
+5. Revisa la **Fecha y hora de inicio**, la **Duración (minutos)** y el resto de pestañas, como en cualquier mesa.
+6. En **Publicación**, activa **Publicado** si quieres que la plantilla quede inscrita ya. Si no, publícala después con **Publicar**.
+7. Pulsa **Crear**.
 
 ## Qué copia de la campaña
 
 | Dato | Qué pasa |
 |---|---|
+| **Tipo de mesa** | Pasa a **Sesión de campaña** y queda bloqueado mientras haya campaña. |
 | **Sistema de juego** | Se copia el de la campaña y queda bloqueado. |
 | **Máximo de jugadores** | Se pone el de la campaña. Si la campaña no tiene máximo, el mayor entre el valor por defecto y el tamaño de la plantilla. Puedes subirlo. |
 | **Formato**, **Ubicación** y **URL online** | Se proponen los de la campaña. Puedes cambiarlos para esta sesión. Si la campaña no tiene alguno, se queda lo que hubieras escrito. |
 | Directores | Si la pestaña **Dirección** está vacía, se traen los de la campaña. |
+
+En **Campaña** solo salen las campañas creadas en el panel y las de la web ya aprobadas. Una campaña de la web en borrador o en revisión no sale hasta que se apruebe, salvo si la mesa ya estaba vinculada a ella.
+
+Para que la mesa deje de ser una sesión, vacía **Campaña**. El **Tipo de mesa** vuelve al que tenía antes de elegir la campaña o, si ya era una sesión, se queda vacío para que elijas otro. Al revés, una mesa de tipo **Sesión de campaña** no se guarda sin campaña.
 
 Los directores de la campaña salen en **Dirección** con «(heredado)» y el aviso **Heredado de la campaña**. Sus datos no se cambian aquí, sino en la campaña. Si alguno no va a estar en esta sesión, activa **Excluir de esta mesa**: seguirá en la campaña, pero no en esta mesa, y su nombre pasa a llevar «(excluido)». También puedes añadir directores solo para esta sesión con **Añadir director de juego**.
 
