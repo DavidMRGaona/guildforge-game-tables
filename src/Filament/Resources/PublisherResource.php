@@ -6,6 +6,7 @@ namespace Modules\GameTables\Filament\Resources;
 
 use App\Filament\Actions\RowDetailsAction;
 use App\Filament\Resources\BaseResource;
+use App\Filament\Support\PanelNavigationGroup;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -29,11 +30,11 @@ final class PublisherResource extends BaseResource
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-building-office';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 20;
 
     public static function getNavigationGroup(): string
     {
-        return __('game-tables::messages.navigation.catalog_group');
+        return PanelNavigationGroup::Catalogues->getLabel();
     }
 
     public static function getNavigationLabel(): string

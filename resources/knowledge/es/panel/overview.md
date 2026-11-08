@@ -35,7 +35,7 @@ El módulo de mesas organiza las partidas de rol de {{site_name}}: partidas suel
 | **Completada** | La partida terminó. Es definitivo. | Ninguno |
 | **Cancelada** | La partida no se juega. Es definitivo. | Ninguno |
 
-Si en **Configuración** está activado **Actualizar el estado de las mesas automáticamente** (viene activado), cada cinco minutos las mesas programadas o completas pasan a **En progreso** a su hora de inicio, y las que están en progreso pasan a **Completada** al terminar (inicio más duración). Ese cambio no envía correos. Si lo desactivas, el estado solo cambia con los botones **Iniciar** y **Completar**.
+Si en **Sistema** → **Configuración** → **Mesas** está activado **Actualizar el estado de las mesas automáticamente** (viene activado), cada cinco minutos las mesas programadas o completas pasan a **En progreso** a su hora de inicio, y las que están en progreso pasan a **Completada** al terminar (inicio más duración). Ese cambio no envía correos. Si lo desactivas, el estado solo cambia con los botones **Iniciar** y **Completar**.
 
 > [!IMPORTANT]
 > **Completa** cierra las plazas de jugador aunque queden libres: los jugadores nuevos solo pueden apuntarse a la lista de espera, si está activada; sin ella, las inscripciones de jugador quedan cerradas. Nadie pasa solo de la lista mientras la mesa está **Completa**: tú das las plazas con **Promover** o aprobando inscripciones pendientes. Los espectadores siguen con sus propias plazas, y la plantilla de una campaña se inscribe en sus sesiones como siempre.
@@ -89,7 +89,7 @@ Ninguno de estos permisos se concede solo: se dan a cada rol en **Roles**. La ad
 
 ## Dónde está cada cosa
 
-- En el menú lateral, el grupo **Mesas de rol** tiene **Mesas**, **Campañas**, **Avisos de contenido** y **Configuración**. El grupo **Catálogo de juegos** tiene **Editoriales** y **Sistemas de juego**.
+- En el menú lateral, el grupo **Actividades** tiene **Mesas**; **Campañas** sale debajo de **Mesas** al abrir una de las dos. El grupo **Catálogos** (plegado) tiene **Sistemas de juego**, **Editoriales** y **Avisos de contenido**. La configuración del módulo está en **Sistema** → **Configuración** → **Mesas**.
 - En la lista de mesas, la pestaña **Pendientes de moderación** reúne las mesas que esperan revisión.
 - En el escritorio, el widget **Pendientes de moderación** aparece mientras haya mesas o campañas por revisar.
 - Dentro de una mesa están las pestañas **Participantes** e **Historial de inscripciones**. Dentro de una campaña, **Plantilla**, **Solicitudes** e **Invitaciones**.

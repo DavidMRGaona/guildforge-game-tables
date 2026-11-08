@@ -9,6 +9,7 @@ use App\Filament\Actions\RowDetailsAction;
 use App\Filament\Concerns\ChecksPermissions;
 use App\Filament\Forms\Components\EndSurveyField;
 use App\Filament\Resources\BaseResource;
+use App\Filament\Support\PanelNavigationGroup;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Carbon\CarbonImmutable;
 use Closure;
@@ -89,7 +90,7 @@ final class GameTableResource extends BaseResource
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-table-cells';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 10;
 
     /**
      * Approving or rejecting needs the update permission: seeing the table or being its author is not enough.
@@ -101,7 +102,7 @@ final class GameTableResource extends BaseResource
 
     public static function getNavigationGroup(): string
     {
-        return (string) __('game-tables::messages.navigation.group');
+        return PanelNavigationGroup::Activities->getLabel();
     }
 
     public static function getNavigationLabel(): string

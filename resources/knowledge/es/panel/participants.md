@@ -15,7 +15,7 @@ Los inscritos de una mesa están en la pestaña **Participantes** de su ficha. D
 
 ## Ver los inscritos
 
-1. Abre **Mesas de rol** → **Mesas** y entra en la mesa.
+1. Abre **Actividades** → **Mesas** y entra en la mesa.
 2. Baja hasta la pestaña **Participantes**.
 
 Cada fila muestra el **Nombre**, el **Rol** (**Jugador** o **Espectador**), el **Estado** y las fechas. Mientras haya gente esperando, la columna **Puesto en lista de espera** dice su orden. La columna **Avisos** marca dos casos de personas sin cuenta:

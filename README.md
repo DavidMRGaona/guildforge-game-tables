@@ -61,7 +61,7 @@ En las releases los assets los compila el CI y van dentro del ZIP.
 
 ## Configuración
 
-Se configura en el panel: **Mesas de rol** → **Configuración** (permiso `gametables.settings`, que los administradores tienen siempre; el mismo formulario está en **Módulos** → **Configuración**, solo para administradores). Los valores iniciales son los que trae el módulo en `config/settings.php`; lo que se guarda en el panel prevalece sobre ellos clave a clave.
+Se configura en el panel: **Sistema** → **Configuración** → **Mesas** (permiso `gametables.settings`, que los administradores tienen siempre; el mismo formulario está en **Módulos** → **Configuración**, solo para administradores). Los valores iniciales son los que trae el módulo en `config/settings.php`; lo que se guarda en el panel prevalece sobre ellos clave a clave.
 
 | Sección | Qué controla |
 |---------|--------------|
@@ -153,7 +153,7 @@ Las inscripciones no cambian: ya se cierran a la hora de inicio, y las mesas que
 
 ### Lista de espera
 
-Se activa en **Configuración** → **Inscripciones** → **Lista de espera** (`registration.waiting_list_enabled`, desactivada por defecto). Desactivada, una mesa con las plazas de jugador completas rechaza a los jugadores; la lista solo recoge a quien añade un administrador desde el panel.
+Se activa en **Sistema** → **Configuración** → **Mesas** → **Inscripciones** → **Lista de espera** (`registration.waiting_list_enabled`, desactivada por defecto). Desactivada, una mesa con las plazas de jugador completas rechaza a los jugadores; la lista solo recoge a quien añade un administrador desde el panel.
 
 Activada:
 
@@ -269,9 +269,9 @@ Aprobar y rechazar (una a una o, en mesas, en bloque) solo actúan sobre lo que 
 
 El panel nunca publica una mesa o campaña creada desde la web que el autor no haya enviado, ni una pendiente de revisión: el interruptor **Publicado** está bloqueado, con el aviso «El autor aún no la ha enviado a revisión.» en borrador o el de usar **Aprobar** o **Rechazar** si está pendiente, y en las mesas no aparece la acción **Publicar**. El servidor lo vuelve a comprobar al guardar, así que un formulario manipulado tampoco la publica. Aprobar es la única forma de publicarlas. Las creadas desde el panel se publican con el interruptor como siempre, y las aprobadas se pueden despublicar y volver a publicar sin que cambie su estado de moderación.
 
-**Mesas**: en **Mesas de rol** → **Mesas** (en la lista o en la página de edición) se aprueban o se rechazan; el autor recibe un correo en ambos casos.
+**Mesas**: en **Actividades** → **Mesas** (en la lista o en la página de edición) se aprueban o se rechazan; el autor recibe un correo en ambos casos.
 
-**Campañas**: en **Mesas de rol** → **Campañas** se aprueban o se rechazan, una a una desde la lista, sin correo al autor.
+**Campañas**: en **Actividades** → **Mesas** → **Campañas** se aprueban o se rechazan, una a una desde la lista, sin correo al autor.
 
 Una mesa creada o editada desde la web solo se puede vincular a una campaña que dirija quien la crea (las que ofrece el formulario); el servidor rechaza cualquier otra con «Solo puedes vincular la mesa a una campaña que dirijas.». Quién dirige una campaña se explica en [Plantillas de campaña](#quién-dirige-una-campaña). Desde el panel se puede vincular cualquier campaña. Al editar una mesa desde la web se puede conservar la campaña que ya tenga, aunque la haya vinculado un administrador desde el panel.
 
@@ -401,12 +401,14 @@ Los invitados (inscripción sin cuenta y cancelación con el enlace del correo),
 
 | Grupo | Elemento | Contenido |
 |-------|----------|-----------|
-| Mesas de rol | Mesas | Formulario por pestañas (información básica, dirección, horario y ubicación, capacidad y requisitos, contenido y seguridad, inscripciones, publicación), participantes y moderación |
-| Mesas de rol | Campañas | Campañas, sus directores y publicación, y las pestañas **Plantilla** y **Solicitudes** (ver [Plantillas de campaña](#plantillas-de-campaña)) |
-| Mesas de rol | Avisos de contenido | Catálogo de avisos con severidad |
-| Mesas de rol | Configuración | Configuración del módulo (permiso `gametables.settings`) |
-| Catálogo de juegos | Editoriales | Editoriales de los sistemas de juego (también se crean desde el formulario de sistemas) |
-| Catálogo de juegos | Sistemas de juego | Sistemas con su editorial |
+| Actividades | Mesas | Formulario por pestañas (información básica, dirección, horario y ubicación, capacidad y requisitos, contenido y seguridad, inscripciones, publicación), participantes y moderación |
+| Actividades | Campañas (debajo de **Mesas**) | Campañas, sus directores y publicación, y las pestañas **Plantilla** y **Solicitudes** (ver [Plantillas de campaña](#plantillas-de-campaña)) |
+| Catálogos | Sistemas de juego | Sistemas con su editorial |
+| Catálogos | Editoriales | Editoriales de los sistemas de juego (también se crean desde el formulario de sistemas) |
+| Catálogos | Avisos de contenido | Catálogo de avisos con severidad |
+| Sistema → Configuración | Mesas | Configuración del módulo (permiso `gametables.settings`) |
+
+Los grupos son los del core (core ≥ 3.43): el módulo no crea grupos propios. **Campañas** es una entrada hija de **Mesas** y sale debajo al abrir una de las dos.
 
 Widget del dashboard: `PendingModerationWidget` (mesas y campañas pendientes de revisión; solo se muestra si hay alguna).
 

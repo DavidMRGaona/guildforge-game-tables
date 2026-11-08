@@ -19,7 +19,7 @@ return [
         'campaigns' => 'Campaigns',
         'game_systems' => 'Game systems',
         'content_warnings' => 'Content warnings',
-        'settings' => 'Settings',
+        'settings' => 'Tables',
         'config' => 'Configuration',
     ],
 

@@ -6,6 +6,7 @@ namespace Modules\GameTables\Filament\Resources;
 
 use App\Filament\Actions\RowDetailsAction;
 use App\Filament\Resources\BaseResource;
+use App\Filament\Support\PanelNavigationGroup;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -31,11 +32,11 @@ final class GameSystemResource extends BaseResource
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-puzzle-piece';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 10;
 
     public static function getNavigationGroup(): string
     {
-        return __('game-tables::messages.navigation.catalog_group');
+        return PanelNavigationGroup::Catalogues->getLabel();
     }
 
     public static function getNavigationLabel(): string

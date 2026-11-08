@@ -1028,17 +1028,14 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     }
 
     /**
-     * Register navigation groups provided by this module.
+     * The module's entries sit in the core's groups (PanelNavigationGroup) and its settings page in
+     * the core's «Configuración» cluster, so it adds no group of its own.
      *
      * @return array<string, array{icon?: string, sort?: int}>
      */
     public function registerNavigationGroups(): array
     {
-        return [
-            __('game-tables::messages.navigation.group') => [
-                'sort' => 12, // After 'Contenido' (10), before 'Socios' (15)
-            ],
-        ];
+        return [];
     }
 
     /**

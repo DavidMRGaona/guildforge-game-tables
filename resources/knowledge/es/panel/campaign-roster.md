@@ -15,7 +15,7 @@ La plantilla son los jugadores fijos de una campaña. Quien está en ella queda 
 
 ## Abrir la plantilla
 
-1. En el menú lateral, abre **Mesas de rol** y elige **Campañas**.
+1. En el menú lateral, abre **Actividades** → **Mesas** y elige **Campañas**, que sale debajo de **Mesas**.
 2. Entra en la campaña.
 3. Baja hasta las pestañas **Plantilla**, **Solicitudes** e **Invitaciones**.
 
@@ -70,7 +70,7 @@ La guía de sesiones de campaña explica la inscripción automática en detalle.
 
 ## Correos
 
-Cada correo se puede apagar en **Configuración** → **Notificaciones de campañas**, salvo la invitación, que siempre se envía.
+Cada correo se puede apagar en **Sistema** → **Configuración** → **Mesas**, sección **Notificaciones de campañas**, salvo la invitación, que siempre se envía.
 
 | Ajuste | Quién lo recibe y cuándo |
 |---|---|

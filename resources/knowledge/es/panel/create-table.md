@@ -15,7 +15,7 @@ Una mesa es una partida con fecha, plazas y unas reglas de inscripción. Esta gu
 
 ## Crear la mesa
 
-1. En el menú lateral, abre **Mesas de rol** y elige **Mesas**.
+1. En el menú lateral, abre **Actividades** y elige **Mesas**.
 2. Pulsa **Crear mesa**.
 3. Recorre las pestañas en orden. Cada una se explica abajo.
 4. Pulsa **Crear**. Con **Crear y crear otro** guardas y empiezas otra mesa.

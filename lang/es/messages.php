@@ -15,13 +15,12 @@ return [
 
     'navigation' => [
         'group' => 'Mesas de rol',
-        'catalog_group' => 'Catálogo de juegos',
         'tables' => 'Mesas',
         'campaigns' => 'Campañas',
         'game_systems' => 'Sistemas de juego',
         'publishers' => 'Editoriales',
         'content_warnings' => 'Avisos de contenido',
-        'settings' => 'Configuración',
+        'settings' => 'Mesas',
         'config' => 'Configuración',
     ],
 

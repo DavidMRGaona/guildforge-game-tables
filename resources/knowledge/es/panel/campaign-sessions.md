@@ -15,7 +15,7 @@ Una sesión de campaña es una mesa vinculada a una campaña. Se crea con el mis
 
 ## Crear la sesión
 
-1. En el menú lateral, abre **Mesas de rol** y elige **Mesas**.
+1. En el menú lateral, abre **Actividades** y elige **Mesas**.
 2. Pulsa **Crear mesa**.
 3. Escribe el **Título**, por ejemplo «Sesión 4: el puerto».
 4. En **Campaña**, elige la campaña. El formulario se rellena como se explica abajo, y el **Tipo de mesa** pasa solo a **Sesión de campaña**.
