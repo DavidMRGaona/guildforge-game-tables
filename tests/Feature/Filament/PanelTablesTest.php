@@ -8,6 +8,7 @@ use App\Filament\Actions\RowDetailsAction;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
+use Filament\Support\ArrayRecord;
 use Filament\Support\Enums\Alignment;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
@@ -94,7 +95,31 @@ final class PanelTablesTest extends ModuleTestCase
             'game systems' => ['game_systems', [RowDetailsAction::NAME, 'edit']],
             'content warnings' => ['content_warnings', [RowDetailsAction::NAME, 'edit']],
             'roster' => ['roster', [RowDetailsAction::NAME, 'remove']],
+            // Its rows are arrays: row details reads them from core 3.41.1 (#229)
+            'pending moderation widget' => ['pending_moderation', [RowDetailsAction::NAME, 'view']],
         ];
+    }
+
+    /**
+     * The widget's rows are arrays (#229): the details panel reads them like any other row.
+     */
+    public function test_the_pending_moderation_details_read_an_array_row(): void
+    {
+        $record = [
+            ArrayRecord::getKeyName() => (string) Str::uuid(),
+            'type' => 'Mesa',
+            'title' => 'La cripta del sábado',
+            'game_system' => 'Dragonbane',
+            'creator' => 'Persona de ejemplo',
+            'created_at' => now(),
+            'url' => '/admin/game-tables',
+        ];
+
+        $byName = array_column(RowDetailsAction::entries($this->table('pending_moderation'), $record), null, 'name');
+
+        $this->assertSame(['type', 'title', 'game_system', 'creator', 'created_at'], array_keys($byName));
+        $this->assertStringContainsString('Dragonbane', $byName['game_system']['html']->toHtml());
+        $this->assertStringContainsString('Persona de ejemplo', $byName['creator']['html']->toHtml());
     }
 
     public function test_the_status_log_offers_only_the_details_icon(): void
