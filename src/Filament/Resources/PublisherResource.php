@@ -100,21 +100,25 @@ final class PublisherResource extends BaseResource
                 TextColumn::make('name')
                     ->label(__('game-tables::messages.fields.name'))
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->wrap(),
 
                 TextColumn::make('country')
                     ->label(__('game-tables::messages.fields.country'))
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('sm'),
 
                 TextColumn::make('game_systems_count')
                     ->label(__('game-tables::messages.fields.game_systems_count'))
                     ->counts('gameSystems')
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('md'),
 
                 IconColumn::make('is_active')
                     ->label(__('game-tables::messages.fields.is_active'))
-                    ->boolean(),
+                    ->boolean()
+                    ->wrapHeader(),
 
                 TextColumn::make('created_at')
                     ->dateTime('d/m/Y H:i')

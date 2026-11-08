@@ -37,8 +37,8 @@ En el panel no hay un botón para añadir directamente: la gente entra aceptando
 
 Aquí llegan las peticiones de quienes pulsan **Solicitar unirse** en la web. La lista enseña al principio las pendientes; cambia el filtro **Estado** para ver las **Aceptada**, **Rechazada** o **Retirada**.
 
-- **Aceptar**: confirma y la persona entra en la plantilla, si queda sitio y la campaña sigue aceptando jugadores nuevos. En una campaña solo para el rol {{association_role}}, la persona tiene que seguir teniéndolo. Si no se cumple, la solicitud sigue pendiente.
-- **Rechazar**: puedes escribir un **Motivo (opcional)**, que se le envía por correo.
+- **Aceptar**, en el menú **⋯** de la solicitud: confirma y la persona entra en la plantilla, si queda sitio y la campaña sigue aceptando jugadores nuevos. En una campaña solo para el rol {{association_role}}, la persona tiene que seguir teniéndolo. Si no se cumple, la solicitud sigue pendiente.
+- **Rechazar**, en el mismo menú: puedes escribir un **Motivo (opcional)**, que se le envía por correo.
 
 Solo pueden pedir entrar quienes cumplen **Quién puede solicitar**, y solo mientras la campaña acepta jugadores nuevos y le quedan plazas. Las invitaciones siguen las mismas reglas.
 
@@ -53,8 +53,8 @@ Para invitar a alguien, con cuenta o sin ella:
 
 La persona recibe el correo «(quien invita) te invita a la campaña «(campaña)»». Si no tiene cuenta, puede crearla desde el enlace. La invitación caduca a los 14 días. La lista muestra **Email**, **Invitada por**, **Envíos** y **Caduca**.
 
-- **Reenviar**: manda el correo otra vez. Han de pasar 24 horas desde el último envío, y a un mismo email no se le pueden mandar más de tres en 30 días por campaña. Si la persona la rechazó, no se le puede volver a invitar durante 30 días.
-- **Cancelar**: la invitación deja de valer.
+- **Reenviar**, en el menú **⋯** de la invitación: manda el correo otra vez. Han de pasar 24 horas desde el último envío, y a un mismo email no se le pueden mandar más de tres en 30 días por campaña. Si la persona la rechazó, no se le puede volver a invitar durante 30 días.
+- **Cancelar**, en el mismo menú: la invitación deja de valer.
 
 Mientras la campaña no acepta jugadores nuevos, **Invitar jugador** y **Reenviar** aparecen desactivados y la pestaña explica por qué; las invitaciones pendientes no se pueden aceptar hasta que vuelva a aceptarlos. Si la campaña es solo para el rol {{association_role}}, no se puede invitar a una cuenta que no lo tenga, y quien no tiene cuenta tendrá que tenerlo al aceptar.
 

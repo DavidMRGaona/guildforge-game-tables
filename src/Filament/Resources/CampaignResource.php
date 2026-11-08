@@ -9,6 +9,7 @@ use App\Filament\Forms\Components\EndSurveyField;
 use App\Filament\Resources\BaseResource;
 use Closure;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -323,14 +324,18 @@ final class CampaignResource extends BaseResource
                 TextColumn::make('title')
                     ->label(__('game-tables::messages.fields.title'))
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->wrap(),
 
                 TextColumn::make('gameSystem.name')
                     ->label(__('game-tables::messages.fields.game_system'))
-                    ->sortable(),
+                    ->sortable()
+                    ->wrap()
+                    ->visibleFrom('xl'),
 
                 TextColumn::make('status')
                     ->label(__('game-tables::messages.fields.campaign_status'))
+                    ->wrapHeader()
                     ->badge()
                     ->color(fn (CampaignStatus $state): string => $state->color())
                     ->formatStateUsing(fn (CampaignStatus $state): string => $state->label())
@@ -338,20 +343,26 @@ final class CampaignResource extends BaseResource
 
                 TextColumn::make('frequency')
                     ->label(__('game-tables::messages.fields.frequency'))
-                    ->formatStateUsing(fn (?CampaignFrequency $state): string => $state?->label() ?? '-'),
+                    ->formatStateUsing(fn (?CampaignFrequency $state): string => $state?->label() ?? '-')
+                    ->visibleFrom('2xl'),
 
                 TextColumn::make('current_session')
                     ->label(__('game-tables::messages.fields.current_session'))
                     ->numeric()
-                    ->sortable(),
+                    ->sortable()
+                    ->wrapHeader()
+                    ->visibleFrom('2xl'),
 
                 IconColumn::make('accepts_new_players')
                     ->label(__('game-tables::messages.fields.accepts_new_players'))
-                    ->boolean(),
+                    ->wrapHeader()
+                    ->boolean()
+                    ->visibleFrom('lg'),
 
                 IconColumn::make('is_published')
                     ->label(__('game-tables::messages.fields.is_published'))
-                    ->boolean(),
+                    ->boolean()
+                    ->visibleFrom('lg'),
 
                 TextColumn::make('created_at')
                     ->dateTime('d/m/Y H:i')
@@ -368,59 +379,62 @@ final class CampaignResource extends BaseResource
                 TernaryFilter::make('is_published')
                     ->label(__('game-tables::messages.fields.is_published')),
             ])
+            // One menu: the moderation actions and «Editar» as labelled links made the table overflow its container
             ->recordActions([
-                Action::make('approve')
-                    ->authorize(fn (): bool => self::canModerate())
-                    ->label(__('game-tables::messages.moderation.approve'))
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
-                    ->requiresConfirmation()
-                    ->modalHeading(__('game-tables::messages.moderation.campaign_approve_confirmation'))
-                    ->modalDescription(__('game-tables::messages.moderation.campaign_approve_description'))
-                    ->visible(fn (CampaignModel $record): bool => $record->frontend_creation_status === FrontendCreationStatus::PendingReview)
-                    ->action(function (CampaignModel $record): void {
-                        try {
-                            app(FrontendCreationServiceInterface::class)->approveCampaign($record->id);
-                        } catch (NotEditableException) {
-                            self::warnStatusAlreadyChanged();
+                ActionGroup::make([
+                    Action::make('approve')
+                        ->authorize(fn (): bool => self::canModerate())
+                        ->label(__('game-tables::messages.moderation.approve'))
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->modalHeading(__('game-tables::messages.moderation.campaign_approve_confirmation'))
+                        ->modalDescription(__('game-tables::messages.moderation.campaign_approve_description'))
+                        ->visible(fn (CampaignModel $record): bool => $record->frontend_creation_status === FrontendCreationStatus::PendingReview)
+                        ->action(function (CampaignModel $record): void {
+                            try {
+                                app(FrontendCreationServiceInterface::class)->approveCampaign($record->id);
+                            } catch (NotEditableException) {
+                                self::warnStatusAlreadyChanged();
 
-                            return;
-                        }
+                                return;
+                            }
 
-                        Notification::make()
-                            ->title(__('game-tables::messages.notifications.campaign_approved'))
-                            ->success()
-                            ->send();
-                    }),
-                Action::make('reject')
-                    ->authorize(fn (): bool => self::canModerate())
-                    ->label(__('game-tables::messages.moderation.reject'))
-                    ->icon('heroicon-o-x-circle')
-                    ->color('danger')
-                    ->modalHeading(__('game-tables::messages.moderation.campaign_reject_confirmation'))
-                    ->modalDescription(__('game-tables::messages.moderation.campaign_reject_description'))
-                    ->schema([
-                        Textarea::make('reason')
-                            ->label(__('game-tables::messages.moderation.rejection_reason'))
-                            ->placeholder(__('game-tables::messages.moderation.campaign_rejection_reason_placeholder'))
-                            ->required(),
-                    ])
-                    ->visible(fn (CampaignModel $record): bool => $record->frontend_creation_status === FrontendCreationStatus::PendingReview)
-                    ->action(function (CampaignModel $record, array $data): void {
-                        try {
-                            app(FrontendCreationServiceInterface::class)->rejectCampaign($record->id, (string) $data['reason']);
-                        } catch (NotEditableException) {
-                            self::warnStatusAlreadyChanged();
+                            Notification::make()
+                                ->title(__('game-tables::messages.notifications.campaign_approved'))
+                                ->success()
+                                ->send();
+                        }),
+                    Action::make('reject')
+                        ->authorize(fn (): bool => self::canModerate())
+                        ->label(__('game-tables::messages.moderation.reject'))
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->modalHeading(__('game-tables::messages.moderation.campaign_reject_confirmation'))
+                        ->modalDescription(__('game-tables::messages.moderation.campaign_reject_description'))
+                        ->schema([
+                            Textarea::make('reason')
+                                ->label(__('game-tables::messages.moderation.rejection_reason'))
+                                ->placeholder(__('game-tables::messages.moderation.campaign_rejection_reason_placeholder'))
+                                ->required(),
+                        ])
+                        ->visible(fn (CampaignModel $record): bool => $record->frontend_creation_status === FrontendCreationStatus::PendingReview)
+                        ->action(function (CampaignModel $record, array $data): void {
+                            try {
+                                app(FrontendCreationServiceInterface::class)->rejectCampaign($record->id, (string) $data['reason']);
+                            } catch (NotEditableException) {
+                                self::warnStatusAlreadyChanged();
 
-                            return;
-                        }
+                                return;
+                            }
 
-                        Notification::make()
-                            ->title(__('game-tables::messages.notifications.campaign_rejected'))
-                            ->success()
-                            ->send();
-                    }),
-                EditAction::make(),
+                            Notification::make()
+                                ->title(__('game-tables::messages.notifications.campaign_rejected'))
+                                ->success()
+                                ->send();
+                        }),
+                    EditAction::make(),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

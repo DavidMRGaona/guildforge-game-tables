@@ -60,7 +60,8 @@ final class StatusLogRelationManager extends RelationManager
                 TextColumn::make('created_at')
                     ->label(__('game-tables::messages.relation_managers.status_log.when'))
                     ->dateTime('d/m/Y H:i')
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('sm'),
 
                 TextColumn::make('participant')
                     ->label(__('game-tables::messages.relation_managers.status_log.participant'))
@@ -81,12 +82,14 @@ final class StatusLogRelationManager extends RelationManager
                         // The participant column already names them; a guest has no account
                         StatusLogActorKind::Participant => __('game-tables::messages.relation_managers.status_log.by_participant'),
                         StatusLogActorKind::Account => $record->actor->name ?? __('game-tables::messages.relation_managers.status_log.deleted_account'),
-                    }),
+                    })
+                    ->visibleFrom('md'),
 
                 TextColumn::make('reason')
                     ->label(__('game-tables::messages.relation_managers.status_log.reason'))
                     ->placeholder('—')
-                    ->wrap(),
+                    ->wrap()
+                    ->visibleFrom('md'),
             ])
             ->defaultSort('created_at', 'desc');
     }

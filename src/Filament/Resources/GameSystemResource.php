@@ -135,24 +135,29 @@ final class GameSystemResource extends BaseResource
                 TextColumn::make('name')
                     ->label(__('game-tables::messages.fields.name'))
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->wrap(),
 
                 TextColumn::make('publisher.name')
                     ->label(__('game-tables::messages.fields.publisher'))
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('sm'),
 
                 TextColumn::make('edition')
                     ->label(__('game-tables::messages.fields.edition'))
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('xl'),
 
                 TextColumn::make('year')
                     ->label(__('game-tables::messages.fields.year'))
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('xl'),
 
                 IconColumn::make('is_active')
                     ->label(__('game-tables::messages.fields.is_active'))
-                    ->boolean(),
+                    ->boolean()
+                    ->wrapHeader(),
 
                 TextColumn::make('created_at')
                     ->dateTime('d/m/Y H:i')

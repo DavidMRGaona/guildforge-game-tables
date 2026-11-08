@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Filament\Resources\CampaignResource\RelationManagers;
 
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Forms\Components\Textarea;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\TextColumn;
@@ -46,7 +47,8 @@ final class JoinRequestsRelationManager extends RelationManager
                 TextColumn::make('message')
                     ->label(__('game-tables::messages.relation_managers.join_requests.message'))
                     ->wrap()
-                    ->limit(120),
+                    ->limit(120)
+                    ->visibleFrom('md'),
 
                 TextColumn::make('status')
                     ->label(__('game-tables::messages.relation_managers.join_requests.status'))
@@ -57,7 +59,8 @@ final class JoinRequestsRelationManager extends RelationManager
                 TextColumn::make('created_at')
                     ->label(__('game-tables::messages.relation_managers.join_requests.requested_at'))
                     ->dateTime('d/m/Y H:i')
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('sm'),
             ])
             ->filters([
                 SelectFilter::make('status')
@@ -65,42 +68,45 @@ final class JoinRequestsRelationManager extends RelationManager
                     ->options(JoinRequestStatus::options())
                     ->default(JoinRequestStatus::Pending->value),
             ])
+            // One menu: two labelled actions made the table overflow its container
             ->recordActions([
-                Action::make('accept')
-                    ->label(__('game-tables::messages.relation_managers.join_requests.accept'))
-                    ->icon('heroicon-o-check')
-                    ->color('success')
-                    ->visible(fn (CampaignJoinRequestModel $record): bool => $record->status === JoinRequestStatus::Pending)
-                    ->authorize(fn (): bool => $this->canManage())
-                    ->requiresConfirmation()
-                    ->action(function (CampaignJoinRequestModel $record): void {
-                        $this->run(fn () => app(CampaignRosterServiceInterface::class)->acceptRequest(
-                            $record->id,
-                            (string) auth()->id(),
-                        ), 'accepted');
-                    }),
+                ActionGroup::make([
+                    Action::make('accept')
+                        ->label(__('game-tables::messages.relation_managers.join_requests.accept'))
+                        ->icon('heroicon-o-check')
+                        ->color('success')
+                        ->visible(fn (CampaignJoinRequestModel $record): bool => $record->status === JoinRequestStatus::Pending)
+                        ->authorize(fn (): bool => $this->canManage())
+                        ->requiresConfirmation()
+                        ->action(function (CampaignJoinRequestModel $record): void {
+                            $this->run(fn () => app(CampaignRosterServiceInterface::class)->acceptRequest(
+                                $record->id,
+                                (string) auth()->id(),
+                            ), 'accepted');
+                        }),
 
-                Action::make('reject')
-                    ->label(__('game-tables::messages.relation_managers.join_requests.reject'))
-                    ->icon('heroicon-o-x-mark')
-                    ->color('danger')
-                    ->visible(fn (CampaignJoinRequestModel $record): bool => $record->status === JoinRequestStatus::Pending)
-                    ->authorize(fn (): bool => $this->canManage())
-                    ->schema([
-                        Textarea::make('reason')
-                            ->label(__('game-tables::messages.relation_managers.join_requests.reason'))
-                            ->rows(3)
-                            ->maxLength(500),
-                    ])
-                    ->action(function (CampaignJoinRequestModel $record, array $data): void {
-                        $reason = is_string($data['reason'] ?? null) ? trim($data['reason']) : '';
+                    Action::make('reject')
+                        ->label(__('game-tables::messages.relation_managers.join_requests.reject'))
+                        ->icon('heroicon-o-x-mark')
+                        ->color('danger')
+                        ->visible(fn (CampaignJoinRequestModel $record): bool => $record->status === JoinRequestStatus::Pending)
+                        ->authorize(fn (): bool => $this->canManage())
+                        ->schema([
+                            Textarea::make('reason')
+                                ->label(__('game-tables::messages.relation_managers.join_requests.reason'))
+                                ->rows(3)
+                                ->maxLength(500),
+                        ])
+                        ->action(function (CampaignJoinRequestModel $record, array $data): void {
+                            $reason = is_string($data['reason'] ?? null) ? trim($data['reason']) : '';
 
-                        $this->run(fn () => app(CampaignRosterServiceInterface::class)->rejectRequest(
-                            $record->id,
-                            (string) auth()->id(),
-                            $reason === '' ? null : $reason,
-                        ), 'rejected');
-                    }),
+                            $this->run(fn () => app(CampaignRosterServiceInterface::class)->rejectRequest(
+                                $record->id,
+                                (string) auth()->id(),
+                                $reason === '' ? null : $reason,
+                            ), 'rejected');
+                        }),
+                ]),
             ]);
     }
 }

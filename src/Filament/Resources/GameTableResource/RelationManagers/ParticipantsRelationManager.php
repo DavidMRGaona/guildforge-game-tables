@@ -7,6 +7,7 @@ namespace Modules\GameTables\Filament\Resources\GameTableResource\RelationManage
 use App\Application\Services\TimezoneServiceInterface;
 use Closure;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
@@ -379,14 +380,16 @@ final class ParticipantsRelationManager extends RelationManager
                             ->orWhere('first_name', 'like', "%{$search}%")
                             ->orWhere('last_name', 'like', "%{$search}%");
                     }))
-                    ->sortable(),
+                    ->sortable()
+                    ->wrap(),
 
                 TextColumn::make('role')
                     ->label(__('game-tables::messages.fields.participant_role'))
                     ->badge()
                     ->color(fn (ParticipantRole $state): string => $state->color())
                     ->formatStateUsing(fn (ParticipantRole $state): string => $state->label())
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('sm'),
 
                 TextColumn::make('status')
                     ->label(__('game-tables::messages.fields.participant_status'))
@@ -402,7 +405,8 @@ final class ParticipantsRelationManager extends RelationManager
                     ->state(fn (ParticipantModel $record): array => $this->guestFlags($record))
                     ->formatStateUsing(fn (string $state): string => __('game-tables::messages.relation_managers.participants.flags.'.$state))
                     ->color(fn (string $state): string => $state === self::FLAG_POSSIBLE_DUPLICATE ? 'danger' : 'warning')
-                    ->tooltip(fn (ParticipantModel $record, ?string $state): ?string => $state !== null ? $this->guestFlagTooltip($state, $record) : null),
+                    ->tooltip(fn (ParticipantModel $record, ?string $state): ?string => $state !== null ? $this->guestFlagTooltip($state, $record) : null)
+                    ->visibleFrom('md'),
 
                 TextColumn::make('waiting_list_position')
                     ->label(__('game-tables::messages.fields.waiting_list_position'))
@@ -411,17 +415,20 @@ final class ParticipantsRelationManager extends RelationManager
                         ? ($this->waitingListPlaces()[$record->id] ?? null)
                         : null)
                     ->numeric()
-                    ->visible(fn (): bool => $this->waitingListPlaces() !== []),
+                    ->visible(fn (): bool => $this->waitingListPlaces() !== [])
+                    ->visibleFrom('md'),
 
                 TextColumn::make('confirmed_at')
                     ->label(__('game-tables::messages.fields.confirmed_at'))
                     ->dateTime('d/m/Y H:i')
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('2xl'),
 
                 TextColumn::make('created_at')
                     ->label(__('game-tables::messages.fields.registered_at'))
                     ->dateTime('d/m/Y H:i')
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('xl'),
             ])
             ->filters([
                 SelectFilter::make('role')
@@ -478,178 +485,181 @@ final class ParticipantsRelationManager extends RelationManager
                         return ParticipantModel::findOrFail($result->id);
                     }),
             ])
+            // One menu: up to eight labelled actions per row made the table overflow its container
             ->recordActions([
-                Action::make('confirm')
-                    ->label(__('game-tables::messages.relation_managers.participants.confirm'))
-                    ->icon('heroicon-o-check')
-                    ->color('success')
-                    ->visible(fn (ParticipantModel $record): bool => $record->status === ParticipantStatus::Pending)
-                    ->authorize(fn (): bool => $this->canManageParticipants())
-                    ->action(function (ParticipantModel $record): void {
-                        $registrationService = app(RegistrationServiceInterface::class);
+                ActionGroup::make([
+                    Action::make('confirm')
+                        ->label(__('game-tables::messages.relation_managers.participants.confirm'))
+                        ->icon('heroicon-o-check')
+                        ->color('success')
+                        ->visible(fn (ParticipantModel $record): bool => $record->status === ParticipantStatus::Pending)
+                        ->authorize(fn (): bool => $this->canManageParticipants())
+                        ->action(function (ParticipantModel $record): void {
+                            $registrationService = app(RegistrationServiceInterface::class);
 
-                        try {
-                            $registrationService->confirm($record->id);
-                        } catch (TableFullException $exception) {
-                            // With the waiting list on, a confirmation never exceeds the player or spectator seats
-                            $this->notifySeatsFull($exception);
-                        }
-                    }),
+                            try {
+                                $registrationService->confirm($record->id);
+                            } catch (TableFullException $exception) {
+                                // With the waiting list on, a confirmation never exceeds the player or spectator seats
+                                $this->notifySeatsFull($exception);
+                            }
+                        }),
 
-                // The same as the emailed link: the guest gets the registration email
-                Action::make('confirmEmail')
-                    ->label(__('game-tables::messages.relation_managers.participants.confirm_email'))
-                    ->icon('heroicon-o-envelope-open')
-                    ->color('success')
-                    ->visible(fn (ParticipantModel $record): bool => $this->isAwaitingEmailConfirmation($record))
-                    ->authorize(fn (): bool => $this->canManageParticipants())
-                    ->requiresConfirmation()
-                    ->modalDescription(__('game-tables::messages.relation_managers.participants.confirm_email_description'))
-                    ->action(function (ParticipantModel $record): void {
-                        try {
-                            app(RegistrationServiceInterface::class)->confirmGuestEmailByAdmin($record->id);
-                        } catch (TableFullException $exception) {
-                            // A guest without a place finds no room: it stays unconfirmed
-                            $this->notifySeatsFull($exception);
-                        }
-                    }),
+                    // The same as the emailed link: the guest gets the registration email
+                    Action::make('confirmEmail')
+                        ->label(__('game-tables::messages.relation_managers.participants.confirm_email'))
+                        ->icon('heroicon-o-envelope-open')
+                        ->color('success')
+                        ->visible(fn (ParticipantModel $record): bool => $this->isAwaitingEmailConfirmation($record))
+                        ->authorize(fn (): bool => $this->canManageParticipants())
+                        ->requiresConfirmation()
+                        ->modalDescription(__('game-tables::messages.relation_managers.participants.confirm_email_description'))
+                        ->action(function (ParticipantModel $record): void {
+                            try {
+                                app(RegistrationServiceInterface::class)->confirmGuestEmailByAdmin($record->id);
+                            } catch (TableFullException $exception) {
+                                // A guest without a place finds no room: it stays unconfirmed
+                                $this->notifySeatsFull($exception);
+                            }
+                        }),
 
-                Action::make('reject')
-                    ->label(__('game-tables::messages.relation_managers.participants.reject'))
-                    ->icon('heroicon-o-x-mark')
-                    ->color('danger')
-                    ->visible(fn (ParticipantModel $record): bool => $record->status === ParticipantStatus::Pending)
-                    ->authorize(fn (): bool => $this->canManageParticipants())
-                    ->requiresConfirmation()
-                    ->schema([
-                        Textarea::make('reason')
-                            ->label(__('game-tables::messages.relation_managers.participants.reject_reason'))
-                            ->maxLength(500),
-                    ])
-                    ->action(function (ParticipantModel $record, array $data): void {
-                        $registrationService = app(RegistrationServiceInterface::class);
+                    Action::make('reject')
+                        ->label(__('game-tables::messages.relation_managers.participants.reject'))
+                        ->icon('heroicon-o-x-mark')
+                        ->color('danger')
+                        ->visible(fn (ParticipantModel $record): bool => $record->status === ParticipantStatus::Pending)
+                        ->authorize(fn (): bool => $this->canManageParticipants())
+                        ->requiresConfirmation()
+                        ->schema([
+                            Textarea::make('reason')
+                                ->label(__('game-tables::messages.relation_managers.participants.reject_reason'))
+                                ->maxLength(500),
+                        ])
+                        ->action(function (ParticipantModel $record, array $data): void {
+                            $registrationService = app(RegistrationServiceInterface::class);
 
-                        try {
-                            $registrationService->reject($record->id, isset($data['reason']) ? (string) $data['reason'] : null);
-                        } catch (ParticipantNotPendingException $exception) {
-                            // Someone else already decided it: nothing changes
-                            Notification::make()
-                                ->title(__('game-tables::messages.errors.'.$exception->reason))
-                                ->danger()
-                                ->send();
-                        }
-                    }),
+                            try {
+                                $registrationService->reject($record->id, isset($data['reason']) ? (string) $data['reason'] : null);
+                            } catch (ParticipantNotPendingException $exception) {
+                                // Someone else already decided it: nothing changes
+                                Notification::make()
+                                    ->title(__('game-tables::messages.errors.'.$exception->reason))
+                                    ->danger()
+                                    ->send();
+                            }
+                        }),
 
-                Action::make('promote')
-                    ->label(__('game-tables::messages.relation_managers.participants.promote'))
-                    ->icon('heroicon-o-arrow-up')
-                    ->color('info')
-                    ->visible(fn (ParticipantModel $record): bool => $record->status === ParticipantStatus::WaitingList)
-                    ->authorize(fn (): bool => $this->canManageParticipants())
-                    ->action(function (ParticipantModel $record): void {
-                        $registrationService = app(RegistrationServiceInterface::class);
+                    Action::make('promote')
+                        ->label(__('game-tables::messages.relation_managers.participants.promote'))
+                        ->icon('heroicon-o-arrow-up')
+                        ->color('info')
+                        ->visible(fn (ParticipantModel $record): bool => $record->status === ParticipantStatus::WaitingList)
+                        ->authorize(fn (): bool => $this->canManageParticipants())
+                        ->action(function (ParticipantModel $record): void {
+                            $registrationService = app(RegistrationServiceInterface::class);
 
-                        try {
-                            $registrationService->promoteParticipant($record->id);
-                        } catch (TableFullException $exception) {
-                            // With the waiting list on, a promotion never exceeds the player or spectator seats
-                            $this->notifySeatsFull($exception);
-                        }
-                    }),
+                            try {
+                                $registrationService->promoteParticipant($record->id);
+                            } catch (TableFullException $exception) {
+                                // With the waiting list on, a promotion never exceeds the player or spectator seats
+                                $this->notifySeatsFull($exception);
+                            }
+                        }),
 
-                // The participant's own cancellation (lock, freed seat, promotion), with its own
-                // email to the participant and none to the directors
-                Action::make('cancelRegistration')
-                    ->label(__('game-tables::messages.relation_managers.participants.cancel_registration'))
-                    ->icon('heroicon-o-x-circle')
-                    ->color('danger')
-                    ->visible(fn (ParticipantModel $record): bool => $record->status->canBeCancelled())
-                    ->authorize(fn (): bool => $this->canManageParticipants())
-                    ->requiresConfirmation()
-                    ->modalDescription(__('game-tables::messages.relation_managers.participants.cancel_registration_description'))
-                    ->action(function (ParticipantModel $record): void {
-                        try {
-                            app(RegistrationServiceInterface::class)->cancelByAdmin($record->id);
-                        } catch (CannotCancelException) {
-                            // Cancelled, rejected or marked meanwhile
-                            Notification::make()
-                                ->title(__('game-tables::messages.errors.cannot_cancel'))
-                                ->danger()
-                                ->send();
-                        }
-                    }),
+                    // The participant's own cancellation (lock, freed seat, promotion), with its own
+                    // email to the participant and none to the directors
+                    Action::make('cancelRegistration')
+                        ->label(__('game-tables::messages.relation_managers.participants.cancel_registration'))
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->visible(fn (ParticipantModel $record): bool => $record->status->canBeCancelled())
+                        ->authorize(fn (): bool => $this->canManageParticipants())
+                        ->requiresConfirmation()
+                        ->modalDescription(__('game-tables::messages.relation_managers.participants.cancel_registration_description'))
+                        ->action(function (ParticipantModel $record): void {
+                            try {
+                                app(RegistrationServiceInterface::class)->cancelByAdmin($record->id);
+                            } catch (CannotCancelException) {
+                                // Cancelled, rejected or marked meanwhile
+                                Notification::make()
+                                    ->title(__('game-tables::messages.errors.cannot_cancel'))
+                                    ->danger()
+                                    ->send();
+                            }
+                        }),
 
-                // Only someone with a confirmed seat, once the table has started; no emails, no promotion
-                Action::make('markNoShow')
-                    ->label(__('game-tables::messages.relation_managers.participants.no_show'))
-                    ->icon('heroicon-o-user-minus')
-                    ->color('gray')
-                    ->visible(function (ParticipantModel $record): bool {
-                        /** @var GameTableModel $ownerRecord */
-                        $ownerRecord = $this->getOwnerRecord();
+                    // Only someone with a confirmed seat, once the table has started; no emails, no promotion
+                    Action::make('markNoShow')
+                        ->label(__('game-tables::messages.relation_managers.participants.no_show'))
+                        ->icon('heroicon-o-user-minus')
+                        ->color('gray')
+                        ->visible(function (ParticipantModel $record): bool {
+                            /** @var GameTableModel $ownerRecord */
+                            $ownerRecord = $this->getOwnerRecord();
 
-                        return $record->status === ParticipantStatus::Confirmed
-                            && ! $ownerRecord->starts_at->isFuture();
-                    })
-                    ->authorize(fn (): bool => $this->canManageParticipants())
-                    ->requiresConfirmation()
-                    ->modalDescription(__('game-tables::messages.relation_managers.participants.no_show_description'))
-                    ->action(function (ParticipantModel $record): void {
-                        try {
-                            app(RegistrationServiceInterface::class)->markAsNoShow($record->id);
-                        } catch (InvalidStatusTransitionException) {
-                            Notification::make()
-                                ->title(__('game-tables::messages.errors.cannot_mark_no_show'))
-                                ->danger()
-                                ->send();
-                        }
-                    }),
+                            return $record->status === ParticipantStatus::Confirmed
+                                && ! $ownerRecord->starts_at->isFuture();
+                        })
+                        ->authorize(fn (): bool => $this->canManageParticipants())
+                        ->requiresConfirmation()
+                        ->modalDescription(__('game-tables::messages.relation_managers.participants.no_show_description'))
+                        ->action(function (ParticipantModel $record): void {
+                            try {
+                                app(RegistrationServiceInterface::class)->markAsNoShow($record->id);
+                            } catch (InvalidStatusTransitionException) {
+                                Notification::make()
+                                    ->title(__('game-tables::messages.errors.cannot_mark_no_show'))
+                                    ->danger()
+                                    ->send();
+                            }
+                        }),
 
-                EditAction::make()
-                    ->mutateDataUsing(function (array $data): array {
-                        // One guest per email and table, whatever the case it is typed in (as on registration)
-                        if (isset($data['email']) && is_string($data['email'])) {
-                            $data['email'] = mb_strtolower(trim($data['email']));
-                        }
-
-                        return $data;
-                    })
-                    ->using(function (Model $record, array $data, EditAction $action): void {
-                        $record->fill($data);
-
-                        try {
-                            // Inside an open transaction the failed write is rolled back to a savepoint:
-                            // PostgreSQL would otherwise abort the whole transaction
-                            $record->newQuery()->withSavepointIfNeeded(fn (): bool => $record->save());
-                        } catch (UniqueConstraintViolationException $exception) {
-                            if (! $record->isDirty('email')) {
-                                throw $exception;
+                    EditAction::make()
+                        ->mutateDataUsing(function (array $data): array {
+                            // One guest per email and table, whatever the case it is typed in (as on registration)
+                            if (isset($data['email']) && is_string($data['email'])) {
+                                $data['email'] = mb_strtolower(trim($data['email']));
                             }
 
-                            // Another guest took the email after the form's check (the unique index
-                            // refuses it): a form error, never a 500 whose SQL carries the email
-                            throw ValidationException::withMessages([
-                                "mountedActions.{$action->getNestingIndex()}.data.email" => __('game-tables::messages.errors.guest_already_registered'),
-                            ]);
-                        }
-                    }),
-                // Only rows that hold no seat: the others are cancelled first (lock, freed seat, promotion)
-                DeleteAction::make()
-                    ->visible(fn (ParticipantModel $record): bool => $record->status->canBeDeleted())
-                    ->authorize(fn (): bool => $this->canDeleteParticipants())
-                    ->using(function (Model $record): bool {
-                        if ($this->deleteIfCancelledOrRejected($record)) {
-                            return true;
-                        }
+                            return $data;
+                        })
+                        ->using(function (Model $record, array $data, EditAction $action): void {
+                            $record->fill($data);
 
-                        // Registered again meanwhile: the row is active, so it stays
-                        Notification::make()
-                            ->title(__('game-tables::messages.relation_managers.participants.delete_not_allowed'))
-                            ->danger()
-                            ->send();
+                            try {
+                                // Inside an open transaction the failed write is rolled back to a savepoint:
+                                // PostgreSQL would otherwise abort the whole transaction
+                                $record->newQuery()->withSavepointIfNeeded(fn (): bool => $record->save());
+                            } catch (UniqueConstraintViolationException $exception) {
+                                if (! $record->isDirty('email')) {
+                                    throw $exception;
+                                }
 
-                        return false;
-                    }),
+                                // Another guest took the email after the form's check (the unique index
+                                // refuses it): a form error, never a 500 whose SQL carries the email
+                                throw ValidationException::withMessages([
+                                    "mountedActions.{$action->getNestingIndex()}.data.email" => __('game-tables::messages.errors.guest_already_registered'),
+                                ]);
+                            }
+                        }),
+                    // Only rows that hold no seat: the others are cancelled first (lock, freed seat, promotion)
+                    DeleteAction::make()
+                        ->visible(fn (ParticipantModel $record): bool => $record->status->canBeDeleted())
+                        ->authorize(fn (): bool => $this->canDeleteParticipants())
+                        ->using(function (Model $record): bool {
+                            if ($this->deleteIfCancelledOrRejected($record)) {
+                                return true;
+                            }
+
+                            // Registered again meanwhile: the row is active, so it stays
+                            Notification::make()
+                                ->title(__('game-tables::messages.relation_managers.participants.delete_not_allowed'))
+                                ->danger()
+                                ->send();
+
+                            return false;
+                        }),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
