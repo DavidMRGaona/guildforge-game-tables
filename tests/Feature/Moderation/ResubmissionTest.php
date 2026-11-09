@@ -51,7 +51,7 @@ final class ResubmissionTest extends ModuleTestCase
             ->assertSessionHas('error', 'Esta campaña ya se ha enviado a revisión y ya no se puede modificar.');
 
         $this->assertSame('pending_review', $campaign->refresh()->frontend_creation_status?->value);
-        Notification::assertSentOnDemandTimes(CampaignModerationSubmittedNotification::class, 1);
+        Notification::assertSentTimes(CampaignModerationSubmittedNotification::class, 1);
     }
 
     public function test_a_rejected_campaign_can_be_sent_again(): void
@@ -61,7 +61,7 @@ final class ResubmissionTest extends ModuleTestCase
         $this->actingAs($this->creator)->post(route('campaigns.submit-review', $campaign->id))->assertRedirect();
 
         $this->assertSame('pending_review', $campaign->refresh()->frontend_creation_status?->value);
-        Notification::assertSentOnDemandTimes(CampaignModerationSubmittedNotification::class, 1);
+        Notification::assertSentTimes(CampaignModerationSubmittedNotification::class, 1);
     }
 
     public function test_an_approved_campaign_cannot_go_back_to_review(): void
@@ -89,7 +89,7 @@ final class ResubmissionTest extends ModuleTestCase
             ->assertSessionHas('error', 'Esta mesa ya se ha enviado a revisión y ya no se puede modificar.');
 
         $this->assertSame('pending_review', $table->refresh()->frontend_creation_status?->value);
-        Notification::assertSentOnDemandTimes(ModerationSubmittedNotification::class, 1);
+        Notification::assertSentTimes(ModerationSubmittedNotification::class, 1);
     }
 
     private function campaign(string $creationStatus, bool $published = false): CampaignModel

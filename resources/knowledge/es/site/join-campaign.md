@@ -26,7 +26,7 @@ Mientras esperas, puedes pulsar **Retirar solicitud** y confirmar con **Retirar*
 - **Si te aceptan**, te llega el correo «Ya formas parte de …» con las sesiones en las que ya quedas inscrito. Si aún no hay sesiones, te avisaremos cuando se publique la próxima.
 - **Si no te aceptan**, te llega un correo con el motivo, si la dirección lo ha escrito. Puedes volver a solicitarlo más adelante.
 
-Según la configuración de la web, algunos de estos correos pueden no enviarse: el resultado se ve siempre en la ficha de la campaña.
+Según la configuración de la web, algunos de estos correos pueden no enviarse: el resultado se ve siempre en la ficha de la campaña. No se quitan desde tu perfil: son de «Mis inscripciones», que siempre se envía.
 
 ## Lo que puede salir en lugar del botón
 

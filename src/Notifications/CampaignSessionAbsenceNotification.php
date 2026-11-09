@@ -4,17 +4,19 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Notifications;
 
+use App\Application\Mail\Contracts\HasMailCategory;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Modules\GameTables\Infrastructure\Mail\GameTablesMailCategories;
 use Modules\GameTables\Notifications\Concerns\EscapesUserText;
 
 /**
  * Sent to a roster member whose seat in one session the organisation cancelled (the direction
  * marking an absence, or the panel): they miss this session only and stay in the campaign.
  */
-final class CampaignSessionAbsenceNotification extends Notification implements ShouldQueue
+final class CampaignSessionAbsenceNotification extends Notification implements HasMailCategory, ShouldQueue
 {
     use EscapesUserText;
     use Queueable;
@@ -34,6 +36,11 @@ final class CampaignSessionAbsenceNotification extends Notification implements S
     public function via(object $notifiable): array
     {
         return ['mail'];
+    }
+
+    public function mailCategory(): string
+    {
+        return GameTablesMailCategories::SIGN_UPS;
     }
 
     public function toMail(object $notifiable): MailMessage

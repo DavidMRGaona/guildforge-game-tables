@@ -70,7 +70,7 @@ La guía de sesiones de campaña explica la inscripción automática en detalle.
 
 ## Correos
 
-Cada correo se puede apagar en **Sistema** → **Configuración** → **Mesas**, sección **Notificaciones de campañas**, salvo la invitación, que siempre se envía.
+Cada correo se puede apagar en **Sistema** → **Configuración** → **Mesas**, sección **Notificaciones de campañas**, salvo la invitación, que no tiene interruptor. Encendidos, cada persona con cuenta puede quitar en su perfil los optativos: la invitación y la sesión programada («Novedades de mis campañas») y los avisos a la dirección («Avisos como director de juego»). Los que responden a su solicitud o la meten o la sacan de la plantilla le llegan siempre.
 
 | Ajuste | Quién lo recibe y cuándo |
 |---|---|

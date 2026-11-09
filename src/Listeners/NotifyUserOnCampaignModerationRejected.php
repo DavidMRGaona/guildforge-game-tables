@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Listeners;
 
-use Illuminate\Support\Facades\Notification;
+use Modules\GameTables\Application\DTOs\MailRecipientDTO;
 use Modules\GameTables\Domain\Events\CampaignModerationRejected;
+use Modules\GameTables\Infrastructure\Mail\MailRecipientNotifier;
 use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
 use Modules\GameTables\Notifications\CampaignModerationRejectedNotification;
 
@@ -13,17 +14,18 @@ final readonly class NotifyUserOnCampaignModerationRejected
 {
     public function __construct(
         private NotificationRecipientResolver $recipientResolver,
+        private MailRecipientNotifier $notifier,
     ) {}
 
     public function handle(CampaignModerationRejected $event): void
     {
-        $creatorEmail = $this->recipientResolver->getCreatorEmail($event->createdBy);
+        $creator = $this->recipientResolver->getCreatorRecipient($event->createdBy);
 
-        if ($creatorEmail === null) {
+        if (! $creator instanceof MailRecipientDTO) {
             return;
         }
 
-        Notification::route('mail', $creatorEmail)->notify(new CampaignModerationRejectedNotification(
+        $this->notifier->send($creator, new CampaignModerationRejectedNotification(
             campaignId: $event->campaignId,
             campaignTitle: $event->title,
             userName: $this->recipientResolver->getCreatorDisplayName($event->createdBy),

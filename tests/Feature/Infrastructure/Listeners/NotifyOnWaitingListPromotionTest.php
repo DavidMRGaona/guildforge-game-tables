@@ -6,6 +6,7 @@ namespace Modules\GameTables\Tests\Feature\Infrastructure\Listeners;
 
 use DateTimeImmutable;
 use Illuminate\Support\Facades\Notification;
+use Modules\GameTables\Application\DTOs\MailRecipientDTO;
 use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\TableFormat;
@@ -68,15 +69,15 @@ final class NotifyOnWaitingListPromotionTest extends TestCase
 
         $this->recipientResolver
             ->expects($this->once())
-            ->method('getParticipantEmail')
+            ->method('getParticipantRecipient')
             ->with('participant-uuid')
-            ->willReturn('participant@example.com');
+            ->willReturn(MailRecipientDTO::address('participant@example.com'));
 
         $this->recipientResolver
             ->expects($this->once())
-            ->method('getGameMasterEmails')
+            ->method('getGameMasterRecipients')
             ->with($gameTableId->value)
-            ->willReturn(['gm@example.com']);
+            ->willReturn([MailRecipientDTO::address('gm@example.com')]);
 
         $this->recipientResolver
             ->expects($this->once())
@@ -129,15 +130,15 @@ final class NotifyOnWaitingListPromotionTest extends TestCase
 
         $this->recipientResolver
             ->expects($this->once())
-            ->method('getParticipantEmail')
+            ->method('getParticipantRecipient')
             ->with('participant-uuid')
             ->willReturn(null);
 
         $this->recipientResolver
             ->expects($this->once())
-            ->method('getGameMasterEmails')
+            ->method('getGameMasterRecipients')
             ->with($gameTableId->value)
-            ->willReturn(['gm@example.com']);
+            ->willReturn([MailRecipientDTO::address('gm@example.com')]);
 
         $this->recipientResolver
             ->expects($this->once())
@@ -153,7 +154,7 @@ final class NotifyOnWaitingListPromotionTest extends TestCase
 
         $this->listener->handle($event);
 
-        Notification::assertSentOnDemandTimes(WaitingListPromotionNotification::class, 0);
+        Notification::assertSentTimes(WaitingListPromotionNotification::class, 0);
 
         Notification::assertSentOnDemand(
             WaitingListPromotionGmNotification::class,
@@ -173,8 +174,8 @@ final class NotifyOnWaitingListPromotionTest extends TestCase
             ->willReturn($this->createGameTable($gameTableId));
 
         $this->recipientResolver->expects($this->once())->method('getParticipantDisplayName')->willReturn('John Doe');
-        $this->recipientResolver->expects($this->once())->method('getParticipantEmail')->willReturn('participant@example.com');
-        $this->recipientResolver->expects($this->never())->method('getGameMasterEmails');
+        $this->recipientResolver->expects($this->once())->method('getParticipantRecipient')->willReturn(MailRecipientDTO::address('participant@example.com'));
+        $this->recipientResolver->expects($this->never())->method('getGameMasterRecipients');
         $this->recipientResolver->expects($this->never())->method('getTableNotificationEmail');
 
         $this->listener->handle(new ParticipantPromotedFromWaitingList(
@@ -187,7 +188,7 @@ final class NotifyOnWaitingListPromotionTest extends TestCase
             WaitingListPromotionNotification::class,
             fn ($notification, $channels, $notifiable): bool => $notifiable->routes['mail'] === 'participant@example.com',
         );
-        Notification::assertSentOnDemandTimes(WaitingListPromotionGmNotification::class, 0);
+        Notification::assertSentTimes(WaitingListPromotionGmNotification::class, 0);
     }
 
     private function createGameTable(GameTableId $gameTableId): GameTable

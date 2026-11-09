@@ -336,4 +336,34 @@ return [
         'intro' => ':player ha aceptado tu invitación y ya forma parte de la plantilla de la campaña «:campaignTitle».',
         'view_roster' => 'Ver plantilla',
     ],
+    // Mail categories in the «Correos» tab of the profile
+    'categories' => [
+        'section' => 'Mesas de rol',
+        'sign_ups' => [
+            'label' => 'Mis inscripciones',
+            'description' => 'Confirmaciones de tus inscripciones y bajas en partidas y campañas, plazas que se liberan para ti, ausencias y cancelaciones.',
+            'reason' => 'Confirman algo que has hecho o te cambian los planes.',
+        ],
+        'reminders' => [
+            'label' => 'Recordatorios de partidas',
+            'description' => 'Un aviso antes de cada partida en la que tienes plaza.',
+        ],
+        'campaign_news' => [
+            'label' => 'Novedades de mis campañas',
+            'description' => 'Invitaciones a campañas y nuevas sesiones de las campañas en las que juegas.',
+        ],
+        'direction' => [
+            'label' => 'Avisos como director de juego',
+            'description' => 'Inscripciones, bajas y lista de espera de tus partidas; solicitudes, invitaciones aceptadas y salidas de tus campañas.',
+        ],
+        'proposals' => [
+            'label' => 'Revisión de mis propuestas',
+            'description' => 'Si la mesa o la campaña que has propuesto en la web se publica o no.',
+            'reason' => 'Te dicen si lo que has propuesto se publica.',
+        ],
+        'moderation' => [
+            'label' => 'Mesas y campañas por revisar',
+            'description' => 'Las mesas y campañas propuestas en la web que esperan moderación.',
+        ],
+    ],
 ];

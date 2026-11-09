@@ -6,14 +6,16 @@ namespace Modules\GameTables\Infrastructure\Listeners;
 
 use Closure;
 use Illuminate\Notifications\Notification as BaseNotification;
-use Illuminate\Support\Facades\Notification;
+use Modules\GameTables\Application\DTOs\MailRecipientDTO;
 use Modules\GameTables\Domain\Entities\GameTable;
+use Modules\GameTables\Infrastructure\Mail\MailRecipientNotifier;
 
 /**
  * Sends a registration email (a new registration, a promotion from the waiting list) to the
  * organisation. When the table delegates its registrations and the registration awaits approval,
  * the linked directors get a link to «Gestionar inscritos»; everyone else gets the plain email. An
- * address never gets two copies.
+ * address never gets two copies. Game masters with an account get it as the account, so their
+ * mail choices apply; the table's mailbox and external game masters by address.
  */
 trait NotifiesOrganisation
 {
@@ -24,29 +26,32 @@ trait NotifiesOrganisation
     {
         $gameTableId = $gameTable->id->value;
 
-        $emails = [];
+        /** @var array<string, array{MailRecipientDTO, ?string}> $recipients */
+        $recipients = [];
 
         if ($gameTable->delegatesRegistrations && $awaitsApproval) {
             $manageUrl = url("/mesas/mis-mesas/{$gameTable->slug}/inscritos");
 
-            foreach ($this->recipientResolver->getDirectorEmails($gameTableId) as $email) {
-                $emails[strtolower($email)] ??= [$email, $manageUrl];
+            foreach ($this->recipientResolver->getDirectorRecipients($gameTableId) as $recipient) {
+                $recipients[mb_strtolower($recipient->email)] ??= [$recipient, $manageUrl];
             }
         }
 
-        $others = $this->recipientResolver->getGameMasterEmails($gameTableId);
+        $others = $this->recipientResolver->getGameMasterRecipients($gameTableId);
         $tableEmail = $this->recipientResolver->getTableNotificationEmail($gameTableId);
 
-        if ($tableEmail !== null) {
-            $others[] = $tableEmail;
+        if ($tableEmail !== null && $tableEmail !== '') {
+            $others[] = MailRecipientDTO::address($tableEmail);
         }
 
-        foreach ($others as $email) {
-            $emails[strtolower($email)] ??= [$email, null];
+        foreach ($others as $recipient) {
+            $recipients[mb_strtolower($recipient->email)] ??= [$recipient, null];
         }
 
-        foreach ($emails as [$email, $manageUrl]) {
-            Notification::route('mail', $email)->notify($makeNotification($manageUrl));
+        $notifier = app(MailRecipientNotifier::class);
+
+        foreach ($recipients as [$recipient, $manageUrl]) {
+            $notifier->send($recipient, $makeNotification($manageUrl));
         }
     }
 }

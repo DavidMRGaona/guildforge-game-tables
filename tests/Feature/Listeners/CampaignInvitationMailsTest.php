@@ -105,6 +105,17 @@ final class CampaignInvitationMailsTest extends ModuleTestCase
         Notification::assertSentOnDemandTimes(CampaignInvitationNotification::class, 1);
     }
 
+    public function test_an_invitation_to_the_address_of_an_account_goes_to_the_account(): void
+    {
+        $guest = UserModel::factory()->create(['name' => 'Guest Doe', 'email' => 'Guest@Example.com']);
+
+        $this->sendInvitation();
+
+        // As the account, so its mail choices apply; it also sees the invitation in its profile
+        Notification::assertSentTo($guest, CampaignInvitationNotification::class);
+        Notification::assertSentOnDemandTimes(CampaignInvitationNotification::class, 0);
+    }
+
     public function test_the_invitation_ignores_the_notice_settings(): void
     {
         config()->set('modules.settings.game-tables', ['campaign_notifications' => array_fill_keys(
@@ -242,13 +253,13 @@ final class CampaignInvitationMailsTest extends ModuleTestCase
     {
         event(new CampaignInvitationAccepted($this->campaign->id, $this->mary->id));
 
-        Notification::assertSentOnDemand(
+        Notification::assertSentTo(
+            $this->john,
             CampaignInvitationAcceptedNotification::class,
-            function (CampaignInvitationAcceptedNotification $notification, array $channels, AnonymousNotifiable $notifiable): bool {
+            function (CampaignInvitationAcceptedNotification $notification, array $channels, UserModel $notifiable): bool {
                 $mail = $notification->toMail($notifiable);
 
-                return $notifiable->routes['mail'] === 'john@example.com'
-                    && $mail->subject === 'Mary Major ha aceptado tu invitación a «Campaña de prueba»'
+                return $mail->subject === 'Mary Major ha aceptado tu invitación a «Campaña de prueba»'
                     && str_contains($mail->actionUrl, '/plantilla');
             },
         );

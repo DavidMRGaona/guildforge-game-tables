@@ -7,6 +7,7 @@ namespace Modules\GameTables\Tests\Feature\Infrastructure\Services;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use Modules\GameTables\Application\DTOs\MailRecipientDTO;
 use Modules\GameTables\Domain\Enums\GameMasterRole;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableStatus;
@@ -81,7 +82,7 @@ final class NotificationRecipientResolverManyToManyTest extends TestCase
             'sort_order' => 1,
         ]);
 
-        $result = $this->resolver->getGameMasterEmails($gameTable->id);
+        $result = $this->emails($this->resolver->getGameMasterRecipients($gameTable->id));
 
         $this->assertCount(1, $result);
         $this->assertContains('gm@example.com', $result);
@@ -146,7 +147,7 @@ final class NotificationRecipientResolverManyToManyTest extends TestCase
             'sort_order' => 2,
         ]);
 
-        $result = $this->resolver->getGameMasterEmails($gameTable->id);
+        $result = $this->emails($this->resolver->getGameMasterRecipients($gameTable->id));
 
         $this->assertCount(2, $result);
         $this->assertContains('alice@example.com', $result);
@@ -212,7 +213,7 @@ final class NotificationRecipientResolverManyToManyTest extends TestCase
             'sort_order' => 2,
         ]);
 
-        $result = $this->resolver->getGameMasterEmails($gameTable->id);
+        $result = $this->emails($this->resolver->getGameMasterRecipients($gameTable->id));
 
         $this->assertCount(1, $result);
         $this->assertContains('notify@example.com', $result);
@@ -256,7 +257,7 @@ final class NotificationRecipientResolverManyToManyTest extends TestCase
             'is_name_public' => true,
         ]);
 
-        $result = $this->resolver->getGameMasterEmails($gameTable->id);
+        $result = $this->emails($this->resolver->getGameMasterRecipients($gameTable->id));
 
         $this->assertEmpty($result);
     }
@@ -309,9 +310,18 @@ final class NotificationRecipientResolverManyToManyTest extends TestCase
             'sort_order' => 1,
         ]);
 
-        $result = $this->resolver->getGameMasterEmails($gameTable->id);
+        $result = $this->emails($this->resolver->getGameMasterRecipients($gameTable->id));
 
         $this->assertCount(1, $result);
         $this->assertContains('user@example.com', $result);
+    }
+
+    /**
+     * @param  list<MailRecipientDTO>  $recipients
+     * @return list<string>
+     */
+    private function emails(array $recipients): array
+    {
+        return array_map(fn (MailRecipientDTO $recipient): string => $recipient->email, $recipients);
     }
 }

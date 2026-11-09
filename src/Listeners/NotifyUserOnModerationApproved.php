@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Listeners;
 
-use Illuminate\Support\Facades\Notification;
+use Modules\GameTables\Application\DTOs\MailRecipientDTO;
 use Modules\GameTables\Domain\Events\GameTableModerationApproved;
+use Modules\GameTables\Infrastructure\Mail\MailRecipientNotifier;
 use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
 use Modules\GameTables\Notifications\ModerationApprovedNotification;
 
@@ -13,13 +14,14 @@ final readonly class NotifyUserOnModerationApproved
 {
     public function __construct(
         private NotificationRecipientResolver $recipientResolver,
+        private MailRecipientNotifier $notifier,
     ) {}
 
     public function handle(GameTableModerationApproved $event): void
     {
-        $creatorEmail = $this->recipientResolver->getCreatorEmail($event->createdBy);
+        $creator = $this->recipientResolver->getCreatorRecipient($event->createdBy);
 
-        if ($creatorEmail === null) {
+        if (! $creator instanceof MailRecipientDTO) {
             return;
         }
 
@@ -32,6 +34,6 @@ final readonly class NotifyUserOnModerationApproved
             notes: $event->notes,
         );
 
-        Notification::route('mail', $creatorEmail)->notify($notification);
+        $this->notifier->send($creator, $notification);
     }
 }

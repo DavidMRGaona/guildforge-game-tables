@@ -25,7 +25,7 @@ Módulo de GuildForge para gestionar mesas de rol y campañas: inscripciones de 
 
 ## Requisitos
 
-- GuildForge core `^3.36` (fuentes del buscador del sitio; antes, contrato de encuestas: sujetos encuestables, enlaces desde la ficha, aviso de cancelación y campo «Encuesta al terminar»; almacenamiento de fechas en UTC y zona horaria de visualización, pestañas del perfil que se ocultan, avisos legales editables de los correos y si la cuenta debe verificar su email; ver [Verificación de email](#verificación-de-email))
+- GuildForge core `^3.47` (categorías de correo: cada persona elige en su perfil qué correos optativos recibe, ver [Categorías de correo](#categorías-de-correo); antes, fuentes del buscador del sitio y contrato de encuestas: sujetos encuestables, enlaces desde la ficha, aviso de cancelación y campo «Encuesta al terminar»; almacenamiento de fechas en UTC y zona horaria de visualización, pestañas del perfil que se ocultan, avisos legales editables de los correos y si la cuenta debe verificar su email; ver [Verificación de email](#verificación-de-email))
 - PHP >= 8.5, Laravel >= 13, Filament 5
 
 El core rechaza el módulo si no se cumplen (`module.json` → `requires`).
@@ -76,6 +76,21 @@ Se configura en el panel: **Sistema** → **Configuración** → **Mesas** (perm
 | **Creación desde web** | Activar la creación desde la web, qué se puede crear (mesas, campañas o ambas), quién puede crear (cualquier persona, usuarios registrados, roles concretos separados por comas o un permiso) y el modo de publicación (`auto`, `approval`, `role_based`) |
 
 Quién crea mesas en el panel lo decide el permiso `gametables.create` (ver [Permisos](#permisos)); quién las crea desde la web, **Creación desde web**.
+
+### Categorías de correo
+
+Cada persona elige en la pestaña **Correos** de su perfil qué correos optativos del módulo recibe (core ≥ 3.47). Los interruptores de **Notificaciones** y **Notificaciones de campañas** y el **Notificar por email** de cada director siguen mandando: una preferencia personal solo sirve para recibir menos. Todas van en la sección «Mesas de rol» (`GameTablesMailCategories`; las claves no cambian nunca):
+
+| Clave | Categoría | Tipo | Correos | La ve |
+|-------|-----------|------|---------|-------|
+| `game-tables.sign-ups` | Mis inscripciones | Obligatoria | Inscripción, baja, confirmación, rechazo, plaza desde la lista de espera, mesa cancelada, cancelación por la organización, ausencia en una sesión, respuesta a una solicitud de campaña, entrada y salida de la plantilla | Todo el mundo |
+| `game-tables.reminders` | Recordatorios de partidas | Optativa | Recordatorio antes de la mesa | Todo el mundo |
+| `game-tables.campaign-news` | Novedades de mis campañas | Optativa | Invitación a una campaña (a una cuenta), sesión programada | Todo el mundo |
+| `game-tables.direction` | Avisos como director de juego | Optativa | Inscripción, cancelación y promoción en mis mesas; solicitud recibida, invitación aceptada y jugador que se va en mis campañas | Quien es director con cuenta de alguna mesa o campaña, o creó una campaña en la web |
+| `game-tables.proposals` | Revisión de mis propuestas | Obligatoria | Mesa o campaña aprobada o rechazada | Quien puede proponer en la web o ya propuso algo |
+| `game-tables.moderation` | Mesas y campañas por revisar | Optativa | Nueva mesa o campaña pendiente de moderación | Quien puede moderar (acceso al panel y `gametables.update` o `campaigns.update`) |
+
+A una cuenta se le escribe siempre como cuenta (`$user->notify()` o `MailRecipientNotifier`), para que el core aplique sus preferencias y añada el pie con la baja; `NotificationRecipientResolverInterface` devuelve `MailRecipientDTO` con el `userId` de la cuenta. Solo van a una dirección los invitados, los directores externos y el email de la mesa. Los correos solo de invitados (`Guest*`) no tienen categoría.
 
 ### Configuración por evento
 
@@ -313,7 +328,7 @@ La dirección puede invitar o aceptar mientras la campaña está cerrada a nuevo
 ### Invitaciones
 
 - **Invitar.** Desde la página de plantilla o desde la pestaña **Invitaciones** del panel, la dirección escribe el email y marca la casilla «Confirmo que esta persona me ha dado permiso para usar su email para invitarla a la campaña.», obligatoria. La casilla es una declaración de quien invita, no el consentimiento de la persona invitada. La respuesta es siempre «Invitación enviada a {email}.», tenga cuenta o no, así que el formulario no sirve para averiguar qué emails tienen cuenta. Solo se responde otra cosa si la campaña no está disponible, ha terminado o tiene la plantilla completa, si ese email es de alguien que ya está en la plantilla o dirige la campaña, y cuando se superan los límites de envío. El email se guarda en minúsculas y sin espacios. Hay un límite de 20 invitaciones y reenvíos por minuto y usuario.
-- **El correo.** Dice quién invita y a qué campaña (con enlace a su ficha), lleva el botón **Ver invitación**, explica cómo rechazar, indica la caducidad e incluye el aviso de protección de datos (ver [Aviso legal del correo](#aviso-legal-del-correo)). Se envía siempre, sin depender de los ajustes de avisos.
+- **El correo.** Dice quién invita y a qué campaña (con enlace a su ficha), lleva el botón **Ver invitación**, explica cómo rechazar, indica la caducidad e incluye el aviso de protección de datos (ver [Aviso legal del correo](#aviso-legal-del-correo)). No depende de los ajustes de avisos. Si el email es de una cuenta activa, se envía a la cuenta en la categoría optativa «Novedades de mis campañas» (la invitación sigue en su perfil aunque la desactive); a cualquier otro email, siempre.
 - **La página del enlace** (`/campanas/invitaciones/{token}`) no pide sesión y no se indexa. Muestra un estado según quién la abre:
   - **sin sesión:** la campaña, quién invita, el email que hay que usar y los botones **Iniciar sesión** y **Crear cuenta**, que vuelven a la invitación al terminar;
   - **con la cuenta de ese email** (sin distinguir mayúsculas): **Aceptar** y **Rechazar**;

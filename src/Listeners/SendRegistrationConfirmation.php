@@ -6,7 +6,6 @@ namespace Modules\GameTables\Listeners;
 
 use App\Application\Services\TimezoneServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
-use Illuminate\Support\Facades\Notification;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Events\ParticipantRegistered;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
@@ -36,16 +35,15 @@ final readonly class SendRegistrationConfirmation
         $tableDate = app(TimezoneServiceInterface::class)->format($gameTable->timeSlot->startsAt);
         $tableLocation = $gameTable->location;
 
-        Notification::route('mail', $user->email)
-            ->notify(new RegistrationConfirmation(
-                participantName: $user->name,
-                tableId: $event->gameTableId,
-                tableTitle: $gameTable->title,
-                tableDate: $tableDate,
-                tableLocation: $tableLocation,
-                role: $event->role,
-                status: $event->status,
-                waitingListPosition: $event->waitingListPosition,
-            ));
+        $user->notify(new RegistrationConfirmation(
+            participantName: $user->name,
+            tableId: $event->gameTableId,
+            tableTitle: $gameTable->title,
+            tableDate: $tableDate,
+            tableLocation: $tableLocation,
+            role: $event->role,
+            status: $event->status,
+            waitingListPosition: $event->waitingListPosition,
+        ));
     }
 }

@@ -339,6 +339,15 @@ final class ParticipantsCancelAndNoShowTest extends ModuleTestCase
      */
     private function assertMailedTo(string $notification, string $email): void
     {
+        // The address of an account is mailed as the account, so its mail choices apply
+        $account = UserModel::query()->where('email', $email)->first();
+
+        if ($account instanceof UserModel) {
+            Notification::assertSentTo($account, $notification);
+
+            return;
+        }
+
         Notification::assertSentOnDemand(
             $notification,
             fn (object $sent, array $channels, AnonymousNotifiable $notifiable): bool => $notifiable->routes['mail'] === $email,

@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Listeners;
 
-use Illuminate\Support\Facades\Notification;
+use Modules\GameTables\Application\DTOs\MailRecipientDTO;
 use Modules\GameTables\Domain\Events\GameTableModerationRejected;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
+use Modules\GameTables\Infrastructure\Mail\MailRecipientNotifier;
 use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
 use Modules\GameTables\Notifications\ModerationRejectedNotification;
 
@@ -16,13 +17,14 @@ final readonly class NotifyUserOnModerationRejected
     public function __construct(
         private NotificationRecipientResolver $recipientResolver,
         private GameTableRepositoryInterface $gameTableRepository,
+        private MailRecipientNotifier $notifier,
     ) {}
 
     public function handle(GameTableModerationRejected $event): void
     {
-        $creatorEmail = $this->recipientResolver->getCreatorEmail($event->createdBy);
+        $creator = $this->recipientResolver->getCreatorRecipient($event->createdBy);
 
-        if ($creatorEmail === null) {
+        if (! $creator instanceof MailRecipientDTO) {
             return;
         }
 
@@ -37,6 +39,6 @@ final readonly class NotifyUserOnModerationRejected
             tableSlug: $this->gameTableRepository->find(new GameTableId($event->gameTableId))?->slug,
         );
 
-        Notification::route('mail', $creatorEmail)->notify($notification);
+        $this->notifier->send($creator, $notification);
     }
 }

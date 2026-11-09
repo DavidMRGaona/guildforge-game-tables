@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Listeners;
 
-use Illuminate\Support\Facades\Notification;
 use Modules\GameTables\Domain\Events\GameTableSubmittedForReview;
+use Modules\GameTables\Infrastructure\Mail\MailRecipientNotifier;
 use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
 use Modules\GameTables\Notifications\ModerationSubmittedNotification;
 
@@ -13,6 +13,7 @@ final readonly class NotifyAdminsOnModerationSubmission
 {
     public function __construct(
         private NotificationRecipientResolver $recipientResolver,
+        private MailRecipientNotifier $notifier,
     ) {}
 
     public function handle(GameTableSubmittedForReview $event): void
@@ -25,10 +26,6 @@ final readonly class NotifyAdminsOnModerationSubmission
             creatorName: $creatorName,
         );
 
-        $adminEmails = $this->recipientResolver->getTableModeratorEmails();
-
-        foreach ($adminEmails as $email) {
-            Notification::route('mail', $email)->notify($notification);
-        }
+        $this->notifier->sendToEach($this->recipientResolver->getTableModeratorRecipients(), $notification);
     }
 }

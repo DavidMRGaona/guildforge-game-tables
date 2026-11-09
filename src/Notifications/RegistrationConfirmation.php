@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Notifications;
 
+use App\Application\Mail\Contracts\HasMailCategory;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
+use Modules\GameTables\Infrastructure\Mail\GameTablesMailCategories;
 use Modules\GameTables\Notifications\Concerns\DescribesRegistrationStatus;
 
-final class RegistrationConfirmation extends Notification implements ShouldQueue
+final class RegistrationConfirmation extends Notification implements HasMailCategory, ShouldQueue
 {
     use DescribesRegistrationStatus;
     use Queueable;
@@ -33,6 +35,11 @@ final class RegistrationConfirmation extends Notification implements ShouldQueue
     public function via(object $notifiable): array
     {
         return ['mail'];
+    }
+
+    public function mailCategory(): string
+    {
+        return GameTablesMailCategories::SIGN_UPS;
     }
 
     public function toMail(object $notifiable): MailMessage

@@ -40,7 +40,7 @@ Si la configuración te deja publicar sin revisión, el botón se llama **Public
 
 ## La respuesta
 
-Te llega un correo con el resultado:
+Te llega un correo con el resultado. Se envía siempre: no se puede quitar desde el perfil.
 
 - **Tu mesa ha sido aprobada** (o **Tu campaña ha sido aprobada**): ya está publicada. Si el moderador ha dejado notas, van en el correo.
 - **Tu mesa no ha sido aprobada** (o **Tu campaña no ha sido aprobada**): con el **Motivo** y el botón para editarla.

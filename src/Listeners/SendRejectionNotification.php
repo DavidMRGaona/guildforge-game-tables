@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Modules\GameTables\Listeners;
 
 use App\Application\Services\TimezoneServiceInterface;
-use Illuminate\Support\Facades\Notification;
+use Modules\GameTables\Application\DTOs\MailRecipientDTO;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Events\ParticipantRejected;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
+use Modules\GameTables\Infrastructure\Mail\MailRecipientNotifier;
 use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
 use Modules\GameTables\Notifications\ParticipantRejectedNotification;
 
@@ -18,6 +19,7 @@ final readonly class SendRejectionNotification
     public function __construct(
         private GameTableRepositoryInterface $gameTableRepository,
         private NotificationRecipientResolver $recipientResolver,
+        private MailRecipientNotifier $notifier,
     ) {}
 
     public function handle(ParticipantRejected $event): void
@@ -28,9 +30,9 @@ final readonly class SendRejectionNotification
             return;
         }
 
-        $participantEmail = $this->recipientResolver->getParticipantEmail($event->participantId);
+        $recipient = $this->recipientResolver->getParticipantRecipient($event->participantId);
 
-        if ($participantEmail === null) {
+        if (! $recipient instanceof MailRecipientDTO) {
             return;
         }
 
@@ -38,13 +40,12 @@ final readonly class SendRejectionNotification
         $tableDate = app(TimezoneServiceInterface::class)->format($gameTable->timeSlot->startsAt);
         $tableLocation = $gameTable->location;
 
-        Notification::route('mail', $participantEmail)
-            ->notify(new ParticipantRejectedNotification(
-                participantName: $participantName,
-                tableTitle: $gameTable->title,
-                tableDate: $tableDate,
-                tableLocation: $tableLocation,
-                reason: $event->reason,
-            ));
+        $this->notifier->send($recipient, new ParticipantRejectedNotification(
+            participantName: $participantName,
+            tableTitle: $gameTable->title,
+            tableDate: $tableDate,
+            tableLocation: $tableLocation,
+            reason: $event->reason,
+        ));
     }
 }

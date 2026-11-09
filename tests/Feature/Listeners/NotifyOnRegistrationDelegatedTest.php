@@ -96,13 +96,21 @@ final class NotifyOnRegistrationDelegatedTest extends ModuleTestCase
     {
         $sent = [];
         $count = 0;
-        Notification::assertSentOnDemand(ParticipantRegisteredNotification::class, function (ParticipantRegisteredNotification $n, array $channels, AnonymousNotifiable $notifiable) use (&$sent, &$count): bool {
-            $count++;
-            $sent[strtolower((string) $notifiable->routes['mail'])] = (fn () => $this->manageUrl)->call($n);
 
-            return true;
-        });
+        // To accounts and to plain addresses alike: directors with an account get it as the account
+        foreach (Notification::sentNotifications() as $byKey) {
+            foreach ($byKey as $byClass) {
+                foreach ($byClass[ParticipantRegisteredNotification::class] ?? [] as $entry) {
+                    $count++;
+                    $notifiable = $entry['notifiable'];
+                    $address = $notifiable instanceof AnonymousNotifiable ? $notifiable->routes['mail'] : $notifiable->email;
+                    $sent[strtolower((string) $address)] = (fn () => $this->manageUrl)->call($entry['notification']);
+                }
+            }
+        }
         $this->assertCount($count, $sent, 'An address received more than one copy');
+        // Accounts and plain addresses are recorded apart: compare by address, not by sending order
+        ksort($sent);
 
         return $sent;
     }

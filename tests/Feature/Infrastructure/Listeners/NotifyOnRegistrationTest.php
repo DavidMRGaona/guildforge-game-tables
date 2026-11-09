@@ -6,6 +6,7 @@ namespace Modules\GameTables\Tests\Feature\Infrastructure\Listeners;
 
 use DateTimeImmutable;
 use Illuminate\Support\Facades\Notification;
+use Modules\GameTables\Application\DTOs\MailRecipientDTO;
 use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
@@ -68,9 +69,9 @@ final class NotifyOnRegistrationTest extends TestCase
 
         $this->recipientResolver
             ->expects($this->once())
-            ->method('getGameMasterEmails')
+            ->method('getGameMasterRecipients')
             ->with($gameTableId->value)
-            ->willReturn(['gm@example.com']);
+            ->willReturn([MailRecipientDTO::address('gm@example.com')]);
 
         $this->recipientResolver
             ->expects($this->once())
@@ -160,7 +161,7 @@ final class NotifyOnRegistrationTest extends TestCase
 
         $this->recipientResolver
             ->expects($this->never())
-            ->method('getGameMasterEmails');
+            ->method('getGameMasterRecipients');
 
         $event = new ParticipantRegistered(
             participantId: 'participant-uuid',

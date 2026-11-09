@@ -5,18 +5,20 @@ declare(strict_types=1);
 namespace Modules\GameTables\Notifications;
 
 use App\Application\Legal\Services\LegalMailNoticeServiceInterface;
+use App\Application\Mail\Contracts\HasMailCategory;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\HtmlString;
+use Modules\GameTables\Infrastructure\Mail\GameTablesMailCategories;
 use Modules\GameTables\Notifications\Concerns\EscapesUserText;
 
 /**
  * The invitation to a campaign, sent to an address that may have no account. It carries the
  * information required by art. 14 GDPR, because the address was given to us by a third party.
  */
-final class CampaignInvitationNotification extends Notification implements ShouldQueue
+final class CampaignInvitationNotification extends Notification implements HasMailCategory, ShouldQueue
 {
     public const string NOTICE_KEY = 'game-tables.campaign_invitation';
 
@@ -40,6 +42,11 @@ final class CampaignInvitationNotification extends Notification implements Shoul
     public function via(object $notifiable): array
     {
         return ['mail'];
+    }
+
+    public function mailCategory(): string
+    {
+        return GameTablesMailCategories::CAMPAIGN_NEWS;
     }
 
     public function toMail(object $notifiable): MailMessage

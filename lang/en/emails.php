@@ -314,4 +314,34 @@ return [
         'intro' => ':player has accepted your invitation and is now on the roster of the campaign ":campaignTitle".',
         'view_roster' => 'View roster',
     ],
+    // Mail categories in the "Emails" tab of the profile
+    'categories' => [
+        'section' => 'Game tables',
+        'sign_ups' => [
+            'label' => 'My sign-ups',
+            'description' => 'Confirmations of your sign-ups and cancellations in games and campaigns, seats freed up for you, absences and cancellations.',
+            'reason' => 'They confirm something you did or change your plans.',
+        ],
+        'reminders' => [
+            'label' => 'Game reminders',
+            'description' => 'A notice before each game you have a seat in.',
+        ],
+        'campaign_news' => [
+            'label' => 'News from my campaigns',
+            'description' => 'Campaign invitations and new sessions of the campaigns you play in.',
+        ],
+        'direction' => [
+            'label' => 'Notices as game master',
+            'description' => 'Sign-ups, cancellations and waiting list of your games; requests, accepted invitations and departures in your campaigns.',
+        ],
+        'proposals' => [
+            'label' => 'Review of my proposals',
+            'description' => 'Whether the table or campaign you proposed on the website is published or not.',
+            'reason' => 'They tell you whether what you proposed is published.',
+        ],
+        'moderation' => [
+            'label' => 'Tables and campaigns to review',
+            'description' => 'Tables and campaigns proposed on the website that are waiting for moderation.',
+        ],
+    ],
 ];
