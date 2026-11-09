@@ -8,7 +8,11 @@ import type { GameTable, GameMaster, SubjectSurveyLinks } from '../../types/game
 import type { CampaignSessionInfo } from '../../types/registration';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import AddToCalendarMenu from '@/components/calendar/AddToCalendarMenu.vue';
-import type { AddToCalendarLinks } from '@/types/models';
+import type {
+    AddToCalendarLinks,
+    SubjectDiscussion as SubjectDiscussionData,
+} from '@/types/models';
+import SubjectDiscussion from '@/components/discussions/SubjectDiscussion.vue';
 import CapacityBar from '../../components/CapacityBar.vue';
 import SurveyLinks from '../../components/SurveyLinks.vue';
 import FormatBadge from '../../components/FormatBadge.vue';
@@ -31,6 +35,8 @@ interface Props {
     surveyLinks?: SubjectSurveyLinks | null;
     /** «Añadir al calendario» links from the core; null when the public calendar does not show the table */
     calendarLinks?: AddToCalendarLinks | null;
+    /** Activity of its forum discussion (core contract), when a forum module offers one */
+    discussion?: SubjectDiscussionData | null;
 }
 
 const props = defineProps<Props>();
@@ -406,6 +412,10 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                 <!-- An action, not a detail: on the card's surface, where the button stands out from it -->
                 <div v-if="calendarLinks" class="mb-6">
                     <AddToCalendarMenu :links="calendarLinks" />
+                </div>
+
+                <div v-if="discussion" class="mb-6">
+                    <SubjectDiscussion :discussion="discussion" />
                 </div>
 
                 <!-- Section 3: Capacity -->

@@ -38,8 +38,10 @@ use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Http\Concerns\ReadsListFilters;
 use Modules\GameTables\Http\Resources\GameTableListResource;
 use Modules\GameTables\Http\Resources\GameTableResource;
+use Modules\GameTables\Http\Support\SubjectDiscussionActivity;
 use Modules\GameTables\Http\Support\SubjectSurveyLinks;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
+use Modules\GameTables\Infrastructure\Publications\GameTablePublicationSource;
 use Modules\GameTables\Infrastructure\Services\GuestConfirmationPolicy;
 use Modules\GameTables\Infrastructure\Services\SeatCounter;
 use Modules\GameTables\Infrastructure\Surveys\TableSurveySubject;
@@ -269,6 +271,10 @@ final class GameTableController extends Controller
                 : null,
             // «Añadir al calendario»: the entry the public calendar shows, through the core
             'calendarLinks' => $this->calendarLinksFor($table->id),
+            // Its forum discussion, through the core: tables on their own only (a session has none)
+            'discussion' => $table->campaignId === null
+                ? app(SubjectDiscussionActivity::class)->for(GameTablePublicationSource::TYPE, $table->id, $user !== null ? (string) $user->id : null)
+                : null,
             'seo' => $this->tableSeo($table),
         ]);
     }

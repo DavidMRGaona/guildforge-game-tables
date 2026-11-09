@@ -15,6 +15,8 @@ import CampaignJoinBox from '../../components/campaigns/CampaignJoinBox.vue';
 import CapacityBar from '../../components/CapacityBar.vue';
 import SurveyLinks from '../../components/SurveyLinks.vue';
 import ModuleSlot from '@/components/layout/ModuleSlot.vue';
+import SubjectDiscussion from '@/components/discussions/SubjectDiscussion.vue';
+import type { SubjectDiscussion as SubjectDiscussionData } from '@/types/models';
 import { buildHeroImageUrl } from '@/utils/cloudinary';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 
@@ -26,6 +28,8 @@ interface Props {
     associationRole?: string;
     // Its surveys for this person, when a surveys module offers any
     surveyLinks?: SubjectSurveyLinks | null;
+    /** Activity of its forum discussion (core contract), when a forum module offers one */
+    discussion?: SubjectDiscussionData | null;
 }
 
 const props = defineProps<Props>();
@@ -432,6 +436,10 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                         :links="surveyLinks"
                         :manage-label="t('gameTables.surveys.manageCampaign')"
                     />
+                </div>
+
+                <div v-if="discussion" class="mb-6">
+                    <SubjectDiscussion :discussion="discussion" />
                 </div>
 
                 <!-- Additional Details -->
