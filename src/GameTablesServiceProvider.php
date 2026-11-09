@@ -17,6 +17,7 @@ use App\Application\Modules\DTOs\NavigationItemDTO;
 use App\Application\Modules\DTOs\PagePrefixDTO;
 use App\Application\Modules\DTOs\PermissionDTO;
 use App\Application\Modules\DTOs\SlotRegistrationDTO;
+use App\Application\Publications\Contracts\PublicationSourceInterface;
 use App\Application\Search\Contracts\IndexedSearchSourceInterface;
 use App\Application\Services\EventQueryServiceInterface;
 use App\Application\Services\SiteBrandingServiceInterface;
@@ -147,6 +148,9 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\Eloquent
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentGameSystemRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentGameTableRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentParticipantRepository;
+use Modules\GameTables\Infrastructure\Publications\AnnouncesPublicationChanges;
+use Modules\GameTables\Infrastructure\Publications\CampaignPublicationSource;
+use Modules\GameTables\Infrastructure\Publications\GameTablePublicationSource;
 use Modules\GameTables\Infrastructure\Search\CampaignSearchSource;
 use Modules\GameTables\Infrastructure\Search\GameTableSearchSource;
 use Modules\GameTables\Infrastructure\Search\RefreshesSearchDocuments;
@@ -735,6 +739,9 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
 
         // Site search (core contract): tables and campaigns follow their rows
         RefreshesSearchDocuments::register();
+
+        // Publications (core contract): listeners hear when tables and campaigns change
+        AnnouncesPublicationChanges::register();
     }
 
     /**
@@ -1385,6 +1392,20 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
             GameTableSurveySubjectSource::class,
             CampaignSessionSurveySubjectSource::class,
             CampaignSurveySubjectSource::class,
+        ];
+    }
+
+    /**
+     * Tables on their own and campaigns as publications (core contract), for modules that announce
+     * them elsewhere (a forum, a channel).
+     *
+     * @return array<class-string<PublicationSourceInterface>>
+     */
+    public function registerPublicationSources(): array
+    {
+        return [
+            GameTablePublicationSource::class,
+            CampaignPublicationSource::class,
         ];
     }
 
