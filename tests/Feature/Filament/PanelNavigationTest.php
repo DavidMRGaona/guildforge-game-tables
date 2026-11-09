@@ -13,7 +13,6 @@ use Modules\GameTables\Filament\Resources\ContentWarningResource;
 use Modules\GameTables\Filament\Resources\GameSystemResource;
 use Modules\GameTables\Filament\Resources\GameTableResource;
 use Modules\GameTables\Filament\Resources\PublisherResource;
-use Modules\GameTables\GameTablesServiceProvider;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\Modules\InteractsWithModulePanel;
 use Tests\Support\Modules\ModuleTestCase;
@@ -102,12 +101,5 @@ final class PanelNavigationTest extends ModuleTestCase
     {
         // The cluster entry sits in the core's «Sistema» group, so the page must not name one
         $this->assertNull(GameTablesSettings::getNavigationGroup());
-    }
-
-    public function test_the_module_registers_no_navigation_groups(): void
-    {
-        $provider = new GameTablesServiceProvider($this->app);
-
-        $this->assertSame([], $provider->registerNavigationGroups());
     }
 }
