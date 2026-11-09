@@ -11,6 +11,7 @@ use App\Application\Cookies\Services\CookieDeclarationRegistryInterface;
 use App\Application\Knowledge\Contracts\KnowledgeCapabilityInterface;
 use App\Application\Legal\DTOs\LegalMailNoticeDTO;
 use App\Application\Legal\Services\LegalMailNoticeRegistryInterface;
+use App\Application\Mail\DTOs\MailCategoryDTO;
 use App\Application\Modules\DTOs\ModuleRouteDTO;
 use App\Application\Modules\DTOs\NavigationItemDTO;
 use App\Application\Modules\DTOs\PagePrefixDTO;
@@ -125,6 +126,7 @@ use Modules\GameTables\Infrastructure\Listeners\NotifyOnCancellation;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnGuestRegistration;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnRegistration;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnWaitingListPromotion;
+use Modules\GameTables\Infrastructure\Mail\GameTablesMailCategories;
 use Modules\GameTables\Infrastructure\Observers\CampaignObserver;
 use Modules\GameTables\Infrastructure\Observers\GameSystemObserver;
 use Modules\GameTables\Infrastructure\Observers\GameTableObserver;
@@ -1384,6 +1386,14 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
             CampaignSessionSurveySubjectSource::class,
             CampaignSurveySubjectSource::class,
         ];
+    }
+
+    /**
+     * @return list<MailCategoryDTO>
+     */
+    public function registerMailCategories(): array
+    {
+        return GameTablesMailCategories::definitions();
     }
 
     /**

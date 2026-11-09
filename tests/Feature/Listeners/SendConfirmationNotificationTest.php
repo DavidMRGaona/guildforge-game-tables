@@ -7,6 +7,7 @@ namespace Modules\GameTables\Tests\Feature\Listeners;
 use Illuminate\Support\Facades\Notification;
 use Modules\GameTables\Domain\Events\ParticipantConfirmed;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
+use Modules\GameTables\Infrastructure\Mail\MailRecipientNotifier;
 use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
 use Modules\GameTables\Listeners\SendConfirmationNotification;
 use Tests\TestCase;
@@ -23,6 +24,7 @@ final class SendConfirmationNotificationTest extends TestCase
         $listener = new SendConfirmationNotification(
             $gameTableRepository,
             $this->app->make(NotificationRecipientResolver::class),
+            new MailRecipientNotifier,
         );
 
         $listener->handle(new ParticipantConfirmed(

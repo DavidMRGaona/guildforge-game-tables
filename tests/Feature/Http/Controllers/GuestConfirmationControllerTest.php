@@ -142,7 +142,7 @@ final class GuestConfirmationControllerTest extends ModuleTestCase
         $this->assertSame('pending', $row->status->value);
         $this->assertNotNull($row->email_confirmed_at);
         // The organisation is told once, now that the email is confirmed
-        Notification::assertSentOnDemandTimes(ParticipantRegisteredNotification::class, 1);
+        Notification::assertSentTimes(ParticipantRegisteredNotification::class, 1);
         Notification::assertSentOnDemand(
             ParticipantRegisteredNotification::class,
             fn (ParticipantRegisteredNotification $notification, array $channels, AnonymousNotifiable $notifiable): bool => $notifiable->routes['mail'] === 'mesa@example.test',
@@ -298,11 +298,7 @@ final class GuestConfirmationControllerTest extends ModuleTestCase
 
         $this->assertResult($response, 'error', 'Este enlace ya no es válido. Si quedan plazas, puedes volver a apuntarte.', 'Caducada');
         $this->assertSame('confirmed', ParticipantModel::query()->findOrFail($waiting->id)->status->value);
-        $email = UserModel::query()->findOrFail($waiting->userId)->email;
-        Notification::assertSentOnDemand(
-            WaitingListPromotionNotification::class,
-            fn (WaitingListPromotionNotification $notification, array $channels, AnonymousNotifiable $notifiable): bool => $notifiable->routes['mail'] === $email,
-        );
+        Notification::assertSentTo(UserModel::query()->findOrFail($waiting->userId), WaitingListPromotionNotification::class);
         Exceptions::assertReported(RuntimeException::class);
     }
 
@@ -389,7 +385,7 @@ final class GuestConfirmationControllerTest extends ModuleTestCase
         );
         $this->assertNotNull($row->refresh()->email_confirmed_at);
         Notification::assertSentTimes(GuestRegistrationConfirmation::class, 1);
-        Notification::assertSentOnDemandTimes(ParticipantRegisteredNotification::class, 1);
+        Notification::assertSentTimes(ParticipantRegisteredNotification::class, 1);
     }
 
     /**

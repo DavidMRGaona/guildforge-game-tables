@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Modules\GameTables\Infrastructure\Listeners;
 
 use App\Application\Services\TimezoneServiceInterface;
-use Illuminate\Support\Facades\Notification;
 use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Events\ParticipantPromotedFromWaitingList;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
+use Modules\GameTables\Infrastructure\Mail\MailRecipientNotifier;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 use Modules\GameTables\Notifications\WaitingListPromotionGmNotification;
 use Modules\GameTables\Notifications\WaitingListPromotionNotification;
@@ -34,21 +34,20 @@ final readonly class NotifyOnWaitingListPromotion
         }
 
         $participantName = $this->recipientResolver->getParticipantDisplayName($event->participantId);
-        $participantEmail = $this->recipientResolver->getParticipantEmail($event->participantId);
+        $participant = $this->recipientResolver->getParticipantRecipient($event->participantId);
         $tableDate = app(TimezoneServiceInterface::class)->format($gameTable->timeSlot->startsAt);
         $tableLocation = $gameTable->location;
 
         // Notify the promoted participant
-        if ($participantEmail !== null) {
-            Notification::route('mail', $participantEmail)
-                ->notify(new WaitingListPromotionNotification(
-                    participantName: $participantName,
-                    tableId: $event->gameTableId,
-                    tableTitle: $gameTable->title,
-                    tableDate: $tableDate,
-                    tableLocation: $tableLocation,
-                    confirmed: $event->confirmed,
-                ));
+        if ($participant !== null) {
+            app(MailRecipientNotifier::class)->send($participant, new WaitingListPromotionNotification(
+                participantName: $participantName,
+                tableId: $event->gameTableId,
+                tableTitle: $gameTable->title,
+                tableDate: $tableDate,
+                tableLocation: $tableLocation,
+                confirmed: $event->confirmed,
+            ));
         }
 
         // The setting only covers the directors' copy, like the registration and cancellation ones

@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Notifications;
 
+use App\Application\Mail\Contracts\HasMailCategory;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Modules\GameTables\Infrastructure\Mail\GameTablesMailCategories;
 
-final class CampaignRosterRemovedNotification extends Notification implements ShouldQueue
+final class CampaignRosterRemovedNotification extends Notification implements HasMailCategory, ShouldQueue
 {
     use Queueable;
 
@@ -25,6 +27,11 @@ final class CampaignRosterRemovedNotification extends Notification implements Sh
     public function via(object $notifiable): array
     {
         return ['mail'];
+    }
+
+    public function mailCategory(): string
+    {
+        return GameTablesMailCategories::SIGN_UPS;
     }
 
     public function toMail(object $notifiable): MailMessage

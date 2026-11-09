@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Modules\GameTables\Infrastructure\Listeners;
 
 use App\Application\Services\TimezoneServiceInterface;
-use Illuminate\Support\Facades\Notification;
+use Modules\GameTables\Application\DTOs\MailRecipientDTO;
 use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Events\ParticipantCancelled;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
+use Modules\GameTables\Infrastructure\Mail\MailRecipientNotifier;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 use Modules\GameTables\Notifications\ParticipantCancelledNotification;
 
@@ -47,17 +48,19 @@ final readonly class NotifyOnCancellation
             tableLocation: $tableLocation,
         );
 
-        $emails = $this->recipientResolver->getGameMasterEmails($event->gameTableId);
+        $recipients = [];
+
+        foreach ($this->recipientResolver->getGameMasterRecipients($event->gameTableId) as $recipient) {
+            $recipients[mb_strtolower($recipient->email)] ??= $recipient;
+        }
+
         $tableEmail = $this->recipientResolver->getTableNotificationEmail($event->gameTableId);
 
-        if ($tableEmail !== null) {
-            $emails[] = $tableEmail;
+        if ($tableEmail !== null && $tableEmail !== '') {
+            $recipients[mb_strtolower($tableEmail)] ??= MailRecipientDTO::address($tableEmail);
         }
 
-        $emails = array_unique($emails);
-
-        foreach ($emails as $email) {
-            Notification::route('mail', $email)->notify($notification);
-        }
+        // Game masters with an account as the account, so their mail choices apply
+        app(MailRecipientNotifier::class)->sendToEach($recipients, $notification);
     }
 }

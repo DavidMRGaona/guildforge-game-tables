@@ -97,7 +97,7 @@ final class ParticipantsGuestConfirmationTest extends ModuleTestCase
         $awaiting->refresh();
         $this->assertSame('2026-11-02 10:00:00', $awaiting->email_confirmed_at?->setTimezone('Europe/Madrid')->format('Y-m-d H:i:s'));
         $this->assertNull($awaiting->confirmation_expires_at);
-        Notification::assertSentOnDemandTimes(GuestRegistrationConfirmation::class, 1);
+        Notification::assertSentTimes(GuestRegistrationConfirmation::class, 1);
     }
 
     public function test_the_action_without_room_warns_and_changes_nothing(): void
@@ -126,7 +126,7 @@ final class ParticipantsGuestConfirmationTest extends ModuleTestCase
         $awaiting->refresh();
         $this->assertSame('confirmed', $awaiting->status->value);
         $this->assertSame('2026-11-02 10:00:00', $awaiting->email_confirmed_at?->setTimezone('Europe/Madrid')->format('Y-m-d H:i:s'));
-        Notification::assertSentOnDemandTimes(GuestRegistrationConfirmation::class, 1);
+        Notification::assertSentTimes(GuestRegistrationConfirmation::class, 1);
     }
 
     public function test_confirm_on_a_wait_guest_without_a_seat_warns_and_changes_nothing(): void

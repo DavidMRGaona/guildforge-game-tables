@@ -9,6 +9,7 @@ use App\Infrastructure\Persistence\Eloquent\Models\RoleModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use Modules\GameTables\Application\DTOs\MailRecipientDTO;
 use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
 use Tests\TestCase;
 
@@ -37,8 +38,8 @@ final class NotificationRecipientResolverModeratorsTest extends TestCase
         $tableModerator = $this->userWithRole(['admin.access', self::TABLES_UPDATE]);
         $campaignModerator = $this->userWithRole(['admin.access', self::CAMPAIGNS_UPDATE]);
 
-        $this->assertSame([$tableModerator->email], $this->resolver->getTableModeratorEmails());
-        $this->assertSame([$campaignModerator->email], $this->resolver->getCampaignModeratorEmails());
+        $this->assertSame([$tableModerator->email], $this->emails($this->resolver->getTableModeratorRecipients()));
+        $this->assertSame([$campaignModerator->email], $this->emails($this->resolver->getCampaignModeratorRecipients()));
     }
 
     public function test_panel_access_and_the_update_permission_may_come_from_different_roles(): void
@@ -46,23 +47,23 @@ final class NotificationRecipientResolverModeratorsTest extends TestCase
         $moderator = $this->userWithRole(['admin.access']);
         $moderator->roles()->attach($this->role([self::TABLES_UPDATE])->id);
 
-        $this->assertSame([$moderator->email], $this->resolver->getTableModeratorEmails());
+        $this->assertSame([$moderator->email], $this->emails($this->resolver->getTableModeratorRecipients()));
     }
 
     public function test_an_editor_without_the_update_permission_receives_nothing(): void
     {
         UserModel::factory()->editor()->create();
 
-        $this->assertSame([], $this->resolver->getTableModeratorEmails());
-        $this->assertSame([], $this->resolver->getCampaignModeratorEmails());
+        $this->assertSame([], $this->emails($this->resolver->getTableModeratorRecipients()));
+        $this->assertSame([], $this->emails($this->resolver->getCampaignModeratorRecipients()));
     }
 
     public function test_the_update_permission_without_panel_access_receives_nothing(): void
     {
         $this->userWithRole([self::TABLES_UPDATE, self::CAMPAIGNS_UPDATE]);
 
-        $this->assertSame([], $this->resolver->getTableModeratorEmails());
-        $this->assertSame([], $this->resolver->getCampaignModeratorEmails());
+        $this->assertSame([], $this->emails($this->resolver->getTableModeratorRecipients()));
+        $this->assertSame([], $this->emails($this->resolver->getCampaignModeratorRecipients()));
     }
 
     public function test_the_tables_permission_does_not_reach_campaigns_nor_the_other_way_round(): void
@@ -70,23 +71,23 @@ final class NotificationRecipientResolverModeratorsTest extends TestCase
         $tableModerator = $this->userWithRole(['admin.access', self::TABLES_UPDATE]);
         $campaignModerator = $this->userWithRole(['admin.access', self::CAMPAIGNS_UPDATE]);
 
-        $this->assertNotContains($tableModerator->email, $this->resolver->getCampaignModeratorEmails());
-        $this->assertNotContains($campaignModerator->email, $this->resolver->getTableModeratorEmails());
+        $this->assertNotContains($tableModerator->email, $this->emails($this->resolver->getCampaignModeratorRecipients()));
+        $this->assertNotContains($campaignModerator->email, $this->emails($this->resolver->getTableModeratorRecipients()));
     }
 
     public function test_an_admin_receives_both(): void
     {
         $admin = UserModel::factory()->admin()->create();
 
-        $this->assertSame([$admin->email], $this->resolver->getTableModeratorEmails());
-        $this->assertSame([$admin->email], $this->resolver->getCampaignModeratorEmails());
+        $this->assertSame([$admin->email], $this->emails($this->resolver->getTableModeratorRecipients()));
+        $this->assertSame([$admin->email], $this->emails($this->resolver->getCampaignModeratorRecipients()));
     }
 
     public function test_an_account_without_roles_receives_nothing(): void
     {
         UserModel::factory()->create();
 
-        $this->assertSame([], $this->resolver->getTableModeratorEmails());
+        $this->assertSame([], $this->emails($this->resolver->getTableModeratorRecipients()));
     }
 
     /**
@@ -116,5 +117,14 @@ final class NotificationRecipientResolverModeratorsTest extends TestCase
         }
 
         return $role;
+    }
+
+    /**
+     * @param  list<MailRecipientDTO>  $recipients
+     * @return list<string>
+     */
+    private function emails(array $recipients): array
+    {
+        return array_map(fn (MailRecipientDTO $recipient): string => $recipient->email, $recipients);
     }
 }

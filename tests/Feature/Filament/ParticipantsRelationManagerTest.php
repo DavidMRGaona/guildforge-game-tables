@@ -134,7 +134,8 @@ final class ParticipantsRelationManagerTest extends ModuleTestCase
             ->assertHasNoTableActionErrors();
 
         $this->assertSame('rejected', $row->refresh()->status->value);
-        Notification::assertSentOnDemand(
+        Notification::assertSentTo(
+            $row->user,
             ParticipantRejectedNotification::class,
             fn (ParticipantRejectedNotification $n): bool => $n->reason === 'Ya no quedan plazas para principiantes',
         );
@@ -149,7 +150,8 @@ final class ParticipantsRelationManagerTest extends ModuleTestCase
         $this->participants($table)->callTableAction('reject', $row, data: ['reason' => '   ']);
 
         $this->assertSame('rejected', $row->refresh()->status->value);
-        Notification::assertSentOnDemand(
+        Notification::assertSentTo(
+            $row->user,
             ParticipantRejectedNotification::class,
             fn (ParticipantRejectedNotification $n): bool => $n->reason === null,
         );

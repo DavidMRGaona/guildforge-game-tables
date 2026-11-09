@@ -4,12 +4,18 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Application\Services;
 
+use Modules\GameTables\Application\DTOs\MailRecipientDTO;
+
+/**
+ * Who the module's mail goes to. Accounts come back as accounts (with their id), so the core
+ * applies each person's mail choices; plain addresses only where there is no account.
+ */
 interface NotificationRecipientResolverInterface
 {
     /**
-     * Get the creator's email address by user ID.
+     * The account that created a table or campaign.
      */
-    public function getCreatorEmail(string $userId): ?string;
+    public function getCreatorRecipient(string $userId): ?MailRecipientDTO;
 
     /**
      * Get the creator's display name by user ID.
@@ -17,42 +23,43 @@ interface NotificationRecipientResolverInterface
     public function getCreatorDisplayName(string $userId): string;
 
     /**
-     * Get emails of the users who can approve or reject game tables in the panel.
+     * The accounts that can approve or reject game tables in the panel.
      *
-     * @return list<string>
+     * @return list<MailRecipientDTO>
      */
-    public function getTableModeratorEmails(): array;
+    public function getTableModeratorRecipients(): array;
 
     /**
-     * Get emails of the users who can approve or reject campaigns in the panel.
+     * The accounts that can approve or reject campaigns in the panel.
      *
-     * @return list<string>
+     * @return list<MailRecipientDTO>
      */
-    public function getCampaignModeratorEmails(): array;
+    public function getCampaignModeratorRecipients(): array;
 
     /**
-     * Get emails of game masters that have notify_by_email enabled.
+     * Game masters that have notify_by_email enabled: their account when linked to one,
+     * their own address otherwise. Unique by address.
      *
-     * @return array<string>
+     * @return list<MailRecipientDTO>
      */
-    public function getGameMasterEmails(string $gameTableId): array;
+    public function getGameMasterRecipients(string $gameTableId): array;
 
     /**
-     * Get the account emails of the linked directors that have notify_by_email enabled.
+     * The accounts of the linked directors that have notify_by_email enabled.
      *
-     * @return list<string>
+     * @return list<MailRecipientDTO>
      */
-    public function getDirectorEmails(string $gameTableId): array;
+    public function getDirectorRecipients(string $gameTableId): array;
 
     /**
-     * Get the table's notification email address.
+     * Get the table's notification email address (a mailbox, never an account).
      */
     public function getTableNotificationEmail(string $gameTableId): ?string;
 
     /**
-     * Get the participant's email address.
+     * The participant's account, or the guest's address.
      */
-    public function getParticipantEmail(string $participantId): ?string;
+    public function getParticipantRecipient(string $participantId): ?MailRecipientDTO;
 
     /**
      * Get the participant's display name.

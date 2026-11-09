@@ -113,8 +113,8 @@ final class OrganisationConfirmsGuestTest extends ModuleTestCase
 
         // One email to the guest, with the cancellation link; nothing to the organisation
         $this->assertGuestEmailedOnce('invitada@example.test', GuestRegistrationConfirmation::class);
-        Notification::assertSentOnDemandTimes(ParticipantConfirmedNotification::class, 0);
-        Notification::assertSentOnDemandTimes(ParticipantRegisteredNotification::class, 0);
+        Notification::assertSentTimes(ParticipantConfirmedNotification::class, 0);
+        Notification::assertSentTimes(ParticipantRegisteredNotification::class, 0);
     }
 
     public function test_approving_a_confirmed_guest_works_as_before(): void
@@ -129,7 +129,7 @@ final class OrganisationConfirmsGuestTest extends ModuleTestCase
         $this->assertSame([], $this->guestRegistered);
         $this->assertCount(1, $this->participantConfirmed);
         $this->assertFalse($this->participantConfirmed[0]->automatic);
-        Notification::assertSentOnDemandTimes(ParticipantConfirmedNotification::class, 1);
+        Notification::assertSentTimes(ParticipantConfirmedNotification::class, 1);
     }
 
     public function test_approving_a_wait_guest_places_it_first(): void
@@ -146,7 +146,7 @@ final class OrganisationConfirmsGuestTest extends ModuleTestCase
         $this->assertNotNull($row->email_confirmed_at);
         $this->assertNull($row->waiting_list_position);
         $this->assertGuestEmailedOnce('invitada@example.test', GuestRegistrationConfirmation::class);
-        Notification::assertSentOnDemandTimes(ParticipantConfirmedNotification::class, 0);
+        Notification::assertSentTimes(ParticipantConfirmedNotification::class, 0);
     }
 
     // «Completa» set by hand closes the seats to newcomers, not to the organisation's approval (#184)
@@ -188,7 +188,7 @@ final class OrganisationConfirmsGuestTest extends ModuleTestCase
         $this->assertNull($row->waiting_list_position);
         $this->assertNull($row->email_confirmed_at);
         $this->assertSame([], $this->guestRegistered);
-        Notification::assertSentOnDemandTimes(GuestRegistrationConfirmation::class, 0);
+        Notification::assertSentTimes(GuestRegistrationConfirmation::class, 0);
     }
 
     // With the list off, approving a user never checks the seats; a guest without one is never let over them
@@ -216,7 +216,7 @@ final class OrganisationConfirmsGuestTest extends ModuleTestCase
         $this->assertSame(1, ParticipantModel::query()->where('game_table_id', $this->table->id)->where('status', 'confirmed')->count());
         $this->assertSame([], $this->guestRegistered);
         $this->assertSame([], $this->participantConfirmed);
-        Notification::assertSentOnDemandTimes(GuestRegistrationConfirmation::class, 0);
+        Notification::assertSentTimes(GuestRegistrationConfirmation::class, 0);
     }
 
     // On a table that confirms by itself the placement already confirms: approved once, one email
@@ -237,8 +237,8 @@ final class OrganisationConfirmsGuestTest extends ModuleTestCase
         $this->assertCount(1, $this->participantConfirmed);
         $this->assertTrue($this->participantConfirmed[0]->automatic);
         $this->assertGuestEmailedOnce('invitada@example.test', GuestRegistrationConfirmation::class);
-        Notification::assertSentOnDemandTimes(ParticipantConfirmedNotification::class, 0);
-        Notification::assertSentOnDemandTimes(ParticipantRegisteredNotification::class, 0);
+        Notification::assertSentTimes(ParticipantConfirmedNotification::class, 0);
+        Notification::assertSentTimes(ParticipantRegisteredNotification::class, 0);
     }
 
     public function test_promoting_an_awaiting_waiting_guest_confirms_the_email_with_one_email(): void
@@ -263,8 +263,8 @@ final class OrganisationConfirmsGuestTest extends ModuleTestCase
 
         // The promotion email has no cancellation link: the registration email goes instead
         $this->assertGuestEmailedOnce('invitada@example.test', GuestRegistrationConfirmation::class);
-        Notification::assertSentOnDemandTimes(WaitingListPromotionNotification::class, 0);
-        Notification::assertSentOnDemandTimes(WaitingListPromotionGmNotification::class, 0);
+        Notification::assertSentTimes(WaitingListPromotionNotification::class, 0);
+        Notification::assertSentTimes(WaitingListPromotionGmNotification::class, 0);
     }
 
     public function test_promoting_a_user_still_sends_the_promotion_emails(): void
@@ -325,8 +325,8 @@ final class OrganisationConfirmsGuestTest extends ModuleTestCase
         $this->assertCount(1, $this->participantConfirmed);
         $this->assertTrue($this->participantConfirmed[0]->automatic);
         $this->assertGuestEmailedOnce('invitada@example.test', GuestRegistrationConfirmation::class);
-        Notification::assertSentOnDemandTimes(ParticipantRegisteredNotification::class, 0);
-        Notification::assertSentOnDemandTimes(ParticipantConfirmedNotification::class, 0);
+        Notification::assertSentTimes(ParticipantRegisteredNotification::class, 0);
+        Notification::assertSentTimes(ParticipantConfirmedNotification::class, 0);
     }
 
     public function test_marking_the_email_confirmed_places_a_wait_guest_as_the_link_would(): void
@@ -395,7 +395,7 @@ final class OrganisationConfirmsGuestTest extends ModuleTestCase
      */
     private function assertGuestEmailedOnce(string $email, string $notification): void
     {
-        Notification::assertSentOnDemandTimes($notification, 1);
+        Notification::assertSentTimes($notification, 1);
         Notification::assertSentOnDemand($notification, fn (object $sent, array $channels, AnonymousNotifiable $notifiable): bool => $notifiable->routes['mail'] === $email);
     }
 

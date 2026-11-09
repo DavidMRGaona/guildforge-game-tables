@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Modules\GameTables\Infrastructure\Listeners;
 
 use App\Application\Services\TimezoneServiceInterface;
-use Illuminate\Support\Facades\Notification;
 use Modules\GameTables\Domain\Events\GameTableCancelled;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
+use Modules\GameTables\Infrastructure\Mail\MailRecipientNotifier;
 use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
 use Modules\GameTables\Notifications\TableCancelledNotification;
 
@@ -32,21 +32,19 @@ final readonly class CancelParticipantsOnTableCancellation
             $participant->cancel();
             $this->participantRepository->save($participant);
 
-            $email = $this->recipientResolver->getParticipantEmail($participant->id->value);
+            $recipient = $this->recipientResolver->getParticipantRecipient($participant->id->value);
             $name = $this->recipientResolver->getParticipantDisplayName($participant->id->value);
 
-            if ($email === null) {
+            if ($recipient === null) {
                 continue;
             }
 
-            Notification::route('mail', $email)->notify(
-                new TableCancelledNotification(
-                    participantName: $name,
-                    tableTitle: $event->title,
-                    tableDate: app(TimezoneServiceInterface::class)->format($event->startsAt),
-                    tableLocation: $gameTable?->location,
-                )
-            );
+            app(MailRecipientNotifier::class)->send($recipient, new TableCancelledNotification(
+                participantName: $name,
+                tableTitle: $event->title,
+                tableDate: app(TimezoneServiceInterface::class)->format($event->startsAt),
+                tableLocation: $gameTable?->location,
+            ));
         }
     }
 }

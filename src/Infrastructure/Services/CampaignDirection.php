@@ -54,7 +54,7 @@ final readonly class CampaignDirection implements CampaignDirectionInterface
                 continue;
             }
 
-            $recipients[$user->email] ??= new MailRecipientDTO($user->email, $user->name);
+            $recipients[$user->email] ??= MailRecipientDTO::account((string) $user->id, $user->email, $user->name);
         }
 
         return array_values($recipients);

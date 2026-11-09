@@ -91,13 +91,19 @@ final class NotifyOnWaitingListPromotionDelegatedTest extends ModuleTestCase
     {
         $sent = [];
         $count = 0;
-        Notification::assertSentOnDemand(WaitingListPromotionGmNotification::class, function (WaitingListPromotionGmNotification $n, array $channels, AnonymousNotifiable $notifiable) use (&$sent, &$count): bool {
-            $count++;
-            $mail = $n->toMail($notifiable);
-            $sent[strtolower((string) $notifiable->routes['mail'])] = [$mail->actionUrl, array_values(array_map(strval(...), $mail->introLines))];
 
-            return true;
-        });
+        // To accounts and to plain addresses alike: directors with an account get it as the account
+        foreach (Notification::sentNotifications() as $byKey) {
+            foreach ($byKey as $byClass) {
+                foreach ($byClass[WaitingListPromotionGmNotification::class] ?? [] as $entry) {
+                    $count++;
+                    $notifiable = $entry['notifiable'];
+                    $address = $notifiable instanceof AnonymousNotifiable ? $notifiable->routes['mail'] : $notifiable->email;
+                    $mail = $entry['notification']->toMail($notifiable);
+                    $sent[strtolower((string) $address)] = [$mail->actionUrl, array_values(array_map(strval(...), $mail->introLines))];
+                }
+            }
+        }
         $this->assertCount($count, $sent, 'An address received more than one copy');
 
         return $sent;
@@ -167,7 +173,7 @@ final class NotifyOnWaitingListPromotionDelegatedTest extends ModuleTestCase
 
         $this->promoted($this->table(true), confirmed: false);
 
-        Notification::assertSentOnDemandTimes(WaitingListPromotionGmNotification::class, 0);
+        $this->assertSame([], $this->sent());
     }
 
     private function tableId(): string

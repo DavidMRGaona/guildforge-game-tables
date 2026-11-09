@@ -112,8 +112,8 @@ final class CampaignDirectionTest extends ModuleTestCase
         $recipients = $this->direction->recipients($campaign->id);
 
         $this->assertEquals([
-            new MailRecipientDTO('john@example.com', 'John Doe'),
-            new MailRecipientDTO('jane@example.com', 'Jane Doe'),
+            new MailRecipientDTO('john@example.com', 'John Doe', (string) $john->id),
+            new MailRecipientDTO('jane@example.com', 'Jane Doe', (string) $jane->id),
         ], $recipients);
         $this->assertCount(3, $this->direction->directorUserIds($campaign->id));
     }

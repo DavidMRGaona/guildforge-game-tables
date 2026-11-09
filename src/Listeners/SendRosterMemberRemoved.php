@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\GameTables\Listeners;
 
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
-use Illuminate\Support\Facades\Notification;
 use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Events\CampaignRosterMemberRemoved;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
@@ -38,7 +37,7 @@ final readonly class SendRosterMemberRemoved
             return;
         }
 
-        Notification::route('mail', $user->email)->notify(new CampaignRosterRemovedNotification(
+        $user->notify(new CampaignRosterRemovedNotification(
             userName: $user->name,
             campaignTitle: $campaign->title,
             campaignSlug: $campaign->slug,

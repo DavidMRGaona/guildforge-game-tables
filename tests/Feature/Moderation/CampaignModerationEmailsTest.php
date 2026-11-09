@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\GameTables\Tests\Feature\Moderation;
 
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
-use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
@@ -76,13 +75,13 @@ final class CampaignModerationEmailsTest extends ModuleTestCase
             ->callTableAction('approve', $this->campaign)
             ->assertHasNoTableActionErrors();
 
-        Notification::assertSentOnDemand(
+        Notification::assertSentTo(
+            $this->author,
             CampaignModerationApprovedNotification::class,
-            function (CampaignModerationApprovedNotification $n, array $channels, AnonymousNotifiable $notifiable): bool {
+            function (CampaignModerationApprovedNotification $n, array $channels, UserModel $notifiable): bool {
                 $message = $n->toMail($notifiable);
 
-                return $notifiable->routes['mail'] === 'autora@example.test'
-                    && $message->actionUrl === route('campaigns.show', 'la-maldicion-de-strahd')
+                return $message->actionUrl === route('campaigns.show', 'la-maldicion-de-strahd')
                     && str_contains((string) $message->subject, 'La maldición de Strahd');
             },
         );
@@ -94,13 +93,13 @@ final class CampaignModerationEmailsTest extends ModuleTestCase
             ->callTableAction('reject', $this->campaign, ['reason' => 'Falta la descripción'])
             ->assertHasNoTableActionErrors();
 
-        Notification::assertSentOnDemand(
+        Notification::assertSentTo(
+            $this->author,
             CampaignModerationRejectedNotification::class,
-            function (CampaignModerationRejectedNotification $n, array $channels, AnonymousNotifiable $notifiable): bool {
+            function (CampaignModerationRejectedNotification $n, array $channels, UserModel $notifiable): bool {
                 $message = $n->toMail($notifiable);
 
-                return $notifiable->routes['mail'] === 'autora@example.test'
-                    && $message->actionUrl === route('campaigns.frontend-edit', $this->campaign->id)
+                return $message->actionUrl === route('campaigns.frontend-edit', $this->campaign->id)
                     && str_contains(implode(' ', $message->introLines), 'Falta la descripción');
             },
         );

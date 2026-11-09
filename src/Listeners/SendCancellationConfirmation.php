@@ -6,7 +6,7 @@ namespace Modules\GameTables\Listeners;
 
 use App\Application\Services\TimezoneServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
-use Illuminate\Support\Facades\Notification;
+use Modules\GameTables\Application\DTOs\MailRecipientDTO;
 use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\ParticipantCancellationReason;
@@ -15,6 +15,7 @@ use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
+use Modules\GameTables\Infrastructure\Mail\MailRecipientNotifier;
 use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
 use Modules\GameTables\Notifications\CampaignSessionAbsenceNotification;
 use Modules\GameTables\Notifications\CancellationConfirmation;
@@ -27,13 +28,14 @@ final readonly class SendCancellationConfirmation
         private GameTableRepositoryInterface $gameTableRepository,
         private NotificationRecipientResolver $recipientResolver,
         private CampaignRepositoryInterface $campaignRepository,
+        private MailRecipientNotifier $notifier,
     ) {}
 
     public function handle(ParticipantCancelled $event): void
     {
-        $email = $this->recipientResolver->getParticipantEmail($event->participantId);
+        $recipient = $this->recipientResolver->getParticipantRecipient($event->participantId);
 
-        if ($email === null) {
+        if ($recipient === null) {
             return;
         }
 
@@ -55,28 +57,26 @@ final readonly class SendCancellationConfirmation
             // A roster member's seat (the direction marking an absence, or the panel): they miss
             // this session only and stay in the campaign
             if ($event->reason === ParticipantCancellationReason::SessionAbsence && $event->userId !== null) {
-                Notification::route('mail', $email)
-                    ->notify(new CampaignSessionAbsenceNotification(
-                        userName: $participantName,
-                        campaignTitle: $this->campaignTitleOf($gameTable),
-                        tableId: $event->gameTableId,
-                        tableTitle: $gameTable->title,
-                        tableDate: $tableDate,
-                        tableLocation: $tableLocation,
-                    ));
-
-                return;
-            }
-
-            Notification::route('mail', $email)
-                ->notify(new OrganizationCancellationNotification(
-                    participantName: $participantName,
+                $this->notifier->send($recipient, new CampaignSessionAbsenceNotification(
+                    userName: $participantName,
+                    campaignTitle: $this->campaignTitleOf($gameTable),
                     tableId: $event->gameTableId,
                     tableTitle: $gameTable->title,
                     tableDate: $tableDate,
                     tableLocation: $tableLocation,
-                    guest: $event->userId === null,
                 ));
+
+                return;
+            }
+
+            $this->notifier->send($recipient, new OrganizationCancellationNotification(
+                participantName: $participantName,
+                tableId: $event->gameTableId,
+                tableTitle: $gameTable->title,
+                tableDate: $tableDate,
+                tableLocation: $tableLocation,
+                guest: $event->userId === null,
+            ));
 
             return;
         }
@@ -86,25 +86,24 @@ final readonly class SendCancellationConfirmation
             $user = UserModel::find($event->userId);
             $participantName = $user->name ?? $this->recipientResolver->getParticipantDisplayName($event->participantId);
 
-            Notification::route('mail', $email)
-                ->notify(new CancellationConfirmation(
-                    participantName: $participantName,
-                    tableId: $event->gameTableId,
-                    tableTitle: $gameTable->title,
-                    tableDate: $tableDate,
-                    tableLocation: $tableLocation,
-                ));
+            $this->notifier->send($recipient, new CancellationConfirmation(
+                participantName: $participantName,
+                tableId: $event->gameTableId,
+                tableTitle: $gameTable->title,
+                tableDate: $tableDate,
+                tableLocation: $tableLocation,
+            ));
         } else {
             $participantName = $this->recipientResolver->getParticipantDisplayName($event->participantId);
 
-            Notification::route('mail', $email)
-                ->notify(new GuestCancellationConfirmation(
-                    firstName: $participantName,
-                    tableId: $event->gameTableId,
-                    tableTitle: $gameTable->title,
-                    tableDate: $tableDate,
-                    tableLocation: $tableLocation,
-                ));
+            // Guest mail has no category: always to the address
+            $this->notifier->send(MailRecipientDTO::address($recipient->email), new GuestCancellationConfirmation(
+                firstName: $participantName,
+                tableId: $event->gameTableId,
+                tableTitle: $gameTable->title,
+                tableDate: $tableDate,
+                tableLocation: $tableLocation,
+            ));
         }
     }
 

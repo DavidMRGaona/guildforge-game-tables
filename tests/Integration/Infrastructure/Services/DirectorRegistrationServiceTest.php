@@ -85,7 +85,7 @@ final class DirectorRegistrationServiceTest extends ModuleTestCase
         $this->assertSame('confirmed', $row->refresh()->status->value);
         $this->assertCount(1, $this->participantConfirmed);
         $this->assertFalse($this->participantConfirmed[0]->automatic);
-        Notification::assertSentOnDemandTimes(ParticipantConfirmedNotification::class, 1);
+        Notification::assertSentTimes(ParticipantConfirmedNotification::class, 1);
     }
 
     /**
@@ -177,7 +177,8 @@ final class DirectorRegistrationServiceTest extends ModuleTestCase
         $this->service()->rejectAsDirector($row->id, '  Sin plazas para principiantes  ');
 
         $this->assertSame('rejected', $row->refresh()->status->value);
-        Notification::assertSentOnDemand(
+        Notification::assertSentTo(
+            $row->user,
             ParticipantRejectedNotification::class,
             fn (ParticipantRejectedNotification $n): bool => $n->reason === 'Sin plazas para principiantes',
         );

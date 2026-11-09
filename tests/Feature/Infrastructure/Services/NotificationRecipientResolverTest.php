@@ -7,6 +7,7 @@ namespace Modules\GameTables\Tests\Feature\Infrastructure\Services;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use Modules\GameTables\Application\DTOs\MailRecipientDTO;
 use Modules\GameTables\Domain\Enums\GameMasterRole;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
@@ -91,7 +92,7 @@ final class NotificationRecipientResolverTest extends TestCase
         $gameTable->gameMasters()->attach($gm1->id, ['source' => 'local', 'excluded' => false, 'sort_order' => 1]);
         $gameTable->gameMasters()->attach($gm2->id, ['source' => 'local', 'excluded' => false, 'sort_order' => 2]);
 
-        $result = $this->resolver->getGameMasterEmails($gameTable->id);
+        $result = $this->emails($this->resolver->getGameMasterRecipients($gameTable->id));
 
         $this->assertCount(2, $result);
         $this->assertContains('gm1@example.com', $result);
@@ -147,7 +148,7 @@ final class NotificationRecipientResolverTest extends TestCase
         $gameTable->gameMasters()->attach($gmEnabled->id, ['source' => 'local', 'excluded' => false, 'sort_order' => 1]);
         $gameTable->gameMasters()->attach($gmDisabled->id, ['source' => 'local', 'excluded' => false, 'sort_order' => 2]);
 
-        $result = $this->resolver->getGameMasterEmails($gameTable->id);
+        $result = $this->emails($this->resolver->getGameMasterRecipients($gameTable->id));
 
         $this->assertCount(1, $result);
         $this->assertContains('enabled@example.com', $result);
@@ -198,10 +199,10 @@ final class NotificationRecipientResolverTest extends TestCase
 
         $gameTable->gameMasters()->attach($gameMaster->id, ['source' => 'local', 'excluded' => false, 'sort_order' => 1]);
 
-        $result = $this->resolver->getGameMasterEmails($gameTable->id);
+        $recipients = $this->resolver->getGameMasterRecipients($gameTable->id);
 
-        $this->assertCount(1, $result);
-        $this->assertContains('user@example.com', $result);
+        // The account, so the core applies its mail choices
+        $this->assertEquals([MailRecipientDTO::account((string) $user->id, 'user@example.com', 'User GM')], $recipients);
     }
 
     public function test_get_table_notification_email_returns_email(): void
@@ -305,9 +306,10 @@ final class NotificationRecipientResolverTest extends TestCase
             'status' => ParticipantStatus::Confirmed,
         ]);
 
-        $result = $this->resolver->getParticipantEmail($participant->id);
+        $recipient = $this->resolver->getParticipantRecipient($participant->id);
 
-        $this->assertEquals('guest@example.com', $result);
+        $this->assertEquals(MailRecipientDTO::address('guest@example.com', 'Guest Player'), $recipient);
+        $this->assertFalse($recipient?->isAccount());
     }
 
     public function test_get_participant_email_returns_user_email(): void
@@ -352,9 +354,9 @@ final class NotificationRecipientResolverTest extends TestCase
             'status' => ParticipantStatus::Confirmed,
         ]);
 
-        $result = $this->resolver->getParticipantEmail($participant->id);
+        $recipient = $this->resolver->getParticipantRecipient($participant->id);
 
-        $this->assertEquals('user@example.com', $result);
+        $this->assertEquals(MailRecipientDTO::account((string) $user->id, 'user@example.com', 'User Player'), $recipient);
     }
 
     public function test_get_participant_display_name_returns_guest_name(): void
@@ -492,8 +494,17 @@ final class NotificationRecipientResolverTest extends TestCase
         $table->gameMasters()->attach($richard->id, ['source' => 'campaign', 'excluded' => true, 'sort_order' => 1]);
         $table->gameMasters()->attach($mary->id, ['source' => 'local', 'excluded' => false, 'sort_order' => 2]);
 
-        $result = $this->resolver->getGameMasterEmails($table->id);
+        $result = $this->emails($this->resolver->getGameMasterRecipients($table->id));
 
         $this->assertEqualsCanonicalizing(['jane@example.com', 'mary@example.com'], $result);
+    }
+
+    /**
+     * @param  list<MailRecipientDTO>  $recipients
+     * @return list<string>
+     */
+    private function emails(array $recipients): array
+    {
+        return array_map(fn (MailRecipientDTO $recipient): string => $recipient->email, $recipients);
     }
 }

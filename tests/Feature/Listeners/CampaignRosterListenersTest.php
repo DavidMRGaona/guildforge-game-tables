@@ -136,32 +136,34 @@ final class CampaignRosterListenersTest extends ModuleTestCase
     }
 
     /**
-     * @return array<string, array{string, string, class-string}>
+     * @return array<string, array{string, string, class-string}> key, the account it goes to (john or mary), class
      */
     public static function emails(): array
     {
         return [
-            'session scheduled' => ['session_scheduled', 'mary@example.com', CampaignSessionScheduledNotification::class],
-            'join request received' => ['join_request_received', 'john@example.com', CampaignJoinRequestReceivedNotification::class],
-            'join request accepted' => ['join_request_accepted', 'mary@example.com', CampaignJoinRequestAcceptedNotification::class],
-            'join request rejected' => ['join_request_rejected', 'mary@example.com', CampaignJoinRequestRejectedNotification::class],
-            'roster added' => ['roster_added', 'mary@example.com', CampaignRosterAddedNotification::class],
-            'roster removed' => ['roster_removed', 'mary@example.com', CampaignRosterRemovedNotification::class],
-            'player left' => ['player_left', 'john@example.com', CampaignPlayerLeftNotification::class],
+            'session scheduled' => ['session_scheduled', 'mary', CampaignSessionScheduledNotification::class],
+            'join request received' => ['join_request_received', 'john', CampaignJoinRequestReceivedNotification::class],
+            'join request accepted' => ['join_request_accepted', 'mary', CampaignJoinRequestAcceptedNotification::class],
+            'join request rejected' => ['join_request_rejected', 'mary', CampaignJoinRequestRejectedNotification::class],
+            'roster added' => ['roster_added', 'mary', CampaignRosterAddedNotification::class],
+            'roster removed' => ['roster_removed', 'mary', CampaignRosterRemovedNotification::class],
+            'player left' => ['player_left', 'john', CampaignPlayerLeftNotification::class],
         ];
     }
 
     #[DataProvider('emails')]
-    public function test_each_event_sends_its_email_to_the_right_address(string $key, string $email, string $class): void
+    public function test_each_event_sends_its_email_to_the_right_account(string $key, string $who, string $class): void
     {
         $this->fire($key);
 
-        Notification::assertSentOnDemand($class, fn ($notification, array $channels, AnonymousNotifiable $notifiable): bool => $notifiable->routes['mail'] === $email);
-        Notification::assertSentOnDemandTimes($class, 1);
+        // As the account, never by address, so the person's mail choices apply
+        Notification::assertSentToTimes($who === 'john' ? $this->john : $this->mary, $class, 1);
+        Notification::assertSentTimes($class, 1);
+        Notification::assertSentOnDemandTimes($class, 0);
     }
 
     #[DataProvider('emails')]
-    public function test_each_toggle_silences_its_email(string $key, string $email, string $class): void
+    public function test_each_toggle_silences_its_email(string $key, string $who, string $class): void
     {
         config()->set('modules.settings.game-tables', ['campaign_notifications' => [$key => false]]);
 
@@ -171,7 +173,7 @@ final class CampaignRosterListenersTest extends ModuleTestCase
     }
 
     #[DataProvider('emails')]
-    public function test_no_email_about_an_anonymized_player(string $key, string $email, string $class): void
+    public function test_no_email_about_an_anonymized_player(string $key, string $who, string $class): void
     {
         $this->mary->forceFill(['anonymized_at' => now()])->save();
 
@@ -181,16 +183,16 @@ final class CampaignRosterListenersTest extends ModuleTestCase
     }
 
     #[DataProvider('emails')]
-    public function test_no_email_to_an_anonymized_account(string $key, string $email, string $class): void
+    public function test_no_email_to_an_anonymized_account(string $key, string $who, string $class): void
     {
         $this->john->forceFill(['anonymized_at' => now()])->save();
 
         $this->fire($key);
 
-        if ($email === 'john@example.com') {
+        if ($who === 'john') {
             Notification::assertNothingSent();
         } else {
-            Notification::assertSentOnDemandTimes($class, 1);
+            Notification::assertSentToTimes($this->mary, $class, 1);
         }
     }
 
@@ -198,7 +200,7 @@ final class CampaignRosterListenersTest extends ModuleTestCase
     {
         $this->fire('join_request_accepted');
 
-        Notification::assertSentOnDemand(CampaignJoinRequestAcceptedNotification::class, function ($notification): bool {
+        Notification::assertSentTo($this->mary, CampaignJoinRequestAcceptedNotification::class, function ($notification): bool {
             $mail = $notification->toMail(new AnonymousNotifiable);
 
             return in_array('«Sesión 2» — 15/11/2026 18:00 (en lista de espera, con prioridad por ser de la plantilla)', $mail->introLines, true)
@@ -210,7 +212,7 @@ final class CampaignRosterListenersTest extends ModuleTestCase
     {
         $this->fire('join_request_received');
 
-        Notification::assertSentOnDemand(CampaignJoinRequestReceivedNotification::class, function ($notification): bool {
+        Notification::assertSentTo($this->john, CampaignJoinRequestReceivedNotification::class, function ($notification): bool {
             $mail = $notification->toMail(new AnonymousNotifiable);
 
             return $mail->subject === 'Solicitud para unirse a Campaña de prueba'
@@ -225,7 +227,7 @@ final class CampaignRosterListenersTest extends ModuleTestCase
 
         $this->fire('join_request_received');
 
-        Notification::assertSentOnDemandTimes(CampaignJoinRequestReceivedNotification::class, 1);
+        Notification::assertSentTimes(CampaignJoinRequestReceivedNotification::class, 1);
     }
 
     public function test_every_director_with_notices_is_emailed(): void
@@ -235,7 +237,8 @@ final class CampaignRosterListenersTest extends ModuleTestCase
 
         $this->fire('player_left');
 
-        Notification::assertSentOnDemandTimes(CampaignPlayerLeftNotification::class, 2);
+        Notification::assertSentToTimes($this->john, CampaignPlayerLeftNotification::class, 1);
+        Notification::assertSentToTimes($jane, CampaignPlayerLeftNotification::class, 1);
     }
 
     public function test_a_gm_with_notify_by_email_off_gets_nothing(): void
@@ -245,15 +248,15 @@ final class CampaignRosterListenersTest extends ModuleTestCase
 
         $this->fire('join_request_received');
 
-        Notification::assertSentOnDemandTimes(CampaignJoinRequestReceivedNotification::class, 1);
-        Notification::assertSentOnDemand(CampaignJoinRequestReceivedNotification::class, fn ($n, array $c, AnonymousNotifiable $notifiable): bool => $notifiable->routes['mail'] === 'john@example.com');
+        Notification::assertSentTimes(CampaignJoinRequestReceivedNotification::class, 1);
+        Notification::assertSentTo($this->john, CampaignJoinRequestReceivedNotification::class);
     }
 
     public function test_the_scheduled_email_marks_a_waiting_member(): void
     {
         event(new RosterMemberEnrolledInSession((string) Str::uuid(), $this->table->id, $this->mary->id, true));
 
-        Notification::assertSentOnDemand(CampaignSessionScheduledNotification::class, function ($notification): bool {
+        Notification::assertSentTo($this->mary, CampaignSessionScheduledNotification::class, function ($notification): bool {
             $mail = $notification->toMail(new AnonymousNotifiable);
 
             return $mail->subject === 'Nueva sesión de Campaña de prueba: 15/11/2026 18:00'

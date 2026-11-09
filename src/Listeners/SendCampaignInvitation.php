@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Modules\GameTables\Listeners;
 
 use App\Application\Services\TimezoneServiceInterface;
-use Illuminate\Support\Facades\Notification;
+use Modules\GameTables\Application\DTOs\MailRecipientDTO;
+use Modules\GameTables\Application\Services\AccountLookupInterface;
 use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Entities\CampaignInvitation;
 use Modules\GameTables\Domain\Events\CampaignInvitationSent;
@@ -13,6 +14,7 @@ use Modules\GameTables\Domain\Repositories\CampaignInvitationRepositoryInterface
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\CampaignInvitationId;
+use Modules\GameTables\Infrastructure\Mail\MailRecipientNotifier;
 use Modules\GameTables\Notifications\CampaignInvitationNotification;
 
 /**
@@ -23,6 +25,8 @@ final readonly class SendCampaignInvitation
     public function __construct(
         private CampaignInvitationRepositoryInterface $invitations,
         private CampaignRepositoryInterface $campaigns,
+        private AccountLookupInterface $accounts,
+        private MailRecipientNotifier $notifier,
     ) {}
 
     public function handle(CampaignInvitationSent $event): void
@@ -40,7 +44,14 @@ final readonly class SendCampaignInvitation
             return;
         }
 
-        Notification::route('mail', $event->email)->notify(new CampaignInvitationNotification(
+        // The address of an active account is the account: it sees the invitation in its profile
+        // too, and its mail choices apply. Anyone else gets it at the address
+        $account = $this->accounts->findByEmail($event->email);
+        $recipient = $account !== null
+            ? MailRecipientDTO::account($account->userId, $account->email, $account->name)
+            : MailRecipientDTO::address($event->email);
+
+        $this->notifier->send($recipient, new CampaignInvitationNotification(
             inviterName: $invitation->inviterName,
             campaignTitle: $campaign->title,
             campaignSlug: $campaign->slug,

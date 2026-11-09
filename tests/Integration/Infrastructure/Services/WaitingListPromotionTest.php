@@ -180,7 +180,8 @@ final class WaitingListPromotionTest extends ModuleTestCase
         $this->assertNull($first->confirmed_at);
         $this->assertSame(1, $this->confirmedPlayers());
 
-        Notification::assertSentOnDemand(
+        Notification::assertSentTo(
+            $first->user,
             WaitingListPromotionNotification::class,
             fn (WaitingListPromotionNotification $notification): bool => $this->mailSays($notification, __('game-tables::emails.waiting_list_promotion.outro_pending')),
         );
@@ -195,11 +196,12 @@ final class WaitingListPromotionTest extends ModuleTestCase
         $this->table->update(['notification_email' => 'mesa@example.test']);
         $leaving = $this->participant('player', 'confirmed');
         $this->participant('player', 'confirmed');
-        $this->participant('player', 'waiting_list', 1, email: 'espera@example.test');
+        $first = $this->participant('player', 'waiting_list', 1, email: 'espera@example.test');
 
         app(RegistrationServiceInterface::class)->cancel($leaving->id);
 
-        Notification::assertSentOnDemand(
+        Notification::assertSentTo(
+            $first->user,
             WaitingListPromotionNotification::class,
             fn (WaitingListPromotionNotification $notification): bool => $this->mailSays($notification, __('game-tables::emails.waiting_list_promotion.outro')),
         );
@@ -215,12 +217,12 @@ final class WaitingListPromotionTest extends ModuleTestCase
         $this->table->update(['notification_email' => 'mesa@example.test']);
         $leaving = $this->participant('player', 'confirmed');
         $this->participant('player', 'confirmed');
-        $this->participant('player', 'waiting_list', 1, email: 'espera@example.test');
+        $first = $this->participant('player', 'waiting_list', 1, email: 'espera@example.test');
 
         app(RegistrationServiceInterface::class)->cancel($leaving->id);
 
-        Notification::assertSentOnDemand(WaitingListPromotionNotification::class);
-        Notification::assertSentOnDemandTimes(WaitingListPromotionGmNotification::class, 0);
+        Notification::assertSentTo($first->user, WaitingListPromotionNotification::class);
+        Notification::assertSentTimes(WaitingListPromotionGmNotification::class, 0);
     }
 
     public function test_after_the_registrations_close_a_cancellation_promotes_nobody(): void
@@ -274,7 +276,7 @@ final class WaitingListPromotionTest extends ModuleTestCase
         $this->assertSame('waiting_list', $waiting->refresh()->status->value);
         $this->assertNull(app(RegistrationServiceInterface::class)->promoteFromWaitingList($this->table->id));
         $this->assertSame('waiting_list', $waiting->refresh()->status->value);
-        Notification::assertSentOnDemandTimes(WaitingListPromotionNotification::class, 0);
+        Notification::assertSentTimes(WaitingListPromotionNotification::class, 0);
     }
 
     /**
@@ -433,7 +435,7 @@ final class WaitingListPromotionTest extends ModuleTestCase
         $this->assertSame('rejected', $pending->refresh()->status->value);
         $this->assertSame('pending', $first->refresh()->status->value);
         $this->assertSame('waiting_list', $second->refresh()->status->value);
-        Notification::assertSentOnDemand(WaitingListPromotionNotification::class);
+        Notification::assertSentTo($first->user, WaitingListPromotionNotification::class);
     }
 
     public function test_with_the_list_off_rejecting_a_pending_player_promotes_nobody(): void

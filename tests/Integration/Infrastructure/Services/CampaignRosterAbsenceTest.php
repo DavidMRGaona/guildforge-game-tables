@@ -108,9 +108,10 @@ final class CampaignRosterAbsenceTest extends ModuleTestCase
     {
         $this->sync()->markAbsence($this->campaign->id, $this->session->id, $this->jane->id);
 
-        Notification::assertSentOnDemand(
+        Notification::assertSentTo(
+            $this->jane,
             CampaignSessionAbsenceNotification::class,
-            function (CampaignSessionAbsenceNotification $notification, array $channels, AnonymousNotifiable $notifiable): bool {
+            function (CampaignSessionAbsenceNotification $notification, array $channels, UserModel $notifiable): bool {
                 $mail = $notification->toMail($notifiable);
                 $lines = array_map(static fn (mixed $line): string => html_entity_decode(strip_tags((string) $line)), $mail->introLines);
 
@@ -311,6 +312,15 @@ final class CampaignRosterAbsenceTest extends ModuleTestCase
      */
     private function assertMailedTo(string $notification, string $email): void
     {
+        // The address of an account is mailed as the account, so its mail choices apply
+        $account = UserModel::query()->where('email', $email)->first();
+
+        if ($account instanceof UserModel) {
+            Notification::assertSentTo($account, $notification);
+
+            return;
+        }
+
         Notification::assertSentOnDemand(
             $notification,
             fn (object $sent, array $channels, AnonymousNotifiable $notifiable): bool => $notifiable->routes['mail'] === $email,

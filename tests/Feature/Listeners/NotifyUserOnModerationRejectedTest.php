@@ -58,7 +58,9 @@ final class NotifyUserOnModerationRejectedTest extends ModuleTestCase
             reason: 'Falta la sinopsis',
         ));
 
-        Notification::assertSentOnDemand(
+        // The author's account, so their mail choices apply
+        Notification::assertSentTo(
+            $author,
             ModerationRejectedNotification::class,
             fn (ModerationRejectedNotification $notification): bool => $notification
                 ->toMail(new AnonymousNotifiable)->actionUrl === url('/mesas/mis-mesas/mesa-rechazada/editar'),

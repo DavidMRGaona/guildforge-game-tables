@@ -343,7 +343,7 @@ final class TableRegistrationsControllerTest extends ModuleTestCase
             ->assertSessionHas('success', 'Has aprobado la inscripción de Jane Doe.');
 
         $this->assertSame('confirmed', $jane->refresh()->status->value);
-        Notification::assertSentOnDemand(ParticipantConfirmedNotification::class);
+        Notification::assertSentTo($jane->user, ParticipantConfirmedNotification::class);
 
         $log = ParticipantStatusLogModel::query()
             ->where('participant_id', $jane->id)
@@ -403,7 +403,8 @@ final class TableRegistrationsControllerTest extends ModuleTestCase
             ->assertSessionHas('success', 'Has rechazado la solicitud de Jane Doe.');
 
         $this->assertSame('rejected', $jane->refresh()->status->value);
-        Notification::assertSentOnDemand(
+        Notification::assertSentTo(
+            $jane->user,
             ParticipantRejectedNotification::class,
             fn (ParticipantRejectedNotification $n): bool => $n->reason === null,
         );
@@ -417,7 +418,8 @@ final class TableRegistrationsControllerTest extends ModuleTestCase
             ->post($this->actionUrl($jane, 'rechazar'), ['reason' => '   '])
             ->assertSessionHas('success', 'Has rechazado la solicitud de Jane Doe.');
 
-        Notification::assertSentOnDemand(
+        Notification::assertSentTo(
+            $jane->user,
             ParticipantRejectedNotification::class,
             fn (ParticipantRejectedNotification $n): bool => $n->reason === null,
         );

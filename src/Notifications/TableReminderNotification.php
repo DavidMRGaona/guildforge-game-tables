@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Notifications;
 
+use App\Application\Mail\Contracts\HasMailCategory;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Modules\GameTables\Infrastructure\Mail\GameTablesMailCategories;
 
-final class TableReminderNotification extends Notification implements ShouldQueue
+final class TableReminderNotification extends Notification implements HasMailCategory, ShouldQueue
 {
     use Queueable;
 
@@ -28,6 +30,11 @@ final class TableReminderNotification extends Notification implements ShouldQueu
     public function via(object $notifiable): array
     {
         return ['mail'];
+    }
+
+    public function mailCategory(): string
+    {
+        return GameTablesMailCategories::REMINDERS;
     }
 
     public function toMail(object $notifiable): MailMessage

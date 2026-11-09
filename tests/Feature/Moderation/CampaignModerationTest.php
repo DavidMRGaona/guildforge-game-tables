@@ -69,16 +69,10 @@ final class CampaignModerationTest extends ModuleTestCase
         app(FrontendCreationServiceInterface::class)->submitCampaignForReview($campaign->id, $this->creator->id);
 
         $this->assertSame('pending_review', $campaign->refresh()->frontend_creation_status?->value);
-        $recipients = [];
-        Notification::assertSentOnDemand(
-            CampaignModerationSubmittedNotification::class,
-            function (CampaignModerationSubmittedNotification $notification, array $channels, AnonymousNotifiable $notifiable) use (&$recipients): bool {
-                $recipients[] = $notifiable->routes['mail'];
-
-                return true;
-            },
-        );
-        $this->assertEqualsCanonicalizing([$this->admin->email, $editor->email], $recipients);
+        // Each moderator as an account, so their mail choices apply
+        Notification::assertSentTo($this->admin, CampaignModerationSubmittedNotification::class);
+        Notification::assertSentTo($editor, CampaignModerationSubmittedNotification::class);
+        Notification::assertSentTimes(CampaignModerationSubmittedNotification::class, 2);
     }
 
     public function test_an_auto_published_campaign_sends_no_moderation_email(): void

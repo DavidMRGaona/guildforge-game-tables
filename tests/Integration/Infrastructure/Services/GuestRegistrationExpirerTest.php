@@ -87,7 +87,7 @@ final class GuestRegistrationExpirerTest extends ModuleTestCase
             && $event->firstName === 'Invitada'
             && $event->notifyGuest);
         // The director hears of the promoted user only, never of the expired guest
-        Notification::assertSentOnDemandTimes(WaitingListPromotionGmNotification::class, 1);
+        Notification::assertSentTimes(WaitingListPromotionGmNotification::class, 1);
     }
 
     // The expiry is committed: its failing email is reported, the promotion is still announced
@@ -108,7 +108,7 @@ final class GuestRegistrationExpirerTest extends ModuleTestCase
         $this->assertSame(['expired' => 1, 'closed' => 0, 'fingerprintsCleared' => 0, 'failed' => 0], $counts);
         $this->assertSame('expired', ParticipantModel::query()->findOrFail($seated->id)->status->value);
         $this->assertSame('confirmed', ParticipantModel::query()->findOrFail($user->id)->status->value);
-        Notification::assertSentOnDemandTimes(WaitingListPromotionGmNotification::class, 1);
+        Notification::assertSentTimes(WaitingListPromotionGmNotification::class, 1);
         Exceptions::assertReported(RuntimeException::class);
     }
 
@@ -121,7 +121,7 @@ final class GuestRegistrationExpirerTest extends ModuleTestCase
         $this->expirer()->run(CarbonImmutable::now()->toDateTimeImmutable());
 
         $this->assertSame('expired', ParticipantModel::query()->findOrFail($guest->id)->status->value);
-        Notification::assertSentOnDemandTimes(GuestRegistrationExpiredNotification::class, 1);
+        Notification::assertSentTimes(GuestRegistrationExpiredNotification::class, 1);
         Notification::assertSentOnDemand(
             GuestRegistrationExpiredNotification::class,
             fn (GuestRegistrationExpiredNotification $notification, array $channels, object $notifiable): bool => ($notifiable->routes['mail'] ?? null) === 'invitada@example.test',
@@ -176,7 +176,7 @@ final class GuestRegistrationExpirerTest extends ModuleTestCase
         $this->travelTo(CarbonImmutable::parse('2026-11-03 10:00:00'));
         $this->expirer()->run(CarbonImmutable::now()->toDateTimeImmutable());
 
-        Notification::assertSentOnDemandTimes(GuestRegistrationExpiredNotification::class, 0);
+        Notification::assertSentTimes(GuestRegistrationExpiredNotification::class, 0);
     }
 
     public function test_a_row_confirmed_meanwhile_is_skipped(): void
