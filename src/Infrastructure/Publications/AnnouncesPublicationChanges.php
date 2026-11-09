@@ -6,10 +6,12 @@ namespace Modules\GameTables\Infrastructure\Publications;
 
 use App\Domain\Publications\Events\PublicationChanged;
 use App\Domain\Publications\Events\PublicationRemoved;
+use App\Domain\Publications\Events\PublicationRosterChanged;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Str;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Events\CampaignInvitationAccepted;
 use Modules\GameTables\Domain\Events\CampaignJoinRequestAccepted;
@@ -17,9 +19,11 @@ use Modules\GameTables\Domain\Events\CampaignRosterMemberAdded;
 use Modules\GameTables\Domain\Events\CampaignRosterMemberLeft;
 use Modules\GameTables\Domain\Events\CampaignRosterMemberRemoved;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Pivots\CampaignGameMasterPivot;
 
 /**
  * Tells publication listeners (core contract) when a table on its own or a campaign may have
@@ -97,8 +101,26 @@ final class AnnouncesPublicationChanges
 
         Event::listen(
             [CampaignRosterMemberAdded::class, CampaignRosterMemberRemoved::class, CampaignRosterMemberLeft::class, CampaignJoinRequestAccepted::class, CampaignInvitationAccepted::class],
-            static fn (CampaignRosterMemberAdded|CampaignRosterMemberRemoved|CampaignRosterMemberLeft|CampaignJoinRequestAccepted|CampaignInvitationAccepted $event) => self::changed(CampaignPublicationSource::TYPE, $event->campaignId),
+            static function (CampaignRosterMemberAdded|CampaignRosterMemberRemoved|CampaignRosterMemberLeft|CampaignJoinRequestAccepted|CampaignInvitationAccepted $event): void {
+                self::changed(CampaignPublicationSource::TYPE, $event->campaignId);
+                self::rosterChanged($event->campaignId, [$event->userId]);
+            },
         );
+
+        // The direction of a campaign: its game masters with an account (core#467)
+        CampaignGameMasterPivot::created(static fn (CampaignGameMasterPivot $pivot) => self::directorChanged($pivot));
+        CampaignGameMasterPivot::deleted(static fn (CampaignGameMasterPivot $pivot) => self::directorChanged($pivot));
+        GameMasterModel::saved(static function (GameMasterModel $gameMaster): void {
+            if (! $gameMaster->wasChanged('user_id')) {
+                return;
+            }
+
+            $accounts = array_values(array_filter([$gameMaster->getOriginal('user_id'), $gameMaster->user_id], is_string(...)));
+
+            foreach (self::ids(CampaignModel::query()->whereHas('gameMasters', static fn (Builder $query): Builder => $query->whereKey($gameMaster->getKey()))) as $campaignId) {
+                self::rosterChanged($campaignId, $accounts);
+            }
+        });
 
         GameSystemModel::saved(static function (GameSystemModel $system): void {
             if ($system->wasChanged('name')) {
@@ -181,6 +203,36 @@ final class AnnouncesPublicationChanges
     private static function ids(Builder $query): array
     {
         return array_values(array_map(strval(...), $query->pluck('id')->all()));
+    }
+
+    private static function directorChanged(CampaignGameMasterPivot $pivot): void
+    {
+        $userId = GameMasterModel::query()->whereKey($pivot->game_master_id)->value('user_id');
+
+        if (is_string($userId)) {
+            self::rosterChanged($pivot->campaign_id, [$userId]);
+        }
+    }
+
+    /**
+     * Someone's place in a campaign's roster or direction changed: only a published campaign is a
+     * publication. Read once the change commits, which is also when listeners read it back.
+     *
+     * @param  list<mixed>  $userIds
+     */
+    private static function rosterChanged(string $campaignId, array $userIds): void
+    {
+        $userIds = array_values(array_filter($userIds, static fn (mixed $id): bool => is_string($id) && Str::isUuid($id)));
+
+        if ($userIds === []) {
+            return;
+        }
+
+        DB::afterCommit(static function () use ($campaignId, $userIds): void {
+            if (CampaignModel::query()->whereKey($campaignId)->where('is_published', true)->exists()) {
+                event(new PublicationRosterChanged(CampaignPublicationSource::TYPE, $campaignId, $userIds));
+            }
+        });
     }
 
     private static function changed(string $type, string $id): void
