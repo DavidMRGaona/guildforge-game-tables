@@ -246,6 +246,37 @@ final class GameTablesPublicationsTest extends ModuleTestCase
         Event::assertDispatched(PublicationRemoved::class, fn (PublicationRemoved $removal): bool => $removal->id === $campaign->id);
     }
 
+    public function test_deleting_a_campaign_tells_the_listeners_about_its_sessions_left_on_their_own(): void
+    {
+        $campaign = $this->campaign();
+        $session = $this->table(['campaign_id' => $campaign->id]);
+        $draftSession = $this->table(['campaign_id' => $campaign->id, 'status' => 'draft', 'is_published' => false]);
+        Event::fake([PublicationChanged::class, PublicationRemoved::class]);
+
+        $campaign->delete();
+
+        Event::assertDispatched(PublicationRemoved::class, fn (PublicationRemoved $removal): bool => $removal->type === 'campaign' && $removal->id === $campaign->id);
+        Event::assertDispatched(PublicationChanged::class, fn (PublicationChanged $change): bool => $change->type === 'game-table' && $change->id === $session->id);
+        Event::assertNotDispatched(PublicationChanged::class, fn (PublicationChanged $change): bool => $change->id === $draftSession->id);
+        $this->assertNotNull($this->tables()->find($session->id));
+    }
+
+    public function test_an_account_deleted_for_good_frees_its_seats_and_roster_places(): void
+    {
+        $player = UserModel::factory()->create();
+        $table = $this->table(['max_players' => 1]);
+        ParticipantModel::create(['id' => (string) Str::uuid(), 'game_table_id' => $table->id, 'user_id' => $player->id, 'role' => 'player', 'status' => 'confirmed', 'confirmed_at' => now()]);
+        $campaign = $this->campaign(['max_players' => 1]);
+        $this->app->make(CampaignRosterRepositoryInterface::class)->add(new CampaignId($campaign->id), $player->id, new DateTimeImmutable);
+        Event::fake([PublicationChanged::class, PublicationRemoved::class]);
+
+        $player->forceDelete();
+
+        Event::assertDispatched(PublicationChanged::class, fn (PublicationChanged $change): bool => $change->type === 'game-table' && $change->id === $table->id);
+        Event::assertDispatched(PublicationChanged::class, fn (PublicationChanged $change): bool => $change->type === 'campaign' && $change->id === $campaign->id);
+        Event::assertNotDispatched(PublicationRemoved::class);
+    }
+
     private function tables(): GameTablePublicationSource
     {
         return $this->app->make(GameTablePublicationSource::class);
