@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Infrastructure\Listeners;
 
 use App\Application\Services\TimezoneServiceInterface;
+use Modules\GameTables\Application\DTOs\MailRecipientDTO;
 use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Events\ParticipantPromotedFromWaitingList;
@@ -39,7 +40,7 @@ final readonly class NotifyOnWaitingListPromotion
         $tableLocation = $gameTable->location;
 
         // Notify the promoted participant
-        if ($participant !== null) {
+        if ($participant instanceof MailRecipientDTO) {
             app(MailRecipientNotifier::class)->send($participant, new WaitingListPromotionNotification(
                 participantName: $participantName,
                 tableId: $event->gameTableId,

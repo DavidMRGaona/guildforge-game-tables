@@ -105,6 +105,8 @@ final class NotifyOnWaitingListPromotionDelegatedTest extends ModuleTestCase
             }
         }
         $this->assertCount($count, $sent, 'An address received more than one copy');
+        // Accounts and plain addresses are recorded apart: compare by address, not by sending order
+        ksort($sent);
 
         return $sent;
     }

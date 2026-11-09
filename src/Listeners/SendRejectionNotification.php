@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Listeners;
 
 use App\Application\Services\TimezoneServiceInterface;
+use Modules\GameTables\Application\DTOs\MailRecipientDTO;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Events\ParticipantRejected;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
@@ -31,7 +32,7 @@ final readonly class SendRejectionNotification
 
         $recipient = $this->recipientResolver->getParticipantRecipient($event->participantId);
 
-        if ($recipient === null) {
+        if (! $recipient instanceof MailRecipientDTO) {
             return;
         }
 

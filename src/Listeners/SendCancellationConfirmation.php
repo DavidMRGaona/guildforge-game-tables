@@ -35,7 +35,7 @@ final readonly class SendCancellationConfirmation
     {
         $recipient = $this->recipientResolver->getParticipantRecipient($event->participantId);
 
-        if ($recipient === null) {
+        if (! $recipient instanceof MailRecipientDTO) {
             return;
         }
 

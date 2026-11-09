@@ -96,11 +96,15 @@ final class MailCategoriesTest extends ModuleTestCase
     }
 
     #[DataProvider('categories')]
-    public function test_each_category_has_english_texts(string $key): void
+    public function test_each_category_has_english_texts(string $key, bool $mandatory, string $label, string $description, ?string $reason): void
     {
         app()->setLocale('en');
         $category = $this->registry()->find($key);
         $this->assertInstanceOf(MailCategoryDTO::class, $category);
+        $this->assertNotSame($label, __($category->label));
+        $this->assertNotSame($description, __($category->description));
+        $this->assertSame($reason === null, $category->mandatoryReason === null);
+        $this->assertSame($mandatory, $category->isMandatory());
 
         foreach ([$category->section, $category->label, $category->description, $category->mandatoryReason] as $text) {
             if ($text !== null) {

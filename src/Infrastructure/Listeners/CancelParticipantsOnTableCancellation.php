@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Infrastructure\Listeners;
 
 use App\Application\Services\TimezoneServiceInterface;
+use Modules\GameTables\Application\DTOs\MailRecipientDTO;
 use Modules\GameTables\Domain\Events\GameTableCancelled;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
@@ -35,7 +36,7 @@ final readonly class CancelParticipantsOnTableCancellation
             $recipient = $this->recipientResolver->getParticipantRecipient($participant->id->value);
             $name = $this->recipientResolver->getParticipantDisplayName($participant->id->value);
 
-            if ($recipient === null) {
+            if (! $recipient instanceof MailRecipientDTO) {
                 continue;
             }
 

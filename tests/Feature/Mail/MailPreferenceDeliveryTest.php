@@ -12,6 +12,7 @@ use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Notifications\Events\NotificationSent;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
+use Illuminate\Testing\PendingCommand;
 use Modules\GameTables\Console\Commands\SendTableRemindersCommand;
 use Modules\GameTables\Domain\Enums\GameMasterRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
@@ -83,7 +84,9 @@ final class MailPreferenceDeliveryTest extends ModuleTestCase
         $this->participant($table, $optedOut);
         $this->preferences()->update($optedOut, [GameTablesMailCategories::REMINDERS => false]);
 
-        $this->artisan('game-tables:send-reminders')->assertSuccessful();
+        $command = $this->artisan('game-tables:send-reminders');
+        $this->assertInstanceOf(PendingCommand::class, $command);
+        $command->assertSuccessful()->run();
 
         $this->assertSame([[TableReminderNotification::class, 'quiere@example.com']], $this->sent);
     }

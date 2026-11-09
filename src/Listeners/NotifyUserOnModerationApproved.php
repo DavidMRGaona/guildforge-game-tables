@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Listeners;
 
+use Modules\GameTables\Application\DTOs\MailRecipientDTO;
 use Modules\GameTables\Domain\Events\GameTableModerationApproved;
 use Modules\GameTables\Infrastructure\Mail\MailRecipientNotifier;
 use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
@@ -20,7 +21,7 @@ final readonly class NotifyUserOnModerationApproved
     {
         $creator = $this->recipientResolver->getCreatorRecipient($event->createdBy);
 
-        if ($creator === null) {
+        if (! $creator instanceof MailRecipientDTO) {
             return;
         }
 

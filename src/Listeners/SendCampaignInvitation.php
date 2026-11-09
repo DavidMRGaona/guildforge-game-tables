@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Listeners;
 
 use App\Application\Services\TimezoneServiceInterface;
+use Modules\GameTables\Application\DTOs\AccountDTO;
 use Modules\GameTables\Application\DTOs\MailRecipientDTO;
 use Modules\GameTables\Application\Services\AccountLookupInterface;
 use Modules\GameTables\Domain\Entities\Campaign;
@@ -47,7 +48,7 @@ final readonly class SendCampaignInvitation
         // The address of an active account is the account: it sees the invitation in its profile
         // too, and its mail choices apply. Anyone else gets it at the address
         $account = $this->accounts->findByEmail($event->email);
-        $recipient = $account !== null
+        $recipient = $account instanceof AccountDTO
             ? MailRecipientDTO::account($account->userId, $account->email, $account->name)
             : MailRecipientDTO::address($event->email);
 
