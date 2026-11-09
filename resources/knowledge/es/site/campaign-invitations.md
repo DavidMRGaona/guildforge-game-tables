@@ -6,7 +6,7 @@ category: campaigns
 audience: site
 order: 30
 keywords: [invitación, invitaciones, me han invitado, invitar, aceptar invitación, rechazar invitación, correo de invitación, enlace de invitación, caducada, no válida, otro email, crear cuenta, unirme a campaña, plantilla, invitacion]
-related: [game-tables.join-campaign, game-tables.campaigns-overview, core.account.verify-email]
+related: [game-tables.join-campaign, game-tables.campaigns-overview, core.account.verify-email, core.account.mail-preferences]
 ---
 La dirección de una campaña puede invitarte a su plantilla con tu email. Te llega un correo «… te invita a la campaña «…»» con el botón **Ver invitación**.
 
@@ -60,6 +60,6 @@ Si no la ves, la dirección puede reenviártela, con un día de espera entre env
 - **«Esta campaña solo admite el rol {{association_role}}, así que no puedes aceptar la invitación mientras no lo tengas. Seguirá disponible hasta que caduque.»**: la campaña es solo para quien tiene el rol {{association_role}}. Podrás aceptar cuando lo tengas, si la invitación no ha caducado.
 - **«La campaña ha terminado: su plantilla ya no cambia.»**: la campaña ya no admite jugadores.
 - **«Esa cuenta ya forma parte de la plantilla.»**: ya estás dentro.
-- **No te llega el correo**: mira en la carpeta de correo no deseado y pide a la dirección que compruebe tu email.
+- **No te llega el correo**: mira en la carpeta de correo no deseado y pide a la dirección que compruebe tu email. Si tienes cuenta con ese email y has desactivado «Novedades de mis campañas» en la pestaña **Correos** de tu perfil, la invitación no te llega por correo, pero la tienes en tu perfil.
 
 [[action:profile.show?tab=gametables-invitations|Ver mis invitaciones]]

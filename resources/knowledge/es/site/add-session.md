@@ -46,7 +46,7 @@ La sesión pasa por la misma revisión que una mesa: según la configuración de
 ## Al publicarse
 
 - **La plantilla queda inscrita**: cada jugador entra con plaza confirmada, aunque la mesa confirme a mano. Se respetan las ausencias que ya hubiera en esa sesión.
-- **Cada jugador recibe un correo** «Nueva sesión de …» con la fecha, si la web tiene activado ese aviso.
+- **Cada jugador recibe un correo** «Nueva sesión de …» con la fecha, si la web tiene activado ese aviso. Cada jugador puede quitarlo en su perfil, desactivando «Novedades de mis campañas»; la sesión le sale igualmente en su perfil.
 - **Las plazas que sobren** quedan libres para otras personas si la campaña acepta jugadores nuevos. Si no, la sesión es **Solo para la plantilla de la campaña**.
 - **Quien entre después en la plantilla** queda inscrito en ella mientras admita inscripciones.
 

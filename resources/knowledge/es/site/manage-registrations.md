@@ -6,7 +6,7 @@ category: events-and-games
 audience: site
 order: 60
 keywords: [gestionar inscritos, inscritos, aprobar inscripción, rechazar inscripción, solicitudes pendientes, pendientes, confirmar jugadores, aceptar jugadores, director, máster, master, DM, GM, mis jugadores, quién viene, lista de inscritos, plazas ocupadas]
-related: [game-tables.tables-overview, game-tables.review-and-publish]
+related: [game-tables.tables-overview, game-tables.review-and-publish, core.account.mail-preferences]
 conditions:
   capabilities: [game-tables.manages_registrations]
 ---
@@ -46,6 +46,8 @@ Verás «Has rechazado la solicitud de …» y le llega un correo con el motivo.
 ## Avisos por correo
 
 Según la configuración de la web, y si la organización te ha activado los avisos en esa mesa, te llega un correo cuando alguien se inscribe («Nueva inscripción en mesa»), cuando alguien se da de baja y cuando alguien pasa de la lista de espera. Si la inscripción queda pendiente, el correo te lo dice.
+
+Si no quieres estos correos, desactiva «Avisos como director de juego» en la pestaña **Correos** de tu perfil. Dejan de llegarte también los de tus campañas. Las inscripciones pendientes siguen en **Gestionar inscritos**.
 
 ## Lo que solo hace la organización
 
