@@ -180,6 +180,19 @@ final class CampaignRosterPublicationTest extends ModuleTestCase
             && $change->userIds === [$before, $after]);
     }
 
+    public function test_deleting_a_director_tells_the_listeners_of_its_campaigns(): void
+    {
+        $campaign = $this->campaign();
+        $user = $this->director($campaign, 'main');
+        $gameMaster = GameMasterModel::query()->where('user_id', $user)->firstOrFail();
+        Event::fake([PublicationRosterChanged::class]);
+
+        // The direction rows go by cascade, without pivot events
+        $gameMaster->delete();
+
+        Event::assertDispatched(PublicationRosterChanged::class, static fn (PublicationRosterChanged $change): bool => $change->id === $campaign->id && $change->userIds === [$user]);
+    }
+
     private function source(): CampaignPublicationSource
     {
         return $this->app->make(CampaignPublicationSource::class);

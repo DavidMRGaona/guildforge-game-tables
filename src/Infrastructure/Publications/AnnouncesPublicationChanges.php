@@ -59,6 +59,14 @@ final class AnnouncesPublicationChanges
      */
     private static array $sessionsOfDeletedCampaigns = [];
 
+    /**
+     * Campaigns and account of each game master being deleted, until it is gone (its direction
+     * rows go with it, by cascade, without pivot events).
+     *
+     * @var array<string, array{account: string|null, campaigns: list<string>}>
+     */
+    private static array $directionOfDeletedGameMasters = [];
+
     public static function register(): void
     {
         GameTableModel::saved(static function (GameTableModel $table): void {
@@ -110,6 +118,20 @@ final class AnnouncesPublicationChanges
         // The direction of a campaign: its game masters with an account (core#467)
         CampaignGameMasterPivot::created(static fn (CampaignGameMasterPivot $pivot) => self::directorChanged($pivot));
         CampaignGameMasterPivot::deleted(static fn (CampaignGameMasterPivot $pivot) => self::directorChanged($pivot));
+        GameMasterModel::deleting(static function (GameMasterModel $gameMaster): void {
+            self::$directionOfDeletedGameMasters[(string) $gameMaster->getKey()] = [
+                'account' => is_string($gameMaster->user_id) ? $gameMaster->user_id : null,
+                'campaigns' => self::ids(CampaignModel::query()->whereHas('gameMasters', static fn (Builder $query): Builder => $query->whereKey($gameMaster->getKey()))),
+            ];
+        });
+        GameMasterModel::deleted(static function (GameMasterModel $gameMaster): void {
+            $direction = self::$directionOfDeletedGameMasters[(string) $gameMaster->getKey()] ?? ['account' => null, 'campaigns' => []];
+            unset(self::$directionOfDeletedGameMasters[(string) $gameMaster->getKey()]);
+
+            foreach ($direction['campaigns'] as $campaignId) {
+                self::rosterChanged($campaignId, [$direction['account']]);
+            }
+        });
         GameMasterModel::saved(static function (GameMasterModel $gameMaster): void {
             if (! $gameMaster->wasChanged('user_id')) {
                 return;
