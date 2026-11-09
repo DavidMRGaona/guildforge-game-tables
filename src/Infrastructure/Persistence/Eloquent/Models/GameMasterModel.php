@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Carbon;
 use Modules\GameTables\Domain\Enums\GameMasterRole;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\Concerns\HasGameMasterAttributes;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Pivots\CampaignGameMasterPivot;
 
 /**
  * @property string $id
@@ -52,7 +53,7 @@ final class GameMasterModel extends Model
     ];
 
     /**
-     * @return BelongsToMany<CampaignModel, $this>
+     * @return BelongsToMany<CampaignModel, $this, CampaignGameMasterPivot>
      */
     public function campaigns(): BelongsToMany
     {
@@ -61,7 +62,7 @@ final class GameMasterModel extends Model
             'gametables_campaign_gm',
             'game_master_id',
             'campaign_id',
-        )->withPivot('sort_order')->withTimestamps();
+        )->using(CampaignGameMasterPivot::class)->withPivot('sort_order')->withTimestamps();
     }
 
     /**

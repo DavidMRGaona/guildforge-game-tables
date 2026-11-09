@@ -23,6 +23,7 @@ use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\RosterAccess;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\Tone;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Pivots\CampaignGameMasterPivot;
 
 /**
  * @property string $id
@@ -206,7 +207,7 @@ final class CampaignModel extends Model
     }
 
     /**
-     * @return BelongsToMany<GameMasterModel, $this>
+     * @return BelongsToMany<GameMasterModel, $this, CampaignGameMasterPivot>
      */
     public function gameMasters(): BelongsToMany
     {
@@ -215,7 +216,7 @@ final class CampaignModel extends Model
             'gametables_campaign_gm',
             'campaign_id',
             'game_master_id',
-        )->withPivot('sort_order')->withTimestamps()->orderByPivot('sort_order');
+        )->using(CampaignGameMasterPivot::class)->withPivot('sort_order')->withTimestamps()->orderByPivot('sort_order');
     }
 
     /**
