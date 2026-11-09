@@ -87,8 +87,9 @@ final class GameTablesPublicationsTest extends ModuleTestCase
 
         $publication = $this->tables()->find($table->id);
 
-        $this->assertFalse($publication?->registrationOpen);
-        $this->assertSame(PublicationState::Active, $publication?->state);
+        $this->assertNotNull($publication);
+        $this->assertFalse($publication->registrationOpen);
+        $this->assertSame(PublicationState::Active, $publication->state);
     }
 
     public function test_cancelled_and_completed_tables_keep_their_state(): void
@@ -171,13 +172,13 @@ final class GameTablesPublicationsTest extends ModuleTestCase
 
     public function test_saving_and_deleting_a_table_on_its_own_tells_the_listeners(): void
     {
-        Event::fake([PublicationChanged::class, PublicationRemoved::class]);
+        $events = Event::fake([PublicationChanged::class, PublicationRemoved::class]);
 
         $table = $this->table();
         $table->update(['starts_at' => now()->addWeeks(2)]);
         $table->delete();
 
-        $this->assertGreaterThanOrEqual(2, Event::dispatched(PublicationChanged::class, fn (PublicationChanged $change): bool => $change->type === 'game-table' && $change->id === $table->id)->count());
+        $this->assertGreaterThanOrEqual(2, $events->dispatched(PublicationChanged::class, fn (PublicationChanged $change): bool => $change->type === 'game-table' && $change->id === $table->id)->count());
         Event::assertDispatched(PublicationRemoved::class, fn (PublicationRemoved $removal): bool => $removal->type === 'game-table' && $removal->id === $table->id);
     }
 
@@ -198,24 +199,24 @@ final class GameTablesPublicationsTest extends ModuleTestCase
     public function test_a_registration_tells_the_listeners_about_its_table(): void
     {
         $table = $this->table();
-        Event::fake([PublicationChanged::class]);
+        $events = Event::fake([PublicationChanged::class]);
 
         $participant = $this->participant($table, 'confirmed');
         $participant->delete();
 
-        $this->assertGreaterThanOrEqual(2, Event::dispatched(PublicationChanged::class, fn (PublicationChanged $change): bool => $change->type === 'game-table' && $change->id === $table->id)->count());
+        $this->assertGreaterThanOrEqual(2, $events->dispatched(PublicationChanged::class, fn (PublicationChanged $change): bool => $change->type === 'game-table' && $change->id === $table->id)->count());
     }
 
     public function test_campaign_saves_and_roster_changes_tell_the_listeners(): void
     {
         $campaign = $this->campaign();
-        Event::fake([PublicationChanged::class, PublicationRemoved::class]);
+        $events = Event::fake([PublicationChanged::class, PublicationRemoved::class]);
 
         $campaign->update(['accepts_new_players' => false]);
         event(new CampaignRosterMemberLeft($campaign->id, (string) Str::uuid()));
         $campaign->delete();
 
-        $this->assertGreaterThanOrEqual(2, Event::dispatched(PublicationChanged::class, fn (PublicationChanged $change): bool => $change->type === 'campaign' && $change->id === $campaign->id)->count());
+        $this->assertGreaterThanOrEqual(2, $events->dispatched(PublicationChanged::class, fn (PublicationChanged $change): bool => $change->type === 'campaign' && $change->id === $campaign->id)->count());
         Event::assertDispatched(PublicationRemoved::class, fn (PublicationRemoved $removal): bool => $removal->type === 'campaign' && $removal->id === $campaign->id);
     }
 
