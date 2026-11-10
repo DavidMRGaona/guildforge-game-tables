@@ -20,9 +20,7 @@ use Modules\GameTables\Application\Services\CampaignQueryServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterQueryInterface;
 use Modules\GameTables\Http\Concerns\ReadsListFilters;
 use Modules\GameTables\Http\Resources\CampaignResource;
-use Modules\GameTables\Http\Support\SubjectDiscussionActivity;
 use Modules\GameTables\Http\Support\SubjectSurveyLinks;
-use Modules\GameTables\Infrastructure\Publications\CampaignPublicationSource;
 use Modules\GameTables\Infrastructure\Surveys\CampaignSurveySubjectSource;
 
 final class CampaignController extends Controller
@@ -109,8 +107,6 @@ final class CampaignController extends Controller
                 'surveyLinks' => auth()->id() !== null
                     ? $this->surveyLinks->for(CampaignSurveySubjectSource::TYPE, $campaign->id, (string) auth()->id())
                     : null,
-                // Its forum discussion, through the core: a forum module answers, and without one nothing shows
-                'discussion' => app(SubjectDiscussionActivity::class)->for(CampaignPublicationSource::TYPE, $campaign->id, auth()->id() !== null ? (string) auth()->id() : null),
                 'seo' => $this->seo->forPage(new SeoPageDTO(
                     title: $campaign->title,
                     description: $campaign->description,
