@@ -8,11 +8,7 @@ import type { GameTable, GameMaster, SubjectSurveyLinks } from '../../types/game
 import type { CampaignSessionInfo } from '../../types/registration';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import AddToCalendarMenu from '@/components/calendar/AddToCalendarMenu.vue';
-import type {
-    AddToCalendarLinks,
-    SubjectDiscussion as SubjectDiscussionData,
-} from '@/types/models';
-import SubjectDiscussion from '@/components/discussions/SubjectDiscussion.vue';
+import type { AddToCalendarLinks } from '@/types/models';
 import CapacityBar from '../../components/CapacityBar.vue';
 import SurveyLinks from '../../components/SurveyLinks.vue';
 import FormatBadge from '../../components/FormatBadge.vue';
@@ -35,8 +31,6 @@ interface Props {
     surveyLinks?: SubjectSurveyLinks | null;
     /** «Añadir al calendario» links from the core; null when the public calendar does not show the table */
     calendarLinks?: AddToCalendarLinks | null;
-    /** Activity of its forum discussion (core contract), when a forum module offers one */
-    discussion?: SubjectDiscussionData | null;
 }
 
 const props = defineProps<Props>();
@@ -414,8 +408,12 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                     <AddToCalendarMenu :links="calendarLinks" />
                 </div>
 
-                <div v-if="discussion" class="mb-6">
-                    <SubjectDiscussion :discussion="discussion" />
+                <!-- Its conversation, drawn by a forum module; a campaign session has none of its own -->
+                <div v-if="table.campaignId === null" class="mb-6">
+                    <ModuleSlot
+                        name="subject-discussion"
+                        :props="{ subjectType: 'game-table', subjectId: table.id }"
+                    />
                 </div>
 
                 <!-- Section 3: Capacity -->
