@@ -23,6 +23,17 @@ return [
         'config' => 'Configuration',
     ],
 
+    // Panel media library (core): origin and role of the images of tables and campaigns
+    'media' => [
+        'sources' => [
+            'tables' => 'Tables',
+            'campaigns' => 'Campaigns',
+        ],
+        'roles' => [
+            'image' => 'Image',
+        ],
+    ],
+
     // Site search (core): group, one result and the tag of results that are over
     'search' => [
         'tables' => [

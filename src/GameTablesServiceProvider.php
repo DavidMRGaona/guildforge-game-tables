@@ -12,6 +12,7 @@ use App\Application\Knowledge\Contracts\KnowledgeCapabilityInterface;
 use App\Application\Legal\DTOs\LegalMailNoticeDTO;
 use App\Application\Legal\Services\LegalMailNoticeRegistryInterface;
 use App\Application\Mail\DTOs\MailCategoryDTO;
+use App\Application\Media\Contracts\MediaUsageSourceInterface;
 use App\Application\Modules\DTOs\ModuleRouteDTO;
 use App\Application\Modules\DTOs\NavigationItemDTO;
 use App\Application\Modules\DTOs\PagePrefixDTO;
@@ -24,6 +25,7 @@ use App\Application\Services\SiteBrandingServiceInterface;
 use App\Application\Services\TimezoneServiceInterface;
 use App\Application\Surveys\Contracts\SurveySubjectSourceInterface;
 use App\Filament\Resources\EventResource;
+use App\Infrastructure\Media\Observers\RefreshMediaUsagesObserver;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use App\Modules\ModuleServiceProvider;
@@ -33,6 +35,7 @@ use Filament\Schemas\Components\Component;
 use Filament\Widgets\Widget;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Event;
@@ -128,6 +131,8 @@ use Modules\GameTables\Infrastructure\Listeners\NotifyOnGuestRegistration;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnRegistration;
 use Modules\GameTables\Infrastructure\Listeners\NotifyOnWaitingListPromotion;
 use Modules\GameTables\Infrastructure\Mail\GameTablesMailCategories;
+use Modules\GameTables\Infrastructure\Media\CampaignMediaSource;
+use Modules\GameTables\Infrastructure\Media\GameTableMediaSource;
 use Modules\GameTables\Infrastructure\Observers\CampaignObserver;
 use Modules\GameTables\Infrastructure\Observers\GameSystemObserver;
 use Modules\GameTables\Infrastructure\Observers\GameTableObserver;
@@ -740,8 +745,37 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         // Site search (core contract): tables and campaigns follow their rows
         RefreshesSearchDocuments::register();
 
+        // Media library (core contract): their image uses follow their rows
+        $this->refreshMediaUsagesOnChange(GameTableModel::class, GameTableMediaSource::TYPE);
+        $this->refreshMediaUsagesOnChange(CampaignModel::class, CampaignMediaSource::TYPE);
+
         // Publications (core contract): listeners hear when tables and campaigns change
         AnnouncesPublicationChanges::register();
+    }
+
+    /**
+     * Queue a refresh of a record's media usages when it is created, changes its image or is deleted.
+     *
+     * @param  class-string<Model>  $model
+     */
+    private function refreshMediaUsagesOnChange(string $model, string $type): void
+    {
+        // A saved record only matters when it is new or its image or title changed (wasRecentlyCreated
+        // stays true on the instance that created the record, hence the check for later changes)
+        $onSave = new RefreshMediaUsagesObserver(
+            $type,
+            static fn (Model $record): array => ($record->wasRecentlyCreated && $record->wasChanged() === false) || $record->wasChanged(['image_public_id', 'title'])
+                ? [(string) $record->getKey()]
+                : [],
+        );
+        // A deleted record always ends its uses, whatever was loaded or changed before
+        $onDelete = new RefreshMediaUsagesObserver(
+            $type,
+            static fn (Model $record): array => [(string) $record->getKey()],
+        );
+
+        $model::saved($onSave->saved(...));
+        $model::deleted($onDelete->deleted(...));
     }
 
     /**
@@ -1364,6 +1398,19 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     {
         return [
             GameTableAttendanceSource::class,
+        ];
+    }
+
+    /**
+     * Images of tables and campaigns in the panel media library (core ≥ 3.53).
+     *
+     * @return array<class-string<MediaUsageSourceInterface>>
+     */
+    public function registerMediaSources(): array
+    {
+        return [
+            GameTableMediaSource::class,
+            CampaignMediaSource::class,
         ];
     }
 
