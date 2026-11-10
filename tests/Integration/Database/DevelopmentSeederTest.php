@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Tests\Integration\Database;
 
+use App\Application\Media\Services\MediaIndexerInterface;
 use App\Application\Search\Services\SearchIndexerInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Facades\DB;
@@ -124,6 +125,9 @@ final class DevelopmentSeederTest extends ModuleTestCase
         // expected, and kept apart so any other queued work still fails the test
         $indexer = Mockery::spy(SearchIndexerInterface::class);
         $this->app->instance(SearchIndexerInterface::class, $indexer);
+        // Same for the media library index: seeded images ask for a refresh of their uses
+        $mediaIndexer = Mockery::spy(MediaIndexerInterface::class);
+        $this->app->instance(MediaIndexerInterface::class, $mediaIndexer);
 
         $this->runSeeder();
 

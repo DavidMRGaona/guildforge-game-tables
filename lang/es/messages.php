@@ -30,6 +30,17 @@ return [
         'campaigns' => 'Campañas',
     ],
 
+    // Panel media library (core): origin and role of the images of tables and campaigns
+    'media' => [
+        'sources' => [
+            'tables' => 'Mesas',
+            'campaigns' => 'Campañas',
+        ],
+        'roles' => [
+            'image' => 'Imagen',
+        ],
+    ],
+
     // Site search (core): group, one result and the tag of results that are over
     'search' => [
         'tables' => [
