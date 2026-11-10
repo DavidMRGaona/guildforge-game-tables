@@ -435,7 +435,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                 </div>
 
                 <!-- Its conversation, drawn by a forum module -->
-                <div class="mb-6">
+                <div class="mb-6 empty:hidden">
                     <ModuleSlot
                         name="subject-discussion"
                         :props="{ subjectType: 'campaign', subjectId: campaign.id }"

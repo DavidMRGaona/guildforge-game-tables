@@ -409,7 +409,7 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                 </div>
 
                 <!-- Its conversation, drawn by a forum module; a campaign session has none of its own -->
-                <div v-if="table.campaignId === null" class="mb-6">
+                <div v-if="table.campaignId === null" class="mb-6 empty:hidden">
                     <ModuleSlot
                         name="subject-discussion"
                         :props="{ subjectType: 'game-table', subjectId: table.id }"
