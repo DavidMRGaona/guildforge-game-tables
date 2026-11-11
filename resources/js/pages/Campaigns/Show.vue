@@ -434,14 +434,6 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                     />
                 </div>
 
-                <!-- Its conversation, drawn by a forum module -->
-                <div class="mb-6 empty:hidden">
-                    <ModuleSlot
-                        name="subject-discussion"
-                        :props="{ subjectType: 'campaign', subjectId: campaign.id }"
-                    />
-                </div>
-
                 <!-- Additional Details -->
                 <div class="mb-6 space-y-4">
                     <!-- Settings -->
@@ -565,6 +557,18 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                 </div>
             </div>
         </article>
+
+        <!-- Its conversation, drawn by a forum module, below the card as a block of its own.
+             The slot leaves a wrapper element even when the module draws nothing, so `empty:`
+             never matches: the margin is given only while that wrapper has content. Not `hidden`
+             plus a variant to show it: the core's `.hidden` sits in a later cascade layer than
+             this module's sheet and would win. -->
+        <div data-testid="subject-discussion" class="has-[[data-slot-key]:not(:empty)]:mt-8">
+            <ModuleSlot
+                name="subject-discussion"
+                :props="{ subjectType: 'campaign', subjectId: campaign.id }"
+            />
+        </div>
 
         <!-- Campaign tables section -->
         <section v-if="campaign.gameTables.length > 0" class="mt-8">
