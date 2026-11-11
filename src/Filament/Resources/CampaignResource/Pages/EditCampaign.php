@@ -28,6 +28,8 @@ final class EditCampaign extends EditRecord
 
     protected static string $resource = CampaignResource::class;
 
+    protected ?bool $hasDatabaseTransactions = true;
+
     public function getTitle(): string
     {
         return __('game-tables::messages.pages.edit_campaign');

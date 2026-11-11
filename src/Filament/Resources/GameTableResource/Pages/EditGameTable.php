@@ -36,6 +36,8 @@ final class EditGameTable extends EditRecord
 
     protected static string $resource = GameTableResource::class;
 
+    protected ?bool $hasDatabaseTransactions = true;
+
     /**
      * The status the form shows, as loaded: the automatic update (or another user) may move the
      * table while the form is open, and saving must not write the old status back.

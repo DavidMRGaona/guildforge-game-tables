@@ -7,6 +7,7 @@ namespace Modules\GameTables\Filament\Resources;
 use App\Filament\Actions\RowDetailsAction;
 use App\Filament\Concerns\ChecksPermissions;
 use App\Filament\Forms\Components\EndSurveyField;
+use App\Filament\Forms\Components\MediaLibraryPicker;
 use App\Filament\Resources\BaseResource;
 use App\Filament\Support\PanelNavigationGroup;
 use Closure;
@@ -171,7 +172,7 @@ final class CampaignResource extends BaseResource
                                     ->maxLength(2000)
                                     ->columnSpanFull(),
 
-                                FileUpload::make('image_public_id')
+                                MediaLibraryPicker::attachTo(FileUpload::make('image_public_id')
                                     ->label(__('game-tables::messages.fields.image'))
                                     ->image()
                                     ->disk('images')
@@ -180,7 +181,7 @@ final class CampaignResource extends BaseResource
                                         fn (TemporaryUploadedFile $file): string => Str::uuid()->toString().'.'.$file->getClientOriginalExtension()
                                     )
                                     ->maxSize(2048)
-                                    ->columnSpanFull(),
+                                    ->columnSpanFull()),
                             ])
                             ->columns(2),
 

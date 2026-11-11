@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Media;
 
+use App\Application\Media\Contracts\ReleasesMediaThroughCoreInterface;
 use App\Infrastructure\Media\Sources\EloquentColumnMediaSource;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
@@ -13,7 +14,7 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel
 /**
  * The image of each table in the panel media library (core ≥ 3.53).
  */
-final class GameTableMediaSource extends EloquentColumnMediaSource
+final class GameTableMediaSource extends EloquentColumnMediaSource implements ReleasesMediaThroughCoreInterface
 {
     public const string TYPE = 'gametables.tables';
 

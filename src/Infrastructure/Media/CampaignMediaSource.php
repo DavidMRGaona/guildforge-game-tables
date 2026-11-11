@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Media;
 
+use App\Application\Media\Contracts\ReleasesMediaThroughCoreInterface;
 use App\Infrastructure\Media\Sources\EloquentColumnMediaSource;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
@@ -13,7 +14,7 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 /**
  * The image of each campaign in the panel media library (core ≥ 3.53).
  */
-final class CampaignMediaSource extends EloquentColumnMediaSource
+final class CampaignMediaSource extends EloquentColumnMediaSource implements ReleasesMediaThroughCoreInterface
 {
     public const string TYPE = 'gametables.campaigns';
 

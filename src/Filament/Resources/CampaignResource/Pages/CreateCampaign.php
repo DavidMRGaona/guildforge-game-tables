@@ -21,6 +21,8 @@ final class CreateCampaign extends CreateRecord
 
     protected static string $resource = CampaignResource::class;
 
+    protected ?bool $hasDatabaseTransactions = true;
+
     /**
      * @var array<int, array<string, mixed>>
      */
