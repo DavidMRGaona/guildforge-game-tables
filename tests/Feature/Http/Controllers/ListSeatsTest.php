@@ -111,6 +111,9 @@ final class ListSeatsTest extends ModuleTestCase
         $this->setWaitingList(true);
         $first = $this->table(['auto_confirm' => false]);
         $this->participants($first, 'player', 'pending', 1);
+        // Both counts are taken with the per-request caches already warm (the site settings, read
+        // once per application): whether enabling the module left them warm is not what is measured
+        $this->get('/mesas')->assertOk();
         $queriesForOne = $this->queriesFor('/mesas');
         $calendarForOne = $this->queriesFor('/eventos/calendario?'.$this->calendarRange());
 
