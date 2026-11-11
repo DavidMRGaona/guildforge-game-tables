@@ -8,6 +8,7 @@ use App\Application\Services\TimezoneServiceInterface;
 use App\Filament\Actions\RowDetailsAction;
 use App\Filament\Concerns\ChecksPermissions;
 use App\Filament\Forms\Components\EndSurveyField;
+use App\Filament\Forms\Components\MediaLibraryPicker;
 use App\Filament\Resources\BaseResource;
 use App\Filament\Support\PanelNavigationGroup;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
@@ -252,7 +253,7 @@ final class GameTableResource extends BaseResource
                                     ->maxLength(2000)
                                     ->columnSpanFull(),
 
-                                FileUpload::make('image_public_id')
+                                MediaLibraryPicker::attachTo(FileUpload::make('image_public_id')
                                     ->label(__('game-tables::messages.fields.image'))
                                     ->image()
                                     ->disk('images')
@@ -261,7 +262,7 @@ final class GameTableResource extends BaseResource
                                         fn (TemporaryUploadedFile $file): string => Str::uuid()->toString().'.'.$file->getClientOriginalExtension()
                                     )
                                     ->maxSize(2048)
-                                    ->columnSpanFull(),
+                                    ->columnSpanFull()),
                             ])
                             ->columns(2),
 

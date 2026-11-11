@@ -23,6 +23,8 @@ final class CreateGameTable extends CreateRecord
 
     protected static string $resource = GameTableResource::class;
 
+    protected ?bool $hasDatabaseTransactions = true;
+
     /**
      * @var array<int, array<string, mixed>>
      */
