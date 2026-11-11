@@ -107,7 +107,7 @@ function goToNextMonth(): void {
 
 <template>
     <div class="bg-surface shadow">
-        <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
             <div class="flex items-start justify-between gap-4">
                 <div class="min-w-0">
                     <h1 class="text-3xl font-bold tracking-tight text-base-primary">

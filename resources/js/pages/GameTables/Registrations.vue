@@ -118,7 +118,7 @@ const badgeClass =
 
 <template>
     <div class="bg-surface shadow">
-        <div class="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
             <Link
                 href="/mesas/mis-mesas"
                 class="-my-3 inline-flex min-h-[44px] items-center gap-1 text-sm text-base-secondary hover:underline focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
