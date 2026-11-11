@@ -408,14 +408,6 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                     <AddToCalendarMenu :links="calendarLinks" />
                 </div>
 
-                <!-- Its conversation, drawn by a forum module; a campaign session has none of its own -->
-                <div v-if="table.campaignId === null" class="mb-6 empty:hidden">
-                    <ModuleSlot
-                        name="subject-discussion"
-                        :props="{ subjectType: 'game-table', subjectId: table.id }"
-                    />
-                </div>
-
                 <!-- Section 3: Capacity -->
                 <div class="mb-6">
                     <h2 class="mb-4 text-lg font-semibold text-base-primary">
@@ -700,5 +692,21 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                 </div>
             </div>
         </article>
+
+        <!-- Its conversation, drawn by a forum module, below the card as a block of its own.
+             The slot leaves a wrapper element even when the module draws nothing, so `empty:`
+             never matches: the margin is given only while that wrapper has content. Not `hidden`
+             plus a variant to show it: the core's `.hidden` sits in a later cascade layer than
+             this module's sheet and would win. -->
+        <div
+            v-if="table.campaignId === null"
+            data-testid="subject-discussion"
+            class="has-[[data-slot-key]:not(:empty)]:mt-8"
+        >
+            <ModuleSlot
+                name="subject-discussion"
+                :props="{ subjectType: 'game-table', subjectId: table.id }"
+            />
+        </div>
     </div>
 </template>
