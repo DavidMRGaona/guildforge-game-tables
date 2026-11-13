@@ -46,6 +46,7 @@ final readonly class NotifyOnCancellation
             tableTitle: $gameTable->title,
             tableDate: $tableDate,
             tableLocation: $tableLocation,
+            participantUserId: $event->userId,
         );
 
         $recipients = [];

@@ -45,6 +45,7 @@ final readonly class CancelParticipantsOnTableCancellation
                 tableTitle: $event->title,
                 tableDate: app(TimezoneServiceInterface::class)->format($event->startsAt),
                 tableLocation: $gameTable?->location,
+                tableId: $event->gameTableId,
             ));
         }
     }

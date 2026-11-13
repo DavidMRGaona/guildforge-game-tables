@@ -54,17 +54,35 @@ final readonly class NotificationRecipientResolver implements NotificationRecipi
     }
 
     /**
+     * Whether the account moderates tables right now: the rule that picks the recipients of a
+     * proposal, asked again when its notice is delivered.
+     */
+    public function moderatesTables(UserModel $user): bool
+    {
+        return $this->moderates($user, self::TABLES_MODERATE_PERMISSION);
+    }
+
+    public function moderatesCampaigns(UserModel $user): bool
+    {
+        return $this->moderates($user, self::CAMPAIGNS_MODERATE_PERMISSION);
+    }
+
+    /**
      * Same rule as the panel: panel access plus the permission its moderation actions check.
-     *
+     */
+    private function moderates(UserModel $user, string $permission): bool
+    {
+        return app(AuthorizationServiceInterface::class)->canAll($user, [self::PANEL_ACCESS_PERMISSION, $permission]);
+    }
+
+    /**
      * The query only narrows the candidates (admins hold every permission without it being
-     * listed on their role); the authorization service has the final word on each one.
+     * listed on their role); moderates() has the final word on each one.
      *
      * @return list<MailRecipientDTO>
      */
     private function moderators(string $permission): array
     {
-        $authorization = app(AuthorizationServiceInterface::class);
-
         $users = UserModel::query()
             ->whereHas('roles', fn (Builder $roles): Builder => $roles->where(
                 fn (Builder $query): Builder => $query
@@ -72,7 +90,7 @@ final readonly class NotificationRecipientResolver implements NotificationRecipi
                     ->orWhereHas('permissions', fn (Builder $permissions): Builder => $permissions->where('key', $permission)),
             ))
             ->get()
-            ->filter(fn (UserModel $user): bool => $authorization->canAll($user, [self::PANEL_ACCESS_PERMISSION, $permission]))
+            ->filter(fn (UserModel $user): bool => $this->moderates($user, $permission))
             ->all();
 
         return $this->uniqueByAddress(array_map($this->account(...), array_values($users)));

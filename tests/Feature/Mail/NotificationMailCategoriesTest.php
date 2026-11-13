@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Modules\GameTables\Tests\Feature\Mail;
 
 use App\Application\Mail\Contracts\HasMailCategory;
+use App\Application\Mail\Contracts\HasMailSubject;
 use App\Application\Mail\Services\MailCategoryRegistryInterface;
+use App\Application\SiteNotifications\Contracts\HasSiteNotification;
+use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Notifications\Notification;
 use Modules\GameTables\Infrastructure\Mail\GameTablesMailCategories;
 use Modules\GameTables\Notifications\CampaignInvitationAcceptedNotification;
@@ -132,6 +135,31 @@ final class NotificationMailCategoriesTest extends ModuleTestCase
     {
         foreach (self::GUEST_ONLY as $class) {
             $this->assertFalse((new ReflectionClass($class))->implementsInterface(HasMailCategory::class), "{$class} goes to guests only");
+            $this->assertFalse((new ReflectionClass($class))->implementsInterface(HasSiteNotification::class), "{$class} goes to guests only");
+        }
+    }
+
+    public function test_every_notification_to_an_account_also_shows_on_the_site_about_its_table_or_campaign(): void
+    {
+        $account = UserModel::factory()->make();
+
+        foreach (array_keys(self::EXPECTED) as $class) {
+            $reflection = new ReflectionClass($class);
+            $this->assertTrue($reflection->implementsInterface(HasSiteNotification::class), "{$class} must implement HasSiteNotification");
+            $this->assertTrue($reflection->implementsInterface(HasMailSubject::class), "{$class} must implement HasMailSubject");
+
+            /** @var Notification $notification */
+            $notification = $reflection->newInstanceWithoutConstructor();
+            $this->assertContains(HasSiteNotification::CHANNEL, $notification->via($account), "{$class} must go through the site channel");
+            $this->assertContains('mail', $notification->via($account), "{$class} must still be mailed");
+        }
+    }
+
+    public function test_every_category_of_the_module_shows_on_the_site(): void
+    {
+        foreach (GameTablesMailCategories::definitions() as $category) {
+            $this->assertTrue($category->site, "{$category->key} must show its notices on the site");
+            $this->assertTrue($category->mail, "{$category->key} must still be mailed");
         }
     }
 

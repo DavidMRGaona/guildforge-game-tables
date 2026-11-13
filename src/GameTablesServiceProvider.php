@@ -189,6 +189,7 @@ use Modules\GameTables\Infrastructure\Services\RegistrationService;
 use Modules\GameTables\Infrastructure\Services\TableDirection;
 use Modules\GameTables\Infrastructure\Services\TableRegistrationsQuery;
 use Modules\GameTables\Infrastructure\Services\UserModelAccountLookup;
+use Modules\GameTables\Infrastructure\SiteNotifications\ForgetsDeletedSubjects;
 use Modules\GameTables\Infrastructure\Surveys\CampaignSessionSurveySubjectSource;
 use Modules\GameTables\Infrastructure\Surveys\CampaignSurveySubjectSource;
 use Modules\GameTables\Infrastructure\Surveys\GameTableSurveySubjectSource;
@@ -751,6 +752,9 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
 
         // Publications (core contract): listeners hear when tables and campaigns change
         AnnouncesPublicationChanges::register();
+
+        // Notification centre and mail mutes (core contract): a deleted table or campaign is forgotten
+        ForgetsDeletedSubjects::register();
     }
 
     /**

@@ -6,7 +6,7 @@ category: events-and-games
 audience: site
 order: 20
 keywords: [apuntarme, apuntarse, inscribirme, inscribirse, inscripción, reservar plaza, plaza, jugar, quiero jugar, partida, mesa, espectador, jugador, lista de espera, invitado, sin cuenta, confirmar inscripción, pendiente, confirmado, acceso anticipado, notas para el director, incribirme, apuntrame]
-related: [game-tables.tables-overview, game-tables.cancel-sign-up, game-tables.join-campaign, core.account.verify-email, core.events.personal-calendar, core.account.mail-preferences]
+related: [game-tables.tables-overview, game-tables.cancel-sign-up, game-tables.join-campaign, core.account.verify-email, core.events.personal-calendar, core.account.mail-preferences, core.account.site-notifications]
 ---
 Te apuntas desde la ficha de la mesa, en la sección **Inscripción**. El botón cambia según la mesa y tu situación, y debajo indica cuántas plazas quedan.
 
@@ -48,7 +48,7 @@ También verás tus inscripciones en tu perfil, pestaña **Mesas**: **Próximas 
 - **Plaza disponible en mesa**, si pasas de la lista de espera.
 - Si la web lo tiene activado, un recordatorio unas horas antes de la partida.
 
-Con cuenta, los correos de tus inscripciones te llegan siempre. El recordatorio puedes quitarlo en tu perfil, pestaña **Correos**, desactivando «Recordatorios de partidas».
+Con cuenta, los correos de tus inscripciones te llegan siempre, y también los ves en la campana de la cabecera, con un enlace a la mesa. El recordatorio puedes quitarlo en tu perfil, pestaña **Avisos**, desactivando «Recordatorios de partidas» en la web, por correo o en los dos. Sin cuenta solo te llegan por correo.
 
 [[action:profile.show?tab=mail|Elegir mis correos]]
 

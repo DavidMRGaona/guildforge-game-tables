@@ -22,6 +22,7 @@ final readonly class NotifyAdminsOnCampaignModerationSubmission
             campaignId: $event->campaignId,
             campaignTitle: $event->title,
             creatorName: $this->recipientResolver->getCreatorDisplayName($event->createdBy),
+            creatorId: $event->createdBy,
         );
 
         $this->notifier->sendToEach($this->recipientResolver->getCampaignModeratorRecipients(), $notification);

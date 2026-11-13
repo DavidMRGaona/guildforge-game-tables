@@ -30,6 +30,7 @@ final readonly class NotifyUserOnCampaignModerationApproved
             campaignSlug: $event->slug,
             userName: $this->recipientResolver->getCreatorDisplayName($event->createdBy),
             notes: $event->notes,
+            campaignId: $event->campaignId,
         ));
     }
 }

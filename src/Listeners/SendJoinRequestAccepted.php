@@ -47,6 +47,7 @@ final readonly class SendJoinRequestAccepted
             campaignTitle: $campaign->title,
             campaignSlug: $campaign->slug,
             sessions: $this->describeSessions($this->tables, $event->sessions),
+            campaignId: $event->campaignId,
         ));
     }
 }

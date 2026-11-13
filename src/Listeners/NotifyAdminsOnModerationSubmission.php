@@ -24,6 +24,7 @@ final readonly class NotifyAdminsOnModerationSubmission
             tableId: $event->gameTableId,
             tableTitle: $event->title,
             creatorName: $creatorName,
+            creatorId: $event->createdBy,
         );
 
         $this->notifier->sendToEach($this->recipientResolver->getTableModeratorRecipients(), $notification);

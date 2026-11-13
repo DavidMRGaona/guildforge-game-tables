@@ -8,6 +8,8 @@ use App\Application\Mail\DTOs\MailCategoryDTO;
 
 /**
  * The module's mail categories. The keys are stored with each person's choice: never rename them.
+ * Every one also shows its notices in the notification centre (core#491); the mandatory ones are
+ * always shown there too.
  */
 final class GameTablesMailCategories
 {
@@ -44,18 +46,21 @@ final class GameTablesMailCategories
                 label: self::LANG.'sign_ups.label',
                 description: self::LANG.'sign_ups.description',
                 reason: self::LANG.'sign_ups.reason',
+                site: true,
             ),
             MailCategoryDTO::optional(
                 key: self::REMINDERS,
                 section: $section,
                 label: self::LANG.'reminders.label',
                 description: self::LANG.'reminders.description',
+                site: true,
             ),
             MailCategoryDTO::optional(
                 key: self::CAMPAIGN_NEWS,
                 section: $section,
                 label: self::LANG.'campaign_news.label',
                 description: self::LANG.'campaign_news.description',
+                site: true,
             ),
             MailCategoryDTO::optional(
                 key: self::DIRECTION,
@@ -63,6 +68,7 @@ final class GameTablesMailCategories
                 label: self::LANG.'direction.label',
                 description: self::LANG.'direction.description',
                 audience: static fn (object $user): bool => app(MailCategoryAudiences::class)->directs($user),
+                site: true,
             ),
             MailCategoryDTO::mandatory(
                 key: self::PROPOSALS,
@@ -71,6 +77,7 @@ final class GameTablesMailCategories
                 description: self::LANG.'proposals.description',
                 reason: self::LANG.'proposals.reason',
                 audience: static fn (object $user): bool => app(MailCategoryAudiences::class)->proposes($user),
+                site: true,
             ),
             MailCategoryDTO::optional(
                 key: self::MODERATION,
@@ -78,6 +85,7 @@ final class GameTablesMailCategories
                 label: self::LANG.'moderation.label',
                 description: self::LANG.'moderation.description',
                 audience: static fn (object $user): bool => app(MailCategoryAudiences::class)->moderates($user),
+                site: true,
             ),
         ];
     }

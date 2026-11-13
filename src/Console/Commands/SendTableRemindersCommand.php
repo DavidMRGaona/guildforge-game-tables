@@ -82,6 +82,7 @@ final class SendTableRemindersCommand extends Command
                 tableDate: $timezone->format($table->starts_at),
                 tableLocation: $table->location,
                 cancellationToken: $participant->user_id === null ? $participant->cancellation_token : null,
+                tableId: $table->id,
             );
 
             if ($participant->user !== null) {

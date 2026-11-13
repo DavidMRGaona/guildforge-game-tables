@@ -6,7 +6,7 @@ category: events-and-games
 audience: site
 order: 60
 keywords: [gestionar inscritos, inscritos, aprobar inscripción, rechazar inscripción, solicitudes pendientes, pendientes, confirmar jugadores, aceptar jugadores, director, máster, master, DM, GM, mis jugadores, quién viene, lista de inscritos, plazas ocupadas]
-related: [game-tables.tables-overview, game-tables.review-and-publish, core.account.mail-preferences]
+related: [game-tables.tables-overview, game-tables.review-and-publish, core.account.mail-preferences, core.account.site-notifications]
 conditions:
   capabilities: [game-tables.manages_registrations]
 ---
@@ -43,11 +43,13 @@ Solo puedes aprobar si queda una plaza libre de su rol (jugador o espectador). S
 
 Verás «Has rechazado la solicitud de …» y le llega un correo con el motivo. Si la web tiene lista de espera, en las mesas que confirman a mano las inscripciones pendientes ocupan plaza: al rechazar una, la plaza pasa al primero de la lista, que queda pendiente y aparecerá en tus solicitudes.
 
-## Avisos por correo
+## Avisos que recibes
 
 Según la configuración de la web, y si la organización te ha activado los avisos en esa mesa, te llega un correo cuando alguien se inscribe («Nueva inscripción en mesa»), cuando alguien se da de baja y cuando alguien pasa de la lista de espera. Si la inscripción queda pendiente, el correo te lo dice.
 
-Si no quieres estos correos, desactiva «Avisos como director de juego» en la pestaña **Correos** de tu perfil. Dejan de llegarte también los de tus campañas. Las inscripciones pendientes siguen en **Gestionar inscritos**.
+Con la sesión iniciada, también te avisa la campana de la cabecera. Los avisos de una misma mesa se juntan en una línea mientras no la abras, por ejemplo «Ana y 3 más: novedades en «La tumba»». Si la inscripción queda pendiente, el aviso te lleva a **Gestionar inscritos**.
+
+Si no los quieres, desactiva «Avisos como director de juego» en la pestaña **Avisos** de tu perfil, **En la web**, **Por correo** o los dos. Dejan de llegarte también los de tus campañas. Las inscripciones pendientes siguen en **Gestionar inscritos**.
 
 ## Lo que solo hace la organización
 

@@ -41,6 +41,7 @@ final readonly class SendRosterMemberRemoved
             userName: $user->name,
             campaignTitle: $campaign->title,
             campaignSlug: $campaign->slug,
+            campaignId: $event->campaignId,
         ));
     }
 }

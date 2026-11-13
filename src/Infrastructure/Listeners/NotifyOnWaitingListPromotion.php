@@ -66,6 +66,7 @@ final readonly class NotifyOnWaitingListPromotion
             tableLocation: $tableLocation,
             confirmed: $event->confirmed,
             manageUrl: $manageUrl,
+            participantUserId: $event->userId,
         ));
     }
 }

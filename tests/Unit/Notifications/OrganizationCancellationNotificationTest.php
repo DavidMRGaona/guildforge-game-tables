@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Tests\Unit\Notifications;
 
+use App\Application\SiteNotifications\Contracts\HasSiteNotification;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Modules\GameTables\Notifications\OrganizationCancellationNotification;
 use Tests\TestCase;
@@ -22,7 +23,7 @@ final class OrganizationCancellationNotificationTest extends TestCase
 
     public function test_it_is_sent_by_mail(): void
     {
-        $this->assertSame(['mail'], $this->notification(guest: false)->via(new AnonymousNotifiable));
+        $this->assertSame(['mail', HasSiteNotification::CHANNEL], $this->notification(guest: false)->via(new AnonymousNotifiable));
     }
 
     public function test_it_says_the_organisation_cancelled_the_registration(): void

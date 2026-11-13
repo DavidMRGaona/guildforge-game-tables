@@ -5,17 +5,24 @@ declare(strict_types=1);
 namespace Modules\GameTables\Notifications;
 
 use App\Application\Mail\Contracts\HasMailCategory;
+use App\Application\Mail\Contracts\HasMailSubject;
+use App\Application\Mail\DTOs\MailSubjectDTO;
+use App\Application\SiteNotifications\Contracts\HasSiteNotification;
+use App\Application\SiteNotifications\DTOs\SiteNotificationDTO;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Modules\GameTables\Infrastructure\Mail\GameTablesMailCategories;
+use Modules\GameTables\Infrastructure\Mail\GameTablesMailSubjects;
 use Modules\GameTables\Notifications\Concerns\EscapesUserText;
+use Modules\GameTables\Notifications\Concerns\ShowsOnSite;
 
-final class CampaignSessionScheduledNotification extends Notification implements HasMailCategory, ShouldQueue
+final class CampaignSessionScheduledNotification extends Notification implements HasMailCategory, HasMailSubject, HasSiteNotification, ShouldQueue
 {
     use EscapesUserText;
     use Queueable;
+    use ShowsOnSite;
 
     public function __construct(
         private readonly string $userName,
@@ -25,19 +32,31 @@ final class CampaignSessionScheduledNotification extends Notification implements
         private readonly string $tableDate,
         private readonly ?string $tableLocation,
         private readonly bool $waiting,
+        // Null in a notification queued before it carried the campaign: no subject
+        public readonly ?string $campaignId = null,
     ) {}
-
-    /**
-     * @return array<int, string>
-     */
-    public function via(object $notifiable): array
-    {
-        return ['mail'];
-    }
 
     public function mailCategory(): string
     {
         return GameTablesMailCategories::CAMPAIGN_NEWS;
+    }
+
+    public function mailSubject(): ?MailSubjectDTO
+    {
+        return GameTablesMailSubjects::campaign($this->campaignId ?? null, $this->campaignTitle);
+    }
+
+    public function toSiteNotification(object $notifiable): ?SiteNotificationDTO
+    {
+        return $this->siteNotice(
+            $this->targets()->table($this->tableId),
+            __($this->waiting ? 'game-tables::notices.campaign_news.session_waiting' : 'game-tables::notices.campaign_news.session', [
+                'campaign' => $this->campaignTitle,
+                'date' => $this->tableDate,
+            ]),
+            $this->details($this->tableTitle, $this->tableLocation),
+            'calendar-days',
+        );
     }
 
     public function toMail(object $notifiable): MailMessage

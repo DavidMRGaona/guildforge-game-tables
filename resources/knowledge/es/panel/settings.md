@@ -68,14 +68,14 @@ Las mesas creadas desde la web no eligen su confirmación ni su tipo de inscripc
 - **Notificar promoción de lista de espera**: avisa a los directores y al email de la mesa cuando alguien pasa de la lista. La persona promovida recibe siempre su correo.
 - **Enviar recordatorio antes de la mesa**: un correo a cada inscripción confirmada, las horas antes del inicio que diga **Antelación del recordatorio (horas)**. Viene desactivado.
 
-Estos interruptores valen para toda la web: un correo apagado aquí no sale para nadie. Encendido, cada persona con cuenta decide además en la pestaña **Correos** de su perfil si quiere los optativos:
+Estos interruptores valen para toda la web: un aviso apagado aquí no sale para nadie, ni por correo ni en la campana de la web. Encendido, cada persona con cuenta decide además en la pestaña **Avisos** de su perfil si quiere los optativos, en la web, por correo o en los dos:
 
 - «Recordatorios de partidas».
 - «Novedades de mis campañas».
 - «Avisos como director de juego».
 - «Mesas y campañas por revisar».
 
-Los de sus inscripciones y los del resultado de sus propuestas le llegan siempre. El **Email de notificaciones** de la mesa, los directores sin cuenta y los invitados reciben todo lo que esté encendido aquí.
+Los de sus inscripciones y los del resultado de sus propuestas le llegan siempre. El **Email de notificaciones** de la mesa, los directores sin cuenta y los invitados reciben todo lo que esté encendido aquí, solo por correo.
 
 ## Notificaciones de campañas
 
