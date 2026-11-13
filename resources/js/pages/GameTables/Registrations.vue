@@ -193,7 +193,7 @@ const badgeClass =
                     {{ t('gameTables.registrations.noPending') }}
                 </p>
 
-                <ul v-else class="mt-4 divide-y divide-default" role="list">
+                <ul v-else class="mt-4 divide-y divide-[var(--color-border)]" role="list">
                     <li
                         v-for="row in pendingRows"
                         :key="row.id"
@@ -262,7 +262,7 @@ const badgeClass =
                     {{ t('gameTables.registrations.others') }}
                 </h2>
 
-                <ul class="mt-4 divide-y divide-default" role="list">
+                <ul class="mt-4 divide-y divide-[var(--color-border)]" role="list">
                     <li
                         v-for="row in otherRows"
                         :key="row.id"

@@ -638,7 +638,7 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                 {{ t('campaigns.roster.requests.empty') }}
             </p>
 
-            <ul v-else class="mt-4 divide-y divide-default" role="list">
+            <ul v-else class="mt-4 divide-y divide-[var(--color-border)]" role="list">
                 <li
                     v-for="request in requests"
                     :key="request.id"
@@ -770,7 +770,7 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                 >
                     {{ t('campaigns.roster.invitations.tooManyPending') }}
                 </p>
-                <ul class="mt-3 divide-y divide-default">
+                <ul class="mt-3 divide-y divide-[var(--color-border)]">
                     <li
                         v-for="invitation in invitations"
                         :key="invitation.id"
