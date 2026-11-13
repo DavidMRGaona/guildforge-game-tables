@@ -42,6 +42,7 @@ final readonly class SendJoinRequestRejected
             campaignTitle: $campaign->title,
             campaignSlug: $campaign->slug,
             reason: $event->reason,
+            campaignId: $event->campaignId,
         ));
     }
 }

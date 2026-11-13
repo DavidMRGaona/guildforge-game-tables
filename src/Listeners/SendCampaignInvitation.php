@@ -58,6 +58,9 @@ final readonly class SendCampaignInvitation
             campaignSlug: $campaign->slug,
             token: $event->token,
             expiresAt: app(TimezoneServiceInterface::class)->format($invitation->expiresAt, 'd/m/Y'),
+            invitationId: $event->invitationId,
+            campaignId: $event->campaignId,
+            inviterId: $invitation->invitedBy,
         ));
     }
 }

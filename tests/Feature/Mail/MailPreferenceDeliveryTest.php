@@ -65,6 +65,11 @@ final class MailPreferenceDeliveryTest extends ModuleTestCase
         ]);
 
         Event::listen(NotificationSent::class, function (NotificationSent $event): void {
+            // The mail only: the notices on the site follow their own switch
+            if ($event->channel !== 'mail') {
+                return;
+            }
+
             $address = $event->notifiable instanceof AnonymousNotifiable
                 ? (string) $event->notifiable->routeNotificationFor('mail')
                 : (string) $event->notifiable->email;

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Tests\Unit\Notifications;
 
+use App\Application\SiteNotifications\Contracts\HasSiteNotification;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -76,7 +77,7 @@ final class CampaignRosterNotificationsTest extends ModuleTestCase
         $this->assertContains('Si no puedes ir a una sesión, date de baja desde su ficha: seguirás en la campaña.', $lines);
         $this->assertSame('Ver sesión', $mail->actionText);
         $this->assertSame(url('/mesas/table-1'), $mail->actionUrl);
-        $this->assertSame(['mail'], $this->scheduled()->via(new AnonymousNotifiable));
+        $this->assertSame(['mail', HasSiteNotification::CHANNEL], $this->scheduled()->via(new AnonymousNotifiable));
     }
 
     public function test_the_scheduled_session_email_has_waiting_copy(): void
@@ -271,7 +272,7 @@ final class CampaignRosterNotificationsTest extends ModuleTestCase
         $this->assertContains('Si al final puedes ir, vuelve a apuntarte desde la página de la sesión con «Volver a apuntarme» mientras queden plazas libres y las inscripciones sigan abiertas.', $lines);
         $this->assertSame('Ver sesión', $mail->actionText);
         $this->assertSame(url('/mesas/table-1'), $mail->actionUrl);
-        $this->assertSame(['mail'], $notification->via(new AnonymousNotifiable));
+        $this->assertSame(['mail', HasSiteNotification::CHANNEL], $notification->via(new AnonymousNotifiable));
         foreach ($lines as $line) {
             $this->assertStringNotContainsString('cancelado', $line);
         }

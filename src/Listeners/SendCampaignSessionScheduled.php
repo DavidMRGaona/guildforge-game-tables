@@ -56,6 +56,7 @@ final readonly class SendCampaignSessionScheduled
             tableDate: app(TimezoneServiceInterface::class)->format($table->timeSlot->startsAt),
             tableLocation: $table->location,
             waiting: $event->waiting,
+            campaignId: $table->campaignId->value,
         ));
     }
 }

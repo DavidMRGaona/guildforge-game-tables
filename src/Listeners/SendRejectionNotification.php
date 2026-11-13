@@ -46,6 +46,7 @@ final readonly class SendRejectionNotification
             tableDate: $tableDate,
             tableLocation: $tableLocation,
             reason: $event->reason,
+            tableId: $event->gameTableId,
         ));
     }
 }

@@ -48,6 +48,7 @@ final readonly class NotifyOnRegistration
             tableLocation: $tableLocation,
             role: $event->role,
             manageUrl: $manageUrl,
+            participantUserId: $event->userId,
         ));
     }
 }

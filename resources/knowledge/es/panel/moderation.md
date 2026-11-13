@@ -17,7 +17,7 @@ Si la web deja crear mesas o campañas, lo que crea la gente puede necesitar el 
 
 1. El autor lo crea en la web y queda como **Borrador** en sus **Mis mesas** o **Mis campañas**. Mientras tanto puede cambiarlo o borrarlo.
 2. Cuando está listo, lo envía a revisión. Pasa a **Pendiente de revisión** y ya no puede cambiarlo.
-3. Quien tiene panel y el permiso de revisión recibe el correo «Nueva mesa pendiente de moderación: (título)» o «Nueva campaña pendiente de moderación: (título)». Cada moderador puede dejar de recibirlo desactivando «Mesas y campañas por revisar» en la pestaña **Correos** de su perfil; lo pendiente sigue en el widget **Pendientes de moderación**.
+3. Quien tiene panel y el permiso de revisión recibe el correo «Nueva mesa pendiente de moderación: (título)» o «Nueva campaña pendiente de moderación: (título)». También le avisa la campana de la cabecera de la web, con una sola línea para todo lo pendiente («2 propuestas pendientes de revisar») que lleva a su revisión en el panel; quien la propuso no recibe aviso de su propia propuesta. Cada moderador puede dejar de recibirlos desactivando «Mesas y campañas por revisar» en la pestaña **Avisos** de su perfil, en la web, por correo o en los dos; lo pendiente sigue en el widget **Pendientes de moderación**.
 
 Según el **Modo de publicación** de la configuración, a algunas personas no les hace falta revisión: lo que crean se publica directamente (mira la guía de ajustes de creación desde la web).
 

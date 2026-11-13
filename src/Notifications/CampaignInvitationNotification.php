@@ -6,19 +6,26 @@ namespace Modules\GameTables\Notifications;
 
 use App\Application\Legal\Services\LegalMailNoticeServiceInterface;
 use App\Application\Mail\Contracts\HasMailCategory;
+use App\Application\Mail\Contracts\HasMailSubject;
+use App\Application\Mail\DTOs\MailSubjectDTO;
+use App\Application\SiteNotifications\Contracts\HasSiteNotification;
+use App\Application\SiteNotifications\DTOs\SiteNotificationDTO;
+use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\HtmlString;
 use Modules\GameTables\Infrastructure\Mail\GameTablesMailCategories;
+use Modules\GameTables\Infrastructure\Mail\GameTablesMailSubjects;
 use Modules\GameTables\Notifications\Concerns\EscapesUserText;
+use Modules\GameTables\Notifications\Concerns\ShowsOnSite;
 
 /**
  * The invitation to a campaign, sent to an address that may have no account. It carries the
  * information required by art. 14 GDPR, because the address was given to us by a third party.
  */
-final class CampaignInvitationNotification extends Notification implements HasMailCategory, ShouldQueue
+final class CampaignInvitationNotification extends Notification implements HasMailCategory, HasMailSubject, HasSiteNotification, ShouldQueue
 {
     public const string NOTICE_KEY = 'game-tables.campaign_invitation';
 
@@ -26,6 +33,7 @@ final class CampaignInvitationNotification extends Notification implements HasMa
 
     use EscapesUserText;
     use Queueable;
+    use ShowsOnSite;
 
     public function __construct(
         private readonly string $inviterName,
@@ -34,19 +42,34 @@ final class CampaignInvitationNotification extends Notification implements HasMa
         private readonly string $token,
         private readonly string $expiresAt,
         private readonly ?string $legalText = null,
+        // Null in a notification queued before they existed: mailed, never shown on the site
+        public readonly ?string $invitationId = null,
+        public readonly ?string $campaignId = null,
+        public readonly ?string $inviterId = null,
     ) {}
-
-    /**
-     * @return array<int, string>
-     */
-    public function via(object $notifiable): array
-    {
-        return ['mail'];
-    }
 
     public function mailCategory(): string
     {
         return GameTablesMailCategories::CAMPAIGN_NEWS;
+    }
+
+    public function mailSubject(): ?MailSubjectDTO
+    {
+        return GameTablesMailSubjects::campaign($this->campaignId ?? null, $this->campaignTitle);
+    }
+
+    public function toSiteNotification(object $notifiable): ?SiteNotificationDTO
+    {
+        $account = $this->account($notifiable);
+
+        // The profile tab, never the link of the mail: a notice must not carry the token
+        return $account instanceof UserModel ? $this->siteNotice(
+            $this->targets()->invitations($account, $this->invitationId ?? null),
+            __('game-tables::notices.campaign_news.invitation', ['inviter' => $this->inviterName, 'campaign' => $this->campaignTitle]),
+            __('game-tables::notices.campaign_news.invitation_expires', ['date' => $this->expiresAt]),
+            'mail',
+            actorId: $this->inviterId ?? null,
+        ) : null;
     }
 
     public function toMail(object $notifiable): MailMessage

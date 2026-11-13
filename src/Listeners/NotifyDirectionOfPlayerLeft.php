@@ -47,6 +47,7 @@ final readonly class NotifyDirectionOfPlayerLeft
                 campaignId: $event->campaignId,
                 campaignTitle: $campaign->title,
                 playerName: $user->name,
+                playerId: (string) $user->id,
             ));
         }
     }

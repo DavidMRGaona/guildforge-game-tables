@@ -53,6 +53,7 @@ final readonly class NotifyDirectionOfJoinRequest
                 campaignTitle: $campaign->title,
                 playerName: $user->name,
                 message: $request?->message,
+                playerId: (string) $user->id,
             ));
         }
     }

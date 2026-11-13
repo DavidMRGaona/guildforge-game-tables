@@ -6,7 +6,7 @@ category: campaigns
 audience: site
 order: 60
 keywords: [plantilla, gestionar plantilla, jugadores, solicitudes, aceptar solicitud, rechazar solicitud, invitar, invitación, reenviar invitación, cancelar invitación, quitar jugador, echar jugador, ausencia, marcar ausencia, volver a inscribir, asistencia, acepta jugadores nuevos, quién puede solicitar, máximo de jugadores, plazas, máster, master, DM, GM, director]
-related: [game-tables.campaigns-overview, game-tables.add-session, game-tables.campaign-invitations, game-tables.join-campaign, core.account.mail-preferences]
+related: [game-tables.campaigns-overview, game-tables.add-session, game-tables.campaign-invitations, game-tables.join-campaign, core.account.mail-preferences, core.account.site-notifications]
 conditions:
   capabilities: [game-tables.manages_roster]
 ---
@@ -84,11 +84,13 @@ Algunas casillas no se pueden cambiar, y lo dicen debajo:
 
 Verás «Jugador quitado de la plantilla.». Deja la plantilla y pierde sus plazas en las sesiones que aún no han empezado, y le llega un correo. Puedes quitar jugadores también con la campaña terminada.
 
-## Correos que recibes
+## Avisos que recibes
 
 Según la configuración de la web, te llega un correo cuando alguien solicita unirse, cuando alguien acepta tu invitación y cuando alguien sale de la plantilla.
 
-Si no los quieres, desactiva «Avisos como director de juego» en la pestaña **Correos** de tu perfil. Dejan de llegarte también los avisos de tus mesas. Las solicitudes pendientes siguen en la página de la plantilla.
+Con la sesión iniciada, también te avisa la campana de la cabecera, y el aviso te lleva a la página de la plantilla. Los avisos de una misma campaña se juntan en una línea mientras no la abras, por ejemplo «Ana y 2 más: novedades en «Los ecos»».
+
+Si no los quieres, desactiva «Avisos como director de juego» en la pestaña **Avisos** de tu perfil, **En la web**, **Por correo** o los dos. Dejan de llegarte también los avisos de tus mesas. Las solicitudes pendientes siguen en la página de la plantilla.
 
 [[action:profile.show?tab=mail|Elegir mis correos]]
 

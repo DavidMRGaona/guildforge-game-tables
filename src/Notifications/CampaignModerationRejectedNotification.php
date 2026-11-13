@@ -5,15 +5,23 @@ declare(strict_types=1);
 namespace Modules\GameTables\Notifications;
 
 use App\Application\Mail\Contracts\HasMailCategory;
+use App\Application\Mail\Contracts\HasMailSubject;
+use App\Application\Mail\DTOs\MailSubjectDTO;
+use App\Application\SiteNotifications\Contracts\HasSiteNotification;
+use App\Application\SiteNotifications\DTOs\SiteNotificationDTO;
+use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Modules\GameTables\Infrastructure\Mail\GameTablesMailCategories;
+use Modules\GameTables\Infrastructure\Mail\GameTablesMailSubjects;
+use Modules\GameTables\Notifications\Concerns\ShowsOnSite;
 
-final class CampaignModerationRejectedNotification extends Notification implements HasMailCategory, ShouldQueue
+final class CampaignModerationRejectedNotification extends Notification implements HasMailCategory, HasMailSubject, HasSiteNotification, ShouldQueue
 {
     use Queueable;
+    use ShowsOnSite;
 
     public function __construct(
         private readonly string $campaignId,
@@ -22,17 +30,26 @@ final class CampaignModerationRejectedNotification extends Notification implemen
         private readonly string $reason,
     ) {}
 
-    /**
-     * @return array<int, string>
-     */
-    public function via(object $notifiable): array
-    {
-        return ['mail'];
-    }
-
     public function mailCategory(): string
     {
         return GameTablesMailCategories::PROPOSALS;
+    }
+
+    public function mailSubject(): ?MailSubjectDTO
+    {
+        return GameTablesMailSubjects::campaign($this->campaignId, $this->campaignTitle);
+    }
+
+    public function toSiteNotification(object $notifiable): ?SiteNotificationDTO
+    {
+        $account = $this->account($notifiable);
+
+        return $account instanceof UserModel ? $this->siteNotice(
+            $this->targets()->ownCampaignEdit($account, $this->campaignId),
+            __('game-tables::notices.proposals.campaign_rejected', ['campaign' => $this->campaignTitle]),
+            $this->reason,
+            'clipboard-list',
+        ) : null;
     }
 
     public function toMail(object $notifiable): MailMessage

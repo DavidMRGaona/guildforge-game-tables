@@ -28,7 +28,7 @@ Módulo de GuildForge para gestionar mesas de rol y campañas: inscripciones de 
 
 ## Requisitos
 
-- GuildForge core `^3.54` (ranura `subject-discussion` de las fichas, donde un módulo de foro dibuja la conversación; antes, plantilla y dirección de las campañas para otros módulos; antes, actividad del foro en las fichas; antes, contrato de publicaciones: mesas sueltas y campañas para los módulos que las anuncian fuera de la web; antes, categorías de correo: cada persona elige en su perfil qué correos optativos recibe, ver [Categorías de correo](#categorías-de-correo); antes, fuentes del buscador del sitio y contrato de encuestas: sujetos encuestables, enlaces desde la ficha, aviso de cancelación y campo «Encuesta al terminar»; almacenamiento de fechas en UTC y zona horaria de visualización, pestañas del perfil que se ocultan, avisos legales editables de los correos y si la cuenta debe verificar su email; ver [Verificación de email](#verificación-de-email))
+- GuildForge core `^3.58` (avisos en la campana de la web que se olvidan al anonimizar a quien nombran, ver [Avisos en la web](#avisos-en-la-web); antes, ranura `subject-discussion` de las fichas, donde un módulo de foro dibuja la conversación; antes, plantilla y dirección de las campañas para otros módulos; antes, actividad del foro en las fichas; antes, contrato de publicaciones: mesas sueltas y campañas para los módulos que las anuncian fuera de la web; antes, categorías de correo: cada persona elige en su perfil qué correos optativos recibe, ver [Categorías de correo](#categorías-de-correo); antes, fuentes del buscador del sitio y contrato de encuestas: sujetos encuestables, enlaces desde la ficha, aviso de cancelación y campo «Encuesta al terminar»; almacenamiento de fechas en UTC y zona horaria de visualización, pestañas del perfil que se ocultan, avisos legales editables de los correos y si la cuenta debe verificar su email; ver [Verificación de email](#verificación-de-email))
 - PHP >= 8.5, Laravel >= 13, Filament 5
 
 El core rechaza el módulo si no se cumplen (`module.json` → `requires`).
@@ -82,7 +82,7 @@ Quién crea mesas en el panel lo decide el permiso `gametables.create` (ver [Per
 
 ### Categorías de correo
 
-Cada persona elige en la pestaña **Correos** de su perfil qué correos optativos del módulo recibe (core ≥ 3.47). Los interruptores de **Notificaciones** y **Notificaciones de campañas** y el **Notificar por email** de cada director siguen mandando: una preferencia personal solo sirve para recibir menos. Todas van en la sección «Mesas de rol» (`GameTablesMailCategories`; las claves no cambian nunca):
+Cada persona elige en la pestaña **Avisos** de su perfil qué correos optativos del módulo recibe (core ≥ 3.47), y por separado si los ve en la campana de la web (ver [Avisos en la web](#avisos-en-la-web)). Los interruptores de **Notificaciones** y **Notificaciones de campañas** y el **Notificar por email** de cada director siguen mandando: una preferencia personal solo sirve para recibir menos. Todas van en la sección «Mesas de rol» (`GameTablesMailCategories`; las claves no cambian nunca):
 
 | Clave | Categoría | Tipo | Correos | La ve |
 |-------|-----------|------|---------|-------|
@@ -94,6 +94,16 @@ Cada persona elige en la pestaña **Correos** de su perfil qué correos optativo
 | `game-tables.moderation` | Mesas y campañas por revisar | Optativa | Nueva mesa o campaña pendiente de moderación | Quien puede moderar (acceso al panel y `gametables.update` o `campaigns.update`) |
 
 A una cuenta se le escribe siempre como cuenta (`$user->notify()` o `MailRecipientNotifier`), para que el core aplique sus preferencias y añada el pie con la baja; `NotificationRecipientResolverInterface` devuelve `MailRecipientDTO` con el `userId` de la cuenta. Solo van a una dirección los invitados, los directores externos y el email de la mesa. Los correos solo de invitados (`Guest*`) no tienen categoría.
+
+### Avisos en la web
+
+Las seis categorías declaran `site: true` (core ≥ 3.58): cada notificación que va a una cuenta sale también en la campana de la cabecera (`HasSiteNotification`, canal `site`); las obligatorias se ven siempre, con el candado del perfil. La campana guarda avisos solo para cuentas, así que los invitados, los directores externos y el email de la mesa siguen recibiendo solo el correo, y las cuatro `Guest*` no pasan por ella.
+
+- **Destino**: una ruta del sitio, nunca una dirección absoluta ni un token. La deciden en `toSiteNotification()`, al entregar el aviso y no al ponerlo en cola, las reglas de la página a la que lleva (`SiteNoticeTargets`): la ficha de la mesa o la campaña mientras está publicada; **Gestionar inscritos** para un director de una mesa que delega sus inscripciones cuando hay que aprobar a alguien; la plantilla para quien dirige la campaña; la pestaña de invitaciones del perfil (`/perfil?tab=gametables-invitations`) mientras la invitación sigue pendiente para el email de la cuenta, no el enlace del correo; la edición de la propuesta rechazada para su autor; y su revisión en el panel para quien modera mientras sigue pendiente. Sin destino (ya no puede verlo o ya no lo dirige) no se guarda nada.
+- **Grupos**: los avisos a la dirección se juntan por mesa o campaña (`game-tables.table:<id>`, `game-tables.campaign:<id>`) con un título neutro, «Ana y 3 más: novedades en «La tumba»»; los de moderación, en una sola fila pendiente de revisar (`game-tables.moderation`).
+- **Personas**: todo aviso que nombra a alguien lleva su cuenta en `actorId` (la del participante, el jugador, quien invita o quien propuso), así que el core lo borra al anonimizarla y nadie recibe aviso de lo que hizo él mismo (un moderador no se entera de su propia propuesta).
+- **Asunto**: cada notificación implementa `HasMailSubject` sobre su mesa o su campaña (`GameTablesMailSubjects`, tipos `game-tables.table` y `game-tables.campaign`); la sesión nueva de una campaña es sobre la campaña, así que silenciarla calla sus sesiones nuevas. Al borrar una mesa o campaña (web, panel, repositorios o la cuenta que la creó borrada del todo) se llama a `forgetSubject()` tras el commit (`ForgetsDeletedSubjects`): se van sus silencios y sus avisos. Borrar solo una sesión no olvida el aviso de su sesión nueva, que es sobre la campaña.
+- **Textos**: `lang/*/notices.php`, escritos al entregar el aviso.
 
 ### Configuración por evento
 
