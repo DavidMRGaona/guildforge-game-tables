@@ -24,6 +24,7 @@ import type {
     TableFormPrefill,
 } from '../../types/gametables';
 import GameMasterSection from '../../components/GameMasterSection.vue';
+import StartsAtField from '../../components/StartsAtField.vue';
 import SessionCampaignField from '../../components/SessionCampaignField.vue';
 import FormTabs from '../../components/FormTabs.vue';
 import type { FormTab } from '../../components/FormTabs.vue';
@@ -661,29 +662,12 @@ function submit(): void {
                                 </p>
                             </div>
 
-                            <!-- Starts At - Free datetime picker -->
-                            <div v-else>
-                                <label
-                                    for="starts_at"
-                                    class="block text-sm font-medium text-base-secondary"
-                                >
-                                    {{ t('gameTables.create.fields.startsAt') }}
-                                    <span class="text-error">*</span>
-                                </label>
-                                <input
-                                    id="starts_at"
-                                    v-model="form.starts_at"
-                                    type="datetime-local"
-                                    name="starts_at"
-                                    required
-                                    :aria-invalid="!!form.errors.starts_at"
-                                    :class="fieldStateClass(!!form.errors.starts_at)"
-                                    class="mt-1 block w-full rounded-lg border bg-surface px-4 py-2.5 text-base-primary focus:outline-none focus:ring-2"
-                                />
-                                <p v-if="form.errors.starts_at" class="mt-1 text-sm text-error">
-                                    {{ form.errors.starts_at }}
-                                </p>
-                            </div>
+                            <!-- Starts At - Day and time, sent as the wall time -->
+                            <StartsAtField
+                                v-else
+                                v-model="form.starts_at"
+                                :error="form.errors.starts_at ?? ''"
+                            />
 
                             <!-- Duration -->
                             <div>

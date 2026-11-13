@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { Check, ChevronDown, X } from '@lucide/vue';
+import { Check, X } from '@lucide/vue';
 import { ref, watch, computed, nextTick } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
+import { FormSelect } from '@/components/form';
 import type { GameSystem, GameTableFilters, EventFilter, FilterOption } from '../types/gametables';
 
 interface Props {
@@ -31,8 +32,8 @@ const selectedFormat = ref<string>(props.currentFilters.format || '');
 const selectedStatus = ref<string>(props.currentFilters.status || '');
 const selectedEvent = ref<string>(props.currentFilters.event || '');
 
-const formatOptions = [
-    { value: '', label: t('gameTables.filters.allFormats') },
+// The "all" entry of each filter is the select's placeholder, worth ''
+const formatOptions: FilterOption[] = [
     { value: 'in_person', label: t('gameTables.formats.inPerson') },
     { value: 'online', label: t('gameTables.formats.online') },
     { value: 'hybrid', label: t('gameTables.formats.hybrid') },
@@ -46,10 +47,7 @@ const tableStatuses: FilterOption[] = [
     { value: 'cancelled', label: t('gameTables.statuses.cancelled') },
 ];
 
-const statusOptions: FilterOption[] = [
-    { value: '', label: t('gameTables.filters.allStatuses') },
-    ...(props.statuses.length > 0 ? props.statuses : tableStatuses),
-];
+const statusOptions: FilterOption[] = props.statuses.length > 0 ? props.statuses : tableStatuses;
 
 function applyFilters(): void {
     const params: Record<string, string> = {};
@@ -173,6 +171,14 @@ const activeFilterPills = computed(() => {
 });
 
 const hasEvents = computed(() => props.events.length > 0);
+const eventOptions = computed<FilterOption[]>(() =>
+    props.events.map((event) => ({ value: event.id, label: event.title }))
+);
+
+/** The value a select hands back, '' for its "all" entry. */
+function choice(value: string | number | null): string {
+    return value === null ? '' : String(value);
+}
 
 // True while local state is being realigned with the server's answer, so the
 // watcher below does not navigate again and loop.
@@ -249,25 +255,13 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
                 >
                     {{ t('gameTables.filters.format') }}
                 </label>
-                <div class="relative">
-                    <select
-                        id="format-filter"
-                        v-model="selectedFormat"
-                        class="block w-full appearance-none rounded-lg border border-default bg-surface py-2 pl-3 pr-10 text-sm text-base-primary shadow-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                    >
-                        <option
-                            v-for="option in formatOptions"
-                            :key="option.value"
-                            :value="option.value"
-                        >
-                            {{ option.label }}
-                        </option>
-                    </select>
-                    <ChevronDown
-                        class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-base-muted"
-                        aria-hidden="true"
-                    />
-                </div>
+                <FormSelect
+                    id="format-filter"
+                    :model-value="selectedFormat"
+                    :options="formatOptions"
+                    :placeholder="t('gameTables.filters.allFormats')"
+                    @update:model-value="selectedFormat = choice($event)"
+                />
             </div>
 
             <!-- Status Filter -->
@@ -278,25 +272,13 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
                 >
                     {{ t('gameTables.filters.status') }}
                 </label>
-                <div class="relative">
-                    <select
-                        id="status-filter"
-                        v-model="selectedStatus"
-                        class="block w-full appearance-none rounded-lg border border-default bg-surface py-2 pl-3 pr-10 text-sm text-base-primary shadow-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                    >
-                        <option
-                            v-for="option in statusOptions"
-                            :key="option.value"
-                            :value="option.value"
-                        >
-                            {{ option.label }}
-                        </option>
-                    </select>
-                    <ChevronDown
-                        class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-base-muted"
-                        aria-hidden="true"
-                    />
-                </div>
+                <FormSelect
+                    id="status-filter"
+                    :model-value="selectedStatus"
+                    :options="statusOptions"
+                    :placeholder="t('gameTables.filters.allStatuses')"
+                    @update:model-value="selectedStatus = choice($event)"
+                />
             </div>
 
             <!-- Event Filter (always visible where events apply) -->
@@ -307,32 +289,18 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
                 >
                     {{ t('gameTables.filters.event') }}
                 </label>
-                <div class="relative">
-                    <select
-                        id="event-filter"
-                        v-model="selectedEvent"
-                        :disabled="!hasEvents"
-                        :class="[
-                            'block w-full appearance-none rounded-lg border border-default bg-surface py-2 pl-3 pr-10 text-sm shadow-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500',
-                            hasEvents ? 'text-base-primary' : 'cursor-not-allowed text-base-muted',
-                        ]"
-                    >
-                        <option value="">
-                            {{
-                                hasEvents
-                                    ? t('gameTables.filters.allEvents')
-                                    : t('gameTables.filters.noEvents')
-                            }}
-                        </option>
-                        <option v-for="event in events" :key="event.id" :value="event.id">
-                            {{ event.title }}
-                        </option>
-                    </select>
-                    <ChevronDown
-                        class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-base-muted"
-                        aria-hidden="true"
-                    />
-                </div>
+                <FormSelect
+                    id="event-filter"
+                    :model-value="selectedEvent"
+                    :options="eventOptions"
+                    :placeholder="
+                        hasEvents
+                            ? t('gameTables.filters.allEvents')
+                            : t('gameTables.filters.noEvents')
+                    "
+                    :disabled="!hasEvents"
+                    @update:model-value="selectedEvent = choice($event)"
+                />
             </div>
         </div>
 

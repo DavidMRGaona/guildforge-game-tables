@@ -5,7 +5,7 @@ import { Link, router, useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
-import { FormCheckbox } from '@/components/form';
+import { FormCheckbox, FormNumberInput, FormSelect } from '@/components/form';
 import { useFlashMessages } from '@/composables/useFlashMessages';
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
@@ -65,8 +65,10 @@ const subtitle = computed(() => {
 });
 
 // Settings
-const accessOptions = computed(
-    () => Object.entries(props.roster_access_options) as Array<[RosterAccessValue, string]>
+const accessOptions = computed(() =>
+    (Object.entries(props.roster_access_options) as Array<[RosterAccessValue, string]>).map(
+        ([value, label]) => ({ value, label })
+    )
 );
 
 const settingsForm = useForm<{
@@ -81,15 +83,17 @@ const settingsForm = useForm<{
 
 const settingsIds = {
     access: useId(),
+    accessError: useId(),
     max: useId(),
     maxHelp: useId(),
     maxError: useId(),
 };
 
-function onMaxPlayersInput(event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
-    // Empty means no limit
-    settingsForm.max_players = value === '' ? null : Number(value);
+function onRosterAccess(value: string | number | null): void {
+    const option = accessOptions.value.find((candidate) => candidate.value === value);
+    if (option !== undefined) {
+        settingsForm.roster_access = option.value;
+    }
 }
 
 function saveSettings(): void {
@@ -554,21 +558,25 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                         >
                             {{ t('campaigns.roster.settings.rosterAccess') }}
                         </label>
-                        <select
+                        <FormSelect
                             :id="settingsIds.access"
-                            v-model="settingsForm.roster_access"
+                            :model-value="settingsForm.roster_access"
                             name="roster_access"
-                            :class="inputClass"
+                            :options="accessOptions"
+                            :error="settingsForm.errors.roster_access ?? ''"
+                            :described-by="
+                                settingsForm.errors.roster_access
+                                    ? settingsIds.accessError
+                                    : undefined
+                            "
+                            class="mt-1"
+                            @update:model-value="onRosterAccess"
+                        />
+                        <p
+                            v-if="settingsForm.errors.roster_access"
+                            :id="settingsIds.accessError"
+                            class="mt-1 text-sm text-error"
                         >
-                            <option
-                                v-for="[value, label] in accessOptions"
-                                :key="value"
-                                :value="value"
-                            >
-                                {{ label }}
-                            </option>
-                        </select>
-                        <p v-if="settingsForm.errors.roster_access" class="mt-1 text-sm text-error">
                             {{ settingsForm.errors.roster_access }}
                         </p>
                     </div>
@@ -580,23 +588,21 @@ const sectionClass = 'rounded-lg bg-surface p-4 shadow sm:p-6';
                         >
                             {{ t('campaigns.roster.settings.maxPlayers') }}
                         </label>
-                        <input
+                        <!-- Empty means no limit -->
+                        <FormNumberInput
                             :id="settingsIds.max"
-                            type="number"
+                            v-model="settingsForm.max_players"
                             name="max_players"
-                            inputmode="numeric"
-                            :value="settingsForm.max_players ?? ''"
                             :min="Math.max(1, campaign.roster_count)"
                             :max="max_players_limit"
-                            step="1"
-                            :aria-invalid="!!settingsForm.errors.max_players"
-                            :aria-describedby="
+                            :step="1"
+                            :error="settingsForm.errors.max_players"
+                            :described-by="
                                 settingsForm.errors.max_players
                                     ? `${settingsIds.maxHelp} ${settingsIds.maxError}`
                                     : settingsIds.maxHelp
                             "
-                            :class="inputClass"
-                            @input="onMaxPlayersInput"
+                            class="mt-1"
                         />
                         <p :id="settingsIds.maxHelp" class="mt-1 text-sm text-base-muted">
                             {{

@@ -403,6 +403,8 @@ export default {
                 selectGameSystem: 'Select a game system',
                 title: 'Session title',
                 startsAt: 'Start date and time',
+                startDate: 'Start date',
+                startTime: 'Start time',
                 timeSlot: 'Session time slot',
                 selectTimeSlot: 'Select a time slot',
                 timeSlotHelp: 'Select one of the available time slots for this event',
