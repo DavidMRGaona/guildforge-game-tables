@@ -18,6 +18,7 @@ use App\Application\Modules\DTOs\NavigationItemDTO;
 use App\Application\Modules\DTOs\PagePrefixDTO;
 use App\Application\Modules\DTOs\PermissionDTO;
 use App\Application\Modules\DTOs\SlotRegistrationDTO;
+use App\Application\Proposals\Contracts\EventProposalRequestInterface;
 use App\Application\Publications\Contracts\PublicationSourceInterface;
 use App\Application\Search\Contracts\IndexedSearchSourceInterface;
 use App\Application\Services\EventQueryServiceInterface;
@@ -153,6 +154,7 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\Eloquent
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentGameSystemRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentGameTableRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentParticipantRepository;
+use Modules\GameTables\Infrastructure\Proposals\TablesProposalRequest;
 use Modules\GameTables\Infrastructure\Publications\AnnouncesPublicationChanges;
 use Modules\GameTables\Infrastructure\Publications\CampaignPublicationSource;
 use Modules\GameTables\Infrastructure\Publications\GameTablePublicationSource;
@@ -1444,6 +1446,16 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
             CampaignSessionSurveySubjectSource::class,
             CampaignSurveySubjectSource::class,
         ];
+    }
+
+    /**
+     * The question «¿Habrá mesas de rol?» of event proposals (core#581).
+     *
+     * @return array<class-string<EventProposalRequestInterface>>
+     */
+    public function registerEventProposalRequests(): array
+    {
+        return [TablesProposalRequest::class];
     }
 
     /**

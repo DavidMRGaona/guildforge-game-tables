@@ -833,6 +833,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Event proposal request (core#581)
+    |--------------------------------------------------------------------------
+    */
+    'proposal_request' => [
+        'label' => 'Mesas de rol',
+        'question' => '¿Habrá mesas de rol?',
+        'note' => 'Nota para la administración',
+        'note_help' => 'Por ejemplo, las franjas o el espacio que te harían falta.',
+        'with_note' => 'Mesas de rol: :note',
+        'already_configured' => 'El evento ya tiene configuradas las mesas de rol.',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Validation Messages
     |--------------------------------------------------------------------------
     */
