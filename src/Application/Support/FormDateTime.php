@@ -10,8 +10,9 @@ use Exception;
 use InvalidArgumentException;
 
 /**
- * A date and time sent by a web form. A wall time without offset (a datetime-local field) is the
- * site's wall time; a string with an offset (the slot of an event) is already an instant.
+ * A date and time sent by a web form. A wall time without offset (the day and time fields of a
+ * table, sent joined) is the site's wall time; a string with an offset (the slot of an event) is
+ * already an instant.
  */
 final class FormDateTime
 {

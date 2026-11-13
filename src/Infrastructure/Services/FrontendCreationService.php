@@ -354,7 +354,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
                 fn ($event): array => [
                     'id' => $event->id()->value,
                     'name' => $event->title(),
-                    // The value of a datetime-local field: the site's wall time
+                    // The value of the start fields (day and time): the site's wall time
                     'start_date' => $timezone->toDisplayWallTime($event->startDate()),
                     // Its slots and fixed location, so choosing it in the form offers them as «Crear partida» does
                     'creation_context' => $this->eventConfigService->getCreationContext($event->id()->value)->toArray(),

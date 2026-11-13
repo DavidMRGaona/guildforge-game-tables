@@ -229,7 +229,7 @@ final class FrontendGameTableController extends Controller
 
         return Inertia::render('GameTables/Edit', [
             'table' => $table->toArray(),
-            // The value of the datetime-local field: the site's wall time
+            // The value of the start fields (day and time): the site's wall time
             'startsAtWallTime' => $table->startsAt instanceof \DateTimeInterface
                 ? app(TimezoneServiceInterface::class)->toDisplayWallTime($table->startsAt)
                 : null,

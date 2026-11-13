@@ -402,6 +402,8 @@ export default {
                 selectGameSystem: 'Selecciona un sistema de juego',
                 title: 'Título de la partida',
                 startsAt: 'Fecha y hora de inicio',
+                startDate: 'Fecha de inicio',
+                startTime: 'Hora de inicio',
                 timeSlot: 'Horario de la partida',
                 selectTimeSlot: 'Selecciona un horario',
                 timeSlotHelp: 'Selecciona uno de los horarios disponibles para este evento',

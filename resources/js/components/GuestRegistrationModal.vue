@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue';
+import { FormCheckbox } from '@/components/form';
 import { ref, computed, watch, onMounted, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { router } from '@inertiajs/vue3';
@@ -374,25 +375,16 @@ function goBack(): void {
                     </div>
 
                     <!-- GDPR Consent -->
-                    <div class="flex items-start gap-2">
-                        <input
-                            id="guest-gdpr"
-                            v-model="form.gdpr_consent"
-                            type="checkbox"
-                            required
-                            class="mt-1 h-4 w-4 rounded border-strong bg-surface text-primary focus:ring-primary-500"
-                        />
-                        <label for="guest-gdpr" class="text-sm text-base-secondary">
-                            {{ t('guestRegistration.gdprConsent') }}
-                            <a
-                                :href="routes.legal.privacy"
-                                target="_blank"
-                                class="text-primary underline"
-                            >
-                                {{ t('guestRegistration.privacyPolicy') }}
-                            </a>
-                        </label>
-                    </div>
+                    <FormCheckbox id="guest-gdpr" v-model="form.gdpr_consent" name="gdpr_consent">
+                        {{ t('guestRegistration.gdprConsent') }}
+                        <a
+                            :href="routes.legal.privacy"
+                            target="_blank"
+                            class="text-primary underline"
+                        >
+                            {{ t('guestRegistration.privacyPolicy') }}
+                        </a>
+                    </FormCheckbox>
 
                     <!-- What happens after sending -->
                     <p

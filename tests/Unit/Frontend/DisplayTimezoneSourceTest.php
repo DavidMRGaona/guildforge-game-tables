@@ -7,8 +7,8 @@ namespace Modules\GameTables\Tests\Unit\Frontend;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Source guards, not behaviour tests: the module has no Vue test runner. The pages show dates in
- * the site's zone and fill datetime-local fields with the wall time the server computes, never by
+ * Source guards, not behaviour tests. The pages show dates in the site's zone and fill the start
+ * fields (day and time) with the wall time the server computes, never by
  * cutting an ISO string (in UTC it would be two hours off in summer).
  */
 final class DisplayTimezoneSourceTest extends TestCase
