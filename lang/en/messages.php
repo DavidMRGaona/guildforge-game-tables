@@ -748,6 +748,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Event proposal request (core#581)
+    |--------------------------------------------------------------------------
+    */
+    'proposal_request' => [
+        'label' => 'Tabletop role-playing tables',
+        'question' => 'Will there be tabletop role-playing tables?',
+        'note' => 'Note for the administration',
+        'note_help' => 'For example, the time slots or the space you would need.',
+        'with_note' => 'Tabletop role-playing tables: :note',
+        'already_configured' => 'The event already has its tables configured.',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Validation Messages
     |--------------------------------------------------------------------------
     */
