@@ -51,9 +51,9 @@ final class ModerationSubmittedNotification extends Notification implements HasM
         return $account instanceof UserModel ? $this->siteNotice(
             $this->targets()->tableReview($account, $this->tableId),
             __('game-tables::notices.moderation.table', ['table' => $this->tableTitle]),
-            $this->creatorName !== '' ? __('game-tables::notices.moderation.proposed_by', ['name' => $this->creatorName]) : null,
+            $this->creatorName !== '' ? (string) __('game-tables::notices.moderation.proposed_by', ['name' => $this->creatorName]) : null,
             'shield-check',
-            self::MODERATION_GROUP,
+            $this->moderationGroup(),
             $this->creatorId ?? null,
             $this->moderationGroupedTitle(),
         ) : null;

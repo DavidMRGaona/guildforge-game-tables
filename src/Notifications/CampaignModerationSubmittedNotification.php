@@ -51,9 +51,9 @@ final class CampaignModerationSubmittedNotification extends Notification impleme
         return $account instanceof UserModel ? $this->siteNotice(
             $this->targets()->campaignReview($account, $this->campaignId),
             __('game-tables::notices.moderation.campaign', ['campaign' => $this->campaignTitle]),
-            $this->creatorName !== '' ? __('game-tables::notices.moderation.proposed_by', ['name' => $this->creatorName]) : null,
+            $this->creatorName !== '' ? (string) __('game-tables::notices.moderation.proposed_by', ['name' => $this->creatorName]) : null,
             'shield-check',
-            self::MODERATION_GROUP,
+            $this->moderationGroup(),
             $this->creatorId ?? null,
             $this->moderationGroupedTitle(),
         ) : null;

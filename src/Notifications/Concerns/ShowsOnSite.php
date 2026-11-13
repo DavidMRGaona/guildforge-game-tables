@@ -19,12 +19,6 @@ use Modules\GameTables\Infrastructure\SiteNotifications\SiteNoticeTargets;
  */
 trait ShowsOnSite
 {
-    /** Icon of the module's notices in the bell (one of the core's closed list). */
-    private const string SITE_ICON = 'dices';
-
-    /** The group of the proposals waiting for review: one row for the moderators. */
-    private const string MODERATION_GROUP = 'game-tables.moderation';
-
     /**
      * @return list<string>
      */
@@ -47,13 +41,14 @@ trait ShowsOnSite
     }
 
     /**
+     * @param  string  $icon  One of the core's closed list; the module's dice by default
      * @param  (Closure(SiteNotificationGroupDTO): string)|null  $groupedTitle
      */
     protected function siteNotice(
         ?string $path,
         string $title,
         ?string $body = null,
-        string $icon = self::SITE_ICON,
+        string $icon = 'dices',
         ?string $groupKey = null,
         ?string $actorId = null,
         ?Closure $groupedTitle = null,
@@ -102,6 +97,14 @@ trait ShowsOnSite
             $group->otherActors,
             ['name' => $name, 'count' => $group->otherActors, 'thing' => $thing],
         );
+    }
+
+    /**
+     * The proposals waiting for review, tables and campaigns alike: one row for the moderators.
+     */
+    protected function moderationGroup(): string
+    {
+        return 'game-tables.moderation';
     }
 
     /**

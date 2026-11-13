@@ -10,6 +10,7 @@ use App\Application\SiteNotifications\Services\SiteNotificationServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Str;
+use Illuminate\Testing\PendingCommand;
 use Modules\GameTables\Console\Commands\SendTableRemindersCommand;
 use Modules\GameTables\Domain\Enums\GameMasterRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
@@ -90,7 +91,9 @@ final class SiteNoticeSendersTest extends ModuleTestCase
         $table = $this->table(['starts_at' => now()->addHours(3)]);
         $this->participant($table, 'confirmed');
 
-        $this->artisan('game-tables:send-reminders')->assertSuccessful();
+        $command = $this->artisan('game-tables:send-reminders');
+        $this->assertInstanceOf(PendingCommand::class, $command);
+        $command->assertSuccessful()->run();
 
         $item = $this->only($this->player);
         $this->assertStringStartsWith('Recordatorio: «La tumba», ', $item->title);

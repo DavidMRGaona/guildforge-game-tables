@@ -148,10 +148,10 @@ final class NotificationMailCategoriesTest extends ModuleTestCase
             $this->assertTrue($reflection->implementsInterface(HasSiteNotification::class), "{$class} must implement HasSiteNotification");
             $this->assertTrue($reflection->implementsInterface(HasMailSubject::class), "{$class} must implement HasMailSubject");
 
-            /** @var Notification $notification */
-            $notification = $reflection->newInstanceWithoutConstructor();
-            $this->assertContains(HasSiteNotification::CHANNEL, $notification->via($account), "{$class} must go through the site channel");
-            $this->assertContains('mail', $notification->via($account), "{$class} must still be mailed");
+            $via = $reflection->getMethod('via')->invoke($reflection->newInstanceWithoutConstructor(), $account);
+            $this->assertIsArray($via);
+            $this->assertContains(HasSiteNotification::CHANNEL, $via, "{$class} must go through the site channel");
+            $this->assertContains('mail', $via, "{$class} must still be mailed");
         }
     }
 
