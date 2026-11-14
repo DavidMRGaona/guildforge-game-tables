@@ -64,7 +64,7 @@ En las releases los assets los compila el CI y van dentro del ZIP.
 
 ## Configuración
 
-Se configura en el panel: **Sistema** → **Configuración** → **Mesas** (permiso `gametables.settings`, que los administradores tienen siempre; el mismo formulario está en **Módulos** → **Configuración**, solo para administradores). Los valores iniciales son los que trae el módulo en `config/settings.php`; lo que se guarda en el panel prevalece sobre ellos clave a clave.
+Se configura en el panel: **Sistema** → **Configuración** → **Mesas** (permiso `gametables.settings`, que los administradores tienen siempre; el botón **Configuración** de **Módulos** lleva a esta misma página y solo se muestra a quien tiene ese permiso). Los valores iniciales son los que trae el módulo en `config/settings.php`; lo que se guarda en el panel prevalece sobre ellos clave a clave.
 
 | Sección | Qué controla |
 |---------|--------------|
