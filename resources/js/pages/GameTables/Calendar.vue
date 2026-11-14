@@ -8,7 +8,7 @@ import type { GameTableListItem, GameSystem } from '../../types/gametables';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import GameTableCard from '../../components/GameTableCard.vue';
 import TablesViewToggle from '../../components/TablesViewToggle.vue';
-import { VENUE_TIMEZONE, venueDayKey } from '@/utils/datetime';
+import { venueDayKey } from '@/utils/datetime';
 
 interface Props {
     tables: GameTableListItem[];
@@ -25,8 +25,9 @@ const isNavigating = ref(false);
 const currentMonthDate = computed(() => new Date(props.currentMonth));
 
 const monthName = computed(() => {
+    // 'YYYY-MM' parses as midnight UTC of the 1st: a calendar month, so read it in UTC
     const formatted = currentMonthDate.value.toLocaleDateString(locale.value, {
-        timeZone: VENUE_TIMEZONE,
+        timeZone: 'UTC',
         month: 'long',
         year: 'numeric',
     });
@@ -58,17 +59,19 @@ const groupedTables = computed((): DayGroup[] => {
 
     return Object.entries(groups)
         .map(([isoDate, tables]) => {
+            // The key is a calendar date, not an instant: read it in UTC, since any
+            // other zone could move the noon it is anchored at onto the next day.
             const date = new Date(`${isoDate}T12:00:00Z`);
             return {
                 isoDate,
                 displayDate: date.toLocaleDateString(locale.value, {
-                    timeZone: VENUE_TIMEZONE,
+                    timeZone: 'UTC',
                     year: 'numeric',
                     month: '2-digit',
                     day: '2-digit',
                 }),
                 weekday: date.toLocaleDateString(locale.value, {
-                    timeZone: VENUE_TIMEZONE,
+                    timeZone: 'UTC',
                     weekday: 'long',
                 }),
                 day: Number(isoDate.slice(8)),
