@@ -258,7 +258,9 @@ final class GameTablesPanelTest extends ModuleTestCase
     public function test_settings_pages_render(): void
     {
         Livewire::test(GameTablesSettings::class)->assertOk();
-        Livewire::test(ModuleSettingsPage::class, ['module' => 'game-tables'])->assertOk();
+        // The generic page hands over to the module's own page (core#666)
+        Livewire::test(ModuleSettingsPage::class, ['module' => 'game-tables'])
+            ->assertRedirect(GameTablesSettings::getUrl());
     }
 
     public function test_pending_moderation_widget_lists_tables_awaiting_review(): void

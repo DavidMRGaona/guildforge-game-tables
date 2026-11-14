@@ -1498,13 +1498,21 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     }
 
     /**
-     * Get the Filament form schema for module settings.
+     * The settings are edited on the module's own page in the settings cluster, not on the generic one.
      *
      * @return array<Component>
      */
     public function getSettingsSchema(): array
     {
-        return GameTablesSettings::getFormSchemaComponents();
+        return [];
+    }
+
+    /**
+     * @return class-string<Page>
+     */
+    public function getSettingsPage(): string
+    {
+        return GameTablesSettings::class;
     }
 
     /**
