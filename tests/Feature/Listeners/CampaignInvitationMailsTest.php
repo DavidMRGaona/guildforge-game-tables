@@ -99,7 +99,7 @@ final class CampaignInvitationMailsTest extends ModuleTestCase
 
                 return $notifiable->routes['mail'] === 'guest@example.com'
                     && $mail->subject === 'John Doe te invita a la campaña «Campaña de prueba»'
-                    && str_contains($mail->actionUrl, '/campanas/invitaciones/'.self::TOKEN);
+                    && str_contains((string) $mail->actionUrl, '/campanas/invitaciones/'.self::TOKEN);
             },
         );
         Notification::assertSentOnDemandTimes(CampaignInvitationNotification::class, 1);
@@ -141,7 +141,7 @@ final class CampaignInvitationMailsTest extends ModuleTestCase
                 && str_contains($text, 'Caduca el 04/11/2026.')
                 && str_contains($text, url('/politica-de-privacidad'))
                 && str_contains($text, 'Rechazar')
-                && str_contains($mail->actionUrl, self::TOKEN);
+                && str_contains((string) $mail->actionUrl, self::TOKEN);
         });
     }
 
@@ -260,7 +260,7 @@ final class CampaignInvitationMailsTest extends ModuleTestCase
                 $mail = $notification->toMail($notifiable);
 
                 return $mail->subject === 'Mary Major ha aceptado tu invitación a «Campaña de prueba»'
-                    && str_contains($mail->actionUrl, '/plantilla');
+                    && str_contains((string) $mail->actionUrl, '/plantilla');
             },
         );
     }
