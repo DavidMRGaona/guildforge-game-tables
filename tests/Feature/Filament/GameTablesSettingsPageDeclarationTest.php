@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Tests\Feature\Filament;
 
 use App\Application\Modules\Services\ModuleManagerServiceInterface;
+use App\Application\Modules\Services\ModuleSettingsStoreInterface;
 use App\Application\Services\SettingsServiceInterface;
 use App\Domain\Modules\ValueObjects\ModuleName;
 use App\Filament\Clusters\SettingsCluster;
@@ -93,6 +94,9 @@ final class GameTablesSettingsPageDeclarationTest extends ModuleTestCase
             'registration' => ['waiting_list_enabled' => true],
             'guest_confirmation' => ['mode' => 'wait', 'hold_hours' => 12],
         ], JSON_THROW_ON_ERROR));
+
+        // What the module's boot does: the row, over the shipped defaults, becomes the module's config
+        config()->set('modules.settings.game-tables', app(ModuleSettingsStoreInterface::class)->effective('game-tables', dirname(__DIR__, 3)));
 
         Livewire::test(GameTablesSettings::class)->assertSchemaStateSet([
             'registration.waiting_list_enabled' => true,
