@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Tests\Feature\Filament;
 
 use App\Application\Modules\Services\ModuleManagerServiceInterface;
+use App\Application\Services\SettingsServiceInterface;
 use App\Domain\Modules\ValueObjects\ModuleName;
 use App\Filament\Clusters\SettingsCluster;
 use App\Infrastructure\Persistence\Eloquent\Models\PermissionModel;
@@ -70,14 +71,34 @@ final class GameTablesSettingsPageDeclarationTest extends ModuleTestCase
     {
         $this->actingAsPanelAdmin();
 
+        // The shipped default is false, so only a real save can make this true
         Livewire::test(GameTablesSettings::class)
-            ->fillForm(['registration.waiting_list_enabled' => false])
+            ->fillForm(['registration.waiting_list_enabled' => true])
             ->call('save')
             ->assertHasNoFormErrors();
 
+        $stored = json_decode((string) app(SettingsServiceInterface::class)->get('module_settings:game-tables'), true);
+        $this->assertTrue($stored['registration']['waiting_list_enabled']);
+
         $moduleManager = app(ModuleManagerServiceInterface::class);
-        $this->assertFalse(data_get($moduleManager->getSettings(new ModuleName('game-tables')), 'registration.waiting_list_enabled'));
-        $this->assertDatabaseHas('settings', ['key' => 'module_settings:game-tables']);
+        $this->assertTrue(data_get($moduleManager->getSettings(new ModuleName('game-tables')), 'registration.waiting_list_enabled'));
+    }
+
+    public function test_the_page_shows_values_already_stored_in_the_module_settings_row(): void
+    {
+        $this->actingAsPanelAdmin();
+
+        // A site configured before the move: the row as the generic page wrote it
+        app(SettingsServiceInterface::class)->set('module_settings:game-tables', json_encode([
+            'registration' => ['waiting_list_enabled' => true],
+            'guest_confirmation' => ['mode' => 'wait', 'hold_hours' => 12],
+        ], JSON_THROW_ON_ERROR));
+
+        Livewire::test(GameTablesSettings::class)->assertSchemaStateSet([
+            'registration.waiting_list_enabled' => true,
+            'guest_confirmation.mode' => 'wait',
+            'guest_confirmation.hold_hours' => 12,
+        ]);
     }
 
     /**
