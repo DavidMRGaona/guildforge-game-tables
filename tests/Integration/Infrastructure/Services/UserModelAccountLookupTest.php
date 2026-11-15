@@ -67,6 +67,21 @@ final class UserModelAccountLookupTest extends ModuleTestCase
         $this->assertNull($lookup->findById('00000000-0000-0000-0000-000000000000'));
     }
 
+    public function test_the_public_name_is_the_display_name_or_else_the_account_name(): void
+    {
+        $ana = UserModel::factory()->create(['name' => 'Ana Account', 'display_name' => 'Ana Reader']);
+        $bea = UserModel::factory()->create(['name' => 'Bea Account', 'display_name' => ' ']);
+        $lookup = app(AccountLookupInterface::class);
+        $anaAccount = $lookup->findById($ana->id);
+        $beaAccount = $lookup->findById($bea->id);
+
+        $this->assertNotNull($anaAccount);
+        $this->assertNotNull($beaAccount);
+        $this->assertSame('Ana Account', $anaAccount->name);
+        $this->assertSame('Ana Reader', $anaAccount->publicName);
+        $this->assertSame('Bea Account', $beaAccount->publicName);
+    }
+
     public function test_find_active_by_id_finds_an_active_account(): void
     {
         $john = UserModel::factory()->create(['name' => 'John Doe', 'email' => 'john@example.com']);

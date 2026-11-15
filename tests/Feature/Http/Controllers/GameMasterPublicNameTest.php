@@ -7,6 +7,8 @@ namespace Modules\GameTables\Tests\Feature\Http\Controllers;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
+use Modules\GameTables\Application\DTOs\GameTableListDTO;
+use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use Modules\GameTables\Domain\Enums\GameMasterRole;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
@@ -178,6 +180,25 @@ final class GameMasterPublicNameTest extends ModuleTestCase
         $this->get('/mesas')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->where('tables.data.0.mainGameMasterName', GameMasterRole::Main->label()));
+    }
+
+    public function test_the_calendar_names_directors_by_the_same_rule(): void
+    {
+        $campaign = $this->campaign('los-ecos');
+        $ana = $this->director($this->account('Ana Account', 'Ana Reader'), public: true);
+        $campaign->gameMasters()->attach($ana->id, ['sort_order' => 1]);
+        $this->table('sesion-1', campaign: $campaign);
+        $excluding = $this->table('sesion-2', '+2 weeks', $campaign);
+        $excluding->gameMasters()->attach($ana->id, ['source' => 'inherited', 'excluded' => true, 'sort_order' => 1]);
+        $this->attachToTable($this->table('la-cripta', '+3 weeks'), $this->director($this->account('Bea Account', 'Bea Reader'), public: false));
+
+        $names = array_map(
+            fn (GameTableListDTO $table): string => $table->mainGameMasterName,
+            app(GameTableQueryServiceInterface::class)->getUpcomingTables(now(), now()->addMonth()),
+        );
+
+        // A session takes the campaign's main director, unless excluded from it; a hidden name gives way to the title
+        $this->assertSame(['Ana Reader', '', $this->systemTitle()], $names);
     }
 
     /**

@@ -411,7 +411,7 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
 
     private function nameOf(string $userId): string
     {
-        return $this->accounts->findById($userId)->name ?? '';
+        return $this->accounts->findById($userId)->publicName ?? '';
     }
 
     private function normalise(string $email): string
