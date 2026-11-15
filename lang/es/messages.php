@@ -1116,6 +1116,20 @@ return [
         ],
     ],
 
+    // The sections and counters of the members' public profiles
+    'profile_sections' => [
+        'tables' => [
+            'label' => 'Mesas',
+            'description' => 'Las próximas mesas que diriges y en las que juegas.',
+        ],
+        'campaigns' => [
+            'label' => 'Campañas',
+            'description' => 'Las campañas en curso que diriges o en las que juegas.',
+        ],
+        'tables_run' => 'Mesas dirigidas',
+        'campaign_count' => 'Campañas',
+    ],
+
     // Server-rendered page metadata (link previews and search engines)
     'seo' => [
         'tables_title' => 'Mesas de rol',

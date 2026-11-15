@@ -230,6 +230,15 @@ export default {
             registered: 'Te has inscrito correctamente',
             cancelled: 'Inscripción cancelada',
         },
+        // The sections of the members' public profiles (`/miembros/<handle>`)
+        publicProfile: {
+            directing: 'Dirige',
+            playing: 'Juega',
+            roles: {
+                director: 'Dirige',
+                player: 'Juega',
+            },
+        },
         profile: {
             title: 'Mis mesas de juego',
             tabLabel: 'Mesas',

@@ -231,6 +231,15 @@ export default {
             registered: 'Successfully registered',
             cancelled: 'Registration cancelled',
         },
+        // The sections of the members' public profiles (`/miembros/<handle>`)
+        publicProfile: {
+            directing: 'Runs',
+            playing: 'Plays',
+            roles: {
+                director: 'Runs',
+                player: 'Plays',
+            },
+        },
         profile: {
             title: 'My game tables',
             tabLabel: 'Tables',

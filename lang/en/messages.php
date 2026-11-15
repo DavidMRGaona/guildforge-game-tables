@@ -1045,6 +1045,20 @@ return [
         ],
     ],
 
+    // The sections and counters of the members' public profiles
+    'profile_sections' => [
+        'tables' => [
+            'label' => 'Tables',
+            'description' => 'The next tables you run and play in.',
+        ],
+        'campaigns' => [
+            'label' => 'Campaigns',
+            'description' => 'The ongoing campaigns you run or play in.',
+        ],
+        'tables_run' => 'Tables run',
+        'campaign_count' => 'Campaigns',
+    ],
+
     // Server-rendered page metadata (link previews and search engines)
     'seo' => [
         'tables_title' => 'Game tables',
