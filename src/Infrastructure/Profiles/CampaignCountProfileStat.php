@@ -50,7 +50,7 @@ final readonly class CampaignCountProfileStat implements ProfileStatInterface
 
     public function stat(ProfileOwnerDTO $owner, ?Authenticatable $viewer): ?ProfileStatDTO
     {
-        $count = $this->activity->countCampaignsOf($owner->id, $viewer instanceof Authenticatable ? (string) $viewer->getAuthIdentifier() : null);
+        $count = $this->activity->countCampaignsOf($owner->id, $viewer);
 
         return $count > 0 ? new ProfileStatDTO($count) : null;
     }

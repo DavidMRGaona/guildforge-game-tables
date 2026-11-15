@@ -6,7 +6,8 @@ import { VENUE_TIMEZONE } from '@/utils/datetime';
 
 /**
  * «Mesas» (`game-tables.tables`) on a public profile: the next tables the owner runs and, when the
- * viewer may see the players, those they play in. The card and its title are the core's.
+ * viewer may see the players, those they play in. The card and its title are the core's. The owner
+ * alone also learns how many tables they run stay out because their game master name is not public.
  */
 interface ProfileTableItem {
     id: string;
@@ -16,10 +17,14 @@ interface ProfileTableItem {
     gameSystem: string;
 }
 
-defineProps<{
-    directing: ProfileTableItem[];
-    playing: ProfileTableItem[];
-}>();
+withDefaults(
+    defineProps<{
+        directing: ProfileTableItem[];
+        playing: ProfileTableItem[];
+        hiddenDirecting?: number;
+    }>(),
+    { hiddenDirecting: 0 }
+);
 
 const { t, locale } = useI18n();
 
@@ -81,5 +86,14 @@ function formatStart(startsAt: string): string {
                 </ul>
             </div>
         </template>
+        <p v-if="hiddenDirecting > 0" class="text-sm text-base-muted" data-note="hidden-directing">
+            {{
+                t(
+                    'gameTables.publicProfile.hiddenDirecting',
+                    { count: hiddenDirecting },
+                    hiddenDirecting
+                )
+            }}
+        </p>
     </div>
 </template>

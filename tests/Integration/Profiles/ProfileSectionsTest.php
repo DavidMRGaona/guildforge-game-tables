@@ -11,6 +11,7 @@ use App\Application\Profiles\DTOs\ResolvedProfileStatDTO;
 use App\Application\Profiles\Services\ProfileRendererInterface;
 use App\Application\Profiles\Services\ProfileSectionRegistryInterface;
 use App\Application\Profiles\Services\ProfileStatRegistryInterface;
+use App\Application\Services\SettingsServiceInterface;
 use App\Application\Services\TimezoneServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\RoleModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
@@ -34,6 +35,9 @@ final class ProfileSectionsTest extends ModuleTestCase
     protected ?string $moduleName = 'game-tables';
 
     protected bool $autoEnableModule = true;
+
+    /** Every query of a whole profile render for a director viewer, the core's included */
+    private const int MAX_RENDER_QUERIES = 10;
 
     private GameSystemModel $system;
 
@@ -114,10 +118,31 @@ final class ProfileSectionsTest extends ModuleTestCase
     {
         $this->directedBy($this->owner, $this->table(), namePublic: false);
 
-        foreach ([...$this->viewers(), 'owner' => $this->owner] as $label => $viewer) {
+        foreach ($this->viewers() as $label => $viewer) {
             $this->assertNull($this->section($this->render($viewer), 'game-tables.tables'), $label);
             $this->assertNull($this->stat($this->render($viewer), 'game-tables.tables_run'), $label);
         }
+
+        // The owner is only told that it does not show, without the table
+        $props = $this->section($this->render($this->owner), 'game-tables.tables')?->props;
+        $this->assertSame(['directing' => [], 'playing' => [], 'hiddenDirecting' => 1], $props);
+        $this->assertNull($this->stat($this->render($this->owner), 'game-tables.tables_run'));
+    }
+
+    public function test_the_owner_note_counts_only_upcoming_listed_tables_without_a_public_name(): void
+    {
+        $this->directedBy($this->owner, $this->table(), namePublic: false);
+        $this->directedBy($this->owner, $this->table(['status' => 'draft']), namePublic: false);
+        $this->directedBy($this->owner, $this->table(['starts_at' => '2026-11-01 17:00:00']), namePublic: false);
+        // Run under a public name too: it shows, so it is not counted as hidden
+        $both = $this->directedBy($this->owner, $this->table(), namePublic: false);
+        $this->directedBy($this->owner, $both);
+
+        $props = $this->section($this->render($this->owner), 'game-tables.tables')?->props;
+
+        $this->assertSame([$both->id], array_column($props['directing'] ?? [], 'id'));
+        $this->assertSame(1, $props['hiddenDirecting'] ?? null);
+        $this->assertSame(0, $this->section($this->render(null), 'game-tables.tables')?->props['hiddenDirecting']);
     }
 
     public function test_a_campaign_session_counts_for_its_game_masters_unless_excluded(): void
@@ -216,6 +241,40 @@ final class ProfileSectionsTest extends ModuleTestCase
 
         $this->assertSame([$session->id], array_column($props['playing'] ?? [], 'id'));
         $this->assertTrue($director->can('manageRoster', $withRoster));
+    }
+
+    public function test_a_director_who_must_verify_their_email_sees_no_players_as_on_their_pages(): void
+    {
+        $settings = $this->app->make(SettingsServiceInterface::class);
+        $settings->set('email_verification_enforced_since', '2026-01-01T00:00:00+00:00');
+        $settings->set('auth_email_verification_required', '1');
+        $director = UserModel::factory()->unverified()->create();
+        $this->joins($this->owner, $this->directedBy($director, $this->table(['delegates_registrations' => true])));
+        $campaign = $this->campaign();
+        $this->directedCampaign($director, $campaign);
+        $this->onRoster($this->owner, $campaign);
+        $this->joins($this->owner, $this->table(['campaign_id' => $campaign->id]), fromRoster: true);
+
+        $profile = $this->render($director);
+
+        $this->assertNull($this->section($profile, 'game-tables.tables'));
+        $this->assertNull($this->section($profile, 'game-tables.campaigns'));
+        $this->assertNull($this->stat($profile, 'game-tables.campaign_count'));
+
+        // Once verified, the same pages open and so does the profile
+        $director->forceFill(['email_verified_at' => now()])->save();
+        $profile = $this->render($director->refresh());
+        $this->assertCount(2, $this->section($profile, 'game-tables.tables')->props['playing'] ?? []);
+        $this->assertCount(1, $this->section($profile, 'game-tables.campaigns')->props['campaigns'] ?? []);
+    }
+
+    public function test_an_anonymized_director_sees_no_players(): void
+    {
+        $director = UserModel::factory()->create();
+        $this->joins($this->owner, $this->directedBy($director, $this->table(['delegates_registrations' => true])));
+        $director->forceFill(['anonymized_at' => now()])->save();
+
+        $this->assertNull($this->section($this->render($director->refresh()), 'game-tables.tables'));
     }
 
     public function test_staff_permissions_never_show_where_the_owner_plays_nor_hidden_tables(): void
@@ -348,12 +407,16 @@ final class ProfileSectionsTest extends ModuleTestCase
     {
         $director = UserModel::factory()->create();
         $this->seedActivity($director, 2);
+        // The site settings are read once and cached by the first render
+        $this->render($director);
         $few = $this->countQueries(fn () => $this->render($director));
 
         $this->seedActivity($director, 8);
         $many = $this->countQueries(fn () => $this->render($director));
 
         $this->assertSame($few, $many);
+        // Three lists and two counts of the module, each list with its game systems, and the core's two reads
+        $this->assertLessThanOrEqual(self::MAX_RENDER_QUERIES, $many);
     }
 
     private function seedActivity(UserModel $director, int $count): void

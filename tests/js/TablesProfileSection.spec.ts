@@ -56,4 +56,18 @@ describe('TablesProfileSection', () => {
         expect(wrapper.find('img').exists()).toBe(false);
         expect(wrapper.text()).toContain('<img src=x onerror=alert(1)>');
     });
+
+    it('tells the owner how many tables they run stay out, and nobody else', () => {
+        const owner = mount(TablesProfileSection, {
+            props: { directing: [], playing: [], hiddenDirecting: 2 },
+        });
+        const other = mount(TablesProfileSection, {
+            props: { directing: [table('la-torre', 'La torre')], playing: [] },
+        });
+
+        expect(owner.get('[data-note="hidden-directing"]').text()).toBe(
+            '2 mesas que diriges no salen aquí porque tu nombre de director no es público.'
+        );
+        expect(other.find('[data-note="hidden-directing"]').exists()).toBe(false);
+    });
 });

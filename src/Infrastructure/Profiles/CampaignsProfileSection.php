@@ -72,7 +72,7 @@ final readonly class CampaignsProfileSection implements ProfileSectionInterface
     {
         $campaigns = $this->activity->activeCampaignsOf(
             $owner->id,
-            $viewer instanceof Authenticatable ? (string) $viewer->getAuthIdentifier() : null,
+            $viewer,
             self::LIMIT,
         );
 

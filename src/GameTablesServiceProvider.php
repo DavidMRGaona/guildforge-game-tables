@@ -281,8 +281,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         $this->app->bind(NotificationRecipientResolverInterface::class, NotificationRecipientResolver::class);
         $this->app->bind(CampaignDirectionInterface::class, CampaignDirection::class);
         $this->app->bind(TableDirectionInterface::class, TableDirection::class);
-        // Scoped: what each viewer manages is read once per request, whatever sections and counters ask
-        $this->app->scoped(ProfileActivityQueryInterface::class, ProfileActivityQuery::class);
+        $this->app->bind(ProfileActivityQueryInterface::class, ProfileActivityQuery::class);
         $this->app->bind(CampaignRosterSessionSyncInterface::class, CampaignRosterSessionSync::class);
         $this->app->bind(CampaignRosterServiceInterface::class, CampaignRosterService::class);
         $this->app->bind(CampaignInvitationServiceInterface::class, CampaignInvitationService::class);

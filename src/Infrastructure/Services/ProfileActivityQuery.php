@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Infrastructure\Services;
 
+use App\Application\Services\EmailVerificationPolicyInterface;
+use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Modules\GameTables\Application\DTOs\ProfileCampaignItemDTO;
 use Modules\GameTables\Application\DTOs\ProfileTableItemDTO;
-use Modules\GameTables\Application\Services\CampaignDirectionInterface;
 use Modules\GameTables\Application\Services\ProfileActivityQueryInterface;
-use Modules\GameTables\Application\Services\TableDirectionInterface;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
@@ -19,10 +20,10 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
 /**
- * Bound scoped: what each viewer may manage is read once per request or job, however many sections
- * and counters ask for it.
+ * Every rule is a subquery of the list it filters, so a profile costs the same few queries however many
+ * tables and campaigns the owner or the viewer has.
  */
-final class ProfileActivityQuery implements ProfileActivityQueryInterface
+final readonly class ProfileActivityQuery implements ProfileActivityQueryInterface
 {
     /** The campaign statuses the profile lists as going on */
     private const array ACTIVE_CAMPAIGN_STATUSES = [
@@ -31,26 +32,27 @@ final class ProfileActivityQuery implements ProfileActivityQueryInterface
         CampaignStatus::OnHold->value,
     ];
 
-    /** @var array<string, list<string>> */
-    private array $delegatingTablesRunBy = [];
-
-    /** @var array<string, list<string>> */
-    private array $rostersManagedBy = [];
-
     public function __construct(
-        private readonly TableDirectionInterface $tableDirection,
-        private readonly CampaignDirectionInterface $campaignDirection,
+        private EmailVerificationPolicyInterface $verification,
     ) {}
 
     public function upcomingTablesRunBy(string $ownerId, int $limit): array
     {
-        $query = $this->upcomingTables()->where(fn (Builder $query) => $this->runBy($query, $ownerId));
-
-        return $this->tableItems($query, $limit);
+        return $this->tableItems($this->upcomingTables()->where(fn (Builder $query) => $this->runBy($query, $ownerId)), $limit);
     }
 
-    public function upcomingTablesPlayedBy(string $ownerId, ?string $viewerId, int $limit): array
+    public function countUpcomingTablesRunWithoutPublicNameBy(string $ownerId): int
     {
+        return $this->upcomingTables()
+            ->where(fn (Builder $query) => $this->runBy($query, $ownerId, publicName: false))
+            ->whereNot(fn (Builder $query) => $this->runBy($query, $ownerId))
+            ->count();
+    }
+
+    public function upcomingTablesPlayedBy(string $ownerId, ?Authenticatable $viewer, int $limit): array
+    {
+        $viewerId = $this->viewerId($viewer);
+
         if ($viewerId === null) {
             return [];
         }
@@ -61,19 +63,16 @@ final class ProfileActivityQuery implements ProfileActivityQueryInterface
             ->where('status', ParticipantStatus::Confirmed->value));
 
         if ($viewerId !== $ownerId) {
-            $tableIds = $this->delegatingTablesRunBy($viewerId);
-            $campaignIds = $this->rostersManagedBy($viewerId);
-
-            if ($tableIds === [] && $campaignIds === []) {
+            if (! $this->mayOpenManagementPages($viewer)) {
                 return [];
             }
 
             $query->where(fn (Builder $visible) => $visible
-                // GameTablePolicy::manageRegistrations: «Gestionar inscritos» of a table of its own
-                ->where(fn (Builder $table) => $table->whereNull('campaign_id')->whereIn('id', $tableIds))
-                // CampaignPolicy::manageRoster: the roster page lists the sessions of its roster players
+                // «Gestionar inscritos» (GameTablePolicy::manageRegistrations) lists the players of the table
+                ->where(fn (Builder $table) => $this->registrationsManagedBy($table, $viewerId))
+                // The roster page (CampaignPolicy::manageRoster) lists the sessions of its roster players
                 ->orWhere(fn (Builder $session) => $session
-                    ->whereIn('campaign_id', $campaignIds)
+                    ->whereHas('campaign', fn (Builder $campaign) => $this->rosterManagedBy($campaign, $viewerId))
                     ->whereExists(fn (QueryBuilder $roster) => $this->rosterOf($roster, $ownerId, 'gametables_tables.campaign_id'))));
         }
 
@@ -88,12 +87,12 @@ final class ProfileActivityQuery implements ProfileActivityQueryInterface
             ->count();
     }
 
-    public function activeCampaignsOf(string $ownerId, ?string $viewerId, int $limit): array
+    public function activeCampaignsOf(string $ownerId, ?Authenticatable $viewer, int $limit): array
     {
-        $campaigns = $this->campaignsOf($ownerId, $viewerId)
+        $campaigns = $this->campaignsOf($ownerId, $viewer)
             ->whereIn('status', self::ACTIVE_CAMPAIGN_STATUSES)
             ->with('gameSystem')
-            ->withExists(['gameMasters as directed_by_owner' => fn (Builder $gm) => $this->publicGameMaster($gm, $ownerId)])
+            ->withExists(['gameMasters as directed_by_owner' => fn (Builder $gm) => $this->gameMasterOf($gm, $ownerId, true)])
             ->orderBy('title')
             ->orderBy('id')
             ->limit($limit)
@@ -109,9 +108,32 @@ final class ProfileActivityQuery implements ProfileActivityQueryInterface
         ))->all());
     }
 
-    public function countCampaignsOf(string $ownerId, ?string $viewerId): int
+    public function countCampaignsOf(string $ownerId, ?Authenticatable $viewer): int
     {
-        return $this->campaignsOf($ownerId, $viewerId)->count();
+        return $this->campaignsOf($ownerId, $viewer)->count();
+    }
+
+    private function viewerId(?Authenticatable $viewer): ?string
+    {
+        return $viewer instanceof Authenticatable ? (string) $viewer->getAuthIdentifier() : null;
+    }
+
+    /**
+     * «Gestionar inscritos» and the roster page sit behind the sign-in and the email verification
+     * (EnsureEmailIsVerifiedWhenRequired), and an anonymized account directs nothing. Fails closed: an
+     * account that is not a site user, or a check that throws, opens neither.
+     */
+    private function mayOpenManagementPages(?Authenticatable $viewer): bool
+    {
+        if (! $viewer instanceof UserModel || $viewer->anonymized_at !== null) {
+            return false;
+        }
+
+        try {
+            return ! $this->verification->mustVerify($viewer);
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     /**
@@ -141,18 +163,18 @@ final class ProfileActivityQuery implements ProfileActivityQueryInterface
 
     /**
      * The tables the owner directs as TableDirection reads it (local, or inherited from the campaign and
-     * not excluded), as far as the page names them: a game master whose name is not public is never
-     * tied to their account there.
+     * not excluded). With a public name only by default: the page never ties a game master whose name is
+     * not public to their account; with `publicName: false`, only those.
      *
      * @param  Builder<GameTableModel>  $query
      */
-    private function runBy(Builder $query, string $ownerId): void
+    private function runBy(Builder $query, string $ownerId, bool $publicName = true): void
     {
         $query
-            ->whereHas('localGameMasters', fn (Builder $gm) => $this->publicGameMaster($gm, $ownerId))
+            ->whereHas('localGameMasters', fn (Builder $gm) => $this->gameMasterOf($gm, $ownerId, $publicName))
             ->orWhere(fn (Builder $session) => $session
                 ->whereNotNull('campaign_id')
-                ->whereHas('campaign.gameMasters', fn (Builder $gm) => $this->publicGameMaster($gm, $ownerId)
+                ->whereHas('campaign.gameMasters', fn (Builder $gm) => $this->gameMasterOf($gm, $ownerId, $publicName)
                     ->whereNotIn('gametables_game_masters.id', fn (QueryBuilder $excluded) => $excluded
                         ->select('gametables_table_gm.game_master_id')
                         ->from('gametables_table_gm')
@@ -166,11 +188,49 @@ final class ProfileActivityQuery implements ProfileActivityQueryInterface
      * @param  Builder<TModel>  $gm
      * @return Builder<TModel>
      */
-    private function publicGameMaster(Builder $gm, string $ownerId): Builder
+    private function gameMasterOf(Builder $gm, string $userId, ?bool $publicName): Builder
     {
-        return $gm
-            ->where('gametables_game_masters.user_id', $ownerId)
-            ->where('gametables_game_masters.is_name_public', true);
+        $gm->where('gametables_game_masters.user_id', $userId);
+
+        if ($publicName !== null) {
+            $gm->where('gametables_game_masters.is_name_public', $publicName);
+        }
+
+        return $gm;
+    }
+
+    /**
+     * GameTablePolicy::manageRegistrations as a subquery: a table of its own (not a campaign session),
+     * published, delegating its registrations and directed by the viewer (a local game master; a table
+     * without a campaign inherits none).
+     *
+     * @param  Builder<GameTableModel>  $table
+     */
+    private function registrationsManagedBy(Builder $table, string $viewerId): void
+    {
+        $table->whereNull('campaign_id')
+            ->where('delegates_registrations', true)
+            ->where('is_published', true)
+            ->whereHas('localGameMasters', fn (Builder $gm) => $this->gameMasterOf($gm, $viewerId, null));
+    }
+
+    /**
+     * CampaignPolicy::manageRoster as a subquery: an approved or published campaign directed by the
+     * viewer as CampaignDirection reads it (its web creator or one of its game masters).
+     *
+     * @param  Builder<CampaignModel>  $campaign
+     */
+    private function rosterManagedBy(Builder $campaign, string $viewerId): void
+    {
+        $campaign
+            ->where(fn (Builder $open) => $open
+                ->where('gametables_campaigns.frontend_creation_status', FrontendCreationStatus::Approved->value)
+                ->orWhere('gametables_campaigns.is_published', true))
+            ->where(fn (Builder $directed) => $directed
+                ->where(fn (Builder $web) => $web
+                    ->where('gametables_campaigns.created_by', $viewerId)
+                    ->whereNotNull('gametables_campaigns.frontend_creation_status'))
+                ->orWhereHas('gameMasters', fn (Builder $gm) => $this->gameMasterOf($gm, $viewerId, null)));
     }
 
     /**
@@ -179,24 +239,22 @@ final class ProfileActivityQuery implements ProfileActivityQueryInterface
      *
      * @return Builder<CampaignModel>
      */
-    private function campaignsOf(string $ownerId, ?string $viewerId): Builder
+    private function campaignsOf(string $ownerId, ?Authenticatable $viewer): Builder
     {
-        $rosterCampaignIds = match (true) {
-            $viewerId === null => [],
-            $viewerId === $ownerId => null,
-            default => $this->rostersManagedBy($viewerId),
-        };
+        $viewerId = $this->viewerId($viewer);
+        $isOwner = $viewerId === $ownerId;
+        // Anybody else sees only the roster places of the rosters they manage
+        $rosterManager = $viewerId !== null && ! $isOwner && $this->mayOpenManagementPages($viewer) ? $viewerId : null;
 
         return CampaignModel::query()
             ->publiclyListed()
-            ->where(function (Builder $query) use ($ownerId, $rosterCampaignIds): void {
-                $query->whereHas('gameMasters', fn (Builder $gm) => $this->publicGameMaster($gm, $ownerId));
+            ->where(function (Builder $query) use ($ownerId, $isOwner, $rosterManager): void {
+                $query->whereHas('gameMasters', fn (Builder $gm) => $this->gameMasterOf($gm, $ownerId, true));
 
-                // The owner sees their own roster places; anybody else only those of the rosters they manage
-                if ($rosterCampaignIds === null || $rosterCampaignIds !== []) {
-                    $query->orWhere(function (Builder $played) use ($ownerId, $rosterCampaignIds): void {
-                        if ($rosterCampaignIds !== null) {
-                            $played->whereIn('id', $rosterCampaignIds);
+                if ($isOwner || $rosterManager !== null) {
+                    $query->orWhere(function (Builder $played) use ($ownerId, $rosterManager): void {
+                        if ($rosterManager !== null) {
+                            $this->rosterManagedBy($played, $rosterManager);
                         }
 
                         $played->whereExists(fn (QueryBuilder $roster) => $this->rosterOf($roster, $ownerId, 'gametables_campaigns.id'));
@@ -211,53 +269,5 @@ final class ProfileActivityQuery implements ProfileActivityQueryInterface
             ->from('gametables_campaign_players')
             ->whereColumn('gametables_campaign_players.campaign_id', $campaignColumn)
             ->where('gametables_campaign_players.user_id', $ownerId);
-    }
-
-    /**
-     * The tables of their own (not campaign sessions) whose registrations the viewer manages: published,
-     * delegating them and run by the viewer (GameTablePolicy::manageRegistrations).
-     *
-     * @return list<string>
-     */
-    private function delegatingTablesRunBy(string $viewerId): array
-    {
-        if (! array_key_exists($viewerId, $this->delegatingTablesRunBy)) {
-            $directed = $this->tableDirection->tableIdsDirectedBy($viewerId);
-
-            $this->delegatingTablesRunBy[$viewerId] = $directed === [] ? [] : array_values(GameTableModel::query()
-                ->whereIn('id', $directed)
-                ->whereNull('campaign_id')
-                ->where('delegates_registrations', true)
-                ->where('is_published', true)
-                ->pluck('id')
-                ->map(fn (mixed $id): string => (string) $id)
-                ->all());
-        }
-
-        return $this->delegatingTablesRunBy[$viewerId];
-    }
-
-    /**
-     * The campaigns whose roster page the viewer opens: approved or published and directed by them
-     * (CampaignPolicy::manageRoster).
-     *
-     * @return list<string>
-     */
-    private function rostersManagedBy(string $viewerId): array
-    {
-        if (! array_key_exists($viewerId, $this->rostersManagedBy)) {
-            $directed = $this->campaignDirection->campaignIdsDirectedBy($viewerId);
-
-            $this->rostersManagedBy[$viewerId] = $directed === [] ? [] : array_values(CampaignModel::query()
-                ->whereIn('id', $directed)
-                ->where(fn (Builder $open) => $open
-                    ->where('frontend_creation_status', FrontendCreationStatus::Approved->value)
-                    ->orWhere('is_published', true))
-                ->pluck('id')
-                ->map(fn (mixed $id): string => (string) $id)
-                ->all());
-        }
-
-        return $this->rostersManagedBy[$viewerId];
     }
 }

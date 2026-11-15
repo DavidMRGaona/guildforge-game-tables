@@ -37,4 +37,27 @@ describe('CampaignsProfileSection', () => {
         expect(items[1]?.text()).toContain('Juega');
         expect(items[1]?.text()).not.toContain('·');
     });
+
+    it('draws titles, systems and statuses as text, never as HTML', () => {
+        const wrapper = mount(CampaignsProfileSection, {
+            props: {
+                campaigns: [
+                    {
+                        id: '1',
+                        title: '<img src=x onerror=alert(1)>',
+                        url: '/campanas/x',
+                        gameSystem: '<b>Sistema</b>',
+                        status: '<script>alert(1)</script>',
+                        role: 'director' as const,
+                    },
+                ],
+            },
+        });
+
+        expect(wrapper.find('img').exists()).toBe(false);
+        expect(wrapper.find('b').exists()).toBe(false);
+        expect(wrapper.find('script').exists()).toBe(false);
+        expect(wrapper.text()).toContain('<img src=x onerror=alert(1)>');
+        expect(wrapper.text()).toContain('<b>Sistema</b>');
+    });
 });

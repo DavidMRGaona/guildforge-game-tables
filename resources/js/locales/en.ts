@@ -235,6 +235,9 @@ export default {
         publicProfile: {
             directing: 'Runs',
             playing: 'Plays',
+            // Only the owner sees it: tables they run whose game master name is not public stay out
+            hiddenDirecting:
+                '{count} table you run does not show here because your game master name is not public. | {count} tables you run do not show here because your game master name is not public.',
             roles: {
                 director: 'Runs',
                 player: 'Plays',

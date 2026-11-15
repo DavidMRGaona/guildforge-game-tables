@@ -234,6 +234,9 @@ export default {
         publicProfile: {
             directing: 'Dirige',
             playing: 'Juega',
+            // Only the owner sees it: tables they run whose game master name is not public stay out
+            hiddenDirecting:
+                '{count} mesa que diriges no sale aquí porque tu nombre de director no es público. | {count} mesas que diriges no salen aquí porque tu nombre de director no es público.',
             roles: {
                 director: 'Dirige',
                 player: 'Juega',

@@ -71,18 +71,21 @@ final readonly class TablesProfileSection implements ProfileSectionInterface
 
     public function props(ProfileOwnerDTO $owner, ?Authenticatable $viewer): array
     {
-        $viewerId = $viewer instanceof Authenticatable ? (string) $viewer->getAuthIdentifier() : null;
-
         $directing = $this->activity->upcomingTablesRunBy($owner->id, self::LIMIT);
-        $playing = $this->activity->upcomingTablesPlayedBy($owner->id, $viewerId, self::LIMIT);
+        $playing = $this->activity->upcomingTablesPlayedBy($owner->id, $viewer, self::LIMIT);
 
-        if ($directing === [] && $playing === []) {
+        // Only the owner learns that some tables they run stay out because their name is not public
+        $isOwner = $viewer instanceof Authenticatable && (string) $viewer->getAuthIdentifier() === $owner->id;
+        $hiddenDirecting = $isOwner ? $this->activity->countUpcomingTablesRunWithoutPublicNameBy($owner->id) : 0;
+
+        if ($directing === [] && $playing === [] && $hiddenDirecting === 0) {
             throw NothingToDrawException::make();
         }
 
         return [
             'directing' => array_map($this->item(...), $directing),
             'playing' => array_map($this->item(...), $playing),
+            'hiddenDirecting' => $hiddenDirecting,
         ];
     }
 

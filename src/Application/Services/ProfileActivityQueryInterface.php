@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Application\Services;
 
+use Illuminate\Contracts\Auth\Authenticatable;
 use Modules\GameTables\Application\DTOs\ProfileCampaignItemDTO;
 use Modules\GameTables\Application\DTOs\ProfileTableItemDTO;
 
@@ -15,8 +16,9 @@ use Modules\GameTables\Application\DTOs\ProfileTableItemDTO;
  *   linked to the owner has a public name, the only way the pages tie it to them.
  * - Playing: only where the site shows that viewer the players: the owner themselves, the directors of
  *   a table that delegates its registrations (GameTablePolicy::manageRegistrations) and the directors
- *   of a campaign whose roster holds the owner (CampaignPolicy::manageRoster). Staff permissions never
- *   widen it, as they do not open those pages.
+ *   of a campaign whose roster holds the owner (CampaignPolicy::manageRoster), once they may open those
+ *   pages (signed in, email verified when the site asks for it). Staff permissions never widen it, as
+ *   they do not open those pages.
  */
 interface ProfileActivityQueryInterface
 {
@@ -28,12 +30,18 @@ interface ProfileActivityQueryInterface
     public function upcomingTablesRunBy(string $ownerId, int $limit): array;
 
     /**
+     * How many of the owner's next listed tables they direct only without a public name, so the profile
+     * can tell the owner, and only them, why those do not show.
+     */
+    public function countUpcomingTablesRunWithoutPublicNameBy(string $ownerId): int;
+
+    /**
      * The owner's next listed tables where they hold a confirmed player seat, soonest first, as far
      * as the viewer may see the players.
      *
      * @return list<ProfileTableItemDTO>
      */
-    public function upcomingTablesPlayedBy(string $ownerId, ?string $viewerId, int $limit): array;
+    public function upcomingTablesPlayedBy(string $ownerId, ?Authenticatable $viewer, int $limit): array;
 
     /**
      * Every listed table, past ones included, the owner directs under a public name.
@@ -45,11 +53,11 @@ interface ProfileActivityQueryInterface
      *
      * @return list<ProfileCampaignItemDTO>
      */
-    public function activeCampaignsOf(string $ownerId, ?string $viewerId, int $limit): array;
+    public function activeCampaignsOf(string $ownerId, ?Authenticatable $viewer, int $limit): array;
 
     /**
      * Every listed campaign, finished ones included, the owner directs or plays in as far as the
      * viewer may see it.
      */
-    public function countCampaignsOf(string $ownerId, ?string $viewerId): int;
+    public function countCampaignsOf(string $ownerId, ?Authenticatable $viewer): int;
 }
