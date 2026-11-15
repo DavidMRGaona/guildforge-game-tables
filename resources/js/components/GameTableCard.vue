@@ -197,9 +197,10 @@ const availabilityBadge = computed(() => {
 
             <!-- Zone 3: Meta (pinned to the bottom so footers line up across a grid row) -->
             <div class="mt-auto flex items-center justify-between">
-                <!-- GM with avatar pill -->
+                <!-- GM with avatar pill (none when the table names no main GM) -->
                 <div class="flex items-center gap-2 text-sm text-base-secondary">
                     <span
+                        v-if="table.mainGameMasterName"
                         class="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1"
                     >
                         <User class="h-3.5 w-3.5" aria-hidden="true" />

@@ -21,7 +21,6 @@ final class GameMasterResource extends JsonResource
         return [
             'id' => $this->id,
             'gameTableId' => $this->gameTableId,
-            'userId' => $this->userId,
             'displayName' => $this->displayName,
             'role' => $this->role->value,
             'roleLabel' => $this->role->label(),

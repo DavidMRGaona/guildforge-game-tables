@@ -34,7 +34,7 @@ final class GameTableResource extends JsonResource
 
         $mainGm = array_filter($this->gameMasters, fn (GameMasterResponseDTO $gm) => $gm->isMain);
         $mainGameMaster = reset($mainGm) ?: null;
-        $mainGameMasterName = $mainGameMaster->displayName ?? $this->creatorName;
+        $mainGameMasterName = $mainGameMaster->cardName ?? '';
 
         return [
             'id' => $this->id,
@@ -47,8 +47,6 @@ final class GameTableResource extends JsonResource
             'campaignTitle' => $this->campaignTitle,
             'eventId' => $this->eventId,
             'eventTitle' => $this->eventTitle,
-            'createdBy' => $this->createdBy,
-            'creatorName' => $this->creatorName,
             'tableType' => $this->tableType->value,
             'tableTypeLabel' => $this->tableType->label(),
             'tableFormat' => $this->tableFormat->value,

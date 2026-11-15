@@ -50,7 +50,7 @@ final class CampaignResource extends JsonResource
 
         $mainGm = array_filter($this->gameMasters, fn (CampaignGameMasterResponseDTO $gm) => $gm->isMain);
         $mainGameMaster = reset($mainGm) ?: null;
-        $mainGameMasterName = $mainGameMaster->displayName ?? $this->creatorName;
+        $mainGameMasterName = $mainGameMaster->cardName ?? '';
 
         return [
             'id' => $this->id,
@@ -59,8 +59,6 @@ final class CampaignResource extends JsonResource
             'description' => $this->description,
             'gameSystemId' => $this->gameSystemId,
             'gameSystemName' => $this->gameSystemName,
-            'createdBy' => $this->createdBy,
-            'creatorName' => $this->creatorName,
             'status' => $this->status->value,
             'statusLabel' => $this->status->label(),
             'statusColor' => $this->status->color(),

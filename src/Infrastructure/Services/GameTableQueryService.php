@@ -14,7 +14,6 @@ use Modules\GameTables\Application\DTOs\ParticipantResponseDTO;
 use Modules\GameTables\Application\Services\EventWithTablesQueryInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use Modules\GameTables\Domain\Entities\GameTable;
-use Modules\GameTables\Domain\Enums\GameMasterRole;
 use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Repositories\GameSystemRepositoryInterface;
@@ -67,7 +66,7 @@ final readonly class GameTableQueryService implements GameTableQueryServiceInter
 
         // Everything the calendar cards read, loaded with the list (no query per table)
         $tables = SeatCounter::withPlayerSeatCounts(GameTableModel::query())
-            ->with(['gameSystem', 'creator', 'event', 'gameMasters.user'])
+            ->with(['gameSystem', 'event', 'gameMasters.user', 'campaign.gameMasters.user'])
             ->publiclyListed()
             // Bound in the storage zone: the callers may give the bounds in another one
             ->whereBetween('starts_at', [$timezone->toStorage($from), $timezone->toStorage($to)])
@@ -85,7 +84,7 @@ final readonly class GameTableQueryService implements GameTableQueryServiceInter
         }
 
         $table = SeatCounter::withPlayerSeatCounts(GameTableModel::query())
-            ->with(['gameSystem', 'creator', 'event', 'gameMasters.user'])
+            ->with(['gameSystem', 'event', 'gameMasters.user', 'campaign.gameMasters.user'])
             ->publiclyListed()
             ->whereKey($id)
             ->first();
@@ -139,7 +138,7 @@ final readonly class GameTableQueryService implements GameTableQueryServiceInter
         ?string $campaignId = null,
     ): Builder {
         $query = SeatCounter::withPlayerSeatCounts(GameTableModel::query())
-            ->with(['gameSystem', 'creator', 'event', 'gameMasters.user'])
+            ->with(['gameSystem', 'event', 'gameMasters.user', 'campaign.gameMasters.user'])
             ->publiclyListed();
 
         // When browsing by event or campaign, show all tables (the context page controls visibility).
@@ -173,8 +172,7 @@ final readonly class GameTableQueryService implements GameTableQueryServiceInter
 
     private function toListDTO(GameTableModel $table): GameTableListDTO
     {
-        $mainGm = $table->gameMasters->firstWhere('role', GameMasterRole::Main);
-        $mainGameMasterName = $mainGm->display_name ?? $table->creator->name ?? '';
+        $mainGameMasterName = $table->loadedMainGameMaster()?->cardName($table->gameSystem?->game_master_title) ?? '';
 
         return new GameTableListDTO(
             id: $table->id,
@@ -193,7 +191,6 @@ final readonly class GameTableQueryService implements GameTableQueryServiceInter
             // The taken seats the table page shows
             currentPlayers: $this->seatCounter->takenPlayerSeatsOf($table),
             isPublished: $table->is_published,
-            creatorName: $table->creator->name ?? '',
             mainGameMasterName: $mainGameMasterName,
             eventId: $table->event_id,
             eventTitle: $table->event?->title,
@@ -233,7 +230,6 @@ final readonly class GameTableQueryService implements GameTableQueryServiceInter
             eventId: $table->event_id,
             eventTitle: $table->event?->title,
             createdBy: $table->created_by,
-            creatorName: $table->creator->name ?? '',
             tableType: $table->table_type,
             tableFormat: $table->table_format,
             status: $table->status,

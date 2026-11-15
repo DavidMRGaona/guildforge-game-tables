@@ -17,11 +17,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
+use Modules\GameTables\Domain\Enums\GameMasterRole;
 use Modules\GameTables\Domain\Enums\RegistrationType;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableStatus;
@@ -280,6 +282,32 @@ final class GameTableModel extends Model
         )->withPivot('source', 'excluded', 'sort_order')
             ->withTimestamps()
             ->wherePivot('excluded', true);
+    }
+
+    /**
+     * The main game master a card names, read from the loaded relations only (no query): the table's own,
+     * else, for a campaign session, the campaign's, leaving out those excluded from this table. Null without one.
+     */
+    public function loadedMainGameMaster(): ?GameMasterModel
+    {
+        $excludedIds = [];
+
+        foreach ($this->gameMasters as $gameMaster) {
+            $pivot = $gameMaster->getRelation('pivot');
+
+            if ($pivot instanceof Pivot && (bool) $pivot->getAttribute('excluded')) {
+                $excludedIds[] = $gameMaster->id;
+            } elseif ($gameMaster->role === GameMasterRole::Main) {
+                return $gameMaster;
+            }
+        }
+
+        $campaign = $this->campaign_id !== null && $this->relationLoaded('campaign') ? $this->campaign : null;
+
+        return $campaign?->gameMasters->first(
+            fn (GameMasterModel $gameMaster): bool => $gameMaster->role === GameMasterRole::Main
+                && ! in_array($gameMaster->id, $excludedIds, true)
+        );
     }
 
     /**

@@ -50,7 +50,6 @@ final class GameTableListResource extends JsonResource
             'spotsAvailable' => max(0, $this->maxPlayers - $this->currentPlayers),
             'isFull' => $this->isFull(),
             'isPublished' => $this->isPublished,
-            'creatorName' => $this->creatorName,
             'mainGameMasterName' => $this->mainGameMasterName,
             'eventId' => $this->eventId,
             'eventTitle' => $this->eventTitle,

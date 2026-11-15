@@ -315,8 +315,8 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                             </div>
                         </div>
 
-                        <!-- Game Masters -->
-                        <div>
+                        <!-- Game Masters: left out when the table names none -->
+                        <div v-if="table.gameMasters.length > 0 || table.mainGameMasterName">
                             <h3 class="mb-1 text-sm font-semibold text-base-primary">
                                 {{ t('gameTables.gameMaster') }}
                             </h3>
@@ -324,9 +324,12 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                                 <!-- When all GMs have the same role, show as a single list -->
                                 <template v-if="allSameRole">
                                     <ul class="space-y-1">
-                                        <!-- No game master rows: the table's main GM name (the creator by default) -->
+                                        <!-- No game master rows: the main GM name, when the props carry one -->
                                         <li
-                                            v-if="formattedAllGameMasters.length === 0"
+                                            v-if="
+                                                formattedAllGameMasters.length === 0 &&
+                                                table.mainGameMasterName
+                                            "
                                             class="flex items-center"
                                         >
                                             <User

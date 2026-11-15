@@ -8,7 +8,6 @@ export interface GameSystem {
 export interface GameMaster {
     id: string;
     gameTableId: string;
-    userId: string | null;
     displayName: string;
     role: string;
     roleLabel: string;
@@ -19,7 +18,6 @@ export interface GameMaster {
 
 export interface CampaignGameMaster {
     id: string;
-    userId: string | null;
     displayName: string;
     role: string;
     roleLabel: string;
@@ -62,7 +60,6 @@ export interface GameTableListItem {
     spotsAvailable: number;
     isFull: boolean;
     isPublished: boolean;
-    creatorName: string;
     mainGameMasterName: string;
     eventId: string | null;
     eventTitle: string | null;
@@ -97,8 +94,6 @@ export interface GameTable {
     campaignTitle: string | null;
     eventId: string | null;
     eventTitle: string | null;
-    createdBy: string;
-    creatorName: string;
     tableType: string;
     tableTypeLabel: string;
     tableFormat: string;
@@ -154,7 +149,6 @@ export interface CampaignListItem {
     title: string;
     slug: string;
     gameSystemName: string;
-    creatorName: string;
     status: string;
     statusLabel: string;
     statusColor: string;
@@ -183,8 +177,6 @@ export interface Campaign {
     description: string | null;
     gameSystemId: string;
     gameSystemName: string;
-    createdBy: string;
-    creatorName: string;
     status: string;
     statusLabel: string;
     statusColor: string;
@@ -342,7 +334,6 @@ export interface GameTableEditData {
     event_id: string | null;
     event_title: string | null;
     created_by: string;
-    creator_name: string;
     table_type: string;
     table_type_label: string;
     table_format: string;
@@ -384,7 +375,6 @@ export interface GameTableEditData {
     game_masters: Array<{
         id: string;
         game_table_id: string;
-        user_id: string | null;
         display_name: string;
         role: string;
         role_label: string;

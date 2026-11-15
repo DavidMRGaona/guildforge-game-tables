@@ -61,14 +61,54 @@ trait HasGameMasterAttributes
     }
 
     /**
-     * Get the display name for this game master.
+     * Get the display name for this game master: a linked account goes by its public name, or by its
+     * account name when it has none (an account without a public name has no public profile to tie it to).
      */
     public function getDisplayNameAttribute(): string
     {
         if ($this->user !== null) {
-            return $this->user->name;
+            $publicName = trim((string) $this->user->display_name);
+
+            return $publicName !== '' ? $publicName : $this->user->name;
         }
 
         return trim(($this->first_name ?? '').' '.($this->last_name ?? ''));
+    }
+
+    /**
+     * The name visitors may see: null when the director chose not to show it (or has none).
+     */
+    public function publicName(): ?string
+    {
+        if (! $this->is_name_public) {
+            return null;
+        }
+
+        $name = trim($this->display_name);
+
+        return $name !== '' ? $name : null;
+    }
+
+    /**
+     * The title shown with this director: their own, or the game system's for the main game master
+     * («Narrador», «Keeper»…). A co-GM keeps the label of their role, which tells them apart.
+     */
+    public function shownTitle(?string $defaultTitle = null): ?string
+    {
+        foreach ([$this->custom_title, $this->role === GameMasterRole::Main ? $defaultTitle : null] as $title) {
+            if ($title !== null && trim($title) !== '') {
+                return $title;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * How a card names this director: the public name, else the title, else the role's label.
+     */
+    public function cardName(?string $defaultTitle = null): string
+    {
+        return $this->publicName() ?? $this->shownTitle($defaultTitle) ?? $this->role->label();
     }
 }
