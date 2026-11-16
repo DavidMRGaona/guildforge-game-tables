@@ -14,7 +14,7 @@ Puedes proponer tu propia campaña desde la web. Una vez publicada, gestionas su
 
 ## Antes de empezar
 
-- Abre el formulario desde **Mis campañas** con **Crear campaña**, o desde tu perfil (pestaña **Mesas**, apartado **Campañas**, **Crear nueva campaña**).
+- Abre el formulario desde **Mis campañas** con **Crear campaña**, o desde **Ajustes de la cuenta** (pestaña **Mesas**, apartado **Campañas**, **Crear nueva campaña**).
 - Si la web te pide verificar tu email, hazlo antes: hasta entonces no puedes crear campañas.
 
 El formulario tiene tres pestañas: **Básico**, **Contenido** y **Ubicación**. Si al guardar falta algo, arriba sale «No se ha podido guardar» con la lista de campos que revisar.

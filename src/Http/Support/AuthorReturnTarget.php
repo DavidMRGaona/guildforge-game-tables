@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
  * Where the author lands after acting on a draft (send to review, delete): «Mis mesas» /
  * «Mis campañas» by default, or the profile when the action came from its drafts list. Only the
  * whitelisted `return_to=profile` is honoured, never a URL, so it cannot become an open redirect.
- * The profile opens on the tab of the item's kind (`/perfil?tab=…`).
+ * The account settings page opens on the tab of the item's kind (`/perfil?tab=…`).
  */
 final readonly class AuthorReturnTarget
 {

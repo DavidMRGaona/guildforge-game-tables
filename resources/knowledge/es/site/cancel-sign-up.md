@@ -1,7 +1,7 @@
 ---
 id: game-tables.cancel-sign-up
 title: Cancelar tu inscripción
-summary: Date de baja de una mesa desde su ficha, desde tu perfil o desde el enlace del correo, y deja tu plaza libre para otra persona.
+summary: Date de baja de una mesa desde su ficha, desde Ajustes de la cuenta o desde el enlace del correo, y deja tu plaza libre para otra persona.
 category: events-and-games
 audience: site
 order: 30
@@ -12,7 +12,7 @@ Si al final no puedes ir, cancela tu inscripción cuanto antes: tu plaza pasa a 
 
 ## Desde la ficha de la mesa
 
-1. Abre la mesa. Si no la encuentras, ve a tu perfil, pestaña **Mesas**, y búscala en **Próximas partidas**.
+1. Abre la mesa. Si no la encuentras, abre **Ajustes de la cuenta**, pestaña **Mesas**, y búscala en **Próximas partidas**.
 2. Pulsa **Cancelar inscripción**.
 3. Confirma con **Confirmar**.
 

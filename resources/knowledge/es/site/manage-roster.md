@@ -90,7 +90,7 @@ Según la configuración de la web, te llega un correo cuando alguien solicita u
 
 Con la sesión iniciada, también te avisa la campana de la cabecera, y el aviso te lleva a la página de la plantilla. Los avisos de una misma campaña se juntan en una línea mientras no la abras, por ejemplo «Ana y 2 más: novedades en «Los ecos»».
 
-Si no los quieres, desactiva «Avisos como director de juego» en la pestaña **Avisos** de tu perfil, **En la web**, **Por correo** o los dos. Dejan de llegarte también los avisos de tus mesas. Las solicitudes pendientes siguen en la página de la plantilla.
+Si no los quieres, desactiva «Avisos como director de juego» en la pestaña **Avisos** de **Ajustes de la cuenta**, **En la web**, **Por correo** o los dos. Dejan de llegarte también los avisos de tus mesas. Las solicitudes pendientes siguen en la página de la plantilla.
 
 [[action:profile.show?tab=mail|Elegir mis correos]]
 

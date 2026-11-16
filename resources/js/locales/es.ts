@@ -16,8 +16,8 @@ export default {
         verificationGate: {
             edit: 'Para editar, enviar o eliminar, verifica tu email.',
         },
-        // «Mis mesas» / «Mis campañas» back to their profile tab
-        backToProfile: 'Volver a mi perfil',
+        // «Mis mesas» / «Mis campañas» back to their account settings tab
+        backToProfile: 'Volver a Ajustes de la cuenta',
         // A draft's actions (DraftActions) and the moderator's reason on the drafts
         draftActions: {
             groupLabel: 'Acciones de «{title}»',

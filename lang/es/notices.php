@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 // Notices of the notification centre (the bell): one line each, written when they are delivered
 return [
-    // Shown before the name of a muted thing in the profile
+    // Shown before the name of a muted thing in the account settings
     'subjects' => [
         'table' => 'Mesa',
         'campaign' => 'Campaña',

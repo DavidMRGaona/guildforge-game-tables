@@ -122,7 +122,7 @@ Si tu web tiene encuestas, al terminar una mesa en la que has jugado puede llega
 | Quién | Qué puede hacer |
 |---|---|
 | Cualquier visitante | Ver las mesas publicadas y, en las abiertas a todos, apuntarse como invitado |
-| Con cuenta | Apuntarse, ver sus inscripciones en la pestaña **Mesas** del perfil y cancelarlas |
+| Con cuenta | Apuntarse, ver sus inscripciones en la pestaña **Mesas** de **Ajustes de la cuenta** y cancelarlas |
 | Directores de una mesa | Si la organización lo permite, aprobar o rechazar desde la web las inscripciones pendientes |
 | Quien puede crear desde la web | Crear mesas y campañas, que pueden pasar por revisión |
 | La organización | Todo lo demás desde el panel: publicar, cancelar, confirmar, mover la lista de espera, marcar a quien no se presenta |
