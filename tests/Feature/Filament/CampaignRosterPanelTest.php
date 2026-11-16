@@ -218,6 +218,24 @@ final class CampaignRosterPanelTest extends ModuleTestCase
             ->assertCanNotSeeTableRecords([$expired]);
     }
 
+    public function test_the_invited_by_column_reads_the_inviters_account_as_it_is_now(): void
+    {
+        $campaign = $this->campaign();
+        $this->admin->update(['name' => 'Admin Account', 'display_name' => 'Admin Reader']);
+        $live = $this->invitation($campaign, 'john@example.com', CarbonImmutable::now()->addDays(3));
+        $live->update(['inviter_name' => 'Old Name']);
+        $gone = $this->invitation($campaign, 'jane@example.com', CarbonImmutable::now()->addDays(3));
+        $gone->update(['invited_by_user_id' => null, 'inviter_name' => 'Stored Name']);
+        $noPublicName = $this->invitation($campaign, 'ana@example.com', CarbonImmutable::now()->addDays(3));
+        $noPublicName->update(['invited_by_user_id' => $this->user('Bea Account')->id]);
+        UserModel::query()->whereKey($noPublicName->invited_by_user_id)->update(['display_name' => null]);
+
+        $this->invitations($campaign)
+            ->assertTableColumnStateSet('inviter_name', 'Admin Reader', $live)
+            ->assertTableColumnStateSet('inviter_name', 'Stored Name', $gone)
+            ->assertTableColumnStateSet('inviter_name', 'Bea Account', $noPublicName);
+    }
+
     public function test_the_tab_warns_when_pending_invitations_outnumber_free_seats(): void
     {
         $warning = 'Hay más invitaciones pendientes que plazas libres; entrará quien acepte primero.';

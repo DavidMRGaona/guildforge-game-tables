@@ -45,7 +45,7 @@ final class ProfileCampaignInvitationsTest extends ModuleTestCase
         config()->set('modules.settings.game-tables', []);
         $this->travelTo(CarbonImmutable::parse('2026-11-02 10:00:00'));
 
-        $this->mary = UserModel::factory()->create(['name' => 'Mary Major', 'email' => 'mary@example.com']);
+        $this->mary = UserModel::factory()->create(['name' => 'Mary Account', 'display_name' => 'Mary Major', 'email' => 'mary@example.com']);
         $this->john = UserModel::factory()->create(['name' => 'John Doe', 'email' => 'john@example.com']);
 
         $system = GameSystemModel::create(['id' => (string) Str::uuid(), 'name' => 'Sistema', 'slug' => 'sistema', 'is_active' => true]);

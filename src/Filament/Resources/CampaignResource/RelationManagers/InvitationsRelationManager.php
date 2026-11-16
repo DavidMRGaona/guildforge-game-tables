@@ -41,7 +41,7 @@ final class InvitationsRelationManager extends RelationManager
     {
         return $table
             // An expired invitation the daily cleanup has not removed yet is not shown, as on the web
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query->where('expires_at', '>', now()))
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->where('expires_at', '>', now())->with('inviter'))
             ->defaultSort('created_at', 'desc')
             // Why nobody can be invited now, else whether invitations outnumber the free seats: no
             // seat is reserved, whoever accepts first enters, so the direction is told (as on the web)
@@ -53,8 +53,10 @@ final class InvitationsRelationManager extends RelationManager
                     ->label(__('game-tables::messages.relation_managers.invitations.email'))
                     ->searchable(),
 
+                // Staff see who really invited: the account as it is now, the stored name only once it is gone
                 TextColumn::make('inviter_name')
                     ->label(__('game-tables::messages.relation_managers.invitations.invited_by'))
+                    ->getStateUsing(fn (CampaignInvitationModel $record): string => $this->inviterOf($record))
                     ->visibleFrom('lg'),
 
                 TextColumn::make('send_count')
@@ -159,5 +161,22 @@ final class InvitationsRelationManager extends RelationManager
         $rosterCount = app(CampaignRosterRepositoryInterface::class)->count(new CampaignId((string) $campaign->getKey()));
 
         return $pending > (int) $maxPlayers - $rosterCount;
+    }
+
+    /**
+     * The inviter's account as it is now (public name, else account name); the name stored when inviting
+     * only once the account is gone.
+     */
+    private function inviterOf(CampaignInvitationModel $invitation): string
+    {
+        $inviter = $invitation->inviter;
+
+        if ($inviter === null) {
+            return $invitation->inviter_name;
+        }
+
+        $publicName = trim((string) $inviter->display_name);
+
+        return $publicName !== '' ? $publicName : (string) $inviter->name;
     }
 }

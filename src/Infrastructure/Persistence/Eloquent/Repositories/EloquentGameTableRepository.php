@@ -242,8 +242,7 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
         return GameTableModel::query()
             ->with([
                 'gameSystem',
-                'creator',
-                'campaign',
+                'campaign.gameMasters.user',
                 'event',
                 'contentWarnings',
                 'participants.user',
@@ -259,8 +258,7 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
         return GameTableModel::query()
             ->with([
                 'gameSystem',
-                'creator',
-                'campaign',
+                'campaign.gameMasters.user',
                 'event',
                 'contentWarnings',
                 'participants.user',

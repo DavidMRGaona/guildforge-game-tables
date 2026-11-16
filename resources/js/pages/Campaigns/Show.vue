@@ -279,37 +279,25 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                         </div>
                     </div>
 
-                    <!-- Game Masters -->
-                    <div>
+                    <!-- Game Masters: left out when the campaign has no main one -->
+                    <div v-if="mainGameMasters.length > 0">
                         <h3 class="mb-1 text-sm font-semibold text-base-primary">
                             {{ t('campaigns.gameMaster') }}
                         </h3>
                         <div class="space-y-1">
-                            <template v-if="mainGameMasters.length > 0">
-                                <div
-                                    v-for="gm in mainGameMasters"
-                                    :key="gm.id"
-                                    class="flex items-center text-base-secondary"
+                            <div
+                                v-for="gm in mainGameMasters"
+                                :key="gm.id"
+                                class="flex items-center text-base-secondary"
+                            >
+                                <User class="mr-2 h-5 w-5 text-primary" aria-hidden="true" />
+                                <span>{{
+                                    gm.isNamePublic ? gm.displayName : t('campaigns.anonymousGm')
+                                }}</span>
+                                <span v-if="gm.customTitle" class="ml-1 text-sm text-base-secondary"
+                                    >({{ gm.customTitle }})</span
                                 >
-                                    <User class="mr-2 h-5 w-5 text-primary" aria-hidden="true" />
-                                    <span>{{
-                                        gm.isNamePublic
-                                            ? gm.displayName
-                                            : t('campaigns.anonymousGm')
-                                    }}</span>
-                                    <span
-                                        v-if="gm.customTitle"
-                                        class="ml-1 text-sm text-base-secondary"
-                                        >({{ gm.customTitle }})</span
-                                    >
-                                </div>
-                            </template>
-                            <template v-else>
-                                <div class="flex items-center text-base-secondary">
-                                    <User class="mr-2 h-5 w-5 text-primary" aria-hidden="true" />
-                                    <span>{{ campaign.creatorName }}</span>
-                                </div>
-                            </template>
+                            </div>
                         </div>
                     </div>
 

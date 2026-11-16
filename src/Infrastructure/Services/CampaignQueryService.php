@@ -90,7 +90,7 @@ final readonly class CampaignQueryService implements CampaignQueryServiceInterfa
         ?string $status = null,
     ): Builder {
         $query = CampaignModel::query()
-            ->with(['gameSystem', 'creator', 'gameMasters.user', 'contentWarnings'])
+            ->with(['gameSystem', 'gameMasters.user', 'contentWarnings'])
             ->withCount([
                 'gameTables',
                 'players' => fn ($players) => $players->whereNull('users.anonymized_at'),
@@ -122,7 +122,6 @@ final readonly class CampaignQueryService implements CampaignQueryServiceInterfa
             gameSystemId: $campaign->game_system_id,
             gameSystemName: $campaign->gameSystem->name ?? '',
             createdBy: $campaign->created_by,
-            creatorName: $campaign->creator->name ?? '',
             status: $campaign->status,
             frequency: $campaign->frequency,
             maxPlayers: $campaign->max_players,
@@ -163,7 +162,7 @@ final readonly class CampaignQueryService implements CampaignQueryServiceInterfa
         )->all();
 
         $gameTables = $campaign->gameTables->map(
-            fn (GameTableModel $table) => $this->toGameTableListDTO($table)
+            fn (GameTableModel $table) => $this->toGameTableListDTO($table->setRelation('campaign', $campaign))
         )->all();
 
         $hasActiveOrUpcoming = $this->hasActiveOrUpcomingTables($campaign);
@@ -176,7 +175,6 @@ final readonly class CampaignQueryService implements CampaignQueryServiceInterfa
             gameSystemId: $campaign->game_system_id,
             gameSystemName: $campaign->gameSystem->name ?? '',
             createdBy: $campaign->created_by,
-            creatorName: $campaign->creator->name ?? '',
             status: $campaign->status,
             frequency: $campaign->frequency,
             maxPlayers: $campaign->max_players,
@@ -212,16 +210,7 @@ final readonly class CampaignQueryService implements CampaignQueryServiceInterfa
 
     private function toGameTableListDTO(GameTableModel $table): GameTableListDTO
     {
-        $mainGm = $table->gameMasters->firstWhere('is_main', true);
-        $mainGameMasterName = '';
-        if ($mainGm !== null) {
-            $mainGameMasterName = $mainGm->is_name_public
-                ? ($mainGm->user->name ?? $mainGm->external_name ?? '')
-                : '';
-        }
-        if ($mainGameMasterName === '') {
-            $mainGameMasterName = $table->creator->name ?? '';
-        }
+        $mainGameMasterName = $table->loadedMainGameMaster()?->cardName($table->gameSystem?->game_master_title) ?? '';
 
         return new GameTableListDTO(
             id: $table->id,
@@ -240,7 +229,6 @@ final readonly class CampaignQueryService implements CampaignQueryServiceInterfa
             // The taken seats the table page shows
             currentPlayers: $this->seatCounter->takenPlayerSeatsOf($table),
             isPublished: $table->is_published,
-            creatorName: $table->creator->name ?? '',
             mainGameMasterName: $mainGameMasterName,
             eventId: $table->event_id,
             eventTitle: $table->event?->title,

@@ -15,6 +15,7 @@ use Modules\GameTables\Application\Services\AccountLookupInterface;
 use Modules\GameTables\Application\Services\CampaignDirectionInterface;
 use Modules\GameTables\Application\Services\CampaignInvitationSendLogInterface;
 use Modules\GameTables\Application\Services\CampaignInvitationServiceInterface;
+use Modules\GameTables\Application\Services\CampaignInviterNamesInterface;
 use Modules\GameTables\Application\Services\CampaignRosterServiceInterface;
 use Modules\GameTables\Application\Services\RegistrationLockInterface;
 use Modules\GameTables\Domain\Entities\Campaign;
@@ -48,6 +49,7 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
         private AccountLookupInterface $accounts,
         private RegistrationLockInterface $lock,
         private CampaignRosterServiceInterface $rosterService,
+        private CampaignInviterNamesInterface $inviterNames,
     ) {}
 
     public function invite(string $campaignId, string $email, string $actorUserId): void
@@ -96,7 +98,7 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
                     campaignId: $campaign->id,
                     email: $email,
                     invitedBy: $actorUserId,
-                    inviterName: $this->nameOf($actorUserId),
+                    inviterName: $this->inviterNames->forNewInvitation($campaignId, $actorUserId),
                     tokenHash: hash('sha256', $token),
                     expiresAt: $this->shiftDays($now, self::EXPIRES_AFTER_DAYS),
                     sendCount: 1,
@@ -157,13 +159,15 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
     {
         $campaign = $this->campaigns->findOrFail(new CampaignId($campaignId));
 
-        $views = [];
-        foreach ($this->invitations->pendingFor($campaign->id) as $invitation) {
-            if ($invitation->isExpired($now)) {
-                continue;
-            }
+        $live = array_values(array_filter(
+            $this->invitations->pendingFor($campaign->id),
+            static fn (CampaignInvitation $invitation): bool => ! $invitation->isExpired($now),
+        ));
+        $names = $this->inviterNames->namesOf($live);
 
-            $views[] = $this->viewOf($invitation, $campaign->title, $campaign->slug, $this->sendLimitsAllow($campaignId, $invitation->email, $now));
+        $views = [];
+        foreach ($live as $invitation) {
+            $views[] = $this->viewOf($invitation, $names[$invitation->id->value], $campaign->title, $campaign->slug, $this->sendLimitsAllow($campaignId, $invitation->email, $now));
         }
 
         return $views;
@@ -171,14 +175,17 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
 
     public function pendingForEmail(string $email, DateTimeImmutable $now): array
     {
+        $pending = $this->invitations->pendingForEmail($this->normalise($email), $now);
+        $names = $this->inviterNames->namesOf($pending);
+
         $views = [];
-        foreach ($this->invitations->pendingForEmail($this->normalise($email), $now) as $invitation) {
+        foreach ($pending as $invitation) {
             $campaign = $this->campaigns->find($invitation->campaignId);
             if (! $campaign instanceof Campaign) {
                 continue;
             }
 
-            $views[] = $this->viewOf($invitation, $campaign->title, $campaign->slug, false);
+            $views[] = $this->viewOf($invitation, $names[$invitation->id->value], $campaign->title, $campaign->slug, false);
         }
 
         return $views;
@@ -193,7 +200,7 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
 
         $campaign = $this->campaigns->findOrFail($invitation->campaignId);
 
-        return $this->viewOf($invitation, $campaign->title, $campaign->slug, false);
+        return $this->viewOf($invitation, $this->inviterNames->nameOf($invitation), $campaign->title, $campaign->slug, false);
     }
 
     public function acceptRefusal(string $campaignId, string $userId): ?string
@@ -317,14 +324,14 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
         return ! $invitation instanceof CampaignInvitation || $invitation->isExpired($now) ? null : $invitation;
     }
 
-    private function viewOf(CampaignInvitation $invitation, string $title, string $slug, bool $canResend): CampaignInvitationViewDTO
+    private function viewOf(CampaignInvitation $invitation, string $inviterName, string $title, string $slug, bool $canResend): CampaignInvitationViewDTO
     {
         return new CampaignInvitationViewDTO(
             id: $invitation->id->value,
             campaignId: $invitation->campaignId->value,
             campaignTitle: $title,
             campaignSlug: $slug,
-            inviterName: $invitation->inviterName,
+            inviterName: $inviterName,
             email: $invitation->email,
             expiresAt: (string) app(TimezoneServiceInterface::class)->iso($invitation->expiresAt),
             sendCount: $invitation->sendCount,
@@ -407,11 +414,6 @@ final readonly class CampaignInvitationService implements CampaignInvitationServ
     private function newToken(): string
     {
         return Str::random(64);
-    }
-
-    private function nameOf(string $userId): string
-    {
-        return $this->accounts->findById($userId)->name ?? '';
     }
 
     private function normalise(string $email): string

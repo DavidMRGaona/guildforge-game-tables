@@ -7,17 +7,24 @@ namespace Modules\GameTables\Application\DTOs;
 use Modules\GameTables\Domain\Enums\GameMasterRole;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
 
+/**
+ * A table director as visitors see them: no account id, and no name unless they chose to show it.
+ */
 final readonly class GameMasterResponseDTO
 {
+    /**
+     * @param  string  $displayName  The public name, empty when the director chose not to show it
+     * @param  string  $cardName  How a card names them: the public name, else the title, else the role's label
+     */
     public function __construct(
         public string $id,
         public string $gameTableId,
-        public ?string $userId,
         public string $displayName,
         public GameMasterRole $role,
         public ?string $customTitle,
         public bool $isMain,
         public bool $isNamePublic,
+        public string $cardName,
     ) {}
 
     /**
@@ -26,27 +33,19 @@ final readonly class GameMasterResponseDTO
      */
     public static function fromModel(GameMasterModel $model, string $gameTableId, ?string $defaultTitle = null): self
     {
+        $publicName = $model->publicName();
+
         return new self(
             id: $model->id,
             gameTableId: $gameTableId,
-            userId: $model->user_id,
-            displayName: $model->display_name,
+            displayName: $publicName ?? '',
             role: $model->role,
-            customTitle: self::title($model->custom_title, $model->role === GameMasterRole::Main ? $defaultTitle : null),
+            customTitle: $model->shownTitle($defaultTitle),
             isMain: $model->role === GameMasterRole::Main,
-            isNamePublic: $model->is_name_public,
+            // Public only with a name to show: otherwise the page would draw an empty name before the title
+            isNamePublic: $publicName !== null,
+            cardName: $model->cardName($defaultTitle),
         );
-    }
-
-    private static function title(?string $own, ?string $default): ?string
-    {
-        foreach ([$own, $default] as $title) {
-            if ($title !== null && trim($title) !== '') {
-                return $title;
-            }
-        }
-
-        return null;
     }
 
     /**
@@ -57,7 +56,6 @@ final readonly class GameMasterResponseDTO
         return [
             'id' => $this->id,
             'game_table_id' => $this->gameTableId,
-            'user_id' => $this->userId,
             'display_name' => $this->displayName,
             'role' => $this->role->value,
             'role_label' => $this->role->label(),

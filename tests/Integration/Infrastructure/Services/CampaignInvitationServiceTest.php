@@ -63,7 +63,7 @@ final class CampaignInvitationServiceTest extends ModuleTestCase
         config()->set('modules.settings.game-tables', []);
         $this->travelTo(CarbonImmutable::parse('2026-11-02 10:00:00', 'Europe/Madrid'));
 
-        $this->mary = UserModel::factory()->create(['name' => 'Mary Major', 'email' => 'mary@example.com']);
+        $this->mary = UserModel::factory()->create(['name' => 'Mary Account', 'display_name' => 'Mary Major', 'email' => 'mary@example.com']);
         $this->john = UserModel::factory()->create(['name' => 'John Doe', 'email' => 'john@example.com']);
         $this->jane = UserModel::factory()->create(['name' => 'Jane Doe', 'email' => 'jane@example.com']);
 
@@ -169,6 +169,27 @@ final class CampaignInvitationServiceTest extends ModuleTestCase
                 && $event->email === 'ana@example.com'
                 && hash('sha256', $event->token) === $invitation->tokenHash,
         );
+    }
+
+    public function test_the_inviter_without_a_public_name_goes_by_the_account_name(): void
+    {
+        $this->mary->update(['display_name' => null]);
+
+        $this->invite('ana@example.com');
+
+        $this->assertSame('Mary Account', $this->pending('ana@example.com')->inviterName);
+    }
+
+    public function test_a_pending_invitation_shows_the_inviters_current_name(): void
+    {
+        $this->invite('ana@example.com');
+        $this->mary->update(['display_name' => 'Mary Renamed']);
+
+        $views = $this->service()->pendingFor($this->campaign->id, CarbonImmutable::now()->toDateTimeImmutable());
+
+        // Stored when inviting, but read again from the account
+        $this->assertSame('Mary Major', $this->pending('ana@example.com')->inviterName);
+        $this->assertSame('Mary Renamed', $views[0]->inviterName);
     }
 
     public function test_invite_answers_the_same_for_an_account_and_for_no_account(): void
