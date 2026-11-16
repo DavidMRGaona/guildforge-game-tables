@@ -12,7 +12,8 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
 
 /**
- * Two reads whatever the number of invitations: their campaigns with their directors, and the inviters.
+ * A fixed number of queries (about five) whatever the number of invitations: their campaigns with their
+ * game system and directors (and the directors' accounts), and the inviters.
  */
 final readonly class CampaignInviterNames implements CampaignInviterNamesInterface
 {

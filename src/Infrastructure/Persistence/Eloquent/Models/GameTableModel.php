@@ -285,35 +285,16 @@ final class GameTableModel extends Model
     }
 
     /**
-     * The game masters visitors see for this table, read from the loaded relations only (no query): the
-     * table's own rows, then, for a campaign session, the campaign's, leaving out those excluded from this table.
+     * The game masters visitors see for this table, read from the loaded relations only (no query).
+     * Same rule as effective_game_masters.
      *
      * @return list<GameMasterModel>
      */
     public function loadedEffectiveGameMasters(): array
     {
-        $effective = [];
-        $excludedIds = [];
-
-        foreach ($this->gameMasters as $gameMaster) {
-            $pivot = $gameMaster->getRelation('pivot');
-
-            if ($pivot instanceof Pivot && (bool) $pivot->getAttribute('excluded')) {
-                $excludedIds[$gameMaster->id] = true;
-            } else {
-                $effective[$gameMaster->id] = $gameMaster;
-            }
-        }
-
         $campaign = $this->campaign_id !== null && $this->relationLoaded('campaign') ? $this->campaign : null;
 
-        foreach ($campaign->gameMasters ?? [] as $gameMaster) {
-            if (! isset($excludedIds[$gameMaster->id]) && ! isset($effective[$gameMaster->id])) {
-                $effective[$gameMaster->id] = $gameMaster;
-            }
-        }
-
-        return array_values($effective);
+        return self::effectiveFrom($this->gameMasters, $campaign->gameMasters ?? []);
     }
 
     /**
@@ -332,29 +313,55 @@ final class GameTableModel extends Model
     }
 
     /**
-     * Get the effective game masters for this table (inherited from campaign + local, minus excluded).
+     * Get the effective game masters for this table, read afresh: the table's own (local) game masters,
+     * then, for a campaign session, the campaign's, leaving out those excluded from this table.
      *
      * @return Collection<int, GameMasterModel>
      */
     public function getEffectiveGameMastersAttribute(): Collection
     {
-        // Get excluded GM IDs for this table
-        $excludedIds = $this->excludedGameMasters()->pluck('gametables_game_masters.id')->toArray();
+        $campaignGameMasters = $this->campaign_id !== null
+            ? ($this->campaign?->gameMasters()->get() ?? new Collection)
+            : new Collection;
 
-        // Start with campaign GMs if linked to a campaign
-        if ($this->campaign_id !== null) {
-            $campaignGms = $this->campaign?->gameMasters()
-                ->whereNotIn('gametables_game_masters.id', $excludedIds)
-                ->get() ?? new Collection;
-        } else {
-            $campaignGms = new Collection;
+        return new Collection(self::effectiveFrom($this->gameMasters()->get(), $campaignGameMasters));
+    }
+
+    /**
+     * The one rule for a table's game masters: its rows with source «local» that are not excluded, in
+     * their order, then the campaign's not excluded from this table. An inherited row only records an
+     * exclusion: an inherited director counts while they direct the campaign, never through that row.
+     *
+     * @param  iterable<GameMasterModel>  $tableRows  The table's game master rows, with their pivot
+     * @param  iterable<GameMasterModel>  $campaignGameMasters
+     * @return list<GameMasterModel>
+     */
+    private static function effectiveFrom(iterable $tableRows, iterable $campaignGameMasters): array
+    {
+        $effective = [];
+        $excludedIds = [];
+
+        foreach ($tableRows as $gameMaster) {
+            $pivot = $gameMaster->getRelation('pivot');
+
+            if (! $pivot instanceof Pivot) {
+                continue;
+            }
+
+            if ((bool) $pivot->getAttribute('excluded')) {
+                $excludedIds[$gameMaster->id] = true;
+            } elseif ($pivot->getAttribute('source') === 'local') {
+                $effective[$gameMaster->id] = $gameMaster;
+            }
         }
 
-        // Add local GMs
-        $localGms = $this->localGameMasters()->get();
+        foreach ($campaignGameMasters as $gameMaster) {
+            if (! isset($excludedIds[$gameMaster->id]) && ! isset($effective[$gameMaster->id])) {
+                $effective[$gameMaster->id] = $gameMaster;
+            }
+        }
 
-        // Merge and return unique by ID
-        return $campaignGms->merge($localGms)->unique('id')->values();
+        return array_values($effective);
     }
 
     /**

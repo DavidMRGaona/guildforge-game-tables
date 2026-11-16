@@ -213,6 +213,48 @@ final class GameMasterPublicNameTest extends ModuleTestCase
         $this->assertStringNotContainsString('Ana Reader', (string) $response->getContent());
     }
 
+    public function test_an_inherited_row_included_again_does_not_bring_back_a_director_who_left_the_campaign(): void
+    {
+        $campaign = $this->campaign('los-ecos');
+        $bea = $this->director($this->account('Bea Account', 'Bea Reader'), public: true);
+        $session = $this->table('sesion-1', campaign: $campaign);
+        // Excluded once and included again, while Bea no longer directs the campaign
+        $session->gameMasters()->attach($bea->id, ['source' => 'inherited', 'excluded' => false, 'sort_order' => 1]);
+
+        $response = $this->get('/mesas/sesion-1');
+
+        $response->assertOk()->assertInertia(fn (Assert $page) => $page->has('table.gameMasters', 0));
+        $this->assertStringNotContainsString('Bea Reader', (string) $response->getContent());
+        $this->assertCount(0, GameTableModel::query()->findOrFail($session->id)->effective_game_masters);
+    }
+
+    public function test_a_sessions_own_main_director_comes_before_the_campaigns(): void
+    {
+        $campaign = $this->campaign('los-ecos');
+        $ana = $this->director($this->account('Ana Account', 'Ana Reader'), public: true);
+        $bea = $this->director($this->account('Bea Account', 'Bea Reader'), public: true);
+        $campaign->gameMasters()->attach($ana->id, ['sort_order' => 1]);
+        $session = $this->table('sesion-1', campaign: $campaign);
+        $session->gameMasters()->attach($ana->id, ['source' => 'inherited', 'excluded' => false, 'sort_order' => 1]);
+        $session->gameMasters()->attach($bea->id, ['source' => 'local', 'excluded' => false, 'sort_order' => 2]);
+
+        $this->get('/mesas/sesion-1')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('table.gameMasters.0.displayName', 'Bea Reader')
+                ->where('table.gameMasters.1.displayName', 'Ana Reader')
+                ->where('table.mainGameMasterName', 'Bea Reader'));
+        $this->get('/mesas')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('tables.data.0.mainGameMasterName', 'Bea Reader'));
+
+        // The rule the notices and the direction read is the same one
+        $this->assertSame(
+            [$bea->id, $ana->id],
+            GameTableModel::query()->findOrFail($session->id)->effective_game_masters->pluck('id')->all(),
+        );
+    }
+
     public function test_a_director_shown_publicly_without_any_name_is_not_marked_public(): void
     {
         $table = $this->table('la-cripta');
