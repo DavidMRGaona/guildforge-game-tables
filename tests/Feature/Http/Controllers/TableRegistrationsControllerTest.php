@@ -56,10 +56,10 @@ final class TableRegistrationsControllerTest extends ModuleTestCase
         config()->set('modules.settings.game-tables', []);
         $this->travelTo(CarbonImmutable::parse('2026-11-02 10:00:00', 'Europe/Madrid'));
 
-        $this->john = UserModel::factory()->create(['name' => 'John Doe', 'email' => 'john@example.com']);
-        $this->mary = UserModel::factory()->create(['name' => 'Mary Major', 'email' => 'mary@example.com']);
-        $this->jane = UserModel::factory()->create(['name' => 'Jane Doe', 'email' => 'jane@example.com']);
-        $this->richard = UserModel::factory()->create(['name' => 'Richard Roe', 'email' => 'richard@example.com']);
+        $this->john = UserModel::factory()->create(['name' => 'John Doe', 'display_name' => 'John Doe', 'email' => 'john@example.com']);
+        $this->mary = UserModel::factory()->create(['name' => 'Mary Major', 'display_name' => 'Mary Major', 'email' => 'mary@example.com']);
+        $this->jane = UserModel::factory()->create(['name' => 'Jane Doe', 'display_name' => 'Jane Doe', 'email' => 'jane@example.com']);
+        $this->richard = UserModel::factory()->create(['name' => 'Richard Roe', 'display_name' => 'Richard Roe', 'email' => 'richard@example.com']);
 
         $this->system = GameSystemModel::create(['id' => (string) Str::uuid(), 'name' => 'Sistema', 'slug' => 'sistema', 'is_active' => true]);
         $this->table = $this->tableDirectedBy($this->john, 'La cripta olvidada');

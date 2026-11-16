@@ -57,8 +57,8 @@ final class SiteNoticeSendersTest extends ModuleTestCase
         config()->set('modules.settings.game-tables', []);
 
         $this->system = GameSystemModel::create(['id' => (string) Str::uuid(), 'name' => 'Sistema de prueba', 'slug' => 'sistema-de-prueba', 'is_active' => true]);
-        $this->player = UserModel::factory()->create(['name' => 'Mary Major']);
-        $this->director = UserModel::factory()->create(['name' => 'John Doe']);
+        $this->player = UserModel::factory()->create(['name' => 'Mary Account', 'display_name' => 'Mary Major']);
+        $this->director = UserModel::factory()->create(['name' => 'John Doe', 'display_name' => 'John Doe']);
     }
 
     public function test_a_rejection_names_its_table(): void
