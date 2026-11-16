@@ -369,13 +369,14 @@ final class ParticipantsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('display_name')
+            // Staff go by the account name, as before public names
+            ->recordTitle(fn (ParticipantModel $record): string => $record->accountName())
             // The name column reads the user of each row
             ->modifyQueryUsing(fn (Builder $query): Builder => $query->with('user'))
             ->columns([
                 TextColumn::make('display_name')
                     ->label(__('game-tables::messages.fields.name'))
-                    ->getStateUsing(fn (ParticipantModel $record): string => $record->display_name)
+                    ->getStateUsing(fn (ParticipantModel $record): string => $record->accountName())
                     ->searchable(query: fn ($query, string $search) => $query->where(function ($q) use ($search) {
                         $q->whereHas('user', fn ($userQuery) => $userQuery->where('name', 'like', "%{$search}%"))
                             ->orWhere('first_name', 'like', "%{$search}%")

@@ -7,6 +7,7 @@ namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\Concerns
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\GameTables\Domain\Enums\GameMasterRole;
+use Modules\GameTables\Infrastructure\Services\AccountPublicName;
 
 /**
  * Trait for shared game master model logic.
@@ -67,9 +68,7 @@ trait HasGameMasterAttributes
     public function getDisplayNameAttribute(): string
     {
         if ($this->user !== null) {
-            $publicName = trim((string) $this->user->display_name);
-
-            return $publicName !== '' ? $publicName : $this->user->name;
+            return AccountPublicName::of($this->user);
         }
 
         return trim(($this->first_name ?? '').' '.($this->last_name ?? ''));

@@ -74,9 +74,7 @@ final readonly class CampaignInviterNames implements CampaignInviterNamesInterfa
             return $director->cardName($campaign->gameSystem?->game_master_title);
         }
 
-        $publicName = trim((string) $inviter->display_name);
-
-        return $publicName !== '' ? $publicName : (string) $inviter->name;
+        return AccountPublicName::of($inviter);
     }
 
     /**

@@ -1816,7 +1816,10 @@ final readonly class RegistrationService implements RegistrationServiceInterface
             return null;
         }
 
-        return $this->toResponse($participant);
+        // Whoever holds the link sees the name the registration goes by (a guest's is on the row)
+        $userName = $participant->userId !== null ? (AccountPublicName::forIds([$participant->userId])[$participant->userId] ?? '') : '';
+
+        return ParticipantResponseDTO::fromEntity($participant, userName: $userName, waitingListRank: $this->rankOf($participant));
     }
 
     /**

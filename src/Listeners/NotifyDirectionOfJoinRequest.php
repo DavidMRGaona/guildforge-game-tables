@@ -13,6 +13,7 @@ use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\JoinRequestId;
 use Modules\GameTables\Infrastructure\Mail\MailRecipientNotifier;
+use Modules\GameTables\Infrastructure\Services\AccountPublicName;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 use Modules\GameTables\Notifications\CampaignJoinRequestReceivedNotification;
 
@@ -51,7 +52,7 @@ final readonly class NotifyDirectionOfJoinRequest
                 userName: $recipient->name,
                 campaignId: $event->campaignId,
                 campaignTitle: $campaign->title,
-                playerName: $user->name,
+                playerName: AccountPublicName::of($user),
                 message: $request?->message,
                 playerId: (string) $user->id,
             ));

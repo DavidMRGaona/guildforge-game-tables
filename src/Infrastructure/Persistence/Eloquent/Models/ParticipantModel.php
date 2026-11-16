@@ -15,6 +15,7 @@ use Modules\GameTables\Domain\Enums\GuestConfirmationMode;
 use Modules\GameTables\Domain\Enums\ParticipantCancellationReason;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
+use Modules\GameTables\Infrastructure\Services\AccountPublicName;
 
 /**
  * @property string $id
@@ -164,14 +165,28 @@ final class ParticipantModel extends Model
     }
 
     /**
-     * Get the display name for this participant.
+     * The name other people see: a linked account goes by its public name, or by its account name when it
+     * has none; a guest by the name written when registering.
      */
     public function getDisplayNameAttribute(): string
     {
         if ($this->user !== null) {
-            return $this->user->name;
+            return AccountPublicName::of($this->user);
         }
 
+        return $this->guestName();
+    }
+
+    /**
+     * The name the panel shows staff: the account name of a linked account, else the guest's name.
+     */
+    public function accountName(): string
+    {
+        return $this->user !== null ? $this->user->name : $this->guestName();
+    }
+
+    private function guestName(): string
+    {
         return trim($this->first_name.' '.$this->last_name);
     }
 }

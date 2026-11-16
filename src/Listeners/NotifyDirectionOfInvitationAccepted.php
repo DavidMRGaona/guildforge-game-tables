@@ -11,6 +11,7 @@ use Modules\GameTables\Domain\Events\CampaignInvitationAccepted;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Infrastructure\Mail\MailRecipientNotifier;
+use Modules\GameTables\Infrastructure\Services\AccountPublicName;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 use Modules\GameTables\Notifications\CampaignInvitationAcceptedNotification;
 
@@ -46,7 +47,7 @@ final readonly class NotifyDirectionOfInvitationAccepted
                 userName: $recipient->name,
                 campaignId: $event->campaignId,
                 campaignTitle: $campaign->title,
-                playerName: $user->name,
+                playerName: AccountPublicName::of($user),
                 playerId: (string) $user->id,
             ));
         }
