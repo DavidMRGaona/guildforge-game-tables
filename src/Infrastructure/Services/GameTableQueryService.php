@@ -205,7 +205,7 @@ final readonly class GameTableQueryService implements GameTableQueryServiceInter
             id: $p->id,
             gameTableId: $p->game_table_id,
             userId: $p->user_id,
-            userName: $p->user->name ?? '',
+            userName: $p->user !== null ? AccountPublicName::of($p->user) : '',
             role: $p->role,
             status: $p->status,
             waitingListPosition: $p->waiting_list_position,

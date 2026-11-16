@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\GameTables\Infrastructure\Services;
 
 use App\Application\Services\TimezoneServiceInterface;
-use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Carbon\CarbonImmutable;
 use DateTimeImmutable;
 use Illuminate\Support\Facades\DB;
@@ -294,10 +293,10 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
             ->where('p.campaign_id', $campaignId->value)
             ->orderBy('p.created_at')
             ->orderBy('p.user_id')
-            ->get(['p.user_id', 'users.name', 'p.created_at'])
+            ->get(['p.user_id', 'users.name', 'users.display_name', 'p.created_at'])
             ->map(fn (object $row): array => [
                 'user_id' => (string) $row->user_id,
-                'name' => (string) $row->name,
+                'name' => AccountPublicName::from((string) $row->display_name, (string) $row->name),
                 // The raw column is a storage-zone wall time
                 'joined_at' => $row->created_at !== null ? $timezone->format(CarbonImmutable::parse((string) $row->created_at), 'd/m/Y') : null,
             ])
@@ -314,13 +313,11 @@ final readonly class CampaignRosterQuery implements CampaignRosterQueryInterface
         $timezone = app(TimezoneServiceInterface::class);
 
         $requests = $this->requests->pendingFor($campaign->id);
-        $names = UserModel::query()
-            ->whereIn('id', array_map(fn (CampaignJoinRequest $request): string => $request->userId, $requests))
-            ->pluck('name', 'id');
+        $names = AccountPublicName::forIds(array_map(fn (CampaignJoinRequest $request): string => $request->userId, $requests));
 
         return array_map(fn (CampaignJoinRequest $request): array => [
             'id' => $request->id->value,
-            'user_name' => (string) ($names[$request->userId] ?? ''),
+            'user_name' => $names[$request->userId] ?? '',
             'message' => $request->message,
             'created_at' => $request->createdAt instanceof DateTimeImmutable ? $timezone->format($request->createdAt, 'd/m/Y') : null,
         ], $requests);

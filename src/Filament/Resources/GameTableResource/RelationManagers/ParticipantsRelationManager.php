@@ -369,19 +369,25 @@ final class ParticipantsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('display_name')
+            // Staff go by the account name, as before public names
+            ->recordTitle(fn (ParticipantModel $record): string => $record->accountName())
             // The name column reads the user of each row
             ->modifyQueryUsing(fn (Builder $query): Builder => $query->with('user'))
             ->columns([
                 TextColumn::make('display_name')
                     ->label(__('game-tables::messages.fields.name'))
-                    ->getStateUsing(fn (ParticipantModel $record): string => $record->display_name)
+                    ->getStateUsing(fn (ParticipantModel $record): string => $record->accountName())
                     ->searchable(query: fn ($query, string $search) => $query->where(function ($q) use ($search) {
                         $q->whereHas('user', fn ($userQuery) => $userQuery->where('name', 'like', "%{$search}%"))
                             ->orWhere('first_name', 'like', "%{$search}%")
                             ->orWhere('last_name', 'like', "%{$search}%");
                     }))
-                    ->sortable()
+                    // There is no such column: by the name shown, the account's or the guest's as written
+                    // (one expression, so accounts and guests mix whatever the engine does with nulls)
+                    ->sortable(query: fn (Builder $query, string $direction): Builder => $query->orderByRaw(
+                        "COALESCE((SELECT users.name FROM users WHERE users.id = gametables_participants.user_id), COALESCE(gametables_participants.first_name, '') || ' ' || COALESCE(gametables_participants.last_name, '')) "
+                            .($direction === 'desc' ? 'desc' : 'asc'),
+                    ))
                     ->wrap(),
 
                 TextColumn::make('role')

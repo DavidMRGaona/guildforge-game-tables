@@ -50,7 +50,7 @@ final class CampaignInvitationMailsTest extends ModuleTestCase
         app()->setLocale('es');
 
         $this->john = UserModel::factory()->create(['name' => 'John Doe', 'display_name' => 'John Doe', 'email' => 'john@example.com']);
-        $this->mary = UserModel::factory()->create(['name' => 'Mary Major', 'email' => 'mary@example.com']);
+        $this->mary = UserModel::factory()->create(['name' => 'Mary Account', 'display_name' => 'Mary Major', 'email' => 'mary@example.com']);
         $system = GameSystemModel::create(['id' => (string) Str::uuid(), 'name' => 'Sistema de prueba', 'slug' => 'sistema-de-prueba', 'is_active' => true]);
         $this->campaign = CampaignModel::create([
             'id' => (string) Str::uuid(),

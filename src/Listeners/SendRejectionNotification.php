@@ -36,7 +36,8 @@ final readonly class SendRejectionNotification
             return;
         }
 
-        $participantName = $this->recipientResolver->getParticipantDisplayName($event->participantId);
+        // A mail to the participant: greeted by their own account name
+        $participantName = $this->recipientResolver->getParticipantGreetingName($event->participantId);
         $tableDate = app(TimezoneServiceInterface::class)->format($gameTable->timeSlot->startsAt);
         $tableLocation = $gameTable->location;
 

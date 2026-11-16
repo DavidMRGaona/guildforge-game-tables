@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\GameTables\Infrastructure\Services;
 
 use App\Application\Services\TimezoneServiceInterface;
-use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Modules\GameTables\Application\DTOs\TableRegistrationRowDTO;
 use Modules\GameTables\Application\DTOs\TableRegistrationsPageDTO;
 use Modules\GameTables\Application\Services\TableRegistrationsQueryInterface;
@@ -113,21 +112,16 @@ final readonly class TableRegistrationsQuery implements TableRegistrationsQueryI
     }
 
     /**
-     * The account names of the participants, in one read.
+     * The names of the participants' accounts (public name, else account name), in one read.
      *
      * @param  list<Participant>  $participants
      * @return array<string, string>
      */
     private function accountNames(array $participants): array
     {
-        $ids = array_values(array_filter(array_map(static fn (Participant $participant): ?string => $participant->userId, $participants)));
-
-        if ($ids === []) {
-            return [];
-        }
-
-        return UserModel::query()->whereIn('id', $ids)->pluck('name', 'id')
-            ->map(static fn (mixed $name): string => (string) $name)
-            ->all();
+        return AccountPublicName::forIds(array_values(array_filter(array_map(
+            static fn (Participant $participant): ?string => $participant->userId,
+            $participants,
+        ))));
     }
 }

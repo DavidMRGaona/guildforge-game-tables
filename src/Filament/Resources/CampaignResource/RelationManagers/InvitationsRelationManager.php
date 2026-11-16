@@ -20,6 +20,7 @@ use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Filament\Resources\CampaignResource\RelationManagers\Concerns\ManagesCampaignRoster;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignInvitationModel;
+use Modules\GameTables\Infrastructure\Services\AccountPublicName;
 use Modules\GameTables\Infrastructure\Services\CampaignRosterGuard;
 
 /**
@@ -175,8 +176,6 @@ final class InvitationsRelationManager extends RelationManager
             return $invitation->inviter_name;
         }
 
-        $publicName = trim((string) $inviter->display_name);
-
-        return $publicName !== '' ? $publicName : (string) $inviter->name;
+        return AccountPublicName::of($inviter);
     }
 }

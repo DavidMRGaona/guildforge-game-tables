@@ -57,7 +57,8 @@ final class CampaignRosterListenersTest extends ModuleTestCase
         app()->setLocale('es');
 
         $this->john = UserModel::factory()->create(['name' => 'John Doe', 'email' => 'john@example.com']);
-        $this->mary = UserModel::factory()->create(['name' => 'Mary Major', 'email' => 'mary@example.com']);
+        // The direction reads the player by the public name, never the account name
+        $this->mary = UserModel::factory()->create(['name' => 'Mary Account', 'display_name' => 'Mary Major', 'email' => 'mary@example.com']);
         $system = GameSystemModel::create(['id' => (string) Str::uuid(), 'name' => 'Sistema de prueba', 'slug' => 'sistema-de-prueba', 'is_active' => true]);
         $this->campaign = CampaignModel::create([
             'id' => (string) Str::uuid(),
@@ -218,6 +219,17 @@ final class CampaignRosterListenersTest extends ModuleTestCase
             return $mail->subject === 'Solicitud para unirse a Campaña de prueba'
                 && in_array('<p>Mary Major quiere unirse a la campaña «Campaña de prueba».</p>', array_map(strval(...), $mail->introLines), true)
                 && in_array('<p>Mensaje: «Me encantaría jugar»</p>', array_map(strval(...), $mail->introLines), true);
+        });
+    }
+
+    public function test_the_player_left_notice_names_the_player_by_the_public_name(): void
+    {
+        $this->fire('player_left');
+
+        Notification::assertSentTo($this->john, CampaignPlayerLeftNotification::class, function ($notification): bool {
+            $mail = $notification->toMail(new AnonymousNotifiable);
+
+            return str_contains((string) $mail->subject, 'Mary Major') && ! str_contains((string) $mail->subject, 'Mary Account');
         });
     }
 

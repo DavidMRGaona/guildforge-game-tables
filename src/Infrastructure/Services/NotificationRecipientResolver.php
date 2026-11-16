@@ -177,21 +177,26 @@ final readonly class NotificationRecipientResolver implements NotificationRecipi
             : null;
     }
 
-    /**
-     * Get the participant's display name.
-     */
     public function getParticipantDisplayName(string $participantId): string
     {
-        $participant = ParticipantModel::query()
+        $participant = $this->participantWithAccount($participantId);
+
+        return $participant instanceof ParticipantModel ? $participant->display_name : '';
+    }
+
+    public function getParticipantGreetingName(string $participantId): string
+    {
+        $participant = $this->participantWithAccount($participantId);
+
+        return $participant instanceof ParticipantModel ? $participant->accountName() : '';
+    }
+
+    private function participantWithAccount(string $participantId): ?ParticipantModel
+    {
+        return ParticipantModel::query()
             ->where('id', $participantId)
             ->with('user')
             ->first();
-
-        if ($participant === null) {
-            return '';
-        }
-
-        return $participant->display_name;
     }
 
     private function account(UserModel $user): ?MailRecipientDTO
