@@ -39,7 +39,7 @@ Verás «Te has inscrito correctamente» y, encima del botón, **Tu inscripción
 | **Pendiente** | La mesa confirma a mano: espera a que la organización o el director aprueben tu inscripción. Te llegará un correo con la respuesta. |
 | **Lista de espera** | Estás en la cola, con tu posición. Si se libera una plaza antes del inicio (o del cierre de inscripciones, si es anterior), pasas a la mesa y te avisamos por correo. En una mesa con confirmación manual pasas como **Pendiente**. |
 
-También verás tus inscripciones en tu perfil, pestaña **Mesas**: **Próximas partidas** y **Partidas pasadas**. Las mesas en las que estás confirmado, o que diriges, aparecen además en tu calendario personal; la guía «Tu calendario personal» explica cómo verlo y suscribirte.
+También verás tus inscripciones en **Ajustes de la cuenta**, pestaña **Mesas**: **Próximas partidas** y **Partidas pasadas**. Las mesas en las que estás confirmado, o que diriges, aparecen además en tu calendario personal; la guía «Tu calendario personal» explica cómo verlo y suscribirte.
 
 ### Correos que recibes
 
@@ -48,7 +48,7 @@ También verás tus inscripciones en tu perfil, pestaña **Mesas**: **Próximas 
 - **Plaza disponible en mesa**, si pasas de la lista de espera.
 - Si la web lo tiene activado, un recordatorio unas horas antes de la partida.
 
-Con cuenta, los correos de tus inscripciones te llegan siempre, y también los ves en la campana de la cabecera, con un enlace a la mesa. El recordatorio puedes quitarlo en tu perfil, pestaña **Avisos**, desactivando «Recordatorios de partidas» en la web, por correo o en los dos. Sin cuenta solo te llegan por correo.
+Con cuenta, los correos de tus inscripciones te llegan siempre, y también los ves en la campana de la cabecera, con un enlace a la mesa. El recordatorio puedes quitarlo en **Ajustes de la cuenta**, pestaña **Avisos**, desactivando «Recordatorios de partidas» en la web, por correo o en los dos. Sin cuenta solo te llegan por correo.
 
 [[action:profile.show?tab=mail|Elegir mis correos]]
 
@@ -96,7 +96,7 @@ Si la mesa es una sesión de una campaña:
 - **«La partida ya ha comenzado»** o **«La partida ya ha terminado»**: ya no admite inscripciones.
 - **«La mesa está completa»**: no quedan plazas y la web no tiene lista de espera.
 - **«No quedan plazas de espectador disponibles»**: elige jugador, si quedan plazas.
-- **«Ya estás inscrito en esta mesa»**: tu inscripción ya existe; mírala en tu perfil.
+- **«Ya estás inscrito en esta mesa»**: tu inscripción ya existe; mírala en **Ajustes de la cuenta**, pestaña **Mesas**.
 - **«Esta mesa es solo para el rol {{association_role}}»**: es solo para quien tiene el rol de {{association_role}}.
 - **«Esta mesa es solo por invitación: la organización inscribe a los jugadores»**: pide plaza a la organización.
 - **«Solo para la plantilla de la campaña»**: la campaña no acepta jugadores nuevos, está en pausa o ha terminado.

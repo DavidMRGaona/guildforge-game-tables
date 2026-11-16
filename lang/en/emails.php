@@ -314,7 +314,7 @@ return [
         'intro' => ':player has accepted your invitation and is now on the roster of the campaign ":campaignTitle".',
         'view_roster' => 'View roster',
     ],
-    // Mail categories in the "Emails" tab of the profile
+    // Mail categories in the "Avisos" tab of the account settings
     'categories' => [
         'section' => 'Game tables',
         'sign_ups' => [

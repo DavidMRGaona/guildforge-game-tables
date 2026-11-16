@@ -68,7 +68,7 @@ Las mesas creadas desde la web no eligen su confirmación ni su tipo de inscripc
 - **Notificar promoción de lista de espera**: avisa a los directores y al email de la mesa cuando alguien pasa de la lista. La persona promovida recibe siempre su correo.
 - **Enviar recordatorio antes de la mesa**: un correo a cada inscripción confirmada, las horas antes del inicio que diga **Antelación del recordatorio (horas)**. Viene desactivado.
 
-Estos interruptores valen para toda la web: un aviso apagado aquí no sale para nadie, ni por correo ni en la campana de la web. Encendido, cada persona con cuenta decide además en la pestaña **Avisos** de su perfil si quiere los optativos, en la web, por correo o en los dos:
+Estos interruptores valen para toda la web: un aviso apagado aquí no sale para nadie, ni por correo ni en la campana de la web. Encendido, cada persona con cuenta decide además en la pestaña **Avisos** de **Ajustes de la cuenta** si quiere los optativos, en la web, por correo o en los dos:
 
 - «Recordatorios de partidas».
 - «Novedades de mis campañas».
@@ -79,7 +79,7 @@ Los de sus inscripciones y los del resultado de sus propuestas le llegan siempre
 
 ## Notificaciones de campañas
 
-Los correos de la plantilla de las campañas, uno por interruptor: **Sesión programada (a la plantilla)**, **Solicitud recibida (a la dirección)**, **Solicitud aceptada**, **Solicitud rechazada**, **Añadido a la plantilla**, **Invitación aceptada (a la dirección)**, **Quitado de la plantilla** y **Salida de la plantilla (a la dirección)**. La guía de la plantilla explica quién recibe cada uno. La invitación a una campaña no tiene interruptor. Si el email es de una cuenta, esa persona puede quitarla en su perfil («Novedades de mis campañas») y la sigue viendo allí.
+Los correos de la plantilla de las campañas, uno por interruptor: **Sesión programada (a la plantilla)**, **Solicitud recibida (a la dirección)**, **Solicitud aceptada**, **Solicitud rechazada**, **Añadido a la plantilla**, **Invitación aceptada (a la dirección)**, **Quitado de la plantilla** y **Salida de la plantilla (a la dirección)**. La guía de la plantilla explica quién recibe cada uno. La invitación a una campaña no tiene interruptor. Si el email es de una cuenta, esa persona puede quitarla en **Ajustes de la cuenta** («Novedades de mis campañas») y la sigue viendo allí.
 
 ## Límites
 

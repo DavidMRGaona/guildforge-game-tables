@@ -49,7 +49,7 @@ Según la configuración de la web, y si la organización te ha activado los avi
 
 Con la sesión iniciada, también te avisa la campana de la cabecera. Los avisos de una misma mesa se juntan en una línea mientras no la abras, por ejemplo «Ana y 3 más: novedades en «La tumba»». Si la inscripción queda pendiente, el aviso te lleva a **Gestionar inscritos**.
 
-Si no los quieres, desactiva «Avisos como director de juego» en la pestaña **Avisos** de tu perfil, **En la web**, **Por correo** o los dos. Dejan de llegarte también los de tus campañas. Las inscripciones pendientes siguen en **Gestionar inscritos**.
+Si no los quieres, desactiva «Avisos como director de juego» en la pestaña **Avisos** de **Ajustes de la cuenta**, **En la web**, **Por correo** o los dos. Dejan de llegarte también los de tus campañas. Las inscripciones pendientes siguen en **Gestionar inscritos**.
 
 ## Lo que solo hace la organización
 

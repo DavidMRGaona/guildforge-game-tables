@@ -14,7 +14,7 @@ Puedes proponer tus propias partidas desde la web. Esta guía recorre el formula
 
 ## Antes de empezar
 
-- Abre el formulario desde **Mis mesas** con **Crear mesa**, desde tu perfil (pestaña **Mesas**, apartado **Mis mesas**, **Crear nueva mesa**) o desde la ficha de un evento con **Crear partida**.
+- Abre el formulario desde **Mis mesas** con **Crear mesa**, desde **Ajustes de la cuenta** (pestaña **Mesas**, apartado **Mis mesas**, **Crear nueva mesa**) o desde la ficha de un evento con **Crear partida**.
 - Si la web te pide verificar tu email, hazlo antes: hasta entonces no puedes crear mesas.
 - Si solo puedes crear sesiones de las campañas que diriges, el tipo queda fijado en **Sesión de campaña** y verás «Solo puedes crear sesiones de las campañas que diriges.». La guía «Añadir una sesión a tu campaña» lo explica.
 

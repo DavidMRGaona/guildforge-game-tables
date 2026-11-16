@@ -14,10 +14,10 @@ Lo que creas en la web pasa por unos estados antes de publicarse. Según la conf
 
 ## Dónde seguir lo que creas
 
-- **Mis mesas**: en tu perfil, pestaña **Mesas**, apartado **Mis mesas**, pulsa **Gestionar mis mesas**. Tiene dos listas:
+- **Mis mesas**: en **Ajustes de la cuenta**, pestaña **Mesas**, apartado **Mis mesas**, pulsa **Gestionar mis mesas**. Tiene dos listas:
   - **Borradores**: tus mesas aún sin publicar, también las que están en revisión o rechazadas.
   - **Publicadas**: tus mesas sueltas publicadas, desde hace 30 días en adelante. Las sesiones de campaña publicadas se ven en la página de su campaña.
-- **Mis campañas**: en tu perfil, pestaña **Mesas**, apartado **Campañas**, pulsa **Gestionar mis campañas**. Tiene tus campañas sin publicar y las que diriges.
+- **Mis campañas**: en **Ajustes de la cuenta**, pestaña **Mesas**, apartado **Campañas**, pulsa **Gestionar mis campañas**. Tiene tus campañas sin publicar y las que diriges.
 
 ## Los estados
 
@@ -40,7 +40,7 @@ Si la configuración te deja publicar sin revisión, el botón se llama **Public
 
 ## La respuesta
 
-Te llega un correo con el resultado. Se envía siempre: no se puede quitar desde el perfil.
+Te llega un correo con el resultado. Se envía siempre: no se puede quitar desde Ajustes de la cuenta.
 
 - **Tu mesa ha sido aprobada** (o **Tu campaña ha sido aprobada**): ya está publicada. Si el moderador ha dejado notas, van en el correo.
 - **Tu mesa no ha sido aprobada** (o **Tu campaña no ha sido aprobada**): con el **Motivo** y el botón para editarla.

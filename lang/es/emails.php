@@ -336,7 +336,7 @@ return [
         'intro' => ':player ha aceptado tu invitación y ya forma parte de la plantilla de la campaña «:campaignTitle».',
         'view_roster' => 'Ver plantilla',
     ],
-    // Mail categories in the «Correos» tab of the profile
+    // Mail categories in the «Avisos» tab of the account settings
     'categories' => [
         'section' => 'Mesas de rol',
         'sign_ups' => [
