@@ -294,7 +294,7 @@ final class GameTableModel extends Model
     {
         $campaign = $this->campaign_id !== null && $this->relationLoaded('campaign') ? $this->campaign : null;
 
-        return self::effectiveFrom($this->gameMasters, $campaign->gameMasters ?? []);
+        return $this->effectiveFrom($this->gameMasters, $campaign->gameMasters ?? []);
     }
 
     /**
@@ -324,7 +324,7 @@ final class GameTableModel extends Model
             ? ($this->campaign?->gameMasters()->get() ?? new Collection)
             : new Collection;
 
-        return new Collection(self::effectiveFrom($this->gameMasters()->get(), $campaignGameMasters));
+        return new Collection($this->effectiveFrom($this->gameMasters()->get(), $campaignGameMasters));
     }
 
     /**
@@ -336,7 +336,7 @@ final class GameTableModel extends Model
      * @param  iterable<GameMasterModel>  $campaignGameMasters
      * @return list<GameMasterModel>
      */
-    private static function effectiveFrom(iterable $tableRows, iterable $campaignGameMasters): array
+    private function effectiveFrom(iterable $tableRows, iterable $campaignGameMasters): array
     {
         $effective = [];
         $excludedIds = [];

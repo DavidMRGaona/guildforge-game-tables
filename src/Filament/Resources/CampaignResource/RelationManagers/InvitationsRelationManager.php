@@ -56,7 +56,7 @@ final class InvitationsRelationManager extends RelationManager
                 // Staff see who really invited: the account as it is now, the stored name only once it is gone
                 TextColumn::make('inviter_name')
                     ->label(__('game-tables::messages.relation_managers.invitations.invited_by'))
-                    ->getStateUsing(fn (CampaignInvitationModel $record): string => self::inviterOf($record))
+                    ->getStateUsing(fn (CampaignInvitationModel $record): string => $this->inviterOf($record))
                     ->visibleFrom('lg'),
 
                 TextColumn::make('send_count')
@@ -167,7 +167,7 @@ final class InvitationsRelationManager extends RelationManager
      * The inviter's account as it is now (public name, else account name); the name stored when inviting
      * only once the account is gone.
      */
-    private static function inviterOf(CampaignInvitationModel $invitation): string
+    private function inviterOf(CampaignInvitationModel $invitation): string
     {
         $inviter = $invitation->inviter;
 
