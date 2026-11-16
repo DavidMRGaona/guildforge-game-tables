@@ -434,7 +434,7 @@ final class ProfileSectionsTest extends ModuleTestCase
 
     private function countQueries(callable $callback): int
     {
-        // A fresh request scope: the renderer and the scoped query service are built again
+        // A fresh request scope: the renderer and the sections are built again
         $this->app->forgetScopedInstances();
         DB::flushQueryLog();
         DB::enableQueryLog();

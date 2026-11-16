@@ -17,6 +17,7 @@ use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\ParticipantRole;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
 /**
@@ -93,7 +94,10 @@ final readonly class ProfileActivityQuery implements ProfileActivityQueryInterfa
         $campaigns = $this->campaignsOf($ownerId, $viewer)
             ->whereIn('status', self::ACTIVE_CAMPAIGN_STATUSES)
             ->with('gameSystem')
-            ->withExists(['gameMasters as directed_by_owner' => fn (Builder $gm) => $this->gameMasterOf($gm, $ownerId, true)])
+            ->withExists(['gameMasters as directed_by_owner' => function (Builder $gm) use ($ownerId): void {
+                /** @var Builder<GameMasterModel> $gm */
+                $gm->linkedTo($ownerId, true);
+            }])
             ->orderBy('title')
             ->orderBy('id')
             ->limit($limit)
@@ -163,23 +167,6 @@ final readonly class ProfileActivityQuery implements ProfileActivityQueryInterfa
     }
 
     /**
-     * @template TModel of \Illuminate\Database\Eloquent\Model
-     *
-     * @param  Builder<TModel>  $gm
-     * @return Builder<TModel>
-     */
-    private function gameMasterOf(Builder $gm, string $userId, ?bool $publicName): Builder
-    {
-        $gm->where('gametables_game_masters.user_id', $userId);
-
-        if ($publicName !== null) {
-            $gm->where('gametables_game_masters.is_name_public', $publicName);
-        }
-
-        return $gm;
-    }
-
-    /**
      * GameTablePolicy::manageRegistrations as a subquery: a table of its own (not a campaign session),
      * published, delegating its registrations and directed by the viewer.
      *
@@ -209,7 +196,7 @@ final readonly class ProfileActivityQuery implements ProfileActivityQueryInterfa
                 ->where(fn (Builder $web) => $web
                     ->where('gametables_campaigns.created_by', $viewerId)
                     ->whereNotNull('gametables_campaigns.frontend_creation_status'))
-                ->orWhereHas('gameMasters', fn (Builder $gm) => $this->gameMasterOf($gm, $viewerId, null)));
+                ->orWhereHas('gameMasters', fn (Builder $gm) => $gm->linkedTo($viewerId)));
     }
 
     /**
@@ -228,7 +215,7 @@ final readonly class ProfileActivityQuery implements ProfileActivityQueryInterfa
         return CampaignModel::query()
             ->publiclyListed()
             ->where(function (Builder $query) use ($ownerId, $isOwner, $rosterManager): void {
-                $query->whereHas('gameMasters', fn (Builder $gm) => $this->gameMasterOf($gm, $ownerId, true));
+                $query->whereHas('gameMasters', fn (Builder $gm) => $gm->linkedTo($ownerId, true));
 
                 if ($isOwner || $rosterManager !== null) {
                     $query->orWhere(function (Builder $played) use ($ownerId, $rosterManager): void {

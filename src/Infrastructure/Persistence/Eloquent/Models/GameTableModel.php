@@ -406,26 +406,17 @@ final class GameTableModel extends Model
      */
     public function scopeDirectedBy(Builder $query, string $userId, ?bool $namePublic = null): Builder
     {
-        $gameMaster = function (Builder $gm) use ($userId, $namePublic): void {
-            $gm->where('gametables_game_masters.user_id', $userId);
-
-            if ($namePublic !== null) {
-                $gm->where('gametables_game_masters.is_name_public', $namePublic);
-            }
-        };
-
         return $query->where(fn (Builder $directed) => $directed
-            ->whereHas('localGameMasters', $gameMaster)
+            ->whereHas('localGameMasters', fn (Builder $gm) => $gm->linkedTo($userId, $namePublic))
             ->orWhere(fn (Builder $session) => $session
                 ->whereNotNull('gametables_tables.campaign_id')
-                ->whereHas('campaign.gameMasters', fn (Builder $gm) => $gameMaster($gm->whereNotIn(
-                    'gametables_game_masters.id',
-                    fn (QueryBuilder $excluded) => $excluded
+                ->whereHas('campaign.gameMasters', fn (Builder $gm) => $gm
+                    ->linkedTo($userId, $namePublic)
+                    ->whereNotIn('gametables_game_masters.id', fn (QueryBuilder $excluded) => $excluded
                         ->select('gametables_table_gm.game_master_id')
                         ->from('gametables_table_gm')
                         ->whereColumn('gametables_table_gm.game_table_id', 'gametables_tables.id')
-                        ->where('gametables_table_gm.excluded', true),
-                )))));
+                        ->where('gametables_table_gm.excluded', true)))));
     }
 
     /**

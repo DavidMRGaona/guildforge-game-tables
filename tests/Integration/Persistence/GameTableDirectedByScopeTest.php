@@ -56,7 +56,23 @@ final class GameTableDirectedByScopeTest extends ModuleTestCase
         $someoneElse = $this->table();
         $someoneElse->gameMasters()->attach($this->gameMaster($other, true)->id, ['source' => 'local', 'excluded' => false, 'sort_order' => 1]);
 
-        $tables = [$local, $localExcluded, $inheritedRowOnly, $session, $excludedSession, $hiddenLocal, $hiddenSession, $someoneElse];
+        // A local row excluded in a session of a campaign the director also runs: out both ways
+        $localExcludedSession = $this->table($campaign);
+        $localExcludedSession->gameMasters()->attach($public->id, ['source' => 'local', 'excluded' => true, 'sort_order' => 1]);
+        // A local row in a session of a campaign the director does not run
+        $otherCampaign = $this->campaign([$this->gameMaster($other, true)]);
+        $localSession = $this->table($otherCampaign);
+        $localSession->gameMasters()->attach($public->id, ['source' => 'local', 'excluded' => false, 'sort_order' => 1]);
+        // A session of a campaign without directors
+        $emptySession = $this->table($this->campaign([]));
+        // An inherited row, not excluded, of a director who is not in the campaign: it records nothing
+        $staleInherited = $this->table($otherCampaign);
+        $staleInherited->gameMasters()->attach($public->id, ['source' => 'inherited', 'excluded' => false, 'sort_order' => 0]);
+
+        $tables = [
+            $local, $localExcluded, $inheritedRowOnly, $session, $excludedSession, $hiddenLocal, $hiddenSession, $someoneElse,
+            $localExcludedSession, $localSession, $emptySession, $staleInherited,
+        ];
 
         foreach ([null, true, false] as $namePublic) {
             $expected = [];
@@ -77,7 +93,7 @@ final class GameTableDirectedByScopeTest extends ModuleTestCase
         }
 
         $this->assertEqualsCanonicalizing(
-            [$local->id, $session->id],
+            [$local->id, $session->id, $localSession->id],
             GameTableModel::query()->directedBy($user->id, true)->pluck('id')->all(),
         );
     }

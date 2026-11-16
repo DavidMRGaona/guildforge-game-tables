@@ -54,23 +54,11 @@ final readonly class TableDirection implements TableDirectionInterface
             return [];
         }
 
-        $local = GameTableModel::query()
-            ->whereHas('localGameMasters', fn ($query) => $query->where('gametables_game_masters.user_id', $userId))
-            ->pluck('id');
-
-        $inherited = GameTableModel::query()
-            ->whereNotNull('campaign_id')
-            ->whereHas('campaign.gameMasters', function ($query) use ($userId): void {
-                $query->where('gametables_game_masters.user_id', $userId)
-                    ->whereNotIn('gametables_game_masters.id', function ($sub): void {
-                        $sub->select('gametables_table_gm.game_master_id')
-                            ->from('gametables_table_gm')
-                            ->whereColumn('gametables_table_gm.game_table_id', 'gametables_tables.id')
-                            ->where('gametables_table_gm.excluded', true);
-                    });
-            })
-            ->pluck('id');
-
-        return array_values($local->merge($inherited)->unique()->map(fn (mixed $id): string => (string) $id)->all());
+        // The module's one rule for a table's directors, in SQL (GameTableModel::scopeDirectedBy())
+        return array_values(GameTableModel::query()
+            ->directedBy($userId)
+            ->pluck('id')
+            ->map(fn (mixed $id): string => (string) $id)
+            ->all());
     }
 }
