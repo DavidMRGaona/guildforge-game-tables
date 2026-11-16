@@ -45,14 +45,11 @@ final readonly class UserModelAccountLookup implements AccountLookupInterface
 
     private function toDto(UserModel $user): AccountDTO
     {
-        $publicName = trim((string) $user->display_name);
-
         return new AccountDTO(
             userId: (string) $user->id,
             email: $user->email,
             emailVerified: $user->email_verified_at !== null,
             name: (string) $user->name,
-            publicName: $publicName !== '' ? $publicName : (string) $user->name,
         );
     }
 }

@@ -214,9 +214,11 @@ final readonly class GameTableQueryService implements GameTableQueryServiceInter
             createdAt: $p->created_at,
         ))->all();
 
-        $gameMasters = $table->gameMasters->map(
-            fn (GameMasterModel $gm) => GameMasterResponseDTO::fromModel($gm, $table->id, $table->gameSystem?->game_master_title)
-        )->all();
+        // The effective directors (own, then the campaign's, minus those excluded), as on the cards
+        $gameMasters = array_map(
+            fn (GameMasterModel $gm): GameMasterResponseDTO => GameMasterResponseDTO::fromModel($gm, $table->id, $table->gameSystem?->game_master_title),
+            $table->loadedEffectiveGameMasters(),
+        );
 
         return new GameTableResponseDTO(
             id: $table->id,

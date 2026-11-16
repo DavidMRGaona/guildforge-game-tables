@@ -285,29 +285,50 @@ final class GameTableModel extends Model
     }
 
     /**
-     * The main game master a card names, read from the loaded relations only (no query): the table's own,
-     * else, for a campaign session, the campaign's, leaving out those excluded from this table. Null without one.
+     * The game masters visitors see for this table, read from the loaded relations only (no query): the
+     * table's own rows, then, for a campaign session, the campaign's, leaving out those excluded from this table.
+     *
+     * @return list<GameMasterModel>
      */
-    public function loadedMainGameMaster(): ?GameMasterModel
+    public function loadedEffectiveGameMasters(): array
     {
+        $effective = [];
         $excludedIds = [];
 
         foreach ($this->gameMasters as $gameMaster) {
             $pivot = $gameMaster->getRelation('pivot');
 
             if ($pivot instanceof Pivot && (bool) $pivot->getAttribute('excluded')) {
-                $excludedIds[] = $gameMaster->id;
-            } elseif ($gameMaster->role === GameMasterRole::Main) {
-                return $gameMaster;
+                $excludedIds[$gameMaster->id] = true;
+            } else {
+                $effective[$gameMaster->id] = $gameMaster;
             }
         }
 
         $campaign = $this->campaign_id !== null && $this->relationLoaded('campaign') ? $this->campaign : null;
 
-        return $campaign?->gameMasters->first(
-            fn (GameMasterModel $gameMaster): bool => $gameMaster->role === GameMasterRole::Main
-                && ! in_array($gameMaster->id, $excludedIds, true)
-        );
+        foreach ($campaign->gameMasters ?? [] as $gameMaster) {
+            if (! isset($excludedIds[$gameMaster->id]) && ! isset($effective[$gameMaster->id])) {
+                $effective[$gameMaster->id] = $gameMaster;
+            }
+        }
+
+        return array_values($effective);
+    }
+
+    /**
+     * The main game master a card or the table page names: the first main one among the effective game
+     * masters (the table's own before the campaign's). Null without one.
+     */
+    public function loadedMainGameMaster(): ?GameMasterModel
+    {
+        foreach ($this->loadedEffectiveGameMasters() as $gameMaster) {
+            if ($gameMaster->role === GameMasterRole::Main) {
+                return $gameMaster;
+            }
+        }
+
+        return null;
     }
 
     /**

@@ -182,6 +182,58 @@ final class GameMasterPublicNameTest extends ModuleTestCase
             ->assertInertia(fn (Assert $page) => $page->where('tables.data.0.mainGameMasterName', GameMasterRole::Main->label()));
     }
 
+    public function test_the_page_of_a_session_without_directors_of_its_own_shows_the_campaigns(): void
+    {
+        $campaign = $this->campaign('los-ecos');
+        $campaign->gameMasters()->attach($this->director($this->account('Ana Account', 'Ana Reader'), public: true)->id, ['sort_order' => 1]);
+        $this->table('sesion-1', campaign: $campaign);
+
+        $this->get('/mesas/sesion-1')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('table.gameMasters', 1)
+                ->where('table.gameMasters.0.displayName', 'Ana Reader')
+                ->where('table.mainGameMasterName', 'Ana Reader'));
+    }
+
+    public function test_the_page_of_a_session_leaves_out_a_director_excluded_from_it(): void
+    {
+        $campaign = $this->campaign('los-ecos');
+        $ana = $this->director($this->account('Ana Account', 'Ana Reader'), public: true);
+        $campaign->gameMasters()->attach($ana->id, ['sort_order' => 1]);
+        $session = $this->table('sesion-1', campaign: $campaign);
+        $session->gameMasters()->attach($ana->id, ['source' => 'inherited', 'excluded' => true, 'sort_order' => 1]);
+
+        $response = $this->get('/mesas/sesion-1');
+
+        $response->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('table.gameMasters', 0)
+                ->where('table.mainGameMasterName', ''));
+        $this->assertStringNotContainsString('Ana Reader', (string) $response->getContent());
+    }
+
+    public function test_a_director_shown_publicly_without_any_name_is_not_marked_public(): void
+    {
+        $table = $this->table('la-cripta');
+        $external = GameMasterModel::create([
+            'id' => (string) Str::uuid(),
+            'user_id' => null,
+            'first_name' => '',
+            'last_name' => '',
+            'role' => GameMasterRole::Main,
+            'notify_by_email' => false,
+            'is_name_public' => true,
+        ]);
+        $this->attachToTable($table, $external);
+
+        $this->get('/mesas/la-cripta')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('table.gameMasters.0.isNamePublic', false)
+                ->where('table.gameMasters.0.displayName', ''));
+    }
+
     public function test_the_calendar_names_directors_by_the_same_rule(): void
     {
         $campaign = $this->campaign('los-ecos');

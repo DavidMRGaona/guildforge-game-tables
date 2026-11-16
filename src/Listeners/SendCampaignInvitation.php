@@ -8,6 +8,7 @@ use App\Application\Services\TimezoneServiceInterface;
 use Modules\GameTables\Application\DTOs\AccountDTO;
 use Modules\GameTables\Application\DTOs\MailRecipientDTO;
 use Modules\GameTables\Application\Services\AccountLookupInterface;
+use Modules\GameTables\Application\Services\CampaignInviterNamesInterface;
 use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Entities\CampaignInvitation;
 use Modules\GameTables\Domain\Events\CampaignInvitationSent;
@@ -28,6 +29,7 @@ final readonly class SendCampaignInvitation
         private CampaignRepositoryInterface $campaigns,
         private AccountLookupInterface $accounts,
         private MailRecipientNotifier $notifier,
+        private CampaignInviterNamesInterface $inviterNames,
     ) {}
 
     public function handle(CampaignInvitationSent $event): void
@@ -53,7 +55,7 @@ final readonly class SendCampaignInvitation
             : MailRecipientDTO::address($event->email);
 
         $this->notifier->send($recipient, new CampaignInvitationNotification(
-            inviterName: $invitation->inviterName,
+            inviterName: $this->inviterNames->nameOf($invitation),
             campaignTitle: $campaign->title,
             campaignSlug: $campaign->slug,
             token: $event->token,

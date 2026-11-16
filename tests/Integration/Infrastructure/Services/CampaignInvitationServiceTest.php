@@ -180,6 +180,18 @@ final class CampaignInvitationServiceTest extends ModuleTestCase
         $this->assertSame('Mary Account', $this->pending('ana@example.com')->inviterName);
     }
 
+    public function test_a_pending_invitation_shows_the_inviters_current_name(): void
+    {
+        $this->invite('ana@example.com');
+        $this->mary->update(['display_name' => 'Mary Renamed']);
+
+        $views = $this->service()->pendingFor($this->campaign->id, CarbonImmutable::now()->toDateTimeImmutable());
+
+        // Stored when inviting, but read again from the account
+        $this->assertSame('Mary Major', $this->pending('ana@example.com')->inviterName);
+        $this->assertSame('Mary Renamed', $views[0]->inviterName);
+    }
+
     public function test_invite_answers_the_same_for_an_account_and_for_no_account(): void
     {
         $this->invite('john@example.com');

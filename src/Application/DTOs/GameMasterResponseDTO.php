@@ -33,14 +33,17 @@ final readonly class GameMasterResponseDTO
      */
     public static function fromModel(GameMasterModel $model, string $gameTableId, ?string $defaultTitle = null): self
     {
+        $publicName = $model->publicName();
+
         return new self(
             id: $model->id,
             gameTableId: $gameTableId,
-            displayName: $model->publicName() ?? '',
+            displayName: $publicName ?? '',
             role: $model->role,
             customTitle: $model->shownTitle($defaultTitle),
             isMain: $model->role === GameMasterRole::Main,
-            isNamePublic: $model->is_name_public,
+            // Public only with a name to show: otherwise the page would draw an empty name before the title
+            isNamePublic: $publicName !== null,
             cardName: $model->cardName($defaultTitle),
         );
     }
