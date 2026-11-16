@@ -34,7 +34,8 @@ final readonly class CancelParticipantsOnTableCancellation
             $this->participantRepository->save($participant);
 
             $recipient = $this->recipientResolver->getParticipantRecipient($participant->id->value);
-            $name = $this->recipientResolver->getParticipantDisplayName($participant->id->value);
+            // A mail to the participant: greeted by their own account name
+            $name = $this->recipientResolver->getParticipantGreetingName($participant->id->value);
 
             if (! $recipient instanceof MailRecipientDTO) {
                 continue;

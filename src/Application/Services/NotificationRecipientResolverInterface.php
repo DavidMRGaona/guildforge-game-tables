@@ -62,7 +62,13 @@ interface NotificationRecipientResolverInterface
     public function getParticipantRecipient(string $participantId): ?MailRecipientDTO;
 
     /**
-     * Get the participant's display name.
+     * The name other people read (directors, the table's mailbox): an account's public name, else its
+     * account name; a guest's name as written when registering.
      */
     public function getParticipantDisplayName(string $participantId): string;
+
+    /**
+     * The name a mail to the participant greets them with: the account name, or a guest's name as written.
+     */
+    public function getParticipantGreetingName(string $participantId): string;
 }

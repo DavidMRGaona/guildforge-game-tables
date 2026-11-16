@@ -67,6 +67,13 @@ final class NotifyOnWaitingListPromotionTest extends TestCase
             ->with('participant-uuid')
             ->willReturn('John Doe');
 
+        // The promoted player is greeted by the account name; the directors read the public one
+        $this->recipientResolver
+            ->expects($this->once())
+            ->method('getParticipantGreetingName')
+            ->with('participant-uuid')
+            ->willReturn('John Account');
+
         $this->recipientResolver
             ->expects($this->once())
             ->method('getParticipantRecipient')
@@ -96,11 +103,13 @@ final class NotifyOnWaitingListPromotionTest extends TestCase
         Notification::assertSentOnDemand(
             WaitingListPromotionNotification::class,
             fn ($notification, $channels, $notifiable) => $notifiable->routes['mail'] === 'participant@example.com'
+                && $this->participantNameOf($notification) === 'John Account'
         );
 
         Notification::assertSentOnDemand(
             WaitingListPromotionGmNotification::class,
             fn ($notification, $channels, $notifiable) => $notifiable->routes['mail'] === 'gm@example.com'
+                && $this->participantNameOf($notification) === 'John Doe'
         );
 
         Notification::assertSentOnDemand(
@@ -207,5 +216,15 @@ final class NotifyOnWaitingListPromotionTest extends TestCase
             maxPlayers: 5,
             location: 'Sala de juegos',
         );
+    }
+
+    /**
+     * The name a notification was built with (the module's translations are not loaded here).
+     */
+    private function participantNameOf(object $notification): string
+    {
+        $name = (new \ReflectionProperty($notification, 'participantName'))->getValue($notification);
+
+        return is_string($name) ? $name : '';
     }
 }

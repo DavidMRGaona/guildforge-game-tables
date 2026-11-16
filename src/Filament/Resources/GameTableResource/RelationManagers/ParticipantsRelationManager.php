@@ -382,7 +382,12 @@ final class ParticipantsRelationManager extends RelationManager
                             ->orWhere('first_name', 'like', "%{$search}%")
                             ->orWhere('last_name', 'like', "%{$search}%");
                     }))
-                    ->sortable()
+                    // There is no such column: by the name shown, the account's or the guest's as written
+                    // (one expression, so accounts and guests mix whatever the engine does with nulls)
+                    ->sortable(query: fn (Builder $query, string $direction): Builder => $query->orderByRaw(
+                        "COALESCE((SELECT users.name FROM users WHERE users.id = gametables_participants.user_id), COALESCE(gametables_participants.first_name, '') || ' ' || COALESCE(gametables_participants.last_name, '')) "
+                            .($direction === 'desc' ? 'desc' : 'asc'),
+                    ))
                     ->wrap(),
 
                 TextColumn::make('role')

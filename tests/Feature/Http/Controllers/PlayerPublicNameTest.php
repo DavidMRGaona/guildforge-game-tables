@@ -14,6 +14,7 @@ use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Domain\Enums\GameMasterRole;
+use Modules\GameTables\Domain\Events\ParticipantConfirmed;
 use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignJoinRequestModel;
@@ -22,12 +23,14 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterMode
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
+use Modules\GameTables\Notifications\ParticipantConfirmedNotification;
 use Tests\Support\Modules\ModuleTestCase;
 
 /**
  * Outside the panel, a player linked to an account goes by the account's public name, or by its account
  * name when it has none, the rule the directors follow; a guest by the name written when registering.
- * The panel, which staff alone see, keeps the account name.
+ * Mails to the players themselves greet them by their account name, as everywhere else; the panel, which
+ * staff alone see, keeps the account name.
  */
 final class PlayerPublicNameTest extends ModuleTestCase
 {
@@ -123,6 +126,32 @@ final class PlayerPublicNameTest extends ModuleTestCase
         $this->assertSame('Janie Roe', $resolver->getParticipantDisplayName($this->guest($table)->id));
     }
 
+    public function test_a_mail_to_the_player_greets_them_by_their_account_name(): void
+    {
+        $table = $this->table();
+        $row = $this->player($table, $this->ana, 'confirmed');
+
+        event(new ParticipantConfirmed($row->id, $table->id, $this->ana->id));
+
+        Notification::assertSentTo($this->ana, ParticipantConfirmedNotification::class, function (ParticipantConfirmedNotification $notification): bool {
+            $mail = $notification->toMail($this->ana);
+
+            return $mail->greeting === '¡Hola, Ana Account!';
+        });
+    }
+
+    public function test_the_mail_names_for_the_player_and_for_the_others(): void
+    {
+        $table = $this->table();
+        $resolver = app(NotificationRecipientResolverInterface::class);
+        $row = $this->player($table, $this->ana, 'pending');
+
+        $this->assertSame('Ana Account', $resolver->getParticipantGreetingName($row->id));
+        $this->assertSame('Ana Reader', $resolver->getParticipantDisplayName($row->id));
+        $this->assertSame('Janie Roe', $resolver->getParticipantGreetingName($this->guest($table)->id));
+        $this->assertSame('', $resolver->getParticipantGreetingName((string) Str::uuid()));
+    }
+
     public function test_the_table_data_names_its_players_by_their_public_name(): void
     {
         $table = $this->table();
@@ -147,7 +176,8 @@ final class PlayerPublicNameTest extends ModuleTestCase
         $this->assertSame($queries, $this->queriesToFind($table));
     }
 
-    public function test_the_panel_keeps_the_account_name(): void
+    // The panel's list itself: ParticipantsNameColumnTest
+    public function test_the_account_name_stays_apart_from_the_public_one(): void
     {
         $table = $this->table();
         $row = $this->player($table, $this->ana, 'confirmed')->load('user');

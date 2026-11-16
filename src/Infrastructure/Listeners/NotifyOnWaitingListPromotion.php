@@ -34,6 +34,8 @@ final readonly class NotifyOnWaitingListPromotion
             return;
         }
 
+        // The promoted participant is greeted by their account name; the directors read the public one
+        $greetingName = $this->recipientResolver->getParticipantGreetingName($event->participantId);
         $participantName = $this->recipientResolver->getParticipantDisplayName($event->participantId);
         $participant = $this->recipientResolver->getParticipantRecipient($event->participantId);
         $tableDate = app(TimezoneServiceInterface::class)->format($gameTable->timeSlot->startsAt);
@@ -42,7 +44,7 @@ final readonly class NotifyOnWaitingListPromotion
         // Notify the promoted participant
         if ($participant instanceof MailRecipientDTO) {
             app(MailRecipientNotifier::class)->send($participant, new WaitingListPromotionNotification(
-                participantName: $participantName,
+                participantName: $greetingName,
                 tableId: $event->gameTableId,
                 tableTitle: $gameTable->title,
                 tableDate: $tableDate,
