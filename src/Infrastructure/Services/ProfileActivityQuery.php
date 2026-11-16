@@ -20,7 +20,8 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
 /**
- * Every rule is a subquery of the list it filters, so a profile costs the same few queries however many
+ * Who directs a table is GameTableModel::scopeDirectedBy(), the SQL form of the module's one rule
+ * (effectiveFrom()). Every rule is a subquery of the list it filters, so a profile costs the same few queries however many
  * tables and campaigns the owner or the viewer has.
  */
 final readonly class ProfileActivityQuery implements ProfileActivityQueryInterface
@@ -38,14 +39,14 @@ final readonly class ProfileActivityQuery implements ProfileActivityQueryInterfa
 
     public function upcomingTablesRunBy(string $ownerId, int $limit): array
     {
-        return $this->tableItems($this->upcomingTables()->where(fn (Builder $query) => $this->runBy($query, $ownerId)), $limit);
+        return $this->tableItems($this->upcomingTables()->directedBy($ownerId, namePublic: true), $limit);
     }
 
     public function countUpcomingTablesRunWithoutPublicNameBy(string $ownerId): int
     {
         return $this->upcomingTables()
-            ->where(fn (Builder $query) => $this->runBy($query, $ownerId, publicName: false))
-            ->whereNot(fn (Builder $query) => $this->runBy($query, $ownerId))
+            ->directedBy($ownerId, namePublic: false)
+            ->whereNot(fn (Builder $query) => $query->directedBy($ownerId, namePublic: true))
             ->count();
     }
 
@@ -83,7 +84,7 @@ final readonly class ProfileActivityQuery implements ProfileActivityQueryInterfa
     {
         return GameTableModel::query()
             ->publiclyListed()
-            ->where(fn (Builder $query) => $this->runBy($query, $ownerId))
+            ->directedBy($ownerId, namePublic: true)
             ->count();
     }
 
@@ -162,27 +163,6 @@ final readonly class ProfileActivityQuery implements ProfileActivityQueryInterfa
     }
 
     /**
-     * The tables the owner directs as TableDirection reads it (local, or inherited from the campaign and
-     * not excluded). With a public name only by default: the page never ties a game master whose name is
-     * not public to their account; with `publicName: false`, only those.
-     *
-     * @param  Builder<GameTableModel>  $query
-     */
-    private function runBy(Builder $query, string $ownerId, bool $publicName = true): void
-    {
-        $query
-            ->whereHas('localGameMasters', fn (Builder $gm) => $this->gameMasterOf($gm, $ownerId, $publicName))
-            ->orWhere(fn (Builder $session) => $session
-                ->whereNotNull('campaign_id')
-                ->whereHas('campaign.gameMasters', fn (Builder $gm) => $this->gameMasterOf($gm, $ownerId, $publicName)
-                    ->whereNotIn('gametables_game_masters.id', fn (QueryBuilder $excluded) => $excluded
-                        ->select('gametables_table_gm.game_master_id')
-                        ->from('gametables_table_gm')
-                        ->whereColumn('gametables_table_gm.game_table_id', 'gametables_tables.id')
-                        ->where('gametables_table_gm.excluded', true))));
-    }
-
-    /**
      * @template TModel of \Illuminate\Database\Eloquent\Model
      *
      * @param  Builder<TModel>  $gm
@@ -201,8 +181,7 @@ final readonly class ProfileActivityQuery implements ProfileActivityQueryInterfa
 
     /**
      * GameTablePolicy::manageRegistrations as a subquery: a table of its own (not a campaign session),
-     * published, delegating its registrations and directed by the viewer (a local game master; a table
-     * without a campaign inherits none).
+     * published, delegating its registrations and directed by the viewer.
      *
      * @param  Builder<GameTableModel>  $table
      */
@@ -211,7 +190,7 @@ final readonly class ProfileActivityQuery implements ProfileActivityQueryInterfa
         $table->whereNull('campaign_id')
             ->where('delegates_registrations', true)
             ->where('is_published', true)
-            ->whereHas('localGameMasters', fn (Builder $gm) => $this->gameMasterOf($gm, $viewerId, null));
+            ->directedBy($viewerId);
     }
 
     /**
