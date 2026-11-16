@@ -141,6 +141,54 @@ final class PersonalCalendarTest extends ModuleTestCase
         $this->assertSame([$session->id], $this->attendedIds());
     }
 
+    // The same rule as the table page and the permissions (GameTableModel::scopeDirectedBy())
+    public function test_a_reincluded_inherited_row_of_a_game_master_who_left_the_campaign_is_left_out(): void
+    {
+        $campaign = $this->campaign();
+        $gameMaster = $this->makeGameMaster($this->person);
+        $session = $this->table('session', ['campaign_id' => $campaign->id]);
+        // Excluded from the session and included again: the inherited row stays, no longer excluded
+        DB::table('gametables_table_gm')->insert([
+            'game_table_id' => $session->id,
+            'game_master_id' => $gameMaster->id,
+            'source' => 'inherited',
+            'excluded' => false,
+            'sort_order' => 0,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // No longer among the campaign's game masters
+        $this->assertSame(0, DB::table('gametables_campaign_gm')->where('game_master_id', $gameMaster->id)->count());
+        $this->assertSame([], $this->attendedIds());
+        $this->assertSame([], GameTableModel::query()->directedBy($this->person->id)->pluck('id')->all());
+    }
+
+    public function test_a_reincluded_inherited_row_of_a_current_campaign_game_master_counts(): void
+    {
+        $campaign = $this->campaign();
+        $gameMaster = $this->makeGameMaster($this->person);
+        DB::table('gametables_campaign_gm')->insert([
+            'campaign_id' => $campaign->id,
+            'game_master_id' => $gameMaster->id,
+            'sort_order' => 0,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $session = $this->table('session', ['campaign_id' => $campaign->id]);
+        DB::table('gametables_table_gm')->insert([
+            'game_table_id' => $session->id,
+            'game_master_id' => $gameMaster->id,
+            'source' => 'inherited',
+            'excluded' => false,
+            'sort_order' => 0,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->assertSame([$session->id], $this->attendedIds());
+    }
+
     public function test_roster_registrations_of_campaign_sessions_count_when_confirmed(): void
     {
         $campaign = $this->campaign();
