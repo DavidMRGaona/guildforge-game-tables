@@ -6,6 +6,7 @@ namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Models;
 
 use App\Infrastructure\Persistence\Eloquent\Concerns\StoresInstantsInStorageTimezone;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -76,5 +77,23 @@ final class GameMasterModel extends Model
             'game_master_id',
             'game_table_id',
         )->withPivot('source', 'excluded', 'sort_order')->withTimestamps();
+    }
+
+    /**
+     * The game masters linked to an account and, with `$namePublic` set, whose «Nombre público» is that.
+     * The director half of GameTableModel::scopeDirectedBy(), also for campaigns' directors.
+     *
+     * @param  Builder<GameMasterModel>  $query
+     * @return Builder<GameMasterModel>
+     */
+    public function scopeLinkedTo(Builder $query, string $userId, ?bool $namePublic = null): Builder
+    {
+        $query->where('gametables_game_masters.user_id', $userId);
+
+        if ($namePublic !== null) {
+            $query->where('gametables_game_masters.is_name_public', $namePublic);
+        }
+
+        return $query;
     }
 }

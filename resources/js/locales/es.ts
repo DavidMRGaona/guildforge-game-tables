@@ -230,6 +230,18 @@ export default {
             registered: 'Te has inscrito correctamente',
             cancelled: 'Inscripción cancelada',
         },
+        // The sections of the members' public profiles (`/miembros/<handle>`)
+        publicProfile: {
+            directing: 'Dirige',
+            playing: 'Juega',
+            // Only the owner sees it: tables they run whose game master name is not public stay out
+            hiddenDirecting:
+                '{count} mesa que diriges no sale aquí porque tu nombre de director no es público. | {count} mesas que diriges no salen aquí porque tu nombre de director no es público.',
+            roles: {
+                director: 'Dirige',
+                player: 'Juega',
+            },
+        },
         profile: {
             title: 'Mis mesas de juego',
             tabLabel: 'Mesas',

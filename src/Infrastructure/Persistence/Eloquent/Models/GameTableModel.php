@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
@@ -391,6 +392,31 @@ final class GameTableModel extends Model
             ->orderBy('starts_at', $direction)
             ->orderBy('title')
             ->orderBy('id');
+    }
+
+    /**
+     * The tables a person directs, as a query: effectiveFrom() in SQL, for lists that filter, limit and
+     * count in the database. Its own game master rows with source «local» that are not excluded, or,
+     * for a campaign session, the campaign's game masters not excluded from this table. With
+     * `$namePublic` set, only through game masters whose «Nombre público» is that (true: the ones the
+     * pages may name).
+     *
+     * @param  Builder<GameTableModel>  $query
+     * @return Builder<GameTableModel>
+     */
+    public function scopeDirectedBy(Builder $query, string $userId, ?bool $namePublic = null): Builder
+    {
+        return $query->where(fn (Builder $directed) => $directed
+            ->whereHas('localGameMasters', fn (Builder $gm) => $gm->linkedTo($userId, $namePublic))
+            ->orWhere(fn (Builder $session) => $session
+                ->whereNotNull('gametables_tables.campaign_id')
+                ->whereHas('campaign.gameMasters', fn (Builder $gm) => $gm
+                    ->linkedTo($userId, $namePublic)
+                    ->whereNotIn('gametables_game_masters.id', fn (QueryBuilder $excluded) => $excluded
+                        ->select('gametables_table_gm.game_master_id')
+                        ->from('gametables_table_gm')
+                        ->whereColumn('gametables_table_gm.game_table_id', 'gametables_tables.id')
+                        ->where('gametables_table_gm.excluded', true)))));
     }
 
     /**

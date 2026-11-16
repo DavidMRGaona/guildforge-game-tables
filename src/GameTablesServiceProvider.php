@@ -18,6 +18,8 @@ use App\Application\Modules\DTOs\NavigationItemDTO;
 use App\Application\Modules\DTOs\PagePrefixDTO;
 use App\Application\Modules\DTOs\PermissionDTO;
 use App\Application\Modules\DTOs\SlotRegistrationDTO;
+use App\Application\Profiles\Contracts\ProfileSectionInterface;
+use App\Application\Profiles\Contracts\ProfileStatInterface;
 use App\Application\Proposals\Contracts\EventProposalRequestInterface;
 use App\Application\Publications\Contracts\PublicationSourceInterface;
 use App\Application\Search\Contracts\IndexedSearchSourceInterface;
@@ -66,6 +68,7 @@ use Modules\GameTables\Application\Services\GameTableServiceInterface;
 use Modules\GameTables\Application\Services\MembershipCheckerInterface;
 use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Application\Services\ParticipantActorContextInterface;
+use Modules\GameTables\Application\Services\ProfileActivityQueryInterface;
 use Modules\GameTables\Application\Services\RegistrationLockInterface;
 use Modules\GameTables\Application\Services\RegistrationServiceInterface;
 use Modules\GameTables\Application\Services\TableDirectionInterface;
@@ -155,6 +158,10 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\Eloquent
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentGameSystemRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentGameTableRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentParticipantRepository;
+use Modules\GameTables\Infrastructure\Profiles\CampaignCountProfileStat;
+use Modules\GameTables\Infrastructure\Profiles\CampaignsProfileSection;
+use Modules\GameTables\Infrastructure\Profiles\TablesProfileSection;
+use Modules\GameTables\Infrastructure\Profiles\TablesRunProfileStat;
 use Modules\GameTables\Infrastructure\Proposals\TablesProposalRequest;
 use Modules\GameTables\Infrastructure\Publications\AnnouncesPublicationChanges;
 use Modules\GameTables\Infrastructure\Publications\CampaignPublicationSource;
@@ -185,6 +192,7 @@ use Modules\GameTables\Infrastructure\Services\GameTableService;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
 use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
 use Modules\GameTables\Infrastructure\Services\ParticipantActorContext;
+use Modules\GameTables\Infrastructure\Services\ProfileActivityQuery;
 use Modules\GameTables\Infrastructure\Services\ProfileCampaignInvitationsDataProvider;
 use Modules\GameTables\Infrastructure\Services\ProfileCreatedCampaignsDataProvider;
 use Modules\GameTables\Infrastructure\Services\ProfileCreatedTablesDataProvider;
@@ -273,6 +281,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         $this->app->bind(NotificationRecipientResolverInterface::class, NotificationRecipientResolver::class);
         $this->app->bind(CampaignDirectionInterface::class, CampaignDirection::class);
         $this->app->bind(TableDirectionInterface::class, TableDirection::class);
+        $this->app->bind(ProfileActivityQueryInterface::class, ProfileActivityQuery::class);
         $this->app->bind(CampaignRosterSessionSyncInterface::class, CampaignRosterSessionSync::class);
         $this->app->bind(CampaignRosterServiceInterface::class, CampaignRosterService::class);
         $this->app->bind(CampaignInvitationServiceInterface::class, CampaignInvitationService::class);
@@ -1433,6 +1442,33 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         return [
             GameTableSearchSource::class,
             CampaignSearchSource::class,
+        ];
+    }
+
+    /**
+     * The tables and campaigns of a public profile (core contract, game-tables#282): only what the
+     * person viewing could see on the tables and campaigns pages.
+     *
+     * @return array<class-string<ProfileSectionInterface>>
+     */
+    public function registerProfileSections(): array
+    {
+        return [
+            TablesProfileSection::class,
+            CampaignsProfileSection::class,
+        ];
+    }
+
+    /**
+     * The counters of a public profile: tables run and campaigns, counted for the person viewing.
+     *
+     * @return array<class-string<ProfileStatInterface>>
+     */
+    public function registerProfileStats(): array
+    {
+        return [
+            TablesRunProfileStat::class,
+            CampaignCountProfileStat::class,
         ];
     }
 
