@@ -185,19 +185,23 @@ final class GenreCatalogFormsTest extends ModuleTestCase
         $this->assertSame(['western', 'horror'], $campaign->refresh()->genres);
     }
 
-    public function test_the_table_page_shows_the_catalog_names_and_leaves_out_unknown_keys(): void
+    public function test_the_table_page_shows_the_catalog_names_and_colours_and_leaves_out_unknown_keys(): void
     {
-        GenreModel::query()->where('key', 'horror')->update(['name' => 'Horror cósmico']);
+        GenreModel::query()->where('key', 'horror')->update(['name' => 'Horror cósmico', 'color' => 'info']);
         $table = $this->publishedTable(['genres' => ['western', 'deleted_genre', 'horror']]);
 
         $this->get('/mesas/'.$table->slug)
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('GameTables/Show', shouldExist: false)
-                ->where('table.genres', ['Horror cósmico', 'Western']));
+                // In the catalog's order; a deactivated genre keeps its colour on the tables that have it
+                ->where('table.genres', [
+                    ['key' => 'horror', 'label' => 'Horror cósmico', 'color' => 'info'],
+                    ['key' => 'western', 'label' => 'Western', 'color' => 'warning'],
+                ]));
     }
 
-    public function test_the_campaign_page_shows_the_catalog_names_and_leaves_out_unknown_keys(): void
+    public function test_the_campaign_page_shows_the_catalog_names_and_colours_and_leaves_out_unknown_keys(): void
     {
         $campaign = $this->campaignDraft([
             'status' => 'active',
@@ -212,7 +216,10 @@ final class GenreCatalogFormsTest extends ModuleTestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Campaigns/Show', shouldExist: false)
-                ->where('campaign.genres', ['Misterio', 'Western']));
+                ->where('campaign.genres', [
+                    ['key' => 'mystery', 'label' => 'Misterio', 'color' => 'gray'],
+                    ['key' => 'western', 'label' => 'Western', 'color' => 'warning'],
+                ]));
     }
 
     public function test_the_panel_table_form_offers_the_active_genres_and_those_the_table_has(): void

@@ -71,8 +71,9 @@ final class GameTableResource extends JsonResource
             'experienceLevelLabel' => $this->experienceLevel?->label(),
             'characterCreation' => $this->characterCreation?->value,
             'characterCreationLabel' => $this->characterCreation?->label(),
+            // Each with its colour, in the catalog's order (GenreBadge.vue draws them)
             'genres' => array_map(
-                static fn (GenreDTO $genre): string => $genre->name,
+                static fn (GenreDTO $genre): array => $genre->toBadge(),
                 app(GenreCatalogInterface::class)->resolve($this->genres),
             ),
             'tone' => $this->tone?->value,

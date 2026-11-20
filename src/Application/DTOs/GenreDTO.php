@@ -27,4 +27,14 @@ final readonly class GenreDTO
             isActive: $genre->isActive,
         );
     }
+
+    /**
+     * What a page needs to draw the genre's badge
+     *
+     * @return array{key: string, label: string, color: string}
+     */
+    public function toBadge(): array
+    {
+        return ['key' => $this->key, 'label' => $this->name, 'color' => $this->color];
+    }
 }

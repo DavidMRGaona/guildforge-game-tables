@@ -57,7 +57,10 @@ final class CampaignDetailsPageTest extends ModuleTestCase
                 ->where('campaign.tableFormatColor', 'warning')
                 ->where('campaign.location', 'Calle Mayor 1')
                 ->where('campaign.scheduleNotes', 'Sábados por la tarde')
-                ->where('campaign.genres', ['Fantasía', 'Terror'])
+                ->where('campaign.genres', [
+                    ['key' => 'fantasy', 'label' => 'Fantasía', 'color' => 'primary'],
+                    ['key' => 'horror', 'label' => 'Terror', 'color' => 'danger'],
+                ])
                 ->where('campaign.tone', 'dark')
                 ->where('campaign.toneLabel', 'Oscuro')
                 ->where('campaign.characterCreation', 'bring_own')

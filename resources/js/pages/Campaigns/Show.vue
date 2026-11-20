@@ -8,6 +8,7 @@ import type { Campaign, JoinBox, SubjectSurveyLinks } from '../../types/gametabl
 import BaseButton from '@/components/ui/BaseButton.vue';
 import StatusBadge from '../../components/StatusBadge.vue';
 import FormatBadge from '../../components/FormatBadge.vue';
+import GenreBadge from '../../components/GenreBadge.vue';
 import SafetyToolBadge from '../../components/SafetyToolBadge.vue';
 import ContentWarningBadge from '../../components/ContentWarningBadge.vue';
 import GameTableCard from '../../components/GameTableCard.vue';
@@ -456,13 +457,12 @@ const imageUrl = computed(() => buildHeroImageUrl(props.campaign.imagePublicId))
                             {{ t('gameTables.genres') }}
                         </h3>
                         <div class="flex flex-wrap gap-2">
-                            <span
-                                v-for="(genre, index) in campaign.genres"
-                                :key="index"
-                                class="rounded-full bg-muted px-3 py-1 text-sm text-base-secondary"
-                            >
-                                {{ genre }}
-                            </span>
+                            <GenreBadge
+                                v-for="genre in campaign.genres"
+                                :key="genre.key"
+                                :label="genre.label"
+                                :color="genre.color"
+                            />
                         </div>
                     </div>
 
