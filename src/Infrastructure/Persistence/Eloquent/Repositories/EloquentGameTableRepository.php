@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
-use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Exceptions\GameTableNotFoundException;
@@ -19,6 +18,7 @@ use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\GameSystemId;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
+use Modules\GameTables\Domain\ValueObjects\GenreKey;
 use Modules\GameTables\Domain\ValueObjects\TimeSlot;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
@@ -300,9 +300,8 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
             onlineUrl: $model->online_url,
             minimumAge: $model->minimum_age,
             language: $model->language,
-            genres: $model->genres !== null
-                ? array_map(Genre::from(...), $model->genres)
-                : null,
+            // A key the catalog no longer knows is kept: it is the table's, and pages leave it out
+            genres: $model->genres !== null ? GenreKey::listFrom($model->genres) : null,
             tone: $model->tone,
             experienceLevel: $model->experience_level,
             characterCreation: $model->character_creation,
@@ -366,7 +365,7 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
             'minimum_age' => $gameTable->minimumAge,
             'language' => $gameTable->language,
             'genres' => $gameTable->genres !== null
-                ? array_map(fn (Genre $g): string => $g->value, $gameTable->genres)
+                ? array_map(static fn (GenreKey $key): string => $key->value, $gameTable->genres)
                 : null,
             'tone' => $gameTable->tone?->value,
             'experience_level' => $gameTable->experienceLevel?->value,

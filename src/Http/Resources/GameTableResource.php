@@ -9,8 +9,10 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\GameTables\Application\DTOs\GameMasterResponseDTO;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
+use Modules\GameTables\Application\DTOs\GenreDTO;
 use Modules\GameTables\Application\DTOs\TableSeatsDTO;
 use Modules\GameTables\Application\Services\AssociationRoleNameInterface;
+use Modules\GameTables\Application\Services\GenreCatalogInterface;
 use Modules\GameTables\Domain\Enums\Language;
 
 /**
@@ -69,7 +71,10 @@ final class GameTableResource extends JsonResource
             'experienceLevelLabel' => $this->experienceLevel?->label(),
             'characterCreation' => $this->characterCreation?->value,
             'characterCreationLabel' => $this->characterCreation?->label(),
-            'genres' => array_map(fn ($genre) => $genre->label(), $this->genres),
+            'genres' => array_map(
+                static fn (GenreDTO $genre): string => $genre->name,
+                app(GenreCatalogInterface::class)->resolve($this->genres),
+            ),
             'tone' => $this->tone?->value,
             'toneLabel' => $this->tone?->label(),
             'safetyTools' => array_map(fn ($tool) => $tool->label(), $this->safetyTools),

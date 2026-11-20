@@ -7,10 +7,10 @@ namespace Modules\GameTables\Application\DTOs;
 use Modules\GameTables\Domain\Enums\CampaignFrequency;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
-use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\Tone;
+use Modules\GameTables\Domain\ValueObjects\GenreKey;
 
 /**
  * Simplified DTO for frontend campaign creation.
@@ -19,7 +19,7 @@ use Modules\GameTables\Domain\Enums\Tone;
 final readonly class FrontendCreateCampaignDTO
 {
     /**
-     * @param  array<Genre>|null  $genres
+     * @param  list<GenreKey>|null  $genres
      * @param  array<SafetyTool>|null  $safetyTools
      * @param  array<string>|null  $contentWarningIds
      * @param  array<string>|null  $customWarnings
@@ -69,7 +69,7 @@ final readonly class FrontendCreateCampaignDTO
             onlineUrl: $data['online_url'] ?? null,
             language: $data['language'] ?? 'es',
             genres: isset($data['genres'])
-                ? array_map(fn ($g) => $g instanceof Genre ? $g : Genre::from($g), $data['genres'])
+                ? GenreKey::listFrom($data['genres'])
                 : null,
             tone: isset($data['tone'])
                 ? ($data['tone'] instanceof Tone ? $data['tone'] : Tone::from($data['tone']))

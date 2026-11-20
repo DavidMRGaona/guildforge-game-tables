@@ -7,22 +7,23 @@ namespace Modules\GameTables\Application\DTOs;
 use App\Application\Services\TimezoneServiceInterface;
 use DateTimeInterface;
 use Modules\GameTables\Application\Services\AssociationRoleNameInterface;
+use Modules\GameTables\Application\Services\GenreCatalogInterface;
 use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
-use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\RegistrationType;
 use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Enums\TableType;
 use Modules\GameTables\Domain\Enums\Tone;
+use Modules\GameTables\Domain\ValueObjects\GenreKey;
 
 final readonly class GameTableResponseDTO
 {
     /**
-     * @param  array<Genre>  $genres
+     * @param  list<string>  $genres  the keys the table stores
      * @param  array<SafetyTool>  $safetyTools
      * @param  array<string>  $contentWarnings
      * @param  array<string>  $customWarnings
@@ -119,7 +120,7 @@ final readonly class GameTableResponseDTO
             language: $gameTable->language,
             experienceLevel: $gameTable->experienceLevel,
             characterCreation: $gameTable->characterCreation,
-            genres: $gameTable->genres ?? [],
+            genres: GenreKey::valuesOf($gameTable->genres ?? []),
             tone: $gameTable->tone,
             safetyTools: $gameTable->safetyTools ?? [],
             contentWarnings: $gameTable->contentWarningIds ?? [],
@@ -185,7 +186,11 @@ final readonly class GameTableResponseDTO
             'experience_level_label' => $this->experienceLevel?->label(),
             'character_creation' => $this->characterCreation?->value,
             'character_creation_label' => $this->characterCreation?->label(),
-            'genres' => array_map(fn (Genre $g) => ['value' => $g->value, 'label' => $g->label()], $this->genres),
+            // Only the genres the catalog knows, so the edit form never sends back a key it refuses
+            'genres' => array_map(
+                static fn (GenreDTO $genre): array => ['value' => $genre->key, 'label' => $genre->name],
+                app(GenreCatalogInterface::class)->resolve($this->genres),
+            ),
             'tone' => $this->tone?->value,
             'tone_label' => $this->tone?->label(),
             'safety_tools' => array_map(fn (SafetyTool $s) => ['value' => $s->value, 'label' => $s->label()], $this->safetyTools),

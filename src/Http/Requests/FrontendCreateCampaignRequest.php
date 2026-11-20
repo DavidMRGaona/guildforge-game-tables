@@ -12,11 +12,11 @@ use Illuminate\Validation\Rule;
 use Modules\GameTables\Domain\Enums\CampaignFrequency;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
-use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\Tone;
 use Modules\GameTables\Http\Concerns\ValidatesPlace;
+use Modules\GameTables\Http\Support\AcceptedGenre;
 use Modules\GameTables\Http\Support\AuthorLockRedirect;
 use Modules\GameTables\Http\Support\FormAttributes;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
@@ -27,6 +27,10 @@ final class FrontendCreateCampaignRequest extends FormRequest
     use ValidatesPlace;
 
     private ?RedirectResponse $lockedAuthorRedirect = null;
+
+    private ?CampaignModel $routeCampaign = null;
+
+    private bool $routeCampaignResolved = false;
 
     /**
      * Runs before validation: the author of a campaign that is no longer theirs to change gets the
@@ -40,9 +44,7 @@ final class FrontendCreateCampaignRequest extends FormRequest
             return false;
         }
 
-        $id = $this->route('id');
-        $campaign = is_string($id) && Str::isUuid($id) ? CampaignModel::query()->find($id) : null;
-        $this->lockedAuthorRedirect = app(AuthorLockRedirect::class)->forCampaign($campaign, (string) $user->getAuthIdentifier());
+        $this->lockedAuthorRedirect = app(AuthorLockRedirect::class)->forCampaign($this->routeCampaign(), (string) $user->getAuthIdentifier());
 
         return $this->lockedAuthorRedirect === null;
     }
@@ -78,7 +80,9 @@ final class FrontendCreateCampaignRequest extends FormRequest
             'online_url' => ['nullable', 'url', 'max:500', $this->onlineUrlRequired()],
             'language' => ['sometimes', 'string', 'size:2'],
             'genres' => ['nullable', 'array'],
-            'genres.*' => ['string', Rule::in(Genre::values())],
+            // The active genres, and on edit the ones the campaign already has (deactivated since or not);
+            // only for its author, so nobody learns another campaign's genres from the answer
+            'genres.*' => ['string', new AcceptedGenre(fn (): array => $this->editableCampaign()->genres ?? [])],
             'tone' => ['nullable', 'string', Rule::in(Tone::values())],
             'experience_level' => ['nullable', 'string', Rule::in(ExperienceLevel::values())],
             'character_creation' => ['nullable', 'string', Rule::in(CharacterCreation::values())],
@@ -118,5 +122,38 @@ final class FrontendCreateCampaignRequest extends FormRequest
             'tone', 'experience_level', 'character_creation', 'safety_tools', 'safety_tools.*',
             'content_warning_ids', 'content_warning_ids.*', 'custom_warnings', 'custom_warnings.*',
         ]);
+    }
+
+    /**
+     * The campaign of the route when it is one of the user's own drafts, the only campaigns the
+     * web edits (null otherwise and on create)
+     */
+    private function editableCampaign(): ?CampaignModel
+    {
+        $campaign = $this->routeCampaign();
+        $userId = $this->user()?->getAuthIdentifier();
+
+        return $campaign instanceof CampaignModel
+            && $userId !== null
+            && $campaign->created_by === (string) $userId
+            && $campaign->frontend_creation_status !== null
+            && ! $campaign->is_published
+            ? $campaign
+            : null;
+    }
+
+    /**
+     * The campaign of the {id} route (null on create)
+     */
+    private function routeCampaign(): ?CampaignModel
+    {
+        if ($this->routeCampaignResolved) {
+            return $this->routeCampaign;
+        }
+
+        $this->routeCampaignResolved = true;
+        $id = $this->route('id');
+
+        return $this->routeCampaign = is_string($id) && Str::isUuid($id) ? CampaignModel::query()->find($id) : null;
     }
 }

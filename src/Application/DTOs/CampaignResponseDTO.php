@@ -7,24 +7,25 @@ namespace Modules\GameTables\Application\DTOs;
 use App\Application\Services\TimezoneServiceInterface;
 use DateTimeInterface;
 use Modules\GameTables\Application\Services\AssociationRoleNameInterface;
+use Modules\GameTables\Application\Services\GenreCatalogInterface;
 use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Enums\CampaignFrequency;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
-use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\RosterAccess;
 use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\Tone;
+use Modules\GameTables\Domain\ValueObjects\GenreKey;
 
 final readonly class CampaignResponseDTO
 {
     /**
      * @param  array<CampaignGameMasterResponseDTO>  $gameMasters
      * @param  array<GameTableListDTO>  $gameTables
-     * @param  array<Genre>  $genres
+     * @param  list<string>  $genres  the keys the campaign stores
      * @param  array<SafetyTool>  $safetyTools
      * @param  array<string>  $contentWarningIds
      * @param  array<string>  $contentWarnings  their names, for the campaign page
@@ -132,7 +133,7 @@ final readonly class CampaignResponseDTO
             location: $campaign->location,
             onlineUrl: $campaign->onlineUrl,
             scheduleNotes: $campaign->scheduleNotes,
-            genres: $campaign->genres ?? [],
+            genres: GenreKey::valuesOf($campaign->genres ?? []),
             tone: $campaign->tone,
             characterCreation: $campaign->characterCreation,
             safetyTools: $campaign->safetyTools ?? [],
@@ -190,7 +191,11 @@ final readonly class CampaignResponseDTO
             'location' => $this->location,
             'online_url' => $this->onlineUrl,
             'schedule_notes' => $this->scheduleNotes,
-            'genres' => array_map(static fn (Genre $genre): string => $genre->value, $this->genres),
+            // Only the genres the catalog knows, so the edit form never sends back a key it refuses
+            'genres' => array_map(
+                static fn (GenreDTO $genre): string => $genre->key,
+                app(GenreCatalogInterface::class)->resolve($this->genres),
+            ),
             'tone' => $this->tone?->value,
             'character_creation' => $this->characterCreation?->value,
             'safety_tools' => array_map(static fn (SafetyTool $tool): string => $tool->value, $this->safetyTools),

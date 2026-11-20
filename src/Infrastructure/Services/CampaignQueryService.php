@@ -11,11 +11,11 @@ use Modules\GameTables\Application\DTOs\CampaignResponseDTO;
 use Modules\GameTables\Application\DTOs\GameTableListDTO;
 use Modules\GameTables\Application\Services\CampaignQueryServiceInterface;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
-use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameSystemRepositoryInterface;
+use Modules\GameTables\Domain\ValueObjects\GenreKey;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
@@ -145,7 +145,7 @@ final readonly class CampaignQueryService implements CampaignQueryServiceInterfa
             location: $campaign->location,
             onlineUrl: $campaign->online_url,
             scheduleNotes: $campaign->schedule_notes,
-            genres: array_map(Genre::from(...), $campaign->genres ?? []),
+            genres: GenreKey::valuesOf($campaign->genres ?? []),
             tone: $campaign->tone,
             characterCreation: $campaign->character_creation,
             safetyTools: array_map(SafetyTool::from(...), $campaign->safety_tools ?? []),
@@ -198,7 +198,7 @@ final readonly class CampaignQueryService implements CampaignQueryServiceInterfa
             location: $campaign->location,
             onlineUrl: $campaign->online_url,
             scheduleNotes: $campaign->schedule_notes,
-            genres: array_map(Genre::from(...), $campaign->genres ?? []),
+            genres: GenreKey::valuesOf($campaign->genres ?? []),
             tone: $campaign->tone,
             characterCreation: $campaign->character_creation,
             safetyTools: array_map(SafetyTool::from(...), $campaign->safety_tools ?? []),
