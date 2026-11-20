@@ -24,6 +24,13 @@ interface GenreCatalogInterface
     public function active(): array;
 
     /**
+     * Every genre, active or not, in the catalog's order
+     *
+     * @return list<GenreDTO>
+     */
+    public function all(): array;
+
+    /**
      * The genres of the stored keys, in the catalog's order, inactive ones included (the record
      * has them); unknown, malformed and repeated keys are left out
      *

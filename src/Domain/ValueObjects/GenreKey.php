@@ -69,6 +69,26 @@ final readonly class GenreKey
         return array_map(static fn (self $key): string => $key->value, self::listFrom($values));
     }
 
+    /**
+     * The values of the well-formed keys of several stored lists (one per table or campaign),
+     * each once and in the order first found
+     *
+     * @param  array<mixed>  $lists
+     * @return list<string>
+     */
+    public static function valuesInLists(array $lists): array
+    {
+        $values = [];
+
+        foreach ($lists as $list) {
+            if (is_array($list)) {
+                array_push($values, ...array_values($list));
+            }
+        }
+
+        return self::valuesOf($values);
+    }
+
     public function equals(self $other): bool
     {
         return $this->value === $other->value;

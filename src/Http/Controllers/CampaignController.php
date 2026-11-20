@@ -20,6 +20,7 @@ use Modules\GameTables\Application\Services\CampaignQueryServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterQueryInterface;
 use Modules\GameTables\Http\Concerns\ReadsListFilters;
 use Modules\GameTables\Http\Resources\CampaignResource;
+use Modules\GameTables\Http\Support\GenreFilter;
 use Modules\GameTables\Http\Support\SubjectSurveyLinks;
 use Modules\GameTables\Infrastructure\Surveys\CampaignSurveySubjectSource;
 
@@ -54,16 +55,20 @@ final class CampaignController extends Controller
         $status = $request->query('status');
         $status = is_string($status) && $status !== '' ? $status : null;
 
+        $genre = GenreFilter::chosen($request);
+
         $campaigns = $this->queryService->getPublishedCampaignsPaginated(
             page: $page,
             perPage: self::PER_PAGE,
             gameSystemIds: $gameSystemIds,
             status: $status,
+            genre: $genre,
         );
 
         $total = $this->queryService->getPublishedCampaignsTotal(
             gameSystemIds: $gameSystemIds,
             status: $status,
+            genre: $genre,
         );
 
         $gameSystems = $this->queryService->getGameSystemsWithCampaigns();
@@ -77,9 +82,11 @@ final class CampaignController extends Controller
                 resourceClass: CampaignResource::class,
             ),
             'gameSystems' => $gameSystems,
+            'genres' => GenreFilter::options($this->queryService->getGenreKeysInList(), $genre),
             'currentFilters' => [
                 'systems' => $gameSystemIds ?? [],
                 'status' => $status,
+                'genre' => $genre,
             ],
             'seo' => $this->seo->forPage(new SeoPageDTO(
                 title: (string) __('game-tables::messages.seo.campaigns_title'),

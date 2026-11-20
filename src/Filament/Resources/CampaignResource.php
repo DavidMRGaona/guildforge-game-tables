@@ -63,6 +63,7 @@ use Modules\GameTables\Filament\Resources\CampaignResource\Pages\ListCampaigns;
 use Modules\GameTables\Filament\Resources\CampaignResource\RelationManagers\InvitationsRelationManager;
 use Modules\GameTables\Filament\Resources\CampaignResource\RelationManagers\JoinRequestsRelationManager;
 use Modules\GameTables\Filament\Resources\CampaignResource\RelationManagers\RosterRelationManager;
+use Modules\GameTables\Filament\Support\GenreTableFilter;
 use Modules\GameTables\Filament\Support\PlaceRequirement;
 use Modules\GameTables\Filament\Support\PublicationLock;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
@@ -401,6 +402,7 @@ final class CampaignResource extends BaseResource
                 SelectFilter::make('game_system_id')
                     ->label(__('game-tables::messages.fields.game_system'))
                     ->options(GameSystemModel::query()->where('is_active', true)->pluck('name', 'id')),
+                GenreTableFilter::make(),
                 TernaryFilter::make('is_published')
                     ->label(__('game-tables::messages.fields.is_published')),
                 SelectFilter::make('frontend_creation_status')

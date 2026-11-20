@@ -78,6 +78,14 @@ final class GenreKeyTest extends TestCase
         $this->assertSame($key, (new GenreKey($key))->value);
     }
 
+    public function test_values_in_lists_joins_the_lists_of_several_records(): void
+    {
+        $this->assertSame(
+            ['horror', 'mystery', 'fantasy'],
+            GenreKey::valuesInLists([['horror', 'mystery'], null, 'horror', ['fantasy', 'horror', 'Bad Key']]),
+        );
+    }
+
     public function test_two_keys_with_the_same_value_are_equal(): void
     {
         $this->assertTrue((new GenreKey('horror'))->equals(new GenreKey('horror')));

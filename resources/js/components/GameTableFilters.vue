@@ -16,11 +16,14 @@ interface Props {
     // The campaigns list has neither a format nor an event filter
     showFormat?: boolean;
     showEvent?: boolean;
+    // The genres the list offers (its records' active ones and the chosen one); none hides it
+    genres?: FilterOption[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
     events: () => [],
     statuses: () => [],
+    genres: () => [],
     showFormat: true,
     showEvent: true,
 });
@@ -31,6 +34,7 @@ const selectedSystems = ref<string[]>(props.currentFilters.systems || []);
 const selectedFormat = ref<string>(props.currentFilters.format || '');
 const selectedStatus = ref<string>(props.currentFilters.status || '');
 const selectedEvent = ref<string>(props.currentFilters.event || '');
+const selectedGenre = ref<string>(props.currentFilters.genre || '');
 
 // The "all" entry of each filter is the select's placeholder, worth ''
 const formatOptions: FilterOption[] = [
@@ -68,6 +72,10 @@ function applyFilters(): void {
         params.event = selectedEvent.value;
     }
 
+    if (selectedGenre.value) {
+        params.genre = selectedGenre.value;
+    }
+
     router.visit(props.basePath, {
         data: params,
         preserveState: true,
@@ -93,6 +101,7 @@ function clearFilters(): void {
     selectedFormat.value = '';
     selectedStatus.value = '';
     selectedEvent.value = '';
+    selectedGenre.value = '';
     applyFilters();
 }
 
@@ -112,12 +121,17 @@ function removeEventFilter(): void {
     selectedEvent.value = '';
 }
 
+function removeGenreFilter(): void {
+    selectedGenre.value = '';
+}
+
 const hasFilters = computed(
     () =>
         selectedSystems.value.length > 0 ||
         selectedFormat.value !== '' ||
         selectedStatus.value !== '' ||
-        selectedEvent.value !== ''
+        selectedEvent.value !== '' ||
+        selectedGenre.value !== ''
 );
 
 const activeFilterPills = computed(() => {
@@ -167,10 +181,30 @@ const activeFilterPills = computed(() => {
         }
     }
 
+    if (selectedGenre.value) {
+        const genre = props.genres.find((g) => g.value === selectedGenre.value);
+        if (genre) {
+            pills.push({
+                key: 'genre',
+                label: genre.label,
+                remove: removeGenreFilter,
+            });
+        }
+    }
+
     return pills;
 });
 
 const hasEvents = computed(() => props.events.length > 0);
+const hasGenres = computed(() => props.genres.length > 0);
+
+// Four selects fit a row on wide screens; fewer keep three columns, as before
+const selectGridClass = computed(() => {
+    const selects =
+        1 + Number(props.showFormat) + Number(props.showEvent) + Number(hasGenres.value);
+
+    return selects > 3 ? 'lg:grid-cols-4' : 'lg:grid-cols-3';
+});
 const eventOptions = computed<FilterOption[]>(() =>
     props.events.map((event) => ({ value: event.id, label: event.title }))
 );
@@ -192,6 +226,7 @@ watch(
         selectedFormat.value = filters.format ?? '';
         selectedStatus.value = filters.status ?? '';
         selectedEvent.value = filters.event ?? '';
+        selectedGenre.value = filters.genre ?? '';
         void nextTick(() => {
             syncingFromServer = false;
         });
@@ -199,7 +234,7 @@ watch(
     { deep: true }
 );
 
-watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
+watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent, selectedGenre], () => {
     if (syncingFromServer) {
         return;
     }
@@ -246,7 +281,7 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
         </div>
 
         <!-- Dropdown filters row -->
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div :class="['grid grid-cols-1 gap-4 sm:grid-cols-2', selectGridClass]">
             <!-- Format Filter -->
             <div v-if="showFormat">
                 <label
@@ -300,6 +335,23 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent], () => {
                     "
                     :disabled="!hasEvents"
                     @update:model-value="selectedEvent = choice($event)"
+                />
+            </div>
+
+            <!-- Genre Filter (only when the list has genres to offer) -->
+            <div v-if="hasGenres">
+                <label
+                    for="genre-filter"
+                    class="mb-1.5 block text-sm font-medium text-base-secondary"
+                >
+                    {{ t('gameTables.filters.genre') }}
+                </label>
+                <FormSelect
+                    id="genre-filter"
+                    :model-value="selectedGenre"
+                    :options="genres"
+                    :placeholder="t('gameTables.filters.allGenres')"
+                    @update:model-value="selectedGenre = choice($event)"
                 />
             </div>
         </div>

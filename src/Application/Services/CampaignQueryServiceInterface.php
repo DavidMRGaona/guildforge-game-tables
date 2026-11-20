@@ -19,6 +19,7 @@ interface CampaignQueryServiceInterface
         int $perPage,
         ?array $gameSystemIds = null,
         ?string $status = null,
+        ?string $genre = null,
     ): array;
 
     /**
@@ -29,7 +30,15 @@ interface CampaignQueryServiceInterface
     public function getPublishedCampaignsTotal(
         ?array $gameSystemIds = null,
         ?string $status = null,
+        ?string $genre = null,
     ): int;
+
+    /**
+     * The genre keys the campaigns of the public list have, each once; its filters do not count.
+     *
+     * @return list<string>
+     */
+    public function getGenreKeysInList(): array;
 
     /**
      * Find a published campaign by ID.

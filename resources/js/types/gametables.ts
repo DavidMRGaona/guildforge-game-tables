@@ -245,6 +245,7 @@ export interface GameTableFilters {
     status?: string;
     event?: string;
     campaign?: string;
+    genre?: string | null;
 }
 
 export interface ProfileParticipationFilters {

@@ -5,6 +5,7 @@ import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import type { PaginatedResponse } from '@/types';
 import type {
+    FilterOption,
     GameTableListItem,
     GameSystem,
     GameTableFilters as GameTableFiltersType,
@@ -23,12 +24,14 @@ interface Props {
     tables: PaginatedResponse<GameTableListItem>;
     gameSystems?: GameSystem[];
     events?: EventFilter[];
+    genres?: FilterOption[];
     currentFilters?: GameTableFiltersType;
 }
 
 const props = withDefaults(defineProps<Props>(), {
     gameSystems: () => [],
     events: () => [],
+    genres: () => [],
     currentFilters: () => ({}),
 });
 
@@ -87,6 +90,7 @@ function handleNext(): void {
         <GameTableFilters
             :game-systems="props.gameSystems"
             :events="props.events"
+            :genres="props.genres"
             :current-filters="props.currentFilters"
             base-path="/mesas"
             class="mb-6"
