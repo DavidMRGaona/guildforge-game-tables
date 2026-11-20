@@ -28,12 +28,17 @@ use Modules\GameTables\Filament\Resources\GameTableResource;
 use Modules\GameTables\Filament\Resources\GameTableResource\Pages\CreateGameTable;
 use Modules\GameTables\Filament\Resources\GameTableResource\Pages\EditGameTable;
 use Modules\GameTables\Filament\Resources\GameTableResource\Pages\ListGameTables;
+use Modules\GameTables\Filament\Resources\GenreResource;
+use Modules\GameTables\Filament\Resources\GenreResource\Pages\CreateGenre;
+use Modules\GameTables\Filament\Resources\GenreResource\Pages\EditGenre;
+use Modules\GameTables\Filament\Resources\GenreResource\Pages\ListGenres;
 use Modules\GameTables\Filament\Resources\PublisherResource;
 use Modules\GameTables\Filament\Resources\PublisherResource\Pages\ListPublishers;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GenreModel;
 use Tests\Support\Modules\InteractsWithModulePanel;
 use Tests\Support\Modules\ModuleTestCase;
 
@@ -89,7 +94,7 @@ final class GameTablesGuidesTest extends ModuleTestCase
 
         $this->configureCreation(enabled: false);
         $this->registerOnAdminPanel(
-            [GameTableResource::class, CampaignResource::class, GameSystemResource::class, PublisherResource::class, ContentWarningResource::class],
+            [GameTableResource::class, CampaignResource::class, GameSystemResource::class, PublisherResource::class, ContentWarningResource::class, GenreResource::class],
             [GameTablesSettings::class],
         );
         $this->gameSystem = GameSystemModel::create([
@@ -179,6 +184,7 @@ final class GameTablesGuidesTest extends ModuleTestCase
         ], $this->visiblePanelGuides($this->userWith('events.update', 'gametables:gametables.settings')));
 
         $this->assertSame(['game-tables.panel.catalog'], $this->visiblePanelGuides($this->userWith('gametables:gamesystems.view_any')));
+        $this->assertSame(['game-tables.panel.catalog'], $this->visiblePanelGuides($this->userWith('gametables:genres.view_any')));
 
         $this->assertSame([], $this->visiblePanelGuides(UserModel::factory()->editor()->create()));
     }
@@ -200,6 +206,9 @@ final class GameTablesGuidesTest extends ModuleTestCase
             [EditGameSystem::class, ['record' => $this->gameSystem->getRouteKey()], 'game-tables.panel.catalog'],
             [ListPublishers::class, [], 'game-tables.panel.catalog'],
             [ListContentWarnings::class, [], 'game-tables.panel.catalog'],
+            [ListGenres::class, [], 'game-tables.panel.catalog'],
+            [CreateGenre::class, [], 'game-tables.panel.catalog'],
+            [EditGenre::class, ['record' => GenreModel::query()->where('key', 'horror')->sole()->getRouteKey()], 'game-tables.panel.catalog'],
             [GameTablesSettings::class, [], 'game-tables.panel.settings'],
         ];
 

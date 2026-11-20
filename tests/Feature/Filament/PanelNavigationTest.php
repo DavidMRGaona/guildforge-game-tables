@@ -12,6 +12,7 @@ use Modules\GameTables\Filament\Resources\CampaignResource;
 use Modules\GameTables\Filament\Resources\ContentWarningResource;
 use Modules\GameTables\Filament\Resources\GameSystemResource;
 use Modules\GameTables\Filament\Resources\GameTableResource;
+use Modules\GameTables\Filament\Resources\GenreResource;
 use Modules\GameTables\Filament\Resources\PublisherResource;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\Modules\InteractsWithModulePanel;
@@ -40,6 +41,7 @@ final class PanelNavigationTest extends ModuleTestCase
                 GameSystemResource::class,
                 PublisherResource::class,
                 ContentWarningResource::class,
+                GenreResource::class,
             ],
             [GameTablesSettings::class],
         );
@@ -56,6 +58,7 @@ final class PanelNavigationTest extends ModuleTestCase
             'game systems' => [GameSystemResource::class, PanelNavigationGroup::Catalogues, 10],
             'publishers' => [PublisherResource::class, PanelNavigationGroup::Catalogues, 20],
             'content warnings' => [ContentWarningResource::class, PanelNavigationGroup::Catalogues, 30],
+            'genres' => [GenreResource::class, PanelNavigationGroup::Catalogues, 35],
         ];
     }
 
@@ -84,6 +87,7 @@ final class PanelNavigationTest extends ModuleTestCase
         $this->assertNull(GameSystemResource::getNavigationParentItem());
         $this->assertNull(PublisherResource::getNavigationParentItem());
         $this->assertNull(ContentWarningResource::getNavigationParentItem());
+        $this->assertNull(GenreResource::getNavigationParentItem());
     }
 
     public function test_the_settings_page_lives_in_the_settings_cluster_in_its_slot(): void

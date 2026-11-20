@@ -52,4 +52,23 @@ final class GenreModel extends Model
             'is_active' => 'boolean',
         ];
     }
+
+    /**
+     * Tables and campaigns that have this genre: while there is any, it is deactivated, never deleted.
+     *
+     * @return array{tables: int, campaigns: int}
+     */
+    public function usage(): array
+    {
+        return [
+            'tables' => GameTableModel::query()->whereJsonContains('genres', $this->key)->count(),
+            'campaigns' => CampaignModel::query()->whereJsonContains('genres', $this->key)->count(),
+        ];
+    }
+
+    public function isInUse(): bool
+    {
+        return GameTableModel::query()->whereJsonContains('genres', $this->key)->exists()
+            || CampaignModel::query()->whereJsonContains('genres', $this->key)->exists();
+    }
 }

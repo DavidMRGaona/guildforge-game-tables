@@ -31,6 +31,8 @@
       "gamesystems.manage",
       "contentwarnings.view_any",
       "contentwarnings.manage",
+      "genres.view_any",
+      "genres.manage",
       "gametables.settings"
     ],
     "routes": [
