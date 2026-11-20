@@ -140,6 +140,20 @@ final class GenreFilterTest extends ModuleTestCase
             ]));
     }
 
+    public function test_browsing_a_campaign_offers_only_the_genres_of_its_tables(): void
+    {
+        $campaign = $this->campaign('Campaña de terror');
+        $this->table('Sesión pasada', ['genres' => ['horror'], 'campaign_id' => $campaign->id, 'starts_at' => now()->subWeek()]);
+        // Listed on /mesas, but not part of the campaign
+        $this->table('Mesa de fantasía', ['genres' => ['fantasy']]);
+
+        $this->get('/mesas?campaign='.$campaign->id)
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('tables.meta.total', 1)
+                ->where('genres', [['value' => 'horror', 'label' => 'Terror']]));
+    }
+
     public function test_without_genres_in_the_list_nothing_is_offered(): void
     {
         $this->table('Mesa sin géneros');

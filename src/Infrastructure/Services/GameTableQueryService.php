@@ -166,14 +166,6 @@ final readonly class GameTableQueryService implements GameTableQueryServiceInter
             $query->where('status', $status);
         }
 
-        if ($eventId !== null) {
-            $query->where('event_id', $eventId);
-        }
-
-        if ($campaignId !== null) {
-            $query->where('campaign_id', $campaignId);
-        }
-
         // A key of the table's JSON list, compared whole (horror never matches horror_comedy)
         if ($genre !== null) {
             $query->whereJsonContains('genres', $genre);
@@ -183,8 +175,9 @@ final readonly class GameTableQueryService implements GameTableQueryServiceInter
     }
 
     /**
-     * The tables the list shows: the published ones, and only the future ones unless browsing an
-     * event or a campaign (whose page decides what it shows)
+     * The tables the list shows: the published ones of the event or campaign browsed, and only
+     * the future ones unless browsing one (whose page decides what it shows). Shared by the list
+     * and the genres its filter offers, so both always read the same tables.
      *
      * @param  Builder<GameTableModel>  $query
      * @return Builder<GameTableModel>
@@ -192,6 +185,14 @@ final readonly class GameTableQueryService implements GameTableQueryServiceInter
     private function listed(Builder $query, ?string $eventId, ?string $campaignId): Builder
     {
         $query->publiclyListed();
+
+        if ($eventId !== null) {
+            $query->where('event_id', $eventId);
+        }
+
+        if ($campaignId !== null) {
+            $query->where('campaign_id', $campaignId);
+        }
 
         if ($eventId === null && $campaignId === null) {
             $query->where('starts_at', '>=', now());
