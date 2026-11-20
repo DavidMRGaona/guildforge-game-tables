@@ -1,3 +1,10 @@
+/** A genre as a page draws it: its name and one of the theme's state colours */
+export interface GenreBadgeData {
+    key: string;
+    label: string;
+    color: string;
+}
+
 export interface GameSystem {
     id: string;
     name: string;
@@ -115,7 +122,7 @@ export interface GameTable {
     experienceLevelLabel: string | null;
     characterCreation: string | null;
     characterCreationLabel: string | null;
-    genres: string[];
+    genres: GenreBadgeData[];
     tone: string | null;
     toneLabel: string | null;
     safetyTools: string[];
@@ -208,7 +215,7 @@ export interface Campaign {
     // Only for its directors and roster; null for anybody else
     onlineUrl: string | null;
     scheduleNotes: string | null;
-    genres: string[];
+    genres: GenreBadgeData[];
     tone: string | null;
     toneLabel: string | null;
     characterCreation: string | null;

@@ -97,8 +97,9 @@ final class CampaignResource extends JsonResource
             'location' => $this->location,
             'onlineUrl' => $this->revealsOnlineUrl ? $this->onlineUrl : null,
             'scheduleNotes' => $this->scheduleNotes,
+            // Each with its colour, in the catalog's order (GenreBadge.vue draws them)
             'genres' => array_map(
-                static fn (GenreDTO $genre): string => $genre->name,
+                static fn (GenreDTO $genre): array => $genre->toBadge(),
                 app(GenreCatalogInterface::class)->resolve($this->genres),
             ),
             'tone' => $this->tone?->value,

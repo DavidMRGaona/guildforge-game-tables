@@ -12,6 +12,7 @@ import type { AddToCalendarLinks } from '@/types/models';
 import CapacityBar from '../../components/CapacityBar.vue';
 import SurveyLinks from '../../components/SurveyLinks.vue';
 import FormatBadge from '../../components/FormatBadge.vue';
+import GenreBadge from '../../components/GenreBadge.vue';
 import StatusBadge from '../../components/StatusBadge.vue';
 import ContentWarningBadge from '../../components/ContentWarningBadge.vue';
 import SafetyToolBadge from '../../components/SafetyToolBadge.vue';
@@ -582,13 +583,12 @@ const imageUrl = computed(() => buildHeroImageUrl(props.table.imagePublicId));
                             {{ t('gameTables.genres') }}
                         </h3>
                         <div class="flex flex-wrap gap-2">
-                            <span
-                                v-for="(genre, index) in table.genres"
-                                :key="index"
-                                class="rounded-full bg-muted px-3 py-1 text-sm text-base-secondary"
-                            >
-                                {{ genre }}
-                            </span>
+                            <GenreBadge
+                                v-for="genre in table.genres"
+                                :key="genre.key"
+                                :label="genre.label"
+                                :color="genre.color"
+                            />
                         </div>
                     </div>
                 </div>
