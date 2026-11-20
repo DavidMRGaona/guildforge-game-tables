@@ -19,7 +19,6 @@ use Modules\GameTables\Application\Support\FormDateTime;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
 use Modules\GameTables\Domain\Enums\GameMasterRole;
-use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableType;
@@ -29,6 +28,7 @@ use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\CampaignRosterRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Http\Concerns\ValidatesPlace;
+use Modules\GameTables\Http\Support\AcceptedGenre;
 use Modules\GameTables\Http\Support\AuthorLockRedirect;
 use Modules\GameTables\Http\Support\FormAttributes;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
@@ -213,7 +213,9 @@ final class FrontendCreateGameTableRequest extends FormRequest
             'minimum_age' => ['nullable', 'integer', 'min:1', 'max:99'],
             'language' => ['required', 'string', 'size:2'],
             'genres' => ['nullable', 'array'],
-            'genres.*' => ['string', Rule::in(Genre::values())],
+            // The active genres, and on edit the ones the table already has (deactivated since or not);
+            // only for someone who may edit it, so nobody learns another table's genres from the answer
+            'genres.*' => ['string', new AcceptedGenre(fn (): array => $this->editableTable()->genres ?? [])],
             'tone' => ['nullable', 'string', Rule::in(Tone::values())],
             'experience_level' => ['required', 'string', Rule::in(ExperienceLevel::values())],
             'character_creation' => ['required', 'string', Rule::in(CharacterCreation::values())],

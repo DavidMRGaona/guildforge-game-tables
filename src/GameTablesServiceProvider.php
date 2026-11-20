@@ -65,6 +65,7 @@ use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Application\Services\GameMasterServiceInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
+use Modules\GameTables\Application\Services\GenreCatalogInterface;
 use Modules\GameTables\Application\Services\MembershipCheckerInterface;
 use Modules\GameTables\Application\Services\NotificationRecipientResolverInterface;
 use Modules\GameTables\Application\Services\ParticipantActorContextInterface;
@@ -111,6 +112,7 @@ use Modules\GameTables\Domain\Repositories\ContentWarningRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\EventGameTableConfigRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameSystemRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
+use Modules\GameTables\Domain\Repositories\GenreRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\GameTables\Filament\Pages\GameTablesSettings;
 use Modules\GameTables\Filament\RelationManagers\EventGameTableConfigRelationManager;
@@ -157,6 +159,7 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\Eloquent
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentEventGameTableConfigRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentGameSystemRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentGameTableRepository;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentGenreRepository;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentParticipantRepository;
 use Modules\GameTables\Infrastructure\Profiles\CampaignCountProfileStat;
 use Modules\GameTables\Infrastructure\Profiles\CampaignsProfileSection;
@@ -190,6 +193,7 @@ use Modules\GameTables\Infrastructure\Services\GameMasterService;
 use Modules\GameTables\Infrastructure\Services\GameTableQueryService;
 use Modules\GameTables\Infrastructure\Services\GameTableService;
 use Modules\GameTables\Infrastructure\Services\GameTableSettingsReader;
+use Modules\GameTables\Infrastructure\Services\GenreCatalog;
 use Modules\GameTables\Infrastructure\Services\NotificationRecipientResolver;
 use Modules\GameTables\Infrastructure\Services\ParticipantActorContext;
 use Modules\GameTables\Infrastructure\Services\ProfileActivityQuery;
@@ -252,6 +256,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         // Repository bindings
         $this->app->bind(GameSystemRepositoryInterface::class, EloquentGameSystemRepository::class);
         $this->app->bind(ContentWarningRepositoryInterface::class, EloquentContentWarningRepository::class);
+        $this->app->bind(GenreRepositoryInterface::class, EloquentGenreRepository::class);
         $this->app->bind(CampaignRepositoryInterface::class, EloquentCampaignRepository::class);
         $this->app->bind(CampaignRosterRepositoryInterface::class, EloquentCampaignRosterRepository::class);
         $this->app->bind(CampaignJoinRequestRepositoryInterface::class, EloquentCampaignJoinRequestRepository::class);
@@ -268,6 +273,8 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         $this->app->bind(CampaignInvitationSendLogInterface::class, DatabaseCampaignInvitationSendLog::class);
         $this->app->bind(MembershipCheckerInterface::class, AssociationRoleMembershipChecker::class);
         $this->app->scoped(AssociationRoleNameInterface::class, AssociationRoleName::class);
+        // Read once per request or queued job
+        $this->app->scoped(GenreCatalogInterface::class, GenreCatalog::class);
         $this->app->bind(CreationEligibilityServiceInterface::class, CreationEligibilityService::class);
         $this->app->bind(FrontendCreationServiceInterface::class, FrontendCreationService::class);
         $this->app->bind(RegistrationServiceInterface::class, RegistrationService::class);

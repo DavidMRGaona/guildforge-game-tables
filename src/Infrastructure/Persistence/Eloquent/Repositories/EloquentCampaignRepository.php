@@ -7,13 +7,13 @@ namespace Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories;
 use DateTimeImmutable;
 use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
-use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\RosterAccess;
 use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Exceptions\CampaignNotFoundException;
 use Modules\GameTables\Domain\Repositories\CampaignRepositoryInterface;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\GameSystemId;
+use Modules\GameTables\Domain\ValueObjects\GenreKey;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 
 final readonly class EloquentCampaignRepository implements CampaignRepositoryInterface
@@ -194,7 +194,7 @@ final readonly class EloquentCampaignRepository implements CampaignRepositoryInt
             location: $model->location,
             onlineUrl: $model->online_url,
             scheduleNotes: $model->schedule_notes,
-            genres: $model->genres !== null ? array_map(Genre::from(...), $model->genres) : null,
+            genres: $model->genres !== null ? GenreKey::listFrom($model->genres) : null,
             tone: $model->tone,
             characterCreation: $model->character_creation,
             safetyTools: $model->safety_tools !== null ? array_map(SafetyTool::from(...), $model->safety_tools) : null,
@@ -237,7 +237,7 @@ final readonly class EloquentCampaignRepository implements CampaignRepositoryInt
             'online_url' => $campaign->onlineUrl,
             'schedule_notes' => $campaign->scheduleNotes,
             'genres' => $campaign->genres !== null
-                ? array_map(static fn (Genre $genre): string => $genre->value, $campaign->genres)
+                ? array_map(static fn (GenreKey $key): string => $key->value, $campaign->genres)
                 : null,
             'tone' => $campaign->tone?->value,
             'character_creation' => $campaign->characterCreation?->value,

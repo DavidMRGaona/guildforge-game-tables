@@ -14,10 +14,10 @@ use Modules\GameTables\Application\DTOs\ParticipantResponseDTO;
 use Modules\GameTables\Application\Services\EventWithTablesQueryInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
 use Modules\GameTables\Domain\Entities\GameTable;
-use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Repositories\GameSystemRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
+use Modules\GameTables\Domain\ValueObjects\GenreKey;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
@@ -246,9 +246,7 @@ final readonly class GameTableQueryService implements GameTableQueryServiceInter
             language: $table->language,
             experienceLevel: $table->experience_level,
             characterCreation: $table->character_creation,
-            genres: $table->genres !== null
-                ? array_map(Genre::from(...), $table->genres)
-                : [],
+            genres: GenreKey::valuesOf($table->genres ?? []),
             tone: $table->tone,
             safetyTools: $table->safety_tools !== null
                 ? array_map(SafetyTool::from(...), $table->safety_tools)

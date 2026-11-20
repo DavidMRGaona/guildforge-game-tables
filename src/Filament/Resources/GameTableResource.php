@@ -51,10 +51,10 @@ use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Modules\GameTables\Application\Services\AssociationRoleNameInterface;
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
+use Modules\GameTables\Application\Services\GenreCatalogInterface;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
-use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\Language;
 use Modules\GameTables\Domain\Enums\RegistrationType;
 use Modules\GameTables\Domain\Enums\SafetyTool;
@@ -387,7 +387,8 @@ final class GameTableResource extends BaseResource
                             ->schema([
                                 CheckboxList::make('genres')
                                     ->label(__('game-tables::messages.fields.genres'))
-                                    ->options(Genre::options())
+                                    // The active genres plus the ones the record already has; Filament accepts only these
+                                    ->options(fn (?GameTableModel $record): array => app(GenreCatalogInterface::class)->options($record->genres ?? []))
                                     ->columns(4)
                                     ->columnSpanFull(),
 

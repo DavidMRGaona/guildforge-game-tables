@@ -139,8 +139,8 @@ final class FrontendCampaignController extends Controller
             abort(404);
         }
 
-        // Get form data for the edit form
-        $formData = $this->creationService->getCreateFormData();
+        // Get form data for the edit form, keeping the genres stored on the campaign
+        $formData = $this->creationService->getCreateFormData(keepGenres: $campaign->genres);
 
         return Inertia::render('Campaigns/Edit', [
             'campaign' => $campaign->toArray(),

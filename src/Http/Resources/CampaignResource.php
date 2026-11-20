@@ -9,7 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\GameTables\Application\DTOs\CampaignGameMasterResponseDTO;
 use Modules\GameTables\Application\DTOs\CampaignResponseDTO;
-use Modules\GameTables\Domain\Enums\Genre;
+use Modules\GameTables\Application\DTOs\GenreDTO;
+use Modules\GameTables\Application\Services\GenreCatalogInterface;
 use Modules\GameTables\Domain\Enums\Language;
 use Modules\GameTables\Domain\Enums\SafetyTool;
 
@@ -96,7 +97,10 @@ final class CampaignResource extends JsonResource
             'location' => $this->location,
             'onlineUrl' => $this->revealsOnlineUrl ? $this->onlineUrl : null,
             'scheduleNotes' => $this->scheduleNotes,
-            'genres' => array_map(static fn (Genre $genre): string => $genre->label(), $this->genres),
+            'genres' => array_map(
+                static fn (GenreDTO $genre): string => $genre->name,
+                app(GenreCatalogInterface::class)->resolve($this->genres),
+            ),
             'tone' => $this->tone?->value,
             'toneLabel' => $this->tone?->label(),
             'characterCreation' => $this->characterCreation?->value,

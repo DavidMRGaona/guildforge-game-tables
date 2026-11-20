@@ -10,7 +10,6 @@ use Modules\GameTables\Domain\Enums\CampaignStatus;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
-use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\RosterAccess;
 use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Enums\TableFormat;
@@ -18,11 +17,12 @@ use Modules\GameTables\Domain\Enums\Tone;
 use Modules\GameTables\Domain\Exceptions\RosterActionRefusedException;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\GameSystemId;
+use Modules\GameTables\Domain\ValueObjects\GenreKey;
 
 final class Campaign
 {
     /**
-     * @param  array<Genre>|null  $genres
+     * @param  list<GenreKey>|null  $genres
      * @param  array<SafetyTool>|null  $safetyTools
      * @param  array<string>|null  $contentWarningIds  null leaves the stored ones as they are
      * @param  array<string>|null  $customWarnings

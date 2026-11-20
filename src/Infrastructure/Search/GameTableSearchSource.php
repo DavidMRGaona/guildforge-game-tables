@@ -8,7 +8,8 @@ use App\Application\Search\Contracts\IndexedSearchSourceInterface;
 use App\Application\Search\DTOs\SearchDocumentDTO;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
-use Modules\GameTables\Domain\Enums\Genre;
+use Modules\GameTables\Application\DTOs\GenreDTO;
+use Modules\GameTables\Application\Services\GenreCatalogInterface;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
@@ -73,9 +74,10 @@ final class GameTableSearchSource implements IndexedSearchSourceInterface
     private function toDocument(GameTableModel $table): SearchDocumentDTO
     {
         $system = $table->gameSystem?->name;
+        // Resolved here, never in the constructor: a worker keeps this source between jobs
         $genres = array_map(
-            static fn (Genre $genre): string => $genre->label(),
-            array_values(array_filter(array_map(Genre::tryFrom(...), $table->genres ?? []))),
+            static fn (GenreDTO $genre): string => $genre->name,
+            app(GenreCatalogInterface::class)->resolve($table->genres ?? []),
         );
         $startsAt = $table->starts_at->toImmutable();
 

@@ -12,6 +12,7 @@ use DateTimeImmutable;
 use Illuminate\Support\Str;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GenreModel;
 use Modules\GameTables\Infrastructure\Search\GameTableSearchSource;
 use Tests\Support\Modules\ModuleTestCase;
 
@@ -127,6 +128,19 @@ final class GameTableSearchSourceTest extends ModuleTestCase
         $this->assertSame('gametables/cripta', $document->imagePublicId);
         $this->assertSame(route('gametables.show', $table->slug, false), $document->url);
         $this->assertStringStartsWith('/', $document->url);
+    }
+
+    public function test_the_genres_are_searched_by_their_catalog_names(): void
+    {
+        $table = $this->table(['genres' => ['horror', 'deleted_genre', 'western']]);
+        GenreModel::query()->where('key', 'horror')->update(['name' => 'Horror cósmico']);
+        GenreModel::query()->where('key', 'western')->update(['is_active' => false]);
+        $this->app->forgetScopedInstances();
+
+        $document = $this->source->document($table->id);
+
+        // An inactive genre is still on the table, so it is still searched; an unknown key is left out
+        $this->assertSame('Sistema de ejemplo Horror cósmico Western', $document?->keywords);
     }
 
     public function test_meta_and_body_skip_what_the_table_lacks(): void

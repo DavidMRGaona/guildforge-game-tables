@@ -9,7 +9,6 @@ use DateTimeZone;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
-use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\RegistrationType;
 use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Enums\TableFormat;
@@ -20,12 +19,13 @@ use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
 use Modules\GameTables\Domain\ValueObjects\CampaignId;
 use Modules\GameTables\Domain\ValueObjects\GameSystemId;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
+use Modules\GameTables\Domain\ValueObjects\GenreKey;
 use Modules\GameTables\Domain\ValueObjects\TimeSlot;
 
 final class GameTable
 {
     /**
-     * @param  array<Genre>|null  $genres
+     * @param  list<GenreKey>|null  $genres
      * @param  array<SafetyTool>|null  $safetyTools
      * @param  array<string>|null  $contentWarningIds
      * @param  array<string>|null  $customWarnings
@@ -449,7 +449,7 @@ final class GameTable
     }
 
     /**
-     * @param  array<Genre>|null  $genres
+     * @param  list<GenreKey>|null  $genres
      * @param  array<SafetyTool>|null  $safetyTools
      */
     public function updateDetails(

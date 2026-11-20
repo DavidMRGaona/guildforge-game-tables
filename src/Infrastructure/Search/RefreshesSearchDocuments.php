@@ -21,8 +21,9 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel
  * model events, so their listed ids are read before and forgotten after. A game system in use cannot
  * be deleted (the foreign key restricts it), so it never takes records along.
  *
- * Nothing else feeds the documents: genres are a column of the table, and content warnings and game
- * masters are not indexed.
+ * Nothing else feeds the documents but the names of the genres: the table keeps their keys in a
+ * column and the names come from the genre catalog, so renaming a genre must refresh the tables
+ * that have it (the panel's genre section does). Content warnings and game masters are not indexed.
  */
 final class RefreshesSearchDocuments
 {

@@ -29,6 +29,7 @@ use Modules\GameTables\Application\Services\EventGameTableConfigServiceInterface
 use Modules\GameTables\Application\Services\FrontendCreationServiceInterface;
 use Modules\GameTables\Application\Services\GameMasterServiceInterface;
 use Modules\GameTables\Application\Services\GameTableServiceInterface;
+use Modules\GameTables\Application\Services\GenreCatalogInterface;
 use Modules\GameTables\Application\Services\TableDirectionInterface;
 use Modules\GameTables\Domain\Entities\Campaign;
 use Modules\GameTables\Domain\Entities\GameTable;
@@ -38,7 +39,6 @@ use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\GameMasterRole;
-use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\Language;
 use Modules\GameTables\Domain\Enums\ParticipantStatus;
 use Modules\GameTables\Domain\Enums\SafetyTool;
@@ -273,6 +273,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
     }
 
     /**
+     * @param  array<mixed>  $keepGenres
      * @return array{
      *     game_systems: array<array{id: string, name: string}>,
      *     table_types: array<string, string>,
@@ -291,7 +292,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
      *     limits: array{max_players: int, max_spectators: int, max_duration_minutes: int}
      * }
      */
-    public function getCreateFormData(?string $keepCampaignId = null, ?string $keepEventId = null): array
+    public function getCreateFormData(?string $keepCampaignId = null, ?string $keepEventId = null, array $keepGenres = []): array
     {
         $timezone = app(TimezoneServiceInterface::class);
 
@@ -347,7 +348,7 @@ final readonly class FrontendCreationService implements FrontendCreationServiceI
                 ],
                 $contentWarnings,
             ),
-            'genres' => Genre::options(),
+            'genres' => app(GenreCatalogInterface::class)->options($keepGenres),
             'languages' => Language::options(),
             'campaign_frequencies' => CampaignFrequency::options(),
             'events' => array_values($events->map(

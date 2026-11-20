@@ -10,7 +10,6 @@ use Modules\GameTables\Domain\Entities\GameTable;
 use Modules\GameTables\Domain\Enums\CharacterCreation;
 use Modules\GameTables\Domain\Enums\ExperienceLevel;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
-use Modules\GameTables\Domain\Enums\Genre;
 use Modules\GameTables\Domain\Enums\RegistrationType;
 use Modules\GameTables\Domain\Enums\SafetyTool;
 use Modules\GameTables\Domain\Enums\TableFormat;
@@ -20,6 +19,7 @@ use Modules\GameTables\Domain\Enums\Tone;
 use Modules\GameTables\Domain\Exceptions\InvalidStatusTransitionException;
 use Modules\GameTables\Domain\ValueObjects\GameSystemId;
 use Modules\GameTables\Domain\ValueObjects\GameTableId;
+use Modules\GameTables\Domain\ValueObjects\GenreKey;
 use Modules\GameTables\Domain\ValueObjects\TimeSlot;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -86,7 +86,7 @@ final class GameTableTest extends TestCase
             onlineUrl: 'https://discord.gg/xyz',
             minimumAge: 18,
             language: 'es',
-            genres: [Genre::Horror, Genre::Mystery],
+            genres: [new GenreKey('horror'), new GenreKey('mystery')],
             tone: Tone::Dark,
             experienceLevel: ExperienceLevel::Beginner,
             characterCreation: CharacterCreation::PreGenerated,
@@ -105,7 +105,7 @@ final class GameTableTest extends TestCase
         $this->assertEquals('https://discord.gg/xyz', $gameTable->onlineUrl);
         $this->assertEquals(18, $gameTable->minimumAge);
         $this->assertEquals('es', $gameTable->language);
-        $this->assertEquals([Genre::Horror, Genre::Mystery], $gameTable->genres);
+        $this->assertEquals([new GenreKey('horror'), new GenreKey('mystery')], $gameTable->genres);
         $this->assertEquals(Tone::Dark, $gameTable->tone);
         $this->assertEquals(ExperienceLevel::Beginner, $gameTable->experienceLevel);
         $this->assertEquals(CharacterCreation::PreGenerated, $gameTable->characterCreation);
