@@ -7,9 +7,11 @@ namespace Modules\GameTables\Infrastructure\Search;
 use App\Application\Search\Services\SearchIndexerInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Database\Eloquent\Builder;
+use Modules\GameTables\Application\Services\GenreCatalogInterface;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GenreModel;
 
 /**
  * Keeps the search documents of tables and campaigns in line with their rows: saving refreshes the
@@ -22,8 +24,8 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel
  * be deleted (the foreign key restricts it), so it never takes records along.
  *
  * Nothing else feeds the documents but the names of the genres: the table keeps their keys in a
- * column and the names come from the genre catalog, so renaming a genre must refresh the tables
- * that have it (the panel's genre section does). Content warnings and game masters are not indexed.
+ * column and the names come from the genre catalog, so renaming a genre refreshes the tables that
+ * have it. Content warnings and game masters are not indexed.
  */
 final class RefreshesSearchDocuments
 {
@@ -53,6 +55,16 @@ final class RefreshesSearchDocuments
         GameSystemModel::saved(static function (GameSystemModel $system): void {
             if ($system->wasChanged('name')) {
                 self::refreshRecordsOf($system);
+            }
+        });
+
+        // The documents carry the genres' names; campaign documents carry no genres
+        GenreModel::saved(static function (GenreModel $genre): void {
+            // A new genre is on no table yet
+            if (! $genre->wasRecentlyCreated && $genre->wasChanged('name')) {
+                // The catalog this request already read still has the old name
+                app()->forgetInstance(GenreCatalogInterface::class);
+                self::refreshTablesWith($genre);
             }
         });
 
@@ -98,6 +110,18 @@ final class RefreshesSearchDocuments
 
         foreach (CampaignModel::query()->publiclyListed()->where('game_system_id', $system->id)->pluck('id') as $id) {
             $indexer->refresh(CampaignSearchSource::TYPE, (string) $id);
+        }
+    }
+
+    /**
+     * The listed tables that have the genre, in one query
+     */
+    private static function refreshTablesWith(GenreModel $genre): void
+    {
+        $indexer = self::indexer();
+
+        foreach (GameTableModel::query()->publiclyListed()->whereJsonContains('genres', $genre->key)->pluck('id') as $id) {
+            $indexer->refresh(GameTableSearchSource::TYPE, (string) $id);
         }
     }
 

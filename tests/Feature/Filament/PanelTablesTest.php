@@ -30,6 +30,8 @@ use Modules\GameTables\Filament\Resources\GameTableResource\Pages\EditGameTable;
 use Modules\GameTables\Filament\Resources\GameTableResource\Pages\ListGameTables;
 use Modules\GameTables\Filament\Resources\GameTableResource\RelationManagers\ParticipantsRelationManager;
 use Modules\GameTables\Filament\Resources\GameTableResource\RelationManagers\StatusLogRelationManager;
+use Modules\GameTables\Filament\Resources\GenreResource;
+use Modules\GameTables\Filament\Resources\GenreResource\Pages\ListGenres;
 use Modules\GameTables\Filament\Resources\PublisherResource;
 use Modules\GameTables\Filament\Resources\PublisherResource\Pages\ListPublishers;
 use Modules\GameTables\Filament\Widgets\PendingModerationWidget;
@@ -67,6 +69,7 @@ final class PanelTablesTest extends ModuleTestCase
             PublisherResource::class,
             GameSystemResource::class,
             ContentWarningResource::class,
+            GenreResource::class,
         ]);
         $this->admin = $this->actingAsPanelAdmin();
 
@@ -94,6 +97,7 @@ final class PanelTablesTest extends ModuleTestCase
             'publishers' => ['publishers', [RowDetailsAction::NAME, 'edit']],
             'game systems' => ['game_systems', [RowDetailsAction::NAME, 'edit']],
             'content warnings' => ['content_warnings', [RowDetailsAction::NAME, 'edit']],
+            'genres' => ['genres', [RowDetailsAction::NAME, 'edit']],
             'roster' => ['roster', [RowDetailsAction::NAME, 'remove']],
             // Its rows are arrays: row details reads them from core 3.41.1 (#229)
             'pending moderation widget' => ['pending_moderation', [RowDetailsAction::NAME, 'view']],
@@ -190,6 +194,7 @@ final class PanelTablesTest extends ModuleTestCase
             'publishers' => ['publishers', ['country' => 'sm', 'game_systems_count' => 'md'], ['name', 'is_active']],
             'game systems' => ['game_systems', ['publisher.name' => 'sm', 'edition' => 'xl', 'year' => 'xl'], ['name', 'is_active']],
             'content warnings' => ['content_warnings', ['label' => 'sm', 'severity' => 'md'], ['name', 'is_active']],
+            'genres' => ['genres', ['usage' => 'sm'], ['name', 'is_active']],
             'participants' => ['participants', [
                 'role' => 'sm', 'guest_flags' => 'md', 'waiting_list_position' => 'md',
                 'created_at' => 'xl', 'confirmed_at' => '2xl',
@@ -233,6 +238,7 @@ final class PanelTablesTest extends ModuleTestCase
             'publishers' => ['publishers'],
             'game systems' => ['game_systems'],
             'content warnings' => ['content_warnings'],
+            'genres' => ['genres'],
         ];
     }
 
@@ -252,6 +258,7 @@ final class PanelTablesTest extends ModuleTestCase
             'publishers' => Livewire::test(ListPublishers::class)->instance(),
             'game_systems' => Livewire::test(ListGameSystems::class)->instance(),
             'content_warnings' => Livewire::test(ListContentWarnings::class)->instance(),
+            'genres' => Livewire::test(ListGenres::class)->instance(),
             'participants' => Livewire::test(ParticipantsRelationManager::class, ['ownerRecord' => $this->gameTable(), 'pageClass' => EditGameTable::class])->instance(),
             'status_log' => Livewire::test(StatusLogRelationManager::class, ['ownerRecord' => $this->gameTable(), 'pageClass' => EditGameTable::class])->instance(),
             'roster' => Livewire::test(RosterRelationManager::class, ['ownerRecord' => $this->campaign(), 'pageClass' => EditCampaign::class])->instance(),

@@ -19,6 +19,7 @@ return [
         'campaigns' => 'Campaigns',
         'game_systems' => 'Game systems',
         'content_warnings' => 'Content warnings',
+        'genres' => 'Genres',
         'settings' => 'Tables',
         'config' => 'Configuration',
     ],
@@ -88,6 +89,10 @@ return [
             'singular' => 'Content warning',
             'plural' => 'Content warnings',
         ],
+        'genre' => [
+            'singular' => 'Genre',
+            'plural' => 'Genres',
+        ],
         'participant' => [
             'singular' => 'Participant',
             'plural' => 'Participants',
@@ -103,6 +108,8 @@ return [
         'edit_game_system' => 'Edit game system',
         'create_content_warning' => 'Create content warning',
         'edit_content_warning' => 'Edit content warning',
+        'create_genre' => 'Create genre',
+        'edit_genre' => 'Edit genre',
     ],
 
     /*
@@ -127,6 +134,9 @@ return [
     |--------------------------------------------------------------------------
     */
     'fields' => [
+        'key' => 'Key',
+        'color' => 'Colour',
+        'usage' => 'Uses',
         'created_at' => 'Created',
         'name' => 'Name',
         'slug' => 'Slug',
@@ -542,6 +552,10 @@ return [
             'view_any' => 'View content warnings',
             'manage' => 'Manage content warnings',
         ],
+        'genres' => [
+            'view_any' => 'View genres',
+            'manage' => 'Manage genres',
+        ],
         'settings' => 'Configure table module',
     ],
 
@@ -744,6 +758,39 @@ return [
         'deactivated' => 'Game system deactivated',
         'not_deleted' => 'Not deleted: tables or campaigns use it',
         'bulk_not_deleted' => ':count system was not deleted because tables or campaigns use it. Deactivate it instead.|:count systems were not deleted because tables or campaigns use them. Deactivate them instead.',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Genres (catalog)
+    |--------------------------------------------------------------------------
+    */
+    'genres' => [
+        'key_help_create' => 'Tables and campaigns store it, and it cannot change later. It is suggested from the name: lower case without accents, digits and underscores, starting with a letter.',
+        'key_help_edit' => 'Tables and campaigns store this key, so it cannot change.',
+        'active_help' => 'A deactivated genre is no longer offered on forms; tables and campaigns that have it keep it.',
+        'name_taken' => 'There is already a genre with that name.',
+        'colors' => [
+            'primary' => 'Main colour',
+            'info' => 'Blue',
+            'success' => 'Green',
+            'warning' => 'Yellow',
+            'danger' => 'Red',
+            'gray' => 'Grey',
+        ],
+    ],
+
+    'genre_deletion' => [
+        'tables' => '1 table|:count tables',
+        'campaigns' => '1 campaign|:count campaigns',
+        'and' => ':first and :second',
+        'in_use' => 'It is on :usage, so it cannot be deleted. Deactivate it so it is no longer offered on forms; those that have it keep it.',
+        'in_use_inactive' => 'It is on :usage, so it cannot be deleted. It is already deactivated: it is not offered on forms.',
+        'deactivate' => 'Deactivate',
+        'deactivated' => 'Genre deactivated',
+        'not_deleted' => 'Not deleted: tables or campaigns have it',
+        'bulk_not_deleted' => ':count genre was not deleted because tables or campaigns have it. Deactivate it instead.|:count genres were not deleted because tables or campaigns have them. Deactivate them instead.',
+        'confirmation_check' => 'I understand the genre will be deleted and that this cannot be undone',
     ],
 
     /*

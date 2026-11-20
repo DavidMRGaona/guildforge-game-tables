@@ -20,6 +20,7 @@ return [
         'game_systems' => 'Sistemas de juego',
         'publishers' => 'Editoriales',
         'content_warnings' => 'Avisos de contenido',
+        'genres' => 'Géneros',
         'settings' => 'Mesas',
         'config' => 'Configuración',
     ],
@@ -99,6 +100,10 @@ return [
             'singular' => 'Aviso de contenido',
             'plural' => 'Avisos de contenido',
         ],
+        'genre' => [
+            'singular' => 'Género',
+            'plural' => 'Géneros',
+        ],
         'participant' => [
             'singular' => 'Participante',
             'plural' => 'Participantes',
@@ -116,6 +121,8 @@ return [
         'edit_publisher' => 'Editar editorial',
         'create_content_warning' => 'Crear aviso de contenido',
         'edit_content_warning' => 'Editar aviso de contenido',
+        'create_genre' => 'Crear género',
+        'edit_genre' => 'Editar género',
     ],
 
     /*
@@ -140,6 +147,9 @@ return [
     |--------------------------------------------------------------------------
     */
     'fields' => [
+        'key' => 'Clave',
+        'color' => 'Color',
+        'usage' => 'Usos',
         'created_at' => 'Creado',
         // GameSystem fields
         'name' => 'Nombre',
@@ -622,6 +632,10 @@ return [
             'view_any' => 'Ver avisos de contenido',
             'manage' => 'Gestionar avisos de contenido',
         ],
+        'genres' => [
+            'view_any' => 'Ver géneros',
+            'manage' => 'Gestionar géneros',
+        ],
         'settings' => 'Configurar módulo de mesas',
     ],
 
@@ -829,6 +843,39 @@ return [
         'deactivated' => 'Sistema de juego desactivado',
         'not_deleted' => 'No se ha borrado: lo usan mesas o campañas',
         'bulk_not_deleted' => ':count sistema no se ha borrado porque lo usan mesas o campañas. Desactívalo en su lugar.|:count sistemas no se han borrado porque los usan mesas o campañas. Desactívalos en su lugar.',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Genres (catalog)
+    |--------------------------------------------------------------------------
+    */
+    'genres' => [
+        'key_help_create' => 'La guardan las mesas y campañas, y no se puede cambiar después. Se propone a partir del nombre: minúsculas sin acentos, números y guiones bajos, empezando por una letra.',
+        'key_help_edit' => 'Las mesas y campañas guardan esta clave, así que no se puede cambiar.',
+        'active_help' => 'Un género desactivado deja de ofrecerse en los formularios; las mesas y campañas que ya lo tienen lo conservan.',
+        'name_taken' => 'Ya hay un género con ese nombre.',
+        'colors' => [
+            'primary' => 'Color principal',
+            'info' => 'Azul',
+            'success' => 'Verde',
+            'warning' => 'Amarillo',
+            'danger' => 'Rojo',
+            'gray' => 'Gris',
+        ],
+    ],
+
+    'genre_deletion' => [
+        'tables' => '1 mesa|:count mesas',
+        'campaigns' => '1 campaña|:count campañas',
+        'and' => ':first y :second',
+        'in_use' => 'Lo tienen :usage, así que no se puede borrar. Desactívalo para que deje de ofrecerse en los formularios; las que ya lo tienen lo conservan.',
+        'in_use_inactive' => 'Lo tienen :usage, así que no se puede borrar. Ya está desactivado: no se ofrece en los formularios.',
+        'deactivate' => 'Desactivar',
+        'deactivated' => 'Género desactivado',
+        'not_deleted' => 'No se ha borrado: lo tienen mesas o campañas',
+        'bulk_not_deleted' => ':count género no se ha borrado porque lo tienen mesas o campañas. Desactívalo en su lugar.|:count géneros no se han borrado porque los tienen mesas o campañas. Desactívalos en su lugar.',
+        'confirmation_check' => 'Entiendo que el género se borrará y que no se puede deshacer',
     ],
 
     /*

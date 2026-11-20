@@ -120,6 +120,7 @@ use Modules\GameTables\Filament\Resources\CampaignResource;
 use Modules\GameTables\Filament\Resources\ContentWarningResource;
 use Modules\GameTables\Filament\Resources\GameSystemResource;
 use Modules\GameTables\Filament\Resources\GameTableResource;
+use Modules\GameTables\Filament\Resources\GenreResource;
 use Modules\GameTables\Filament\Resources\PublisherResource;
 use Modules\GameTables\Filament\Widgets\PendingModerationWidget;
 use Modules\GameTables\Http\Controllers\CampaignInvitationController;
@@ -143,12 +144,14 @@ use Modules\GameTables\Infrastructure\Media\GameTableMediaSource;
 use Modules\GameTables\Infrastructure\Observers\CampaignObserver;
 use Modules\GameTables\Infrastructure\Observers\GameSystemObserver;
 use Modules\GameTables\Infrastructure\Observers\GameTableObserver;
+use Modules\GameTables\Infrastructure\Observers\GenreObserver;
 use Modules\GameTables\Infrastructure\Observers\ParticipantStatusObserver;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ContentWarningModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\EventGameTableConfigModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GenreModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\PublisherModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentCampaignInvitationRepository;
@@ -236,6 +239,7 @@ use Modules\GameTables\Policies\CampaignPolicy;
 use Modules\GameTables\Policies\ContentWarningPolicy;
 use Modules\GameTables\Policies\GameSystemPolicy;
 use Modules\GameTables\Policies\GameTablePolicy;
+use Modules\GameTables\Policies\GenrePolicy;
 use Modules\GameTables\Policies\PublisherPolicy;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
@@ -760,6 +764,10 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
             GameSystemObserver::class
         );
 
+        GenreModel::observe(
+            GenreObserver::class
+        );
+
         ParticipantModel::observe(
             ParticipantStatusObserver::class
         );
@@ -1074,6 +1082,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
             GameSystemResource::class,
             PublisherResource::class,
             ContentWarningResource::class,
+            GenreResource::class,
             CampaignResource::class,
             GameTableResource::class,
         ];
@@ -1090,6 +1099,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
             GameSystemModel::class => GameSystemPolicy::class,
             PublisherModel::class => PublisherPolicy::class,
             ContentWarningModel::class => ContentWarningPolicy::class,
+            GenreModel::class => GenrePolicy::class,
             CampaignModel::class => CampaignPolicy::class,
             GameTableModel::class => GameTablePolicy::class,
         ];
@@ -1199,6 +1209,22 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                 roles: [],
             ),
 
+            // Genre permissions
+            new PermissionDTO(
+                name: 'genres.view_any',
+                label: __('game-tables::messages.permissions.genres.view_any'),
+                group: __('game-tables::messages.navigation.config'),
+                module: 'gametables',
+                roles: [],
+            ),
+            new PermissionDTO(
+                name: 'genres.manage',
+                label: __('game-tables::messages.permissions.genres.manage'),
+                group: __('game-tables::messages.navigation.config'),
+                module: 'gametables',
+                roles: [],
+            ),
+
             // Settings permission
             new PermissionDTO(
                 name: 'gametables.settings',
@@ -1259,6 +1285,15 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
                 group: __('game-tables::messages.navigation.group'),
                 sort: 5,
                 permissions: ['gametables:contentwarnings.view_any'],
+                module: 'gametables',
+            ),
+            new NavigationItemDTO(
+                label: __('game-tables::messages.navigation.genres'),
+                route: 'filament.admin.resources.generos.index',
+                icon: 'heroicon-o-swatch',
+                group: __('game-tables::messages.navigation.group'),
+                sort: 6,
+                permissions: ['gametables:genres.view_any'],
                 module: 'gametables',
             ),
         ];
