@@ -20,11 +20,13 @@ import { useGridLayout, type GridColumns } from '@/composables/useGridLayout';
 interface Props {
     campaigns: PaginatedResponse<CampaignListItem>;
     gameSystems?: GameSystem[];
+    genres?: FilterOption[];
     currentFilters?: GameTableFiltersType;
 }
 
 const props = withDefaults(defineProps<Props>(), {
     gameSystems: () => [],
+    genres: () => [],
     currentFilters: () => ({}),
 });
 
@@ -83,6 +85,7 @@ function handleNext(): void {
     <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <GameTableFilters
             :game-systems="props.gameSystems"
+            :genres="props.genres"
             :current-filters="props.currentFilters"
             :statuses="campaignStatuses"
             :show-format="false"

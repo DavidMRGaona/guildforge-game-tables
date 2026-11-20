@@ -24,6 +24,11 @@ final class GenreCatalog implements GenreCatalogInterface
         return array_values(array_filter($this->genres(), static fn (GenreDTO $genre): bool => $genre->isActive));
     }
 
+    public function all(): array
+    {
+        return array_values($this->genres());
+    }
+
     public function resolve(array $keys): array
     {
         $wanted = $this->keySet($keys);

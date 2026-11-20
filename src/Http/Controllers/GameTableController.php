@@ -38,6 +38,7 @@ use Modules\GameTables\Domain\ValueObjects\GameTableId;
 use Modules\GameTables\Http\Concerns\ReadsListFilters;
 use Modules\GameTables\Http\Resources\GameTableListResource;
 use Modules\GameTables\Http\Resources\GameTableResource;
+use Modules\GameTables\Http\Support\GenreFilter;
 use Modules\GameTables\Http\Support\SubjectSurveyLinks;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Modules\GameTables\Infrastructure\Services\GuestConfirmationPolicy;
@@ -89,6 +90,8 @@ final class GameTableController extends Controller
         $campaignId = $request->query('campaign');
         $campaignId = is_string($campaignId) && $campaignId !== '' ? $campaignId : null;
 
+        $genre = GenreFilter::chosen($request);
+
         $tables = $this->queryService->getPublishedTablesPaginated(
             page: $page,
             perPage: self::PER_PAGE,
@@ -97,6 +100,7 @@ final class GameTableController extends Controller
             status: $status,
             eventId: $eventId,
             campaignId: $campaignId,
+            genre: $genre,
         );
 
         $total = $this->queryService->getPublishedTablesTotal(
@@ -105,6 +109,7 @@ final class GameTableController extends Controller
             status: $status,
             eventId: $eventId,
             campaignId: $campaignId,
+            genre: $genre,
         );
 
         $gameSystems = $this->queryService->getGameSystemsWithTables();
@@ -120,12 +125,14 @@ final class GameTableController extends Controller
             ),
             'gameSystems' => $gameSystems,
             'events' => $events,
+            'genres' => GenreFilter::options($this->queryService->getGenreKeysInList($eventId, $campaignId), $genre),
             'currentFilters' => [
                 'systems' => $gameSystemIds ?? [],
                 'format' => $format,
                 'status' => $status,
                 'event' => $eventSlug ?? null,
                 'campaign' => $campaignId,
+                'genre' => $genre,
             ],
             'seo' => $this->seo->forPage(new SeoPageDTO(
                 title: (string) __('game-tables::messages.seo.tables_title'),

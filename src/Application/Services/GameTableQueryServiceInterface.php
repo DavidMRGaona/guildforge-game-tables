@@ -23,6 +23,7 @@ interface GameTableQueryServiceInterface
         ?string $status = null,
         ?string $eventId = null,
         ?string $campaignId = null,
+        ?string $genre = null,
     ): array;
 
     /**
@@ -36,7 +37,16 @@ interface GameTableQueryServiceInterface
         ?string $status = null,
         ?string $eventId = null,
         ?string $campaignId = null,
+        ?string $genre = null,
     ): int;
+
+    /**
+     * The genre keys the tables of the list have, each once: the future published tables, or
+     * every one of the event or campaign browsed. The list's other filters do not count.
+     *
+     * @return list<string>
+     */
+    public function getGenreKeysInList(?string $eventId = null, ?string $campaignId = null): array;
 
     /**
      * Get upcoming game tables for calendar.

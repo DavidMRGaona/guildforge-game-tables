@@ -33,8 +33,9 @@ final readonly class CampaignQueryService implements CampaignQueryServiceInterfa
         int $perPage,
         ?array $gameSystemIds = null,
         ?string $status = null,
+        ?string $genre = null,
     ): array {
-        $query = $this->buildQuery($gameSystemIds, $status);
+        $query = $this->buildQuery($gameSystemIds, $status, $genre);
 
         $campaigns = $query
             ->orderBy('created_at', 'desc')
@@ -48,8 +49,16 @@ final readonly class CampaignQueryService implements CampaignQueryServiceInterfa
     public function getPublishedCampaignsTotal(
         ?array $gameSystemIds = null,
         ?string $status = null,
+        ?string $genre = null,
     ): int {
-        return $this->buildQuery($gameSystemIds, $status)->count();
+        return $this->buildQuery($gameSystemIds, $status, $genre)->count();
+    }
+
+    public function getGenreKeysInList(): array
+    {
+        $query = CampaignModel::query()->publiclyListed()->whereNotNull('genres');
+
+        return GenreKey::valuesInLists($query->pluck('genres')->all());
     }
 
     public function findPublished(string $id): ?CampaignResponseDTO
@@ -88,6 +97,7 @@ final readonly class CampaignQueryService implements CampaignQueryServiceInterfa
     private function buildQuery(
         ?array $gameSystemIds = null,
         ?string $status = null,
+        ?string $genre = null,
     ): Builder {
         $query = CampaignModel::query()
             ->with(['gameSystem', 'gameMasters.user', 'contentWarnings'])
@@ -103,6 +113,11 @@ final readonly class CampaignQueryService implements CampaignQueryServiceInterfa
 
         if ($status !== null) {
             $query->where('status', $status);
+        }
+
+        // A key of the campaign's JSON list, compared whole
+        if ($genre !== null) {
+            $query->whereJsonContains('genres', $genre);
         }
 
         return $query;
