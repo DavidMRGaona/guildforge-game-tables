@@ -129,6 +129,17 @@ final class CampaignIndexTest extends ModuleTestCase
         );
     }
 
+    public function test_a_system_that_is_not_a_uuid_is_ignored(): void
+    {
+        $this->createCampaign('Campaña del sistema', 'campana-del-sistema');
+
+        $this->get('/campanas?systems=no-es-un-uuid')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('campaigns.data', 1)
+                ->where('currentFilters.systems', []));
+    }
+
     public function test_the_status_filter_narrows_the_listing(): void
     {
         $this->createCampaign('Campaña activa', 'campana-activa');

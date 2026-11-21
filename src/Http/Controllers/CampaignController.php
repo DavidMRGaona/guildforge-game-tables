@@ -50,7 +50,7 @@ final class CampaignController extends Controller
     {
         $page = $this->getCurrentPage();
 
-        $gameSystemIds = $this->readMultiValueFilter($request, 'systems');
+        $gameSystemIds = $this->readUuidListFilter($request, 'systems');
 
         $status = $request->query('status');
         $status = is_string($status) && $status !== '' ? $status : null;

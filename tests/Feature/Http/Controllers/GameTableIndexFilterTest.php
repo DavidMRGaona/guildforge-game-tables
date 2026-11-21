@@ -102,6 +102,41 @@ final class GameTableIndexFilterTest extends ModuleTestCase
         );
     }
 
+    /**
+     * Ids reach uuid columns: on PostgreSQL a value that is not a UUID makes the query fail, so it
+     * is ignored like any other malformed filter (SQLite would compare it as text and pass anyway)
+     */
+    public function test_a_system_that_is_not_a_uuid_is_ignored(): void
+    {
+        foreach (['no-es-un-uuid', 'no-es-un-uuid,otro', "{$this->dnd->id}x"] as $systems) {
+            $this->get('/mesas?systems='.urlencode($systems))
+                ->assertOk()
+                ->assertInertia(fn (Assert $page) => $page
+                    ->has('tables.data', 2)
+                    ->where('currentFilters.systems', []));
+        }
+    }
+
+    public function test_only_the_systems_that_are_uuids_filter_the_listing(): void
+    {
+        $this->get("/mesas?systems[]=no-es-un-uuid&systems[]={$this->vampire->id}")
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('tables.data', 1)
+                ->where('tables.data.0.title', 'Mesa Beta')
+                ->where('currentFilters.systems', [$this->vampire->id]));
+    }
+
+    public function test_a_campaign_that_is_not_a_uuid_is_ignored(): void
+    {
+        $this->get('/mesas?campaign=no-es-un-uuid')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('tables.data', 2)
+                ->where('tables.meta.total', 2)
+                ->where('currentFilters.campaign', null));
+    }
+
     private function createGameSystem(string $name, string $slug): GameSystemModel
     {
         return GameSystemModel::create([
