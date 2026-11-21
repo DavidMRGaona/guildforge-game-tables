@@ -59,21 +59,27 @@ trait ReadsListFilters
      */
     protected function readUuidListFilter(Request $request, string $key): ?array
     {
-        $ids = array_values(array_filter(
-            $this->readMultiValueFilter($request, $key) ?? [],
-            static fn (string $value): bool => Str::isUuid($value),
-        ));
+        // In lower case, as ids are stored and compared in the page (an upper-case copy would
+        // filter the list but match no option of the filter)
+        $ids = array_values(array_unique(array_map(
+            Str::lower(...),
+            array_filter(
+                $this->readMultiValueFilter($request, $key) ?? [],
+                static fn (string $value): bool => Str::isUuid($value),
+            ),
+        )));
 
         return $ids !== [] ? $ids : null;
     }
 
     /**
-     * Read a single id filter: null unless it is one UUID (see readUuidListFilter())
+     * Read a single id filter: null unless it is one UUID, in lower case (see readUuidListFilter())
      */
     protected function readUuidFilter(Request $request, string $key): ?string
     {
         $value = $request->query($key);
+        $value = is_string($value) ? trim($value) : null;
 
-        return is_string($value) && Str::isUuid($value) ? $value : null;
+        return $value !== null && Str::isUuid($value) ? Str::lower($value) : null;
     }
 }
