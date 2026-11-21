@@ -133,7 +133,7 @@ const createTableUrl = computed(() => {
     <VerificationBlockedButton
         v-if="canCreateNow && gate.blocked.value"
         :reason="gate.reason('createTable')"
-        button-class="inline-flex items-center gap-2 rounded-lg border border-primary-500/30 bg-primary-500/10 px-4 py-2.5 text-sm font-medium text-primary"
+        button-class="inline-flex items-center gap-2 rounded-lg border border-primary-500/30 bg-primary-500/10 px-4 py-2.5 text-sm font-medium text-base-primary"
     >
         <!-- Plus icon -->
         <Plus class="h-4 w-4" aria-hidden="true" />
@@ -144,7 +144,7 @@ const createTableUrl = computed(() => {
     <Link
         v-else-if="canCreateNow"
         :href="createTableUrl"
-        class="inline-flex items-center gap-2 rounded-lg border border-primary-500/30 bg-primary-500/10 px-4 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary-500/20 hover:underline"
+        class="inline-flex items-center gap-2 rounded-lg border border-primary-500/30 bg-primary-500/10 px-4 py-2.5 text-sm font-medium text-base-primary transition-colors hover:bg-primary-500/20 hover:underline"
     >
         <!-- Plus icon -->
         <Plus class="h-4 w-4" aria-hidden="true" />

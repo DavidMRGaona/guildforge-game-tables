@@ -230,7 +230,7 @@ function cancelRemoveGm(): void {
             <div class="relative rounded-lg border border-primary-500/30 bg-primary-500/10 p-4">
                 <!-- "Tú" badge -->
                 <span
-                    class="absolute right-3 top-3 inline-flex items-center rounded-full border border-primary-500/30 bg-primary-500/5 px-2 py-0.5 text-xs font-medium text-[color:var(--color-primary-link)]"
+                    class="absolute right-3 top-3 inline-flex items-center rounded-full border border-primary-500/30 bg-primary-500/5 px-2 py-0.5 text-xs font-medium text-base-primary"
                 >
                     {{ t('gameTables.create.gameMasters.youBadge') }}
                 </span>
@@ -588,7 +588,7 @@ function cancelRemoveGm(): void {
         <button
             type="button"
             :disabled="disabled"
-            class="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-default py-3 text-sm font-medium text-base-secondary transition-colors hover:border-primary-500/50 hover:bg-primary-500/10 hover:text-[color:var(--color-primary-link)] focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-50"
+            class="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-default py-3 text-sm font-medium text-base-secondary transition-colors hover:border-primary-500/50 hover:bg-primary-500/10 hover:text-base-primary focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-50"
             @click="addGm"
         >
             <UserPlus class="h-5 w-5" aria-hidden="true" />

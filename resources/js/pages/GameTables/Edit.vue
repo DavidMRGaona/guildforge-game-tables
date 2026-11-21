@@ -543,7 +543,7 @@ function cancel(): void {
                     <Calendar class="h-5 w-5 text-primary" aria-hidden="true" />
                 </div>
                 <div>
-                    <p class="text-sm font-medium text-primary">
+                    <p class="text-sm font-medium text-base-primary">
                         {{ t('gameTables.edit.eventContext.associatedWith') }}
                     </p>
                     <p class="text-base font-semibold text-base-primary">
