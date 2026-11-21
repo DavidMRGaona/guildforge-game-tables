@@ -149,18 +149,7 @@ final class GameTableIndexFilterTest extends ModuleTestCase
 
     public function test_a_campaign_that_is_a_uuid_still_filters_the_listing(): void
     {
-        $campaign = CampaignModel::create([
-            'id' => (string) Str::uuid(),
-            'game_system_id' => $this->dnd->id,
-            'created_by' => $this->creator->id,
-            'title' => 'Campaña de prueba',
-            'slug' => 'campana-de-prueba',
-            'frequency' => 'weekly',
-            'status' => 'active',
-            'max_players' => 5,
-            'is_published' => true,
-        ]);
-        GameTableModel::query()->where('slug', 'mesa-alpha')->update(['campaign_id' => $campaign->id]);
+        $campaign = $this->campaignOfMesaAlpha();
 
         $this->get('/mesas?campaign=%20'.Str::upper($campaign->id))
             ->assertOk()
@@ -174,6 +163,76 @@ final class GameTableIndexFilterTest extends ModuleTestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->has('tables.data', 2)
                 ->where('currentFilters.campaign', null));
+    }
+
+    public function test_the_page_names_the_campaign_it_lists(): void
+    {
+        $campaign = $this->campaignOfMesaAlpha();
+
+        $this->get('/mesas?campaign='.$campaign->id)
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('campaign', ['id' => $campaign->id, 'title' => 'Campaña de prueba']));
+
+        $this->get('/mesas')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('campaign', null));
+    }
+
+    /**
+     * The pill would show the campaign's title: a campaign without a public page is no filter, so
+     * the list never names it (an unknown id behaves the same)
+     */
+    public function test_a_campaign_without_a_public_page_is_no_filter(): void
+    {
+        $campaign = $this->campaignOfMesaAlpha(['is_published' => false]);
+
+        foreach ([$campaign->id, (string) Str::uuid()] as $id) {
+            $this->get('/mesas?campaign='.$id)
+                ->assertOk()
+                ->assertInertia(fn (Assert $page) => $page
+                    ->has('tables.data', 2)
+                    ->where('campaign', null)
+                    ->where('currentFilters.campaign', null));
+        }
+    }
+
+    public function test_the_campaign_combines_with_the_other_filters(): void
+    {
+        $campaign = $this->campaignOfMesaAlpha();
+        GameTableModel::query()->where('slug', 'mesa-beta')->update(['campaign_id' => $campaign->id]);
+
+        $this->get("/mesas?campaign={$campaign->id}&systems={$this->vampire->id}")
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('tables.data', 1)
+                ->where('tables.data.0.title', 'Mesa Beta')
+                ->where('currentFilters.campaign', $campaign->id)
+                ->where('currentFilters.systems', [$this->vampire->id]));
+    }
+
+    /**
+     * A published campaign holding «Mesa Alpha», unless the attributes say otherwise
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    private function campaignOfMesaAlpha(array $attributes = []): CampaignModel
+    {
+        $campaign = CampaignModel::create([
+            'id' => (string) Str::uuid(),
+            'game_system_id' => $this->dnd->id,
+            'created_by' => $this->creator->id,
+            'title' => 'Campaña de prueba',
+            'slug' => 'campana-de-prueba',
+            'frequency' => 'weekly',
+            'status' => 'active',
+            'max_players' => 5,
+            'is_published' => true,
+            ...$attributes,
+        ]);
+        GameTableModel::query()->where('slug', 'mesa-alpha')->update(['campaign_id' => $campaign->id]);
+
+        return $campaign;
     }
 
     private function createGameSystem(string $name, string $slug): GameSystemModel

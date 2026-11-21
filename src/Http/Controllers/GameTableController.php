@@ -25,9 +25,11 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\GameTables\Application\DTOs\CampaignResponseDTO;
 use Modules\GameTables\Application\DTOs\GameTableResponseDTO;
 use Modules\GameTables\Application\DTOs\ParticipantResponseDTO;
 use Modules\GameTables\Application\Services\AssociationRoleNameInterface;
+use Modules\GameTables\Application\Services\CampaignQueryServiceInterface;
 use Modules\GameTables\Application\Services\CampaignRosterQueryInterface;
 use Modules\GameTables\Application\Services\EligibilityServiceInterface;
 use Modules\GameTables\Application\Services\GameTableQueryServiceInterface;
@@ -65,6 +67,7 @@ final class GameTableController extends Controller
         private readonly SubjectSurveyLinks $surveyLinks,
         private readonly CalendarAggregatorServiceInterface $calendar,
         private readonly AddToCalendarLinksFactoryInterface $calendarLinks,
+        private readonly CampaignQueryServiceInterface $campaignQuery,
     ) {}
 
     public function index(Request $request): Response
@@ -87,7 +90,10 @@ final class GameTableController extends Controller
             $eventId = $event?->id;
         }
 
+        // Only a campaign with a public page filters the list, since the filter shows its title
         $campaignId = $this->readUuidFilter($request, 'campaign');
+        $campaign = $campaignId !== null ? $this->campaignQuery->findPublished($campaignId) : null;
+        $campaignId = $campaign?->id;
 
         $genre = GenreFilter::chosen($request);
 
@@ -125,6 +131,7 @@ final class GameTableController extends Controller
             'gameSystems' => $gameSystems,
             'events' => $events,
             'genres' => GenreFilter::options($this->queryService->getGenreKeysInList($eventId, $campaignId), $genre),
+            'campaign' => $campaign instanceof CampaignResponseDTO ? ['id' => $campaign->id, 'title' => $campaign->title] : null,
             'currentFilters' => [
                 'systems' => $gameSystemIds ?? [],
                 'format' => $format,

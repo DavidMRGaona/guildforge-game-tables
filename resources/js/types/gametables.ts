@@ -239,6 +239,12 @@ export interface FilterOption {
     label: string;
 }
 
+/** The campaign a tables list is narrowed to: only one with a public page, so the pill can name it. */
+export interface CampaignFilter {
+    id: string;
+    title: string;
+}
+
 export interface GameTableFilters {
     systems?: string[];
     format?: string;
