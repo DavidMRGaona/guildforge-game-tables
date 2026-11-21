@@ -84,7 +84,7 @@ function handleNext(): void {
                 </div>
 
                 <!-- List / calendar toggle, also on phones -->
-                <TablesViewToggle current="list" />
+                <TablesViewToggle current="list" :filters="props.currentFilters" />
             </div>
         </div>
     </div>

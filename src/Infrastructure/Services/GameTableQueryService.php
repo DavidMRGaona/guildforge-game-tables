@@ -69,14 +69,29 @@ final readonly class GameTableQueryService implements GameTableQueryServiceInter
         return GenreKey::valuesInLists($query->pluck('genres')->all());
     }
 
-    public function getUpcomingTables(\DateTimeInterface $from, \DateTimeInterface $to): array
-    {
+    public function getUpcomingTables(
+        \DateTimeInterface $from,
+        \DateTimeInterface $to,
+        ?array $gameSystemIds = null,
+        ?string $format = null,
+        ?string $status = null,
+        ?string $eventId = null,
+        ?string $campaignId = null,
+        ?string $genre = null,
+    ): array {
         $timezone = app(TimezoneServiceInterface::class);
 
         // Everything the calendar cards read, loaded with the list (no query per table)
-        $tables = SeatCounter::withPlayerSeatCounts(GameTableModel::query())
-            ->with(['gameSystem', 'event', 'gameMasters.user', 'campaign.gameMasters.user'])
-            ->publiclyListed()
+        $query = $this->inEventOrCampaign(
+            SeatCounter::withPlayerSeatCounts(GameTableModel::query())
+                ->with(['gameSystem', 'event', 'gameMasters.user', 'campaign.gameMasters.user'])
+                ->publiclyListed(),
+            $eventId,
+            $campaignId,
+        );
+
+        // The month decides which tables show, past ones included: no "future only" here
+        $tables = $this->narrowed($query, $gameSystemIds, $format, $status, $genre)
             // Bound in the storage zone: the callers may give the bounds in another one
             ->whereBetween('starts_at', [$timezone->toStorage($from), $timezone->toStorage($to)])
             ->orderedByStart()
@@ -154,6 +169,18 @@ final readonly class GameTableQueryService implements GameTableQueryServiceInter
             $campaignId,
         );
 
+        return $this->narrowed($query, $gameSystemIds, $format, $status, $genre);
+    }
+
+    /**
+     * The filters the list and the tables calendar share, besides the event and the campaign
+     *
+     * @param  Builder<GameTableModel>  $query
+     * @param  array<int, string>|null  $gameSystemIds
+     * @return Builder<GameTableModel>
+     */
+    private function narrowed(Builder $query, ?array $gameSystemIds, ?string $format, ?string $status, ?string $genre): Builder
+    {
         if ($gameSystemIds !== null && count($gameSystemIds) > 0) {
             $query->whereIn('game_system_id', $gameSystemIds);
         }
@@ -175,6 +202,23 @@ final readonly class GameTableQueryService implements GameTableQueryServiceInter
     }
 
     /**
+     * @param  Builder<GameTableModel>  $query
+     * @return Builder<GameTableModel>
+     */
+    private function inEventOrCampaign(Builder $query, ?string $eventId, ?string $campaignId): Builder
+    {
+        if ($eventId !== null) {
+            $query->where('event_id', $eventId);
+        }
+
+        if ($campaignId !== null) {
+            $query->where('campaign_id', $campaignId);
+        }
+
+        return $query;
+    }
+
+    /**
      * The tables the list shows: the published ones of the event or campaign browsed, and only
      * the future ones unless browsing one (whose page decides what it shows). Shared by the list
      * and the genres its filter offers, so both always read the same tables.
@@ -184,15 +228,7 @@ final readonly class GameTableQueryService implements GameTableQueryServiceInter
      */
     private function listed(Builder $query, ?string $eventId, ?string $campaignId): Builder
     {
-        $query->publiclyListed();
-
-        if ($eventId !== null) {
-            $query->where('event_id', $eventId);
-        }
-
-        if ($campaignId !== null) {
-            $query->where('campaign_id', $campaignId);
-        }
+        $this->inEventOrCampaign($query->publiclyListed(), $eventId, $campaignId);
 
         if ($eventId === null && $campaignId === null) {
             $query->where('starts_at', '>=', now());
