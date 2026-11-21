@@ -6,6 +6,7 @@ import { router, Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
+import { useAuth } from '@/composables/useAuth';
 import { useFlashMessages } from '@/composables/useFlashMessages';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 import type { CampaignInvitationState, CampaignInvitationView } from '../../types/gametables';
@@ -28,9 +29,12 @@ const showRejectDialog = ref(false);
 
 const baseUrl = computed(() => `/campanas/invitaciones/${props.token}`);
 
-// Signs out and lands back on this invitation (the core's logout would go to the home page)
-const logout = (): void => {
-    router.post(`${baseUrl.value}/cerrar-sesion`);
+const { logout } = useAuth();
+
+// Signs out like the site's menu (this browser stops getting push notifications first), through
+// the module's route, which lands back on this invitation instead of the home page
+const signOut = (): void => {
+    logout({ url: `${baseUrl.value}/cerrar-sesion` });
 };
 
 const expiresAt = computed(() => {
@@ -165,7 +169,7 @@ function handleReject(): void {
                     <p class="text-sm text-base-primary">
                         {{ t('campaigns.invitation.mismatch') }}
                     </p>
-                    <BaseButton variant="secondary" size="sm" class="mt-3" @click="logout">
+                    <BaseButton variant="secondary" size="sm" class="mt-3" @click="signOut">
                         {{ t('campaigns.invitation.logout') }}
                     </BaseButton>
                 </div>

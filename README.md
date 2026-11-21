@@ -29,7 +29,7 @@ Módulo de GuildForge para gestionar mesas de rol y campañas: inscripciones de 
 
 ## Requisitos
 
-- GuildForge core `^3.79` (secciones y contadores del perfil público; antes, avisos en la campana de la web que se olvidan al anonimizar a quien nombran, ver [Avisos en la web](#avisos-en-la-web); antes, ranura `subject-discussion` de las fichas, donde un módulo de foro dibuja la conversación; antes, plantilla y dirección de las campañas para otros módulos; antes, actividad del foro en las fichas; antes, contrato de publicaciones: mesas sueltas y campañas para los módulos que las anuncian fuera de la web; antes, categorías de correo: cada persona elige en Ajustes de la cuenta qué correos optativos recibe, ver [Categorías de correo](#categorías-de-correo); antes, fuentes del buscador del sitio y contrato de encuestas: sujetos encuestables, enlaces desde la ficha, aviso de cancelación y campo «Encuesta al terminar»; almacenamiento de fechas en UTC y zona horaria de visualización, pestañas de Ajustes de la cuenta que se ocultan, avisos legales editables de los correos y si la cuenta debe verificar su email; ver [Verificación de email](#verificación-de-email))
+- GuildForge core `^3.85` (cerrar sesión desde la invitación a una campaña da de baja el navegador de las notificaciones push; antes, secciones y contadores del perfil público; antes, avisos en la campana de la web que se olvidan al anonimizar a quien nombran, ver [Avisos en la web](#avisos-en-la-web); antes, ranura `subject-discussion` de las fichas, donde un módulo de foro dibuja la conversación; antes, plantilla y dirección de las campañas para otros módulos; antes, actividad del foro en las fichas; antes, contrato de publicaciones: mesas sueltas y campañas para los módulos que las anuncian fuera de la web; antes, categorías de correo: cada persona elige en Ajustes de la cuenta qué correos optativos recibe, ver [Categorías de correo](#categorías-de-correo); antes, fuentes del buscador del sitio y contrato de encuestas: sujetos encuestables, enlaces desde la ficha, aviso de cancelación y campo «Encuesta al terminar»; almacenamiento de fechas en UTC y zona horaria de visualización, pestañas de Ajustes de la cuenta que se ocultan, avisos legales editables de los correos y si la cuenta debe verificar su email; ver [Verificación de email](#verificación-de-email))
 - PHP >= 8.5, Laravel >= 13, Filament 5
 
 El core rechaza el módulo si no se cumplen (`module.json` → `requires`).
@@ -347,7 +347,7 @@ La dirección puede invitar o aceptar mientras la campaña está cerrada a nuevo
   - **sin sesión:** la campaña, quién invita, el email que hay que usar y los botones **Iniciar sesión** y **Crear cuenta**, que vuelven a la invitación al terminar;
   - **con la cuenta de ese email** (sin distinguir mayúsculas): **Aceptar** y **Rechazar**;
   - **con una cuenta que debe verificar su email:** solo **Rechazar** y el aviso «Verifica tu email para aceptar.», con un enlace a la verificación que vuelve a la invitación al verificar;
-  - **con otra cuenta:** «Esta invitación es para otro email», sin decir cuál, y **Cerrar sesión**;
+  - **con otra cuenta:** «Esta invitación es para otro email», sin decir cuál, y **Cerrar sesión**, que cierra la sesión como el menú de la web (antes da de baja este navegador de las notificaciones push) y vuelve a la invitación;
   - **recién rechazada:** «Invitación rechazada»;
   - **caducada, usada, cancelada o inexistente:** un único mensaje genérico, «Invitación no válida».
 
