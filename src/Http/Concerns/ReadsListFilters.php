@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GameTables\Http\Concerns;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 trait ReadsListFilters
 {
@@ -47,5 +48,38 @@ trait ReadsListFilters
         }
 
         return $values !== [] ? $values : null;
+    }
+
+    /**
+     * Read a multi-valued filter of ids: only the values that are UUIDs are kept. Ids reach uuid
+     * columns, where PostgreSQL refuses to compare anything else, so a malformed value is ignored
+     * like any other malformed filter instead of failing the whole page.
+     *
+     * @return array<int, string>|null
+     */
+    protected function readUuidListFilter(Request $request, string $key): ?array
+    {
+        // In lower case, as ids are stored and compared in the page (an upper-case copy would
+        // filter the list but match no option of the filter)
+        $ids = array_values(array_unique(array_map(
+            Str::lower(...),
+            array_filter(
+                $this->readMultiValueFilter($request, $key) ?? [],
+                static fn (string $value): bool => Str::isUuid($value),
+            ),
+        )));
+
+        return $ids !== [] ? $ids : null;
+    }
+
+    /**
+     * Read a single id filter: null unless it is one UUID, in lower case (see readUuidListFilter())
+     */
+    protected function readUuidFilter(Request $request, string $key): ?string
+    {
+        $value = $request->query($key);
+        $value = is_string($value) ? trim($value) : null;
+
+        return $value !== null && Str::isUuid($value) ? Str::lower($value) : null;
     }
 }

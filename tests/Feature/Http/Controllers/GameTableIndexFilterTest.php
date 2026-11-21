@@ -10,6 +10,7 @@ use Inertia\Testing\AssertableInertia as Assert;
 use Modules\GameTables\Domain\Enums\TableFormat;
 use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Domain\Enums\TableType;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 use Tests\Support\Modules\ModuleTestCase;
@@ -100,6 +101,79 @@ final class GameTableIndexFilterTest extends ModuleTestCase
         $response->assertInertia(
             fn (Assert $page) => $page->has('tables.data', 0)
         );
+    }
+
+    /**
+     * Ids reach uuid columns: on PostgreSQL a value that is not a UUID makes the query fail, so it
+     * is ignored like any other malformed filter (SQLite would compare it as text and pass anyway)
+     */
+    public function test_a_system_that_is_not_a_uuid_is_ignored(): void
+    {
+        foreach (['no-es-un-uuid', 'no-es-un-uuid,otro', "{$this->dnd->id}x"] as $systems) {
+            $this->get('/mesas?systems='.urlencode($systems))
+                ->assertOk()
+                ->assertInertia(fn (Assert $page) => $page
+                    ->has('tables.data', 2)
+                    ->where('currentFilters.systems', []));
+        }
+    }
+
+    public function test_only_the_systems_that_are_uuids_filter_the_listing(): void
+    {
+        $this->get("/mesas?systems[]=no-es-un-uuid&systems[]={$this->vampire->id}")
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('tables.data', 1)
+                ->where('tables.data.0.title', 'Mesa Beta')
+                ->where('currentFilters.systems', [$this->vampire->id]));
+    }
+
+    public function test_a_campaign_that_is_not_a_uuid_is_ignored(): void
+    {
+        $this->get('/mesas?campaign=no-es-un-uuid')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('tables.data', 2)
+                ->where('tables.meta.total', 2)
+                ->where('currentFilters.campaign', null));
+    }
+
+    public function test_a_system_in_upper_case_is_read_in_lower_case(): void
+    {
+        $this->get('/mesas?systems='.Str::upper($this->vampire->id))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('tables.data', 1)
+                ->where('currentFilters.systems', [$this->vampire->id]));
+    }
+
+    public function test_a_campaign_that_is_a_uuid_still_filters_the_listing(): void
+    {
+        $campaign = CampaignModel::create([
+            'id' => (string) Str::uuid(),
+            'game_system_id' => $this->dnd->id,
+            'created_by' => $this->creator->id,
+            'title' => 'Campaña de prueba',
+            'slug' => 'campana-de-prueba',
+            'frequency' => 'weekly',
+            'status' => 'active',
+            'max_players' => 5,
+            'is_published' => true,
+        ]);
+        GameTableModel::query()->where('slug', 'mesa-alpha')->update(['campaign_id' => $campaign->id]);
+
+        $this->get('/mesas?campaign=%20'.Str::upper($campaign->id))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('tables.data', 1)
+                ->where('tables.data.0.title', 'Mesa Alpha')
+                ->where('currentFilters.campaign', $campaign->id));
+
+        $this->get('/mesas?campaign[]='.$campaign->id)
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('tables.data', 2)
+                ->where('currentFilters.campaign', null));
     }
 
     private function createGameSystem(string $name, string $slug): GameSystemModel

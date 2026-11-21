@@ -71,7 +71,7 @@ final class GameTableController extends Controller
     {
         $page = $this->getCurrentPage();
 
-        $gameSystemIds = $this->readMultiValueFilter($request, 'systems');
+        $gameSystemIds = $this->readUuidListFilter($request, 'systems');
 
         $format = $request->query('format');
         $format = is_string($format) && $format !== '' ? $format : null;
@@ -87,8 +87,7 @@ final class GameTableController extends Controller
             $eventId = $event?->id;
         }
 
-        $campaignId = $request->query('campaign');
-        $campaignId = is_string($campaignId) && $campaignId !== '' ? $campaignId : null;
+        $campaignId = $this->readUuidFilter($request, 'campaign');
 
         $genre = GenreFilter::chosen($request);
 
