@@ -33,6 +33,8 @@ function mountMismatch(): ReturnType<typeof mount> {
             },
             token,
         },
+        // The help link asks the site which guides the signed-in person may see: not this test's matter
+        global: { stubs: { HelpLink: true } },
     });
 }
 
