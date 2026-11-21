@@ -166,7 +166,7 @@ function toggleDraftsSection(): void {
         >
             <Link
                 :href="createUrl"
-                class="inline-flex items-center gap-2 rounded-lg border-2 border-primary px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary-light"
+                class="inline-flex items-center gap-2 rounded-lg border-2 border-primary px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary-light hover:text-base-primary"
             >
                 <Plus class="h-4 w-4" aria-hidden="true" />
                 {{ t('campaigns.profile.createNew') }}

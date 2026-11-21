@@ -79,8 +79,10 @@ final class TableFormsThemeSourceTest extends TestCase
         // Main director card: a translucent primary tint over the surface, theme text
         $this->assertStringContainsString('class="relative rounded-lg border border-primary-500/30 bg-primary-500/10 p-4"', $section);
         $this->assertStringContainsString('<div class="font-medium text-base-primary">', $section);
-        // «Tú» and «Director principal (tú)»: the theme's link shade of primary (AA in both themes)
-        $this->assertStringContainsString('rounded-full border border-primary-500/30 bg-primary-500/5 px-2 py-0.5 text-xs font-medium text-[color:var(--color-primary-link)]', $section);
+        // «Tú» adds its own tint over the card's: the link shade falls to 4.4:1 there, so the badge
+        // uses the theme text (#302)
+        $this->assertStringContainsString('rounded-full border border-primary-500/30 bg-primary-500/5 px-2 py-0.5 text-xs font-medium text-base-primary', $section);
+        // «Director principal (tú)» sits on the card's tint alone: the link shade keeps 4.5:1 there
         $this->assertStringContainsString('<div class="text-sm text-[color:var(--color-primary-link)]">', $section);
         $this->assertStringNotContainsString('bg-primary-50 ', $section);
 
