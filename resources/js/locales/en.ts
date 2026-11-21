@@ -104,6 +104,7 @@ export default {
             status: 'Status',
             event: 'Event',
             genre: 'Genre',
+            campaign: 'Campaign',
             clearAll: 'Clear filters',
             allFormats: 'All formats',
             allGenres: 'All genres',

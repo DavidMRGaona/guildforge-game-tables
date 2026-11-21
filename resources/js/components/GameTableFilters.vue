@@ -4,7 +4,13 @@ import { ref, watch, computed, nextTick } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import { FormSelect } from '@/components/form';
-import type { GameSystem, GameTableFilters, EventFilter, FilterOption } from '../types/gametables';
+import type {
+    CampaignFilter,
+    GameSystem,
+    GameTableFilters,
+    EventFilter,
+    FilterOption,
+} from '../types/gametables';
 
 interface Props {
     gameSystems: GameSystem[];
@@ -18,12 +24,15 @@ interface Props {
     showEvent?: boolean;
     // The genres the list offers (its records' active ones and the chosen one); none hides it
     genres?: FilterOption[];
+    // The campaign the list is narrowed to (its page links here); it has no select, only a pill
+    campaign?: CampaignFilter | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
     events: () => [],
     statuses: () => [],
     genres: () => [],
+    campaign: null,
     showFormat: true,
     showEvent: true,
 });
@@ -35,6 +44,7 @@ const selectedFormat = ref<string>(props.currentFilters.format || '');
 const selectedStatus = ref<string>(props.currentFilters.status || '');
 const selectedEvent = ref<string>(props.currentFilters.event || '');
 const selectedGenre = ref<string>(props.currentFilters.genre || '');
+const selectedCampaign = ref<string>(props.currentFilters.campaign || '');
 
 // The "all" entry of each filter is the select's placeholder, worth ''
 const formatOptions: FilterOption[] = [
@@ -76,6 +86,10 @@ function applyFilters(): void {
         params.genre = selectedGenre.value;
     }
 
+    if (selectedCampaign.value) {
+        params.campaign = selectedCampaign.value;
+    }
+
     router.visit(props.basePath, {
         data: params,
         preserveState: true,
@@ -102,6 +116,7 @@ function clearFilters(): void {
     selectedStatus.value = '';
     selectedEvent.value = '';
     selectedGenre.value = '';
+    selectedCampaign.value = '';
     applyFilters();
 }
 
@@ -125,17 +140,30 @@ function removeGenreFilter(): void {
     selectedGenre.value = '';
 }
 
+function removeCampaignFilter(): void {
+    selectedCampaign.value = '';
+}
+
 const hasFilters = computed(
     () =>
         selectedSystems.value.length > 0 ||
         selectedFormat.value !== '' ||
         selectedStatus.value !== '' ||
         selectedEvent.value !== '' ||
-        selectedGenre.value !== ''
+        selectedGenre.value !== '' ||
+        selectedCampaign.value !== ''
 );
 
 const activeFilterPills = computed(() => {
     const pills: Array<{ key: string; label: string; remove: () => void }> = [];
+
+    if (selectedCampaign.value && props.campaign?.id === selectedCampaign.value) {
+        pills.push({
+            key: 'campaign',
+            label: `${t('gameTables.filters.campaign')}: ${props.campaign.title}`,
+            remove: removeCampaignFilter,
+        });
+    }
 
     for (const systemId of selectedSystems.value) {
         const system = props.gameSystems.find((s) => s.id === systemId);
@@ -227,6 +255,7 @@ watch(
         selectedStatus.value = filters.status ?? '';
         selectedEvent.value = filters.event ?? '';
         selectedGenre.value = filters.genre ?? '';
+        selectedCampaign.value = filters.campaign ?? '';
         void nextTick(() => {
             syncingFromServer = false;
         });
@@ -234,13 +263,23 @@ watch(
     { deep: true }
 );
 
-watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent, selectedGenre], () => {
-    if (syncingFromServer) {
-        return;
-    }
+watch(
+    [
+        selectedSystems,
+        selectedFormat,
+        selectedStatus,
+        selectedEvent,
+        selectedGenre,
+        selectedCampaign,
+    ],
+    () => {
+        if (syncingFromServer) {
+            return;
+        }
 
-    applyFilters();
-});
+        applyFilters();
+    }
+);
 </script>
 
 <template>
