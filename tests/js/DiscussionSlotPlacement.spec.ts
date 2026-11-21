@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import CampaignShow from '../../resources/js/pages/Campaigns/Show.vue';
 import GameTableShow from '../../resources/js/pages/GameTables/Show.vue';
@@ -39,6 +39,13 @@ const campaign = {
     id: 'campaign-1',
     title: 'La cripta olvidada',
     slug: 'la-cripta-olvidada',
+    // What the status and format badges read (#320)
+    status: 'active',
+    statusLabel: 'Activa',
+    statusColor: 'success',
+    tableFormat: 'in_person',
+    tableFormatLabel: 'Presencial',
+    tableFormatColor: 'success',
     themes: [],
     safetyTools: [],
     contentWarnings: [],
@@ -58,6 +65,12 @@ const table = {
     title: 'Una noche en la cripta',
     slug: 'una-noche-en-la-cripta',
     campaignId: null,
+    status: 'scheduled',
+    statusLabel: 'Programada',
+    statusColor: 'success',
+    tableFormat: 'in_person',
+    tableFormatLabel: 'Presencial',
+    tableFormatColor: 'success',
     startsAt: '2030-01-01T18:00:00Z',
     durationMinutes: 120,
     registrationOpensAt: null,
@@ -77,6 +90,22 @@ const table = {
     spotsAvailable: 5,
     spectatorSpotsAvailable: 0,
 } as unknown as GameTable;
+
+// The pages must mount without Vue warnings: a prop the fixtures lack shows up here, not as noise
+let warn: MockInstance<typeof console.warn>;
+
+beforeEach(() => {
+    warn = vi.spyOn(console, 'warn');
+});
+
+afterEach(() => {
+    const vueWarnings = warn.mock.calls.filter(
+        ([message]) => typeof message === 'string' && message.startsWith('[Vue warn]')
+    );
+    warn.mockRestore();
+
+    expect(vueWarnings).toEqual([]);
+});
 
 const pages = {
     'game table': (): ReturnType<typeof mount> =>
