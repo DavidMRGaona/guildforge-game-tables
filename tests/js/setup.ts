@@ -39,6 +39,32 @@ config.global.plugins = [
 // Every mounted component is unmounted after its test, attached ones included
 enableAutoUnmount(afterEach);
 
+// No test reaches the network: a request nobody stubbed fails the test that made it, naming
+// the address, instead of trying localhost and printing the refusal (#318). A spec that needs
+// one stubs `fetch` itself, which replaces this one
+const unexpectedRequests: string[] = [];
+
 beforeEach(() => {
     page.props = {};
+    unexpectedRequests.length = 0;
+    vi.stubGlobal(
+        'fetch',
+        vi.fn((input: RequestInfo | URL): Promise<Response> => {
+            const address =
+                typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+            unexpectedRequests.push(address);
+
+            return Promise.reject(new TypeError(`Unexpected network request to ${address}`));
+        })
+    );
+});
+
+afterEach(() => {
+    vi.unstubAllGlobals();
+
+    if (unexpectedRequests.length > 0) {
+        throw new Error(
+            `The test made network requests nobody stubbed: ${unexpectedRequests.join(', ')}`
+        );
+    }
 });
