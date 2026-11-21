@@ -361,7 +361,7 @@ watch([selectedSystems, selectedFormat, selectedStatus, selectedEvent, selectedG
             <span
                 v-for="pill in activeFilterPills"
                 :key="pill.key"
-                class="inline-flex items-center gap-1 rounded-full bg-primary-light px-2.5 py-1 text-xs font-medium text-primary"
+                class="inline-flex items-center gap-1 rounded-full bg-primary-light px-2.5 py-1 text-xs font-medium text-base-primary"
             >
                 {{ pill.label }}
                 <button

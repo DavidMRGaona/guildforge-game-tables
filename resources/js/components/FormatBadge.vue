@@ -25,7 +25,7 @@ const colorClasses: Record<string, string> = {
     warning: 'bg-warning-light text-base-primary',
     danger: 'bg-error-light text-base-primary',
     gray: 'bg-muted text-base-secondary',
-    primary: 'bg-primary-light text-primary',
+    primary: 'bg-primary-light text-base-primary',
 };
 
 const badgeClasses = computed(() => [

@@ -45,7 +45,7 @@ const statusColorClasses = computed(() => {
         gray: 'bg-muted text-base-secondary',
         success: 'bg-success-light text-base-primary',
         warning: 'bg-warning-light text-base-primary',
-        primary: 'bg-primary-light text-primary',
+        primary: 'bg-primary-light text-base-primary',
         danger: 'bg-error-light text-base-primary',
     };
     return colorMap[props.table.statusColor] ?? colorMap.gray;

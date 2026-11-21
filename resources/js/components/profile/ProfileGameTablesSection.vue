@@ -108,7 +108,7 @@ function loadMore(): void {
             <section>
                 <h2 class="mb-6 flex items-center gap-2 text-lg font-semibold text-base-primary">
                     <span
-                        class="flex h-6 w-6 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary"
+                        class="flex h-6 w-6 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-base-primary"
                     >
                         {{ filteredUpcoming.length }}
                     </span>
