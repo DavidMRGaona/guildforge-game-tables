@@ -49,11 +49,22 @@ interface GameTableQueryServiceInterface
     public function getGenreKeysInList(?string $eventId = null, ?string $campaignId = null): array;
 
     /**
-     * Get upcoming game tables for calendar.
+     * The publicly listed tables starting between the bounds, for the calendars. The tables
+     * calendar narrows them with the filters of the list (#314); the site calendar passes none.
      *
+     * @param  array<int, string>|null  $gameSystemIds
      * @return array<GameTableListDTO>
      */
-    public function getUpcomingTables(\DateTimeInterface $from, \DateTimeInterface $to): array;
+    public function getUpcomingTables(
+        \DateTimeInterface $from,
+        \DateTimeInterface $to,
+        ?array $gameSystemIds = null,
+        ?string $format = null,
+        ?string $status = null,
+        ?string $eventId = null,
+        ?string $campaignId = null,
+        ?string $genre = null,
+    ): array;
 
     /**
      * Find a table the public calendar shows (published, neither a draft nor

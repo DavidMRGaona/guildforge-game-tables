@@ -73,52 +73,27 @@ final class GameTableController extends Controller
     public function index(Request $request): Response
     {
         $page = $this->getCurrentPage();
-
-        $gameSystemIds = $this->readUuidListFilter($request, 'systems');
-
-        $format = $request->query('format');
-        $format = is_string($format) && $format !== '' ? $format : null;
-
-        $status = $request->query('status');
-        $status = is_string($status) && $status !== '' ? $status : null;
-
-        // Resolve event by slug
-        $eventSlug = $request->query('event');
-        $eventId = null;
-        if (is_string($eventSlug) && $eventSlug !== '') {
-            $event = EventModel::where('slug', $eventSlug)->first();
-            $eventId = $event?->id;
-        }
-
-        // Only a campaign with a public page filters the list, since the filter shows its title
-        $campaignId = $this->readUuidFilter($request, 'campaign');
-        $campaign = $campaignId !== null ? $this->campaignQuery->findPublished($campaignId) : null;
-        $campaignId = $campaign?->id;
-
-        $genre = GenreFilter::chosen($request);
+        $filters = $this->readTableFilters($request);
 
         $tables = $this->queryService->getPublishedTablesPaginated(
             page: $page,
             perPage: self::PER_PAGE,
-            gameSystemIds: $gameSystemIds,
-            format: $format,
-            status: $status,
-            eventId: $eventId,
-            campaignId: $campaignId,
-            genre: $genre,
+            gameSystemIds: $filters['systems'],
+            format: $filters['format'],
+            status: $filters['status'],
+            eventId: $filters['eventId'],
+            campaignId: $filters['campaign']?->id,
+            genre: $filters['genre'],
         );
 
         $total = $this->queryService->getPublishedTablesTotal(
-            gameSystemIds: $gameSystemIds,
-            format: $format,
-            status: $status,
-            eventId: $eventId,
-            campaignId: $campaignId,
-            genre: $genre,
+            gameSystemIds: $filters['systems'],
+            format: $filters['format'],
+            status: $filters['status'],
+            eventId: $filters['eventId'],
+            campaignId: $filters['campaign']?->id,
+            genre: $filters['genre'],
         );
-
-        $gameSystems = $this->queryService->getGameSystemsWithTables();
-        $events = $this->queryService->getEventsWithTables();
 
         return Inertia::render('GameTables/Index', [
             'tables' => $this->buildPaginatedResponse(
@@ -128,18 +103,7 @@ final class GameTableController extends Controller
                 perPage: self::PER_PAGE,
                 resourceClass: GameTableListResource::class,
             ),
-            'gameSystems' => $gameSystems,
-            'events' => $events,
-            'genres' => GenreFilter::options($this->queryService->getGenreKeysInList($eventId, $campaignId), $genre),
-            'campaign' => $campaign instanceof CampaignResponseDTO ? ['id' => $campaign->id, 'title' => $campaign->title] : null,
-            'currentFilters' => [
-                'systems' => $gameSystemIds ?? [],
-                'format' => $format,
-                'status' => $status,
-                'event' => $eventSlug ?? null,
-                'campaign' => $campaignId,
-                'genre' => $genre,
-            ],
+            ...$this->filterProps($filters),
             'seo' => $this->seo->forPage(new SeoPageDTO(
                 title: (string) __('game-tables::messages.seo.tables_title'),
                 description: (string) __('game-tables::messages.seo.tables_description'),
@@ -151,28 +115,99 @@ final class GameTableController extends Controller
     {
         $timezone = app(TimezoneServiceInterface::class);
         $monthParam = $request->query('month');
-        // The month of the site's calendar: a month typed in the URL is read there, and so is today
-        $month = is_string($monthParam)
-            ? CarbonImmutable::parse($monthParam, $timezone->displayTimezone())
-            : $timezone->today();
+        // The month of the site's calendar: a month typed in the URL (YYYY-MM) is read there, and
+        // so is today; anything else shows the current month rather than failing
+        $month = is_string($monthParam) && preg_match('/^\d{4}-(?:0[1-9]|1[0-2])$/', $monthParam) === 1
+            ? CarbonImmutable::createFromFormat('!Y-m', $monthParam, $timezone->displayTimezone())
+            : null;
+        $month = $month instanceof CarbonImmutable ? $month : $timezone->today();
 
         [$from, $next] = $timezone->displayMonthRange($month);
         // The range is [start, end) and the query includes its bounds
         $to = $next->sub(new DateInterval('PT1S'));
 
-        $tables = $this->queryService->getUpcomingTables($from, $to);
+        // The same filters as the list, within the month (#314)
+        $filters = $this->readTableFilters($request);
 
-        $gameSystems = $this->queryService->getGameSystemsWithTables();
+        $tables = $this->queryService->getUpcomingTables(
+            $from,
+            $to,
+            gameSystemIds: $filters['systems'],
+            format: $filters['format'],
+            status: $filters['status'],
+            eventId: $filters['eventId'],
+            campaignId: $filters['campaign']?->id,
+            genre: $filters['genre'],
+        );
 
         return Inertia::render('GameTables/Calendar', [
             'tables' => GameTableListResource::collection($tables)->resolve(),
-            'gameSystems' => $gameSystems,
+            ...$this->filterProps($filters),
             'currentMonth' => $timezone->format($from, 'Y-m'),
             'seo' => $this->seo->forPage(new SeoPageDTO(
                 title: (string) __('game-tables::messages.seo.calendar_title'),
                 description: (string) __('game-tables::messages.seo.tables_description'),
             ))->toArray(),
         ]);
+    }
+
+    /**
+     * The filters of the tables list and calendar, read alike: a malformed or unknown value is no
+     * filter, never an error.
+     *
+     * @return array{systems: array<int, string>|null, format: string|null, status: string|null, eventSlug: string|null, eventId: string|null, campaign: CampaignResponseDTO|null, genre: string|null}
+     */
+    private function readTableFilters(Request $request): array
+    {
+        $format = $request->query('format');
+        $status = $request->query('status');
+
+        // Resolve event by slug
+        $eventSlug = $request->query('event');
+        $eventSlug = is_string($eventSlug) && $eventSlug !== '' ? $eventSlug : null;
+        $eventId = $eventSlug !== null ? EventModel::where('slug', $eventSlug)->first()?->id : null;
+
+        // Only a campaign with a public page filters the tables, since the filter shows its title
+        $campaignId = $this->readUuidFilter($request, 'campaign');
+
+        return [
+            'systems' => $this->readUuidListFilter($request, 'systems'),
+            'format' => is_string($format) && $format !== '' ? $format : null,
+            'status' => is_string($status) && $status !== '' ? $status : null,
+            'eventSlug' => $eventSlug,
+            'eventId' => is_string($eventId) ? $eventId : null,
+            'campaign' => $campaignId !== null ? $this->campaignQuery->findPublished($campaignId) : null,
+            'genre' => GenreFilter::chosen($request),
+        ];
+    }
+
+    /**
+     * What the filters of the tables list and calendar draw: the choices and the current values
+     *
+     * @param  array{systems: array<int, string>|null, format: string|null, status: string|null, eventSlug: string|null, eventId: string|null, campaign: CampaignResponseDTO|null, genre: string|null}  $filters
+     * @return array<string, mixed>
+     */
+    private function filterProps(array $filters): array
+    {
+        $campaign = $filters['campaign'];
+
+        return [
+            'gameSystems' => $this->queryService->getGameSystemsWithTables(),
+            'events' => $this->queryService->getEventsWithTables(),
+            'genres' => GenreFilter::options(
+                $this->queryService->getGenreKeysInList($filters['eventId'], $campaign?->id),
+                $filters['genre'],
+            ),
+            'campaign' => $campaign instanceof CampaignResponseDTO ? ['id' => $campaign->id, 'title' => $campaign->title] : null,
+            'currentFilters' => [
+                'systems' => $filters['systems'] ?? [],
+                'format' => $filters['format'],
+                'status' => $filters['status'],
+                'event' => $filters['eventSlug'],
+                'campaign' => $campaign?->id,
+                'genre' => $filters['genre'],
+            ],
+        ];
     }
 
     public function show(string $identifier): Response|RedirectResponse

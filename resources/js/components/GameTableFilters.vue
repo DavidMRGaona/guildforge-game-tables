@@ -4,6 +4,7 @@ import { ref, watch, computed, nextTick } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import { FormSelect } from '@/components/form';
+import { tableFilterQuery } from '../utils/tableFilterQuery';
 import type {
     CampaignFilter,
     GameSystem,
@@ -26,6 +27,8 @@ interface Props {
     genres?: FilterOption[];
     // The campaign the list is narrowed to (its page links here); it has no select, only a pill
     campaign?: CampaignFilter | null;
+    // Query the page keeps across filter changes (the calendar's month)
+    keepParams?: Record<string, string>;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -33,6 +36,7 @@ const props = withDefaults(defineProps<Props>(), {
     statuses: () => [],
     genres: () => [],
     campaign: null,
+    keepParams: () => ({}),
     showFormat: true,
     showEvent: true,
 });
@@ -64,34 +68,17 @@ const tableStatuses: FilterOption[] = [
 const statusOptions: FilterOption[] = props.statuses.length > 0 ? props.statuses : tableStatuses;
 
 function applyFilters(): void {
-    const params: Record<string, string> = {};
-
-    if (selectedSystems.value.length > 0) {
-        params.systems = selectedSystems.value.join(',');
-    }
-
-    if (selectedFormat.value) {
-        params.format = selectedFormat.value;
-    }
-
-    if (selectedStatus.value) {
-        params.status = selectedStatus.value;
-    }
-
-    if (selectedEvent.value) {
-        params.event = selectedEvent.value;
-    }
-
-    if (selectedGenre.value) {
-        params.genre = selectedGenre.value;
-    }
-
-    if (selectedCampaign.value) {
-        params.campaign = selectedCampaign.value;
-    }
+    const params = tableFilterQuery({
+        systems: selectedSystems.value,
+        format: selectedFormat.value,
+        status: selectedStatus.value,
+        event: selectedEvent.value,
+        campaign: selectedCampaign.value,
+        genre: selectedGenre.value,
+    });
 
     router.visit(props.basePath, {
-        data: params,
+        data: { ...props.keepParams, ...params },
         preserveState: true,
         preserveScroll: true,
     });

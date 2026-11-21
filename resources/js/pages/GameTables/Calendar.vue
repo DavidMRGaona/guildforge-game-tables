@@ -4,19 +4,38 @@ import { Calendar, ChevronLeft, ChevronRight } from '@lucide/vue';
 import { ref, computed } from 'vue';
 import { router, Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import type { GameTableListItem, GameSystem } from '../../types/gametables';
+import type {
+    CampaignFilter,
+    EventFilter,
+    FilterOption,
+    GameTableFilters as GameTableFiltersType,
+    GameTableListItem,
+    GameSystem,
+} from '../../types/gametables';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import GameTableCard from '../../components/GameTableCard.vue';
+import GameTableFilters from '../../components/GameTableFilters.vue';
 import TablesViewToggle from '../../components/TablesViewToggle.vue';
 import { venueDayKey } from '@/utils/datetime';
+import { tableFilterQuery } from '../../utils/tableFilterQuery';
 
 interface Props {
     tables: GameTableListItem[];
     gameSystems: GameSystem[];
+    // The same filters as the list, within the month shown (#314)
+    events?: EventFilter[];
+    genres?: FilterOption[];
+    campaign?: CampaignFilter | null;
+    currentFilters?: GameTableFiltersType;
     currentMonth: string;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+    events: () => [],
+    genres: () => [],
+    campaign: null,
+    currentFilters: () => ({}),
+});
 
 const { t, locale } = useI18n();
 
@@ -96,15 +115,23 @@ function shiftMonth(month: string, delta: number): string {
     return `${Math.floor(monthsSinceYearZero / 12)}-${String((monthsSinceYearZero % 12) + 1).padStart(2, '0')}`;
 }
 
-function goToPreviousMonth(): void {
+/** Moves to another month keeping the filters chosen. */
+function goToMonth(delta: number): void {
     isNavigating.value = true;
-    router.visit(`/mesas/calendario?month=${shiftMonth(props.currentMonth, -1)}`);
+    router.visit('/mesas/calendario', {
+        data: {
+            ...tableFilterQuery(props.currentFilters),
+            month: shiftMonth(props.currentMonth, delta),
+        },
+    });
+}
+
+function goToPreviousMonth(): void {
+    goToMonth(-1);
 }
 
 function goToNextMonth(): void {
-    isNavigating.value = true;
-    const monthParam = shiftMonth(props.currentMonth, 1);
-    router.visit(`/mesas/calendario?month=${monthParam}`);
+    goToMonth(1);
 }
 </script>
 
@@ -131,25 +158,40 @@ function goToNextMonth(): void {
                 </div>
 
                 <!-- List / calendar toggle, also on phones -->
-                <TablesViewToggle current="calendar" />
+                <TablesViewToggle
+                    current="calendar"
+                    :filters="props.currentFilters"
+                    :month="props.currentMonth"
+                />
             </div>
         </div>
     </div>
 
     <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <!-- Month Navigation -->
-        <div class="mb-6 flex items-center justify-between">
+        <GameTableFilters
+            :game-systems="props.gameSystems"
+            :events="props.events"
+            :genres="props.genres"
+            :current-filters="props.currentFilters"
+            :campaign="props.campaign"
+            :keep-params="{ month: props.currentMonth }"
+            base-path="/mesas/calendario"
+            class="mb-6"
+        />
+
+        <!-- Month navigation: on phones the arrows go without their words, so the month fits -->
+        <div class="mb-6 flex items-center justify-between gap-2">
             <BaseButton variant="secondary" :loading="isNavigating" @click="goToPreviousMonth">
                 <ChevronLeft class="h-5 w-5" aria-hidden="true" />
-                {{ t('common.previous') }}
+                <span class="sr-only sm:not-sr-only">{{ t('common.previous') }}</span>
             </BaseButton>
 
-            <h2 class="text-2xl font-bold text-base-primary">
+            <h2 class="min-w-0 text-center text-xl font-bold text-base-primary sm:text-2xl">
                 {{ monthName }}
             </h2>
 
             <BaseButton variant="secondary" :loading="isNavigating" @click="goToNextMonth">
-                {{ t('common.next') }}
+                <span class="sr-only sm:not-sr-only">{{ t('common.next') }}</span>
                 <ChevronRight class="h-5 w-5" aria-hidden="true" />
             </BaseButton>
         </div>
