@@ -420,6 +420,18 @@ final class GameTableModel extends Model
     }
 
     /**
+     * The tables their own page shows: published ones, to guests too. The one rule for opening a
+     * table's page, also what other modules are told they may link to.
+     *
+     * @param  Builder<GameTableModel>  $query
+     * @return Builder<GameTableModel>
+     */
+    public function scopeShownOnItsPage(Builder $query): Builder
+    {
+        return $query->where('is_published', true);
+    }
+
+    /**
      * The tables the public listing shows, before its date cut: published and neither draft nor cancelled
      * (tables created from the site stay unpublished until approved). The site search offers the same
      * ones, past tables included, so both read this rule.

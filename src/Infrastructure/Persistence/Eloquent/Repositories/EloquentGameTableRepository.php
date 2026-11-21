@@ -249,7 +249,7 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
                 'gameMasters.user',
             ])
             ->where('id', $id)
-            ->where('is_published', true)
+            ->shownOnItsPage()
             ->first();
     }
 
@@ -265,7 +265,7 @@ final readonly class EloquentGameTableRepository implements GameTableRepositoryI
                 'gameMasters.user',
             ])
             ->where('slug', $slug)
-            ->where('is_published', true)
+            ->shownOnItsPage()
             ->first();
     }
 

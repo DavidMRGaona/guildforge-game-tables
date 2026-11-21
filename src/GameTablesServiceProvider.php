@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GameTables;
 
+use App\Application\Activity\Contracts\ActivitySourceInterface;
 use App\Application\Calendar\Contracts\CalendarAttendanceSourceInterface;
 use App\Application\Calendar\Contracts\CalendarEntrySourceInterface;
 use App\Application\Cookies\DTOs\DeclaredCookieDTO;
@@ -125,6 +126,9 @@ use Modules\GameTables\Filament\Resources\PublisherResource;
 use Modules\GameTables\Filament\Widgets\PendingModerationWidget;
 use Modules\GameTables\Http\Controllers\CampaignInvitationController;
 use Modules\GameTables\Http\Controllers\GuestConfirmationController;
+use Modules\GameTables\Infrastructure\Activity\AnnouncesActivityChanges;
+use Modules\GameTables\Infrastructure\Activity\CampaignActivitySource;
+use Modules\GameTables\Infrastructure\Activity\SessionActivitySource;
 use Modules\GameTables\Infrastructure\Calendar\GameTableAttendanceSource;
 use Modules\GameTables\Infrastructure\Calendar\GameTableCalendarSource;
 use Modules\GameTables\Infrastructure\Knowledge\AddsCampaignSessionsCapability;
@@ -781,6 +785,9 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
 
         // Publications (core contract): listeners hear when tables and campaigns change
         AnnouncesPublicationChanges::register();
+
+        // Activity (core contract): whoever keeps a record of sessions and campaigns hears of changes
+        AnnouncesActivityChanges::register();
 
         // Notification centre and mail mutes (core contract): a deleted table or campaign is forgotten
         ForgetsDeletedSubjects::register();
@@ -1537,6 +1544,20 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     public function registerEventProposalRequests(): array
     {
         return [TablesProposalRequest::class];
+    }
+
+    /**
+     * Completed sessions (tables on their own and campaign sessions) and campaigns as activity
+     * (core contract): who played, ran and created them, for modules that build on it (achievements).
+     *
+     * @return array<class-string<ActivitySourceInterface>>
+     */
+    public function registerActivitySources(): array
+    {
+        return [
+            SessionActivitySource::class,
+            CampaignActivitySource::class,
+        ];
     }
 
     /**

@@ -49,6 +49,11 @@ return [
         ],
     ],
 
+    'activity' => [
+        'session_label' => 'Games played',
+        'campaign_label' => 'Completed campaigns',
+        'game_system' => 'Game system',
+    ],
     'surveys' => [
         'source_label' => 'Game table',
         'campaign_session_label' => 'Campaign session',
