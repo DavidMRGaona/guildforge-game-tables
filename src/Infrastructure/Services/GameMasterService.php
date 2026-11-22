@@ -7,6 +7,7 @@ namespace Modules\GameTables\Infrastructure\Services;
 use Illuminate\Support\Str;
 use Modules\GameTables\Application\Services\GameMasterServiceInterface;
 use Modules\GameTables\Domain\Enums\GameMasterRole;
+use Modules\GameTables\Infrastructure\Activity\AnnouncesActivityChanges;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
@@ -59,6 +60,8 @@ final class GameMasterService implements GameMasterServiceInterface
             ]);
         }
 
+        AnnouncesActivityChanges::tableDirectionChanged($gameTableId);
+
         return $gameMaster;
     }
 
@@ -80,6 +83,8 @@ final class GameMasterService implements GameMasterServiceInterface
                 'sort_order' => 0,
             ]);
         }
+
+        AnnouncesActivityChanges::tableDirectionChanged($gameTableId);
     }
 
     public function includeInTable(string $gameTableId, string $gameMasterId): void
@@ -92,6 +97,8 @@ final class GameMasterService implements GameMasterServiceInterface
                 'excluded' => false,
             ]);
         }
+
+        AnnouncesActivityChanges::tableDirectionChanged($gameTableId);
     }
 
     public function isInherited(string $gameTableId, string $gameMasterId): bool
@@ -134,6 +141,7 @@ final class GameMasterService implements GameMasterServiceInterface
         $gameTable = GameTableModel::findOrFail($gameTableId);
         $gameTable->gameMasters()->detach($gameMasterId);
 
+        AnnouncesActivityChanges::tableDirectionChanged($gameTableId);
         $this->cleanupIfOrphaned($gameMasterId);
     }
 

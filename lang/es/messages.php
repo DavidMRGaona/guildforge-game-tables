@@ -56,6 +56,11 @@ return [
         ],
     ],
 
+    'activity' => [
+        'session_label' => 'Partidas',
+        'campaign_label' => 'Campañas completadas',
+        'game_system' => 'Sistema de juego',
+    ],
     'surveys' => [
         'source_label' => 'Mesa',
         'campaign_session_label' => 'Sesión de campaña',

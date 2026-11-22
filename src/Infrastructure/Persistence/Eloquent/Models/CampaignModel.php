@@ -220,6 +220,18 @@ final class CampaignModel extends Model
     }
 
     /**
+     * The campaigns their own page shows: published ones, to guests too. The one rule for opening a
+     * campaign's page, also what other modules are told they may link to.
+     *
+     * @param  Builder<CampaignModel>  $query
+     * @return Builder<CampaignModel>
+     */
+    public function scopeShownOnItsPage(Builder $query): Builder
+    {
+        return $query->where('is_published', true);
+    }
+
+    /**
      * The campaigns the public listing shows: published and not cancelled. The site search offers the
      * same ones, so both read this rule.
      *
