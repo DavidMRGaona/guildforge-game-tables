@@ -12,8 +12,9 @@ use Modules\GameTables\Application\Services\ProfileActivityQueryInterface;
 
 /**
  * «Campañas» (game-tables#282): every listed campaign, finished ones included, the owner directs
- * under a public name or plays in as far as the viewer may see the roster. Nothing they may see
- * hides the counter, rather than a 0 that would say the owner plays in none.
+ * under a public name or plays in. Since game-tables#325 the campaigns they play in count for any
+ * viewer: a total names no campaign, while the «Campañas» section still lists them only to who may
+ * see the roster. None hides the counter.
  */
 final readonly class CampaignCountProfileStat implements ProfileStatInterface
 {
@@ -50,7 +51,7 @@ final readonly class CampaignCountProfileStat implements ProfileStatInterface
 
     public function stat(ProfileOwnerDTO $owner, ?Authenticatable $viewer): ?ProfileStatDTO
     {
-        $count = $this->activity->countCampaignsOf($owner->id, $viewer);
+        $count = $this->activity->countCampaignsOf($owner->id);
 
         return $count > 0 ? new ProfileStatDTO($count) : null;
     }

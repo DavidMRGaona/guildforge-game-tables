@@ -170,6 +170,8 @@ use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\Eloquent
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Repositories\EloquentParticipantRepository;
 use Modules\GameTables\Infrastructure\Profiles\CampaignCountProfileStat;
 use Modules\GameTables\Infrastructure\Profiles\CampaignsProfileSection;
+use Modules\GameTables\Infrastructure\Profiles\PlayedTablesProfileSection;
+use Modules\GameTables\Infrastructure\Profiles\TablesPlayedProfileStat;
 use Modules\GameTables\Infrastructure\Profiles\TablesProfileSection;
 use Modules\GameTables\Infrastructure\Profiles\TablesRunProfileStat;
 use Modules\GameTables\Infrastructure\Proposals\TablesProposalRequest;
@@ -1504,12 +1506,14 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     {
         return [
             TablesProfileSection::class,
+            PlayedTablesProfileSection::class,
             CampaignsProfileSection::class,
         ];
     }
 
     /**
-     * The counters of a public profile: tables run and campaigns, counted for the person viewing.
+     * The counters of a public profile: tables run, tables played and campaigns. Totals that name
+     * no table or campaign, so the same for every viewer.
      *
      * @return array<class-string<ProfileStatInterface>>
      */
@@ -1517,6 +1521,7 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     {
         return [
             TablesRunProfileStat::class,
+            TablesPlayedProfileStat::class,
             CampaignCountProfileStat::class,
         ];
     }
