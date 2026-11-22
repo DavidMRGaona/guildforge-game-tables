@@ -7,13 +7,11 @@ namespace Modules\GameTables\Tests\Integration\Activity;
 use App\Application\Activity\Contracts\ActivitySourceInterface;
 use App\Application\Activity\DTOs\ActivityFactDTO;
 use App\Domain\Activity\ActivityKind;
-use App\Domain\Activity\ActivityRole;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use DateTimeImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
-use Modules\GameTables\Application\Services\CampaignDirectionInterface;
 use Modules\GameTables\Domain\Enums\FrontendCreationStatus;
 use Modules\GameTables\Domain\Enums\GameMasterRole;
 use Modules\GameTables\Infrastructure\Activity\CampaignActivitySource;
@@ -101,23 +99,37 @@ final class CampaignActivitySourceTest extends ActivitySourceTestCase
         }
     }
 
-    public function test_the_direction_is_the_modules_own_rule(): void
+    public function test_the_direction_is_what_the_module_shows_to_anybody(): void
     {
         $webCreator = UserModel::factory()->create();
         $director = UserModel::factory()->create();
+        $hidden = UserModel::factory()->create();
         $campaign = $this->campaign([
             'created_by' => $webCreator->id,
             'frontend_creation_status' => FrontendCreationStatus::Approved,
         ]);
         $this->direct($campaign, $director);
+        $this->direct($campaign, $hidden, namePublic: false);
+        // Who also plays still counts as a player
+        $this->join($campaign, $hidden);
 
-        $directors = array_values(array_filter($this->activitySource()->facts($campaign->id), static fn (ActivityFactDTO $fact): bool => $fact->role === ActivityRole::Director));
+        $pairs = $this->pairs($this->activitySource()->facts($campaign->id));
 
-        $this->assertEqualsCanonicalizing(
-            $this->app->make(CampaignDirectionInterface::class)->directorUserIds($campaign->id),
-            array_map(static fn (ActivityFactDTO $fact): string => $fact->userId, $directors),
-        );
-        $this->assertCount(2, $directors);
+        $this->assertEqualsCanonicalizing([
+            [$director->id, 'director'],
+            [$hidden->id, 'player'],
+            [$webCreator->id, 'creator'],
+        ], $pairs);
+    }
+
+    public function test_deactivated_accounts_on_the_roster_are_reported(): void
+    {
+        $campaign = $this->campaign();
+        $deactivated = UserModel::factory()->create();
+        $this->join($campaign, $deactivated);
+        $deactivated->delete();
+
+        $this->assertContains([$deactivated->id, 'player'], $this->pairs($this->activitySource()->facts($campaign->id)));
     }
 
     public function test_campaigns_that_are_not_completed_give_nothing(): void
@@ -239,7 +251,7 @@ final class CampaignActivitySourceTest extends ActivitySourceTestCase
         ]);
     }
 
-    private function direct(CampaignModel $campaign, UserModel $user): GameMasterModel
+    private function direct(CampaignModel $campaign, UserModel $user, bool $namePublic = true): GameMasterModel
     {
         $gm = GameMasterModel::create([
             'id' => (string) Str::uuid(),
@@ -248,7 +260,7 @@ final class CampaignActivitySourceTest extends ActivitySourceTestCase
             'last_name' => 'Doe',
             'role' => GameMasterRole::Main,
             'notify_by_email' => true,
-            'is_name_public' => true,
+            'is_name_public' => $namePublic,
         ]);
         $campaign->gameMasters()->attach($gm->id, ['sort_order' => 1]);
 

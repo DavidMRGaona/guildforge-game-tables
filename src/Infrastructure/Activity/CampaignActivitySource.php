@@ -16,6 +16,7 @@ use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use DateTimeImmutable;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
@@ -69,6 +70,11 @@ final readonly class CampaignActivitySource implements ActivitySourceInterface, 
         return $campaign instanceof CampaignModel ? self::factsOf($campaign) : [];
     }
 
+    /**
+     * A limit under 1 is read as 1 and one over ActivityHistoryPageDTO::MAX_LIMIT as that maximum
+     * (the core never asks for either), so a page never claims to be the last one while subjects
+     * remain.
+     */
     public function history(?string $cursor, int $limit): ActivityHistoryPageDTO
     {
         $after = $cursor === null ? null : ActivityCursor::read(self::CURSOR_SCOPE, $cursor);
@@ -135,7 +141,8 @@ final readonly class CampaignActivitySource implements ActivitySourceInterface, 
             ->with([
                 'gameSystem',
                 'gameMasters',
-                'players',
+                // Deactivated accounts too, as sessions keep theirs: whether they count is the consumer's choice
+                'players' => static fn (BelongsToMany $players): BelongsToMany => $players->withTrashed(),
                 'gameTables' => static fn (HasMany $sessions): HasMany => $sessions
                     ->where('status', TableStatus::Completed->value)
                     ->select(['id', 'campaign_id', 'starts_at', 'status']),
@@ -143,10 +150,11 @@ final readonly class CampaignActivitySource implements ActivitySourceInterface, 
     }
 
     /**
-     * One fact per person and role: the creator, the direction (the module's rule, as
-     * CampaignDirection: whoever created it from the website plus its game masters with an
-     * account) and the roster. It took place at its last completed session, or when it was
-     * created without any.
+     * One fact per person and role: the creator, the roster and the direction as the module shows
+     * it to anybody (its game masters with an account and a public name, the rule of the profile's
+     * campaigns; a game master who chose not to show their name, or whoever created it from the
+     * website without directing it, is never reported as a director). It took place at its last
+     * completed session, or when it was created without any.
      *
      * @return list<ActivityFactDTO>
      */
@@ -162,10 +170,10 @@ final readonly class CampaignActivitySource implements ActivitySourceInterface, 
 
         $roles = [
             ActivityRole::Player->value => array_map(static fn (UserModel $player): string => (string) $player->getKey(), $players),
-            ActivityRole::Director->value => [
-                $campaign->frontend_creation_status !== null ? $campaign->created_by : null,
-                ...array_map(static fn (GameMasterModel $gameMaster): ?string => $gameMaster->user_id, $gameMasters),
-            ],
+            ActivityRole::Director->value => array_map(
+                static fn (GameMasterModel $gameMaster): ?string => $gameMaster->is_name_public ? $gameMaster->user_id : null,
+                $gameMasters,
+            ),
             ActivityRole::Creator->value => [$campaign->created_by],
         ];
 

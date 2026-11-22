@@ -153,6 +153,28 @@ final class SessionActivitySourceTest extends ActivitySourceTestCase
         )));
     }
 
+    public function test_a_game_master_who_hides_their_name_is_never_a_director(): void
+    {
+        $shown = UserModel::factory()->create();
+        $hidden = UserModel::factory()->create();
+        $hiddenInherited = UserModel::factory()->create();
+        $campaign = $this->campaign();
+        $inherited = $this->gameMaster($hiddenInherited, GameMasterRole::Main, namePublic: false);
+        $campaign->gameMasters()->attach($inherited->id, ['sort_order' => 1]);
+        $session = $this->table(['campaign_id' => $campaign->id, 'table_type' => 'campaign_session']);
+        $this->direct($session, $shown, GameMasterRole::Main);
+        $session->gameMasters()->attach($this->gameMaster($hidden, GameMasterRole::CoGm, namePublic: false)->id, ['source' => 'local', 'excluded' => false, 'sort_order' => 2]);
+        // Who also played still counts as a player
+        $this->player($session, $hidden);
+
+        $pairs = $this->pairs($this->activitySource()->facts($session->id));
+
+        $this->assertContains([$shown->id, 'director'], $pairs);
+        $this->assertNotContains([$hidden->id, 'director'], $pairs);
+        $this->assertNotContains([$hiddenInherited->id, 'director'], $pairs);
+        $this->assertContains([$hidden->id, 'player'], $pairs);
+    }
+
     public function test_a_campaign_session_counts_the_campaign_direction_it_inherits(): void
     {
         $campaignDirector = UserModel::factory()->create();
@@ -369,7 +391,7 @@ final class SessionActivitySourceTest extends ActivitySourceTestCase
         return $gm;
     }
 
-    private function gameMaster(UserModel $user, GameMasterRole $role): GameMasterModel
+    private function gameMaster(UserModel $user, GameMasterRole $role, bool $namePublic = true): GameMasterModel
     {
         return GameMasterModel::create([
             'id' => (string) Str::uuid(),
@@ -378,7 +400,7 @@ final class SessionActivitySourceTest extends ActivitySourceTestCase
             'last_name' => 'Doe',
             'role' => $role,
             'notify_by_email' => true,
-            'is_name_public' => true,
+            'is_name_public' => $namePublic,
         ]);
     }
 

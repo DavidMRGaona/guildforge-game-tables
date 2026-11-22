@@ -69,6 +69,11 @@ final readonly class SessionActivitySource implements ActivitySourceInterface, O
         return $table instanceof GameTableModel ? self::factsOf($table) : [];
     }
 
+    /**
+     * A limit under 1 is read as 1 and one over ActivityHistoryPageDTO::MAX_LIMIT as that maximum
+     * (the core never asks for either), so a page never claims to be the last one while subjects
+     * remain.
+     */
     public function history(?string $cursor, int $limit): ActivityHistoryPageDTO
     {
         $after = $cursor === null ? null : ActivityCursor::read(self::CURSOR_SCOPE, $cursor);
@@ -149,7 +154,10 @@ final readonly class SessionActivitySource implements ActivitySourceInterface, O
     /**
      * One fact per person and role: the creator, every director with an account (the module's
      * rule for a table's direction, read from the loaded relations) and every confirmed player.
-     * It took place when it started.
+     * A game master who chose not to show their name is never reported as a director, as the
+     * module never names them anywhere else (their profile counts tables run only through
+     * game masters with a public name); they still count as a player if they played. It took
+     * place when it started.
      *
      * @return list<ActivityFactDTO>
      */
@@ -164,7 +172,7 @@ final readonly class SessionActivitySource implements ActivitySourceInterface, O
         $roles = [
             ActivityRole::Player->value => array_map(static fn (ParticipantModel $player): ?string => $player->user_id, $players),
             ActivityRole::Director->value => array_map(
-                static fn (GameMasterModel $gameMaster): ?string => $gameMaster->user_id,
+                static fn (GameMasterModel $gameMaster): ?string => $gameMaster->is_name_public ? $gameMaster->user_id : null,
                 $table->loadedEffectiveGameMasters(),
             ),
             ActivityRole::Creator->value => [$table->created_by],
