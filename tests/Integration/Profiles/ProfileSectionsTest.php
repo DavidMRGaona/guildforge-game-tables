@@ -485,6 +485,59 @@ final class ProfileSectionsTest extends ModuleTestCase
             // The total names no table, so anybody sees it
             $this->assertSame(4, $this->stat($this->render($viewer), 'game-tables.tables_played')?->value, $label);
         }
+
+        // An anonymized manager opens no management page, so sees none of them
+        $director->forceFill(['anonymized_at' => now()])->save();
+        $rosterDirector->forceFill(['anonymized_at' => now()])->save();
+        $this->assertNull($this->playedIds($director->refresh()));
+        $this->assertNull($this->playedIds($rosterDirector->refresh()));
+    }
+
+    public function test_a_manager_sees_only_the_started_listed_tables_they_manage(): void
+    {
+        $director = UserModel::factory()->create();
+        $managed = fn (array $attributes): GameTableModel => $this->directedBy($director, $this->table(['delegates_registrations' => true, ...$attributes]));
+        $played = $managed(['starts_at' => '2026-11-10 17:00:00']);
+        $this->joins($this->owner, $played);
+        $this->joins($this->owner, $managed(['status' => 'cancelled', 'starts_at' => '2026-11-10 17:00:00']));
+        $this->joins($this->owner, $managed(['status' => 'draft', 'starts_at' => '2026-11-10 17:00:00']));
+        $this->joins($this->owner, $managed(['is_published' => false, 'starts_at' => '2026-11-10 17:00:00']));
+        $upcoming = $managed(['starts_at' => '2026-11-20 17:00:00']);
+        $this->joins($this->owner, $upcoming);
+
+        $profile = $this->render($director);
+
+        $this->assertSame([$played->id], $this->playedIds($director));
+        $this->assertSame([$upcoming->id], array_column($this->section($profile, 'game-tables.tables')->props['playing'] ?? [], 'id'));
+    }
+
+    public function test_a_table_starting_right_now_has_started(): void
+    {
+        $now = $this->table(['title' => 'Ahora', 'starts_at' => '2026-11-15 10:00:00']);
+        $this->joins($this->owner, $now);
+
+        $profile = $this->render($this->owner);
+
+        $this->assertSame([$now->id], $this->playedIds($this->owner));
+        $this->assertSame(1, $this->stat($profile, 'game-tables.tables_played')?->value);
+        $this->assertNull($this->section($profile, 'game-tables.tables'));
+    }
+
+    public function test_a_session_of_an_unpublished_campaign_is_not_played_on_the_profile(): void
+    {
+        $director = UserModel::factory()->create();
+        $hidden = $this->campaign(['is_published' => false]);
+        $this->directedCampaign($director, $hidden);
+        $this->onRoster($this->owner, $hidden);
+        $this->joins($this->owner, $this->table(['campaign_id' => $hidden->id, 'starts_at' => '2026-11-10 17:00:00']), fromRoster: true);
+        $listed = $this->campaign();
+        $this->onRoster($this->owner, $listed);
+        $session = $this->table(['campaign_id' => $listed->id, 'starts_at' => '2026-11-09 17:00:00']);
+        $this->joins($this->owner, $session, fromRoster: true);
+
+        // As the activity source reports it: only sessions of published campaigns count
+        $this->assertSame(1, $this->stat($this->render(null), 'game-tables.tables_played')?->value);
+        $this->assertSame([$session->id], $this->playedIds($this->owner));
     }
 
     public function test_a_manager_who_must_verify_their_email_sees_no_played_tables(): void

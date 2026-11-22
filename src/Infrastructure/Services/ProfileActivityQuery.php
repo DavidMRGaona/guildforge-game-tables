@@ -198,21 +198,31 @@ final readonly class ProfileActivityQuery implements ProfileActivityQueryInterfa
     }
 
     /**
+     * Listed tables not started yet, as the tables listing shows them (a published session of an
+     * unpublished campaign included, like its own page).
+     *
      * @return Builder<GameTableModel>
      */
     private function upcomingTables(): Builder
     {
-        return GameTableModel::query()->publiclyListed()->where('starts_at', '>=', now());
+        return GameTableModel::query()->publiclyListed()->where('gametables_tables.starts_at', '>', now());
     }
 
     /**
-     * Listed tables already started: what upcomingTables() no longer holds.
+     * Listed tables already started (one starting right now included), what upcomingTables() no
+     * longer holds, and, for a campaign session, of a published campaign: what the profile counts as
+     * played is what SessionActivitySource reports to other modules.
      *
      * @return Builder<GameTableModel>
      */
     private function startedTables(): Builder
     {
-        return GameTableModel::query()->publiclyListed()->where('starts_at', '<', now());
+        return GameTableModel::query()
+            ->publiclyListed()
+            ->where('gametables_tables.starts_at', '<=', now())
+            ->where(fn (Builder $query) => $query
+                ->whereNull('gametables_tables.campaign_id')
+                ->orWhereHas('campaign', fn (Builder $campaign) => $campaign->where('gametables_campaigns.is_published', true)));
     }
 
     /**
