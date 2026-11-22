@@ -79,7 +79,7 @@ final class ActivityPublishingTest extends ModuleTestCase
         $table->update(['title' => 'Otra mesa']);
         $this->participant($table, UserModel::factory()->create(), 'confirmed');
 
-        Event::assertNotDispatched(ActivityRecorded::class);
+        $this->assertNothingOfThisModuleRecorded();
     }
 
     public function test_changing_a_completed_table_publishes_it(): void
@@ -153,7 +153,7 @@ final class ActivityPublishingTest extends ModuleTestCase
 
         $table->update(['title' => 'Otra mesa', 'synopsis' => 'Otro resumen']);
 
-        Event::assertNotDispatched(ActivityRecorded::class);
+        $this->assertNothingOfThisModuleRecorded();
     }
 
     public function test_publishing_a_completed_table_publishes_it(): void
@@ -299,7 +299,7 @@ final class ActivityPublishingTest extends ModuleTestCase
 
         $campaign->update(['title' => 'Otra campaña']);
 
-        Event::assertNotDispatched(ActivityRecorded::class);
+        $this->assertNothingOfThisModuleRecorded();
     }
 
     public function test_a_roster_change_while_completed_publishes_the_campaign(): void
@@ -443,7 +443,7 @@ final class ActivityPublishingTest extends ModuleTestCase
         } catch (\RuntimeException) {
         }
 
-        Event::assertNotDispatched(ActivityRecorded::class);
+        $this->assertNothingOfThisModuleRecorded();
     }
 
     /**
@@ -454,6 +454,15 @@ final class ActivityPublishingTest extends ModuleTestCase
     {
         Event::fake([ActivityRecorded::class]);
         $this->app->forgetInstance(ActivityPublisherInterface::class);
+    }
+
+    /**
+     * Only this module's facts: the core and other modules publish their own (an account created
+     * in the test is `core.account`), which say nothing about tables or campaigns.
+     */
+    private function assertNothingOfThisModuleRecorded(): void
+    {
+        Event::assertNotDispatched(ActivityRecorded::class, static fn (ActivityRecorded $event): bool => str_starts_with($event->sourceType, 'game-tables.'));
     }
 
     private function assertRecorded(string $type, string $id): void
