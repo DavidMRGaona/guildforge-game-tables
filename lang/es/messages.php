@@ -1175,11 +1175,19 @@ return [
             'label' => 'Mesas',
             'description' => 'Las próximas mesas que diriges y en las que juegas.',
         ],
+        'played_tables' => [
+            'label' => 'Últimas partidas',
+            'description' => 'Las últimas mesas en las que has jugado. Solo las ves tú y quien gestiona esas mesas o campañas.',
+        ],
         'campaigns' => [
             'label' => 'Campañas',
             'description' => 'Las campañas en curso que diriges o en las que juegas.',
         ],
         'tables_run' => 'Mesas dirigidas',
+        'tables_played' => [
+            'label' => 'Partidas jugadas',
+            'description' => 'Las mesas y sesiones de campaña que ya has jugado.',
+        ],
         'campaign_count' => 'Campañas',
     ],
 

@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\GameTables\Tests\Integration\Profiles;
 
+use App\Application\Profiles\DTOs\ProfileLayoutOptionDTO;
 use App\Application\Profiles\DTOs\ProfileOwnerDTO;
 use App\Application\Profiles\DTOs\ResolvedProfileDTO;
 use App\Application\Profiles\DTOs\ResolvedProfileSectionDTO;
 use App\Application\Profiles\DTOs\ResolvedProfileStatDTO;
+use App\Application\Profiles\Services\ProfileLayoutOptionsInterface;
 use App\Application\Profiles\Services\ProfileRendererInterface;
 use App\Application\Profiles\Services\ProfileSectionRegistryInterface;
 use App\Application\Profiles\Services\ProfileStatRegistryInterface;
@@ -37,7 +39,7 @@ final class ProfileSectionsTest extends ModuleTestCase
     protected bool $autoEnableModule = true;
 
     /** Every query of a whole profile render for a director viewer, the core's included */
-    private const int MAX_RENDER_QUERIES = 10;
+    private const int MAX_RENDER_QUERIES = 13;
 
     private GameSystemModel $system;
 
@@ -60,8 +62,23 @@ final class ProfileSectionsTest extends ModuleTestCase
 
         $this->assertContains('game-tables.tables', $sections);
         $this->assertContains('game-tables.campaigns', $sections);
+        $this->assertContains('game-tables.played-tables', $sections);
         $this->assertContains('game-tables.tables_run', $stats);
+        $this->assertContains('game-tables.tables_played', $stats);
         $this->assertContains('game-tables.campaign_count', $stats);
+    }
+
+    public function test_the_profile_editor_offers_the_played_counter_and_section_on_by_default(): void
+    {
+        $options = $this->app->make(ProfileLayoutOptionsInterface::class);
+        $stat = $this->option($options->stats(), 'game-tables.tables_played');
+        $section = $this->option($options->sections(), 'game-tables.played-tables');
+
+        $this->assertSame('Partidas jugadas', $stat?->label);
+        $this->assertSame('Las mesas y sesiones de campaña que ya has jugado.', $stat->description);
+        $this->assertTrue($stat->enabledByDefault);
+        $this->assertSame('Últimas partidas', $section?->label);
+        $this->assertTrue($section->enabledByDefault);
     }
 
     public function test_tables_go_in_the_main_column_and_campaigns_in_the_aside(): void
@@ -259,7 +276,8 @@ final class ProfileSectionsTest extends ModuleTestCase
 
         $this->assertNull($this->section($profile, 'game-tables.tables'));
         $this->assertNull($this->section($profile, 'game-tables.campaigns'));
-        $this->assertNull($this->stat($profile, 'game-tables.campaign_count'));
+        // The total names no campaign, so it counts as for anybody else
+        $this->assertSame(1, $this->stat($profile, 'game-tables.campaign_count')?->value);
 
         // Once verified, the same pages open and so does the profile
         $director->forceFill(['email_verified_at' => now()])->save();
@@ -354,7 +372,8 @@ final class ProfileSectionsTest extends ModuleTestCase
 
         foreach ($this->viewers() as $label => $viewer) {
             $this->assertNull($this->section($this->render($viewer), 'game-tables.campaigns'), $label);
-            $this->assertNull($this->stat($this->render($viewer), 'game-tables.campaign_count'), $label);
+            // A total names no campaign, so it counts for anybody (game-tables#325)
+            $this->assertSame(1, $this->stat($this->render($viewer), 'game-tables.campaign_count')?->value, $label);
         }
     }
 
@@ -366,6 +385,8 @@ final class ProfileSectionsTest extends ModuleTestCase
         $this->assertNull($this->section($profile, 'game-tables.campaigns'));
         $this->assertNull($this->stat($profile, 'game-tables.tables_run'));
         $this->assertNull($this->stat($profile, 'game-tables.campaign_count'));
+        $this->assertNull($this->section($profile, 'game-tables.played-tables'));
+        $this->assertNull($this->stat($profile, 'game-tables.tables_played'));
     }
 
     public function test_the_tables_run_counter_counts_every_listed_table_under_their_name(): void
@@ -387,7 +408,7 @@ final class ProfileSectionsTest extends ModuleTestCase
         }
     }
 
-    public function test_the_campaign_counter_counts_what_the_viewer_may_see(): void
+    public function test_the_campaign_counter_counts_for_anybody_the_campaigns_the_owner_runs_or_plays_in(): void
     {
         $this->directedCampaign($this->owner, $this->campaign());
         $this->directedCampaign($this->owner, $this->campaign(['status' => 'completed']));
@@ -396,11 +417,181 @@ final class ProfileSectionsTest extends ModuleTestCase
         $played = $this->campaign();
         $this->directedCampaign($director, $played);
         $this->onRoster($this->owner, $played);
+        // Run and played: counted once
+        $both = $this->campaign();
+        $this->directedCampaign($this->owner, $both);
+        $this->onRoster($this->owner, $both);
+        // Not listed: never counted
+        $this->onRoster($this->owner, $this->campaign(['status' => 'cancelled']));
+        $this->onRoster($this->owner, $this->campaign(['is_published' => false, 'frontend_creation_status' => 'pending_review']));
 
-        $this->assertSame(2, $this->stat($this->render(null), 'game-tables.campaign_count')?->value);
-        $this->assertSame(3, $this->stat($this->render($this->owner), 'game-tables.campaign_count')?->value);
-        $this->assertSame(3, $this->stat($this->render($director), 'game-tables.campaign_count')?->value);
+        foreach ([...$this->viewers(), 'owner' => $this->owner, 'director' => $director] as $label => $viewer) {
+            $this->assertSame(4, $this->stat($this->render($viewer), 'game-tables.campaign_count')?->value, $label);
+        }
+
         $this->assertSame('Campañas', $this->stat($this->render(null), 'game-tables.campaign_count')?->label);
+    }
+
+    public function test_anyone_sees_how_many_listed_tables_the_owner_has_played(): void
+    {
+        $campaign = $this->campaign();
+        $this->joins($this->owner, $this->table(['starts_at' => '2026-11-10 17:00:00']));
+        $this->joins($this->owner, $this->table(['status' => 'completed', 'starts_at' => '2026-10-01 17:00:00']));
+        $this->joins($this->owner, $this->table(['campaign_id' => $campaign->id, 'starts_at' => '2026-11-01 17:00:00']), fromRoster: true);
+        // Started already, still going on
+        $this->joins($this->owner, $this->table(['starts_at' => '2026-11-15 09:00:00']));
+        // Never counted
+        $this->joins($this->owner, $this->table());
+        $this->joins($this->owner, $this->table(['status' => 'cancelled', 'starts_at' => '2026-11-10 17:00:00']));
+        $this->joins($this->owner, $this->table(['status' => 'draft', 'starts_at' => '2026-11-10 17:00:00']));
+        $this->joins($this->owner, $this->table(['is_published' => false, 'starts_at' => '2026-11-10 17:00:00']));
+        $this->joins($this->owner, $this->table(['starts_at' => '2026-11-10 17:00:00']), status: 'waiting_list');
+        $this->joins($this->owner, $this->table(['starts_at' => '2026-11-10 17:00:00']), status: 'pending');
+        $this->joins($this->owner, $this->table(['starts_at' => '2026-11-10 17:00:00']), status: 'cancelled');
+        $this->joins($this->owner, $this->table(['starts_at' => '2026-11-10 17:00:00']), role: 'spectator');
+        $this->directedBy($this->owner, $this->table(['starts_at' => '2026-11-10 17:00:00']));
+
+        foreach ([...$this->viewers(), 'owner' => $this->owner] as $label => $viewer) {
+            $stat = $this->stat($this->render($viewer), 'game-tables.tables_played');
+
+            $this->assertSame(4, $stat?->value, $label);
+            $this->assertNull($stat->url, $label);
+            $this->assertSame('Partidas jugadas', $stat->label, $label);
+        }
+    }
+
+    public function test_the_played_tables_show_only_to_the_owner_and_who_manages_them(): void
+    {
+        $director = UserModel::factory()->create();
+        $delegating = $this->directedBy($director, $this->table(['title' => 'Delegada', 'delegates_registrations' => true, 'starts_at' => '2026-11-10 17:00:00']));
+        $this->joins($this->owner, $delegating);
+        $notDelegating = $this->directedBy($director, $this->table(['title' => 'Sin delegar', 'starts_at' => '2026-11-09 17:00:00']));
+        $this->joins($this->owner, $notDelegating);
+        $rosterDirector = UserModel::factory()->create();
+        $campaign = $this->campaign();
+        $this->directedCampaign($rosterDirector, $campaign);
+        $this->onRoster($this->owner, $campaign);
+        $session = $this->table(['title' => 'Sesión', 'campaign_id' => $campaign->id, 'starts_at' => '2026-11-08 17:00:00']);
+        $this->joins($this->owner, $session, fromRoster: true);
+        $other = UserModel::factory()->create();
+        $this->joins($this->owner, $this->directedBy($other, $this->table(['delegates_registrations' => false, 'starts_at' => '2026-11-07 17:00:00'])));
+
+        $this->assertCount(4, $this->playedIds($this->owner) ?? []);
+        $this->assertSame([$delegating->id], $this->playedIds($director));
+        $this->assertSame([$session->id], $this->playedIds($rosterDirector));
+
+        foreach ([...$this->viewers(), 'other director' => $other] as $label => $viewer) {
+            $this->assertNull($this->playedIds($viewer), $label);
+            // The total names no table, so anybody sees it
+            $this->assertSame(4, $this->stat($this->render($viewer), 'game-tables.tables_played')?->value, $label);
+        }
+
+        // An anonymized manager opens no management page, so sees none of them
+        $director->forceFill(['anonymized_at' => now()])->save();
+        $rosterDirector->forceFill(['anonymized_at' => now()])->save();
+        $this->assertNull($this->playedIds($director->refresh()));
+        $this->assertNull($this->playedIds($rosterDirector->refresh()));
+    }
+
+    public function test_a_manager_sees_only_the_started_listed_tables_they_manage(): void
+    {
+        $director = UserModel::factory()->create();
+        $managed = fn (array $attributes): GameTableModel => $this->directedBy($director, $this->table(['delegates_registrations' => true, ...$attributes]));
+        $played = $managed(['starts_at' => '2026-11-10 17:00:00']);
+        $this->joins($this->owner, $played);
+        $this->joins($this->owner, $managed(['status' => 'cancelled', 'starts_at' => '2026-11-10 17:00:00']));
+        $this->joins($this->owner, $managed(['status' => 'draft', 'starts_at' => '2026-11-10 17:00:00']));
+        $this->joins($this->owner, $managed(['is_published' => false, 'starts_at' => '2026-11-10 17:00:00']));
+        $upcoming = $managed(['starts_at' => '2026-11-20 17:00:00']);
+        $this->joins($this->owner, $upcoming);
+
+        $profile = $this->render($director);
+
+        $this->assertSame([$played->id], $this->playedIds($director));
+        $this->assertSame([$upcoming->id], array_column($this->section($profile, 'game-tables.tables')->props['playing'] ?? [], 'id'));
+    }
+
+    public function test_a_table_starting_right_now_has_started(): void
+    {
+        $now = $this->table(['title' => 'Ahora', 'starts_at' => '2026-11-15 10:00:00']);
+        $this->joins($this->owner, $now);
+
+        $profile = $this->render($this->owner);
+
+        $this->assertSame([$now->id], $this->playedIds($this->owner));
+        $this->assertSame(1, $this->stat($profile, 'game-tables.tables_played')?->value);
+        $this->assertNull($this->section($profile, 'game-tables.tables'));
+    }
+
+    public function test_a_session_of_an_unpublished_campaign_is_not_played_on_the_profile(): void
+    {
+        $director = UserModel::factory()->create();
+        $hidden = $this->campaign(['is_published' => false]);
+        $this->directedCampaign($director, $hidden);
+        $this->onRoster($this->owner, $hidden);
+        $this->joins($this->owner, $this->table(['campaign_id' => $hidden->id, 'starts_at' => '2026-11-10 17:00:00']), fromRoster: true);
+        $listed = $this->campaign();
+        $this->onRoster($this->owner, $listed);
+        $session = $this->table(['campaign_id' => $listed->id, 'starts_at' => '2026-11-09 17:00:00']);
+        $this->joins($this->owner, $session, fromRoster: true);
+
+        // As the activity source reports it: only sessions of published campaigns count
+        $this->assertSame(1, $this->stat($this->render(null), 'game-tables.tables_played')?->value);
+        $this->assertSame([$session->id], $this->playedIds($this->owner));
+    }
+
+    public function test_a_manager_who_must_verify_their_email_sees_no_played_tables(): void
+    {
+        $settings = $this->app->make(SettingsServiceInterface::class);
+        $settings->set('email_verification_enforced_since', '2026-01-01T00:00:00+00:00');
+        $settings->set('auth_email_verification_required', '1');
+        $director = UserModel::factory()->unverified()->create();
+        $this->joins($this->owner, $this->directedBy($director, $this->table(['delegates_registrations' => true, 'starts_at' => '2026-11-10 17:00:00'])));
+
+        $this->assertNull($this->section($this->render($director), 'game-tables.played-tables'));
+
+        $director->forceFill(['email_verified_at' => now()])->save();
+        $this->assertCount(1, $this->section($this->render($director->refresh()), 'game-tables.played-tables')->props['tables'] ?? []);
+    }
+
+    public function test_the_played_tables_list_the_five_latest_newest_first(): void
+    {
+        foreach ([7, 3, 9, 1, 5, 2, 8] as $day) {
+            $this->joins($this->owner, $this->table(['title' => "Día {$day}", 'starts_at' => sprintf('2026-11-%02d 17:00:00', $day)]));
+        }
+        $this->joins($this->owner, $this->table(['title' => 'Futura']));
+        $this->joins($this->owner, $this->table(['title' => 'Cancelada', 'status' => 'cancelled', 'starts_at' => '2026-11-14 17:00:00']));
+        $this->joins($this->owner, $this->table(['title' => 'Borrador', 'status' => 'draft', 'starts_at' => '2026-11-14 17:00:00']));
+
+        $profile = $this->render($this->owner);
+        $section = $this->section($profile, 'game-tables.played-tables');
+
+        $this->assertNotNull($section);
+        $this->assertContains($section, $profile->main);
+        $this->assertSame('Últimas partidas', $section->label);
+        $this->assertSame('components/profileSections/PlayedTablesProfileSection.vue', $section->component);
+        $this->assertSame(['Día 9', 'Día 8', 'Día 7', 'Día 5', 'Día 3'], array_column($section->props['tables'], 'title'));
+        $this->assertSame(['id', 'title', 'url', 'startsAt', 'gameSystem'], array_keys($section->props['tables'][0]));
+        $this->assertSame(
+            $this->app->make(TimezoneServiceInterface::class)->iso(CarbonImmutable::parse('2026-11-09 17:00:00', 'UTC')),
+            $section->props['tables'][0]['startsAt'],
+        );
+        // The upcoming tables stay in «Mesas»
+        $this->assertSame(['Futura'], array_column($this->section($profile, 'game-tables.tables')->props['playing'] ?? [], 'title'));
+    }
+
+    public function test_an_anonymized_owner_has_played_nothing(): void
+    {
+        $this->joins($this->owner, $this->table(['starts_at' => '2026-11-10 17:00:00']));
+        $campaign = $this->campaign();
+        $this->onRoster($this->owner, $campaign);
+        $this->owner->forceFill(['anonymized_at' => now()])->save();
+
+        $profile = $this->render($this->owner->refresh());
+
+        $this->assertNull($this->stat($profile, 'game-tables.tables_played'));
+        $this->assertNull($this->stat($profile, 'game-tables.campaign_count'));
+        $this->assertNull($this->section($profile, 'game-tables.played-tables'));
     }
 
     public function test_the_queries_do_not_grow_with_the_number_of_tables(): void
@@ -415,7 +606,7 @@ final class ProfileSectionsTest extends ModuleTestCase
         $many = $this->countQueries(fn () => $this->render($director));
 
         $this->assertSame($few, $many);
-        // Three lists and two counts of the module, each list with its game systems, and the core's two reads
+        // Four lists and three counts of the module, each list with its game systems, and the core's two reads
         $this->assertLessThanOrEqual(self::MAX_RENDER_QUERIES, $many);
     }
 
@@ -424,6 +615,7 @@ final class ProfileSectionsTest extends ModuleTestCase
         for ($i = 0; $i < $count; $i++) {
             $this->directedBy($this->owner, $this->table());
             $this->joins($this->owner, $this->directedBy($director, $this->table(['delegates_registrations' => true])));
+            $this->joins($this->owner, $this->directedBy($director, $this->table(['delegates_registrations' => true, 'starts_at' => '2026-11-10 17:00:00'])));
             $campaign = $this->campaign();
             $this->directedCampaign($this->owner, $campaign);
             $played = $this->campaign();
@@ -479,6 +671,32 @@ final class ProfileSectionsTest extends ModuleTestCase
         }
 
         return null;
+    }
+
+    /**
+     * @param  list<ProfileLayoutOptionDTO>  $options
+     */
+    private function option(array $options, string $key): ?ProfileLayoutOptionDTO
+    {
+        foreach ($options as $option) {
+            if ($option->key === $key) {
+                return $option;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The ids «Últimas partidas» lists for the viewer, or null when the section does not show.
+     *
+     * @return list<string>|null
+     */
+    private function playedIds(?UserModel $viewer): ?array
+    {
+        $props = $this->section($this->render($viewer), 'game-tables.played-tables')?->props;
+
+        return $props === null ? null : array_column($props['tables'], 'id');
     }
 
     private function stat(ResolvedProfileDTO $profile, string $key): ?ResolvedProfileStatDTO

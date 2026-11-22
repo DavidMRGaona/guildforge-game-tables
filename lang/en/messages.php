@@ -1104,11 +1104,19 @@ return [
             'label' => 'Tables',
             'description' => 'The next tables you run and play in.',
         ],
+        'played_tables' => [
+            'label' => 'Latest games',
+            'description' => 'The latest tables you played in. Only you and whoever manages those tables or campaigns see them.',
+        ],
         'campaigns' => [
             'label' => 'Campaigns',
             'description' => 'The ongoing campaigns you run or play in.',
         ],
         'tables_run' => 'Tables run',
+        'tables_played' => [
+            'label' => 'Tables played',
+            'description' => 'The tables and campaign sessions you have already played.',
+        ],
         'campaign_count' => 'Campaigns',
     ],
 

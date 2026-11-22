@@ -19,6 +19,7 @@ use Modules\GameTables\Domain\Enums\ParticipantStatus;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\CampaignModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameMasterModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
+use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 
 /**
  * Who directs a table is GameTableModel::scopeDirectedBy(), the SQL form of the module's one rule
@@ -53,32 +54,23 @@ final readonly class ProfileActivityQuery implements ProfileActivityQueryInterfa
 
     public function upcomingTablesPlayedBy(string $ownerId, ?Authenticatable $viewer, int $limit): array
     {
-        $viewerId = $this->viewerId($viewer);
+        $query = $this->playedTablesShownTo($this->upcomingTables(), $ownerId, $viewer);
 
-        if ($viewerId === null) {
-            return [];
-        }
+        return $query instanceof Builder ? $this->tableItems($query, $limit) : [];
+    }
 
-        $query = $this->upcomingTables()->whereHas('participants', fn (Builder $participant) => $participant
-            ->where('user_id', $ownerId)
-            ->where('role', ParticipantRole::Player->value)
-            ->where('status', ParticipantStatus::Confirmed->value));
+    public function recentTablesPlayedBy(string $ownerId, ?Authenticatable $viewer, int $limit): array
+    {
+        $query = $this->playedTablesShownTo($this->startedTables(), $ownerId, $viewer);
 
-        if ($viewerId !== $ownerId) {
-            if (! $this->mayOpenManagementPages($viewer)) {
-                return [];
-            }
+        return $query instanceof Builder ? $this->tableItems($query, $limit, 'desc') : [];
+    }
 
-            $query->where(fn (Builder $visible) => $visible
-                // «Gestionar inscritos» (GameTablePolicy::manageRegistrations) lists the players of the table
-                ->where(fn (Builder $table) => $this->registrationsManagedBy($table, $viewerId))
-                // The roster page (CampaignPolicy::manageRoster) lists the sessions of its roster players
-                ->orWhere(fn (Builder $session) => $session
-                    ->whereHas('campaign', fn (Builder $campaign) => $this->rosterManagedBy($campaign, $viewerId))
-                    ->whereExists(fn (QueryBuilder $roster) => $this->rosterOf($roster, $ownerId, 'gametables_tables.campaign_id'))));
-        }
-
-        return $this->tableItems($query, $limit);
+    public function countTablesPlayedBy(string $ownerId): int
+    {
+        return $this->startedTables()
+            ->whereHas('participants', fn (Builder $participant) => $this->confirmedPlayer($participant, $ownerId))
+            ->count();
     }
 
     public function countTablesRunBy(string $ownerId): int
@@ -113,9 +105,15 @@ final readonly class ProfileActivityQuery implements ProfileActivityQueryInterfa
         ))->all());
     }
 
-    public function countCampaignsOf(string $ownerId, ?Authenticatable $viewer): int
+    public function countCampaignsOf(string $ownerId): int
     {
-        return $this->campaignsOf($ownerId, $viewer)->count();
+        return CampaignModel::query()
+            ->publiclyListed()
+            ->where(fn (Builder $query) => $query
+                ->whereHas('gameMasters', fn (Builder $gm) => $gm->linkedTo($ownerId, true))
+                ->orWhereExists(fn (QueryBuilder $roster) => $this->rosterOf($roster, $ownerId, 'gametables_campaigns.id')
+                    ->whereExists(fn (QueryBuilder $account) => $this->activeAccount($account, 'gametables_campaign_players.user_id'))))
+            ->count();
     }
 
     private function viewerId(?Authenticatable $viewer): ?string
@@ -142,20 +140,99 @@ final readonly class ProfileActivityQuery implements ProfileActivityQueryInterfa
     }
 
     /**
+     * The tables among `$tables` where the owner holds a confirmed player seat, as far as the viewer
+     * may see the players: the owner themselves, or who opens the players list of that table. Null
+     * when the viewer may see none of them.
+     *
+     * @param  Builder<GameTableModel>  $tables
+     * @return Builder<GameTableModel>|null
+     */
+    private function playedTablesShownTo(Builder $tables, string $ownerId, ?Authenticatable $viewer): ?Builder
+    {
+        $viewerId = $this->viewerId($viewer);
+
+        if ($viewerId === null) {
+            return null;
+        }
+
+        $query = $tables->whereHas('participants', fn (Builder $participant) => $this->confirmedPlayer($participant, $ownerId));
+
+        if ($viewerId === $ownerId) {
+            return $query;
+        }
+
+        if (! $this->mayOpenManagementPages($viewer)) {
+            return null;
+        }
+
+        return $query->where(fn (Builder $visible) => $visible
+            // «Gestionar inscritos» (GameTablePolicy::manageRegistrations) lists the players of the table
+            ->where(fn (Builder $table) => $this->registrationsManagedBy($table, $viewerId))
+            // The roster page (CampaignPolicy::manageRoster) lists the sessions of its roster players
+            ->orWhere(fn (Builder $session) => $session
+                ->whereHas('campaign', fn (Builder $campaign) => $this->rosterManagedBy($campaign, $viewerId))
+                ->whereExists(fn (QueryBuilder $roster) => $this->rosterOf($roster, $ownerId, 'gametables_tables.campaign_id'))));
+    }
+
+    /**
+     * A confirmed player seat of the owner, while their account is not anonymized: an erased account
+     * plays nothing on its profile.
+     *
+     * @param  Builder<ParticipantModel>  $participant
+     */
+    private function confirmedPlayer(Builder $participant, string $ownerId): void
+    {
+        $participant
+            ->where('gametables_participants.user_id', $ownerId)
+            ->where('gametables_participants.role', ParticipantRole::Player->value)
+            ->where('gametables_participants.status', ParticipantStatus::Confirmed->value)
+            ->whereExists(fn (QueryBuilder $account) => $this->activeAccount($account, 'gametables_participants.user_id'));
+    }
+
+    private function activeAccount(QueryBuilder $account, string $userColumn): void
+    {
+        $account->selectRaw('1')
+            ->from('users')
+            ->whereColumn('users.id', $userColumn)
+            ->whereNull('users.anonymized_at');
+    }
+
+    /**
+     * Listed tables not started yet, as the tables listing shows them (a published session of an
+     * unpublished campaign included, like its own page).
+     *
      * @return Builder<GameTableModel>
      */
     private function upcomingTables(): Builder
     {
-        return GameTableModel::query()->publiclyListed()->where('starts_at', '>=', now());
+        return GameTableModel::query()->publiclyListed()->where('gametables_tables.starts_at', '>', now());
+    }
+
+    /**
+     * Listed tables already started (one starting right now included), what upcomingTables() no
+     * longer holds, and, for a campaign session, of a published campaign: what the profile counts as
+     * played is what SessionActivitySource reports to other modules.
+     *
+     * @return Builder<GameTableModel>
+     */
+    private function startedTables(): Builder
+    {
+        return GameTableModel::query()
+            ->publiclyListed()
+            ->where('gametables_tables.starts_at', '<=', now())
+            ->where(fn (Builder $query) => $query
+                ->whereNull('gametables_tables.campaign_id')
+                ->orWhereHas('campaign', fn (Builder $campaign) => $campaign->where('gametables_campaigns.is_published', true)));
     }
 
     /**
      * @param  Builder<GameTableModel>  $query
+     * @param  'asc'|'desc'  $direction
      * @return list<ProfileTableItemDTO>
      */
-    private function tableItems(Builder $query, int $limit): array
+    private function tableItems(Builder $query, int $limit, string $direction = 'asc'): array
     {
-        $tables = $query->with('gameSystem')->orderedByStart()->limit($limit)->get();
+        $tables = $query->with('gameSystem')->orderedByStart($direction)->limit($limit)->get();
 
         return array_values($tables->map(fn (GameTableModel $table): ProfileTableItemDTO => new ProfileTableItemDTO(
             id: $table->id,
@@ -229,9 +306,9 @@ final readonly class ProfileActivityQuery implements ProfileActivityQueryInterfa
             });
     }
 
-    private function rosterOf(QueryBuilder $roster, string $ownerId, string $campaignColumn): void
+    private function rosterOf(QueryBuilder $roster, string $ownerId, string $campaignColumn): QueryBuilder
     {
-        $roster->selectRaw('1')
+        return $roster->selectRaw('1')
             ->from('gametables_campaign_players')
             ->whereColumn('gametables_campaign_players.campaign_id', $campaignColumn)
             ->where('gametables_campaign_players.user_id', $ownerId);
