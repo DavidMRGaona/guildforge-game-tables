@@ -12,6 +12,7 @@ use App\Application\Cookies\Services\CookieDeclarationRegistryInterface;
 use App\Application\Knowledge\Contracts\KnowledgeCapabilityInterface;
 use App\Application\Legal\DTOs\LegalMailNoticeDTO;
 use App\Application\Legal\Services\LegalMailNoticeRegistryInterface;
+use App\Application\Linking\Contracts\LinkableRecordSourceInterface;
 use App\Application\Mail\DTOs\MailCategoryDTO;
 use App\Application\Media\Contracts\MediaUsageSourceInterface;
 use App\Application\Modules\DTOs\ModuleRouteDTO;
@@ -115,6 +116,8 @@ use Modules\GameTables\Domain\Repositories\GameSystemRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GameTableRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\GenreRepositoryInterface;
 use Modules\GameTables\Domain\Repositories\ParticipantRepositoryInterface;
+use Modules\GameTables\Filament\Linking\Sources\CampaignLinkableRecordSource;
+use Modules\GameTables\Filament\Linking\Sources\GameTableLinkableRecordSource;
 use Modules\GameTables\Filament\Pages\GameTablesSettings;
 use Modules\GameTables\Filament\RelationManagers\EventGameTableConfigRelationManager;
 use Modules\GameTables\Filament\Resources\CampaignResource;
@@ -1565,6 +1568,21 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
         return [
             SessionActivitySource::class,
             CampaignActivitySource::class,
+        ];
+    }
+
+    /**
+     * Game tables and campaigns as linkable records (core contract), so other modules link their
+     * data to them (a venue booking to a table) without depending on this module, including what
+     * each person organizes.
+     *
+     * @return array<class-string<LinkableRecordSourceInterface>>
+     */
+    public function registerLinkableRecordSources(): array
+    {
+        return [
+            GameTableLinkableRecordSource::class,
+            CampaignLinkableRecordSource::class,
         ];
     }
 
