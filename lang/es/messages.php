@@ -59,6 +59,11 @@ return [
         ],
     ],
 
+    'linking' => [
+        'game_table' => 'Mesa de rol',
+        'campaign' => 'Campaña',
+    ],
+
     'activity' => [
         'session_label' => 'Partidas',
         'campaign_label' => 'Campañas completadas',

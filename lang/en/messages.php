@@ -52,6 +52,11 @@ return [
         ],
     ],
 
+    'linking' => [
+        'game_table' => 'Game table',
+        'campaign' => 'Campaign',
+    ],
+
     'activity' => [
         'session_label' => 'Games played',
         'campaign_label' => 'Completed campaigns',
