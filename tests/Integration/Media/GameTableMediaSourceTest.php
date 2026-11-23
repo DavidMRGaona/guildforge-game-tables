@@ -5,16 +5,20 @@ declare(strict_types=1);
 namespace Modules\GameTables\Tests\Integration\Media;
 
 use App\Application\Media\Contracts\MediaUsageSourceInterface;
+use App\Application\Media\Contracts\ShowsMediaPreviews;
+use App\Application\Media\Services\MediaIndexerInterface;
 use App\Application\Media\Services\MediaSourceRegistryInterface;
 use App\Domain\Media\ValueObjects\MediaFileId;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\GameTables\Filament\Resources\GameTableResource;
 use Modules\GameTables\Infrastructure\Media\GameTableMediaSource;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameSystemModel;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\Media\ColumnSourceContractTests;
 use Tests\Support\Modules\InteractsWithModulePanel;
 use Tests\Support\Modules\ModuleTestCase;
@@ -50,6 +54,14 @@ final class GameTableMediaSourceTest extends ModuleTestCase
 
     protected function makeRecord(?string $path): Model
     {
+        return $this->makeTable(['image_public_id' => $path]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    private function makeTable(array $attributes = []): GameTableModel
+    {
         return GameTableModel::create([
             'id' => (string) Str::uuid(),
             'game_system_id' => $this->system->id,
@@ -67,7 +79,8 @@ final class GameTableMediaSourceTest extends ModuleTestCase
             'language' => 'es',
             'registration_type' => 'everyone',
             'is_published' => true,
-            'image_public_id' => $path,
+            'image_public_id' => 'game-tables/2026/11/a.jpg',
+            ...$attributes,
         ]);
     }
 
@@ -152,5 +165,104 @@ final class GameTableMediaSourceTest extends ModuleTestCase
 
         $this->assertSame(1, count(array_keys($types, 'gametables.tables', true)));
         $this->assertSame(1, count(array_keys($types, 'gametables.campaigns', true)));
+    }
+
+    public function test_shows_its_previews_in_the_media_library(): void
+    {
+        $this->assertInstanceOf(ShowsMediaPreviews::class, $this->source());
+    }
+
+    public function test_the_image_of_a_published_table_is_shown_with_its_title(): void
+    {
+        $table = $this->makeTable();
+
+        $usage = $this->source()->usagesFor((string) $table->getKey())[0];
+
+        $this->assertFalse($usage->hidden);
+        $this->assertSame('Mesa de ejemplo', $usage->title);
+    }
+
+    public function test_a_published_table_stays_shown_once_cancelled_or_completed(): void
+    {
+        // Its page still opens, image included, so the library may show it too
+        foreach (['cancelled', 'completed'] as $status) {
+            $table = $this->makeTable(['status' => $status]);
+
+            $this->assertFalse($this->source()->usagesFor((string) $table->getKey())[0]->hidden, $status);
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    #[DataProvider('unpublishedTables')]
+    public function test_the_image_of_an_unpublished_table_is_hidden_under_a_neutral_title(array $attributes): void
+    {
+        $table = $this->makeTable(['title' => 'Sorpresa de fin de año', 'is_published' => false, ...$attributes]);
+
+        $usage = $this->source()->usagesFor((string) $table->getKey())[0];
+
+        $this->assertTrue($usage->hidden);
+        $this->assertSame('Mesa sin publicar', $usage->title);
+    }
+
+    /**
+     * @return array<string, array{array<string, mixed>}>
+     */
+    public static function unpublishedTables(): array
+    {
+        return [
+            'draft from the panel' => [['status' => 'draft']],
+            'scheduled but not published' => [['status' => 'scheduled']],
+            'draft from the site' => [['status' => 'draft', 'frontend_creation_status' => 'draft']],
+            'pending moderation' => [['status' => 'draft', 'frontend_creation_status' => 'pending_review']],
+            'rejected' => [['status' => 'draft', 'frontend_creation_status' => 'rejected']],
+        ];
+    }
+
+    public function test_publishing_or_unpublishing_a_table_refreshes_its_usages(): void
+    {
+        $table = $this->makeTable(['is_published' => false]);
+        $indexer = $this->spy(MediaIndexerInterface::class);
+
+        $table->update(['is_published' => true]);
+        $table->update(['is_published' => false]);
+
+        $indexer->shouldHaveReceived('refresh')->with(GameTableMediaSource::TYPE, (string) $table->getKey())->twice();
+    }
+
+    public function test_the_index_follows_the_table_when_it_is_published_and_unpublished(): void
+    {
+        $table = $this->makeTable(['title' => 'Sorpresa de fin de año', 'is_published' => false]);
+        $this->assertSame([true, 'Mesa sin publicar'], $this->indexedUsage($table));
+
+        $table->update(['is_published' => true]);
+        $this->assertSame([false, 'Sorpresa de fin de año'], $this->indexedUsage($table));
+
+        $table->update(['is_published' => false]);
+        $this->assertSame([true, 'Mesa sin publicar'], $this->indexedUsage($table));
+    }
+
+    public function test_a_change_the_library_does_not_show_leaves_the_index_alone(): void
+    {
+        $table = $this->makeTable();
+        $indexer = $this->spy(MediaIndexerInterface::class);
+
+        $table->update(['notes' => 'Traed dados']);
+
+        $indexer->shouldNotHaveReceived('refresh');
+    }
+
+    /**
+     * @return array{bool, string}
+     */
+    private function indexedUsage(GameTableModel $table): array
+    {
+        $row = DB::table('media_usages')
+            ->where('source_type', GameTableMediaSource::TYPE)
+            ->where('record_id', (string) $table->getKey())
+            ->sole();
+
+        return [(bool) $row->is_hidden, (string) $row->title];
     }
 }

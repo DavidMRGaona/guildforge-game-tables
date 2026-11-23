@@ -40,6 +40,9 @@ return [
         'roles' => [
             'image' => 'Imagen',
         ],
+        // Title of a usage whose image the library hides: the record is not published yet
+        'unpublished_table' => 'Mesa sin publicar',
+        'unpublished_campaign' => 'Campaña sin publicar',
     ],
 
     // Site search (core): group, one result and the tag of results that are over
