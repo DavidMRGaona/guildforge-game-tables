@@ -7,6 +7,8 @@ namespace Modules\GameTables\Tests\Integration\Linking;
 use App\Application\Linking\Contracts\LinkableRecordSourceInterface;
 use App\Application\Linking\DTOs\LinkableRecordDTO;
 use App\Application\Linking\Services\LinkableRecordLookupInterface;
+use App\Infrastructure\Persistence\Eloquent\Models\PermissionModel;
+use App\Infrastructure\Persistence\Eloquent\Models\RoleModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Str;
 use Modules\GameTables\Domain\Enums\GameMasterRole;
@@ -163,6 +165,28 @@ final class GameTableLinkableRecordSourceTest extends ModuleTestCase
         $excluded->gameMasters()->attach($gm->id, ['source' => 'inherited', 'excluded' => true, 'sort_order' => 1]);
 
         $this->assertSame([], $this->lookup->organizedBy('game-table', $person));
+    }
+
+    public function test_who_views_any_table_without_the_panel_does_not_organize_their_drafts(): void
+    {
+        // organizedBy() gets the real id of anybody, with no panel check: the view permission that
+        // shows drafts in the panel must not show them on the site
+        $this->registerOnAdminPanel([GameTableResource::class]);
+        $person = UserModel::factory()->create();
+        $role = RoleModel::create(['name' => 'tester-'.uniqid(), 'display_name' => 'Ve todas las mesas']);
+        foreach (['gametables:gametables.view_any', 'gametables:gametables.view', 'gametables:gametables.update'] as $key) {
+            [$resource, $action] = explode('.', $key, 2);
+            $role->permissions()->attach(PermissionModel::firstOrCreate(['key' => $key], ['label' => $key, 'resource' => $resource, 'action' => $action])->id);
+        }
+        $person->roles()->attach($role->id);
+        $published = $this->table(['created_by' => $person->id]);
+        $this->table(['created_by' => $person->id, 'is_published' => false, 'status' => 'draft']);
+        $this->table(['created_by' => $person->id, 'is_published' => false, 'frontend_creation_status' => 'pending_review']);
+
+        $organized = $this->lookup->organizedBy('game-table', $person);
+
+        $this->assertSame([$published->id], $this->ids($organized));
+        $this->assertNull($organized[0]->panelUrl ?? null);
     }
 
     /**
