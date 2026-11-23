@@ -796,17 +796,20 @@ final class GameTablesServiceProvider extends ModuleServiceProvider
     }
 
     /**
-     * Queue a refresh of a record's media usages when it is created, changes its image or is deleted.
+     * Queue a refresh of a record's media usages when it is created, changes its image, title or
+     * publication, or is deleted.
      *
      * @param  class-string<Model>  $model
      */
     private function refreshMediaUsagesOnChange(string $model, string $type): void
     {
-        // A saved record only matters when it is new or its image or title changed (wasRecentlyCreated
-        // stays true on the instance that created the record, hence the check for later changes)
+        // A saved record only matters when it is new or its image, its title or whether it is published
+        // changed: an unpublished record's image is hidden in the library under a neutral title
+        // (wasRecentlyCreated stays true on the instance that created the record, hence the check for
+        // later changes)
         $onSave = new RefreshMediaUsagesObserver(
             $type,
-            static fn (Model $record): array => ($record->wasRecentlyCreated && $record->wasChanged() === false) || $record->wasChanged(['image_public_id', 'title'])
+            static fn (Model $record): array => ($record->wasRecentlyCreated && $record->wasChanged() === false) || $record->wasChanged(['image_public_id', 'title', 'is_published'])
                 ? [(string) $record->getKey()]
                 : [],
         );

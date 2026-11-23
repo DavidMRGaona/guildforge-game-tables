@@ -232,6 +232,14 @@ final class CampaignModel extends Model
     }
 
     /**
+     * Whether this campaign's own page opens: the same rule as scopeShownOnItsPage(), for one loaded row.
+     */
+    public function isShownOnItsPage(): bool
+    {
+        return $this->getAttribute('is_published') === true;
+    }
+
+    /**
      * The campaigns the public listing shows: published and not cancelled. The site search offers the
      * same ones, so both read this rule.
      *

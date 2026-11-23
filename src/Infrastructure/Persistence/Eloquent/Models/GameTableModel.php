@@ -432,6 +432,14 @@ final class GameTableModel extends Model
     }
 
     /**
+     * Whether this table's own page opens: the same rule as scopeShownOnItsPage(), for one loaded row.
+     */
+    public function isShownOnItsPage(): bool
+    {
+        return $this->getAttribute('is_published') === true;
+    }
+
+    /**
      * The tables the public listing shows, before its date cut: published and neither draft nor cancelled
      * (tables created from the site stay unpublished until approved). The site search offers the same
      * ones, past tables included, so both read this rule.
