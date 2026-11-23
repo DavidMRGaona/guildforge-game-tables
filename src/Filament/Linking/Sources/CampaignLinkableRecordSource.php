@@ -10,6 +10,7 @@ use App\Application\Linking\Contracts\FindsLinkableRecordsOfOrganizer;
 use App\Application\Linking\DTOs\LinkableRecordDTO;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Gate;
 use Modules\GameTables\Domain\Enums\CampaignStatus;
 use Modules\GameTables\Filament\Resources\CampaignResource;
@@ -55,9 +56,17 @@ final readonly class CampaignLinkableRecordSource implements FindsLinkableRecord
         return $this->latestFirst($this->matchingTitle($this->visibleTo($viewer), $query), $limit, $viewer);
     }
 
+    /**
+     * The id is read in lower case, as the keys are stored; the record answers with the id asked,
+     * as the contract wants.
+     */
     public function find(string $id, string $viewerId): ?LinkableRecordDTO
     {
-        return $this->findMany([$id], $viewerId)[0] ?? null;
+        $record = $this->findMany([strtolower($id)], $viewerId)[0] ?? null;
+
+        return $record instanceof LinkableRecordDTO && $record->id !== $id
+            ? new LinkableRecordDTO(type: $record->type, id: $id, title: $record->title, panelUrl: $record->panelUrl)
+            : $record;
     }
 
     public function findMany(array $ids, string $viewerId): array
@@ -70,9 +79,7 @@ final readonly class CampaignLinkableRecordSource implements FindsLinkableRecord
 
         $viewer = $this->viewer($viewerId);
 
-        return array_values($this->visibleTo($viewer)->whereKey($ids)->get()
-            ->map(fn (CampaignModel $campaign): LinkableRecordDTO => $this->toRecord($campaign, $viewer))
-            ->all());
+        return $this->toRecords($this->visibleTo($viewer)->whereKey($ids)->get(), $viewer);
     }
 
     /**
@@ -118,30 +125,34 @@ final readonly class CampaignLinkableRecordSource implements FindsLinkableRecord
      */
     private function latestFirst(Builder $campaigns, int $limit, ?UserModel $viewer): array
     {
-        return array_values($campaigns
+        return $this->toRecords($campaigns
             ->orderByDesc('gametables_campaigns.created_at')
             ->orderBy('gametables_campaigns.id')
             ->limit($limit)
-            ->get()
-            ->map(fn (CampaignModel $campaign): LinkableRecordDTO => $this->toRecord($campaign, $viewer))
-            ->all());
+            ->get(), $viewer);
     }
 
-    private function toRecord(CampaignModel $campaign, ?UserModel $viewer): LinkableRecordDTO
+    /**
+     * Panel access is asked once for the whole answer, and only for an account.
+     *
+     * @param  Collection<int, CampaignModel>  $campaigns
+     * @return list<LinkableRecordDTO>
+     */
+    private function toRecords(Collection $campaigns, ?UserModel $viewer): array
     {
-        return new LinkableRecordDTO(
+        $editor = $viewer instanceof UserModel && $this->authorization->can($viewer, 'admin.access') ? $viewer : null;
+
+        return array_values($campaigns->map(fn (CampaignModel $campaign): LinkableRecordDTO => new LinkableRecordDTO(
             type: self::TYPE,
             id: (string) $campaign->getKey(),
             title: $campaign->title,
-            panelUrl: $this->panelUrl($campaign, $viewer),
-        );
+            panelUrl: $editor instanceof UserModel ? $this->panelUrl($campaign, $editor) : null,
+        ))->all());
     }
 
-    private function panelUrl(CampaignModel $campaign, ?UserModel $viewer): ?string
+    private function panelUrl(CampaignModel $campaign, UserModel $editor): ?string
     {
-        if (! $viewer instanceof UserModel
-            || ! $this->authorization->can($viewer, 'admin.access')
-            || ! Gate::forUser($viewer)->allows('update', $campaign)) {
+        if (! Gate::forUser($editor)->allows('update', $campaign)) {
             return null;
         }
 

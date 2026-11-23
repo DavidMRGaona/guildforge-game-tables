@@ -143,13 +143,33 @@ final class GameTableLinkableRecordSourceTest extends ModuleTestCase
         $campaign = $this->campaign();
         $campaign->gameMasters()->attach($this->gameMaster($person)->id, ['sort_order' => 1]);
         $session = $this->table(['campaign_id' => $campaign->id, 'starts_at' => now()->addDays(2)]);
-        $played = $this->table(['created_by' => $person->id, 'starts_at' => now()->subWeek()]);
         $this->table();
 
         $this->assertSame(
-            [$directed->id, $session->id, $created->id, $played->id],
+            [$directed->id, $session->id, $created->id],
             $this->ids($this->lookup->organizedBy('game-table', $person)),
         );
+    }
+
+    public function test_a_table_being_played_counts_first_and_a_played_one_never(): void
+    {
+        $person = UserModel::factory()->create();
+        $upcoming = $this->table(['created_by' => $person->id, 'starts_at' => now()->addDay()]);
+        $running = $this->table(['created_by' => $person->id, 'starts_at' => now()->subHour(), 'duration_minutes' => 240, 'status' => 'in_progress']);
+        $this->table(['created_by' => $person->id, 'starts_at' => now()->subHours(5), 'duration_minutes' => 240]);
+        $this->table(['created_by' => $person->id, 'starts_at' => now()->subWeek()]);
+        $this->table(['created_by' => $person->id, 'starts_at' => now()->addDays(2), 'status' => 'completed']);
+
+        $this->assertSame([$running->id, $upcoming->id], $this->ids($this->lookup->organizedBy('game-table', $person)));
+        $this->assertSame([$running->id], $this->ids($this->lookup->organizedBy('game-table', $person, 1)));
+    }
+
+    public function test_a_table_is_found_by_its_id_in_capitals(): void
+    {
+        $table = $this->table();
+        $shouted = strtoupper($table->id);
+
+        $this->assertSame($shouted, $this->app->make(GameTableLinkableRecordSource::class)->find($shouted, LinkableRecordSourceInterface::VISITOR)?->id);
     }
 
     public function test_drafts_cancelled_tables_and_excluded_sessions_are_not_organized(): void

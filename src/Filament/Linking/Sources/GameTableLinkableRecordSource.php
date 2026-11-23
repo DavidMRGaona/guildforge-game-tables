@@ -10,7 +10,9 @@ use App\Application\Linking\Contracts\FindsLinkableRecordsOfOrganizer;
 use App\Application\Linking\DTOs\LinkableRecordDTO;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Gate;
+use Modules\GameTables\Domain\Enums\TableStatus;
 use Modules\GameTables\Filament\Resources\GameTableResource;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
@@ -50,13 +52,30 @@ final readonly class GameTableLinkableRecordSource implements FindsLinkableRecor
         }
 
         $viewer = $this->viewer($viewerId);
+        $now = now();
+        $tables = fn (): Builder => $this->matchingTitle($this->visibleTo($viewer), $query);
+        $found = $tables()->where('gametables_tables.starts_at', '>=', $now)->orderedByStart()->limit($limit)->get();
 
-        return $this->soonestFirst(fn (): Builder => $this->matchingTitle($this->visibleTo($viewer), $query), $limit, $viewer);
+        if ($found->count() < $limit) {
+            $found = $found->concat(
+                $tables()->where('gametables_tables.starts_at', '<', $now)->orderedByStart('desc')->limit($limit - $found->count())->get(),
+            );
+        }
+
+        return $this->toRecords($found, $viewer);
     }
 
+    /**
+     * The id is read in lower case, as the keys are stored; the record answers with the id asked,
+     * as the contract wants.
+     */
     public function find(string $id, string $viewerId): ?LinkableRecordDTO
     {
-        return $this->findMany([$id], $viewerId)[0] ?? null;
+        $record = $this->findMany([strtolower($id)], $viewerId)[0] ?? null;
+
+        return $record instanceof LinkableRecordDTO && $record->id !== $id
+            ? new LinkableRecordDTO(type: $record->type, id: $id, title: $record->title, date: $record->date, panelUrl: $record->panelUrl)
+            : $record;
     }
 
     public function findMany(array $ids, string $viewerId): array
@@ -69,15 +88,15 @@ final readonly class GameTableLinkableRecordSource implements FindsLinkableRecor
 
         $viewer = $this->viewer($viewerId);
 
-        return array_values($this->visibleTo($viewer)->whereKey($ids)->get()
-            ->map(fn (GameTableModel $table): LinkableRecordDTO => $this->toRecord($table, $viewer))
-            ->all());
+        return $this->toRecords($this->visibleTo($viewer)->whereKey($ids)->get(), $viewer);
     }
 
     /**
      * The tables the person created or directs (their own game master rows, or the campaign's
      * for a session, unless excluded from it; hidden names count, it is their own), among those
-     * the public listing shows: published, neither draft nor cancelled.
+     * the public listing shows (published, neither draft nor cancelled) that have not ended:
+     * neither completed nor past their start plus duration. A table being played counts, before
+     * the upcoming ones. Never a played one: nobody links a booking to it.
      */
     public function organizedBy(string $userId, int $limit): array
     {
@@ -85,11 +104,26 @@ final readonly class GameTableLinkableRecordSource implements FindsLinkableRecor
             return [];
         }
 
-        return $this->soonestFirst(fn (): Builder => GameTableModel::query()
+        $organized = static fn (): Builder => GameTableModel::query()
             ->publiclyListed()
-            ->where(fn (Builder $organized) => $organized
+            ->where('gametables_tables.status', '!=', TableStatus::Completed->value)
+            ->where(fn (Builder $mine) => $mine
                 ->where('gametables_tables.created_by', $userId)
-                ->orWhere(fn (Builder $directed) => $directed->directedBy($userId))), $limit, null);
+                ->orWhere(fn (Builder $directed) => $directed->directedBy($userId)));
+        $now = now();
+
+        // Started ones are few: those that may still be running are read, and the end is worked
+        // out here, the same on every database
+        $longest = (int) GameTableModel::query()->max('duration_minutes');
+        $running = $organized()
+            ->where('gametables_tables.starts_at', '<', $now)
+            ->where('gametables_tables.starts_at', '>=', $now->copy()->subMinutes($longest))
+            ->orderedByStart()
+            ->get()
+            ->filter(static fn (GameTableModel $table): bool => $table->starts_at->copy()->addMinutes((int) $table->duration_minutes)->greaterThan($now));
+        $upcoming = $organized()->where('gametables_tables.starts_at', '>=', $now)->orderedByStart()->limit($limit)->get();
+
+        return array_slice($this->toRecords($running->concat($upcoming), null), 0, $limit);
     }
 
     /**
@@ -109,41 +143,27 @@ final readonly class GameTableLinkableRecordSource implements FindsLinkableRecor
     }
 
     /**
-     * Upcoming tables by start, then past ones from the latest, at most $limit in all.
+     * Panel access is asked once for the whole answer, and only for an account.
      *
-     * @param  \Closure(): Builder<GameTableModel>  $tables
+     * @param  Collection<int, GameTableModel>  $tables
      * @return list<LinkableRecordDTO>
      */
-    private function soonestFirst(\Closure $tables, int $limit, ?UserModel $viewer): array
+    private function toRecords(Collection $tables, ?UserModel $viewer): array
     {
-        $now = now();
-        $found = $tables()->where('gametables_tables.starts_at', '>=', $now)->orderedByStart()->limit($limit)->get();
+        $editor = $viewer instanceof UserModel && $this->authorization->can($viewer, 'admin.access') ? $viewer : null;
 
-        if ($found->count() < $limit) {
-            $found = $found->concat(
-                $tables()->where('gametables_tables.starts_at', '<', $now)->orderedByStart('desc')->limit($limit - $found->count())->get(),
-            );
-        }
-
-        return array_values($found->map(fn (GameTableModel $table): LinkableRecordDTO => $this->toRecord($table, $viewer))->all());
-    }
-
-    private function toRecord(GameTableModel $table, ?UserModel $viewer): LinkableRecordDTO
-    {
-        return new LinkableRecordDTO(
+        return array_values($tables->map(fn (GameTableModel $table): LinkableRecordDTO => new LinkableRecordDTO(
             type: self::TYPE,
             id: (string) $table->getKey(),
             title: $table->title,
             date: $table->starts_at->toImmutable(),
-            panelUrl: $this->panelUrl($table, $viewer),
-        );
+            panelUrl: $editor instanceof UserModel ? $this->panelUrl($table, $editor) : null,
+        ))->all());
     }
 
-    private function panelUrl(GameTableModel $table, ?UserModel $viewer): ?string
+    private function panelUrl(GameTableModel $table, UserModel $editor): ?string
     {
-        if (! $viewer instanceof UserModel
-            || ! $this->authorization->can($viewer, 'admin.access')
-            || ! Gate::forUser($viewer)->allows('update', $table)) {
+        if (! Gate::forUser($editor)->allows('update', $table)) {
             return null;
         }
 
