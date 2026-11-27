@@ -234,6 +234,7 @@ final class EventGameTableConfigRelationManager extends RelationManager
                         ->label(__('game-tables::messages.event_config.creation_opens_at'))
                         ->helperText(__('game-tables::messages.event_config.creation_opens_at_help'))
                         ->native(false)
+                        ->seconds(false)
                         ->displayFormat('d/m/Y H:i')
                         ->required(),
                 ])
