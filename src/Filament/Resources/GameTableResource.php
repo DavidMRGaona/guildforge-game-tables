@@ -282,6 +282,7 @@ final class GameTableResource extends BaseResource
                                 DateTimePicker::make('starts_at')
                                     ->label(__('game-tables::messages.fields.start_time'))
                                     ->native(false)
+                                    ->seconds(false)
                                     ->displayFormat('d/m/Y H:i')
                                     ->required(),
 
@@ -442,11 +443,13 @@ final class GameTableResource extends BaseResource
                                 DateTimePicker::make('registration_opens_at')
                                     ->label(__('game-tables::messages.fields.registration_opens_at'))
                                     ->native(false)
+                                    ->seconds(false)
                                     ->displayFormat('d/m/Y H:i'),
 
                                 DateTimePicker::make('registration_closes_at')
                                     ->label(__('game-tables::messages.fields.registration_closes_at'))
                                     ->native(false)
+                                    ->seconds(false)
                                     ->displayFormat('d/m/Y H:i')
                                     ->helperText(__('game-tables::messages.fields.registration_closes_at_help'))
                                     ->rule(self::closesNoLaterThanTheTable()),
