@@ -37,6 +37,7 @@ final class GameTablesSeoTest extends ModuleTestCase
         $this->creator = UserModel::create([
             'id' => (string) Str::uuid(),
             'name' => 'Table Creator',
+            'display_name' => 'Organizer',
             'email' => 'creator@example.com',
             'password' => 'password',
         ]);
