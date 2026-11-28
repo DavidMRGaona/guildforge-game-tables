@@ -34,6 +34,7 @@ final class EventTableCreationAccessTest extends ModuleTestCase
         $this->user = UserModel::create([
             'id' => (string) Str::uuid(),
             'name' => 'Table Creator',
+            'display_name' => 'Organizer',
             'email' => 'event-access@example.com',
             'password' => 'password',
         ]);

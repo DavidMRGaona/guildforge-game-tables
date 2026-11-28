@@ -55,6 +55,7 @@ final class RegistrationControllerTest extends ModuleTestCase
         $this->testUser = UserModel::create([
             'id' => (string) Str::uuid(),
             'name' => 'Test User',
+            'display_name' => 'Player',
             'email' => 'testuser@example.com',
             'password' => 'password',
         ]);
