@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Gate;
 use Modules\GameTables\Domain\Enums\TableStatus;
+use Modules\GameTables\Domain\ValueObjects\TimeSlot;
 use Modules\GameTables\Filament\Resources\GameTableResource;
 use Modules\GameTables\Infrastructure\Persistence\Eloquent\Models\GameTableModel;
 
@@ -114,13 +115,13 @@ final readonly class GameTableLinkableRecordSource implements FindsLinkableRecor
 
         // Started ones are few: those that may still be running are read, and the end is worked
         // out here, the same on every database
-        $longest = (int) GameTableModel::query()->max('duration_minutes');
+        $longest = (int) $organized()->max('duration_minutes');
         $running = $organized()
             ->where('gametables_tables.starts_at', '<', $now)
             ->where('gametables_tables.starts_at', '>=', $now->copy()->subMinutes($longest))
             ->orderedByStart()
             ->get()
-            ->filter(static fn (GameTableModel $table): bool => $table->starts_at->copy()->addMinutes((int) $table->duration_minutes)->greaterThan($now));
+            ->filter(static fn (GameTableModel $table): bool => TimeSlot::create($table->starts_at->toImmutable(), (int) $table->duration_minutes)->endsAt() > $now);
         $upcoming = $organized()->where('gametables_tables.starts_at', '>=', $now)->orderedByStart()->limit($limit)->get();
 
         return array_slice($this->toRecords($running->concat($upcoming), null), 0, $limit);
